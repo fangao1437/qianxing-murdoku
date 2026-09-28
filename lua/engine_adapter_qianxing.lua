@@ -1497,66 +1497,6 @@ function Adapter:apply_tray_layout(layout)
     --    改成由调用方传入（`main.lua` 从规划里取 `kind == "button"`），有多少算多少。
     local names = self.cfg.btn_list or {}
     local done, miss = 0, 0
--- ★★ 2026-09-28 新增：**让行标 / 列标与棋盘真对齐**（用格子的实际位置反推）。
---
--- 用户报"列标和行标没与棋盘对齐"，我从截图量出了偏差：
---     C1≈462 C2≈560 C3≈657 C4≈752 C5≈848   → 标签间距 ≈ 97
---     棋盘列 450-575, 585-745 …             → 列间距   ≈ 171
---   97 正好是 ruler 标签自身的宽度 ⇒ **标签是"边对边"排的，没按列居中**。
---   根因：ruler 的位置在**规划时**用设计空间的几何算了一遍，
---         而格子是**运行时**用 `cell_geometry` 算的 —— 两套数，必然对不上。
---
--- 修法：**只信一份数据** —— 直接读格子的实际锚点位置，反推出标签该在哪。
---   列标 j：x = 该列任一格子的 x − ruler 容器的 x（同一坐标系下相减）
---   行标 i：y = 该行任一格子的 y − ruler 容器的 y
---   （标签的"横带"位置不动 —— 那一维本来就是对的，动它反而会跑偏。）
--- ★★ 2026-09-28 新增：**开机时显式给所有按钮填上名字，并把结果读回来打日志**。
---
--- 背景：用户反复报"按钮名字还是没配上"。已查明的事实：
---   · **文字内容根本不存进 `.gil`** —— `ruler.c.1` 的记录里只有它自己的名字，
---     连它画面上显示的 "C1" 都没有（那是脚本运行时填的）。所以文字只能由脚本写。
---   · 按钮的 `label` 子控件**确实存在**（真机体检：`label(visible=true)`），
---     而且 `proto.text` 与已知文本框 `clue.1`/`hud.title` **记录结构完全一致**（都是文本框）。
---   · 那么问题只可能在"写进去了但没生效"或"根本没找到那个子控件"。
---   ⇒ 所以这里**不猜**：走一遍写入，并**把 label.text 读回来打印**。
---     日志会直接告诉我们卡在哪一环：
---       读到 "放置"      → 写入成功（那问题在渲染/层级/字号）
---       读到 "" 或 nil   → 写不进去（那问题在控件类型或查找路径）
---       "找不到 label"   → `sub()` 没找到（那问题在控件树）
-function Adapter:apply_button_labels(labels)
-  if labels == nil or print == nil then return 0 end
-  local ok_n, miss, bad = 0, 0, 0
-  local shown = 0
-  local ids = {}
-  for id in pairs(labels) do ids[#ids + 1] = id end
-  table.sort(ids)
-  for i = 1, #ids do
-    local id, want = ids[i], labels[ids[i]]
-    if type(want) == "string" and want ~= "" then
-      local lb = nil
-      pcall(function() lb = self:sub(id, "label") end)
-      if lb == nil then
-        miss = miss + 1
-        if shown < 8 then print("  ⚠️ " .. id .. "：**找不到 label 子控件**") ; shown = shown + 1 end
-      else
-        local wrote = pcall(function() lb.text = want end)
-        local back = nil
-        pcall(function() back = lb.text end)
-        local fs = nil
-        pcall(function() fs = lb.fontSize end)
-        if wrote and back == want then ok_n = ok_n + 1 else bad = bad + 1 end
-        if shown < 8 then
-          print(string.format("  %s：想要 %q → 读回 %s   fontSize=%s   visible=%s",
-            id, want, tostring(back), tostring(fs), tostring(lb.visible)))
-          shown = shown + 1
-        end
-      end
-    end
-  end
-  print(string.format("[murdoku] 按钮文字：写入成功 %d 个，写入后读回不一致 %d 个，找不到 label %d 个",
-    ok_n, bad, miss))
-  return ok_n
-end
 function Adapter:apply_ruler_layout(rows, cols)
   local g = self.cfg.cells or {}
   local ruler = self:find("ruler")
@@ -3481,6 +3421,44 @@ function M.capabilities()
   local text = "千星适配层运行时能力自检：\n" .. table.concat(rows, "\n")
   if #missing > 0 then text = text .. "\n\n缺失项：" .. table.concat(missing, "、") end
   return text, missing
+end
+
+-- ★★ 2026-09-28：`apply_button_labels` **放到文件最末尾**重新定义。
+--
+--   为什么搬：原来它定义在中段，语法上看是顶层，但实测
+--   `M.Adapter.apply_button_labels == nil`（而同一位置的 `set_property` 存在）——
+--   说明它被包在了某个 `do`/`local function` 里，**永远不会被赋值到 Adapter 上**。
+--   放到 `return M` 前一行，**不可能再有嵌套**。
+--
+--   ⚠️ 现在它**没有调用方**（main.lua 走已验证的 `set_property` 路径），
+--      保留它只为将来需要"批量重写按钮文字 + 读回校验"时有个现成入口。
+function Adapter:apply_button_labels(labels)
+  if labels == nil or print == nil then return 0 end
+  local okN, miss, bad, shown = 0, 0, 0, 0
+  local ids = {}
+  for id in pairs(labels) do ids[#ids + 1] = id end
+  table.sort(ids)
+  for i = 1, #ids do
+    local id, want = ids[i], labels[ids[i]]
+    if type(want) == "string" and want ~= "" then
+      local lb = nil
+      pcall(function() lb = self:sub(id, "label") end)
+      if lb == nil then
+        miss = miss + 1
+      else
+        local wrote = pcall(function() lb.text = want end)
+        local back = nil
+        pcall(function() back = lb.text end)
+        if wrote and back == want then okN = okN + 1 else bad = bad + 1 end
+        if shown < 8 then
+          print(string.format("  %s：想要 %q → 读回 %s", id, want, tostring(back)))
+          shown = shown + 1
+        end
+      end
+    end
+  end
+  print(string.format("[murdoku] 按钮文字：成功 %d，读回不一致 %d，找不到 label %d", okN, bad, miss))
+  return okN
 end
 
 return M
