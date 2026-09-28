@@ -1,0 +1,269 @@
+﻿# tools/check_all.ps1 —— 一键全量自检
+#
+# 跑法（在工程根目录）：
+#   powershell -ExecutionPolicy Bypass -File tools\check_all.ps1
+#   powershell -ExecutionPolicy Bypass -File tools\check_all.ps1 -SkipSim   # 跳过模拟器（省时间）
+#
+# 依次做：
+#   1.  规则引擎自测            tests/selftest.lua          （55 断言）
+#   2.  界面坐标自洽性回归      tests/ui_math.lua           （47 断言）
+#   2b. 动效接线一致性          tests/effects_wiring.lua    （41 断言）
+#   2c. 文件编码归一（BOM）     tools/normalize_encoding.ps1 -Check
+#   3.  关卡批量校验（唯一解）  tools/validate_levels.lua
+#   4.  打包客户端脚本          tools/bundle_client_script.lua
+#   5.  Lua 5.3 编译 + 顶层执行 tools/lua53check/check.cjs
+#   5b. 入口离线冒烟            tests/entry_smoke.lua       （20 断言，浮点画布）
+#   6.  导出界面布局计划        tools/dump_layout.lua
+#   7.  重新生成真机控件坐标表  tools/gen_editor_guide.mjs
+#   8.  模拟器完整交互回归      tools/sim/play_test.mjs     （27 断言 + 截图）
+#   8b. 输入与设备适配          tools/sim/probe_input.mjs   （12 断言，键鼠/触屏/手柄）
+#   9~11. 三关完整通关          tools/sim/win_path.mjs      （5×5 / 6×6 / 7×7 打到破案）
+#   12. 选关 / 切关             tools/sim/probe_levels.mjs  （28 断言）
+#   13. 光标门控自愈            tools/sim/probe_cursor.mjs  （4 断言）
+#
+# 任何一步失败都会明确报出来，最后汇总。
+#
+# ⚠️ 改过本文件（或任何含中文的 .ps1）之后，先跑一次
+#      powershell -ExecutionPolicy Bypass -File tools\normalize_encoding.ps1
+#    因为编辑工具会剥掉 BOM，而 PowerShell 5.1 会把无 BOM 的文件按 GBK 读 → 直接解析失败。
+#    （2c 步会以 -Check 模式复查这一点，但它自己得先能被解析才行。）
+
+param(
+  [switch]$SkipSim,
+  [int]$SolveLimit = 3
+)
+
+$ErrorActionPreference = 'Continue'
+$root = Split-Path -Parent $PSScriptRoot
+Set-Location $root
+
+function Find-Lua {
+  $candidates = @(
+    (Join-Path $env:LOCALAPPDATA 'Programs\Lua\bin\lua.exe'),
+    'lua.exe'
+  )
+  foreach ($c in $candidates) {
+    try {
+      $null = & $c -v 2>&1
+      if ($LASTEXITCODE -eq 0 -or $?) { return $c }
+    } catch { }
+  }
+  return $null
+}
+
+$lua = Find-Lua
+if (-not $lua) {
+  Write-Host "!! 找不到 Lua 解释器。装一个（https://luabinaries.sourceforge.net/）或把路径加进 PATH。" -ForegroundColor Red
+  exit 1
+}
+Write-Host "Lua: $lua" -ForegroundColor DarkGray
+Write-Host "Node: $(node -v)" -ForegroundColor DarkGray
+Write-Host ""
+
+$results = @()
+
+function Run-Step {
+  # ⚠️ 参数名不能叫 $Args —— 那是 PowerShell 的自动变量，
+  #    撞名会让传进来的数组丢掉，lua 收到空参数直接进 REPL，然后"退出码 0"假绿。
+  param([string]$Name, [string]$Exe, [string[]]$ArgList, [switch]$Soft)
+
+  Write-Host ("=" * 70)
+  Write-Host ">> $Name" -ForegroundColor Cyan
+  Write-Host ("=" * 70)
+  & $Exe @ArgList 2>&1 | ForEach-Object { Write-Host $_ }
+  $code = $LASTEXITCODE
+  $okFlag = ($code -eq 0)
+  if (-not $okFlag -and $Soft) {
+    Write-Host "   （这一步是可选的，失败不阻塞）" -ForegroundColor Yellow
+    $okFlag = $true
+  }
+  $script:results += [pscustomobject]@{ Step = $Name; Exit = $code; OK = $okFlag }
+  Write-Host ""
+  return $okFlag
+}
+
+$ok1 = Run-Step '1/13 规则引擎自测'            $lua @('tests\selftest.lua')
+$ok2 = Run-Step '2/13 界面坐标自洽性回归'       $lua @('tests\ui_math.lua')
+# 2b：动效接线一致性。界面层的语义名（M.EFFECTS）与适配器的实现表（EFFECTS）
+#     分处两个文件、靠字符串对上；对不上时**不动也不报错**，只能靠肉眼发现。
+#     portrait_slide_up 就是这么漏的。
+Run-Step '2b/13 动效接线一致性'                 $lua @('tests\effects_wiring.lua') | Out-Null
+# 2c：文件编码归一（BOM 状态）。两条相反的规则都会踩：
+#     · 含中文的 .ps1 **必须**有 BOM，否则 PS 5.1 按 GBK 读会解析失败；
+#     · .lua / .md **必须没有** BOM，否则打包成单文件后 Lua 5.3 报
+#       "unexpected symbol near '<\239>'" 且行号指向文件末尾。
+#     `edit` 工具每次写入都会剥掉 BOM，所以这一步基本每次都会抓到东西。
+Run-Step '2c/13 文件编码归一（BOM）' 'powershell' @('-ExecutionPolicy', 'Bypass',
+  '-File', 'tools\normalize_encoding.ps1', '-Check') | Out-Null
+# 2d：输入手势状态机（纯 Lua）。模拟器的 pointer 只有 down/up、**没有 move**，
+#     所以 CursorDrag 那条"按住移动就当场取消长按"的分支在模拟器里永远走不到。
+#     这里直接造 Controller 调 on_cell_down / on_cell_drag / on_cell_up 把它钉死，
+#     顺带复验长按=放置、抑制尾随点击、键盘光标与回车放置。
+Run-Step '2d/13 输入手势状态机'                 $lua @('tests\input_logic.lua') | Out-Null
+# 2e：四方对照（我的代码 / 模拟器 / 官方文档 / 真机实测）。
+#     ① sim_surface：**机械提取**模拟器插件的 API 面（不再靠读源码猜 ——
+#        我曾因此断言"模拟器没有 InstantiateClientUIControl"，其实是有的）
+#     ② reconcile  ：把四者摊在一起 + 生成 docs/未验证清单.md
+#     这一步保证「我代码里的假设」和「文档/模拟器」始终对齐；纯离线，不联网。
+#     ⚠️ 联网抓社区知识库是手动的（tools\audit\fetch_kb.mjs），不进自检。
+Run-Step '2e/13 四方对照（代码/模拟器/文档）' 'node' @('tools\audit\sim_surface.mjs') | Out-Null
+Run-Step '2f/13 生成四方对照表 + 未验证清单' 'node' @('tools\audit\reconcile.mjs') | Out-Null
+# 2g：Lua 源码"奇数 ASCII 双引号"扫描。
+#     这个坑我踩了 4 次：把 ASCII 双引号当中文引号写进 Lua 字符串 →
+#     字符串提前结束 → 语法错误，而**报错行号指向别处**，极难一眼看出。
+#     判据很硬：那行的 ASCII 双引号个数必为奇数。
+Run-Step '2g/13 Lua 引号隐患扫描' 'powershell' @('-ExecutionPolicy', 'Bypass',
+  '-File', 'tools\lua_quote_scan.ps1') | Out-Null
+# 2h：「本次搭建要求」也从**代码**生成。
+#     起因：用户说"因为改了很多次脚本，重新确认一下本次实验的搭建要求" ——
+#     散落在各 .md 里的搭建说明必然会和代码脱节，靠人同步一定漏。
+#     这里从 cfg / MANAGED / ui_controller 的容器层级 / layout-plan 抠事实再生成，
+#     所以它**不可能过期**。
+Run-Step '2h/13 生成「本次搭建要求」' 'node' @('tools\gen_setup_requirements.mjs') | Out-Null
+# 2i：界面发出的 action vs 分发器分支 —— 抓"点了没反应"的死按钮。
+#     首跑就抓到 `focus_clue` 发了却没分支（2026-09-27 已修），固化成步骤防回归。
+$okAct = Run-Step '2i/13 交互 action 对账' 'node' @('tools\audit\check_actions.mjs')
+$ok3 = Run-Step '3/13 关卡批量校验（唯一解）'   $lua @('tools\validate_levels.lua', "$SolveLimit")
+$ok4 = Run-Step '4/13 打包客户端脚本'           $lua @('tools\bundle_client_script.lua')
+
+if ($ok4) {
+  $ok5 = Run-Step '5/13 Lua 5.3 编译 + 顶层执行' 'node' @('tools\lua53check\check.cjs', 'dist\client_script.lua', '--run')
+  # 5b：离线把**真机入口**完整跑一遍（假游戏环境，画布尺寸故意返回浮点）。
+  #     2026-09-26 真机事故：check_canvas 用 %d 格式化浮点画布尺寸 → 抛错 →
+  #     整个 OnInit 被打断 → 日志表现成一大串"控件未找到"。这条就是防它复发的。
+  if ($ok5) {
+    $ok5 = Run-Step '5b/13 入口离线冒烟（浮点画布/空控件树/惰性重试）' $lua @('tests\entry_smoke.lua')
+  }
+} else {
+  Write-Host "（跳过 5/13：上一步没产出 dist\client_script.lua）" -ForegroundColor Yellow
+  $results += [pscustomobject]@{ Step = '5/13 Lua 5.3 编译 + 顶层执行'; Exit = 'SKIP'; OK = 'SKIP' }
+  $ok5 = $false
+}
+
+# 6 依赖 3：关卡数据不合法时导出的布局计划不可信
+if ($ok3) {
+  $ok6 = Run-Step '6/13 导出界面布局计划' $lua @('tools\dump_layout.lua')
+} else {
+  Write-Host "（跳过 6/13：关卡校验没过，导出的布局计划不可信）" -ForegroundColor Yellow
+  $results += [pscustomobject]@{ Step = '6/13 导出界面布局计划'; Exit = 'SKIP'; OK = 'SKIP' }
+  $ok6 = $false
+}
+
+# 7 依赖 6：否则会拿**上一次的**陈旧计划生成指南 —— 这种"假绿"最危险
+if ($ok6) {
+  $ok7 = Run-Step '7/13 生成真机控件坐标表' 'node' @('tools\gen_editor_guide.mjs')
+} else {
+  Write-Host "（跳过 7/13：布局计划没刷新，会生成陈旧的坐标表）" -ForegroundColor Yellow
+  $results += [pscustomobject]@{ Step = '7/13 生成真机控件坐标表'; Exit = 'SKIP'; OK = 'SKIP' }
+  $ok7 = $false
+}
+
+if ($SkipSim) {
+  Write-Host "（已跳过 8~13、8b：模拟器相关）" -ForegroundColor Yellow
+  $results += [pscustomobject]@{ Step = '8/13 模拟器交互回归'; Exit = 'SKIP'; OK = 'SKIP' }
+  $results += [pscustomobject]@{ Step = '8b/13 输入与设备适配'; Exit = 'SKIP'; OK = 'SKIP' }
+  $results += [pscustomobject]@{ Step = '9/13 完整通关 case_001'; Exit = 'SKIP'; OK = 'SKIP' }
+  $results += [pscustomobject]@{ Step = '10/13 完整通关 case_002'; Exit = 'SKIP'; OK = 'SKIP' }
+  $results += [pscustomobject]@{ Step = '11/13 完整通关 case_003'; Exit = 'SKIP'; OK = 'SKIP' }
+  $results += [pscustomobject]@{ Step = '12/13 选关/切关'; Exit = 'SKIP'; OK = 'SKIP' }
+  $results += [pscustomobject]@{ Step = '13/13 光标门控自愈'; Exit = 'SKIP'; OK = 'SKIP' }
+} else {
+  if ($ok7) {
+    $ok8 = Run-Step '8/13 模拟器交互回归（27 断言）' 'node' @('tools\sim\play_test.mjs')
+# ★ 新增：**美术验证**（按钮底色/按钮文字/行标列标对齐/头像卡底图/落子头像/棋盘无遮挡）
+#   为什么单列一步：行为回归全绿≠外观正确。前几轮"按钮还是白的""没有名字""ruler 没对齐"
+#   全是靠用户真机截图才发现的 —— 这一步把它们挡在交付之前。
+$okArt = Run-Step '8c/13 美术验证（外观/对齐/头像）' 'node' @('tools\sim\verify_art.mjs')
+
+    # 9~11：按答案**真打一遍**到破案结算
+    #   case_001 = 5×5 无同伙 · case_002 = 6×6 有同伙 · case_003 = 7×7 有同伙+假话不告知
+    # 8b：输入与设备适配。7.1 要求同一套界面同时吃 PC 键鼠和移动端触屏，
+    #     这里同时验：设备识别 → 图例文案、长按落子、双击落子、单击笔记、
+    #     长按后抑制尾随点击、键盘 Digit/Arrow/Return 落子。任何一条挂了都会
+    #     让真机某类设备玩不动，所以在通关测试之前先卡住。
+    if ($ok8) {
+      Run-Step '8b/13 输入与设备适配（键鼠/触屏/手柄）' 'node' @('tools\sim\probe_input.mjs') | Out-Null
+    } else {
+      Write-Host "（跳过 8b/13：界面回归没过）" -ForegroundColor Yellow
+      $results += [pscustomobject]@{ Step = '8b/13 输入与设备适配'; Exit = 'SKIP'; OK = 'SKIP' }
+    }
+
+    if ($ok8) {
+      $ok9 = Run-Step '9/13 完整通关 case_001（5×5 无同伙）' 'node' @('tools\sim\win_path.mjs', '--level=case_001')
+    } else {
+      Write-Host "（跳过 9/13：界面回归没过）" -ForegroundColor Yellow
+      $results += [pscustomobject]@{ Step = '9/13 完整通关 case_001'; Exit = 'SKIP'; OK = 'SKIP' }
+      $ok9 = $false
+    }
+    if ($ok9) {
+      $ok10 = Run-Step '10/13 完整通关 case_002（6×6 有同伙）' 'node' @('tools\sim\win_path.mjs', '--level=case_002')
+    } else {
+      Write-Host "（跳过 10/13：上一关没通过）" -ForegroundColor Yellow
+      $results += [pscustomobject]@{ Step = '10/13 完整通关 case_002'; Exit = 'SKIP'; OK = 'SKIP' }
+      $ok10 = $false
+    }
+    if ($ok10) {
+      $ok11 = Run-Step '11/13 完整通关 case_003（7×7）' 'node' @('tools\sim\win_path.mjs', '--level=case_003')
+    } else {
+      Write-Host "（跳过 11/13：上一关没通过）" -ForegroundColor Yellow
+      $results += [pscustomobject]@{ Step = '11/13 完整通关 case_003'; Exit = 'SKIP'; OK = 'SKIP' }
+      $ok11 = $false
+    }
+    if ($ok11) {
+      Run-Step '12/13 选关/切关' 'node' @('tools\sim\probe_levels.mjs') | Out-Null
+    } else {
+      Write-Host "（跳过 12/13：上一关没通过）" -ForegroundColor Yellow
+      $results += [pscustomobject]@{ Step = '12/13 选关/切关'; Exit = 'SKIP'; OK = 'SKIP' }
+    }
+    # 13：验证脚本能否**自己**打开容器的「显示常驻光标」。
+    #     能的话真机上就不用手动勾这一项；不能也会明确报出来，而不是让你去猜。
+    Run-Step '13/13 光标门控自愈' 'node' @('tools\sim\probe_cursor.mjs') | Out-Null
+  } else {
+    Write-Host "（跳过 8~13：布局计划不可信）" -ForegroundColor Yellow
+    $results += [pscustomobject]@{ Step = '8/13 模拟器交互回归'; Exit = 'SKIP'; OK = 'SKIP' }
+    $results += [pscustomobject]@{ Step = '9/13 完整通关 case_001'; Exit = 'SKIP'; OK = 'SKIP' }
+    $results += [pscustomobject]@{ Step = '10/13 完整通关 case_002'; Exit = 'SKIP'; OK = 'SKIP' }
+    $results += [pscustomobject]@{ Step = '11/13 完整通关 case_003'; Exit = 'SKIP'; OK = 'SKIP' }
+    $results += [pscustomobject]@{ Step = '12/13 选关/切关'; Exit = 'SKIP'; OK = 'SKIP' }
+    $results += [pscustomobject]@{ Step = '13/13 光标门控自愈'; Exit = 'SKIP'; OK = 'SKIP' }
+  }
+}
+
+Write-Host ("=" * 70)
+Write-Host "汇总" -ForegroundColor Cyan
+Write-Host ("=" * 70)
+$bad = 0
+$skipped = 0
+foreach ($r in $results) {
+  # 三态：通过 / 失败 / 跳过。跳过**不能显示成 OK** —— 否则 -SkipSim 跑出来一片
+  # 绿色，看起来"全绿"其实模拟器那几步根本没跑（这正是本脚本一直在防的假绿）。
+  # ⚠️ 顺序与左右位置都有讲究：
+  #    `$bool -eq 'SKIP'` 在 PowerShell 里是 **$true** —— `-eq` 按**左操作数**的类型
+  #    做强制转换，于是 'SKIP' 被转成 [bool] = $true，字符串比较根本没发生。
+  #    所以先用 `-eq $false` 判失败，再把**字符串写在左边**判跳过
+  #    （右侧的 $true 会被转成 'True'，才正确地不等于 'SKIP'）。
+  $mark = '  OK  '; $color = 'Green'
+  if ($r.OK -eq $false) { $mark = ' FAIL '; $color = 'Red'; $bad++ }
+  elseif ('SKIP' -eq $r.OK) { $mark = ' SKIP '; $color = 'DarkGray'; $skipped++ }
+  Write-Host ("[$mark] {0,-32} exit={1}" -f $r.Step, $r.Exit) -ForegroundColor $color
+}
+Write-Host ""
+if ($skipped -gt 0) {
+  Write-Host "有 $skipped 步被跳过 —— 不算失败，但也**不算通过**。" -ForegroundColor Yellow
+}
+if ($bad -gt 0) {
+  Write-Host "有 $bad 步失败。" -ForegroundColor Red
+  exit 1
+}
+Write-Host "全部通过。" -ForegroundColor Green
+exit 0
+
+
+
+
+
+
+
+
+
+

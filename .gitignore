@@ -1,0 +1,10 @@
+﻿# 可再生成的产物
+tools/sim/out/
+dist/
+_backup/
+# 抓取缓存（体积大、且可由脚本重建）
+docs/api-cache/
+docs/community-cache/
+# 杂项
+*.log
+tools/check_all_last.log

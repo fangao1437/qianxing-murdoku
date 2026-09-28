@@ -1,0 +1,1494 @@
+--[[----------------------------------------------------------------------------
+  ui_controller.lua —— 操作框架层（页面布局 + 交互状态机 + 特效指令）v0.3.0
+
+  交互模型照 murdoku 实证规格：
+    · 点头像卡        = 选中/取消选中（卡片下沉 2px = 已放置）
+    · 单击格子        = 写/删铅笔笔记（小字，不占位）
+    · 双击格子        = 放置（大字母）并清空选中
+    · 右键 / X 工具   = 该格不可能（X 标记）
+    · 橡皮擦          = 单击清该格；双击橡皮擦工具清空全盘
+    · 双指            = 回滚到本次手势之前的快照
+    · 未摆满时提交    = 无效（提交按钮显示「先摆满」）
+    · 摆满且成立      = 进入「指认凶手」
+  页面分区照 murdoku：
+    顶部工具条 / 左侧面板(头像卡 + 线索卡 + 图例) / 中央棋盘(带 R,C 坐标尺) / 右侧信息栏
+  职责边界：本文件不认识任何引擎 API，只产出「控件树 + 属性 + 特效指令」。
+----------------------------------------------------------------------------]]--
+
+local M = {}
+
+-- 浅比较：walls / notes / state 这类 table 属性按内容比较，避免每帧重推
+local function same_value(a, b)
+  if a == b then return true end
+  if type(a) ~= "table" or type(b) ~= "table" then return false end
+  for k, v in pairs(a) do if b[k] ~= v then return false end end
+  for k, v in pairs(b) do if a[k] ~= v then return false end end
+  return true
+end
+
+M.DESIGN = { width = 1920, height = 1080 }
+
+-- ════════════════════════════════════════════════════════════════════════
+-- 坐标基准（2026-09-26 实测确认，务必先读这段再动 LAYOUT）
+--
+-- 本文件下面的 LAYOUT 全部写在**设计空间**里：
+--     1920 × 1080，**原点左上角，Y 轴向下**（写起来像读文档，最直观）
+--
+-- 真机画布（game.GetUICanvasSize() 实测）是 **1600 × 900**，
+-- 编辑器「位置 X, Y」输入框用的是**画布空间**：
+--     原点**左下角**，Y 轴**向上**，数值 = 控件**中心(pivot)点**的绝对坐标，
+--     **跟父级无关**（父级只影响显示层级，不影响位置数值）。
+--
+-- 两套空间的换算只有 M.to_canvas() 一处，别在别处手算。
+--
+-- 【重要】模拟器 dsh-plugin-beyond-simulator 的 posX/posY 语义与编辑器
+--   「位置」输入框**完全一致**（实测：pos 就是中心点绝对坐标，父级被忽略，
+--   pivot/anchor 的设置不生效）。所以同一份 canvas 坐标既喂模拟器、
+--   又直接抄进编辑器，两边不会打架。
+-- ════════════════════════════════════════════════════════════════════════
+
+M.CANVAS = { width = 1600, height = 900 }
+M.SCALE  = M.CANVAS.width / M.DESIGN.width    -- = 5/6
+
+local function round(v) return math.floor(v + 0.5) end
+
+-- 设计空间矩形 {x, y, w, h}（左上原点、Y 向下）
+--   → 画布空间 {cx, cy, w, h}（左下原点、Y 向上，cx/cy = 中心点绝对坐标）
+function M.to_canvas(r)
+  local s = M.SCALE
+  return {
+    cx = round((r.x + r.w / 2) * s),
+    cy = round((M.DESIGN.height - r.y - r.h / 2) * s),
+    w  = round(r.w * s),
+    h  = round(r.h * s),
+  }
+end
+
+M.LAYOUT = {
+  topbar = { x = 0, y = 0, w = 1920, h = 104 },
+  title  = { x = 32, y = 18, w = 520, h = 50 },
+  stats  = { x = 1520, y = 26, w = 380, h = 46 },
+
+  -- 左侧面板：头像卡 + 线索卡 + 图例
+  --   ⚠️ 高度必须算够：tray_item_h * 行数 + 行距 不能超过 tray.h，
+  --   否则最后一行卡片会**溢出容器**压到下面的线索上（2026-09-26 实测踩到过两次：
+  --   先是 2 列 3 行压住线索，后来是 7 个角色排到第 3 行又压住一次）。
+  --   现在卡片的**列数**会按人数自适应（见 build_layout），保证永远只占 2 行。
+  left   = { x = 24, y = 128, w = 392, h = 880 },
+  tray   = { x = 40, y = 148, w = 360, h = 218 },   -- 固定 2 行 × 104 + 10 = 218
+  tray_item_w = 112, tray_item_h = 104,             -- tray_item_w 只是参考值，实际按列数均分
+  tray_gap_x = 12,
+  tray_gap_y = 10,
+  tray_per_row = 3,                                 -- 最少 3 列
+  -- 线索区。
+  --   ⚠️ clue_max_visible 是**硬上限**：超出的线索不会生成控件，玩家看不到，
+  --   而线索是解题的全部依据 —— 看不全就等于关卡不可解。
+  --   2026-09-26 踩到过：case_003 有 18 条线索，而这里只放 12 行，
+  --   后 6 条连控件都没有（界面上只显示"还有 6 条线索"，玩家无从下手）。
+  --   现在放 18 行（382 + 18*28 = 886 ≤ 902），够本项目所有关卡用。
+  --   写更多线索的关卡请同步调大 clue_max_visible / 调小 clue_row_h，
+  --   并跑 `lua tests/ui_math.lua` 确认没压到图例。
+  clues  = { x = 40, y = 382, w = 360, h = 520 },   -- 382 + 18*28 = 886 ≤ 902
+  clue_row_h = 28,
+  clue_max_visible = 18,
+  legend = { x = 40, y = 916, w = 360, h = 76 },
+
+  -- ★★ 2026-09-28 修：**棋盘与底部动作条重叠了 116px**（用户报"动作条压住第 5 行"）。
+  --
+  --   原来是 `board = {x=480, y=176, w=880, h=880}` → y 176..**1056**，
+  --   而 `actions` 是 y 940..1060 ⇒ **重叠 y 940..1056**；
+  --   两者 x 范围又都是 480..1360（**完全同宽**）⇒ 动作条整片压在棋盘底部上。
+  --   设计画布只有 1080 高，棋盘从 176 起根本放不下 880 高。
+  --
+  --   现在：上边贴顶栏下沿（124）、下边留出动作条（936），可用 812 ⇒ 边长取 812；
+  --   并把两者**横向也对齐到同一中心 918**（原来一个中心 920、一个 918，看着是歪的）。
+  --
+  --   ⚠️ 改 board 时**必须同步核对 actions.y ≥ board.y + board.h**，
+  --      否则又会压住；`lua tests/ui_math.lua` 会检查不重叠。
+  board  = { x = 512, y = 124, w = 812, h = 812 },   -- y 124..936
+  ruler  = 44,
+  cell   = 160,        -- 仅参考
+  cell_gap = 4,        -- 仅参考
+  wall_thickness = 10,
+
+  -- 右侧信息栏
+  right  = { x = 1420, y = 128, w = 460, h = 880 },
+
+  -- 底部操作条（放在左侧面板底部与棋盘下方之间）
+  actions = { x = 478, y = 944, w = 880, h = 120 },  -- y 944..1064，中心 x=918（与棋盘同）
+  action_btn = { w = 168, h = 56, gap = 14 },
+
+  modal = { w = 760, h = 460 },
+}
+
+M.EFFECTS = {
+  SELECT    = "sel_pop_glow",
+  PLACE     = "pop_tile",
+  NOTE      = "note_pop",
+  XMARK     = "pulse",
+  VICTIM    = "portrait_slide_up",
+  ERASE     = "vanish",
+  UNDO      = "undo_flash",
+  SUBMIT    = "submit_nudge",
+  SOLVED    = "solved_flash",
+  CLUE_IN   = "clue_box_pop",
+  FAIL      = "shake",
+  ROOMWALL  = "roomwall",
+}
+
+-- 开屏教程（5 页：怎么破案 / 每行每列一人 / beside 的含义 / 单击双击的区别 / 提交判题）
+M.INTRO = {
+  { title = "怎么破案",        body = "读线索，把每个角色放到正确的位置上。\n摆满之后，与受害者单独共处一室的人就是凶手。" },
+  { title = "每行每列只有一人", body = "每一行、每一列都恰好只能站一个人（受害者也算一个人）。" },
+  { title = "“旁边”是什么意思", body = "旁边 = 上下左右四邻，而且必须在同一个房间里。\n隔着墙的不算旁边。" },
+  { title = "单击写字，双击放置", body = "单击格子只会留下一个铅笔小字（笔记）。\n在同一格连着点两下，才会把人放上去。" },
+  { title = "提交判题",        body = "摆满后点「提交」校验摆位，通过后即可指认凶手。\n拿不准的位置可以先打 X 标记。" },
+}
+
+----------------------------------------------------------------------------
+
+local Controller = {}
+Controller.__index = Controller
+M.Controller = Controller
+
+function M.new(core, opts)
+  opts = opts or {}
+  local self = setmetatable({}, Controller)
+  self.core = core
+  self.opts = opts
+  self.effects = {}
+  self.dirty = true
+  self.toast = nil
+  self.modal = nil          -- nil | {kind="accuse"} | {kind="result",win=bool,message=} | {kind="howto"} | {kind="intro",page=n}
+  self.intro_page = opts.skip_intro and (#M.INTRO + 1) or 1
+  self.share_code = nil
+  self._created = {}
+  self._props = {}
+  self._gesture_snapshot = nil
+  self.debug = opts.debug == true
+  -- 键盘光标（PC）：方向键移动它，空格/回车对它生效。
+  -- kb_active 只有真的按过方向键才置 true，纯鼠标玩家不会看到多余高亮。
+  self.kb = { r = 1, c = 1 }
+  self.kb_active = false
+  return self
+end
+
+function Controller:fx(target, kind, params)
+  local e = { target = target, kind = kind }
+  if params then for k, v in pairs(params) do e[k] = v end end
+  self.effects[#self.effects + 1] = e
+  return e
+end
+
+function Controller:cell_id(r, c) return string.format("cell.%d.%d", r, c) end
+
+-- 结案判定：盗窃者 + 有没有同伙（+ 同伙是谁）
+function Controller:finish_accuse(thief, has_acc, acc)
+  local core = self.core
+  local res
+  if has_acc == nil then
+    res = core:accuse(thief)
+  else
+    res = core:accuse_verdict(thief, has_acc, acc)
+  end
+  self.toast = res.message
+  if res.solved then
+    self.modal = { kind = "result", win = true, message = res.message }
+    self:fx("modal", M.EFFECTS.SOLVED)
+    -- 揭示：受害者头像从下往上顶出来。
+    -- 受害者**也在头像卡列里**（core:view().tray 里 is_victim=true 的那张），
+    -- 所以这个控件一定存在，不需要额外建控件。
+    local vid = core.victim_id
+    if vid ~= nil then self:fx("tray." .. tostring(vid), M.EFFECTS.VICTIM) end
+    if self.opts.on_solved then self.opts.on_solved(core:view()) end
+  else
+    self.modal = nil
+    self:fx("modal", M.EFFECTS.FAIL)
+  end
+  self.dirty = true
+  return res
+end
+function Controller:format_time(sec)
+  sec = math.max(0, math.floor(sec or 0))
+  return string.format("%02d:%02d", math.floor(sec / 60), sec % 60)
+end
+
+----------------------------------------------------------------------------
+-- 输入路由
+--   事件格式：
+--     {action="suspect", id=}
+--     {action="click",     r=, c=}      单击格子（单击=笔记，双击=放置，由本层判定）
+--     {action="cell_right",r=, c=}      右键 → X（可选绑定；默认用 X 工具按钮）
+--     {action="gesture_begin"}          手指/指针按下（用于双指回滚）
+--     {action="gesture_rollback"}       双指 → 回滚
+--     {action="tool", mode="place|x|eraser|note"}   双击 eraser 工具 = 清空全盘
+--     {action="undo"|"redo"|"submit"|"hint"|"reveal"|"restart"|"share"|"howto"|"back"}
+--     {action="accuse", id=} | {action="close_modal"} | {action="intro_next"} | {action="intro_skip"}
+--
+--   为什么要双击：官方客户端脚本**只有 CursorClick，没有长按事件**，
+--   与其自己造长按阈值，不如用「单击=笔记 / 双击=放置」这一套更明确的手感。
+----------------------------------------------------------------------------
+
+-- 双击窗口（秒）：两次单击落在这个窗口内、且在同一格 → 判定为双击
+local DOUBLE_CLICK_SECONDS = 0.35
+
+-- 长按窗口（秒）：按住不放超过这么久、且期间基本没移动 → 判定为长按
+--
+-- 为什么要它：官方**没有长按事件**，所以我们最初用"双击=放置"替代。
+-- 但移动端双击不友好（要担心系统双击缩放、手指也容易抖），
+-- 所以从 CursorDown/CursorUp 自己合成一个长按 —— **两种手势都触发同一个"放置"**：
+--   · PC 键鼠：双击 / 长按按鼠标左键，随你喜欢
+--   · 移动端：长按（更好按）
+local LONG_PRESS_SECONDS = 0.45
+-- 按下到抬起之间允许的位移（画布像素）。超过就当成"划动"，不算点/长按。
+local TAP_MOVE_TOLERANCE = 24
+
+function Controller:snapshot()
+  self._gesture_snapshot = self.core:serialize()
+end
+
+-- 记录一次"某个键"的点击，返回这次是否构成双击
+function Controller:is_double(key)
+  self.now = self.now or 0
+  local last = self.last_key
+  if last and last.key == key and (self.now - last.t) <= DOUBLE_CLICK_SECONDS then
+    self.last_key = nil
+    return true
+  end
+  self.last_key = { key = key, t = self.now }
+  return false
+end
+
+-- ★★ 「为什么点了没反应」必须说出来。
+--
+-- 背景：`core:tap_cell()` / `core:hold_cell()` 失败时**返回第二个值就是原因**
+-- （例如「先点一个头像」「这个格子站不了人」「这格已经有人了」），
+-- 但控制器原来把那第二个值**直接丢掉了** —— 于是玩家/开发者看到的是"点击无反馈"，
+-- 完全不知道差在哪。真机 2026-09-27 05:59 就是这么卡住的：
+-- 点了 8 次、日志只说"收到点击"，而真正的原因是头像卡容器还没建、选不了人。
+--
+-- 现在：每个不同的原因**最多打 3 次**（避免刷屏），并且带上格子坐标。
+-- 这些是**正常的玩法提示**（不是错误），所以走 print 而不是 printerr。
+function Controller:_refuse(r, c, why)
+  if why == nil then return end
+  self._refuse_seen = self._refuse_seen or {}
+  local n = self._refuse_seen[why] or 0
+  if n >= 3 then return end
+  self._refuse_seen[why] = n + 1
+  if print then
+    -- ★ 2026-09-28：把**当前工具模式**一起打出来。
+    --
+    -- 起因：用户报"没有看到任何 X 图标"。而 `tap_cell` 里 X 模式是**在选中检查之前**
+    -- 就返回的（`if self.mode == MODE_X then return toggle_x(...) end`），
+    -- 所以日志里刷"先点一个头像"就说明**模式根本没切到 X** —— 问题在工具按钮那一步，
+    -- 不在 X 的画法。没有这行模式，就分不清"X 没画出来"和"X 没被设置"。
+    print("[murdoku] 点 (第" .. tostring(r) .. "行 第" .. tostring(c) .. "列) 没生效："
+      .. tostring(why) .. "  当前工具=" .. tostring(self.core and self.core.mode)
+      .. "  已选=" .. tostring(self.core and self.core.selected)
+      .. "（同类提示最多打 3 次）")
+  end
+end
+
+-- 把挂起的单击落成铅笔笔记（等过双击窗口才执行，免得抢在第二次点击前面）
+function Controller:flush_pending_note()
+  local p = self.pending_click
+  if p == nil then return end
+  if (self.now or 0) - p.t < DOUBLE_CLICK_SECONDS then return end
+  self.pending_click = nil
+  local ok, why = self.core:tap_cell(p.r, p.c)
+  if ok then
+    self:fx(self:cell_id(p.r, p.c), M.EFFECTS.NOTE)
+    self.dirty = true
+  else
+    self:_refuse(p.r, p.c, why)
+  end
+end
+
+-- 把当前选中的人放到 (r,c)（双击 / 长按 / 键盘回车 共用这一条路径）
+function Controller:do_place(r, c)
+  local core = self.core
+  self.last_click = nil
+  self.pending_click = nil
+  local who = core.selected
+  local ok, why = core:hold_cell(r, c)
+  if ok then
+    self:fx(self:cell_id(r, c), M.EFFECTS.PLACE)
+    if self.opts.on_place then self.opts.on_place(who, r, c) end
+    self.dirty = true
+    return true
+  end
+  self:_refuse(r, c, why)
+  return false
+end
+
+-- ★★ 2026-09-28（用户设计）：**双击 = 预放置**。
+--
+-- 与 `do_place`（正式放置，走 `core:hold_cell`）的区别全在 core 里：
+--   预放置 → 只标同行同列 ✗，**不擦笔记、不取消选中、不记 placed**
+--   正式放置 → 擦该人物的笔记 + 记 placed（之后不许再给他打笔记）+ 取消选中
+-- 反馈动效两者相同（`pop_tile`），因为"有没有真的放上去"要靠盘面看，不靠动效区分。
+function Controller:do_pre_place(r, c)
+  local core = self.core
+  self.last_click = nil
+  self.pending_click = nil
+  local who = core.selected
+  local ok, why = core:pre_place(r, c)
+  if ok then
+    self:fx(self:cell_id(r, c), M.EFFECTS.PLACE)
+    if self.opts.on_place then self.opts.on_place(who, r, c) end
+    self.dirty = true
+    return true
+  end
+  self:_refuse(r, c, why)
+  return false
+end
+
+-- ── 按下 / 抬起：自己合成"长按" ──────────────────────────────────────────
+-- 返回 true = 这次抬起已经被当成"长按"处理掉了（后续那个 CursorClick 要忽略）
+function Controller:on_cell_down(r, c, x, y)
+  self._press = { r = r, c = c, t = self.now or 0, x = x, y = y }
+  return false
+end
+
+function Controller:on_cell_up(r, c, x, y)
+  local p = self._press
+  self._press = nil
+  if p == nil then return false end
+  if p.r ~= r or p.c ~= c then return false end          -- 按在别处，不算
+  local dt = (self.now or 0) - p.t
+  if dt < LONG_PRESS_SECONDS then return false end         -- 还不够长
+  -- 位移太大 = 划动，不算长按
+  if p.x ~= nil and x ~= nil then
+    local dx, dy = math.abs(x - p.x), math.abs(y - p.y)
+    if dx > TAP_MOVE_TOLERANCE or dy > TAP_MOVE_TOLERANCE then return false end
+  end
+  local ok = self:do_place(r, c)
+  if ok then
+    self._suppress_click = true     -- 紧跟着的那个 CursorClick 不要重复处理
+  end
+  return ok
+end
+
+-- 按住期间移动了（CursorDrag）：超过容差就**当场**放弃这次长按判定。
+-- 为什么不等抬起再判：抬起才判的话，玩家按住想微调位置的那 0.5 秒里
+-- 松手就会落子，移动端上太容易误触。这里只是提前撤销，不改别的状态。
+-- x/y 取不到时**什么都不做**（宁可退回"抬起时判断"，也不要误取消）。
+function Controller:on_cell_drag(r, c, x, y)
+  local p = self._press
+  if p == nil then return false end
+  if p.x == nil or x == nil then return false end
+  local dx, dy = math.abs(x - p.x), math.abs(y - p.y)
+  if dx > TAP_MOVE_TOLERANCE or dy > TAP_MOVE_TOLERANCE then
+    self._press = nil
+    return true
+  end
+  return false
+end
+
+-- 棋盘格被单击：单击=笔记 / 双击=放置；已放置格、X 模式、橡皮擦模式、只写笔记模式都立即生效
+function Controller:on_cell_click(r, c)
+  local core = self.core
+  self.now = self.now or 0
+  local occupied = core.grid[r][c] ~= nil
+  local mode = core.mode
+
+  -- 双击 → **预放置**（★ 2026-09-28 用户设计：双击=预放置，长按=正式放置）
+  if (not occupied) and mode == "place" then
+    local last = self.last_click
+    if last and last.r == r and last.c == c and (self.now - last.t) <= DOUBLE_CLICK_SECONDS then
+      self:do_pre_place(r, c)
+      return
+    end
+    self.last_click = { r = r, c = c, t = self.now }
+  end
+
+  -- 这些情况单击立即生效，不需要等双击窗口
+  if occupied or mode == "x" or mode == "eraser" or mode == "note" then
+    self.pending_click = nil
+    local had = core.grid[r][c]
+    local ok, why = core:tap_cell(r, c)
+    if ok then
+      if had then
+        -- ★ 2026-09-27 修（用户报"双击格子有时会导致其消失"）：
+        --   原来把 `vanish`（缩放 1.00 → **0.00**）作用在**格子本身**上。
+        --   双击放置后若系统多派发一次点击（或玩家连点三下），那一次落在"已占格"上
+        --   → 拿起棋子 + **把整个格子缩到 0** → 看上去"格子消失了"。
+        --   改成作用在 `face` 子控件上：拿起棋子的反馈照样有，**格子本身不缩**。
+        --   （适配器另有"动完还原姿态"的兜底。）
+        self:fx(self:cell_id(r, c) .. ".face", M.EFFECTS.ERASE)
+        if self.opts.on_clear then self.opts.on_clear(had) end
+      else
+        self:fx(self:cell_id(r, c), core.mode == "x" and M.EFFECTS.XMARK or M.EFFECTS.NOTE)
+      end
+      self.dirty = true
+    else
+      self:_refuse(r, c, why)
+    end
+    return
+  end
+
+  -- 放置模式下的空格：先挂起，等过了双击窗口再落成笔记
+  self:flush_pending_note()
+  self.pending_click = { r = r, c = c, t = self.now }
+end
+
+-- ── 键盘（PC，可选）─────────────────────────────────────────────────────
+-- 键盘光标：方向键移动一格，写笔记 / 放置 / 换工具 / 撤销重做提示。
+-- `kb_active` 只在真的用过方向键之后才为 true —— 纯鼠标玩家不会看到一个
+-- 莫名其妙的选中框。
+--
+-- ⚠️⚠️ **官方键事件不是物理键码，而是语义事件**（2026-09-26 真机日志查出来的）：
+--   注册用的是 `ctrl:AddKeyEventListener(Enum.KeyEventType.<名字>, cb)`，
+--   而 `Enum.KeyEventType` 是「设备 + 语义 + 按下/抬起」的组合，共 164 项，例如
+--       KeyboardCraftspersonKey1Down  = 键鼠：奇匠按键1（按下），默认物理键 `1`
+--       KeyboardCraftspersonKey36Down = 键鼠：奇匠按键36（按下），默认物理键 `↑`
+--       KeyboardInteractKeyDown       = 键鼠：拾取/交互（按下），默认物理键 `F`
+--       KeyboardJumpKeyDown           = 键鼠：跳跃（按下），默认物理键 `Space`
+--   **没有 `Return` / `Enter` / `Escape` 这三种事件**，所以那两个功能换绑到别的键。
+--   （`Enum.KeyboardKeyCode` 是**另一个东西** —— 它只给「按键提示控件」显示用。）
+--
+--   另外「奇匠按键」是**可被玩家重映射的槽位**，上面那些物理键只是**默认值**，
+--   所以图例里要写成语义说法，不能假定玩家按的一定是 ↑↓←→。
+--
+--   本表：`Enum.KeyEventType` 名字 → 本工程的内部动作名。
+local KB_ACTIONS = {
+  -- 方向（奇匠按键36..39，默认 ↑ ↓ ← →）
+  KeyboardCraftspersonKey36Down = "up",
+  KeyboardCraftspersonKey37Down = "down",
+  KeyboardCraftspersonKey38Down = "left",
+  KeyboardCraftspersonKey39Down = "right",
+
+  -- 选角色（奇匠按键1..10，默认 1..9 与 0）
+  KeyboardCraftspersonKey1Down  = "pick1",
+  KeyboardCraftspersonKey2Down  = "pick2",
+  KeyboardCraftspersonKey3Down  = "pick3",
+  KeyboardCraftspersonKey4Down  = "pick4",
+  KeyboardCraftspersonKey5Down  = "pick5",
+  KeyboardCraftspersonKey6Down  = "pick6",
+  KeyboardCraftspersonKey7Down  = "pick7",
+  KeyboardCraftspersonKey8Down  = "pick8",
+  KeyboardCraftspersonKey9Down  = "pick9",
+  KeyboardCraftspersonKey10Down = "pick10",
+
+  -- 主要动作
+  KeyboardInteractKeyDown       = "place",   -- 拾取/交互（默认 F）= 放置
+  KeyboardJumpKeyDown           = "note",    -- 跳跃（默认 Space）= 铅笔笔记
+  KeyboardDropKeyDown           = "xmark",   -- 落下（默认 X）= 划掉这格
+  KeyboardCraftspersonKey42Down = "back",     -- 奇匠按键42（默认 Backspace）= 关弹窗/选关
+
+  -- 工具与命令
+  KeyboardOpenShortcutWheelKeyDown = "tool",    -- 呼出快捷轮盘（默认 Tab）= 循环换工具
+  KeyboardCharacterSkill1KeyDown   = "eraser",  -- 角色技能1（默认 E）= 橡皮擦
+  KeyboardCharacterSkill3KeyDown   = "submit",  -- 角色技能3（默认 R）= 提交
+  KeyboardCraftspersonKey12Down    = "undo",    -- 默认 Z
+  KeyboardCraftspersonKey13Down    = "redo",    -- 默认 Y
+  KeyboardCraftspersonKey15Down    = "hint",    -- 默认 H
+}
+
+local KB_DELTA = { up = { -1, 0 }, down = { 1, 0 }, left = { 0, -1 }, right = { 0, 1 } }
+
+local KB_TOOL_CYCLE = { "place", "note", "x", "eraser" }
+
+function Controller:kb_move(dr, dc)
+  local kb = self.kb or { r = 1, c = 1 }
+  local r = math.min(self.core.rows, math.max(1, kb.r + dr))
+  local c = math.min(self.core.cols, math.max(1, kb.c + dc))
+  if r ~= kb.r or c ~= kb.c or not self.kb_active then
+    self.kb_active = true
+    self.dirty = true
+  end
+  self.kb = { r = r, c = c }
+end
+
+-- `event.key` 是 `Enum.KeyEventType` 的**名字**（由适配层原样带过来）
+local function kb_action_of(event)
+  return KB_ACTIONS[tostring(event.key or "")]
+end
+
+-- 返回 true = 这个键被消费掉了
+function Controller:on_key(event)
+  local core = self.core
+  local act = kb_action_of(event)
+  if act == nil then return false end
+
+  -- 方向：移动键盘光标
+  local d = KB_DELTA[act]
+  if d ~= nil then
+    self:kb_move(d[1], d[2])
+    return true
+  end
+
+  -- 选第 i 个角色
+  local n = act:match("^pick(%d+)$")
+  if n ~= nil then
+    local i = tonumber(n)
+    local vm = core:view()
+    if i >= 1 and i <= #vm.tray then
+      self:on_input({ action = "suspect", id = vm.tray[i].id })
+      return true
+    end
+    return false
+  end
+
+  if act == "note" then
+    -- 在光标格写/删笔记
+    local kb = self.kb
+    if kb ~= nil then
+      self.kb_active = true
+      self:on_cell_click(kb.r, kb.c)
+      self.pending_click = { r = kb.r, c = kb.c, t = (self.now or 0) - DOUBLE_CLICK_SECONDS - 1 }
+      self:flush_pending_note()
+      return true
+    end
+    return false
+  end
+
+  if act == "place" then
+    local kb = self.kb
+    if kb ~= nil then
+      self.kb_active = true
+      self:do_place(kb.r, kb.c)
+      return true
+    end
+    return false
+  end
+
+  if act == "tool" then
+    local mode = core.mode or "place"
+    local idx = 1
+    for i = 1, #KB_TOOL_CYCLE do if KB_TOOL_CYCLE[i] == mode then idx = i end end
+    self:on_input({ action = "tool", mode = KB_TOOL_CYCLE[idx % #KB_TOOL_CYCLE + 1] })
+    return true
+  end
+
+  if act == "xmark"  then self:on_input({ action = "tool", mode = "x" });      return true end
+  if act == "eraser" then self:on_input({ action = "tool", mode = "eraser" }); return true end
+  if act == "undo"   then self:on_input({ action = "undo" });                  return true end
+  if act == "redo"   then self:on_input({ action = "redo" });                  return true end
+  if act == "hint"   then self:on_input({ action = "hint" });                  return true end
+  if act == "submit" then self:on_input({ action = "submit" });                return true end
+
+  if act == "back" then
+    -- 官方**没有** Escape / Return 事件，所以"关弹窗 / 选关"改绑 Backspace
+    if self.modal ~= nil then self:on_input({ action = "close_modal" })
+    else self:on_input({ action = "level_list" }) end
+    return true
+  end
+
+  return false
+end
+
+function Controller:on_input(event)
+  local core = self.core
+  local a = event.action
+
+  -- ── 输入阶段（PC 键鼠 / 移动端触碰共用同一套）─────────────────────────
+  if event.phase == "key" then
+    self:on_key(event)
+    return self.effects
+  end
+  if event.phase == "down" then
+    if a == "click" then self:on_cell_down(event.r, event.c, event.x, event.y) end
+    return self.effects
+  end
+  if event.phase == "up" then
+    if a == "click" then self:on_cell_up(event.r, event.c, event.x, event.y) end
+    return self.effects
+  end
+  if event.phase == "drag" then
+    if a == "click" then self:on_cell_drag(event.r, event.c, event.x, event.y) end
+    return self.effects
+  end
+
+  if a == "suspect" then
+    core:tap_suspect(event.id)
+    local vm = core:view()
+    if vm.hud.selected == event.id then
+      self:fx("tray." .. tostring(event.id), M.EFFECTS.SELECT)
+    end
+    if self.modal and self.modal.kind == "accuse" then
+      self.modal = { kind = "accuse" }   -- 重画指认面板
+    end
+
+  elseif a == "gesture_begin" then
+    self:snapshot()
+
+  elseif a == "gesture_rollback" then
+    if self._gesture_snapshot then
+      core:deserialize(self._gesture_snapshot)
+      self.toast = "已回滚本次操作"
+      self:fx("board", M.EFFECTS.UNDO)
+    end
+
+  elseif a == "click" then
+    -- 刚被"长按"处理过的那一次点击要忽略掉，否则同一格会被放两次
+    if self._suppress_click then
+      self._suppress_click = nil
+    else
+      self:on_cell_click(event.r, event.c)
+    end
+
+  elseif a == "cell_right" then
+    if core:toggle_x(event.r, event.c) then
+      self:fx(self:cell_id(event.r, event.c), M.EFFECTS.XMARK)
+    end
+
+  elseif a == "tool" then
+    -- ★ 2026-09-28：工具切换必须留下痕迹。
+    --   用户报"没有看到任何 X 图标"，而 X 模式在 tap_cell 里是**优先于选中检查**的 ——
+    --   所以要么"X 工具按钮没生效"（模式没切），要么"切了但 X 没画出来"。
+    --   把每次切换打出来（最多 12 次），这两者就能一眼分开。
+    if print then
+      self._tool_log = (self._tool_log or 0) + 1
+      if self._tool_log <= 12 then
+        print("[murdoku] 切换工具 → " .. tostring(event.mode)
+          .. "（之前是 " .. tostring(core.mode) .. "）")
+      end
+    end
+    core:set_mode(event.mode)
+
+  elseif a == "undo" then
+    if core:undo() then self:fx("action.undo", M.EFFECTS.UNDO) end
+
+  elseif a == "redo" then
+    if core:redo() then self:fx("action.redo", M.EFFECTS.UNDO) end
+
+  elseif a == "hint" then
+    local ok, msg = core:hint()
+    self.toast = msg
+    if ok then self:fx("action.hint", M.EFFECTS.SELECT) end
+
+  elseif a == "reveal" then
+    -- 直接揭示答案（照 murdoku 的 Reveal，用于教学/放弃）
+    core:reset()
+    for id, p in pairs(core.solution) do
+      core:select_suspect(id)
+      core:hold_cell(p.r, p.c)
+    end
+    self.toast = "已揭示答案"
+
+  elseif a == "submit" then
+    local res = core:submit()
+    self:fx("action.submit", M.EFFECTS.SUBMIT)
+    -- 规格 5.3：提交只给硬约束反馈，不揭晓任何线索层面的对错（连条数都不说）
+    self.toast = res.message
+    if res.ok then
+      self.modal = { kind = "accuse_thief" }
+    end
+
+  elseif a == "accuse_thief" then
+    self.pending_thief = event.id
+    self.modal = { kind = "accuse_accomplice", thief = event.id }
+
+  elseif a == "accuse_no_accomplice" then
+    self:finish_accuse(self.pending_thief, false, nil)
+
+  elseif a == "accuse_pick_accomplice" then
+    self:finish_accuse(self.pending_thief, true, event.id)
+
+  elseif a == "accuse" then
+    -- 兼容入口：只给盗窃者，同伙按关卡声明处理
+    self:finish_accuse(event.id, nil, nil)
+
+  elseif a == "restart" then
+    core:reset()
+    self.modal = nil
+    self.toast = nil
+
+  elseif a == "share" then
+    local code = core:encode_state()
+    self.share_code = code
+    self.modal = { kind = "share", code = code }
+    if self.opts.on_share then self.opts.on_share(code) end
+
+  elseif a == "howto" then
+    self.modal = { kind = "howto" }
+
+  elseif a == "intro_next" then
+    self.intro_page = (self.intro_page or 1) + 1
+    if self.intro_page > #M.INTRO then
+      self.intro_page = #M.INTRO + 1
+      self.modal = nil
+    end
+
+  elseif a == "intro_skip" then
+    self.intro_page = #M.INTRO + 1
+    self.modal = nil
+
+  elseif a == "close_modal" then
+    self.modal = nil
+
+  elseif a == "level_list" then
+    -- 打开选关面板（关卡清单由 main.lua 通过 opts.levels 给进来）
+    self.modal = { kind = "levelselect" }
+
+  elseif a == "pick_level" then
+    if self.opts.on_pick_level then
+      self.modal = nil
+      self.opts.on_pick_level(event.id)
+    end
+
+  elseif a == "focus_clue" then
+    -- 线索卡：点一下聚焦、再点取消。
+    --
+    -- 为什么必须有这个分支：线索卡在 push 时就发了 `event = { action = "focus_clue" }`，
+    -- 但分发器一直没有对应分支 —— **点了完全没反应**。
+    -- （这是 tools/audit/check_actions.mjs 对账抓出来的：发出 26 个 action、只有 25 个分支。）
+    --
+    -- 可见反馈走**特效**而不是样式：adapter 的 `key == "style"` 分支只对少数已知样式
+    -- 做缩放反馈，未知样式是静默忽略的。这里复用已有的 CLUE_IN 特效，不引入新资产。
+    local ci = event.index
+    if ci ~= nil then
+      self.focused_clue = (self.focused_clue == ci) and nil or ci
+      self:fx("clue." .. tostring(ci), M.EFFECTS.CLUE_IN)
+    end
+
+  elseif a == "back" then
+    -- 「返回列表」= 打开选关面板；没有 on_back 时退化成打开选关，行为一致
+    if self.opts.on_back then
+      self.opts.on_back()
+    else
+      self.modal = { kind = "levelselect" }
+    end
+
+  elseif a == "next_level" and self.opts.on_next_level then
+    self.opts.on_next_level()
+  end
+
+  self.dirty = true
+  return self.effects
+end
+
+function Controller:tick(dt)
+  self.now = (self.now or 0) + (dt or 0)
+  self.core:set_elapsed((self.core.elapsed or 0) + (dt or 0))
+  self:flush_pending_note()      -- 挂起的单击到点就落成笔记
+  self.dirty = true
+end
+
+function Controller:is_intro_active() return (self.intro_page or 1) <= #M.INTRO end
+
+----------------------------------------------------------------------------
+-- 布局规格
+----------------------------------------------------------------------------
+
+local function rect_of(t) return { x = t.x, y = t.y, w = t.w, h = t.h } end
+
+function Controller:build_layout()
+  local vm = self.core:view()
+  local L = M.LAYOUT
+  local nodes = {}
+  -- ★ 每个节点都必须带**显式** visible：
+  --   弹窗/教程的控件在编辑器里是一直存在的，开局由 render 统一藏起来；
+  --   如果节点没有 visible 字段，增量渲染就永远不会把它重新显示出来
+  --   （2026-09-26 踩过：指认面板出来了，但一直是隐藏的）。
+  local function push(n)
+    if n.visible == nil then n.visible = true end
+    nodes[#nodes + 1] = n
+    return n
+  end
+  local function btn(id, parent, r, text, event, style, enabled)
+    return push({ id = id, kind = "button", parent = parent, rect = r, text = text,
+                  style = style or "stamp", enabled = (enabled ~= false), event = event })
+  end
+
+  push({ id = "root", kind = "container", rect = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height }, style = "screen" })
+
+  -- ===== 顶部工具条 =====
+  push({ id = "topbar", kind = "container", parent = "root", rect = rect_of(L.topbar), style = "topbar" })
+  -- 工具条容器：与 topbar 同区（视觉上仍是一条顶栏），只是树里分开，HUD 文字不再和按钮混杂。
+  push({ id = "toolbar", kind = "container", parent = "root", rect = rect_of(L.topbar), style = "toolbar" })
+  push({ id = "hud.title", kind = "text", parent = "topbar", rect = rect_of(L.title), text = vm.title, style = "title" })
+  local announce_text = ""
+  if vm.meta_announce == "one" then
+    announce_text = "　※ 线索中有一句假话"
+  elseif vm.meta_announce == "none" then
+    announce_text = "　※ 线索全部为真"
+  end
+  push({ id = "hud.subtitle", kind = "text", parent = "topbar",
+         rect = { x = L.title.x, y = L.title.y + 48, w = L.title.w + 320, h = 30 },
+         text = tostring(vm.subtitle or "") .. announce_text, style = "subtitle",
+         visible = (vm.subtitle ~= nil or announce_text ~= "") })
+
+  -- 顶部工具条（1920 宽内排布：标题 32..512 / 计时步数 520..814 / 工具 840..1246 / 动作 1262..1828）
+  --
+  -- ★ 2026-09-27 结构修正：工具 / 操作按钮原来**直接挂在 `topbar` 下**，
+  --   于是 `topbar` 里 HUD 文字（hud.title/subtitle/timer/moves）和
+  --   tool.*/action.* 混在一起（用户反馈"hub 中混入了 action 和 tool"）。
+  --   现在独立出一个 `toolbar` 容器：**topbar 只放 HUD 文字，按钮归 toolbar**。
+  --   位置仍用**绝对 rect**（见 L56 的坐标换算注释：rect 是设计空间绝对坐标），
+  --   所以改父级**不会移动任何控件**，只是树结构变干净。
+  local function tool(id, label, mode, x)
+    return push({ id = id, kind = "button", parent = "toolbar",
+                  rect = { x = x, y = 26, w = 130, h = 52 }, text = label,
+                  style = (vm.hud.mode == mode) and "tab.active" or "tab",
+                  event = { action = "tool", mode = mode } })
+  end
+  tool("tool.place",  "放置",  "place",  840)
+  tool("tool.x",      "X 标记", "x",      978)
+  tool("tool.eraser", "橡皮擦", "eraser", 1116)
+
+  btn("action.undo", "toolbar", { x = 1262, y = 26, w = 90, h = 52 }, "撤销",
+      { action = "undo" }, "stamp.sm", vm.hud.can_undo)
+  btn("action.redo", "toolbar", { x = 1358, y = 26, w = 90, h = 52 }, "重做",
+      { action = "redo" }, "stamp.sm", vm.hud.can_redo)
+  btn("action.submit", "toolbar", { x = 1460, y = 26, w = 190, h = 52 },
+      vm.hud.filled and "提交" or "提交（先摆满）", { action = "submit" }, "stamp.primary", vm.hud.filled)
+  btn("action.hint", "toolbar", { x = 1660, y = 26, w = 80, h = 52 }, "提示",
+      { action = "hint" }, "stamp.sm", vm.hud.can_hint)
+  btn("action.reveal", "toolbar", { x = 1748, y = 26, w = 80, h = 52 }, "揭示",
+      { action = "reveal" }, "stamp.sm")
+
+  push({ id = "hud.timer", kind = "text", parent = "topbar",
+         rect = { x = 520, y = 30, w = 140, h = 46 },
+         text = self:format_time(vm.hud.time), style = "stat" })
+  push({ id = "hud.moves", kind = "text", parent = "topbar",
+         rect = { x = 664, y = 30, w = 150, h = 46 },
+         text = string.format("%d 步", vm.hud.moves), style = "stat" })
+
+  -- ===== 左侧面板：头像卡 + 线索卡 + 图例 =====
+  push({ id = "left", kind = "container", parent = "root", rect = rect_of(L.left), style = "panel.left" })
+  push({ id = "tray", kind = "container", parent = "left", rect = rect_of(L.tray), style = "tray" })
+  -- 头像卡的**列数自适应**：保证永远只占 2 行。
+  --   踩过的坑：写死 3 列时，7 个角色的关卡会排到第 3 行，
+  --   而 tray 容器只有 2 行高 —— 卡片溢出容器、压住了下面的线索。
+  --   规则：per_row = max(3, ceil(人数 / 2))，卡片宽度按剩余宽度均分。
+  local gx = L.tray_gap_x or 12
+  local gy = L.tray_gap_y or 10
+  local n_tray = #vm.tray
+  local per_row = math.max(L.tray_per_row or 3, math.ceil(n_tray / 2))
+  local item_w = math.floor((L.tray.w - (per_row - 1) * gx) / per_row)
+  local item_h = L.tray_item_h
+  for i = 1, n_tray do
+    local it = vm.tray[i]
+    local col = (i - 1) % per_row
+    local row = math.floor((i - 1) / per_row)
+    push({
+      id = "tray." .. tostring(it.id),
+      kind = "button",
+      parent = "tray",
+      rect = { x = L.tray.x + col * (item_w + gx),
+               y = L.tray.y + row * (item_h + gy),
+               w = item_w, h = item_h },
+      text = it.name,
+      image = it.portrait,
+      style = it.selected and "portrait.selected" or (it.placed and "portrait.placed" or "portrait"),
+      state = { selected = it.selected, placed = it.placed, is_victim = it.is_victim },
+      event = { action = "suspect", id = it.id },
+    })
+  end
+
+  push({ id = "clues", kind = "container", parent = "left", rect = rect_of(L.clues), style = "panel" })
+  local shown = math.min(#vm.clues, L.clue_max_visible)
+  -- 线索卡"刷出来"的动效：每条只弹一次。
+  -- 为什么不在生成时直接 fx：这条线索控件可能在**同一帧里刚被创建**，
+  -- 而 effects 是在 render 末尾（控件都建完之后）才统一交给适配器播的，
+  -- 所以在这里排队是安全的。控制器每个关卡重建一次 → 表随关卡自然重置。
+  self._clue_fx = self._clue_fx or {}
+  for i = 1, shown do
+    local cl = vm.clues[i]
+    push({
+      id = "clue." .. i,
+      kind = "text",
+      parent = "clues",
+      rect = { x = L.clues.x, y = L.clues.y + (i - 1) * L.clue_row_h,
+               w = L.clues.w, h = L.clue_row_h - 6 },
+      text = cl.text,
+      style = (self.focused_clue == i) and "clue.focus"
+              or (cl.satisfied and "clue.ok" or "clue"),
+      event = { action = "focus_clue", index = i },
+    })
+    if not self._clue_fx[i] and not self:is_intro_active() and self.modal == nil then
+      self._clue_fx[i] = true
+      self:fx("clue." .. i, M.EFFECTS.CLUE_IN)
+    end
+  end
+  push({ id = "clues.more", kind = "text", parent = "clues",
+         rect = { x = L.clues.x, y = L.clues.y + shown * L.clue_row_h, w = L.clues.w, h = 30 },
+         text = string.format("还有 %d 条线索", math.max(0, #vm.clues - shown)),
+         style = "muted", visible = (#vm.clues > shown) })
+
+  -- 操作提示**按设备换文案** —— 同一套界面同时给 PC 键鼠和移动端触碰用，
+  -- 但两边的"怎么操作"不一样，写在图例里免得玩家自己试。
+  local legend_text = "单击=铅笔笔记　双击/长按=放置　X工具=划掉这格\n橡皮擦：单击清格，双击清全盘"
+  if self.input_profile == "touch" then
+    legend_text = "轻触=铅笔笔记　长按=放置　X工具=划掉这格\n橡皮擦：轻触清格，长按清全盘"
+  elseif self.input_profile == "pc" then
+    legend_text = "单击=笔记　双击/长按=放置　X工具=划掉这格\n"
+      -- ⚠️ 官方键事件是**语义事件 + 可重映射的「奇匠按键」**（见 KB_ACTIONS 注释），
+      --    所以这里写"默认键"，并说明"以你自己的按键设置为准" —— 不能假定玩家
+      --    按的一定是 ↑↓←→ / F / Space。
+      .. "键盘(默认键)：方向键移动　F放置　空格笔记　Tab换工具　数字选人\n"
+      .. "（键位可在按键设置里改，以你实际的为准）"
+  elseif self.input_profile == "gamepad" then
+    legend_text = "确认=笔记　按住=放置　肩键切换工具\n（手柄为兜底方案，推荐用键鼠或触屏）"
+  end
+
+  push({ id = "legend", kind = "text", parent = "left", rect = rect_of(L.legend),
+         text = legend_text,
+         style = "muted" })
+
+  -- ===== 中央棋盘（含坐标尺）=====
+  push({ id = "board", kind = "container", parent = "root", rect = rect_of(L.board), style = "board" })
+  -- 格子几何按**当前关卡的实际 N** 自适应：
+  -- 棋盘区大小固定，格子边长 = 可用边长 / N。这样 5×5 / 6×6 / 7×7 都能正确排布，
+  -- 不需要为每个尺寸重摆一次编辑器布局（编辑器里按**最大的 N** 建够格子即可，
+  -- 小尺寸关卡多出来的格子由界面层隐藏、位置由脚本运行时摆正）。
+  local n = math.max(vm.rows, vm.cols)
+  local avail_w = L.board.w - L.ruler
+  local avail_h = L.board.h - L.ruler
+  local pitch = math.floor(math.min(avail_w, avail_h) / n)
+  local gap   = math.max(2, math.floor(pitch * 0.03))
+  local cell  = pitch - gap
+  local ruler = L.ruler
+  local grid_w = n * pitch - gap
+  local grid_h = n * pitch - gap
+  local gx = L.board.x + ruler + math.floor((avail_w - grid_w) / 2)
+  local gy = L.board.y + ruler + math.floor((avail_h - grid_h) / 2)
+  -- ★ 2026-09-27 结构修正：坐标尺原来**直接挂在 `board` 下**，和运行时生成的 49 个格子
+  --   挤在同一个节点里（board 子树一度有 63 个子控件），树里根本找不到 ruler。
+  --   现在独立成一个 `ruler` 容器（占位与 board 相同）。位置仍用**绝对 rect**，
+  --   所以改父级**不会移动任何控件**。
+  push({ id = "ruler", kind = "container", parent = "board", rect = rect_of(L.board), style = "ruler" })
+  -- 列标尺
+  for c = 1, vm.cols do
+    push({ id = "ruler.c." .. c, kind = "text", parent = "ruler",
+           rect = { x = gx + (c - 1) * (cell + gap), y = L.board.y, w = cell, h = ruler - 6 },
+           text = "C" .. c, style = "ruler" })
+  end
+  -- 行标尺
+  for r = 1, vm.rows do
+    push({ id = "ruler.r." .. r, kind = "text", parent = "ruler",
+           rect = { x = L.board.x, y = gy + (r - 1) * (cell + gap), w = ruler - 6, h = cell },
+           text = "R" .. r, style = "ruler" })
+  end
+  for r = 1, vm.rows do
+    for c = 1, vm.cols do
+      local cd = vm.cells[r][c]
+      local style = "cell"
+      if cd.state == "blocked" then style = "cell.blocked"
+      elseif cd.state == "victim" then style = "cell.victim"
+      elseif cd.state == "hint" then style = "cell.hint"
+      elseif cd.state == "wrong" then style = "cell.wrong" end
+      if cd.x then style = "cell.x" end
+      -- 键盘光标（PC）：只在真的用过方向键之后才高亮，纯鼠标玩家看不到它
+      if self.kb_active and self.kb ~= nil and self.kb.r == r and self.kb.c == c then
+        style = "cell.cursor"
+      end
+      push({
+        id = self:cell_id(r, c),
+        kind = "button",
+        parent = "board",
+        rect = { x = gx + (c - 1) * (cell + gap), y = gy + (r - 1) * (cell + gap), w = cell, h = cell },
+        style = style,
+        text = cd.name or "",
+        -- ⚠️ 这里**只能传图片 ID（整数）**，不能传名字。
+        --
+        -- 真机 16:07 日志报过：`SetImage 失败：bad argument #3 to 'SetImage'
+        -- (integer expected, got string)`。根因就是这行原来写的是
+        --     `… portrait_of(vm, cd.suspect) or cd.object or nil`
+        -- 而 `cd.object` 是**家具/物体的名字字符串**（例如「收银台」）。
+        -- 当角色没配 `portrait` 时，`and/or` 表达式就掉到 `cd.object` 上，
+        -- 于是名字被当成图片 ID 传进了 SetImage。
+        --
+        -- 现在只传 `portrait`。
+        -- ★ 2026-09-26 起 `portrait` 支持**调色板素材名**（字符串）：
+        --   例如 `portrait = "portrait.A"`，适配层会用调色板里的 source+id 去 SetImage。
+        --   整数 ID 依然兼容。调色板见 engine_adapter_qianxing.lua 的 read_palette。
+        -- ⚠️ 用 `false` 而不是 nil 当"这格没有人"：
+        --   渲染循环是 `for k, v in pairs(n)` —— **Lua 里 `image = nil` 等于"这个键不存在"**，
+        --   于是"人走了的格子"**永远不会下发 image** ⇒ 旧格的头像**永远不清**。
+        --   这就是用户报的「换位后头像卡残留」。
+        --   （和 `obj` 白块是**同一个 bug 形状** —— 我在同一个坑里摔了两次。）
+        image = cd.suspect and Controller.portrait_of(vm, cd.suspect) or false,
+        notes = cd.notes,
+        room = cd.room,
+        -- ★★ 2026-09-28 新增：**显式告诉适配层"这格有没有物件"**。
+        --
+        -- 为什么必须传：模板里有个 `obj` 子控件，是留给"物件图标"（书桌/地毯）的，
+        --   而且 `layer_order` 故意把它排在 `face` **之上**。
+        --   但我当初生成它时用的是**白色占位图**（106053），**而且没有任何代码去关它** ——
+        --   于是它永远是"一块白板压在头像上"。
+        --   空格看不出来（`face` 本来就是白图），**一放人就变成用户报的
+        --   「人物头像上有异常遮挡」**（截图里 C3/R1、C4/R2、C4/R3 那三块白方块）。
+        --   ⇒ 每格显式声明 `object`（没有物件就是 nil），适配层据此开关 `obj` 的显隐。
+        -- ⚠️ 必须用 `false` 而不是 nil 当"没有物件"：
+        --   渲染循环是 `for k, v in pairs(n)` —— **Lua 里 `object = nil` 等于"这个键不存在"**，
+        --    于是没有物件的格子**永远不会下发 object** ⇒ `obj` 永远不被隐藏
+        --    （这正是"白块还在"的原因，我第一次没修掉）。
+        object = cd.object or false,
+        -- ★ 每格四边的墙 / 门：数据来自 core 的 `view()`（{up,down,left,right} 布尔表），
+        --   适配层靠模板里固定的 `wall.*` / `door.*` 子控件 SetVisible 开关来实现 ——
+        --   **不需要为每种墙型做模板**。
+        walls = cd.walls,
+        doors = cd.doors,
+        -- ★ 房间染色：`imageColor` 是**读写**字段，所以"同一张底图 + 不同颜色区分房间"
+        --   是零额外素材的做法。颜色表在下面 ROOM_COLORS。
+        tint = Controller.room_color(cd.room),
+        occupiable = cd.occupiable,
+        x_mark = cd.x,
+        enabled = true,   -- 不可站人的格子也要能点（用于打 X / 提示原因）
+        event = { action = "click", r = r, c = c },
+      })
+    end
+  end
+
+  -- ===== 右侧信息栏 =====
+  push({ id = "right", kind = "container", parent = "root", rect = rect_of(L.right), style = "panel.right" })
+  push({ id = "hud.progress", kind = "text", parent = "right",
+         rect = { x = L.right.x + 20, y = L.right.y + 20, w = L.right.w - 40, h = 44 },
+         text = string.format("已放置 %d / %d", self:placed_count(vm), vm.piece_count),
+         style = "stat" })
+  local got, total = self.core:score()
+  push({ id = "hud.score", kind = "text", parent = "right",
+         rect = { x = L.right.x + 20, y = L.right.y + 74, w = L.right.w - 40, h = 44 },
+         text = string.format("位置正确 %d / %d", got, total), style = "muted" })
+  -- 区域推断面板（偷窃版 R3/R4 的可观测量，玩家自己也能数出来）
+  local st = vm.structure or {}
+  local st_lines = {}
+  if st.victim_room == nil then
+    st_lines[#st_lines + 1] = "把受害者摆上棋盘后，这里会显示区域推断"
+  else
+    st_lines[#st_lines + 1] = string.format("受害者区域 #%d，区内 %d 人（k=%d）",
+                                            st.victim_room, st.k or 0, st.k or 0)
+    st_lines[#st_lines + 1] = string.format("→ 同伙：%s",
+      (st.k or 0) >= 2 and "必然是 1 人" or "可有可无，看线索与假话预算")
+    local adj = st.adjacent or {}
+    if #adj == 0 then
+      st_lines[#st_lines + 1] = "相邻区域：无（关卡非法）"
+    else
+      local parts = {}
+      for i = 1, #adj do
+        local room = adj[i]
+        parts[#parts + 1] = string.format("#%d 无辜 %d", room, (st.innocent_counts or {})[room] or 0)
+      end
+      st_lines[#st_lines + 1] = "门相邻区域：" .. table.concat(parts, "、")
+      if st.best_rooms and #st.best_rooms == 1 then
+        st_lines[#st_lines + 1] = string.format("→ 盗窃者应在 #%d（无辜人数最多）", st.best_rooms[1])
+      elseif st.best_rooms and #st.best_rooms > 1 then
+        st_lines[#st_lines + 1] = "相邻区域无辜人数并列（本关允许并列）"
+      end
+    end
+  end
+  for i = 1, #(vm.violations or {}) do
+    st_lines[#st_lines + 1] = "· " .. vm.violations[i].text
+  end
+  push({ id = "hud.violations", kind = "text", parent = "right",
+         rect = { x = L.right.x + 20, y = L.right.y + 132, w = L.right.w - 40, h = 230 },
+         text = table.concat(st_lines, "\n"), style = "muted" })
+  push({ id = "hud.share", kind = "text", parent = "right",
+         rect = { x = L.right.x + 20, y = L.right.y + 360, w = L.right.w - 40, h = 120 },
+         text = self.share_code and ("分享码：" .. self.share_code) or "", style = "muted" })
+  push({ id = "hud.toast", kind = "text", parent = "right",
+         rect = { x = L.right.x + 20, y = L.right.y + 520, w = L.right.w - 40, h = 140 },
+         text = self.toast or vm.last_message or "", style = "toast",
+         visible = (self.toast ~= nil or vm.last_message ~= nil) })
+  -- 顶部放不下的次级操作放这里（1920 内不会溢出）
+  local rx = L.right.x + 20
+  btn("action.howto", "right", { x = rx, y = L.right.y + 680, w = 100, h = 52 }, "玩法",
+      { action = "howto" }, "tab")
+  btn("action.share", "right", { x = rx + 108, y = L.right.y + 680, w = 100, h = 52 }, "分享",
+      { action = "share" }, "tab")
+  btn("action.restart", "right", { x = rx + 216, y = L.right.y + 680, w = 100, h = 52 }, "重开",
+      { action = "restart" }, "tab")
+  btn("action.back", "right", { x = rx + 324, y = L.right.y + 680, w = 116, h = 52 }, "返回列表",
+      { action = "back" }, "tab")
+
+  -- ===== 底部操作条（大按钮，触屏友好）=====
+  push({ id = "actions", kind = "container", parent = "root", rect = rect_of(L.actions), style = "actions" })
+  local ax, ay = L.actions.x, L.actions.y
+  local aw = 150
+  local agap = 12
+  btn("action.q.place", "actions", { x = ax, y = ay, w = aw, h = L.action_btn.h }, "放置工具",
+      { action = "tool", mode = "place" }, (vm.hud.mode == "place") and "tab.active" or "tab")
+  btn("action.q.note", "actions", { x = ax + (aw + agap), y = ay, w = aw, h = L.action_btn.h }, "只写笔记",
+      { action = "tool", mode = "note" }, (vm.hud.mode == "note") and "tab.active" or "tab")
+  btn("action.q.x", "actions", { x = ax + 2 * (aw + agap), y = ay, w = aw, h = L.action_btn.h }, "划掉这格",
+      { action = "tool", mode = "x" }, (vm.hud.mode == "x") and "tab.active" or "tab")
+  btn("action.q.eraser", "actions", { x = ax + 3 * (aw + agap), y = ay, w = aw, h = L.action_btn.h }, "橡皮擦",
+      { action = "tool", mode = "eraser" }, (vm.hud.mode == "eraser") and "tab.active" or "tab")
+  btn("action.q.accuse", "actions",
+      { x = ax + 4 * (aw + agap), y = ay, w = 200, h = L.action_btn.h },
+      "指认凶手", { action = "submit" }, "stamp.primary", vm.hud.filled)
+
+  -- ===== 开屏教程 =====
+  if self:is_intro_active() then
+    local mw, mh = L.modal.w, L.modal.h
+    local mx, my = math.floor((M.DESIGN.width - mw) / 2), math.floor((M.DESIGN.height - mh) / 2)
+    local page = M.INTRO[self.intro_page]
+    push({ id = "intro", kind = "panel", parent = "root", rect = { x = mx, y = my, w = mw, h = mh }, style = "modal" })
+    push({ id = "intro.dots", kind = "text", parent = "intro",
+           rect = { x = mx + 40, y = my + 30, w = mw - 80, h = 36 },
+           text = string.format("第 %d / %d 页", self.intro_page, #M.INTRO), style = "muted" })
+    push({ id = "intro.title", kind = "text", parent = "intro",
+           rect = { x = mx + 40, y = my + 80, w = mw - 80, h = 60 }, text = page.title, style = "modal.title" })
+    push({ id = "intro.body", kind = "text", parent = "intro",
+           rect = { x = mx + 40, y = my + 160, w = mw - 80, h = 180 }, text = page.body, style = "modal.body" })
+    btn("intro.skip", "intro", { x = mx + 40, y = my + mh - 90, w = 180, h = 60 }, "跳过",
+        { action = "intro_skip" }, "tab")
+    btn("intro.next", "intro", { x = mx + mw - 240, y = my + mh - 90, w = 200, h = 60 },
+        (self.intro_page >= #M.INTRO) and "开始破案" or "下一页", { action = "intro_next" }, "stamp.primary")
+  end
+
+  -- ===== 弹窗 =====
+  local modal = self.modal
+  if modal and not self:is_intro_active() then
+    local mw, mh = L.modal.w, L.modal.h
+    local mx, my = math.floor((M.DESIGN.width - mw) / 2), math.floor((M.DESIGN.height - mh) / 2)
+    push({ id = "modal", kind = "panel", parent = "root", rect = { x = mx, y = my, w = mw, h = mh }, style = "modal" })
+
+    if modal.kind == "accuse_thief" or modal.kind == "accuse_accomplice" then
+      local is_acc = (modal.kind == "accuse_accomplice")
+      push({ id = "modal.title", kind = "text", parent = "modal",
+             rect = { x = mx + 30, y = my + 26, w = mw - 60, h = 56 },
+             text = is_acc and "那同伙是谁？" or "摆位成立。谁是盗窃者？",
+             style = "modal.title" })
+      local per = 3
+      for i = 1, #vm.tray do
+        local it = vm.tray[i]
+        if not (is_acc and it.id == modal.thief) then
+          local col = (i - 1) % per
+          local row = math.floor((i - 1) / per)
+          push({ id = "modal.suspect." .. tostring(it.id), kind = "button", parent = "modal",
+                 rect = { x = mx + 40 + col * 232, y = my + 110 + row * 128, w = 212, h = 110 },
+                 text = it.name, image = it.portrait, style = "portrait",
+                 event = is_acc and { action = "accuse_pick_accomplice", id = it.id }
+                                 or { action = "accuse_thief", id = it.id } })
+        end
+      end
+      if is_acc then
+        btn("modal.no_accomplice", "modal",
+            { x = mx + 40, y = my + mh - 88, w = 280, h = 60 }, "他独自作案（没有同伙）",
+            { action = "accuse_no_accomplice" }, "stamp")
+      end
+      btn("modal.cancel", "modal", { x = mx + mw - 200, y = my + mh - 88, w = 160, h = 60 }, "再看看",
+          { action = "close_modal" }, "tab")
+
+    elseif modal.kind == "result" then
+      local got, total = self.core:score()
+      push({ id = "modal.title", kind = "text", parent = "modal",
+             rect = { x = mx + 30, y = my + 40, w = mw - 60, h = 60 },
+             text = modal.win and "破案！" or "没能找齐所有人", style = "modal.title" })
+      push({ id = "modal.body", kind = "text", parent = "modal",
+             rect = { x = mx + 30, y = my + 120, w = mw - 60, h = 120 }, text = modal.message or "", style = "modal.body" })
+      push({ id = "modal.stats", kind = "text", parent = "modal",
+             rect = { x = mx + 30, y = my + 250, w = mw - 60, h = 40 },
+             text = string.format("用时 %s · %d 步 · 误指认 %d 次 · 位置 %d/%d",
+                                  self:format_time(vm.hud.time), vm.hud.moves, vm.hud.failed_accusations, got, total),
+             style = "muted" })
+      btn("modal.again", "modal", { x = mx + 40, y = my + mh - 88, w = 180, h = 60 }, "重玩本关",
+          { action = "restart" }, "stamp")
+      btn("modal.share", "modal", { x = mx + 240, y = my + mh - 88, w = 180, h = 60 }, "分享棋局",
+          { action = "share" }, "stamp")
+      btn("modal.next", "modal", { x = mx + 440, y = my + mh - 88, w = 200, h = 60 }, "下一关",
+          { action = "next_level" }, "stamp.primary")
+
+    elseif modal.kind == "share" then
+      push({ id = "modal.title", kind = "text", parent = "modal",
+             rect = { x = mx + 30, y = my + 30, w = mw - 60, h = 56 }, text = "分享棋局", style = "modal.title" })
+      push({ id = "modal.body", kind = "text", parent = "modal",
+             rect = { x = mx + 30, y = my + 110, w = mw - 60, h = 200 },
+             text = "把这个码发给别人，对方可以还原你的棋盘：\n\n" .. tostring(modal.code), style = "modal.body" })
+      btn("modal.cancel", "modal", { x = mx + mw - 200, y = my + mh - 88, w = 160, h = 60 }, "关闭",
+          { action = "close_modal" }, "tab")
+
+    elseif modal.kind == "levelselect" then
+      -- ===== 选关 =====
+      -- 关卡清单由 main.lua 通过 opts.levels 传进来（界面层不认识 Levels 模块）
+      local list = self.opts.levels or {}
+      push({ id = "modal.title", kind = "text", parent = "modal",
+             rect = { x = mx + 30, y = my + 24, w = mw - 60, h = 56 },
+             text = "选择关卡", style = "modal.title" })
+      push({ id = "modal.body", kind = "text", parent = "modal",
+             rect = { x = mx + 30, y = my + 84, w = mw - 60, h = 34 },
+             text = string.format("已登记 %d 关 · 当前：%s", #list, tostring(vm.title or "")),
+             style = "muted" })
+      local per = 2
+      local col_w = math.floor((mw - 100) / per)
+      for i = 1, math.min(#list, 8) do
+        local it = list[i]
+        local col = (i - 1) % per
+        local row = math.floor((i - 1) / per)
+        local cur = (tostring(it.id) == tostring(self.core.level and self.core.level.id))
+        btn("modal.level." .. tostring(it.id), "modal",
+            { x = mx + 40 + col * (col_w + 20), y = my + 126 + row * 82, w = col_w, h = 68 },
+            string.format("%s%s", cur and "▶ " or "", tostring(it.name or it.id)),
+            { action = "pick_level", id = it.id },
+            cur and "stamp.primary" or "stamp")
+      end
+      if #list > 8 then
+        push({ id = "modal.body", kind = "text", parent = "modal",
+               rect = { x = mx + 30, y = my + 126 + 4 * 82, w = mw - 60, h = 34 },
+               text = string.format("（这里只列出前 8 关，共 %d 关）", #list), style = "muted" })
+      end
+      btn("modal.cancel", "modal", { x = mx + mw - 200, y = my + mh - 88, w = 160, h = 60 }, "关闭",
+          { action = "close_modal" }, "tab")
+
+    elseif modal.kind == "howto" then
+      push({ id = "modal.title", kind = "text", parent = "modal",
+             rect = { x = mx + 30, y = my + 26, w = mw - 60, h = 56 }, text = "玩法", style = "modal.title" })
+      local text = {}
+      for i = 1, #M.INTRO do
+        text[#text + 1] = string.format("%d. %s —— %s", i, M.INTRO[i].title,
+                                        M.INTRO[i].body:gsub("\n", " "))
+      end
+      push({ id = "modal.body", kind = "text", parent = "modal",
+             rect = { x = mx + 30, y = my + 100, w = mw - 60, h = 280 },
+             text = table.concat(text, "\n\n"), style = "modal.body" })
+      btn("modal.cancel", "modal", { x = mx + mw - 200, y = my + mh - 88, w = 160, h = 60 }, "知道了",
+          { action = "close_modal" }, "tab")
+    end
+  end
+
+  return nodes
+end
+
+-- ────────────────────────────────────────────────────────────────────────
+-- 布局计划：把 build_layout() 摊平成「画布空间」清单，
+-- 供 ① 模拟器建树脚本 ② 编辑器搭建指南生成器 共用同一份数据。
+-- 每项：{ id, kind, parent, style, cx, cy, w, h, text, visible, states }
+-- cx/cy 就是编辑器「位置 X, Y」要填的数（pivot 设 0.5,0.5）。
+--
+-- ★ 必须**遍历所有界面状态**再取并集：弹窗（指认/结果/分享/玩法）和开屏教程
+--   的控件只在对应状态下才出现在 build_layout() 里。如果只按开局那一屏生成，
+--   编辑器里就会缺 modal.* / intro.* —— 脚本运行时按名字找不到，面板永远出不来。
+-- ────────────────────────────────────────────────────────────────────────
+function Controller:layout_plan()
+  local saved_intro, saved_modal = self.intro_page, self.modal
+  local vm0 = self.core:view()
+  local first_id = vm0.tray[1] and vm0.tray[1].id
+
+  local states = {
+    { name = "intro",             intro = 1,  modal = nil },
+    { name = "board",             intro = 99, modal = nil },
+    { name = "accuse_thief",      intro = 99, modal = { kind = "accuse_thief" } },
+    { name = "accuse_accomplice", intro = 99,
+      modal = { kind = "accuse_accomplice", thief = first_id } },
+    { name = "result",            intro = 99,
+      modal = { kind = "result", win = true, message = "（结果文案）" } },
+    { name = "share",             intro = 99, modal = { kind = "share", code = "（分享码）" } },
+    { name = "howto",             intro = 99, modal = { kind = "howto" } },
+    { name = "levelselect",       intro = 99, modal = { kind = "levelselect" } },
+  }
+
+  local order, byId = {}, {}
+  for si = 1, #states do
+    local st = states[si]
+    self.intro_page = st.intro
+    self.modal = st.modal
+    local nodes = self:build_layout()
+    for i = 1, #nodes do
+      local n = nodes[i]
+      local cv = M.to_canvas(n.rect)
+      local prev = byId[n.id]
+      if prev == nil then
+        prev = {
+          id = n.id, kind = n.kind, parent = n.parent, style = n.style,
+          cx = cv.cx, cy = cv.cy, w = cv.w, h = cv.h,
+          text = n.text, visible = (n.visible ~= false),
+          states = {},
+        }
+        byId[n.id] = prev
+        order[#order + 1] = prev
+      end
+      prev.states[#prev.states + 1] = st.name
+      -- 文案取「在某个状态里可见」的那一份
+      if (n.visible ~= false) and prev.visible == false then
+        prev.text = n.text
+        prev.visible = true
+      end
+    end
+  end
+
+  self.intro_page, self.modal = saved_intro, saved_modal
+
+  -- 初始可见性：只有「开局就该看见」的控件才是可见的，其余交给脚本按状态开关。
+  -- （脚本每次 render 都会把 visible 同步过去，所以这里留 false 最安全。）
+  for i = 1, #order do
+    local it = order[i]
+    local in_board = false
+    for k = 1, #it.states do
+      if it.states[k] == "board" or it.states[k] == "intro" or it.states[k] == "accuse_thief"
+         or it.states[k] == "accuse_accomplice" or it.states[k] == "result"
+         or it.states[k] == "share" or it.states[k] == "howto" then in_board = true end
+    end
+    it.visible = in_board and it.visible
+  end
+  return order
+end
+
+-- ────────────────────────────────────────────────────────────────────────
+-- 头像卡的「画布空间几何」。
+--
+-- 为什么要单独给适配层一份：头像卡的**列数按人数自适应**（保证只占 2 行），
+-- 于是同一张 tray.A 在 5 人关和 7 人关里位置/尺寸都不一样。编辑器每个控件
+-- 只能有一套几何，所以做法是「编辑器按最挤的情况静态摆好，运行时按本关
+-- 实际人数重新摆正」—— 和棋盘格子同一套思路。
+--
+-- 这里算**画布绝对坐标**；适配层只负责换算成「相对父级中心的偏移」再应用，
+-- 避免两处各自推导导致差 1px。
+-- ────────────────────────────────────────────────────────────────────────
+function Controller:tray_layout_canvas()
+  local L = M.LAYOUT
+  local vm = self.core:view()
+  local n = #vm.tray
+  if n == 0 then return nil end
+
+  local gx = L.tray_gap_x or 12
+  local gy = L.tray_gap_y or 10
+  local per_row = math.max(L.tray_per_row or 3, math.ceil(n / 2))
+  local item_w = math.floor((L.tray.w - (per_row - 1) * gx) / per_row)
+  local item_h = L.tray_item_h
+
+  local tray_cv = M.to_canvas(rect_of(L.tray))
+  local items = {}
+  for i = 1, n do
+    local col = (i - 1) % per_row
+    local row = math.floor((i - 1) / per_row)
+    local cv = M.to_canvas({
+      x = L.tray.x + col * (item_w + gx),
+      y = L.tray.y + row * (item_h + gy),
+      w = item_w, h = item_h,
+    })
+    items[#items + 1] = {
+      id = "tray." .. tostring(vm.tray[i].id),
+      cx = cv.cx, cy = cv.cy, w = cv.w, h = cv.h,
+    }
+  end
+  return { tray_cx = tray_cv.cx, tray_cy = tray_cv.cy, per_row = per_row, items = items }
+end
+
+function Controller:placed_count(vm)
+  local n = 0
+  for i = 1, #vm.tray do if vm.tray[i].placed then n = n + 1 end end
+  return n
+end
+
+function Controller:violations_text(vm)
+  if #vm.violations == 0 then return "当前没有硬性冲突" end
+  local lines = {}
+  for i = 1, #vm.violations do lines[#lines + 1] = "· " .. vm.violations[i].text end
+  return table.concat(lines, "\n")
+end
+
+-- 房间染色表：同一张底图 + 不同 imageColor 就能区分房间 —— **零额外素材**。
+--
+-- 官方依据：`ClientUIImageControl.imageColor` 是 `ColorValue` 类型、**读写**、
+-- Tweenable；ColorValue 由全局函数 `Color(r,g,b,a?)` 创建（0–255，a 可省略）。
+-- 适配层会把它落到格子的 `face` 子控件上（见 set_property 的 "tint" 分支）。
+--
+-- 改这里就能换配色；不想要染色就把整张表清空（返回 nil → 适配层跳过）。
+Controller.ROOM_COLORS = {
+  { r = 214, g = 196, b = 160 },   -- 1 暖木色
+  { r = 178, g = 200, b = 208 },   -- 2 冷灰蓝
+  { r = 206, g = 178, b = 200 },   -- 3 淡紫
+  { r = 190, g = 206, b = 176 },   -- 4 淡绿
+  { r = 220, g = 190, b = 170 },   -- 5 陶土
+  { r = 186, g = 190, b = 210 },   -- 6 石板
+}
+
+-- 注意：这是**普通函数**不是方法（同 portrait_of 的坑）
+function Controller.room_color(room)
+  if type(room) ~= "number" then return nil end
+  local t = Controller.ROOM_COLORS
+  if type(t) ~= "table" or #t == 0 then return nil end
+  return t[((room - 1) % #t) + 1]
+end
+
+-- 注意：这是**普通函数**不是方法，所以不能用 self:portrait_of(vm, id) 调用
+-- （冒号调用会把 self 当第一个参数，vm 就变成控制器了 —— 这个坑已经踩过一次）
+function Controller.portrait_of(vm, id)
+  if not vm or not vm.tray then return nil end
+  for i = 1, #vm.tray do
+    if vm.tray[i].id == id then return vm.tray[i].portrait end
+  end
+  return nil
+end
+
+----------------------------------------------------------------------------
+-- 增量渲染
+----------------------------------------------------------------------------
+
+function Controller:render(adapter, force)
+  local nodes = self:build_layout()
+
+  -- 设备档位（pc / touch / gamepad）只在第一次渲染时探一次，用来决定提示文案。
+  -- 界面本身完全一样 —— 两种模式走的是同一套光标事件。
+  if self.input_profile == nil then
+    self.input_profile = "pc"
+    if adapter ~= nil and adapter.input_profile ~= nil then
+      pcall(function() self.input_profile = adapter:input_profile() end)
+    end
+  end
+
+  -- ★★ 必须**先把本帧要显示的 id 收齐，再算差集**。
+  --    2026-09-26 踩过的坑：差集循环写在收集 seen 之前，seen 一直是空表，
+  --    于是"上一帧显示过的全部"每帧都被藏一遍；而增量渲染又因为
+  --    `last["visible"] == n.visible` 判定"没变"不再显示回来 ——
+  --    结果是**第一次渲染之后整个界面就再也不可见**（而且一个报错都没有）。
+  local seen = {}
+  for i = 1, #nodes do seen[nodes[i].id] = true end
+
+  -- 弹窗/教程/多余格子这些控件**在编辑器里是一直存在的**，只是不该显示时
+  -- 不出现在布局里。第一次渲染先把"除了当前布局以外"的全部藏起来；
+  -- 之后每次只藏"上一次显示过、这一次不在布局里"的。
+  if self._shown == nil then
+    local all = self:layout_plan()
+    for i = 1, #all do
+      if not seen[all[i].id] then
+        adapter:set_property(all[i].id, "visible", false)
+      end
+    end
+    -- ★ 上面只能藏住"当前这一关自己的布局里没有的"控件。
+    --   但编辑器是照**所有关卡的最大并集**建的，多出来的控件（cell.6.6 / clue.12 /
+    --   tray.F …）界面层根本不知道它们存在，只能让适配层去控件树上扫。
+    if adapter.hide_unlisted ~= nil then
+      adapter:hide_unlisted(seen)
+    end
+  else
+    for id in pairs(self._shown) do
+      if not seen[id] then
+        adapter:set_property(id, "visible", false)
+      end
+    end
+  end
+  self._shown = seen          -- 记住这一帧显示了什么，下一帧据此算差集
+
+  for i = 1, #nodes do
+    local n = nodes[i]
+    if not self._created[n.id] then
+      adapter:create_control(n)
+      self._created[n.id] = true
+      self._props[n.id] = {}
+    end
+    local last = self._props[n.id]
+    for k, v in pairs(n) do
+      if k ~= "id" and k ~= "rect" then
+        if not same_value(last[k], v) then
+          adapter:set_property(n.id, k, v)
+          last[k] = v
+        end
+      end
+    end
+    local lr = last.__rect
+    if force or not lr or lr.x ~= n.rect.x or lr.y ~= n.rect.y or lr.w ~= n.rect.w or lr.h ~= n.rect.h then
+      adapter:set_property(n.id, "rect", n.rect)
+      last.__rect = { x = n.rect.x, y = n.rect.y, w = n.rect.w, h = n.rect.h }
+    end
+  end
+  for id in pairs(self._created) do
+    if not seen[id] then
+      adapter:destroy_control(id)
+      self._created[id] = nil
+      self._props[id] = nil
+    end
+  end
+  for i = 1, #self.effects do
+    local e = self.effects[i]
+    adapter:play_effect(e.target, e.kind, e)
+  end
+  self.effects = {}
+  self.dirty = false
+end
+
+return M

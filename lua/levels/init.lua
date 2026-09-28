@@ -1,0 +1,85 @@
+--[[----------------------------------------------------------------------------
+  levels/init.lua —— 关卡注册表
+
+  加关卡只要两步：
+    1. 复制 levels/template.lua 改成 levels/<你的id>.lua
+    2. 在下面的 LIST 里加一行
+
+  关卡顺序就是 LIST 的顺序，Murdoku 的“下一关”按它走。
+
+  ⚠️ 加载失败不会被静默吞掉：失败信息收集在 M.load_errors() 里，
+     tools/validate_levels.lua 会把它们当作错误报出来。
+----------------------------------------------------------------------------]]--
+
+local M = {}
+
+-- 按顺序登记你的关卡；游戏里默认从第一个开始
+local LIST = {
+  "levels.demo_selftest",     -- 框架自检样例（不需要就删掉这一行）
+  "levels.case_001",          -- 案件 001 · 夜盗独行（5×5，k=1，无同伙）
+  "levels.case_002",          -- 案件 002 · 双影（6×6，k=2，必有同伙）
+  "levels.case_003",          -- 案件 003 · 第三方（7×7，k=3，必有同伙 + 假话不告知）
+}
+
+M._errors = {}
+
+local function note_error(module_name, err)
+  M._errors[#M._errors + 1] = { module = module_name, error = tostring(err) }
+end
+
+function M.all()
+  M._errors = {}
+  local out = {}
+  for i = 1, #LIST do
+    local ok, lv = pcall(require, LIST[i])
+    if ok and type(lv) == "table" then
+      out[#out + 1] = lv
+    else
+      note_error(LIST[i], lv)
+    end
+  end
+  return out
+end
+
+-- 上一次 all() 期间失败的关卡模块（{ module =, error = }）
+function M.load_errors() return M._errors end
+
+function M.get(level_id)
+  for _, lv in ipairs(M.all()) do
+    if lv.id == level_id then return lv end
+  end
+  -- 直接按文件名兜底
+  for i = 1, #LIST do
+    if LIST[i] == level_id or LIST[i]:match("%.([^%.]+)$") == level_id then
+      local ok, lv = pcall(require, LIST[i])
+      if ok and type(lv) == "table" then return lv end
+    end
+  end
+  return nil
+end
+
+function M.current_id()
+  local lv = M.all()[1]
+  return lv and lv.id or nil
+end
+
+function M.next(level_id)
+  local list = M.all()
+  for i = 1, #list do
+    if list[i].id == level_id then
+      local nxt = list[i + 1]
+      return nxt and nxt.id or nil
+    end
+  end
+  return nil
+end
+
+function M.index_of(level_id)
+  local list = M.all()
+  for i = 1, #list do
+    if list[i].id == level_id then return i end
+  end
+  return nil
+end
+
+return M
