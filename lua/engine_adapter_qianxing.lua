@@ -1348,6 +1348,21 @@ end
 -- 这里换算成「相对父级中心的偏移」（官方嵌套控件语义）再写下去。
 -- ════════════════════════════════════════════════════════════════════════
 
+-- ★★ 2026-09-28：**样式的缩放值只在这里定义一处**。
+--
+--   起因：用户报"已放置头像卡没有变小（0.72）"。查下来是 `style` 分支设了缩放，
+--   但 `apply_tray_layout`（头像卡重排）随后把姿态重置了 ⇒ **设了又被覆盖**。
+--   这和本工程里反复出现的"同一件事两处实现"是同一类问题
+--   （前面吃过：`erases` 动效、运行时上色 vs 存档静态图、自动 ✗ 的三处还原）。
+--   ⇒ 这次直接把缩放表抽成一个函数，**style 分支和重排函数都调它**，从根上不可能不一致。
+function Adapter:scale_of_style(value)
+  if value == "portrait" then return 0.86            -- 默认：比选中略小
+  elseif value == "portrait.selected" then return 1.08
+  elseif value == "portrait.placed" then return 0.72  -- 已放置：最小
+  elseif value == "clue.focus" then return 1.03
+  elseif value == "tab.active" then return 1.04 end
+  return nil
+end
 function Adapter:apply_tray_layout(layout)
   if layout == nil or layout.items == nil then return 0 end
   local parent = self:find(self.cfg.tray_parent or "tray")
@@ -1367,6 +1382,17 @@ function Adapter:apply_tray_layout(layout)
       if ctrl.SetPivot     then pcall(function() ctrl:SetPivot(0.5, 0.5) end) end
       if ctrl.SetSizeDelta then pcall(function() ctrl:SetSizeDelta(it.w, it.h) end) end
       if ctrl.SetAnchoredPosition then pcall(function() ctrl:SetAnchoredPosition(ox, oy) end) end
+      -- ★★ 2026-09-28：**重排后必须把样式缩放重新施加一遍**。
+      --
+      --   这一行就是"已放置头像卡没变小"的修复点：
+      --   原来 `style` 分支设了 0.72，但重排的 `SetSizeDelta`/`SetAnchoredPosition`
+      --   会把姿态重置回 1.0，而重排发生在其后 ⇒ 玩家永远看不到那一档。
+      --   缩放值取自 `scale_of_style`（与 style 分支**同一处定义**，不可能不一致）。
+      local sty = self._style and self._style[it.id] or nil
+      local sc2 = sty ~= nil and self:scale_of_style(sty) or nil
+      if sc2 ~= nil and ctrl.SetLocalScale ~= nil then
+        pcall(function() ctrl:SetLocalScale(sc2, sc2, 1) end)
+      end
       -- 卡片里的 face / text 跟着一起变
       local kids = { "face", "text" }
       for k = 1, #kids do
@@ -2713,29 +2739,16 @@ function Adapter:set_property(id, key, value)
     --   `imageColor` 是**乘算着色**：乘白=不变色，乘半透明白=整体减淡 ⇒ 正是"减淡+加透明"。
     local PLACED_TINT = 2147483647
     local NORMAL_TINT = 4294967295      -- 0xFFFFFFFF：不透明白 = 还原
-    local scale = nil
-    -- ★ 2026-09-28（用户要求）：**默认档要显式给**。
-    --   原来只有 selected/placed 两个分支，`"portrait"` 落到 `scale = nil` ⇒ 完全不缩放（1.00），
-    --   于是"选中 → 取消"只是从 1.04 回到 1.00，玩家看到的是"取消后变小了"。
-    --   用户的原话：「更应该设计为初始较小选中变大」。所以现在三档拉开：
-    --     默认 0.86   <   选中 1.08   >   已放置 0.72
-    if value == "portrait" then
-      scale = 0.86
-    elseif value == "portrait.selected" then
-      -- ★ 2026-09-28（用户要求）：**默认小、选中变大**。
-      --   原来默认 1.00 / 选中 1.04 —— 差 4%，等于没有反馈；
-      --   而 `placed` 是 0.72（最小），用户看到的是"取消选中后变小了"。
-      --   现在三档拉开：默认 0.86 < 选中 1.08 > 已放置 0.72。
-      scale = 1.08
-    elseif value == "portrait.placed" then
-      -- ★ 2026-09-28：0.96 → **0.72**。
-      --   用户报"重新放置后头像卡还在原位" —— 其实状态**是**在变的（`placed` 分支），
-      --   但 0.96 只有 4% 的差，肉眼根本看不出来，等于没有反馈。
-      --   在没有染色能力（`Color` 全局函数不存在）的前提下，**缩放是唯一可用的视觉手段**，
-      --   所以幅度必须大到一眼能分辨。
-      scale = 0.72
-    elseif value == "clue.focus" then scale = 1.03
-    elseif value == "tab.active" then scale = 1.04 end
+    -- ★★ 2026-09-28：缩放值**不再在这里写 if/elseif 链** —— 改查 `scale_of_style`。
+    --
+    --   为什么：原来这里设了 0.72，而 `apply_tray_layout`（头像卡重排）随后把姿态重置
+    --   ⇒ **设了又被覆盖**，用户看到"已放置头像卡没有变小"。
+    --   这与本工程反复出现的"同一件事两处实现"是同一类病
+    --   （前面吃过：`erases` 动效、运行时上色 vs 存档静态图、自动 ✗ 的三处还原）。
+    --   ⇒ 缩放表抽成**一个函数**，style 分支与重排函数共用，从根上不可能不一致。
+    self._style = self._style or {}
+    self._style[id] = value             -- 记住样式：重排函数要据此**重新施加**缩放
+    local scale = self:scale_of_style(value)
     if scale and ctrl.SetLocalScale then ctrl:SetLocalScale(scale, scale, 1) end
 
     -- ★ 着色：**只有"已放置"才减淡**，其余状态一律还原成不透明白。
