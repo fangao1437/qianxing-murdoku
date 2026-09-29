@@ -94,6 +94,15 @@ function Murdoku.start(level_id, opts)
     for k, v in pairs(opts) do o[k] = v end
     o.skip_intro = true
     o.debug = opts.debug
+    -- ★★★ 2026-09-30：**切关必须清掉屏幕状态**。
+    --
+    --   上面那句 `for k, v in pairs(opts)` 会把 `opts.screen`（入口传的是 `"home"`）
+    --   一并复制过来 ⇒ 新控制器带着 `screen = "home"` ⇒ **游戏界面被屏幕分支整片隐藏**
+    --   ⇒ 表现成"切关之后指认面板弹不出来 / 点了像没反应"。
+    --   我在探针里看到 `toast` 说提交成功、`modal` 却是 false，查了很久才定位到这里。
+    --   ⇒ 规则：**"进入某个关卡" = 屏幕状态为空**，必须显式清掉，不能依赖默认值。
+    o.screen = nil
+    o.start_in_level = true
     local ok = Murdoku.start(id, o)
     if not ok then
       controller.toast = "切关失败：" .. tostring(why or id)

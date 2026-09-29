@@ -1448,20 +1448,31 @@ end
 
 function Controller:layout_plan()
   local saved_intro, saved_modal = self.intro_page, self.modal
+  -- ★★★ 2026-09-30：**屏幕状态也要纳入枚举**。
+  --   `layout_plan` 原来只枚举 8 种"关卡内"状态（intro / modal 各变体），
+  --   **从不设置 `self.screen`** ⇒ 主页和选关的控件**永远进不了布局计划**
+  --   ⇒ 模拟器建树时压根没有 `home.select` 这些控件：点不到、也没法验证。
+  --   我为此查了半天"为什么点主页按钮没反应"，最后打印计划才发现控件不在里面。
+  local saved_screen = self.screen
   local vm0 = self.core:view()
   local first_id = vm0.tray[1] and vm0.tray[1].id
 
   local states = {
-    { name = "intro",             intro = 1,  modal = nil },
-    { name = "board",             intro = 99, modal = nil },
-    { name = "accuse_thief",      intro = 99, modal = { kind = "accuse_thief" } },
+    -- ★ 整屏状态排最前：编辑器/模拟器要按这份清单建控件
+    { name = "home",              intro = 99, modal = nil, screen = "home" },
+    { name = "select",            intro = 99, modal = nil, screen = "select" },
+    { name = "intro",             intro = 1,  modal = nil, screen = nil },
+    { name = "board",             intro = 99, modal = nil, screen = nil },
+    { name = "accuse_thief",      intro = 99, modal = { kind = "accuse_thief" }, screen = nil },
     { name = "accuse_accomplice", intro = 99,
-      modal = { kind = "accuse_accomplice", thief = first_id } },
+      modal = { kind = "accuse_accomplice", thief = first_id }, screen = nil },
     { name = "result",            intro = 99,
-      modal = { kind = "result", win = true, message = "（结果文案）" } },
-    { name = "share",             intro = 99, modal = { kind = "share", code = "（分享码）" } },
-    { name = "howto",             intro = 99, modal = { kind = "howto" } },
-    { name = "levelselect",       intro = 99, modal = { kind = "levelselect" } },
+      modal = { kind = "result", win = true, message = "（结果文案）" }, screen = nil },
+    { name = "share",             intro = 99,
+      modal = { kind = "share", code = "（分享码）" }, screen = nil },
+    { name = "howto",             intro = 99, modal = { kind = "howto" }, screen = nil },
+    { name = "levelselect",       intro = 99,
+      modal = { kind = "levelselect" }, screen = nil },
   }
 
   local order, byId = {}, {}
@@ -1469,6 +1480,7 @@ function Controller:layout_plan()
     local st = states[si]
     self.intro_page = st.intro
     self.modal = st.modal
+    self.screen = st.screen
     local nodes = self:build_layout()
     for i = 1, #nodes do
       local n = nodes[i]
@@ -1493,7 +1505,7 @@ function Controller:layout_plan()
     end
   end
 
-  self.intro_page, self.modal = saved_intro, saved_modal
+  self.intro_page, self.modal, self.screen = saved_intro, saved_modal, saved_screen
 
   -- 初始可见性：只有「开局就该看见」的控件才是可见的，其余交给脚本按状态开关。
   -- （脚本每次 render 都会把 visible 同步过去，所以这里留 false 最安全。）

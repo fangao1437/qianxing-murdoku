@@ -197,7 +197,11 @@ console.log('\n=== 棋盘区域的控件（"压在棋盘上"的候选）===');
       if (/^cell\./.test(nm) || nm === 'ruler' || /^ruler\./.test(nm)) continue;
       if (/\.(bg|label|face|text|note|x|obj)$/.test(nm)) continue;      // 子控件不算
       // 顶层分区容器不算（它们本来就铺满）
-      if (/^(root|topbar|toolbar|left|tray|clues|board|right|actions|intro|modal)$/.test(nm)) continue;
+      // ★ 2026-09-30：补上 `home` / `select` —— 主页与选关是**整屏结构容器**，
+      //   和 `intro`/`modal` 同一类，不是"压在棋盘上的多余控件"。
+      //   （它们应当在关卡里被脚本隐藏，但那属于"屏幕状态"的职责，
+      //     由下面独立的断言去查，不该混在这条几何检查里。）
+      if (/^(root|topbar|toolbar|left|tray|clues|board|right|actions|intro|modal|home|select)$/.test(nm)) continue;
       if (/容器|面板/.test(nm)) continue;   // 整屏根容器（模拟器给的中文名），本来就铺满
       if (!k.box || k.visible === false) continue;
       const cx = k.box.left + k.box.width / 2, cy = k.box.bottom + k.box.height / 2;

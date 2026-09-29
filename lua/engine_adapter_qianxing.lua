@@ -2273,15 +2273,22 @@ function Adapter:seal_container(id)
   local c = self:find(id)
   if c == nil then return false end
   local n = 0
+  -- ① 按键：**屏蔽**（这才是"把 2D 界面和 3D 角色隔开"的关键）
   if c.disableKeyEventPassthrough ~= nil then
     if pcall(function() c.disableKeyEventPassthrough = true end) then n = n + 1 end
   end
+  -- ② 点击：**必须放开（false）**！
+  --
+  --   ⚠️⚠️ 我第一版把这里也设成了 `true`，结果**主页上所有按钮都点不动**
+  --   （点了完全没反应，界面像卡死）。本项目 `open_click_passthrough` 的注释早就写明：
+  --       `disableCursorEventPassthrough = false` …… **否则点击到不了按钮**
+  --   "屏蔽区域内点击事件穿透"的语义是「**点击不再传给这个区域里的控件**」，
+  --   **不是**"挡住背后的 3D 世界"。对自己要用鼠标点的界面必须设 `false`，
+  --   否则等于把界面锁死。真正要挡的是**按键**落到 3D 角色身上 —— 那是 ① 的职责。
   if c.disableCursorEventPassthrough ~= nil then
-    if pcall(function() c.disableCursorEventPassthrough = true end) then n = n + 1 end
+    pcall(function() c.disableCursorEventPassthrough = false end)
   end
-  if c.isolateNavigation ~= nil then
-    pcall(function() c.isolateNavigation = true end)   -- 手柄导航隔离（社区资料少，待验）
-  end
+  -- ③ 手柄导航隔离：社区资料少，**先不动**（等真机验证过再开）。
   return n > 0
 end
 

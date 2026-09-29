@@ -139,6 +139,12 @@ function cloneSubtree(srcRec, parentRec, newName) {
   }
   setChildList(list, ids);
 
+  // ★ 把自己挂进父级的子列表 —— **必须用记录里的 `#504` 指到的那个父级**，
+  //   光在 JS 对象上设 `parentId` 是没用的（`readGil` 认的是 `#504`）。
+  //   漏了这一步的症状：建出来的控件记录存在，但**挂在原型下面**，
+  //   于是容器看起来"子控件是 bg/label"（那是原型的子控件）。
+  if (parentRec) addToChildList(parentRec, newId);
+
   return newRec;
 }
 
@@ -162,14 +168,21 @@ if (!protoBtn) { console.error('❌ 找不到按钮原型 action.undo'); process
 
 const built = [];
 function addContainer(name, x, y, w, h) {
-  const rec = cloneSubtree(protoBtn, null, name);   // 先用按钮克隆出骨架
-  // 换成"容器"该有的样子先不管类型 —— 类型字段由原型决定，这里只保证**有名字、有几何、有子列表**
-  rec.parentId = rootRec.id;
+  // ★★★ 2026-09-30：**父级必须传给 `cloneSubtree`**。
+  //
+  //   同一个坑我踩了两次：
+  //     · 传 `null` ⇒ 记录里的 `#504`（**真正的父级引用**）不会被改写，
+  //       副本仍指向原型的父级（`toolbar`）⇒ **编辑器按 `#504` 建树，看不到这个控件**
+  //       —— 用户反馈"完整界面33 里没有 home 和 select"就是这个原因；
+  //       而我只手工把它加进了 `root` 的**子列表** ⇒ 两套数据不一致。
+  //     · 传 `rootRec` ⇒ `#504` 改写 + 自动挂进 root 的子列表，一步到位。
+  //   ⇒ 教训：**「子列表」和「#504」是两套数据，必须同时正确**，缺一个编辑器就看不到。
+  const rec = cloneSubtree(protoBtn, rootRec, name);
   setGeom(rec.field.sub, x, y, w, h);
   setPos(rec.field.sub, x + w / 2, y + h / 2);
+  // 容器不需要原型带来的 bg/label（那是按钮的子控件）⇒ 清空
   const cl = ensureChildList(rec);
   setChildList(cl, []);
-  rootRec.field.sub && addToChildList(rootRec, rec.id);
   built.push({ name, what: 'container' });
   return rec;
 }
@@ -183,7 +196,7 @@ function addToChildList(rec, id) {
 // 主页
 const HOME_X = 730, HOME_W = 460, HOME_H = 88;
 const home = addContainer('home', 0, 0, 1920, 1080);
-const homeTitle = cloneSubtree(protoBtn, null, 'home.title');
+const homeTitle = cloneSubtree(protoBtn, home, 'home.title');
 homeTitle.parentId = home.id;
 setGeom(homeTitle.field.sub, 460, 140, 1000, 110);
 setPos(homeTitle.field.sub, 960, 195);
@@ -197,22 +210,22 @@ const HOME_ROWS = [
   ['home.bag',      '背包',           720],
 ];
 for (const [id, , y] of HOME_ROWS) {
-  const b = cloneSubtree(protoBtn, null, id);
+  const b = cloneSubtree(protoBtn, home, id);
   b.parentId = home.id;
   setGeom(b.field.sub, HOME_X, y, HOME_W, HOME_H);
   setPos(b.field.sub, HOME_X + HOME_W / 2, y + HOME_H / 2);
-  addToChildList(home, b.id);
+  // （挂父级已由 cloneSubtree 负责）
   built.push({ name: id, what: 'button' });
 }
 
 // 选关界面
 const sel = addContainer('select', 0, 0, 1920, 1080);
-const selTitle = cloneSubtree(protoBtn, null, 'select.title');
+const selTitle = cloneSubtree(protoBtn, sel, 'select.title');
 selTitle.parentId = sel.id;
 setGeom(selTitle.field.sub, 460, 80, 1000, 90);
 setPos(selTitle.field.sub, 960, 125);
 addToChildList(sel, selTitle.id);
-const selBack = cloneSubtree(protoBtn, null, 'select.back');
+const selBack = cloneSubtree(protoBtn, sel, 'select.back');
 selBack.parentId = sel.id;
 setGeom(selBack.field.sub, 120, 950, 260, 80);
 setPos(selBack.field.sub, 250, 990);
@@ -222,11 +235,11 @@ const CARD_W = 380, CARD_H = 200, CGAP = 40, CX0 = 160, CY0 = 240;
 for (let i = 1; i <= 8; i++) {
   const col = (i - 1) % 4, row = Math.floor((i - 1) / 4);
   const x = CX0 + col * (CARD_W + CGAP), y = CY0 + row * (CARD_H + CGAP);
-  const c = cloneSubtree(protoBtn, null, 'select.card.' + i);
+  const c = cloneSubtree(protoBtn, sel, 'select.card.' + i);
   c.parentId = sel.id;
   setGeom(c.field.sub, x, y, CARD_W, CARD_H);
   setPos(c.field.sub, x + CARD_W / 2, y + CARD_H / 2);
-  addToChildList(sel, c.id);
+  // （挂父级已由 cloneSubtree 负责）
   built.push({ name: 'select.card.' + i, what: 'card' });
 }
 

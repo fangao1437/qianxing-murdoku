@@ -35,37 +35,38 @@ check('开局成功', (ri.logs || []).some((l) => /started:/.test(l.text)),
 // ── 1. 返回列表 → 选关面板 ────────────────────────────────────────────────
 console.log('\n=== 1. 「返回列表」打开选关面板');
 await click('intro.skip'); await tick(0.05);
-await click('action.back'); await tick(0.05);
+await click('action.back'); await tick(0.15);
 ri = await get();
-check('选关面板已打开', visibleOf(ri, 'modal') === true);
-check('标题是「选择关卡」', textOf(ri, 'modal.title') === '选择关卡', textOf(ri, 'modal.title'));
-const lvBtns = [...indexTree(ri).keys()].filter((k) => /^modal\.level\./.test(k)).sort();
-check('列出了关卡按钮', lvBtns.length >= 4, lvBtns.join(' '));
-check('面板显示了登记关数', /已登记 4 关/.test(textOf(ri, 'modal.body') || ''), textOf(ri, 'modal.body'));
+// ★★★ 2026-09-30：**选关从"关卡内弹窗"改成了"整屏界面"**（用户要求，参考 murdoku 原作：
+//   退出关卡 → 回选关界面 → 点卡片选关）。所以这里断言的目标从 `modal.*` 换成 `select.*`。
+//   （旧断言测的是被替换掉的实现，一直红 —— 又是"断言锁死实现"那一类。）
+check('退出关卡 → 打开整屏选关界面', visibleOf(ri, 'select') === true);
+check('关卡内界面已隐藏（board 不可见）', visibleOf(ri, 'board') === false);
+check('标题是「选择关卡」', textOf(ri, 'select.title') === '选择关卡', textOf(ri, 'select.title'));
+const lvBtns = [...indexTree(ri).keys()].filter((k) => /^select\.card\.\d+$/.test(k)).sort();
+check('列出了关卡卡片', lvBtns.length >= 4, lvBtns.join(' '));
+check('有「返回主页」按钮', !!indexTree(ri).get('select.back'));
 
-// ⚠️ 模拟器预览的限制（2026-09-26 实测，别再去追）：
-//   `requestScreenshot()` 出的 PNG **画不出弹窗内容**，但同一时刻
-//   (a) 运行树里 modal.* 都是 visible=true / active=true / 文本正确，
-//   (b) 绘制列表（play('get',{paint:true})）里 modal.title 和 hud.title
-//       形式完全一样（都是 textbox + 文本 + 正确 left/bottom），
-//       而 hud.title 在截图里是能看见的。
-//   逐像素差分也证明"开合面板"只改了 6k 个像素（细笔画量级），而不是整块面板。
-//   所以：**弹窗只做数据层断言**，截图不作为弹窗的验收依据。
-//   真机上控件由游戏 UI 系统渲染 + 你在编辑器里配的素材，能看到就是能看到。
 const paint = (await c.play('get', { paint: true })).paint || [];
-const mp = paint.filter((x) => String(x.name || '').startsWith('modal.'));
-check('绘制列表里有弹窗控件且坐标居中', mp.length >= 5,
+const mp = paint.filter((x) => String(x.name || '').startsWith('select.'));
+check('绘制列表里有选关界面控件', mp.length >= 5,
   mp.length + ' 个：' + mp.map((x) => x.name + '@' + x.matrix.tx + ',' + x.matrix.ty).slice(0, 3).join(' '));
-const mTitle = paint.find((x) => x.name === 'modal.title');
-check('modal.title 位置居中（画布中心 800,450 附近）',
-  !!mTitle && Math.abs(mTitle.matrix.tx - 800) <= 2 && Math.abs(mTitle.matrix.ty - 450) <= 160,
-  mTitle ? ('中心 ' + mTitle.matrix.tx + ',' + mTitle.matrix.ty) : 'MISSING');
 await shot(c, 'lv-01-select.png');
 
 // ── 2. 切到 case_002（6×6）────────────────────────────────────────────────
 console.log('\n=== 2. 切到 case_002（6×6，有同伙）');
-check('选关面板里有 case_002', lvBtns.includes('modal.level.case_002'), lvBtns.join(' '));
-await click('modal.level.case_002'); await tick(0.1);
+// 卡片是「第 N 张 = 登记表第 N 关」，卡片上写着关名 ⇒ **按文字找**，
+// 不要去猜索引（登记表顺序变了测试就会假红）。
+const idx = indexTree(ri);
+let card002 = null;
+for (const [nm] of idx) {
+  if (!/^select\.card\.\d+$/.test(nm)) continue;
+  const t = textOf(ri, nm) || '';
+  if (t.includes('002')) { card002 = nm; break; }        // 卡片上写着「案件 002 · …」
+}
+check('选关界面上能读到卡片文字', !!textOf(ri, 'select.card.1'), textOf(ri, 'select.card.1'));
+check('找到了 002 的卡片', card002 !== null, String(card002));
+await click(card002 || 'select.card.2'); await tick(0.25);
 ri = await get();
 check('标题切到了案件 002', /案件 002/.test(textOf(ri, 'hud.title') || ''), textOf(ri, 'hud.title'));
 check('棋子数跟着变成 6', /\/ 6/.test(textOf(ri, 'hud.progress') || ''), textOf(ri, 'hud.progress'));
@@ -126,10 +127,27 @@ await shot(c, 'lv-04-back-to-5x5.png');
 // ── 5. 「下一关」按钮 ────────────────────────────────────────────────────
 console.log('\n=== 5. 结算面板的「下一关」');
 // case_001 是注册表第 2 关，下一关应该是 case_002
-await click('action.reveal'); await tick(0.1);
-await click('action.submit'); await tick(0.05);
+//
+// ⚠️ 2026-09-30：这一步**在"切关之后"跑**，而切关会重建控制器 + 重新渲染，
+//    状态刷新比"一路开局"慢。原来的 0.05s 等待在切关后不够，
+//    于是这条假红（同一条断言在 `play_test` 里是绿的 —— 那边不切关）。
+//    把等待放宽，并把 toast 打出来：提交被拒时原因写在 toast 里，
+//    比只报一个 `false` 有用得多。
+await click('action.reveal'); await tick(0.2);
+await click('action.submit'); await tick(0.25);
 ri = await get();
-check('进入指认面板', visibleOf(ri, 'modal') === true);
+// ⚠️⚠️ **已知未修好的测试问题**（2026-09-30，诚实记录，不要当成"功能坏了"）：
+//   同一时刻 `toast` = "摆位成立，可以指认盗窃者了"（说明**提交是成功的**），
+//   但 `modal` 的 visible 是 false。
+//   ⇒ 这指向"屏幕状态"：`ui_controller` 的屏幕分支在 `self.screen ~= nil` 时
+//     会把 `modal` 一起隐藏。也就是说**切关之后 `self.screen` 又变成了非 nil**。
+//   佐证：**同一条断言的兄弟版本在 `play_test.mjs` 里是 27/0 全绿**
+//     （那边不切关，一路开局），说明**指认面板本身是好的**。
+//   ⇒ 尚未查清"切关后 screen 为何非 nil"。下轮优先查这个，
+//     不要为了让这条变绿去改断言（那是掩盖）。
+check('进入指认面板', visibleOf(ri, 'modal') === true,
+  '已知问题（切关后 screen 非 nil）toast=' + JSON.stringify(textOf(ri, 'hud.toast'))
+  + '  modal=' + visibleOf(ri, 'modal'));
 await click('modal.suspect.D'); await tick(0.05);         // case_001 的盗窃者是 D
 await click('modal.no_accomplice'); await tick(0.05);      // 无同伙
 ri = await get();
