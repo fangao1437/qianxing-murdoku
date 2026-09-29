@@ -14,7 +14,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { makeController, loadPlan, buildProject, indexTree, textOf, childOf, childText, visibleOf, dumpJson, shot, WORKSPACE, OUT } from './kit.mjs';
+import { makeController, loadPlan, buildProject, indexTree, textOf, childOf, childText, visibleOf, dumpJson, shot, WORKSPACE, OUT , enterLevel} from './kit.mjs';
 
 const LUA_FILE = process.argv[2] || path.join(WORKSPACE, 'dist', 'client_script.lua');
 const plan = loadPlan();
@@ -43,7 +43,7 @@ const check = (label, cond, detail) => {
 
 // ── 1. 启动 ───────────────────────────────────────────────────────────────
 console.log('\n=== 1. 试玩启动');
-await c.play('start', {});
+await c.play('start', {}); await enterLevel(c, tick);
 await tick(0.05);
 let ri = await get();
 dumpJson('t01-start.json', ri);
@@ -204,7 +204,7 @@ console.log('\n=== 6. X 标记（单击空格直接切 ✗，不再需要工具�
 //   而"选中人物时单击空格"是**预放置**、不是 ✗。
 //   ⇒ 不再去猜当前选中态（试过按缩放找选中卡片，不可靠），
 //     直接**重启本关**拿到干净状态再验证 —— 断言不该依赖上文残留的隐式状态。
-await c.play('start', {}); await tick(0.2);
+await c.play('start', {}); await enterLevel(c, tick); await tick(0.2);
 ri = await get();
 await click('cell.4.4'); await tick(0.05);
 ri = await get();

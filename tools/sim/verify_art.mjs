@@ -9,7 +9,7 @@
 // 运行：node tools/sim/verify_art.mjs [lua文件]
 
 import path from 'node:path';
-import { makeController, loadPlan, buildProject, indexTree, textOf, childOf, childText, WORKSPACE } from './kit.mjs';
+import { makeController, loadPlan, buildProject, indexTree, textOf, childOf, childText, WORKSPACE , enterLevel} from './kit.mjs';
 
 const LUA_FILE = process.argv[2] || path.join(WORKSPACE, 'dist', 'client_script.lua');
 const plan = loadPlan();
@@ -29,7 +29,7 @@ const check = (label, cond, detail) => {
 // 开机：跳过教程，进入棋盘
 // ⚠️ 必须先 `play('start')` —— 建树只是把工程建进画布，
 //    不 start 的话所有 `play('step')` 都会报 `play session has not started`。
-await c.play('start', {});
+await c.play('start', {}); await enterLevel(c, tick);
 await tick(0.1);
 await click('intro.skip');
 await tick(0.1);

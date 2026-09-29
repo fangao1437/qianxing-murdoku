@@ -103,10 +103,24 @@ function Murdoku.start(level_id, opts)
     return ok
   end
 
+  -- ★★★ 2026-09-29：**屏幕状态**（"home" 主页 / "select" 选关 / nil = 在关卡里）
+  --
+  --   ⚠️⚠️ 这一轮最大的教训，写在这里免得以后再犯：
+  --     **官方生命周期 `OnStart()` 不接受参数**，入口是自己造 opts 表的
+  --     （见 `entry_client_script.lua` 的 `Murdoku.on_start(FORCE_LEVEL, {...})`）。
+  --     所以我最初想"让测试/调用方传 `start_in_level` 压过主页"是**完全无效的** ——
+  --     参数根本到不了这里。表现是：模拟器里所有关卡内测试都被送进主页，
+  --     而主页分支会连 `modal` 一起藏 ⇒ 症状伪装成"提交后不弹指认面板"，
+  --     我为此改了三轮（`and/or` 陷阱、默认值、优先级）全是白费功夫。
+  --   ⇒ **不要把力气花在"绕过主页"上，而是让测试真的走一遍主页流程**
+  --     （`tools/sim/kit.mjs` 的 `enterLevel()`）。
+  local want_screen = nil
+  if opts.screen ~= nil then want_screen = opts.screen end
   controller = UIC.new(core, {
     debug = opts.debug,
     skip_intro = opts.skip_intro,
     levels = level_list,
+    screen = want_screen,
     -- 选关：直接从面板跳过去
     on_pick_level = function(id)
       if id ~= level.id then start_other(id) end

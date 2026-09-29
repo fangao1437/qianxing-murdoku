@@ -16,7 +16,7 @@
 // 用法：node tools/sim/probe_input.mjs
 
 import path from 'node:path';
-import { makeController, loadPlan, buildProject, indexTree, textOf, childText, WORKSPACE } from './kit.mjs';
+import { makeController, loadPlan, buildProject, indexTree, textOf, childText, WORKSPACE , enterLevel} from './kit.mjs';
 
 const plan = loadPlan();
 const c = await makeController();
@@ -41,7 +41,7 @@ const check = (label, cond, detail) => {
   else { fail++; console.log('  ✗ ' + label + (detail ? '   [' + detail + ']' : '')); }
 };
 
-await c.play('start', {});
+await c.play('start', {}); await enterLevel(c, tick);
 await tick(0.05);
 await click('intro.skip');
 await tick(0.05);

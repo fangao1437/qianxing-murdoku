@@ -273,3 +273,15 @@ export async function shot(c, file) {
   fs.writeFileSync(out, Buffer.from(data, 'base64'));
   return out;
 }
+
+// ★★★ 2026-09-29：**从主页走进第一关**（测试用）。
+//
+// 为什么需要：游戏现在开机进**主页**（用户要求的流程），
+// 而 `OnStart()` 是官方生命周期、**不接受参数** ——
+// 所以"从外面传个 flag 跳过主页"是做不到的（我为此白改了三轮）。
+// ⇒ 正确做法就是**真的走一遍主页流程**：点「选关」→ 点第 1 张卡片。
+// 顺带把新流程本身测了。
+export async function enterLevel(c, tick = async (dt) => { await c.play('step', { dt }); }, card = 1) {
+  await c.play('click', { name: 'home.select' }); await tick(0.1);
+  await c.play('click', { name: 'select.card.' + card }); await tick(0.2);
+}

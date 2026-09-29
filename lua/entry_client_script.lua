@@ -510,9 +510,23 @@ function OnStart()
   bind_keyboard_once("OnStart")
 
   -- 钉死了关卡就**不要**恢复存档（存档是别的关的，读进来会串味）
+  --
+  -- ★★★ 2026-09-29：**开局进主页**（用户要求的主页选关流程）。
+  --
+  --   ⚠️ 必须用显式 if 算，**不能用 `and/or` 三元式**：
+  --     我写过 `FORCE_LEVEL and nil or "home"` —— Lua 里 `x and nil` 恒为 nil，
+  --     于是 `nil or "home"` 永远是 "home"，条件等于没写。
+  --     凡"某个分支是 nil/false"，就必须写成 if。
+  --
+  --   ⚠️ 另一个大教训：**`OnStart()` 不接受参数**，入口自己造 opts 表 ——
+  --     所以"从外面传个 flag 绕过主页"是做不到的。测试请走主页流程
+  --     （`tools/sim/kit.mjs` 的 `enterLevel()`）；钉死关卡（测试模式）则直接进关。
+  local start_screen = "home"
+  if FORCE_LEVEL ~= nil then start_screen = nil end
   local self = Murdoku.on_start(FORCE_LEVEL, {
     adapter      = adapter,
     restore_save = (FORCE_LEVEL == nil),
+    screen       = start_screen,
   })
   if self then
     started = true
@@ -544,9 +558,17 @@ function OnUpdate(dt)
         if probe_or_dump(false) then
           -- 控件树就绪了 → 补绑键盘（OnInit 时绑不上，那时树是空的）
           bind_keyboard_once("重试")
+          -- 与 OnStart 那条保持一致。
+          -- ⚠️ 写成显式 if —— 我在这里第一次就是顺手写成
+          --    `(FORCE_LEVEL ~= nil) and nil or "home"`，
+          --    而 `x and nil` 恒为 nil ⇒ 永远落到 "home"，{==} 我又踩了同一个坑 {==}。
+          --    所以：**只要三元式里有一个分支是 nil/false，就必须写 if**。
+          local retry_screen = "home"
+          if FORCE_LEVEL ~= nil then retry_screen = nil end
           local self = Murdoku.on_start(FORCE_LEVEL, {
             adapter = adapter,
             restore_save = (FORCE_LEVEL == nil),
+            screen = retry_screen,
           })
           if self then
             started = true

@@ -68,6 +68,9 @@ end
 --   用户确认这三个动作都有更直接的入口（双击/长按=放置、单击=✗、单击已放置格=拿起）
 --   ⇒ **默认关闭**。留这个开关，是为了以后给移动端补按钮时不用重写布局。
 M.SHOW_TOOL_BUTTONS = false
+
+-- 主页标题（文字**存不进 .gil**，只能脚本写 —— 见《工作约定》）
+M.HOME_TITLE = "侦探推理 · 摆位谜题"
 M.LAYOUT = {
   topbar = { x = 0, y = 0, w = 1920, h = 104 },
   title  = { x = 32, y = 18, w = 520, h = 50 },
@@ -164,6 +167,10 @@ function M.new(core, opts)
   self.dirty = true
   self.toast = nil
   self.modal = nil          -- nil | {kind="accuse"} | {kind="result",win=bool,message=} | {kind="howto"} | {kind="intro",page=n}
+  -- ★★★ 2026-09-29：屏幕状态（"home" 主页 / "select" 选关 / nil = 在关卡里）。
+  --   与 `modal` 的区别：modal 是"浮在关卡上的弹窗"，屏幕是**整屏**的。
+  --   控件已在 .gil 里（tools/gil/gen_home.mjs），脚本只切 visible + 写文字。
+  self.screen = opts.screen
   self.intro_page = opts.skip_intro and (#M.INTRO + 1) or 1
   self.share_code = nil
   self._created = {}
@@ -751,8 +758,34 @@ function Controller:on_input(event)
   elseif a == "pick_level" then
     if self.opts.on_pick_level then
       self.modal = nil
+      self.screen = nil              -- ★ 点卡片 = 离开选关、进入关卡
       self.opts.on_pick_level(event.id)
     end
+
+  -- ★★★ 2026-09-29 新增：主页四键 + 整屏切换（用户要求的布局与流程）
+  elseif a == "home" then
+    self.screen = "home"; self.modal = nil; self.dirty = true
+
+  elseif a == "levelselect" then
+    self.screen = "select"; self.modal = nil; self.dirty = true
+
+  elseif a == "continue" then
+    -- 「从存档点开始」= 接续**最近游玩记录**（由 main.lua 提供，取不到就老实说）
+    local last = self.opts.last_level and self.opts.last_level() or nil
+    if last and self.opts.on_pick_level then
+      self.screen = nil
+      self.opts.on_pick_level(last)
+    else
+      self.toast = "还没有游玩记录，先从「选关」开始吧"
+      self.screen = "select"
+    end
+    self.dirty = true
+
+  elseif a == "shop" or a == "bag" then
+    -- 占位：具体内容等美术资源齐全后再设计（用户原话）。
+    -- 给一句明确反馈，免得玩家以为按钮坏了。
+    self.toast = (a == "shop") and "商城：美术资源就绪后开放" or "背包：美术资源就绪后开放"
+    self.dirty = true
 
   elseif a == "focus_clue" then
     -- 线索卡：点一下聚焦、再点取消。
@@ -765,17 +798,27 @@ function Controller:on_input(event)
     -- 做缩放反馈，未知样式是静默忽略的。这里复用已有的 CLUE_IN 特效，不引入新资产。
     local ci = event.index
     if ci ~= nil then
-      self.focused_clue = (self.focused_clue == ci) and nil or ci
+      -- ★★ 2026-09-29 修（被"扫 `and nil or`"扫出来的真 bug）：
+      --   原文是 `self.focused_clue = (self.focused_clue == ci) and nil or ci`
+      --   —— Lua 里 `x and nil` **恒为 nil**，于是永远落到 `or ci`，
+      --   结果 `focused_clue` **永远是 ci，再点一次永远取消不掉聚焦**。
+      --   （和我在入口刚踩的那个是同一个坑；写成显式 if 就不会有这个问题。）
+      if self.focused_clue == ci then
+        self.focused_clue = nil       -- 再点一次 = 取消聚焦
+      else
+        self.focused_clue = ci
+      end
       self:fx("clue." .. tostring(ci), M.EFFECTS.CLUE_IN)
     end
 
   elseif a == "back" then
-    -- 「返回列表」= 打开选关面板；没有 on_back 时退化成打开选关，行为一致
-    if self.opts.on_back then
-      self.opts.on_back()
-    else
-      self.modal = { kind = "levelselect" }
-    end
+    -- ★★★ 2026-09-29（用户要求，参考 murdoku 原作）：
+    --   **退出关卡 → 回到选关界面**（不是回主页）。
+    --   原作循环是"选关 → 关卡 → 退出 → 选关"，连玩几关不用每次绕主页。
+    self.screen = "select"
+    self.modal = nil
+    self.dirty = true
+    if self.opts.on_back then self.opts.on_back() end
 
   elseif a == "next_level" and self.opts.on_next_level then
     self.opts.on_next_level()
@@ -1303,6 +1346,80 @@ function Controller:build_layout()
     end
   end
 
+  -- ★★★ 2026-09-29：**主页 / 选关的整屏切换**。
+  --
+  --   ⚠️ 两个容器**每一帧都要显式给可见性**，不能只在 `screen ~= nil` 时处理 ——
+  --      我第一版在"进入关卡"（screen == nil）时直接 return 了，
+  --      于是主页/选关控件**留在关卡画面上**（美术检查报"棋盘区域有 1 个多余控件"）。
+  --      原因：这两个容器在 `.gil` 里默认是可见的（要给编辑器里能看见、能调），
+  --      所以**运行时必须由脚本负责关掉**。
+  local FULL = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height }
+  push({ id = "home", kind = "container", parent = "root", rect = FULL,
+         visible = (self.screen == "home") })
+  push({ id = "select", kind = "container", parent = "root", rect = FULL,
+         visible = (self.screen == "select") })
+
+  if self.screen ~= nil then
+    local HIDE = { topbar = true, toolbar = true, left = true, board = true, right = true,
+                   toast = true, modal = true, intro = true, ["action.back"] = true }
+    for i = 1, #nodes do
+      if HIDE[nodes[i].id] then nodes[i].visible = false end
+    end
+    local FULL = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height }
+    push({ id = "home", kind = "container", parent = "root", rect = FULL,
+           visible = (self.screen == "home") })
+    push({ id = "select", kind = "container", parent = "root", rect = FULL,
+           visible = (self.screen == "select") })
+    if self.screen == "home" then
+      push({ id = "home.title", kind = "text", parent = "home", visible = true, text = M.HOME_TITLE,
+             rect = { x = 460, y = 140, w = 1000, h = 110 } })
+      -- 中列四键。用户要求：原左边的「选关」挪到**中列最上**，原位置（左下角）留空。
+      local HOME_BTNS = {
+        { "home.select",   "选关",         "levelselect", 360 },
+        { "home.continue", "从存档点开始", "continue",    480 },
+        { "home.shop",     "商城",         "shop",        600 },
+        { "home.bag",      "背包",         "bag",         720 },
+      }
+      for i = 1, #HOME_BTNS do
+        local b = HOME_BTNS[i]
+        push({ id = b[1], kind = "button", parent = "home", visible = true,
+               rect = { x = 730, y = b[4], w = 460, h = 88 },
+               text = b[2], event = { action = b[3] } })
+      end
+    elseif self.screen == "select" then
+      push({ id = "select.title", kind = "text", parent = "select", visible = true, text = "选择关卡",
+             rect = { x = 460, y = 80, w = 1000, h = 90 } })
+      push({ id = "select.back", kind = "button", parent = "select", visible = true,
+             rect = { x = 120, y = 950, w = 260, h = 80 },
+             text = "返回主页", event = { action = "home" } })
+      -- ⚠️⚠️ `opts.levels` 在 main.lua 里传的是**表**（`levels = level_list`），不是函数！
+      --   我第一版写成 `self.opts.levels()` ⇒ `attempt to call a table value (field 'levels')`
+      --   ⇒ **build_layout 直接抛错、整个渲染崩掉**，
+      --   表现成"主页激活时画不出东西 / 提交后不弹指认面板"。
+      --   我为此查了三轮（`and/or` 陷阱、屏幕默认值、优先级），**全是白费** ——
+      --   真正的错误信息一直在运行日志里，我没去看。
+      --   ⇒ 教训：**改完先看运行时报错，再谈推断**。
+      local list = {}
+      local lv = self.opts.levels
+      if type(lv) == "function" then list = lv() or {}
+      elseif type(lv) == "table" then list = lv end
+      for i = 1, 8 do
+        local it = list[i]
+        local r = { x = 160 + ((i - 1) % 4) * 420, y = 240 + math.floor((i - 1) / 4) * 240,
+                    w = 380, h = 200 }
+        if it ~= nil then
+          push({ id = "select.card." .. i, kind = "button", parent = "select", visible = true,
+                 rect = r, text = self:level_card_text(it),
+                 event = { action = "pick_level", id = it.id } })
+        else
+          push({ id = "select.card." .. i, kind = "button", parent = "select", visible = false,
+                 rect = r })
+        end
+      end
+    end
+    return nodes
+  end
+
   return nodes
 end
 
@@ -1316,6 +1433,19 @@ end
 --   的控件只在对应状态下才出现在 build_layout() 里。如果只按开局那一屏生成，
 --   编辑器里就会缺 modal.* / intro.* —— 脚本运行时按名字找不到，面板永远出不来。
 -- ────────────────────────────────────────────────────────────────────────
+-- 关卡卡片文字（murdoku 原作那种：关名 + 进度）。
+-- ⚠️ 文字存不进 .gil，只能脚本写；进度拿不到就只显示关名 —— **不编数据**。
+function Controller:level_card_text(it)
+  local name = tostring(it.name or it.id)
+  local p = self.opts.progress and self.opts.progress(it.id) or nil
+  if type(p) ~= "table" then return name end
+  local mark = "未开始"
+  if p.cleared then mark = "★ 已破案"
+  elseif p.started then mark = "· 进行中" end
+  if type(p.best) == "string" and p.best ~= "" then mark = mark .. "　" .. p.best end
+  return name .. "\n" .. mark
+end
+
 function Controller:layout_plan()
   local saved_intro, saved_modal = self.intro_page, self.modal
   local vm0 = self.core:view()
