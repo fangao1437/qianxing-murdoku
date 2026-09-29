@@ -1,0 +1,258 @@
+// tools/gil/gen_home.mjs —— 在存档里**直接建出主页与选关界面的控件**
+//
+// 为什么走这条路（而不是让脚本创建）：
+//   见 `docs/工作约定-优先直改控件.md` —— 加控件/改几何这类事直改 `.gil` 一步到位，
+//   走脚本要经过"创建→找控件→设属性→每帧维持"，环节多、易错。
+//   脚本只负责**运行时才成立**的东西：文字内容、显隐、进度。
+//
+// 建出来的东西（设计坐标 1920×1080）：
+//   home   容器（整屏）
+//     home.title        标题
+//     home.select       选关        ← 用户要求：原左下角的「选关」挪到中列**最上**
+//     home.continue     从存档点开始
+//     home.shop         商城（占位）
+//     home.bag          背包（占位）
+//     （左下角原来放「选关」的位置**留空** —— 用户明确要求）
+//   select 容器（整屏）
+//     select.title / select.back
+//     select.card.1 … select.card.8   关卡卡片网格 4×2（murdoku 原作那种卡片选关）
+//
+// 用法：
+//   node tools/gil/gen_home.mjs --in=完整界面30.gil --out=完整界面31.gil
+//
+// ⚠️ 克隆是**递归**的：按钮自带 `bg` / `label` 子控件，必须连子控件一起复制并换 ID，
+//    否则副本的子列表还指着原型的子控件（两个按钮共用一张底图/一个文本框）。
+
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import {
+  readGil, encodeMsg, cloneField, setPair, pairOf, stateBlocks,
+  findChildList, setChildList, asIdList, writeVarint,
+} from './gilread.mjs';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const argv = process.argv.slice(2);
+const argOf = (k) => { const a = argv.find((s) => s.startsWith('--' + k + '=')); return a ? a.slice(k.length + 3) : null; };
+const IN = argOf('in') || path.join(ROOT, '完整界面30.gil');
+const OUT = argOf('out') || path.join(ROOT, '完整界面31.gil');
+
+const g = readGil(IN);
+const byId = new Map(g.recs.map((r) => [r.id, r]));
+let nextId = g.maxId + 1;
+
+// ── 几何 ──────────────────────────────────────────────────────────────────
+// `rect` 是设计坐标**左上原点**；记录里存两对浮点（位置 / 尺寸）。
+// 注意：这里写的是**编辑器里的控件几何**，脚本的 `respect_editor_rect` 会尊重它。
+function setGeom(fields, x, y, w, h) {
+  const pairs = [];
+  (function walk(fs2) {
+    for (const f of fs2) {
+      if (f.wt === 5) {                       // 两浮点对
+        pairs.push(f);
+        continue;
+      }
+      if (f.sub) walk(f.sub);
+    }
+  })(fields);
+  // 记录里通常有多组两浮点对：按约定 第 1 对 = 中心偏移，第 2 对 = 宽高
+  // （gen_btn_art.mjs 用的是同一个约定：`setPair(pairOf(block,505), w, h)`）
+  const blocks = stateBlocks(fields, []);
+  for (const b of blocks) {
+    const p = pairOf(b, 505);
+    if (p) setPair(p, w, h);
+  }
+  return pairs.length;
+}
+
+function setPos(fields, x, y) {
+  const blocks = stateBlocks(fields, []);
+  for (const b of blocks) {
+    const p = pairOf(b, 504);
+    if (p) setPair(p, x, y);
+  }
+}
+
+function findBlocks(fields) { return stateBlocks(fields, []); }
+
+// ── 递归克隆 ──────────────────────────────────────────────────────────────
+// 返回新记录（已挂进 tree），并把它加进 `parentRec` 的子列表。
+function cloneSubtree(srcRec, parentRec, newName) {
+  const clone = cloneField(srcRec.field);
+  const oldId = srcRec.id;
+  const newId = nextId++;
+
+  // ① 记录自己的 ID（引用它的地方全换掉）
+  (function fixId(fs2) {
+    for (const f of fs2) {
+      if (f.wt === 0 && Number(f.num) === oldId) f.num = BigInt(newId);
+      if (f.payload && f.len > 0) {
+        const ids = asIdList(f.payload, true);
+        if (ids && ids.length === 1 && ids[0] === oldId) { f.payload = writeVarint(newId); f.len = f.payload.length; }
+      }
+      if (f.sub) fixId(f.sub);
+    }
+  })(clone.sub);
+
+  // ② 名字
+  if (newName) {
+    (function putName(fs2) {
+      for (const f of fs2) {
+        if (f.wt === 2 && f.isText && f.payload && f.payload.toString('utf8') === srcRec.name) {
+          f.payload = Buffer.from(newName, 'utf8'); f.len = f.payload.length; return true;
+        }
+        if (f.sub && putName(f.sub)) return true;
+      }
+      return false;
+    })(clone.sub);
+  }
+
+  // ②b ★★ **父级字段要改**（踩过的坑）：
+  //   只改 JS 侧的 `parentId` 是没用的 —— 记录里的 `#504` 才是真正的父级引用，
+  //   不改的话副本仍挂在原型下面。我第一次跑出来"按钮子控件为空"就是这个原因：
+  //   克隆出的 bg/label 认的还是 `action.undo`，不是新按钮。
+  if (parentRec) {
+    (function fixParent(fs2) {
+      for (const f of fs2) {
+        if (f.wt === 0 && f.field === 504) { f.num = BigInt(parentRec.id); return true; }
+      }
+      return false;
+    })(clone.sub);
+  }
+
+  // ③ 递归克隆子控件（关键：否则副本和原型共用子控件）
+  const kids = g.recs.filter((r) => r.parentId === srcRec.id);
+  const cl = findChildList(clone.sub, true);
+  if (cl) setChildList(cl, []);
+
+  const newRec = {
+    id: newId, name: newName || srcRec.name, parentId: parentRec ? parentRec.id : srcRec.parentId,
+    field: clone, holder: null, index: -1,
+  };
+  byId.set(newId, newRec);
+
+  const list = ensureChildList(newRec);
+  const ids = [];
+  for (const k of kids) {
+    const kc = cloneSubtree(k, newRec, null);
+    ids.push(kc.id);
+  }
+  setChildList(list, ids);
+
+  return newRec;
+}
+
+function ensureChildList(rec) {
+  let l = findChildList(rec.field.sub, true);
+  if (!l) {
+    // 空列表 = 字段不存在 → 新建
+    const src = g.recs.map((r) => findChildList(r.field.sub, true)).find(Boolean);
+    const f = src ? cloneField({ field: src.field, wt: 2, sub: null, num: 0n, payload: Buffer.alloc(0), len: 0, isText: false })
+                  : null;
+    if (f) { rec.field.sub.push(f); l = findChildList(rec.field.sub, true); }
+  }
+  return l;
+}
+
+// ── 建树 ──────────────────────────────────────────────────────────────────
+const rootRec = g.byName.get('root');
+if (!rootRec) { console.error('❌ 找不到 root'); process.exit(3); }
+const protoBtn = g.byName.get('action.undo') || g.byName.get('action.hint');
+if (!protoBtn) { console.error('❌ 找不到按钮原型 action.undo'); process.exit(3); }
+
+const built = [];
+function addContainer(name, x, y, w, h) {
+  const rec = cloneSubtree(protoBtn, null, name);   // 先用按钮克隆出骨架
+  // 换成"容器"该有的样子先不管类型 —— 类型字段由原型决定，这里只保证**有名字、有几何、有子列表**
+  rec.parentId = rootRec.id;
+  setGeom(rec.field.sub, x, y, w, h);
+  setPos(rec.field.sub, x + w / 2, y + h / 2);
+  const cl = ensureChildList(rec);
+  setChildList(cl, []);
+  rootRec.field.sub && addToChildList(rootRec, rec.id);
+  built.push({ name, what: 'container' });
+  return rec;
+}
+function addToChildList(rec, id) {
+  const l = ensureChildList(rec);
+  const cur = asIdList(l.payload, true) || [];
+  if (!cur.includes(id)) cur.push(id);
+  setChildList(l, cur);
+}
+
+// 主页
+const HOME_X = 730, HOME_W = 460, HOME_H = 88;
+const home = addContainer('home', 0, 0, 1920, 1080);
+const homeTitle = cloneSubtree(protoBtn, null, 'home.title');
+homeTitle.parentId = home.id;
+setGeom(homeTitle.field.sub, 460, 140, 1000, 110);
+setPos(homeTitle.field.sub, 960, 195);
+addToChildList(home, homeTitle.id);
+built.push({ name: 'home.title', what: 'title' });
+
+const HOME_ROWS = [
+  ['home.select',   '选关',           360],
+  ['home.continue', '从存档点开始',   480],
+  ['home.shop',     '商城',           600],
+  ['home.bag',      '背包',           720],
+];
+for (const [id, , y] of HOME_ROWS) {
+  const b = cloneSubtree(protoBtn, null, id);
+  b.parentId = home.id;
+  setGeom(b.field.sub, HOME_X, y, HOME_W, HOME_H);
+  setPos(b.field.sub, HOME_X + HOME_W / 2, y + HOME_H / 2);
+  addToChildList(home, b.id);
+  built.push({ name: id, what: 'button' });
+}
+
+// 选关界面
+const sel = addContainer('select', 0, 0, 1920, 1080);
+const selTitle = cloneSubtree(protoBtn, null, 'select.title');
+selTitle.parentId = sel.id;
+setGeom(selTitle.field.sub, 460, 80, 1000, 90);
+setPos(selTitle.field.sub, 960, 125);
+addToChildList(sel, selTitle.id);
+const selBack = cloneSubtree(protoBtn, null, 'select.back');
+selBack.parentId = sel.id;
+setGeom(selBack.field.sub, 120, 950, 260, 80);
+setPos(selBack.field.sub, 250, 990);
+addToChildList(sel, selBack.id);
+
+const CARD_W = 380, CARD_H = 200, CGAP = 40, CX0 = 160, CY0 = 240;
+for (let i = 1; i <= 8; i++) {
+  const col = (i - 1) % 4, row = Math.floor((i - 1) / 4);
+  const x = CX0 + col * (CARD_W + CGAP), y = CY0 + row * (CARD_H + CGAP);
+  const c = cloneSubtree(protoBtn, null, 'select.card.' + i);
+  c.parentId = sel.id;
+  setGeom(c.field.sub, x, y, CARD_W, CARD_H);
+  setPos(c.field.sub, x + CARD_W / 2, y + CARD_H / 2);
+  addToChildList(sel, c.id);
+  built.push({ name: 'select.card.' + i, what: 'card' });
+}
+
+// 把新记录插进 tree（tree 是 parseMsg 的字段数组，记录就在其中）
+const allNew = [...byId.values()].filter((r) => r.id >= g.maxId + 1);
+for (const r of allNew) g.tree.push(r.field);
+
+const body = encodeMsg(g.tree);
+const outBuf = g.pack(body);
+fs.writeFileSync(OUT, outBuf);
+
+const g2 = readGil(OUT);
+const tr = outBuf.subarray(outBuf.length - g.trailer.length);
+console.log('输出：' + path.basename(OUT));
+console.log('  文件 ' + outBuf.length + '（+' + (outBuf.length - g.src.length) + '）');
+console.log('  尾 ' + tr.toString('hex') + (tr.equals(g.trailer) ? '  ✅' : '  ❌')
+  + '   控件记录 ' + g2.recs.length + '（+' + (g2.recs.length - g.recs.length) + '）');
+let bad = 0;
+for (const it of built) {
+  const r = g2.byName.get(it.name);
+  if (!r) { bad++; console.log('  ❌ 缺 ' + it.name); }
+}
+for (const nm of ['home.select', 'home.continue', 'home.shop', 'home.bag']) {
+  const r = g2.byName.get(nm);
+  const kids = r ? g2.recs.filter((x) => x.parentId === r.id).map((x) => x.name) : [];
+  console.log('    ' + nm.padEnd(16) + ' 子控件：' + (kids.join(', ') || '（无）'));
+}
+console.log('\n' + (bad === 0 ? '★ 主页/选关控件已建好（共 ' + built.length + ' 个）' : '❌ 有 ' + bad + ' 个缺失'));
+process.exit(bad === 0 ? 0 : 4);
