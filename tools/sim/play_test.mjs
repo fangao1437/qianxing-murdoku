@@ -44,6 +44,42 @@ const check = (label, cond, detail) => {
 // ── 1. 启动 ───────────────────────────────────────────────────────────────
 console.log('\n=== 1. 试玩启动');
 await c.play('start', {}); await enterLevel(c, tick);
+
+// ── 0. 主页四键（用户要求的布局：中列最上是「选关」）──────────────────────
+//
+// ⚠️ 这一步在文件里**排在"1. 试玩启动"之后、但 `let ri` 之前** ⇒
+//    不能给 `ri` 赋值（会撞上 `let` 的暂时性死区：Cannot access 'ri' before initialization）。
+//    ⇒ 块内用自己的局部变量 `r0`，结束时把状态传回外层的 `ri`（那时 `ri` 已可用）。
+console.log('\n=== 0. 主页四键');
+{
+  let r0 = await get();
+  const t = indexTree(r0);
+  const has = (n) => !!t.get(n);
+  check('主页容器在', has('home'));
+  check('四键齐全', has('home.select') && has('home.continue') && has('home.shop') && has('home.bag'));
+  check('选关键在最上（用户要求：原左下角那个挪到中列最上）',
+    textOf(r0, 'home.select') === '选关', textOf(r0, 'home.select'));
+  check('第二键是「从存档点开始」',
+    textOf(r0, 'home.continue') === '从存档点开始', textOf(r0, 'home.continue'));
+  // 商城 / 背包：占位按钮，点了给一句明确提示（美术资源齐了再设计）
+  await click('home.shop'); await tick(0.1);
+  r0 = await get();
+  check('商城是占位（点了有明确提示，不是静默无反应）',
+    /商城/.test(textOf(r0, 'hud.toast') || ''), textOf(r0, 'hud.toast'));
+  // 「从存档点开始」：没有游玩记录时应当**老实说**并送到选关，而不是假装能继续
+  await click('home.continue'); await tick(0.15);
+  r0 = await get();
+  check('无记录时「从存档点开始」给出提示并去选关',
+    visibleOf(r0, 'select') === true && /游玩记录/.test(textOf(r0, 'hud.toast') || ''),
+    'select=' + visibleOf(r0, 'select') + ' toast=' + JSON.stringify(textOf(r0, 'hud.toast')));
+  await click('select.back'); await tick(0.15);   // 回主页
+}
+
+// ★ 关键收尾：上面几步把界面**留在了主页**（点过 商城 / 从存档点开始 / 返回主页）。
+//   后面的步骤全都假定"已经在关卡里"，所以这里必须**重新走一遍进关流程**。
+//   （我第一版漏了这步 ⇒ 界面停在主页 ⇒ 游戏 UI 被整片隐藏 ⇒
+//     后面"提交后不弹指认面板"又红了一次。屏幕状态是全局的，副作用要自己收干净。）
+await enterLevel(c, tick);
 await tick(0.05);
 let ri = await get();
 dumpJson('t01-start.json', ri);

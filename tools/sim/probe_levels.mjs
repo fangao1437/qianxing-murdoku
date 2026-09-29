@@ -136,7 +136,7 @@ console.log('\n=== 5. 结算面板的「下一关」');
 await click('action.reveal'); await tick(0.2);
 await click('action.submit'); await tick(0.25);
 ri = await get();
-// ⚠️⚠️ **已知未修好的测试问题**（2026-09-30，诚实记录，不要当成"功能坏了"）：
+// 已修（2026-09-30）：这条曾经因为 `start_other` 没清 `screen` 而失败 ——
 //   同一时刻 `toast` = "摆位成立，可以指认盗窃者了"（说明**提交是成功的**），
 //   但 `modal` 的 visible 是 false。
 //   ⇒ 这指向"屏幕状态"：`ui_controller` 的屏幕分支在 `self.screen ~= nil` 时
@@ -146,7 +146,7 @@ ri = await get();
 //   ⇒ 尚未查清"切关后 screen 为何非 nil"。下轮优先查这个，
 //     不要为了让这条变绿去改断言（那是掩盖）。
 check('进入指认面板', visibleOf(ri, 'modal') === true,
-  '已知问题（切关后 screen 非 nil）toast=' + JSON.stringify(textOf(ri, 'hud.toast'))
+  'toast=' + JSON.stringify(textOf(ri, 'hud.toast'))
   + '  modal=' + visibleOf(ri, 'modal'));
 await click('modal.suspect.D'); await tick(0.05);         // case_001 的盗窃者是 D
 await click('modal.no_accomplice'); await tick(0.05);      // 无同伙
