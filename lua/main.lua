@@ -130,9 +130,25 @@ function Murdoku.start(level_id, opts)
     skip_intro = opts.skip_intro,
     levels = level_list,
     screen = want_screen,
+    -- ★★★ 2026-09-30：**选关卡片要看的两样东西**（之前漏了，卡片永远显示"未开始"）
+    --   · progress(id) —— 这一关打过没有 / 破了没有
+    --   · last_level() —— 「从存档点开始」要接续的那一关
+    --   两者都读局内存档，取不到就返回 nil，卡片只显示关名 —— **不编数据**。
+    progress = function(lid) return Murdoku.progress_of(lid) end,
+    last_level = function() return Murdoku.last_played() end,
     -- 选关：直接从面板跳过去
     on_pick_level = function(id)
-      if id ~= level.id then start_other(id) end
+      -- ★ 记下"最近游玩"，供主页的「从存档点开始」用（要落盘，跨会话有效）
+      Murdoku.remember_level(id)
+      if id ~= level.id then
+        start_other(id)
+      else
+        -- 点的是当前这一关：只是退出选关界面，不用重开
+        controller.screen = nil
+        controller.modal = nil
+        controller.dirty = true
+        Murdoku.flush_effects()
+      end
     end,
     -- 返回列表：打开选关面板
     on_back = function()
@@ -159,6 +175,10 @@ function Murdoku.start(level_id, opts)
         vm.hud.moves or 0,
         vm.hud.failed_accusations or 0,
       })
+      -- ★★★ 2026-09-30：**记下"这一关破了"** —— 选关卡片要显示「★ 已破案」。
+      --   之前只发了信号、没落盘 ⇒ 卡片永远显示"未开始"，
+      --   玩家看不出自己打过哪几关（这正是「参考原作卡片选关」要看的信息）。
+      Murdoku.mark_cleared(level.id)
     end,
   })
 
@@ -533,6 +553,74 @@ function Murdoku.restore(payload)
 end
 
 -- 主动存档：压成分享码字符串 + 三个整数（局内存档不支持结构体/字典）
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 主页 / 选关要用的小状态（2026-09-30）
+--
+--   · `remember_level` / `last_played` —— 「从存档点开始」接续**最近游玩记录**
+--   · `progress_of`                     —— 选关卡片显示「未开始 / 进行中 / ★ 已破案」
+--   · `mark_cleared`                    —— 破案时落盘（否则卡片永远是"未开始"）
+--
+--   存在**局内存档**里（走适配器的 `save`/`load`），所以跨会话有效 ——
+--   这正是"从存档点开始"的意义：玩家这次进来能接着上次那关。
+--   取不到就是 nil：卡片只显示关名，**不编假的进度**。
+-- ═══════════════════════════════════════════════════════════════════════════
+local SAVE_RECENT   = "murdoku/recent"
+local SAVE_PROGRESS = "murdoku/progress"
+
+local function store()
+  return prepared_adapter
+end
+
+function Murdoku.remember_level(id)
+  if id == nil then return end
+  local a = store()
+  if a == nil or a.save == nil then return end
+  pcall(function() a:save(SAVE_RECENT, tostring(id)) end)
+  pcall(function()
+    local p = a:load(SAVE_PROGRESS)
+    if type(p) ~= "table" then p = {} end
+    local cur = p[tostring(id)]
+    if type(cur) ~= "table" then cur = {} end
+    if not cur.cleared then cur.started = true end
+    p[tostring(id)] = cur
+    a:save(SAVE_PROGRESS, p)
+  end)
+end
+
+function Murdoku.last_played()
+  local a = store()
+  if a == nil or a.load == nil then return nil end
+  local v = nil
+  pcall(function() v = a:load(SAVE_RECENT) end)
+  if type(v) == "string" and v ~= "" then return v end
+  return nil
+end
+
+function Murdoku.mark_cleared(id)
+  if id == nil then return end
+  local a = store()
+  if a == nil or a.save == nil then return end
+  pcall(function()
+    local p = a:load(SAVE_PROGRESS)
+    if type(p) ~= "table" then p = {} end
+    local cur = p[tostring(id)]
+    if type(cur) ~= "table" then cur = {} end
+    cur.cleared = true
+    cur.started = true
+    p[tostring(id)] = cur
+    a:save(SAVE_PROGRESS, p)
+  end)
+end
+
+function Murdoku.progress_of(id)
+  local a = store()
+  if a == nil or a.load == nil then return nil end
+  local p = nil
+  pcall(function() p = a:load(SAVE_PROGRESS) end)
+  if type(p) ~= "table" then return nil end
+  return p[tostring(id)]
+end
+
 function Murdoku.save_now()
   if not current then return false end
   local core = current.core

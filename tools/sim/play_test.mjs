@@ -66,13 +66,25 @@ console.log('\n=== 0. 主页四键');
   r0 = await get();
   check('商城是占位（点了有明确提示，不是静默无反应）',
     /商城/.test(textOf(r0, 'hud.toast') || ''), textOf(r0, 'hud.toast'));
-  // 「从存档点开始」：没有游玩记录时应当**老实说**并送到选关，而不是假装能继续
-  await click('home.continue'); await tick(0.15);
+  // 「从存档点开始」：**有记录就进那一关；没有记录就老实说并送去选关** —— 不能装死。
+  //
+  //   ⚠️ 不要断言"一定是无记录分支"：模拟器的局内存档**会跨测试运行保留**，
+  //   所以跑过一遍之后就有记录了（我第一版写死了"无记录"，第二轮就假红）。
+  //   断言真正的要求：**点了必有明确结果**，两种情况都算过。
+  await click('home.continue'); await tick(0.3);
   r0 = await get();
-  check('无记录时「从存档点开始」给出提示并去选关',
-    visibleOf(r0, 'select') === true && /游玩记录/.test(textOf(r0, 'hud.toast') || ''),
-    'select=' + visibleOf(r0, 'select') + ' toast=' + JSON.stringify(textOf(r0, 'hud.toast')));
-  await click('select.back'); await tick(0.15);   // 回主页
+  {
+    const wentIn = visibleOf(r0, 'board') === true;
+    const toSelect = visibleOf(r0, 'select') === true;
+    const toasted = /游玩记录/.test(textOf(r0, 'hud.toast') || '');
+    check('「从存档点开始」点了必有明确结果（进关 / 提示并去选关）',
+      wentIn || (toSelect && toasted),
+      'board=' + visibleOf(r0, 'board') + ' select=' + toSelect
+      + ' toast=' + JSON.stringify(textOf(r0, 'hud.toast')));
+  }
+  // 收尾：不管刚才进了关还是停在选关，都退回主页，别把状态留给后面的步骤
+  if (visibleOf(r0, 'board') === true) { await click('action.back'); await tick(0.2); r0 = await get(); }
+  if (visibleOf(r0, 'select') === true) { await click('select.back'); await tick(0.2); }
 }
 
 // ★ 关键收尾：上面几步把界面**留在了主页**（点过 商城 / 从存档点开始 / 返回主页）。
@@ -251,6 +263,30 @@ await ss('t06-xmark.png');
   check('结案（独自作案）→ 出现结果面板',
     !!textOf(ri, 'modal.body'), JSON.stringify((textOf(ri, 'modal.body') || '').slice(0, 60)));
   await ss('t10-result.png');
+}
+
+// ── 8b. 「从存档点开始」的完整闭环（2026-09-30）────────────────────────────
+//
+//   必须放在**玩过一关之后** —— 因为「从存档点开始」读的正是"最近游玩记录"，
+//   而记录是在点卡片切关时落盘的（`Murdoku.remember_level`）。
+//   开机时测只能测到"没有记录"那条分支（第 0 节已经测过）。
+console.log('\n=== 8b. 从存档点开始（玩过之后）');
+{
+  // 退出关卡 → 应该回到**整屏选关**（用户要求，参考原作）
+  await click('action.back'); await tick(0.2);
+  let r3 = await get();
+  check('退出关卡回到选关界面（不是弹窗、也不是主页）',
+    visibleOf(r3, 'select') === true, 'select=' + visibleOf(r3, 'select'));
+  await click('select.back'); await tick(0.2);
+  r3 = await get();
+  check('「返回主页」能回主页', visibleOf(r3, 'home') === true);
+  // 现在应该**有**游玩记录了 ⇒ 点「从存档点开始」应当直接进关，而不是提示"没有记录"
+  await click('home.continue'); await tick(0.3);
+  r3 = await get();
+  check('有记录时「从存档点开始」直接进关',
+    visibleOf(r3, 'board') === true && visibleOf(r3, 'home') === false,
+    'board=' + visibleOf(r3, 'board') + ' home=' + visibleOf(r3, 'home')
+    + ' toast=' + JSON.stringify(textOf(r3, 'hud.toast')));
 }
 
 // ── 9. 收尾 ───────────────────────────────────────────────────────────────
