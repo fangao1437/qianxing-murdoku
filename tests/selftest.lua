@@ -124,11 +124,20 @@ core:reset()
 ctrl:on_input({ action = "suspect", id = "A" })
 check("头像被选中", core.selected == "A", tostring(core.selected))
 
--- 单击：先挂起，等过了双击窗口才落成铅笔笔记
+-- ★★ 2026-09-29 改：单击**立即生效**，不再"挂起等双击窗口"。
+--
+--   旧流程（本断言原来编码的）：单击先挂起 0.35 秒，过了窗口才落成笔记。
+--   用户报「没选标记按钮、直接单击棋盘做 ✗ 有明显延迟」后改成：
+--   **第一击立即生效**；若真来了第二击，先撤销第一击再做预放置。
+--   （本工程反复出现的教训：**断言里不要锁死"实现细节"，要锁"用户可感知的行为"**——
+--     旧断言锁的是"挂起"这个内部机制，机制一改就红，而用户要的"点了马上有反应"
+--     反而从来没被断言过。）
 ctrl:on_input({ action = "click", r = 1, c = 2 })
-check("单击先挂起（不立刻写笔记）", core.notes[1][2]["A"] == nil)
+check("单击**立即**生效（不再挂起等双击窗口）",
+      core.notes[1][2]["A"] == true and core.grid[1][2] == nil,
+      "notes=" .. tostring(core.notes[1][2]["A"]))
 ctrl:tick(0.5)
-check("单击落成铅笔笔记", core.notes[1][2]["A"] == true and core.grid[1][2] == nil)
+check("等待之后笔记仍在（没有被延迟处理覆盖）", core.notes[1][2]["A"] == true)
 check("写笔记不会清空选中", core.selected == "A", tostring(core.selected))
 
 -- 双击同一格（间隔 0.1s < 窗口 0.35s）→ **预放置**（★ 2026-09-28 语义拆分）

@@ -99,11 +99,18 @@ ri = await probe('3b 选中头像后');
 await click('cell.2.2');
 await tick(0.05);
 ri = await probe('3b 单击后 0.05s');
-check('单击后还没落笔记（在等双击窗口）', !childText(ri, 'cell.2.2', 'note'));
+// ★★ 2026-09-29 改（用户报"没选标记按钮、直接单击棋盘做 ✗ 有明显延迟"）：
+//   **单击立即生效，不再挂起等双击窗口。**
+//   旧断言锁的是"挂起"这个**内部机制**（单击后 0.05s 还没落笔记）——
+//   机制一改就红，而用户真正要的"点了马上有反应"从来没被断言过。
+//   ⇒ 现在直接断言**可感知的行为**：0.05 秒内笔记就该出现。
+const noteNow = childText(ri, 'cell.2.2', 'note');
+check('单击后 0.05s 内笔记就出现（不再有 0.35s 延迟）',
+  !!noteNow && noteNow.length > 0, JSON.stringify(noteNow));
 await tick(0.45);                       // 越过 DOUBLE_CLICK_SECONDS = 0.35
 ri = await probe('3b 过了双击窗口');
 const note = childText(ri, 'cell.2.2', 'note');
-check('过了双击窗口 → 笔记已落格', !!note && note.length > 0, JSON.stringify(note));
+check('等待之后笔记仍在（没有被延迟处理覆盖）', !!note && note.length > 0, JSON.stringify(note));
 check('笔记不改动步数', textOf(ri, 'hud.moves') === '0 步', textOf(ri, 'hud.moves'));
 dumpJson('t03b-note.json', ri);
 await ss('t03b-note.png');

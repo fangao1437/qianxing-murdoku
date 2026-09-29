@@ -64,6 +64,10 @@ function M.to_canvas(r)
   }
 end
 
+-- ★ 2026-09-29：是否显示「放置 / X 标记 / 橡皮擦」三个工具按钮。
+--   用户确认这三个动作都有更直接的入口（双击/长按=放置、单击=✗、单击已放置格=拿起）
+--   ⇒ **默认关闭**。留这个开关，是为了以后给移动端补按钮时不用重写布局。
+M.SHOW_TOOL_BUTTONS = false
 M.LAYOUT = {
   topbar = { x = 0, y = 0, w = 1920, h = 104 },
   title  = { x = 32, y = 18, w = 520, h = 50 },
@@ -393,43 +397,65 @@ function Controller:on_cell_click(r, c)
   local mode = core.mode
 
   -- 双击 → **预放置**（★ 2026-09-28 用户设计：双击=预放置，长按=正式放置）
+  --
+  -- ★★ 2026-09-29 重写（用户报「没选标记按钮、直接单击棋盘做 ✗ 有明显延迟」）：
+  --
+  --   旧流程：`place` 模式下单击空格会**先挂起 0.35 秒**（`pending_click`），
+  --   等过了双击窗口才落成动作 —— 因为要等一下看有没有第二击。
+  --   玩家体感就是"点了没反应，过一会儿才出现"。
+  --   而**取消工具栏三个按钮之后，单击=切 ✗ 成了最高频的动作**，这 0.35 秒完全不能忍。
+  --
+  --   新流程：**第一击立即生效**；若真来了第二击，**先把第一击撤销掉**再做预放置。
+  --   撤销方式按"第一击到底做了什么"分派（记在 `last_click.did`）：
+  --     · `"x"`   → 再切一次 ✗ 就回到原状
+  --     · `"pre"` → 撤销那次预放置
+  --   于是**单击零延迟，双击行为与原来完全一致**。
   if (not occupied) and mode == "place" then
     local last = self.last_click
     if last and last.r == r and last.c == c and (self.now - last.t) <= DOUBLE_CLICK_SECONDS then
+      self.last_click = nil
+      if last.did == "x" then
+        core:toggle_x(r, c)             -- 撤销第一击切出来的 ✗
+        self.dirty = true
+      elseif last.did == "pre" then
+        core:undo()                     -- 撤销第一击的预放置
+        self.dirty = true
+      end
       self:do_pre_place(r, c)
       return
     end
-    self.last_click = { r = r, c = c, t = self.now }
   end
 
-  -- 这些情况单击立即生效，不需要等双击窗口
-  if occupied or mode == "x" or mode == "eraser" or mode == "note" then
-    self.pending_click = nil
-    local had = core.grid[r][c]
-    local ok, why = core:tap_cell(r, c)
-    if ok then
-      if had then
-        -- ★ 2026-09-27 修（用户报"双击格子有时会导致其消失"）：
-        --   原来把 `vanish`（缩放 1.00 → **0.00**）作用在**格子本身**上。
-        --   双击放置后若系统多派发一次点击（或玩家连点三下），那一次落在"已占格"上
-        --   → 拿起棋子 + **把整个格子缩到 0** → 看上去"格子消失了"。
-        --   改成作用在 `face` 子控件上：拿起棋子的反馈照样有，**格子本身不缩**。
-        --   （适配器另有"动完还原姿态"的兜底。）
-        self:fx(self:cell_id(r, c) .. ".face", M.EFFECTS.ERASE)
-        if self.opts.on_clear then self.opts.on_clear(had) end
-      else
-        self:fx(self:cell_id(r, c), core.mode == "x" and M.EFFECTS.XMARK or M.EFFECTS.NOTE)
-      end
-      self.dirty = true
+  -- ★★ 单击**一律立即生效**（不再有任何"挂起等双击窗口"）。
+  --   挂起是延迟的唯一来源；现在第一击马上做，双击时再撤销它（见函数开头那段）。
+  self.pending_click = nil
+  local had = core.grid[r][c]
+  local had_selected = core.selected          -- 要在 tap_cell **之前**取：它会改选中态
+  local ok, why = core:tap_cell(r, c)
+  if ok then
+    if had then
+      -- ★ 2026-09-27 修（用户报"双击格子有时会导致其消失"）：
+      --   原来把 `vanish`（缩放 1.00 → **0.00**）作用在**格子本身**上。
+      --   双击放置后若系统多派发一次点击（或玩家连点三下），那一次落在"已占格"上
+      --   → 拿起棋子 + **把整个格子缩到 0** → 看上去"格子消失了"。
+      --   改成作用在 `face` 子控件上：拿起棋子的反馈照样有，**格子本身不缩**。
+      --   （适配器另有"动完还原姿态"的兜底。）
+      self:fx(self:cell_id(r, c) .. ".face", M.EFFECTS.ERASE)
+      if self.opts.on_clear then self.opts.on_clear(had) end
     else
-      self:_refuse(r, c, why)
+      self:fx(self:cell_id(r, c), core.mode == "x" and M.EFFECTS.XMARK or M.EFFECTS.NOTE)
     end
-    return
+    -- 记下这一击做了什么，供"第二击撤销第一击"用
+    if (not occupied) and mode == "place" then
+      self.last_click = {
+        r = r, c = c, t = self.now,
+        did = had_selected and "pre" or "x",
+      }
+    end
+    self.dirty = true
+  else
+    self:_refuse(r, c, why)
   end
-
-  -- 放置模式下的空格：先挂起，等过了双击窗口再落成笔记
-  self:flush_pending_note()
-  self.pending_click = { r = r, c = c, t = self.now }
 end
 
 -- ── 键盘（PC，可选）─────────────────────────────────────────────────────
@@ -818,10 +844,28 @@ function Controller:build_layout()
   --   现在独立出一个 `toolbar` 容器：**topbar 只放 HUD 文字，按钮归 toolbar**。
   --   位置仍用**绝对 rect**（见 L56 的坐标换算注释：rect 是设计空间绝对坐标），
   --   所以改父级**不会移动任何控件**，只是树结构变干净。
+  -- ★★ 2026-09-29（用户要求）：**删掉「放置 / X 标记 / 橡皮擦」三个工具按钮**。
+  --
+  --   理由（用户原话）：「因为放置，标记，橡皮擦，都已经有了合适的操作逻辑，
+  --   这三个按钮可以删了」——
+  --     · 放置：**双击 / 长按**格子
+  --     · 标记：**单击**空格（未选人时切 ✗，选中人物时是预放置）
+  --     · 橡皮擦：**单击已放置的格子**就是拿起
+  --   三个动作全都有更直接的入口，工具按钮纯属多余（还占着工具条正中间）。
+  --
+  --   ⚠️ 保留 `Core.mode` 与键盘换工具的**能力**（`Tab` 轮盘仍可切换，
+  --      `note` 模式仍可用）—— 删的只是这三个按钮，不是模式机制本身。
+  --      这样"以后想加回按钮"或"给移动端留一条路"都不用重写逻辑。
+  --
+  --   注（踩过的坑）：**不能"干脆不 push"** ——
+  --   渲染的差集逻辑只隐藏**曾经显示过**的控件，从没进过计划的控件不会被隐藏，
+  --   按钮照样留在屏幕上（实测）。
+  --   ⇒ 正确做法是**留在计划里，但 `visible = false`**，让渲染真的把它们藏掉。
   local function tool(id, label, mode, x)
     return push({ id = id, kind = "button", parent = "toolbar",
                   rect = { x = x, y = 26, w = 130, h = 52 }, text = label,
                   style = (vm.hud.mode == mode) and "tab.active" or "tab",
+                  visible = (M.SHOW_TOOL_BUTTONS == true),
                   event = { action = "tool", mode = mode } })
   end
   tool("tool.place",  "放置",  "place",  840)

@@ -302,7 +302,15 @@ function Murdoku.start(level_id, opts)
               end
             end)
             if lb.SetSizeDelta ~= nil then
-              pcall(function() lb:SetSizeDelta(bw or 100, 40) end)
+              -- ★★ 2026-09-29 调整：**字号 18 → 24**（用户要求"再加大"），
+              --   并把文本框高度**收紧到刚好包住字**（40 → 28）。
+              --
+              --   为什么收紧：真机上文字**没有居中**，而 `label` 的可用字段里
+              --   **根本没有对齐属性**（模拟器枚举过：text/fontSize/fontColor/bgColor…
+              --   没有 horizontalAlign/verticalAlign 这类东西）。
+              --   ⇒ 既然改不了对齐，就**让容器刚好等于内容** ——
+              --     框 28 高、字 24 高，无论引擎按哪种基线摆放，视觉偏移都不会超过几像素。
+              pcall(function() lb:SetSizeDelta(bw or 100, 28) end)
             end
             -- ★★ 2026-09-29：**居中**。
             --   上一版只改了尺寸没改位置 ⇒ 文字不居中（用户报"没有居中"）。
@@ -313,7 +321,7 @@ function Murdoku.start(level_id, opts)
             if lb.SetAnchoredPosition ~= nil then
               pcall(function() lb:SetAnchoredPosition(0, 0) end)
             end
-            if lb.fontSize ~= nil then lb.fontSize = 18 end
+            if lb.fontSize ~= nil then lb.fontSize = 24 end
           end
         end)
       end

@@ -1859,9 +1859,12 @@ function Core:tap_cell(r, c)
   if r < 1 or r > self.rows or c < 1 or c > self.cols then
     return false, "越界"
   end
-  if self:is_blocked(r, c) then
-    return false, "这个格子站不了人"
-  end
+  -- ★★ 2026-09-29 修（R1C5 的**真正元凶**）：这里原来有一道 `is_blocked` 门控，
+  --   直接把整格封死 —— 用户报「R1C5 不能做 ✗ / 放人 / 笔记」，
+  --   日志里那句"这个格子站不了人"就是**从这里**出来的（不是 `do_place`）。
+  --   它把"不能站人"错误地扩大成了"这格什么都不能做"。
+  --   ⇒ 现在按动作各自判断：✗ / 擦除 / 笔记都能打（它们是玩家的推理痕迹）；
+  --     只有**放人**会落到 `do_place`，由 `do_place` 自己的门控拒绝（书桌确实不能站人）。
   if self.mode == M.MODE_X then
     return self:toggle_x(r, c), nil
   end
