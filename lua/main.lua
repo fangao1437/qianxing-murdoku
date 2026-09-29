@@ -304,8 +304,16 @@ function Murdoku.start(level_id, opts)
             if lb.SetSizeDelta ~= nil then
               pcall(function() lb:SetSizeDelta(bw or 100, 40) end)
             end
+            -- ★★ 2026-09-29：**居中**。
+            --   上一版只改了尺寸没改位置 ⇒ 文字不居中（用户报"没有居中"）。
+            --   锚点/轴心在生成时已设成 (0.5,0.5)，所以直接归零就是按钮正中心。
+            if lb.SetAnchorMin ~= nil then pcall(function() lb:SetAnchorMin(0.5, 0.5) end) end
+            if lb.SetAnchorMax ~= nil then pcall(function() lb:SetAnchorMax(0.5, 0.5) end) end
+            if lb.SetPivot ~= nil then pcall(function() lb:SetPivot(0.5, 0.5) end) end
+            if lb.SetAnchoredPosition ~= nil then
+              pcall(function() lb:SetAnchoredPosition(0, 0) end)
+            end
             if lb.fontSize ~= nil then lb.fontSize = 18 end
-            if lb.SetAsLastSibling ~= nil then pcall(function() lb:SetAsLastSibling() end) end
           end
         end)
       end

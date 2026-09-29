@@ -2654,15 +2654,6 @@ function Adapter:set_property(id, key, value)
       pcy = R(ch * 0.5)
     end
 
-    -- 诊断（最多 6 条）：把"父级查找"的实际情况打出来
-    self._pdbg = (self._pdbg or 0) + 1
-    if self._pdbg <= 6 and print then
-      print(string.format("  [父级] %s: parent=%s handlers有=%s rect有=%s → 父中心(%.0f,%.0f)",
-        tostring(id), tostring(pid),
-        tostring(p_node ~= nil), tostring(p_node ~= nil and p_node.rect ~= nil),
-        pcx or -1, pcy or -1))
-    end
-
     if ctrl.SetAnchorMin then pcall(function() ctrl:SetAnchorMin(0.5, 0.5) end) end
     if ctrl.SetAnchorMax then pcall(function() ctrl:SetAnchorMax(0.5, 0.5) end) end
     if ctrl.SetPivot     then pcall(function() ctrl:SetPivot(0.5, 0.5) end) end
