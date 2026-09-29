@@ -924,16 +924,31 @@ function Controller:build_layout()
     tool("tool.eraser", "橡皮擦", "eraser", 1116)
   end
 
-  btn("action.undo", "toolbar", { x = 1262, y = 26, w = 90, h = 52 }, "撤销",
+  -- ★★★ 2026-09-30：**「撤销 / 提交 / 揭示」挪到右侧竖排**（用户确定的映射，参考执律庭实习）。
+  --
+  --   用户给的排除逻辑：重做 → 已被「重置关卡」占用、提示 → 已被右下角放大镜占用
+  --   ⇒ 剩下这三个放右侧三个六边形位置。
+  --
+  --   两处必须同源：
+  --     · 这里（布局计划）—— 模拟器建树、编辑器搭建指南都读它
+  --     · `.gil`（`tools/gil/move_side_buttons.mjs` 挪的）—— 真机实际几何
+  --   因为 `cfg.respect_editor_rect = true`，真机上**以 `.gil` 为准**；
+  --   计划这份是为了让模拟器/文档跟真机一致，别让两边说法不同。
+  --
+  --   注：父级从 `toolbar` 改成 `root` —— 右侧竖排的 y 已经超出 toolbar 的高度（104），
+  --   挂在 toolbar 下会被裁掉。
+  btn("action.undo", "root", { x = 1790, y = 390, w = 110, h = 110 }, "撤销",
       { action = "undo" }, "stamp.sm", vm.hud.can_undo)
+  btn("action.submit", "root", { x = 1790, y = 540, w = 110, h = 110 },
+      vm.hud.filled and "提交" or "提交（先摆满）", { action = "submit" }, "stamp.primary", vm.hud.filled)
+  btn("action.reveal", "root", { x = 1790, y = 690, w = 110, h = 110 }, "揭示",
+      { action = "reveal" }, "stamp.sm")
+
+  -- 留在顶栏的两个（参考图上它们对应「重置关卡 ↻」和「放大镜 🔍」）
   btn("action.redo", "toolbar", { x = 1358, y = 26, w = 90, h = 52 }, "重做",
       { action = "redo" }, "stamp.sm", vm.hud.can_redo)
-  btn("action.submit", "toolbar", { x = 1460, y = 26, w = 190, h = 52 },
-      vm.hud.filled and "提交" or "提交（先摆满）", { action = "submit" }, "stamp.primary", vm.hud.filled)
   btn("action.hint", "toolbar", { x = 1660, y = 26, w = 80, h = 52 }, "提示",
       { action = "hint" }, "stamp.sm", vm.hud.can_hint)
-  btn("action.reveal", "toolbar", { x = 1748, y = 26, w = 80, h = 52 }, "揭示",
-      { action = "reveal" }, "stamp.sm")
 
   push({ id = "hud.timer", kind = "text", parent = "topbar",
          rect = { x = 520, y = 30, w = 140, h = 46 },
