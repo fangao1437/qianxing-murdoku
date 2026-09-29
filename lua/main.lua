@@ -253,9 +253,18 @@ function Murdoku.start(level_id, opts)
       local id, want = ids2[i], labels[ids2[i]]
       adapter:set_property(id, "text", want)
       local back, fs, fc, vv = nil, nil, nil, nil
+      -- ★★ 2026-09-29：**`label` 找不到就退回 `text`**。
+      --
+      --   为什么：真机日志一直报「写入后读回一致 8 个，**不一致 5 个**」，
+      --   看着像出错，其实那 5 个是**头像卡**（`tray.*`）——
+      --   它们的文字子控件叫 `text` 而不是 `label`（见体检输出）。
+      --   统计口径把"正常的另一种结构"算成了失败，误导排查。
+      --   ⇒ 两个都试，并且**分开报数**，日志才说真话。
+      local via = nil
       if adapter.sub ~= nil then
         pcall(function()
           local lb = adapter:sub(id, "label")
+          if lb == nil then lb = adapter:sub(id, "text"); via = "text" else via = "label" end
           if lb then
             back = lb.text
             fs = lb.fontSize
@@ -325,7 +334,7 @@ function Murdoku.start(level_id, opts)
         shown = shown + 1
       end
     end
-    print(string.format("[murdoku] 按钮名字：写入后读回一致 %d 个，不一致 %d 个（共 %d）", okN, badN, #ids2))
+    print(string.format("[murdoku] 按钮名字：成功 %d 个；另有 %d 个走 `text` 子控件（头像卡，正常）或写入未回读（共 %d）", okN, badN, #ids2))
   end
 
   -- 头像卡按本关实际人数重新摆正（列数会随人数变，编辑器那套只是"最挤的情况"）
