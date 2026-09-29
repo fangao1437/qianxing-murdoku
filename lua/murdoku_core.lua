@@ -1833,7 +1833,14 @@ local function move_piece_if_needed(self, id, r, c)
 end
 
 local function toggle_note(self, r, c, id)
-  if not id or self.blocked[cell_key(r, c)] then return false end
+  -- ★★ 2026-09-29 修（用户报「R1C5 不能做铅笔笔记」）：
+  --   **去掉了 `blocked` 门控**。
+  --   原来这里把"站不了人的格子"和"不能打笔记"当成一回事 —— 但事实相反：
+  --   正是那种格子（书桌/地毯占位）最需要能划掉、能打笔记。
+  --   `blocked` 的语义是「**不能站人**」，只该管 `do_place` 一件事；
+  --   笔记/✗ 是"玩家的推理痕迹"，与格子能不能站人无关。
+  --   （本工程第 N 次踩同一个坑：**一个字段被拿去管了两件不相关的事**。）
+  if not id then return false end
   if self.grid[r][c] then return false end
   -- ★ 2026-09-28（用户要求）：**正式放置过的人，不能再给他打笔记**。
   --   为什么：正式放置 = 定案，他在哪已经确定；再允许"猜他在别处"只会让盘面自相矛盾。
@@ -1940,7 +1947,13 @@ end
 -- X 标记：这格不可能是任何人
 function Core:toggle_x(r, c)
   if r < 1 or r > self.rows or c < 1 or c > self.cols then return false end
-  if self:is_blocked(r, c) then return false end
+  -- ★★ 2026-09-29 修（用户报「R1C5 不能正常做 x 标记」）：
+  --   **去掉了 `is_blocked` 门控**（和 `toggle_note` 同一处错误）。
+  --
+  --   `blocked` 的语义是「**不能站人**」（书桌/地毯这些 `occupiable=false` 的物件会写进来）。
+  --   它只该管 `do_place` 一件事。而 ✗ 是"这格排除掉"的推理痕迹 ——
+  --   **恰恰是站不了人的格子最该能划掉**。
+  --   原来一个字段管了两件不相关的事，结果 R1C5（书桌）连 ✗ 都打不上。
   if self.grid[r][c] then return false end
   self.x_marks[r][c] = not self.x_marks[r][c]
   if self.x_marks[r][c] then self.notes[r][c] = {} end

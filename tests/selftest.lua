@@ -212,7 +212,12 @@ core:select_suspect("V"); core:hold_cell(4, 1)
 core:select_suspect("B"); core:tap_cell(3, 2)
 -- (1,5) 是书桌所在格（occupiable=false）：顺便验证"不可站人"这条链路
 check("书桌所在格不可站人", core:is_blocked(1, 5))
-check("不可站人的格子打不了 X", core:toggle_x(1, 5) == false)
+-- ★★ 2026-09-29 更正：这条断言原来编码的是**我写错的假设**
+--   （原文：「不可站人的格子打不了 X」）。
+--   用户实测报「R1C5 不能正常做 x 标记」后，语义改成正确的：
+--   **`blocked` 只表示"不能站人"，✗ / 笔记是玩家的推理痕迹，任何格子都能打。**
+check("不可站人的格子**能**打 X（✗ 与能否站人无关）", core:toggle_x(1, 5) == true)
+core.x_marks[1][5] = false      -- 还原，免得影响后面的编码/解码断言
 core:toggle_x(2, 4)
 local code = core:encode_state()
 local c2 = assert(Core.new(Level))
