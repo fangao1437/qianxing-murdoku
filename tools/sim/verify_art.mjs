@@ -43,9 +43,9 @@ const nodeOf = (ri, name) => indexTree(ri).get(name) || null;
 // ── ③ 按钮底图有没有换色（imageId 是不是浅蓝那张 100108）──────────────
 console.log('\n=== ③ 按钮底图配色 ===');
 {
-  const btn = nodeOf(ri, 'tool.place');
+  const btn = nodeOf(ri, 'action.undo');
   const bg = btn && (btn.children || []).find((x) => x.name === 'bg');
-  check('tool.place 有 bg 子控件', !!bg, bg ? 'imageId=' + bg.imageId : '无');
+  check('action.undo 有 bg 子控件', !!bg, bg ? 'imageId=' + bg.imageId : '无');
   if (bg) {
     check('bg 是显示状态', bg.visible !== false, 'visible=' + bg.visible);
     check('bg 的图是浅蓝素材 100108', Number(bg.imageId) === 100108, 'imageId=' + bg.imageId);
@@ -58,7 +58,9 @@ console.log('\n=== ③ 按钮底图配色 ===');
 // ── ⑤ 按钮文字有没有填上 ────────────────────────────────────────────────
 console.log('\n=== ⑤ 按钮文字 ===');
 {
-  const cases = [['tool.place', '放置'], ['action.undo', '撤销'], ['action.submit', '提交']];
+  // ★★ 2026-09-29：`tool.place` 已随底部操作条删除，原来那条 ['action.undo','放置']
+  //   是替换时的残留（撤销按钮当然没有「放置」二字）。改成它真正的文字。
+  const cases = [['action.undo', '撤销'], ['action.submit', '提交']];
   for (const [id, want] of cases) {
     const btn = nodeOf(ri, id);
     const lb = btn && (btn.children || []).find((x) => x.name === 'label');

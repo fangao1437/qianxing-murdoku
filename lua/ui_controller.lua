@@ -868,9 +868,18 @@ function Controller:build_layout()
                   visible = (M.SHOW_TOOL_BUTTONS == true),
                   event = { action = "tool", mode = mode } })
   end
-  tool("tool.place",  "放置",  "place",  840)
-  tool("tool.x",      "X 标记", "x",      978)
-  tool("tool.eraser", "橡皮擦", "eraser", 1116)
+  -- ★★ 2026-09-29：用户已在编辑器里**删掉这三个控件**（存档记录 231 → 197）。
+  --
+  --   脚本必须跟着删，否则 `sub(id,"label")` 找不到子控件 ——
+  --   真机日志里那 16 条"读回 nil"就是这个原因：
+  --   **不是写入失败，是控件根本不存在**。
+  --   （我上一版用 `visible=false` 想"藏起来"，但控件被删掉之后连藏都无从谈起。）
+  --   要恢复：把 `M.SHOW_TOOL_BUTTONS` 设为 true **并且**在编辑器里把三个控件加回来。
+  if M.SHOW_TOOL_BUTTONS then
+    tool("tool.place",  "放置",  "place",  840)
+    tool("tool.x",      "X 标记", "x",      978)
+    tool("tool.eraser", "橡皮擦", "eraser", 1116)
+  end
 
   btn("action.undo", "toolbar", { x = 1262, y = 26, w = 90, h = 52 }, "撤销",
       { action = "undo" }, "stamp.sm", vm.hud.can_undo)
@@ -1129,31 +1138,24 @@ function Controller:build_layout()
          visible = (self.toast ~= nil or vm.last_message ~= nil) })
   -- 顶部放不下的次级操作放这里（1920 内不会溢出）
   local rx = L.right.x + 20
-  btn("action.howto", "right", { x = rx, y = L.right.y + 680, w = 100, h = 52 }, "玩法",
-      { action = "howto" }, "tab")
-  btn("action.share", "right", { x = rx + 108, y = L.right.y + 680, w = 100, h = 52 }, "分享",
-      { action = "share" }, "tab")
-  btn("action.restart", "right", { x = rx + 216, y = L.right.y + 680, w = 100, h = 52 }, "重开",
-      { action = "restart" }, "tab")
+  -- ★★ 2026-09-29：`action.howto` / `action.share` / `action.restart` 三个按钮
+  --   **用户已在编辑器里删除** ⇒ 计划里同步移除，否则脚本会去写不存在的控件
+  --   （真机日志里 `action.howto` 那几条"读回 nil"就是这么来的）。
+  --   ⚠️ `action.back` 保留 —— 它还在你的存档里。
   btn("action.back", "right", { x = rx + 324, y = L.right.y + 680, w = 116, h = 52 }, "返回列表",
       { action = "back" }, "tab")
 
-  -- ===== 底部操作条（大按钮，触屏友好）=====
-  push({ id = "actions", kind = "container", parent = "root", rect = rect_of(L.actions), style = "actions" })
-  local ax, ay = L.actions.x, L.actions.y
-  local aw = 150
-  local agap = 12
-  btn("action.q.place", "actions", { x = ax, y = ay, w = aw, h = L.action_btn.h }, "放置工具",
-      { action = "tool", mode = "place" }, (vm.hud.mode == "place") and "tab.active" or "tab")
-  btn("action.q.note", "actions", { x = ax + (aw + agap), y = ay, w = aw, h = L.action_btn.h }, "只写笔记",
-      { action = "tool", mode = "note" }, (vm.hud.mode == "note") and "tab.active" or "tab")
-  btn("action.q.x", "actions", { x = ax + 2 * (aw + agap), y = ay, w = aw, h = L.action_btn.h }, "划掉这格",
-      { action = "tool", mode = "x" }, (vm.hud.mode == "x") and "tab.active" or "tab")
-  btn("action.q.eraser", "actions", { x = ax + 3 * (aw + agap), y = ay, w = aw, h = L.action_btn.h }, "橡皮擦",
-      { action = "tool", mode = "eraser" }, (vm.hud.mode == "eraser") and "tab.active" or "tab")
-  btn("action.q.accuse", "actions",
-      { x = ax + 4 * (aw + agap), y = ay, w = 200, h = L.action_btn.h },
-      "指认凶手", { action = "submit" }, "stamp.primary", vm.hud.filled)
+  -- ★★ 2026-09-29：**整块删掉底部操作条**（`actions` 容器 + 5 个按钮）。
+  --
+  --   用户在编辑器里把 `actions` 以及 `action.q.*` 全删了（存档记录 231 → 197）。
+  --   这五个按钮的功能现在都有更直接的入口：
+  --     · 放置工具 / 只写笔记 / 划掉这格 / 橡皮擦
+  --         → 由「双击长按=放置、单击=✗、单击已放置格=拿起」承担
+  --     · 指认凶手 → 顶部工具条的 `action.submit` 就是它
+  --   ⇒ 计划里不再声明，脚本也就不会去写不存在的控件。
+  --   （以后要做移动端大按钮，可以从 git 历史取回：提交 2f4b1ea）
+  local _ = L.actions    -- 布局表里的坐标先留着，方便将来恢复
+  local _ = L.action_btn
 
   -- ===== 开屏教程 =====
   if self:is_intro_active() then

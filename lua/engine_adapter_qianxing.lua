@@ -2601,6 +2601,27 @@ function Adapter:set_property(id, key, value)
     h.event = value
 
   elseif key == "rect" then
+    -- ★★★ 2026-09-29：**编辑器优先 —— 不再覆盖你已经调好的控件几何**。
+    --
+    --   用户反馈「加入的文本与我调整的布局未完整生效」。
+    --   根因：`M.LAYOUT` 里的坐标是我**当初规划时写的**，而用户在编辑器里
+    --   把按钮的尺寸/位置都改过（例如 `action.hint` 的 bg 从 90×52 改成 97×43、
+    --   label 改成 59×40）。脚本每次渲染都按自己的表把位置尺寸推下去
+    --   ⇒ **用户的调整被无声地覆盖**。
+    --
+    --   新规则：
+    --     · **运行时由脚本生成的控件**（格子等）→ 仍由脚本摆位置
+    --       （它们本来就不在存档里，没有"编辑器几何"可言）。
+    --     · **存档里已有的控件** → 保持编辑器里的几何，脚本不碰。
+    --   `cfg.respect_editor_rect = false` 可关掉此行为（回到"布局全由代码说了算"）。
+    --
+    --   注意：行标/列标、头像卡另有 `apply_ruler_layout` / `apply_tray_layout`
+    --   直接写位置，不受这里影响（那两条本来就是运行时重排）。
+    if self.cfg.respect_editor_rect ~= false
+       and not (self.instantiated and self.instantiated[id]) then
+      return
+    end
+
     -- ⚠️⚠️ 2026-09-28：这一段是**事故后重建**的。
     --   我在加 ruler 漂移检测时误删了函数体，而工程没有 git、没有备份 ——
     --   只能按现有代码里的换算规则重建。**务必以模拟器/真机的实际渲染为准**。

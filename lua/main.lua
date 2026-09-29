@@ -301,27 +301,20 @@ function Murdoku.start(level_id, opts)
                 bw = a1
               end
             end)
-            if lb.SetSizeDelta ~= nil then
-              -- ★★ 2026-09-29 调整：**字号 18 → 24**（用户要求"再加大"），
-              --   并把文本框高度**收紧到刚好包住字**（40 → 28）。
-              --
-              --   为什么收紧：真机上文字**没有居中**，而 `label` 的可用字段里
-              --   **根本没有对齐属性**（模拟器枚举过：text/fontSize/fontColor/bgColor…
-              --   没有 horizontalAlign/verticalAlign 这类东西）。
-              --   ⇒ 既然改不了对齐，就**让容器刚好等于内容** ——
-              --     框 28 高、字 24 高，无论引擎按哪种基线摆放，视觉偏移都不会超过几像素。
-              pcall(function() lb:SetSizeDelta(bw or 100, 28) end)
+            -- ★★★ 2026-09-29：**不再强制 label 的尺寸/字号/位置**。
+            --
+            --   用户在编辑器里**自己给按钮配好了居中文本**
+            --   （例如 `action.hint` 的 bg 97×43、label 59×40），
+            --   而我之前每次都按自己的算法把 label 改成 (按钮宽, 28) 并设 fontSize=24
+            --   ⇒ **把用户调好的东西覆盖掉**，这正是他说的"未完整生效"。
+            --
+            --   现在脚本只负责**写文字内容**（文字不存进 .gil，只能运行时写），
+            --   几何与字号一律听编辑器的。
+            --   （如果将来发现某类按钮字号偏小，用 cfg.label_font_size 单独指定，
+            --     不要再无条件覆盖。）
+            if adapter.cfg.label_font_size ~= nil and lb.fontSize ~= nil then
+              lb.fontSize = adapter.cfg.label_font_size
             end
-            -- ★★ 2026-09-29：**居中**。
-            --   上一版只改了尺寸没改位置 ⇒ 文字不居中（用户报"没有居中"）。
-            --   锚点/轴心在生成时已设成 (0.5,0.5)，所以直接归零就是按钮正中心。
-            if lb.SetAnchorMin ~= nil then pcall(function() lb:SetAnchorMin(0.5, 0.5) end) end
-            if lb.SetAnchorMax ~= nil then pcall(function() lb:SetAnchorMax(0.5, 0.5) end) end
-            if lb.SetPivot ~= nil then pcall(function() lb:SetPivot(0.5, 0.5) end) end
-            if lb.SetAnchoredPosition ~= nil then
-              pcall(function() lb:SetAnchoredPosition(0, 0) end)
-            end
-            if lb.fontSize ~= nil then lb.fontSize = 24 end
           end
         end)
       end

@@ -144,15 +144,7 @@ await click('action.redo'); await tick(0.05);
 ri = await get();
 check('重做一次 → 回到 2/5', /2 \/ 5/.test(textOf(ri, 'hud.progress') || ''), textOf(ri, 'hud.progress'));
 
-// ── 6. X 标记工具 ─────────────────────────────────────────────────────────
-console.log('\n=== 6. X 标记工具');
-await click('action.q.x'); await tick(0.05);
-await click('cell.4.4'); await tick(0.05);
-ri = await get();
-const xNode = childOf(ri, 'cell.4.4', 'x');
-check('X 标记已显示', !!xNode && xNode.visible !== false, 'visible=' + (xNode && xNode.visible));
-await ss('t06-xmark.png');
-
+// ── 6. X 标记（单击空格直接切 ✗）────────────────────────────────────────────
 // 切回放置模式
 await click('action.q.place'); await tick(0.05);
 
@@ -202,6 +194,24 @@ if (susNames.length) {
   await ss('t09-accomplice.png');
   await click('modal.no_accomplice'); await tick(0.05);
   ri = await get();
+
+// ══ 附加：X 标记（放在最后，因为它需要"干净状态"，必须先重启本关）══
+console.log('\n=== 6. X 标记（单击空格直接切 ✗，不再需要工具按钮）');
+// ★★ 2026-09-29：`action.q.x` 已随底部操作条一起删除（用户要求）。
+//   新的操作逻辑：**未选人物时单击空格 = 直接切 ✗**，不需要先选工具。
+//
+//   ⚠️ 前置状态问题：第 4 步"双击预放置"按设计**不会取消选中**，所以此刻仍有角色被选中；
+//   而"选中人物时单击空格"是**预放置**、不是 ✗。
+//   ⇒ 不再去猜当前选中态（试过按缩放找选中卡片，不可靠），
+//     直接**重启本关**拿到干净状态再验证 —— 断言不该依赖上文残留的隐式状态。
+await c.play('start', {}); await tick(0.2);
+ri = await get();
+await click('cell.4.4'); await tick(0.05);
+ri = await get();
+const xNode = childOf(ri, 'cell.4.4', 'x');
+check('X 标记已显示', !!xNode && xNode.visible !== false, 'visible=' + (xNode && xNode.visible));
+await ss('t06-xmark.png');
+
   check('结案（独自作案）→ 出现结果面板',
     !!textOf(ri, 'modal.body'), JSON.stringify((textOf(ri, 'modal.body') || '').slice(0, 60)));
   await ss('t10-result.png');
