@@ -61,6 +61,16 @@ console.log('\n=== 0. 主页四键');
     textOf(r0, 'home.select') === '选关', textOf(r0, 'home.select'));
   check('第二键是「从存档点开始」',
     textOf(r0, 'home.continue') === '从存档点开始', textOf(r0, 'home.continue'));
+  // ★ 2D/3D 输入隔离（目标 ⑤）：适配期会打一行"已屏蔽穿透 N 个"。
+  //   ⚠️ 模拟器**不暴露** `disableKeyEventPassthrough` 这些字段（读过，没有），
+  //   所以这里断言的是**那行日志** —— 而 `seal_container` **只在字段存在且写入成功时才计数**，
+  //   于是"N ≥ 1"就等价于"这些字段在运行时是可设的"。这是在模拟器里能拿到的最强证据。
+  {
+    const sealLog = (r0.logs || []).map((l) => (typeof l === 'string' ? l : (l.text || '')))
+      .find((s) => /输入隔离.*屏蔽穿透/.test(s)) || '';
+    const n = Number((sealLog.match(/屏蔽穿透\s*(\d+)\s*个/) || [])[1] || 0);
+    check('主页/选关容器已设「屏蔽按键事件穿透」（目标 ⑤）', n >= 2, sealLog || '（没打这行日志）');
+  }
   // 商城 / 背包：占位按钮，点了给一句明确提示（美术资源齐了再设计）
   await click('home.shop'); await tick(0.1);
   r0 = await get();
