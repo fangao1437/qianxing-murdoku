@@ -2250,6 +2250,50 @@ end
 -- 顺带把 `showCursor` 也打开（官方：「CursorEvent 相关方法都需设置该参数为真后
 -- 才可正常使用」），与门控②同源；`disableKeyEventPassthrough` 也放开，
 -- 免得中间容器把键盘事件也吃掉。
+-- ★★★ 2026-09-30：**屏蔽穿透 —— 把 2D 界面和 3D 角色隔开**。
+--
+--   用户问过"社区里怎么把 2D 操作和后面的 3D 角色模型隔开，是拦截键位还是别的办法"。
+--   答案（官方《客户端 Lua UI 脚本公共 API》第 24 节 ClientUIContainerControl）：
+--     **不是拦截键位**，而是给**容器**设"屏蔽穿透"字段（均读写）：
+--       disableKeyEventPassthrough     是否屏蔽**按键**事件穿透
+--       disableCursorEventPassthrough  是否屏蔽**区域内点击**事件穿透
+--       isolateNavigation              是否隔离手柄导航
+--   一个字段覆盖整棵子树，不需要按键黑名单。
+--
+--   为什么"拦截"思路走不通：`AddKeyEventListener` **只是监听，没有"消费"语义** ——
+--   监听无法阻止引擎把按键交给角色。官方给的解法就是在容器层面屏蔽穿透。
+--
+--   ⚠️ 本项目里 `open_click_passthrough` 用的是**同一个字段的反方向**
+--      （设 false，让点击落到棋子上）—— 所以这不是新机制，只是换个方向用。
+--
+--   ⚠️ 待真机验证：**屏蔽之后 `AddKeyEventListener` 自己还能不能收到按键**。
+--      如果连自己也收不到，就不能对整屏开 —— 所以这里**逐个容器可配**，
+--      并打一行日志说明设了几个。
+function Adapter:seal_container(id)
+  local c = self:find(id)
+  if c == nil then return false end
+  local n = 0
+  if c.disableKeyEventPassthrough ~= nil then
+    if pcall(function() c.disableKeyEventPassthrough = true end) then n = n + 1 end
+  end
+  if c.disableCursorEventPassthrough ~= nil then
+    if pcall(function() c.disableCursorEventPassthrough = true end) then n = n + 1 end
+  end
+  if c.isolateNavigation ~= nil then
+    pcall(function() c.isolateNavigation = true end)   -- 手柄导航隔离（社区资料少，待验）
+  end
+  return n > 0
+end
+
+-- 批量：给一组容器屏蔽穿透。返回成功的个数。
+function Adapter:seal_containers(list)
+  if list == nil then return 0 end
+  local ok = 0
+  for i = 1, #list do
+    if self:seal_container(list[i]) then ok = ok + 1 end
+  end
+  return ok
+end
 function Adapter:open_click_passthrough(cell_id)
   local roots = (self.cfg.cells and self.cfg.cells.sub_roots)
     or { "content", "root", "body" }

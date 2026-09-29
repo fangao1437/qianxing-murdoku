@@ -395,6 +395,23 @@ function Murdoku.start(level_id, opts)
 
   Murdoku.render(true)
 
+  -- ★★★ 2026-09-30：**把主页/选关和 3D 角色的输入隔开**（用户明确要求）。
+  --
+  --   做法见适配器 `seal_container` 的注释：给容器设「屏蔽按键事件穿透」
+  --   （`disableKeyEventPassthrough`）等字段 —— **不是拦截键位**
+  --   （`AddKeyEventListener` 只有"监听"、没有"消费"语义，拦不住）。
+  --   控件已经在 .gil 里，这里是运行时给它们上锁。
+  --
+  --   ⚠️ 待真机验证：**屏蔽之后 `AddKeyEventListener` 自己还能不能收到按键**。
+  --      如果连自己也收不到，就缩小范围（只用 `disableCursorEventPassthrough`）。
+  --      这条日志打出"设了几个"，方便对照。
+  if adapter.seal_containers ~= nil then
+    local sealed = adapter:seal_containers({ "home", "select" })
+    if print then
+      print(string.format("[murdoku] 2D/3D 输入隔离：主页/选关容器已屏蔽穿透 %d 个", sealed))
+    end
+  end
+
   -- ★ 逐格自检 + 子控件清单放在**首次渲染之后**。
   --
   -- 为什么必须放到渲染后：格子上的墙/门/图片是**渲染时**由 `set_property` 落下去的
