@@ -164,6 +164,17 @@ function ensureChildList(rec) {
 const rootRec = g.byName.get('root');
 if (!rootRec) { console.error('❌ 找不到 root'); process.exit(3); }
 const protoBtn = g.byName.get('action.undo') || g.byName.get('action.hint');
+// ★★★ 2026-09-30：**容器必须克隆"真正的容器"**。
+//
+//   用户反馈「编辑器里看不到 home 和 select」。查下来是**类型标记**不对：
+//     · 容器节点 = `#505` 块里以 `#78` 开头
+//     · 预设按钮 = 以 `#80` 开头
+//   我原来从 `action.undo`（按钮）克隆 ⇒ 建出来的"容器"其实是**预设按钮**
+//   ⇒ 编辑器那个树叫「**客户端控件容器**」，只列容器 ⇒ **看不到它们**。
+//   （而且按钮在编辑器里也不允许挂子控件 ⇒ 首页那些子控件也一起看不见。）
+//   ⇒ 改成克隆 `intro`（一个**货真价实的容器节点**），类型字段自然就对。
+const protoBox = g.byName.get('intro') || g.byName.get('modal') || g.byName.get('board');
+if (!protoBox) { console.error('❌ 找不到容器原型（intro/modal/board 都没有）'); process.exit(3); }
 if (!protoBtn) { console.error('❌ 找不到按钮原型 action.undo'); process.exit(3); }
 
 const built = [];
@@ -177,7 +188,7 @@ function addContainer(name, x, y, w, h) {
   //       而我只手工把它加进了 `root` 的**子列表** ⇒ 两套数据不一致。
   //     · 传 `rootRec` ⇒ `#504` 改写 + 自动挂进 root 的子列表，一步到位。
   //   ⇒ 教训：**「子列表」和「#504」是两套数据，必须同时正确**，缺一个编辑器就看不到。
-  const rec = cloneSubtree(protoBtn, rootRec, name);
+  const rec = cloneSubtree(protoBox, rootRec, name);
   setGeom(rec.field.sub, x, y, w, h);
   setPos(rec.field.sub, x + w / 2, y + h / 2);
   // 容器不需要原型带来的 bg/label（那是按钮的子控件）⇒ 清空
@@ -244,8 +255,28 @@ for (let i = 1; i <= 8; i++) {
 }
 
 // 把新记录插进 tree（tree 是 parseMsg 的字段数组，记录就在其中）
+// ★ 只把**从 root 可达**的新记录放进 tree。
+//
+//   为什么：容器原型（`intro`）自带子控件，克隆时它们也被复制了一份；
+//   我们随后清空了容器的子列表 ⇒ 那些副本成了**孤儿记录** ——
+//   挂在容器下但不在子列表里，运行时会**飘在主页上**（视觉垃圾）。
+//   ⇒ 做一次可达性遍历，只保留真正用得上的。
 const allNew = [...byId.values()].filter((r) => r.id >= g.maxId + 1);
-for (const r of allNew) g.tree.push(r.field);
+const reachable = new Set([rootRec.id]);
+const byIdAll = new Map([...g.recs.map((r) => [r.id, r]), ...allNew.map((r) => [r.id, r])]);
+(function mark(id) {
+  const r = byIdAll.get(id);
+  if (!r) return;
+  const cl = findChildList(r.field.sub, true);
+  const kids = cl ? (asIdList(cl.payload, true) || []) : [];
+  for (const k of kids) { if (!reachable.has(k)) { reachable.add(k); mark(k); } }
+})(rootRec.id);
+let dropped = 0;
+for (const r of allNew) {
+  if (reachable.has(r.id)) g.tree.push(r.field);
+  else dropped++;
+}
+console.log('  丢掉孤儿记录 ' + dropped + ' 条（容器原型带过来的子控件副本）');
 
 const body = encodeMsg(g.tree);
 const outBuf = g.pack(body);
