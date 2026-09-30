@@ -1296,7 +1296,11 @@ function Controller:build_layout()
       local ly = gy + (b.r2 - 1) * step + math.floor(cell * 0.55)
       push({ id = "room.label." .. j, kind = "text", parent = "board",
              rect = { x = lx, y = ly, w = math.floor(cell * 0.82), h = math.floor(cell * 0.42) },
-             text = tostring(nm), style = "room.label", visible = true })
+             text = tostring(nm), style = "room.label", visible = true,
+             -- ★ 位置每帧由脚本按房间外框算 ⇒ 必须显式声明"脚本说了算"，
+             --   否则会被 `respect_editor_rect`（编辑器几何优先）按在存档里那一份几何上，
+             --   三个标签**中心重叠**（真机上是三个字叠在一起，模拟器里 box 完全相同）。
+             pos_runtime = true })
     end
     for j = #boxes + 1, 8 do
       -- ⚠️ 占位**也要给真实尺寸**，不能给 2×2。
@@ -1316,7 +1320,7 @@ function Controller:build_layout()
         ly = gy + (last.r2 - 1) * step + math.floor(cell * 0.55)
       end
       push({ id = "room.label." .. j, kind = "text", parent = "board", visible = false,
-             rect = { x = lx, y = ly, w = lw, h = lh } })
+             rect = { x = lx, y = ly, w = lw, h = lh }, pos_runtime = true })
     end
   end
 
@@ -2087,6 +2091,21 @@ function Controller:render(adapter, force)
     end
     local lr = last.__rect
     if force or not lr or lr.x ~= n.rect.x or lr.y ~= n.rect.y or lr.w ~= n.rect.w or lr.h ~= n.rect.h then
+      -- ★★★ 2026-09-30：**「这个控件的位置由脚本说了算」**。
+      --
+      --   背景：适配器有 `respect_editor_rect`（**编辑器几何优先**）—— 只要是存档里
+      --   已有的控件，脚本就不碰它的位置（这样你在编辑器里调的位置不会被覆盖）。
+      --   例外只有"运行时实例化"的控件（`self.instantiated[id]`）。
+      --
+      --   而**房间名标签**（`room.label.*`）需要在运行时按每个房间的外框摆 ——
+      --   它是存档里的控件（`sync_plan` 建进去的），但**位置必须每帧由脚本算**。
+      --   原来的下场：三个标签全被按在存档里那一份几何上，**中心完全重叠**（都是 503,738），
+      --   真机上就是三个字叠在一起。
+      --   ⇒ 给这类节点一个显式标记 `pos_runtime = true`，走和"运行时实例化"同一条路。
+      if n.pos_runtime then
+        adapter.instantiated = adapter.instantiated or {}
+        adapter.instantiated[n.id] = true
+      end
       adapter:set_property(n.id, "rect", n.rect)
       last.__rect = { x = n.rect.x, y = n.rect.y, w = n.rect.w, h = n.rect.h }
     end

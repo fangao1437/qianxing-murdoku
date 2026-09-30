@@ -194,7 +194,11 @@ console.log('\n=== 棋盘区域的控件（"压在棋盘上"的候选）===');
     console.log('  board.box = ' + JSON.stringify(bb));
     const bad = [];
     for (const [nm, k] of indexTree(ri)) {
+      // ★ 2026-09-30：`room.label.*` 也跳过 —— 它是**参考图里本来就有的房间名**
+      //   （每个房间右下角一行字），不是"压在棋盘上的多余控件"。
+      //   位置由脚本按房间外框每帧算（`pos_runtime = true`）。
       if (/^cell\./.test(nm) || nm === 'ruler' || /^ruler\./.test(nm)) continue;
+      if (/^room\.label\./.test(nm)) continue;
       if (/\.(bg|label|face|text|note|x|obj)$/.test(nm)) continue;      // 子控件不算
       // 顶层分区容器不算（它们本来就铺满）
       // ★ 2026-09-30：补上 `home` / `select` —— 主页与选关是**整屏结构容器**，

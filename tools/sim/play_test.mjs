@@ -364,6 +364,23 @@ console.log('\n=== 8b. 从存档点开始（玩过之后）');
   const w = k && k.box && k.box.width;
   check('房间名标签有真实尺寸（不是 2×2 占位）', typeof w === 'number' && w > 20,
     '宽=' + w);
+  // ★ 更关键的一条：**标签不许重叠**。
+  //
+  //   踩过的坑：`room.label.*` 是存档里的控件，而适配器有 `respect_editor_rect`
+  //   （编辑器几何优先）⇒ 三个标签**全被按在存档里那一份几何上**，中心完全重合
+  //   （模拟器里三个 box 一模一样，真机上是三个字叠在一起）。
+  //   ⇒ 给这类节点加了显式标记 `pos_runtime = true`，走"运行时实例化"同一条路。
+  {
+    const spots = [];
+    for (let j = 1; j <= 8; j++) {
+      const kk = indexTree(ri).get('room.label.' + j);
+      if (!kk || kk.visible !== true || !kk.box) continue;
+      spots.push(kk.box.left + ',' + kk.box.bottom);
+    }
+    const uniq = new Set(spots);
+    check('房间名标签彼此不重叠（每个房间一个位置）', uniq.size === spots.length,
+      spots.length + ' 个可见标签，位置 ' + uniq.size + ' 个：' + spots.join(' '));
+  }
 }
 
 // ── 9. 收尾 ───────────────────────────────────────────────────────────────
