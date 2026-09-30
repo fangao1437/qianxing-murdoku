@@ -1363,6 +1363,27 @@ function Adapter:scale_of_style(value)
   elseif value == "tab.active" then return 1.04 end
   return nil
 end
+
+-- ★★★ 2026-09-30：**样式的文字颜色也只在这里定义一处**（和 `scale_of_style` 同一套路）。
+--
+--   用途：参考《派蒙的执律庭实习》的线索卡 —— **人名/关键字是红色**、正文是白色。
+--   官方**没有富文本**（查过 API 缓存），也没有文字宽度测量 ⇒ 一行里没法给某几个字换色，
+--   只能"拆成两个控件"（`lua/ui_controller.lua` 的线索卡就是这么做的：
+--   名字占固定宽度的第一列，正文从固定 x 起）。
+--
+--   ⚠️ 颜色是 **32 位整数**（真机日志 `fontColor=4294967295`），**没有 `Color()` 全局函数**
+--   —— 所以这里直接写整数字面量。
+--   ⚠️ `RED` 用的是**真机实测过的那个红**（就是 ✗ 标记用的 `4290453793`），
+--   不自己调一个新色 —— 免得又变成"只在模拟器里好看"。
+function Adapter:color_of_style(value)
+  local WHITE = 4294967295            -- 0xFFFFFFFF：不透明白
+  local RED   = 4290453793            -- 真机实测红（✗ 标记同款素材色）
+  if value == "clue.who" then return RED end
+  if value == "clue.what" or value == "clue" or value == "clue.ok" or value == "clue.focus" then
+    return WHITE
+  end
+  return nil                          -- 其它样式不管颜色（保住各自现状）
+end
 function Adapter:apply_tray_layout(layout)
   if layout == nil or layout.items == nil then return 0 end
   local parent = self:find(self.cfg.tray_parent or "tray")
@@ -2753,6 +2774,13 @@ function Adapter:set_property(id, key, value)
     self._style[id] = value             -- 记住样式：重排函数要据此**重新施加**缩放
     local scale = self:scale_of_style(value)
     if scale and ctrl.SetLocalScale then ctrl:SetLocalScale(scale, scale, 1) end
+
+    -- ★★★ 2026-09-30：**文字颜色**（线索卡的"人名标红"，见 `color_of_style` 的注释）。
+    --   和缩放一样，颜色表也只定义一处 —— 避免"两个地方各写一份必然漂移"。
+    local wantColor = self:color_of_style(value)
+    if wantColor ~= nil and ctrl.fontColor ~= nil then
+      pcall(function() ctrl.fontColor = wantColor end)
+    end
 
     -- ★ 着色：**只有"已放置"才减淡**，其余状态一律还原成不透明白。
     --   不还原的话，取消放置后头像会一直是淡的（"调色"会粘住）。

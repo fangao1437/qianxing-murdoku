@@ -996,19 +996,61 @@ function Controller:build_layout()
   -- 而 effects 是在 render 末尾（控件都建完之后）才统一交给适配器播的，
   -- 所以在这里排队是安全的。控制器每个关卡重建一次 → 表随关卡自然重置。
   self._clue_fx = self._clue_fx or {}
+  -- ★★★ 2026-09-30：**线索卡拆成「名字 + 内容」两个控件**（参考《派蒙的执律庭实习》：
+  --   卡片上的人名/关键字是**红色**的，正文是白色）。
+  --
+  --   为什么必须拆控件、不能"行内标红"：官方**没有富文本**（查过 API 缓存），
+  --   也没有文字宽度测量 ⇒ 无法在一行里给某几个字换色。
+  --   ⇒ 做法：**名字占固定宽度的第一列**（`clue.<i>.who`，红色），
+  --     正文从固定 x 起（`clue.<i>.what`，常规色）。这样不需要测量宽度。
+  --
+  --   ⚠️ 切分依据：线索文案里**一定含角色名**（核心的 `text` 用 `ctx.name(...)` 拼的）。
+  --     从 `vm.tray` 里找"哪个名字出现在这条文案里"，找到就切；找不到就整条当正文
+  --     （**不硬造关键字** —— 宁可不高亮，也不显示编出来的名字）。
+  local WHO_W = 132      -- 名字列宽（设计坐标）
+  local function split_by_name(txt)
+    if type(vm.tray) ~= "table" then return nil, txt end
+    local best = nil
+    for _, it in ipairs(vm.tray) do
+      local nm = tostring(it.name or it.short or it.id or "")
+      if nm ~= "" and txt:find(nm, 1, true) then
+        -- 取**最长匹配**，避免"保"抢先于"保安"
+        if best == nil or #nm > #best then best = nm end
+      end
+    end
+    if best == nil then return nil, txt end
+    local at = txt:find(best, 1, true)
+    local pre, post = txt:sub(1, at - 1), txt:sub(at + #best)
+    return best, pre, post
+  end
+
   for i = 1, shown do
     local cl = vm.clues[i]
+    local y = L.clues.y + (i - 1) * L.clue_row_h
+    local h = L.clue_row_h - 6
+    local style = (self.focused_clue == i) and "clue.focus"
+                  or (cl.satisfied and "clue.ok" or "clue")
+    -- 整行保留（作为卡片底板 + 点击热区）；文字子控件浮在它上面
     push({
       id = "clue." .. i,
       kind = "text",
       parent = "clues",
-      rect = { x = L.clues.x, y = L.clues.y + (i - 1) * L.clue_row_h,
-               w = L.clues.w, h = L.clue_row_h - 6 },
+      rect = { x = L.clues.x, y = y, w = L.clues.w, h = h },
       text = cl.text,
-      style = (self.focused_clue == i) and "clue.focus"
-              or (cl.satisfied and "clue.ok" or "clue"),
+      style = style,
       event = { action = "focus_clue", index = i },
     })
+    local who, pre, post = split_by_name(tostring(cl.text or ""))
+    if who ~= nil then
+      -- 名字（红）：放第一列
+      push({ id = "clue." .. i .. ".who", kind = "text", parent = "clues",
+             rect = { x = L.clues.x + 10, y = y + 4, w = WHO_W, h = h - 8 },
+             text = tostring(pre or "") .. who, style = "clue.who" })
+      -- 内容：从固定 x 起（不测量宽度也能对齐）
+      push({ id = "clue." .. i .. ".what", kind = "text", parent = "clues",
+             rect = { x = L.clues.x + 10 + WHO_W, y = y + 4, w = L.clues.w - 20 - WHO_W, h = h - 8 },
+             text = tostring(post or ""), style = "clue.what" })
+    end
     if not self._clue_fx[i] and not self:is_intro_active() and self.modal == nil then
       self._clue_fx[i] = true
       self:fx("clue." .. i, M.EFFECTS.CLUE_IN)
