@@ -106,6 +106,9 @@ function M.ui_list()
       -- ★ 缩略图要的**房间外框**（`{ {r1,c1,r2,c2,cells}, ... }`）。
       --   算法来自 `lua/room_map.lua`（和游戏内房间判定**同一份实现**，不会漂移）。
       room_boxes = RoomMap.boxes(lv),
+      -- 关卡里**可选**写的房间名（`room_names = { "餐厅", "厨房", ... }`）。
+      --   没写就是 nil ⇒ 界面显示中性的「区域 N」（**不编名字**）。
+      room_names = lv.room_names,
     }
   end
   return out

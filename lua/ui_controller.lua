@@ -1262,6 +1262,64 @@ function Controller:build_layout()
            rect = { x = gx + (c - 1) * (cell + gap), y = L.board.y, w = cell, h = ruler - 6 },
            text = "C" .. c, style = "ruler" })
   end
+  -- ★★★ 2026-09-30：**房间名标签**（参考《派蒙的执律庭实习》：每个房间在右下角写房间名，
+  --   如 餐厅/厨房/前院/门廊/卧室）。
+  --
+  --   ⚠️ 关卡数据里**没有房间名**（`rooms` 字段都不存在，房间是从 `walls` 推导的）。
+  --     所以这里**不编名字**，而是两级：
+  --       · 关卡里写了 `room_names = { "餐厅", "厨房", ... }` ⇒ 用真名
+  --       · 没写 ⇒ 显示中性的「区域 1 / 区域 2 …」（位置先占住，名字随时能补）
+  --     等你在关卡里填上 `room_names`，这里**不用改一行代码**就会显示真名。
+  --
+  --   标签放在**房间外框的右下角那一格**里（和参考图的位置一致）。
+  if n > 0 then
+    -- ⚠️ 这里**不能用 `list`** —— 那是下面"选关界面"分支里的局部变量，
+    --   本段在它**之前**执行（我第一版就踩了：`attempt to get length of a nil value`）。
+    --   自己从 `self.opts.levels` 取一份。
+    local lv_list = {}
+    local opt_lv = self.opts.levels
+    if type(opt_lv) == "function" then lv_list = opt_lv() or {}
+    elseif type(opt_lv) == "table" then lv_list = opt_lv end
+    local cur = nil
+    local want = tostring(self.opts.current_level or "")
+    for i = 1, #lv_list do
+      if tostring(lv_list[i].id) == want then cur = lv_list[i] break end
+    end
+    local boxes = cur and cur.room_boxes or {}
+    local names = cur and cur.room_names or nil
+    local step = cell + gap
+    for j = 1, math.min(#boxes, 8) do
+      local b = boxes[j]
+      local nm = (type(names) == "table" and names[j]) or ("区域 " .. j)
+      -- 右下角那一格的位置；标签占该格的右下 3/4，字号由样式控制
+      local lx = gx + (b.c2 - 1) * step + math.floor(cell * 0.18)
+      local ly = gy + (b.r2 - 1) * step + math.floor(cell * 0.55)
+      push({ id = "room.label." .. j, kind = "text", parent = "board",
+             rect = { x = lx, y = ly, w = math.floor(cell * 0.82), h = math.floor(cell * 0.42) },
+             text = tostring(nm), style = "room.label", visible = true })
+    end
+    for j = #boxes + 1, 8 do
+      -- ⚠️ 占位**也要给真实尺寸**，不能给 2×2。
+      --
+      --   原因：`layout_plan` 是把**所有关卡**的布局取**并集**（为了让编辑器一次建够控件）。
+      --   如果本关房间少、把 `room.label.4` 推成 2×2 隐藏，而并集里"第一次出现"的就是它，
+      --   那这个控件的几何就**永久是 2×2** —— 真机上房间名会缩成一个小点。
+      --   （我第一版就是这么写的，模拟器里 `room.label.1` 的 box 是 2×2。）
+      --   ⇒ 占位沿用**最后一个真实房间**的几何，只是 `visible=false`。
+      local last = boxes[#boxes]
+      local lx = gx
+      local ly = gy
+      local lw = math.floor(cell * 0.82)
+      local lh = math.floor(cell * 0.42)
+      if last ~= nil then
+        lx = gx + (last.c2 - 1) * step + math.floor(cell * 0.18)
+        ly = gy + (last.r2 - 1) * step + math.floor(cell * 0.55)
+      end
+      push({ id = "room.label." .. j, kind = "text", parent = "board", visible = false,
+             rect = { x = lx, y = ly, w = lw, h = lh } })
+    end
+  end
+
   -- 行标尺
   for r = 1, vm.rows do
     push({ id = "ruler.r." .. r, kind = "text", parent = "ruler",

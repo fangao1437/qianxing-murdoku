@@ -348,6 +348,24 @@ console.log('\n=== 8b. 从存档点开始（玩过之后）');
     + ' toast=' + JSON.stringify(textOf(r3, 'hud.toast')));
 }
 
+// ── 8c. 棋盘上的房间名标签（参考《派蒙的执律庭实习》：每个房间右下角写房间名）────
+//
+//   ⚠️ 关卡数据里**没有房间名**，所以显示的是中性的「区域 N」——这是**有意为之**：
+//     宁可显示占位，也不编一个假名字。关卡里写了 `room_names = {...}` 就会自动变真名。
+{
+  // 回到关卡里（上面 8b 已经把界面停在关卡里了）
+  const k = indexTree(ri).get('room.label.1');
+  const txt = textOf(ri, 'room.label.1') || '';
+  check('棋盘上有房间名标签', !!k && k.visible === true, 'visible=' + (k ? k.visible : 'NA'));
+  check('房间名是「区域 N」占位（关卡没写 room_names 时不编名字）',
+    /^区域 \d+$/.test(txt.trim()), JSON.stringify(txt));
+  // 几何必须是**真实尺寸**，不能是 2×2 的小点
+  //   （跨关卡取并集时，"第一次出现"的那份几何会留下 —— 占位给 2×2 就会永久缩成小点）
+  const w = k && k.box && k.box.width;
+  check('房间名标签有真实尺寸（不是 2×2 占位）', typeof w === 'number' && w > 20,
+    '宽=' + w);
+}
+
 // ── 9. 收尾 ───────────────────────────────────────────────────────────────
 dumpJson('t99-final.json', ri);
 const errsLog = (ri.logs || []).filter((l) => l.level === 'error');

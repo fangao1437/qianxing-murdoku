@@ -141,6 +141,10 @@ function Murdoku.start(level_id, opts)
     --   两者都读局内存档，取不到就返回 nil，卡片只显示关名 —— **不编数据**。
     progress = function(lid) return Murdoku.progress_of(lid) end,
     last_level = function() return Murdoku.last_played() end,
+    -- ★★★ 2026-09-30：**界面要知道"现在跑的是哪一关"** —— 棋盘上的**房间名标签**
+    --   要按当前关卡的房间框来摆（房间框由 `Levels.ui_list()` 算好）。
+    --   只传 id（字符串），界面层自己去那份 list 里找 —— 不把整个关卡表塞过去。
+    current_level = tostring(level.id),
     -- 选关：直接从面板跳过去
     on_pick_level = function(id)
       -- ★ 记下"最近游玩"，供主页的「从存档点开始」用（要落盘，跨会话有效）
