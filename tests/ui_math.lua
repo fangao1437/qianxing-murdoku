@@ -330,5 +330,34 @@ do
   end
 end
 
+-- ── 6. 物件 → 素材键（家具图标的前置，2026-09-30）─────────────────────────
+--
+--   关卡里的物件是**中文名做键**（`["书架"]`），而适配层拿这个名字查 `assets` 调色板。
+--   中文素材名不好管理 ⇒ 物件可写 `kind = "shelf"`，界面层翻成 `obj.shelf`。
+--   这条钉住"写了 kind 用它、没写退回中文名"两条分支（老关卡不用改一个字）。
+do
+  local UIC = require("ui_controller")
+  -- ⚠️ 导出结构是 `M.Controller = Controller`（ui_controller.lua 第 171 行），
+  --   所以是 `UIC.Controller.object_key_of`，**不是** `UIC.object_key_of`
+  --   （我第一版就写错了，测试当场报 nil）。
+  local f = UIC.Controller and UIC.Controller.object_key_of
+  ok(type(f) == "function", "ui_controller.Controller.object_key_of 存在")
+
+  local vm = { object_defs = { ["书架"] = { kind = "shelf" }, ["旧物"] = {} } }
+  ok(f(vm, { object = "书架" }) == "obj.shelf",
+    "写了 kind ⇒ 用 ASCII 键 obj.shelf", f(vm, { object = "书架" }))
+  ok(f(vm, { object = "旧物" }) == "obj.旧物",
+    "没写 kind ⇒ 退回中文名 obj.旧物（不破坏老关卡）", f(vm, { object = "旧物" }))
+  ok(f(vm, { object = nil }) == nil, "没有物件 ⇒ nil")
+  ok(f(vm, { object = false }) == nil, "物件为 false 哨兵 ⇒ nil")
+  ok(f({}, { object = "书架" }) == "obj.书架", "vm 里没有 object_defs 也不报错")
+
+  -- 真实关卡：case_001 的三个物件都写了 kind
+  local lv = require("levels.case_001")
+  local seen = {}
+  for name, def in pairs(lv.objects or {}) do seen[#seen + 1] = name .. "→" .. tostring(def.kind) end
+  ok(#seen >= 1, "case_001 的物件表可读（" .. table.concat(seen, " ") .. "）")
+end
+
 print(string.format("\n结果：%d 通过 / %d 失败", pass, fail))
 if fail > 0 then os.exit(1) end

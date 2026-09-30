@@ -1376,11 +1376,20 @@ function Controller:build_layout()
         --   空格看不出来（`face` 本来就是白图），**一放人就变成用户报的
         --   「人物头像上有异常遮挡」**（截图里 C3/R1、C4/R2、C4/R3 那三块白方块）。
         --   ⇒ 每格显式声明 `object`（没有物件就是 nil），适配层据此开关 `obj` 的显隐。
-        -- ⚠️ 必须用 `false` 而不是 nil 当"没有物件"：
-        --   渲染循环是 `for k, v in pairs(n)` —— **Lua 里 `object = nil` 等于"这个键不存在"**，
-        --    于是没有物件的格子**永远不会下发 object** ⇒ `obj` 永远不被隐藏
-        --    （这正是"白块还在"的原因，我第一次没修掉）。
-        object = cd.object or false,
+        -- ★★★ 2026-09-30：**物件传的是"素材键"，不是显示名**（为 ⑤ 家具图标铺路）。
+        --
+        --   关卡里的物件是**中文名做键**的：
+        --       objects = { ["书架"] = { cells = {...}, kind = "shelf" }, ... }
+        --   而适配层拿这个名字去 `assets` 调色板里查素材 ⇒ 素材名会变成 `obj.书架`。
+        --   中文素材名不是不行，但**不好管理**（改名、跨语言、和图集对不上）。
+        --   ⇒ 规则：物件定义里写了 `kind` 就用 `obj.<kind>`（ASCII 稳定键），
+        --     没写就退回中文名（**不破坏现有数据** —— 老关卡一个字都不用改）。
+        --
+        --   ⚠️ 没物件时必须是 `false` 而不是 nil：
+        --     渲染循环是 `for k, v in pairs(n)` —— Lua 里 `object = nil` 等于"这个键不存在"，
+        --     于是没有物件的格子**永远不会下发 object** ⇒ `obj` 白块永远不被隐藏
+        --     （这正是用户报的「人物头像上有异常遮挡」，我第一次没修掉）。
+        object = Controller.object_key_of(vm, cd) or false,
         -- ★ 每格四边的墙 / 门：数据来自 core 的 `view()`（{up,down,left,right} 布尔表），
         --   适配层靠模板里固定的 `wall.*` / `door.*` 子控件 SetVisible 开关来实现 ——
         --   **不需要为每种墙型做模板**。
@@ -1791,6 +1800,31 @@ function Controller:push_room_thumb(push, cardId, it, cardRect, parent)
              rect = { x = area.x, y = area.y, w = 2, h = 2 } })
     end
   end
+end
+
+-- ★★★ 2026-09-30：**物件 → 素材键**（家具图标用）。
+--
+--   关卡里的物件是**中文名做键**的（`["书架"] = {...}`），而适配层拿这个名字
+--   去 `assets` 调色板查素材 ⇒ 素材名会变成 `obj.书架`。中文素材名不好管理
+--   （改名、跨语言、和图集对不上）。
+--
+--   ⇒ 规则：
+--     · 物件定义里写了 `kind = "shelf"` ⇒ 用 `obj.shelf`（ASCII 稳定键，推荐）
+--     · 没写 ⇒ 退回中文名（**不破坏现有数据**，老关卡一个字都不用改）
+--
+--   ⚠️ 一定要查"当前关卡"的物件表。`vm` 里只有**这一格是什么物件**（名字），
+--     没有 kind —— kind 在关卡数据的 `objects` 里。
+function Controller.object_key_of(vm, cd)
+  if cd == nil or cd.object == nil or cd.object == false or cd.object == "" then return nil end
+  local name = tostring(cd.object)
+  local kind = nil
+  local list = vm and vm.object_defs
+  if type(list) == "table" then
+    local def = list[name]
+    if type(def) == "table" then kind = def.kind end
+  end
+  if type(kind) == "string" and kind ~= "" then return "obj." .. kind end
+  return "obj." .. name
 end
 
 function Controller:level_card_text(it)

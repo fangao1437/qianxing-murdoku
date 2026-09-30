@@ -2635,6 +2635,13 @@ function Core:view()
     difficulty = self.level.difficulty,
     rows = self.rows,
     cols = self.cols,
+    -- ★★★ 2026-09-30：**关卡里的物件定义**（`objects` 原表）交给界面层。
+    --
+    --   为什么需要：格子上的 `object` 只是**物件的中文名**（如「书架」），
+    --   而界面层要把它翻成**素材键**（`obj.shelf`）去调色板查图 ——
+    --   `kind` 字段在关卡数据的 `objects[name].kind` 里，`vm` 里没有。
+    --   ⇒ 直接把原表带过来（只读用途；界面层不改它）。
+    object_defs = self.level.objects,
     cell_count = self.rows * self.cols,
     piece_count = self:piece_count(),
     victim_pos = victim_pos,

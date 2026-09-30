@@ -69,9 +69,14 @@ return {
 
   -- ⚠️ Lua 标识符只能是 ASCII，中文家具名必须写成 ["名"] = {...}
   objects = {
-    ["书架"]   = { cells = { { r = 5, c = 1 } }, occupiable = false },
-    ["展示柜"] = { cells = { { r = 5, c = 3 } }, occupiable = false },
-    ["地毯"]   = { cells = { { r = 4, c = 2 } }, occupiable = true  },
+    -- ★ 2026-09-30：物件多了个**可选**的 `kind` —— **家具图标的素材键**。
+    --   界面层会把它翻成 `obj.shelf` / `obj.case` / `obj.carpet`，
+    --   去 `assets` 调色板里查图（见 `ui_controller.object_key_of`）。
+    --   不写 kind 也能跑（退回中文名 `obj.书架`），只是素材名不好管理。
+    --   等家具素材配好，在 assets 里放 obj.shelf / obj.case / obj.carpet 即可显示。
+    ["书架"]   = { cells = { { r = 5, c = 1 } }, occupiable = false, kind = "shelf"  },
+    ["展示柜"] = { cells = { { r = 5, c = 3 } }, occupiable = false, kind = "case"   },
+    ["地毯"]   = { cells = { { r = 4, c = 2 } }, occupiable = true,  kind = "carpet" },
   },
   blocked = {},
   water   = {},
