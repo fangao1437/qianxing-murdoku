@@ -61,10 +61,13 @@ const idx = indexTree(ri);
 let card002 = null;
 for (const [nm] of idx) {
   if (!/^select\.card\.\d+$/.test(nm)) continue;
-  const t = textOf(ri, nm) || '';
+  // ★ 2026-09-30：卡片改成三段式（title / 缩略图 / info）后，文字**不在卡片本体上**了，
+  //   而在 `select.card.N.title`（关名）与 `.info`（人数）。这里要读关名。
+  const t = textOf(ri, nm + '.title') || '';
   if (t.includes('002')) { card002 = nm; break; }        // 卡片上写着「案件 002 · …」
 }
-check('选关界面上能读到卡片文字', !!textOf(ri, 'select.card.1'), textOf(ri, 'select.card.1'));
+check('选关界面上能读到卡片文字', !!textOf(ri, 'select.card.1.title'),
+  textOf(ri, 'select.card.1.title'));
 check('找到了 002 的卡片', card002 !== null, String(card002));
 await click(card002 || 'select.card.2'); await tick(0.25);
 ri = await get();

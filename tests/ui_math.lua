@@ -288,5 +288,47 @@ do
   end
 end
 
+-- ── 5. 房间计算（`lua/room_map.lua`）─────────────────────────────────────────
+--
+-- ★ 2026-09-30：选关卡片的棋盘缩略图要按**房间色块**画，房间算法被抽成独立模块
+--   （`murdoku_core` 转调它，界面层也用它 —— 只有这一处实现）。
+--   这里钉住它的**基本不变量**，免得哪天改动把缩略图/游戏内房间判定弄歪。
+do
+  local RoomMap = require("room_map")
+  -- ⚠️ `Levels` 是上面那个 `do` 块里的局部变量，这里取不到（我第一版就踩了：
+  --    `attempt to index a nil value`）⇒ 自己 require 一份。
+  local Levels = require("levels.init")
+  local all = Levels.all()
+  ok(type(RoomMap.boxes) == "function", "room_map.boxes 存在")
+
+  for i = 1, #all do
+    local lv = all[i]
+    local rows = lv.size and lv.size.rows
+    local cols = lv.size and lv.size.cols
+    local boxes = RoomMap.boxes(lv)
+    -- ① 每个格子都被划进某个房间（房间数 ≥ 1）
+    ok(#boxes >= 1, string.format("%s：至少算出 1 个房间（实际 %d）", tostring(lv.id), #boxes))
+    -- ② 房间框加起来**至少覆盖棋盘面积**（框会重叠，所以只查下界）
+    local cover = 0
+    for j = 1, #boxes do cover = cover + (boxes[j].r2 - boxes[j].r1 + 1) * (boxes[j].c2 - boxes[j].c1 + 1) end
+    ok(cover >= rows * cols,
+      string.format("%s：房间框覆盖 ≥ 棋盘 %d 格（实际 %d）", tostring(lv.id), rows * cols, cover))
+    -- ③ 每个框都在棋盘范围内
+    local inside = true
+    for j = 1, #boxes do
+      local b = boxes[j]
+      if b.r1 < 1 or b.c1 < 1 or b.r2 > rows or b.c2 > cols then inside = false end
+    end
+    ok(inside, string.format("%s：所有房间框都在棋盘内", tostring(lv.id)))
+    -- ④ 与核心口径**一致**（这是"只有一处实现"的证据）
+    local Core = require("murdoku_core")
+    local ws = Core.build_walls(lv, rows, cols)
+    local _, n_core = Core.compute_rooms(rows, cols, ws)
+    ok(n_core == #boxes,
+      string.format("%s：核心与 room_map 算出的房间数一致（%d）", tostring(lv.id), n_core),
+      (n_core ~= #boxes) and "两处实现漂移了！" or nil)
+  end
+end
+
 print(string.format("\n结果：%d 通过 / %d 失败", pass, fail))
 if fail > 0 then os.exit(1) end
