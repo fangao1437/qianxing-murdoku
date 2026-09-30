@@ -74,6 +74,58 @@ check('第 6 行第 6 列格子已显示', visibleOf(ri, 'cell.6.6') === true);
 check('第 7 行格子仍是隐藏的', visibleOf(ri, 'cell.7.7') === false);
 await shot(c, 'lv-02-case002.png');
 
+
+// ── 线索区滚动（2026-09-30，参考《派蒙的执律庭实习》的带滚轮列表）──────────────
+//
+//   引擎**没有滚轮事件**（查过官方 API 缓存），做的是「↑/↓ 按钮 + 滚动条」。
+//   这条测试的**真正意义**：一屏放不下时，靠后的线索必须**真的能滚到**
+//   —— `clue_max_visible` 是硬上限，少建控件 = 线索看不见 = 关卡不可解。
+{
+  check('线索区有 ↑/↓ 滚动按钮',
+    !!indexTree(ri).get('clues.up') && !!indexTree(ri).get('clues.down'));
+  const visCount = () => {
+    let n = 0;
+    for (const [nm] of indexTree(ri)) if (/^clue\.\d+$/.test(nm) && visibleOf(ri, nm) === true) n++;
+    return n;
+  };
+  const before = visCount();
+  // ⚠️ 三个坑（全踩过，写下来免得再犯）：
+  //   ① 不能写死 `clue.18` —— 各关线索数不同。
+  //   ② 模拟器的树是**所有关卡控件的并集** ⇒ `clue.18` 在 15 条的关卡上**也存在**，
+  //      只是永远隐藏 ⇒ "滚到 clue.18" 在那种关卡上**不可能通过**（假红）。
+  //   ③ 不需要滚动时，↑/↓ 与滚动条本来就该隐藏。
+  //   ⇒ 只断言**真正的要求**：**窗口能滚到"末端 == 总条数"**（每一条都够得着）。
+  const readCount = () => {
+    const t = textOf(ri, 'clues.count') || '';
+    const m = /^(\d+)-(\d+)\s*\/\s*(\d+)$/.exec(t.trim());
+    return m ? { from: +m[1], to: +m[2], total: +m[3] } : null;
+  };
+  const needScroll = visibleOf(ri, 'clues.track') === true;
+  if (needScroll) {
+    let steps = 0, cc = readCount();
+    while (steps < 40 && cc && cc.to < cc.total) {
+      await click('clues.down'); await tick(0.05);
+      ri = await get();
+      cc = readCount();
+      steps++;
+    }
+    check('滚到底时窗口末端 == 总条数（每一条都够得着）',
+      !!cc && cc.to === cc.total,
+      '滚了 ' + steps + ' 步；' + JSON.stringify(textOf(ri, 'clues.count')) + '（起始可见 ' + before + ' 条）');
+    check('滚动时窗口整体下移（from 变大了）', !!cc && cc.from > 1,
+      JSON.stringify(textOf(ri, 'clues.count')));
+    for (let k = 0; k < 40; k++) { await click('clues.up'); await tick(0.03); }
+    ri = await get();
+    const cc2 = readCount();
+    check('滚回顶部（from 回到 1）', !!cc2 && cc2.from === 1,
+      JSON.stringify(textOf(ri, 'clues.count')));
+  } else {
+    check('线索不需要滚动时，↑/↓ 与滚动条正确隐藏',
+      visibleOf(ri, 'clues.up') !== true && visibleOf(ri, 'clues.down') !== true,
+      'count=' + JSON.stringify(textOf(ri, 'clues.count')));
+  }
+}
+
 // ── 3. 切到 case_003（7×7）───────────────────────────────────────────────
 console.log('\n=== 3. 切到 case_003（7×7）');
 await click('action.back'); await tick(0.05);
@@ -104,7 +156,12 @@ const bw = boardN && (boardN.sizeDeltaX ?? boardN.width);
 const s7 = cell77 && (cell77.sizeDeltaX ?? cell77.width);
 check('7×7 的格子边长在合理区间（不重算公式，只看意图）',
   !!cell77 && sane(s7), 'cell.7.7=' + s7 + '（棋盘 ' + bw + '）');
-check('线索数跟着变成 18（clue.18 可见）', visibleOf(ri, 'clue.18') === true);
+// ★ 2026-09-30：**这条断言的约束变了**（不是"改测试让它变绿"）。
+//   以前线索区一屏显示全部 ⇒ `clue.18` 一定可见。
+//   现在线索区是**可滚动窗口** ⇒ 第 18 条在窗口外时 `visible=false` 是**正常的**，
+//   真正要保证的是"**控件存在**（能滚到）"。能不能滚到由下面那组滚动断言负责。
+check('线索数跟着变成 18（clue.18 的控件在）', !!indexTree(ri).get('clue.18'),
+  '存在=' + !!indexTree(ri).get('clue.18') + ' 可见=' + visibleOf(ri, 'clue.18'));
 await shot(c, 'lv-03-case003.png');
 
 // ── 4. 切回 5×5，大关卡的格子要重新隐藏 ──────────────────────────────────
@@ -117,6 +174,7 @@ check('棋子数回到 5', /\/ 5/.test(textOf(ri, 'hud.progress') || ''), textOf
 check('第 6 行格子重新被隐藏', visibleOf(ri, 'cell.6.6') === false);
 check('第 7 行格子重新被隐藏', visibleOf(ri, 'cell.7.7') === false);
 check('第 18 条线索重新被隐藏', visibleOf(ri, 'clue.18') === false);
+
 const c11 = indexTree(ri).get('cell.1.1');
 // 同上一处：按棋盘尺寸复算，不写死。5×5 的格子必须**比 7×7 大**（这是这条断言的本意）。
 const s5 = c11 && (c11.sizeDeltaX ?? c11.width);

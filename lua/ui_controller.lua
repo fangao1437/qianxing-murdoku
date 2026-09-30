@@ -95,9 +95,21 @@ M.LAYOUT = {
   --   现在放 18 行（382 + 18*28 = 886 ≤ 902），够本项目所有关卡用。
   --   写更多线索的关卡请同步调大 clue_max_visible / 调小 clue_row_h，
   --   并跑 `lua tests/ui_math.lua` 确认没压到图例。
-  clues  = { x = 40, y = 382, w = 360, h = 520 },   -- 382 + 18*28 = 886 ≤ 902
-  clue_row_h = 28,
-  clue_max_visible = 18,
+  clues  = { x = 40, y = 382, w = 360, h = 520 },   -- 9 行 × 52 = 468 ≤ 520
+  clue_row_h = 52,          -- ★ 2026-09-30：28 → 52（参考图的卡片是"头像 + 两行"，比原来高）
+  clue_max_visible = 18,    -- 硬上限：仍要够 case_003 的 18 条线索
+  -- ★★★ 2026-09-30：**线索区改成"可滚动窗口"**（参考《派蒙的执律庭实习》左侧那个带滚轮的列表）。
+  --
+  --   为什么必须真的能滚：上面那条注释写得很清楚 ——
+  --   `clue_max_visible` 是**硬上限**，超出的线索**连控件都不会生成**，
+  --   而线索是解题的全部依据 ⇒ **看不全 = 关卡不可解**。
+  --   所以窗口化时**不能靠"少建控件"**，而是：
+  --     · 18 个控件**照旧全部建出来**（保证任何一条都能滚到）
+  --     · 只按 `clue_scroll` 摆放可见的那 `clue_rows` 个，其余 `visible=false`
+  --
+  --   引擎**没有滚轮事件**（查过 API），但有**光标拖拽**；本实现先给
+  --   「↑ / ↓ 两个按钮 + 一条滚动条 + 焦点自动滚入视图」，够用且好测。
+  clue_rows = 9,            -- 一屏显示几条
   legend = { x = 40, y = 916, w = 360, h = 76 },
 
   -- ★★ 2026-09-28 修：**棋盘与底部动作条重叠了 116px**（用户报"动作条压住第 5 行"）。
@@ -787,6 +799,27 @@ function Controller:on_input(event)
     self.toast = (a == "shop") and "商城：美术资源就绪后开放" or "背包：美术资源就绪后开放"
     self.dirty = true
 
+  elseif a == "clue_up" or a == "clue_down" then
+    -- ★★★ 2026-09-30：**线索区滚动**（参考《派蒙的执律庭实习》左侧那个带滚轮的列表）。
+    --
+    --   引擎**没有滚轮事件**（查过官方 API 缓存），所以做的是"↑/↓ 按钮 + 滚动条"。
+    --   滚动的**真正意义**：一屏放不下时，能滚到的那几条必须**真的能被看到** ——
+    --   `clue_max_visible` 是硬上限，少建控件就等于线索看不见、关卡不可解。
+    --   所以这里只改 `clue_scroll`（窗口起点），**控件一个都不少**。
+    --   ⚠️ 这里**不能用 `L`** —— 那是 `build_layout` 里的局部变量，
+    --   输入分发这条路上没有（我第一版就写成了 `L.clue_rows`，
+    --   运行时报 `attempt to index a nil value (global 'L')`，被探针当场抓住）。
+    --   布局常量请走 `M.LAYOUT`。
+    local rows = M.LAYOUT.clue_rows or 9
+    local shown = math.min(#self.core:view().clues, M.LAYOUT.clue_max_visible)
+    local maxscroll = math.max(0, shown - rows)
+    local s = self.clue_scroll or 0
+    if a == "clue_up" then s = s - 1 else s = s + 1 end
+    if s < 0 then s = 0 end
+    if s > maxscroll then s = maxscroll end
+    self.clue_scroll = s
+    self.dirty = true
+
   elseif a == "focus_clue" then
     -- 线索卡：点一下聚焦、再点取消。
     --
@@ -991,6 +1024,59 @@ function Controller:build_layout()
 
   push({ id = "clues", kind = "container", parent = "left", rect = rect_of(L.clues), style = "panel" })
   local shown = math.min(#vm.clues, L.clue_max_visible)
+  local rows = L.clue_rows or 9
+  -- ★ 滚动位置：0 表示从第 1 条开始。**所有 `shown` 条控件都照旧建出来**
+  --   （保证任何一条都能滚到 —— 少建控件就等于线索看不见，关卡不可解）。
+  local total = shown
+  local maxscroll = math.max(0, total - rows)
+  self.clue_scroll = self.clue_scroll or 0
+  -- 焦点线索自动滚进视野 —— **只在焦点"变化时"做一次**。
+  --
+  --   ⚠️ 我第一版是每帧都做，结果：只要之前点过某条线索（`focused_clue` 有值），
+  --   **每一帧都把滚动位置拽回那条线索** ⇒ ↑/↓ 点了完全没用（探针点了 40 次没动）。
+  --   ⇒ 记住"上次为哪个焦点滚过"，只有真的换焦点时才自动滚。
+  if self.focused_clue ~= nil and self.focused_clue > 0
+     and self._clue_focus_seen ~= self.focused_clue then
+    self._clue_focus_seen = self.focused_clue
+    if self.focused_clue <= self.clue_scroll then self.clue_scroll = self.focused_clue - 1 end
+    if self.focused_clue > self.clue_scroll + rows then self.clue_scroll = self.focused_clue - rows end
+  end
+  if self.clue_scroll < 0 then self.clue_scroll = 0 end
+  if self.clue_scroll > maxscroll then self.clue_scroll = maxscroll end
+
+  -- ↑ / ↓ 两个按钮 + 一条滚动条（引擎**没有滚轮事件**，这是最实在的做法）
+  local ARROW = 34
+  local top = L.clues.y
+  local bottom = L.clues.y + rows * L.clue_row_h
+  push({ id = "clues.up", kind = "button", parent = "clues",
+         rect = { x = L.clues.x + L.clues.w - ARROW - 6, y = top + 2, w = ARROW, h = ARROW },
+         text = "▲", event = { action = "clue_up" },
+         style = "tab", visible = (maxscroll > 0) })
+  push({ id = "clues.down", kind = "button", parent = "clues",
+         rect = { x = L.clues.x + L.clues.w - ARROW - 6, y = bottom - ARROW - 2, w = ARROW, h = ARROW },
+         text = "▼", event = { action = "clue_down" },
+         style = "tab", visible = (maxscroll > 0) })
+  -- 滚动条：轨道 + 滑块（比例条，纯展示；拖动留给真机验证后再加）
+  push({ id = "clues.track", kind = "container", parent = "clues",
+         rect = { x = L.clues.x + L.clues.w - 8, y = top + ARROW + 6, w = 4, h = bottom - top - 2 * ARROW - 12 },
+         style = "panel", visible = (maxscroll > 0) })
+  if maxscroll > 0 then
+    local trackTop = top + ARROW + 6
+    local trackH = bottom - top - 2 * ARROW - 12
+    local knobH = math.max(24, math.floor(trackH * rows / total))
+    local knobY = trackTop + math.floor((trackH - knobH) * self.clue_scroll / maxscroll)
+    push({ id = "clues.knob", kind = "container", parent = "clues",
+           rect = { x = L.clues.x + L.clues.w - 8, y = knobY, w = 4, h = knobH },
+           style = "tab.active", visible = true })
+  end
+  -- 计数（"3–11 / 18"），让玩家知道自己是第几条
+  push({ id = "clues.count", kind = "text", parent = "clues",
+         rect = { x = L.clues.x + L.clues.w - 120, y = top + 2, w = 78, h = ARROW },
+         text = string.format("%d-%d / %d",
+           maxscroll > 0 and (self.clue_scroll + 1) or 1,
+           math.min(self.clue_scroll + rows, total), total),
+         style = "muted", visible = (maxscroll > 0) })
+
   -- 线索卡"刷出来"的动效：每条只弹一次。
   -- 为什么不在生成时直接 fx：这条线索控件可能在**同一帧里刚被创建**，
   -- 而 effects 是在 render 末尾（控件都建完之后）才统一交给适配器播的，
@@ -1026,7 +1112,10 @@ function Controller:build_layout()
 
   for i = 1, shown do
     local cl = vm.clues[i]
-    local y = L.clues.y + (i - 1) * L.clue_row_h
+    -- 这一条落在窗口的第几行（不在窗口里就整条隐藏 —— 但**控件仍然存在**，能滚到）
+    local slot = i - self.clue_scroll
+    local inWin = (slot >= 1 and slot <= rows)
+    local y = L.clues.y + (slot - 1) * L.clue_row_h
     local h = L.clue_row_h - 6
     local style = (self.focused_clue == i) and "clue.focus"
                   or (cl.satisfied and "clue.ok" or "clue")
@@ -1035,9 +1124,10 @@ function Controller:build_layout()
       id = "clue." .. i,
       kind = "text",
       parent = "clues",
-      rect = { x = L.clues.x, y = y, w = L.clues.w, h = h },
+      rect = { x = L.clues.x, y = y, w = L.clues.w - 16, h = h },
       text = cl.text,
       style = style,
+      visible = inWin,
       event = { action = "focus_clue", index = i },
     })
     local who, pre, post = split_by_name(tostring(cl.text or ""))
@@ -1045,19 +1135,19 @@ function Controller:build_layout()
       -- 名字（红）：放第一列
       push({ id = "clue." .. i .. ".who", kind = "text", parent = "clues",
              rect = { x = L.clues.x + 10, y = y + 4, w = WHO_W, h = h - 8 },
-             text = tostring(pre or "") .. who, style = "clue.who" })
+             text = tostring(pre or "") .. who, style = "clue.who", visible = inWin })
       -- 内容：从固定 x 起（不测量宽度也能对齐）
       push({ id = "clue." .. i .. ".what", kind = "text", parent = "clues",
-             rect = { x = L.clues.x + 10 + WHO_W, y = y + 4, w = L.clues.w - 20 - WHO_W, h = h - 8 },
-             text = tostring(post or ""), style = "clue.what" })
+             rect = { x = L.clues.x + 10 + WHO_W, y = y + 4, w = L.clues.w - 36 - WHO_W, h = h - 8 },
+             text = tostring(post or ""), style = "clue.what", visible = inWin })
     end
-    if not self._clue_fx[i] and not self:is_intro_active() and self.modal == nil then
+    if inWin and not self._clue_fx[i] and not self:is_intro_active() and self.modal == nil then
       self._clue_fx[i] = true
       self:fx("clue." .. i, M.EFFECTS.CLUE_IN)
     end
   end
   push({ id = "clues.more", kind = "text", parent = "clues",
-         rect = { x = L.clues.x, y = L.clues.y + shown * L.clue_row_h, w = L.clues.w, h = 30 },
+         rect = { x = L.clues.x, y = L.clues.y + rows * L.clue_row_h, w = L.clues.w, h = 30 },
          text = string.format("还有 %d 条线索", math.max(0, #vm.clues - shown)),
          style = "muted", visible = (#vm.clues > shown) })
 

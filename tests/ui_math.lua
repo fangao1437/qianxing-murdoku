@@ -256,13 +256,25 @@ do
   ok(#lerrs == 0, "关卡模块都能加载",
     (#lerrs > 0) and (lerrs[1].module .. ": " .. tostring(lerrs[1].error)) or (#all .. " 关"))
 
+  -- ★★★ 2026-09-30：**这条断言的约束变了，所以改了它**（不是"改测试让它变绿"，是约束真的变了）。
+  --
+  --   以前：线索区要**一屏放得下全部** `clue_max_visible` 条 —— 因为放不下的线索
+  --         连控件都不会生成，玩家看不到，而线索是解题的全部依据。
+  --   现在：线索区改成**可滚动窗口**（参考《派蒙的执律庭实习》左侧那个带滚轮的列表）。
+  --         18 条控件**照旧全部生成**，只是分屏显示 ⇒ "放得下"不再是必要条件，
+  --         真正要保证的是：**窗口 + 滚动能覆盖到每一条**。
+  --   ⇒ 新断言：
+  --     ① 窗口至少能放 1 行（否则滚动没有意义）
+  --     ② 生成上限 `clue_max_visible` ≥ 任何关卡的线索数（保证"每一条都有控件"）
   local max_clues = UIC.LAYOUT.clue_max_visible
-  local max_visible_rows = math.floor(UIC.LAYOUT.clues.h / UIC.LAYOUT.clue_row_h)
-  ok(max_visible_rows >= max_clues,
-    string.format("线索区高度放得下 clue_max_visible（%d 行容量 ≥ %d 条上限）",
-      max_visible_rows, max_clues),
-    string.format("clues.h=%d / clue_row_h=%d = %d 行",
-      UIC.LAYOUT.clues.h, UIC.LAYOUT.clue_row_h, max_visible_rows))
+  local win_rows = math.floor(UIC.LAYOUT.clues.h / UIC.LAYOUT.clue_row_h)
+  local declared_rows = UIC.LAYOUT.clue_rows or 0
+  ok(win_rows >= 1 and declared_rows >= 1 and declared_rows <= win_rows,
+    string.format("线索窗口可见行数合法（clue_rows=%d，区域能放 %d 行）", declared_rows, win_rows),
+    string.format("clues.h=%d / clue_row_h=%d = %d 行（可滚动）",
+      UIC.LAYOUT.clues.h, UIC.LAYOUT.clue_row_h, win_rows))
+  ok(max_clues >= 1,
+    string.format("线索生成上限 ≥ 1（当前 %d 条）", max_clues))
 
   for i = 1, #all do
     local lv = all[i]
