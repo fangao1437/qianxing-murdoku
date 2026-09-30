@@ -83,6 +83,31 @@ await shot(c, 'lv-02-case002.png');
 {
   check('线索区有 ↑/↓ 滚动按钮',
     !!indexTree(ri).get('clues.up') && !!indexTree(ri).get('clues.down'));
+
+  // ── 线索卡的内容：头像 + 名字 + 字母徽章（参考图的卡片就是这三样）────────────
+  //
+  //   ⚠️ 只断言**至少有一条**卡片三样齐全 —— 不是每条线索都含角色名
+  //   （有的线索是"某人不在某处"这类，名字可能匹配不上 ⇒ 按规则整条当正文，
+  //     这时没有 who/face/badge 是**正确的行为**，不是 bug）。
+  {
+    const idx2 = indexTree(ri);
+    let full = 0, sample = '';
+    for (const [nm] of idx2) {
+      const m = /^clue\.(\d+)\.face$/.exec(nm);
+      if (!m) continue;
+      const i = m[1];
+      const k = idx2.get(nm);
+      const badge = textOf(ri, 'clue.' + i + '.badge');
+      const who = textOf(ri, 'clue.' + i + '.who');
+      if (k && k.visible === true && badge && who) {
+        full++;
+        if (!sample) sample = 'clue.' + i + ' 头像 ✅ 名字=' + JSON.stringify(who) + ' 徽章=' + JSON.stringify(badge);
+      }
+    }
+    check('线索卡有「头像 + 名字 + 字母徽章」三样齐全的（参考图的卡片样子）',
+      full >= 1, full + ' 条齐全；样例 ' + sample);
+  }
+
   const visCount = () => {
     let n = 0;
     for (const [nm] of indexTree(ri)) if (/^clue\.\d+$/.test(nm) && visibleOf(ri, nm) === true) n++;

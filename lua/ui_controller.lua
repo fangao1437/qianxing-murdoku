@@ -1094,20 +1094,29 @@ function Controller:build_layout()
   --     从 `vm.tray` 里找"哪个名字出现在这条文案里"，找到就切；找不到就整条当正文
   --     （**不硬造关键字** —— 宁可不高亮，也不显示编出来的名字）。
   local WHO_W = 132      -- 名字列宽（设计坐标）
+  -- ★★★ 2026-09-30：**卡片左边一个头像、右边一个字母徽章**（参考《派蒙的执律庭实习》：
+  --   线索卡是"人物头像 + 线索文字 + 右侧字母（B/C/D）"）。
+  --   头像复用已有的 `portrait.*` 调色板（`vm.tray` 里每项都带 `portrait` 字段），
+  --   **不引入新素材**；徽章就是嫌疑人的字母 id（A/B/C/D/V）。
+  local FACE = 40        -- 头像边长
+  local BADGE_W = 30     -- 徽章宽
+  local PAD = 8          -- 卡片内边距
+
+  -- 返回 名字 / 前缀 / 后缀 / 该角色的 id / 头像名
   local function split_by_name(txt)
-    if type(vm.tray) ~= "table" then return nil, txt end
-    local best = nil
+    if type(vm.tray) ~= "table" then return nil, txt, nil, nil, nil end
+    local best, bestIt = nil, nil
     for _, it in ipairs(vm.tray) do
       local nm = tostring(it.name or it.short or it.id or "")
       if nm ~= "" and txt:find(nm, 1, true) then
         -- 取**最长匹配**，避免"保"抢先于"保安"
-        if best == nil or #nm > #best then best = nm end
+        if best == nil or #nm > #best then best, bestIt = nm, it end
       end
     end
-    if best == nil then return nil, txt end
+    if best == nil then return nil, txt, nil, nil, nil end
     local at = txt:find(best, 1, true)
     local pre, post = txt:sub(1, at - 1), txt:sub(at + #best)
-    return best, pre, post
+    return best, pre, post, bestIt and tostring(bestIt.id) or nil, bestIt and bestIt.portrait or nil
   end
 
   for i = 1, shown do
@@ -1130,16 +1139,28 @@ function Controller:build_layout()
       visible = inWin,
       event = { action = "focus_clue", index = i },
     })
-    local who, pre, post = split_by_name(tostring(cl.text or ""))
+    local who, pre, post, wid, wportrait = split_by_name(tostring(cl.text or ""))
+    local tx = L.clues.x + PAD + FACE + PAD      -- 文字起点：让开左边的头像
+    local tw = L.clues.w - 16 - (FACE + PAD * 2) - BADGE_W - PAD
     if who ~= nil then
-      -- 名字（红）：放第一列
+      -- 头像（左边）：复用 `portrait.*` 调色板，**不引入新素材**
+      push({ id = "clue." .. i .. ".face", kind = "button", parent = "clues",
+             rect = { x = L.clues.x + PAD, y = y + math.floor((h - FACE) / 2), w = FACE, h = FACE },
+             image = wportrait, style = "portrait", visible = inWin })
+      -- 名字（红）：正文第一列
       push({ id = "clue." .. i .. ".who", kind = "text", parent = "clues",
-             rect = { x = L.clues.x + 10, y = y + 4, w = WHO_W, h = h - 8 },
+             rect = { x = tx, y = y + 4, w = WHO_W, h = h - 8 },
              text = tostring(pre or "") .. who, style = "clue.who", visible = inWin })
       -- 内容：从固定 x 起（不测量宽度也能对齐）
       push({ id = "clue." .. i .. ".what", kind = "text", parent = "clues",
-             rect = { x = L.clues.x + 10 + WHO_W, y = y + 4, w = L.clues.w - 36 - WHO_W, h = h - 8 },
+             rect = { x = tx + WHO_W, y = y + 4, w = math.max(40, tw - WHO_W), h = h - 8 },
              text = tostring(post or ""), style = "clue.what", visible = inWin })
+      -- 字母徽章（右边）：就是嫌疑人的字母 id（A/B/C/D/V），参考图那样
+      if wid ~= nil and wid ~= "" then
+        push({ id = "clue." .. i .. ".badge", kind = "text", parent = "clues",
+               rect = { x = L.clues.x + L.clues.w - 16 - BADGE_W - PAD, y = y + 4, w = BADGE_W, h = h - 8 },
+               text = wid, style = "clue.who", visible = inWin })
+      end
     end
     if inWin and not self._clue_fx[i] and not self:is_intro_active() and self.modal == nil then
       self._clue_fx[i] = true
