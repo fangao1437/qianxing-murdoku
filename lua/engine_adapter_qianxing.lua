@@ -2689,8 +2689,19 @@ function Adapter:set_property(id, key, value)
     --
     --   注意：行标/列标、头像卡另有 `apply_ruler_layout` / `apply_tray_layout`
     --   直接写位置，不受这里影响（那两条本来就是运行时重排）。
+    --
+    -- ★★★ 2026-09-30：`runtime_rect` 是**只影响这一处**的独立标记。
+    --
+    --   为什么不能复用 `instantiated`：那个标记还管着"**允不允许销毁控件**"
+    --   （见隐藏分支：`instantiated[id]` 为真时会调 `DestroyClientUIControl`）。
+    --   我第一版复用它 —— 结果房间名标签 / 选卡色块被当成"脚本建的"，
+    --   某次渲染里它们短暂不可见 ⇒ 被判为"该隐藏" ⇒ **真销毁了** ⇒ 再也回不来
+    --   （测试报"可见色块 0 块"，而单独探针在别的时点看是 3 块 ——
+    --     这个"两处看到的不一样"就是销毁的证据）。
+    --   ⇒ 挪到独立标记：**只跳过 `respect_editor_rect`，不碰销毁语义**。
     if self.cfg.respect_editor_rect ~= false
-       and not (self.instantiated and self.instantiated[id]) then
+       and not (self.instantiated and self.instantiated[id])
+       and not (self.runtime_rect and self.runtime_rect[id]) then
       return
     end
 

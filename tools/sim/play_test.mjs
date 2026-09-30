@@ -86,9 +86,18 @@ console.log('\n=== 0. 主页四键');
     check('卡片 info 有人数（M名嫌疑人+1名受害人）', /名嫌疑人\+1名受害人/.test(info),
       JSON.stringify(info.slice(0, 70)));
     // 缩略图：至少有一条房间色块可见
+    //
+    //   ⚠️ 用**重试**而不是"睡固定时间再读一次"：
+    //   我先后试过"复用旧快照"和"重新取一次"，都报 0 块，而单独探针明明看到
+    //   `room.1/2/3 visible=true`。多次 tick 之后总会同步上 ——
+    //   与其猜"睡多久才够"，不如**轮询到出现为止**（有上限，不会挂死）。
     let rooms = 0;
     if (caseCard) {
-      for (let j = 1; j <= 6; j++) if (visibleOf(r9, caseCard + '.room.' + j) === true) rooms++;
+      for (let attempt = 0; attempt < 8 && rooms === 0; attempt++) {
+        const rr = await get();
+        for (let j = 1; j <= 6; j++) if (visibleOf(rr, caseCard + '.room.' + j) === true) rooms++;
+        if (rooms === 0) await tick(0.1);
+      }
     }
     check('卡片中间画出了棋盘缩略图（房间色块）', rooms >= 1,
       caseCard ? caseCard + ' 可见色块 ' + rooms + ' 块' : '（没找到案件卡）');

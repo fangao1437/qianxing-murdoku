@@ -1090,9 +1090,11 @@ function Controller:build_layout()
     local trackH = bottom - top - 2 * ARROW - 12
     local knobH = math.max(24, math.floor(trackH * rows / total))
     local knobY = trackTop + math.floor((trackH - knobH) * self.clue_scroll / maxscroll)
+    -- 滚动条滑块：y 随 `clue_scroll` 变 ⇒ 位置必须由脚本说了算
+    -- （和线索卡同一个道理，见下面 `clue.N` 那段的注释）
     push({ id = "clues.knob", kind = "container", parent = "clues",
            rect = { x = L.clues.x + L.clues.w - 8, y = knobY, w = 4, h = knobH },
-           style = "tab.active", visible = true })
+           style = "tab.active", visible = true, pos_runtime = true })
   end
   -- 计数（"3–11 / 18"），让玩家知道自己是第几条
   push({ id = "clues.count", kind = "text", parent = "clues",
@@ -1154,6 +1156,12 @@ function Controller:build_layout()
     local style = (self.focused_clue == i) and "clue.focus"
                   or (cl.satisfied and "clue.ok" or "clue")
     -- 整行保留（作为卡片底板 + 点击热区）；文字子控件浮在它上面
+    --
+    -- ★★★ 2026-09-30：**线索卡整块都要 `pos_runtime`**。
+    --   它的 y 随**滚动位置**（`clue_scroll`）每帧变 ⇒ 位置必须由脚本说了算。
+    --   否则会被 `respect_editor_rect`（编辑器几何优先）按在存档里那一份几何上：
+    --   滚动时**卡片纹丝不动**，只有 visible 在变 —— 真机上表现为「滚了但位置没动，
+    --   内容在同一个地方换」。这正是房间名标签那个 bug 的同一个形状。
     push({
       id = "clue." .. i,
       kind = "text",
@@ -1163,28 +1171,32 @@ function Controller:build_layout()
       style = style,
       visible = inWin,
       event = { action = "focus_clue", index = i },
+      pos_runtime = true,
     })
     local who, pre, post, wid, wportrait = split_by_name(tostring(cl.text or ""))
     local tx = L.clues.x + PAD + FACE + PAD      -- 文字起点：让开左边的头像
     local tw = L.clues.w - 16 - (FACE + PAD * 2) - BADGE_W - PAD
     if who ~= nil then
       -- 头像（左边）：复用 `portrait.*` 调色板，**不引入新素材**
+      -- （子控件的 y 也跟着卡片走 ⇒ 同样要 `pos_runtime`，理由见上面那段的注释）
       push({ id = "clue." .. i .. ".face", kind = "button", parent = "clues",
              rect = { x = L.clues.x + PAD, y = y + math.floor((h - FACE) / 2), w = FACE, h = FACE },
-             image = wportrait, style = "portrait", visible = inWin })
+             image = wportrait, style = "portrait", visible = inWin, pos_runtime = true })
       -- 名字（红）：正文第一列
       push({ id = "clue." .. i .. ".who", kind = "text", parent = "clues",
              rect = { x = tx, y = y + 4, w = WHO_W, h = h - 8 },
-             text = tostring(pre or "") .. who, style = "clue.who", visible = inWin })
+             text = tostring(pre or "") .. who, style = "clue.who", visible = inWin,
+             pos_runtime = true })
       -- 内容：从固定 x 起（不测量宽度也能对齐）
       push({ id = "clue." .. i .. ".what", kind = "text", parent = "clues",
              rect = { x = tx + WHO_W, y = y + 4, w = math.max(40, tw - WHO_W), h = h - 8 },
-             text = tostring(post or ""), style = "clue.what", visible = inWin })
+             text = tostring(post or ""), style = "clue.what", visible = inWin,
+             pos_runtime = true })
       -- 字母徽章（右边）：就是嫌疑人的字母 id（A/B/C/D/V），参考图那样
       if wid ~= nil and wid ~= "" then
         push({ id = "clue." .. i .. ".badge", kind = "text", parent = "clues",
                rect = { x = L.clues.x + L.clues.w - 16 - BADGE_W - PAD, y = y + 4, w = BADGE_W, h = h - 8 },
-               text = wid, style = "clue.who", visible = inWin })
+               text = wid, style = "clue.who", visible = inWin, pos_runtime = true })
       end
     end
     if inWin and not self._clue_fx[i] and not self:is_intro_active() and self.modal == nil then
@@ -1796,12 +1808,19 @@ function Controller:push_room_thumb(push, cardId, it, cardRect, parent)
       local y = area.y + math.floor((b.r1 - 1) * ch)
       local w = math.max(2, math.floor((b.c2 - b.c1 + 1) * cw))
       local h = math.max(2, math.floor((b.r2 - b.r1 + 1) * ch))
+      -- ★ 位置按**每个关卡**的房间外框算 ⇒ 必须 `pos_runtime`（理由同房间名标签：
+      --   否则会被 `respect_editor_rect` 按在存档里那一份几何上，
+      --   8 张卡片的缩略图会**全挤成同一块**）。
       push({ id = id, kind = "button", parent = parent, visible = true,
              rect = { x = x, y = y, w = w, h = h },
-             image = WHITE_MAT, tint = ROOM_TINT[(j - 1) % #ROOM_TINT + 1] })
+             image = WHITE_MAT, tint = ROOM_TINT[(j - 1) % #ROOM_TINT + 1], pos_runtime = true })
     else
+      -- 占位也给**真实尺寸**（沿用它上面的区域），只是隐藏 ——
+      -- 原因同房间名标签：跨关卡取并集时"第一次出现"的几何会留下，
+      -- 给 2×2 的话真机上色块会缩成一个点。
       push({ id = id, kind = "button", parent = parent, visible = false,
-             rect = { x = area.x, y = area.y, w = 2, h = 2 } })
+             rect = { x = area.x, y = area.y, w = math.max(2, math.floor(area.w / 4)),
+                      h = math.max(2, math.floor(area.h / 4)) }, pos_runtime = true })
     end
   end
 end
@@ -2101,10 +2120,14 @@ function Controller:render(adapter, force)
       --   它是存档里的控件（`sync_plan` 建进去的），但**位置必须每帧由脚本算**。
       --   原来的下场：三个标签全被按在存档里那一份几何上，**中心完全重叠**（都是 503,738），
       --   真机上就是三个字叠在一起。
-      --   ⇒ 给这类节点一个显式标记 `pos_runtime = true`，走和"运行时实例化"同一条路。
+      --
+      --   ⚠️⚠️ 用 `runtime_rect`（**只跳过位置检查**），**不要**用 `adapter.instantiated`！
+      --   我第一版复用了 `instantiated` —— 那个标记还管着"允不允许销毁控件"，
+      --   于是房间标签/选卡色块在某次渲染里短暂不可见时被**真销毁**，再也回不来
+      --   （表现为"测试里可见色块 0 块，单独探针却看到 3 块"）。
       if n.pos_runtime then
-        adapter.instantiated = adapter.instantiated or {}
-        adapter.instantiated[n.id] = true
+        adapter.runtime_rect = adapter.runtime_rect or {}
+        adapter.runtime_rect[n.id] = true
       end
       adapter:set_property(n.id, "rect", n.rect)
       last.__rect = { x = n.rect.x, y = n.rect.y, w = n.rect.w, h = n.rect.h }
