@@ -173,6 +173,8 @@ const protoBtn = g.byName.get('action.undo') || g.byName.get('action.hint');
 //   ⇒ 编辑器那个树叫「**客户端控件容器**」，只列容器 ⇒ **看不到它们**。
 //   （而且按钮在编辑器里也不允许挂子控件 ⇒ 首页那些子控件也一起看不见。）
 //   ⇒ 改成克隆 `intro`（一个**货真价实的容器节点**），类型字段自然就对。
+// 文本原型：`modal.title` 是编辑器里一个货真价实的文本控件
+const protoText = g.byName.get('modal.title') || g.byName.get('hud.title') || g.byName.get('intro.title') || null;
 const protoBox = g.byName.get('intro') || g.byName.get('modal') || g.byName.get('board');
 if (!protoBox) { console.error('❌ 找不到容器原型（intro/modal/board 都没有）'); process.exit(3); }
 if (!protoBtn) { console.error('❌ 找不到按钮原型 action.undo'); process.exit(3); }
@@ -204,10 +206,34 @@ function addToChildList(rec, id) {
   setChildList(l, cur);
 }
 
+// ★★★ 2026-09-30：**`--reuse` 模式 —— 容器由编辑器自己建，我们只砌砖**。
+//
+//   背景：我从 `intro` 克隆出来的 `home`/`select`，**编辑器导入后整棵子树被丢弃**
+//   （用户导出回来的 35.gil 只有 197 条记录，`home`/`select` 连同子控件全没了）。
+//   我在 `.gil` 里能验的都验过了：类型 `#505/#78` 对、父级 `#504` 对、子列表对、
+//   ID 无冲突、和 `board` 全字段零差异 —— 编辑器还是不认。
+//   ⇒ 不再猜了：**让编辑器自己建容器**（用户已在 35.1.gil 里建好 `home`/`select`），
+//     我们只往里挂子控件。地基是编辑器打的，它必然认。
+const REUSE = argv.some((s) => s === '--reuse' || s === '--reuse=true');
+
+function useContainer(name, x, y, w, h) {
+  if (REUSE) {
+    const ex = g.byName.get(name);
+    if (ex) {
+      console.log('    ♻️  复用编辑器已建的容器 `' + name + '`（id=' + ex.id + '）');
+      built.push({ name, what: 'container(reused)' });
+      return ex;
+    }
+    console.error('❌ --reuse 模式下找不到 `' + name + '`，无法继续');
+    process.exit(5);
+  }
+  return addContainer(name, x, y, w, h);
+}
+
 // 主页
 const HOME_X = 730, HOME_W = 460, HOME_H = 88;
-const home = addContainer('home', 0, 0, 1920, 1080);
-const homeTitle = cloneSubtree(protoBtn, home, 'home.title');
+const home = useContainer('home', 0, 0, 1920, 1080);
+const homeTitle = cloneSubtree(protoText || protoBtn, home, 'home.title');
 homeTitle.parentId = home.id;
 setGeom(homeTitle.field.sub, 460, 140, 1000, 110);
 setPos(homeTitle.field.sub, 960, 195);
@@ -230,8 +256,8 @@ for (const [id, , y] of HOME_ROWS) {
 }
 
 // 选关界面
-const sel = addContainer('select', 0, 0, 1920, 1080);
-const selTitle = cloneSubtree(protoBtn, sel, 'select.title');
+const sel = useContainer('select', 0, 0, 1920, 1080);
+const selTitle = cloneSubtree(protoText || protoBtn, sel, 'select.title');
 selTitle.parentId = sel.id;
 setGeom(selTitle.field.sub, 460, 80, 1000, 90);
 setPos(selTitle.field.sub, 960, 125);
