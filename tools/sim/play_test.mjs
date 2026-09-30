@@ -63,26 +63,35 @@ console.log('\n=== 0. 主页四键');
     textOf(r0, 'home.continue') === '从存档点开始', textOf(r0, 'home.continue'));
   // ★ 选关卡片的内容（参考《派蒙的执律庭实习》）：关名 + 「NxN　M名嫌疑人+1名受害人」
   //
-  //   ⚠️ 不要写死 `select.card.1` —— 第 1 张是 `demo_selftest`（框架自检样例），
-  //   它**没有 size/suspects** ⇒ 按"读不到就不写那一行"的规则，它只有关名。
-  //   （第一版我写死了 card.1，结果红了两条 —— 其实是**测试假设错**，不是功能错。）
-  //   ⇒ 遍历所有卡片，找出**真正的案件卡**来断言。
+  //   ⚠️ 卡片现在是**三段**：`select.card.N.title`（关名）/ 中间是**棋盘缩略图**
+  //   （`select.card.N.room.1..6`）/ 下面是 `select.card.N.info`（人数+进度）。
+  //   所以文字**不在** `select.card.N` 上了 —— 第一版我断言在卡片的 `text` 上，会红。
+  //
+  //   ⚠️ 也别写死 `select.card.1` —— 第 1 张是 `demo_selftest`，没有 size/suspects。
   {
-    await click('home.select'); await tick(0.2);
+    await click('home.select'); await tick(0.25);
     const r9 = await get();
     const idx9 = indexTree(r9);
-    let caseCard = null, caseText = '';
+    let caseCard = null, title = '', info = '';
     for (const [nm] of idx9) {
-      if (!/^select\.card\.\d+$/.test(nm)) continue;
-      const t = textOf(r9, nm) || '';
-      if (/案件/.test(t) && /\d+x\d+/.test(t)) { caseCard = nm; caseText = t; break; }
+      const m = /^(select\.card\.\d+)\.info$/.exec(nm);
+      if (!m) continue;
+      const t = textOf(r9, m[1] + '.title') || '';
+      const f = textOf(r9, nm) || '';
+      if (/案件/.test(t) && /\d+x\d+/.test(f)) { caseCard = m[1]; title = t; info = f; break; }
     }
-    check('有关卡卡片显示了网格尺寸 NxN', caseCard !== null,
-      caseCard ? caseCard + ' → ' + JSON.stringify(caseText.slice(0, 70)) : '（没有卡片显示尺寸）');
-    check('该卡片有人数（M名嫌疑人+1名受害人）', /名嫌疑人\+1名受害人/.test(caseText),
-      JSON.stringify(caseText.slice(0, 70)));
-    check('卡片第一行是关名（不是状态词）', !/^未开始|^★|^·/.test(caseText.trim()),
-      JSON.stringify(caseText.slice(0, 30)));
+    check('卡片有关名（三段式里的 title）', caseCard !== null,
+      caseCard ? caseCard + ' → ' + JSON.stringify(title) : '（没找到）');
+    check('卡片 info 有网格尺寸 NxN', /\d+x\d+/.test(info), JSON.stringify(info.slice(0, 70)));
+    check('卡片 info 有人数（M名嫌疑人+1名受害人）', /名嫌疑人\+1名受害人/.test(info),
+      JSON.stringify(info.slice(0, 70)));
+    // 缩略图：至少有一条房间色块可见
+    let rooms = 0;
+    if (caseCard) {
+      for (let j = 1; j <= 6; j++) if (visibleOf(r9, caseCard + '.room.' + j) === true) rooms++;
+    }
+    check('卡片中间画出了棋盘缩略图（房间色块）', rooms >= 1,
+      caseCard ? caseCard + ' 可见色块 ' + rooms + ' 块' : '（没找到案件卡）');
     await click('select.back'); await tick(0.2);
     r0 = await get();
   }

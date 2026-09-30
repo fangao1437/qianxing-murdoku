@@ -112,7 +112,17 @@ M.as_pos = as_pos
 -- 墙体与房间
 ----------------------------------------------------------------------------
 
+-- ★★★ 2026-09-30：**实现搬到 `lua/room_map.lua`，这里只转调**。
+--   原因：选关卡片的棋盘缩略图要算**别的关卡**的房间，界面层也需要同一套算法。
+--   如果在界面层再写一遍，就又是"同一件事两处实现 ⇒ 必然漂移"。
+--   ⇒ 抽成纯函数模块，核心与界面层共用；**这里的 API 与行为一字不变**。
+local RoomMap = require("room_map")
+
 function M.build_walls(level, rows, cols)
+  return RoomMap.build_walls(level, rows, cols)
+end
+
+function M.build_walls_OLD(level, rows, cols)
   local set = {}
   local walls = level.walls
   if type(walls) ~= "table" then return set end
@@ -143,6 +153,10 @@ function M.build_walls(level, rows, cols)
 end
 
 function M.compute_rooms(rows, cols, wall_set)
+  return RoomMap.compute_rooms(rows, cols, wall_set)
+end
+
+function M.compute_rooms_OLD(rows, cols, wall_set)
   local room = {}
   for r = 1, rows do
     room[r] = {}

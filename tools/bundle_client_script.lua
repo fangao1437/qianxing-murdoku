@@ -51,6 +51,8 @@ end
 
 -- 模块列表（依赖顺序无关紧要，加载器是惰性的）
 local modules = {
+  -- ★ room_map 放最前：它是纯函数模块，murdoku_core 与 levels.init 都要 require 它
+  { name = "room_map",                 path = "lua/room_map.lua" },
   { name = "murdoku_core",             path = "lua/murdoku_core.lua" },
   { name = "ui_controller",            path = "lua/ui_controller.lua" },
   { name = "engine_adapter",           path = "lua/engine_adapter.lua" },

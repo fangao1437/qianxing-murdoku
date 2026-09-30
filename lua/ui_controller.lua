@@ -1576,12 +1576,28 @@ function Controller:build_layout()
         local r = { x = 160 + ((i - 1) % 4) * 420, y = 240 + math.floor((i - 1) / 4) * 240,
                     w = 380, h = 200 }
         if it ~= nil then
+          -- ★★★ 2026-09-30：卡片改成**三段**（参考《派蒙的执律庭实习》的选关卡片：
+          --   上面一条"关名"纸条、中间是**该关棋盘的缩略图**、下面一行"人数/进度"）。
+          --   原来是一整块按钮 + 多行文字 —— 缩略图没地方放（文字会盖在它上面）。
           push({ id = "select.card." .. i, kind = "button", parent = "select", visible = true,
-                 rect = r, text = self:level_card_text(it),
-                 event = { action = "pick_level", id = it.id } })
+                 rect = r, event = { action = "pick_level", id = it.id } })
+          local t = self:level_card_parts(it)
+          push({ id = "select.card." .. i .. ".title", kind = "text", parent = "select",
+                 visible = true, text = t.title, style = "card.title",
+                 rect = { x = r.x + 16, y = r.y + 10, w = r.w - 32, h = 34 } })
+          push({ id = "select.card." .. i .. ".info", kind = "text", parent = "select",
+                 visible = true, text = t.info, style = "muted",
+                 rect = { x = r.x + 16, y = r.y + r.h - 42, w = r.w - 32, h = 32 } })
+          self:push_room_thumb(push, "select.card." .. i, it, r, "select")
         else
           push({ id = "select.card." .. i, kind = "button", parent = "select", visible = false,
                  rect = r })
+          -- 空卡片的三个附件也要显式隐藏 —— 否则上一屏的内容会**残留在空位上**
+          for _, suf in ipairs({ ".title", ".info" }) do
+            push({ id = "select.card." .. i .. suf, kind = "text", parent = "select", visible = false,
+                   rect = { x = r.x, y = r.y, w = 1, h = 1 } })
+          end
+          self:push_room_thumb(push, "select.card." .. i, nil, r, "select")
         end
       end
     end
@@ -1615,6 +1631,86 @@ end
 --
 --   ⚠️ 取值一律**从关卡数据里读**，读不到就**不写那一行** —— 不编数据
 --   （比如 `size` 缺失就只显示关名，而不是硬写一个 "5x5"）。
+-- ★★★ 2026-09-30：**选关卡片的三段内容**（参考《派蒙的执律庭实习》的卡片）。
+--
+--   卡片现在是"标题 / 缩略图 / 说明"三段，所以文字也拆成两块：
+--     · `select.card.N.title` —— 关名（上面那条）
+--     · `select.card.N.info`  —— 「NxN　M名嫌疑人+1名受害人」+ 进度（下面那行）
+--   缩略图夹在中间（见 `push_room_thumb`）。
+--
+--   取值规则同前：**从关卡数据里读，读不到就不写那一行** —— 不编数据。
+function Controller:level_card_parts(it)
+  local title = tostring(it.name or it.id)
+  local bits = {}
+  local sz = it.size
+  local rows = type(sz) == "table" and tonumber(sz.rows) or nil
+  local cols = type(sz) == "table" and tonumber(sz.cols) or nil
+  local total = type(it.suspects) == "table" and #it.suspects or nil
+  if rows and cols and total and total >= 2 then
+    bits[#bits + 1] = string.format("%dx%d　%d名嫌疑人+1名受害人", cols, rows, total - 1)
+  elseif rows and cols then
+    bits[#bits + 1] = string.format("%dx%d", cols, rows)
+  end
+  local p = self.opts.progress and self.opts.progress(it.id) or nil
+  if type(p) == "table" then
+    local mark = "未开始"
+    if p.cleared then mark = "★ 已破案"
+    elseif p.started then mark = "· 进行中" end
+    bits[#bits + 1] = mark
+  end
+  return { title = title, info = table.concat(bits, "　") }
+end
+
+-- 房间色块的配色（**只在这里定义一处**）。
+--
+--   为什么是"色块"而不是"逐格"：参考图的缩略图就是几块彩色区域。
+--   逐格要 rows×cols 个控件（最多 49 个）× 8 张卡 = 392 个，太多；
+--   色块只要"每关房间数"个（本项目每关 3 个）⇒ 8×6 = 48 个上限，可控。
+--
+--   ⚠️ 素材用的是**整数 id 106053（白）**，靠 `imageColor`（乘算着色）出颜色。
+--     `assets` 里目前只有 9 张头像、**没有房间类素材**，所以不能写 "room.xxx"
+--     这种调色板名（那只对 assets 里存在的名字有效）。
+--     等美术资源齐了，把这里换成真实素材名即可（一行改）。
+local ROOM_TINT = {
+  4285965944,   -- 暖米（餐厅一类）
+  4282326293,   -- 淡蓝（厨房一类）
+  4285241469,   -- 草绿（前院一类）
+  4290036043,   -- 浅紫
+  4291078505,   -- 浅橙
+  4291603827,   -- 灰蓝（兜底/第 6 个房间）
+}
+local ROOM_MAX = 6          -- 一关最多画几个房间色块
+local WHITE_MAT = 106053    -- 真机日志里确认过的白底素材 id
+
+function Controller:push_room_thumb(push, cardId, it, cardRect, parent)
+  -- 缩略图区域：卡片中间那块（上面留给标题、下面留给说明）
+  local area = { x = cardRect.x + 24, y = cardRect.y + 50,
+                 w = cardRect.w - 48, h = cardRect.h - 50 - 48 }
+  local boxes = it and it.room_boxes or nil
+  local sz = it and it.size or nil
+  local rows = type(sz) == "table" and tonumber(sz.rows) or nil
+  local cols = type(sz) == "table" and tonumber(sz.cols) or nil
+  for j = 1, ROOM_MAX do
+    local id = cardId .. ".room." .. j
+    local b = (type(boxes) == "table") and boxes[j] or nil
+    if b ~= nil and rows and cols then
+      -- 把"第几行第几列"按比例映射进缩略图区域（不依赖任何素材尺寸）
+      local cw = area.w / cols
+      local ch = area.h / rows
+      local x = area.x + math.floor((b.c1 - 1) * cw)
+      local y = area.y + math.floor((b.r1 - 1) * ch)
+      local w = math.max(2, math.floor((b.c2 - b.c1 + 1) * cw))
+      local h = math.max(2, math.floor((b.r2 - b.r1 + 1) * ch))
+      push({ id = id, kind = "button", parent = parent, visible = true,
+             rect = { x = x, y = y, w = w, h = h },
+             image = WHITE_MAT, tint = ROOM_TINT[(j - 1) % #ROOM_TINT + 1] })
+    else
+      push({ id = id, kind = "button", parent = parent, visible = false,
+             rect = { x = area.x, y = area.y, w = 2, h = 2 } })
+    end
+  end
+end
+
 function Controller:level_card_text(it)
   local name = tostring(it.name or it.id)
   local lines = { name }

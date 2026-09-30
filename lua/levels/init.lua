@@ -11,6 +11,8 @@
      tools/validate_levels.lua 会把它们当作错误报出来。
 ----------------------------------------------------------------------------]]--
 
+local RoomMap = require("room_map")
+
 local M = {}
 
 -- 按顺序登记你的关卡；游戏里默认从第一个开始
@@ -101,6 +103,9 @@ function M.ui_list()
       id = lv.id, name = lv.name, difficulty = lv.difficulty,
       size = lv.size, suspects = lv.suspects, victim = lv.victim,
       rooms = lv.rooms, objects = lv.objects,
+      -- ★ 缩略图要的**房间外框**（`{ {r1,c1,r2,c2,cells}, ... }`）。
+      --   算法来自 `lua/room_map.lua`（和游戏内房间判定**同一份实现**，不会漂移）。
+      room_boxes = RoomMap.boxes(lv),
     }
   end
   return out
