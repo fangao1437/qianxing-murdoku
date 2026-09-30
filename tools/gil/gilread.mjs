@@ -149,6 +149,47 @@ export function findChildList(fields, allowEmpty) {
   })(fields);
   return hit;
 }
+
+/**
+ * ★★★ 2026-09-30：**只找记录「顶层」的子列表字段** —— 这是修掉"导不进去"的关键。
+ *
+ *   出的事：`findChildList` 是**递归**的。给一个**原本没有子控件**的容器
+ *   （用户手建的 `home`/`select`）挂子控件时，顶层没有 `#503`，
+ *   于是它**递归到嵌套的 `#505` 块里**，找到一个"碰巧能解析成 ID 列表"的字段，
+ *   就把子控件 ID 写进了那个**无关的嵌套字段**上 —— 两个后果：
+ *     · 容器顶层仍然没有 `#503` ⇒ 编辑器眼里它是**空容器**（子控件全部不见）
+ *     · 那个无辜的嵌套字段被覆写成 ID 数据 ⇒ **文件直接导不进去**
+ *   （`board`/`action.undo` 天生有顶层 `#503`，递归"先撞上正确的那个"，
+ *     所以只有我新建的容器中招 —— 这就是为什么症状只出现在新控件上。）
+ *
+ *   ⇒ 规则：**子列表只在记录顶层找**，找不到就新建一个，并**插在 `#502` 之后**
+ *     （与 `board` 的字段顺序一致：`#501 #502 #503 #504 #505…`）。
+ */
+export function findChildListTop(fields) {
+  for (const f of fields) {
+    if (f.wt === 2 && f.sub === null && !f.isText && f.payload && asIdList(f.payload, true) !== null) return f;
+  }
+  return null;
+}
+
+/** 顶层子列表；没有就**新建**（插在 `#502` 之后，和 `board` 同构） */
+export function ensureChildListTop(rec, proto) {
+  let l = findChildListTop(rec.field.sub);
+  if (l) return l;
+  // 用一个现成的 `#503` 当模板（字段号/类型照抄），没有就用最小结构
+  const src = proto || { field: 503, wt: 2 };
+  l = { field: src.field || 503, wt: 2, sub: null, num: 0n, payload: Buffer.alloc(0), len: 0, isText: false };
+  // ⚠️ 插入位置必须和 `board` 同构：`#501  #502  #503  #504  #505…`
+  //    注意 `#502` 在记录顶层是个**消息**（不是 varint），所以**不能**加 `wt === 0` 条件
+  //    —— 我第一版就是加了它，结果匹配不上、退化成 `unshift`，`#503` 跑到了第一位。
+  const at = rec.field.sub.findIndex((f) => f.field === 502);
+  if (at >= 0) rec.field.sub.splice(at + 1, 0, l);
+  else {
+    const at501 = rec.field.sub.findIndex((f) => f.field === 501);
+    rec.field.sub.splice(at501 + 1, 0, l);
+  }
+  return l;
+}
 export function setChildList(f, ids) {
   f.payload = ids.length ? Buffer.concat(ids.map((i) => writeVarint(i))) : Buffer.alloc(0);
   f.len = f.payload.length;
@@ -159,13 +200,29 @@ export function cloneField(f) {
   if (f.sub) c.sub = f.sub.map(cloneField);
   return c;
 }
+/**
+ * 写"两浮点对"（位置 / 尺寸）。
+ *
+ * ★★★ 2026-09-30：**必须跟引擎一样做稀疏编码 —— 0 分量不写**。
+ *
+ *   之前的实现是：找不到现成的 `#501`/`#502` 就**重建两个分量**、并把 `len` 硬写成 12。
+ *   而引擎编码时**值为 0 的字段根本不写**（见下面 `pairValue` 的注释）：
+ *   原始位置 (0,0) 在文件里是**一个空的 `#504` 消息**（长度 0，一个字节 `00`）。
+ *   于是"把 (0,0) 改成 (1,1)"这一步，我的版本凭空多出 12 字节（`#501`+`#502` 各 4 字节
+ *   + 两个标签 + 长度前缀）—— 4 组坐标就多 48 字节。
+ *   虽然那样也是**合法 protobuf**（读回来一样），但**和引擎的写法不一致**；
+ *   而用户反馈"我生成的文件导不进去"，所以这里改成**尽量贴近引擎的写法**：
+ *     · 值为 0 的分量 → **删掉该分量**（而不是写一个 0）
+ *     · 两个分量都为 0 → 整个对字段**留空**（长度 0）
+ *   这样"改坐标"产出的字节形态和引擎自己重存的一模一样。
+ */
 export function setPair(pairField, x, y) {
   if (!pairField) return false;
-  let a = null, b = null;
-  if (pairField.sub) for (const g of pairField.sub) { if (g.field === 501 && g.wt === 5) a = g; if (g.field === 502 && g.wt === 5) b = g; }
-  if (a && b) { a.f = x; b.f = y; return true; }
-  pairField.sub = [{ field: 501, wt: 5, f: x }, { field: 502, wt: 5, f: y }];
-  pairField.len = 12;
+  const keep = [];
+  if (x !== 0) keep.push({ field: 501, wt: 5, f: x });
+  if (y !== 0) keep.push({ field: 502, wt: 5, f: y });
+  pairField.sub = keep;
+  pairField.len = keep.length * 4 + keep.length;   // 标签 1 字节 + float 4 字节（值都很小，标签一定单字节）
   return true;
 }
 export const pairOf = (block, fieldNo) => block.sub.find((g) => g.field === fieldNo) || null;

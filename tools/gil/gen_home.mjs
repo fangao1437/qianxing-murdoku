@@ -28,7 +28,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   readGil, encodeMsg, cloneField, setPair, pairOf, stateBlocks,
-  findChildList, setChildList, asIdList, writeVarint,
+  findChildList, findChildListTop, ensureChildListTop, setChildList, asIdList, writeVarint,
 } from './gilread.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -149,15 +149,12 @@ function cloneSubtree(srcRec, parentRec, newName) {
 }
 
 function ensureChildList(rec) {
-  let l = findChildList(rec.field.sub, true);
-  if (!l) {
-    // 空列表 = 字段不存在 → 新建
-    const src = g.recs.map((r) => findChildList(r.field.sub, true)).find(Boolean);
-    const f = src ? cloneField({ field: src.field, wt: 2, sub: null, num: 0n, payload: Buffer.alloc(0), len: 0, isText: false })
-                  : null;
-    if (f) { rec.field.sub.push(f); l = findChildList(rec.field.sub, true); }
-  }
-  return l;
+  // ★★★ 2026-09-30：**必须用"顶层版"**。
+  //   老实现调的是递归的 `findChildList` ⇒ 对一个**原本没有子控件**的容器，
+  //   它会递归到嵌套字段里、把子控件 ID 写到无关的字段上 ⇒ 文件导不进去。
+  //   详见 `gilread.mjs` 里 `findChildListTop` 的注释。
+  const proto = g.recs.map((r) => findChildListTop(r.field.sub)).find(Boolean);
+  return ensureChildListTop(rec, proto);
 }
 
 // ── 建树 ──────────────────────────────────────────────────────────────────

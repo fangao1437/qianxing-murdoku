@@ -19,7 +19,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   readGil, encodeMsg, setPair, pairOf, stateBlocks,
-  findChildList, setChildList, asIdList,
+  findChildList, findChildListTop, ensureChildListTop, setChildList, asIdList,
 } from './gilread.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -54,7 +54,7 @@ function setGeom(fields, x, y, w, h) {
 }
 
 function ensureChildList(rec) {
-  let l = findChildList(rec.field.sub, true);
+  let l = findChildListTop(rec.field.sub);
   if (!l) {
     const src = g.recs.map((r) => findChildList(r.field.sub, true)).find(Boolean);
     if (src) {
