@@ -60,9 +60,10 @@ return {
   },
 
   objects = {
-    ["书架"]   = { cells = { { r = 5, c = 1 }, { r = 6, c = 1 } }, occupiable = false },
-    ["展示柜"] = { cells = { { r = 5, c = 4 } }, occupiable = false },
-    ["地毯"]   = { cells = { { r = 6, c = 3 }, { r = 6, c = 4 } }, occupiable = true },
+    -- `kind` = 家具图标的素材键（界面层翻成 `obj.<kind>`，见 ui_controller.object_key_of）
+    ["书架"]   = { cells = { { r = 5, c = 1 }, { r = 6, c = 1 } }, occupiable = false, kind = "shelf"  },
+    ["展示柜"] = { cells = { { r = 5, c = 4 } }, occupiable = false, kind = "case"   },
+    ["地毯"]   = { cells = { { r = 6, c = 3 }, { r = 6, c = 4 } }, occupiable = true,  kind = "carpet" },
   },
   blocked = {},
   water   = {},

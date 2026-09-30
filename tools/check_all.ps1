@@ -218,6 +218,18 @@ $okArt = Run-Step '8c/13 美术验证（外观/对齐/头像）' 'node' @('tools
     # 13：验证脚本能否**自己**打开容器的「显示常驻光标」。
     #     能的话真机上就不用手动勾这一项；不能也会明确报出来，而不是让你去猜。
     Run-Step '13/13 光标门控自愈' 'node' @('tools\sim\probe_cursor.mjs') | Out-Null
+
+    # 14：**素材自检**（美术改造 ⑤/⑥ 的待办追踪）。
+    #
+    #   ★★ 2026-09-30：这一步用 `--warn-only` —— **只报告，永远不判失败**。
+    #
+    #   为什么：现在 `obj.*`（家具）和 `btn.hex`（六边形）这些美术素材**还没做**，
+    #   那是**预期内的待办**，不该让 check_all 变红 —— 否则真出错时会被淹没在
+    #   "缺素材"的噪音里（本项目已经吃过好几次"断言锁死现状"的亏）。
+    #   它会把"关卡已经在用、但 assets 里还没有的"和"界面一次性素材待办"**分开报**。
+    #
+    #   ⇒ 素材齐了之后，把这行的 `--warn-only` 去掉即可变成守门。
+    Run-Step '14/14 素材自检（只报告）' 'node' @('tools\gil\check_assets.mjs', '--warn-only') | Out-Null
   } else {
     Write-Host "（跳过 8~13：布局计划不可信）" -ForegroundColor Yellow
     $results += [pscustomobject]@{ Step = '8/13 模拟器交互回归'; Exit = 'SKIP'; OK = 'SKIP' }
