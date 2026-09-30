@@ -295,10 +295,16 @@ const byIdAll = new Map([...g.recs.map((r) => [r.id, r]), ...allNew.map((r) => [
   for (const k of kids) { if (!reachable.has(k)) { reachable.add(k); mark(k); } }
 })(rootRec.id);
 let dropped = 0;
+// ★★★ 2026-09-30：**加到 `recHolder`，不是 `g.tree`**！
+//   所有真实控件都住在某个子消息里（本工程是 `/#9`），`tree` 只是最外层字段列表。
+//   我原来 push 到 tree ⇒ 编辑器读不到（导入后记录全没）+ 顶层多出怪记录（整个文件导不进去）。
+//   详见 `gilread.mjs` 里 `recHolder` 的注释。
+const holder = g.recHolder;
 for (const r of allNew) {
-  if (reachable.has(r.id)) g.tree.push(r.field);
+  if (reachable.has(r.id)) holder.push(r.field);
   else dropped++;
 }
+console.log('  新记录写入容器：' + (holder === g.tree ? '顶层 tree（⚠️ 本文件记录就在顶层）' : '嵌套子消息（与现有 ' + g.recs.length + ' 条同处）'));
 console.log('  丢掉孤儿记录 ' + dropped + ' 条（容器原型带过来的子控件副本）');
 
 const body = encodeMsg(g.tree);

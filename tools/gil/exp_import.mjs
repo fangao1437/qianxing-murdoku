@@ -97,7 +97,7 @@ console.log('  A ' + path.basename(A) + '  ' + fs.statSync(A).size + ' 字节');
   const named = setLeafText(field.sub, 'home.probe');
   if (!named) console.log('    ⚠️ 没找到名字字段，名字可能没改成功');
 
-  g.tree.push(field);
+  g.recHolder.push(field);   // ★ 必须和现有记录同处（详见 gilread.mjs 的 recHolder）
   const cl = findChildList(home.field.sub, true);
   const ids = cl ? (asIdList(cl.payload, true) || []) : [];
   ids.push(newId);

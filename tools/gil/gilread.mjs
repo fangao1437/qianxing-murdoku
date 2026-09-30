@@ -297,6 +297,24 @@ export function readGil(file) {
     byName: new Map(recs.filter((r) => r.name).map((r) => [r.name, r])),
     maxId: recs.length ? Math.max(...recs.map((r) => r.id)) : 0,
     names: new Set(recs.map((r) => r.name).filter(Boolean)),
+    /**
+     * ★★★ 2026-09-30：**控件记录真正的"家"** —— 新增记录必须加到这里，不能加到 `tree`。
+     *
+     *   血的教训（查了整整一轮才找到）：我原来写 `g.tree.push(新记录)`，
+     *   而 `.gil` 里**所有真实控件都住在某个子消息里**（本工程是 `/#9`），
+     *   `tree` 只是最外层字段列表。后果：
+     *     · 编辑器**根本读不到**我加的记录 ⇒ 每次导入后它们全部消失
+     *       （用户反复反馈"home/select 没有子控件"，记录数永远是导出前的 199 条）
+     *     · 顶层多出格式不符的记录 ⇒ **整个文件导不进去**
+     *   ⇒ 取"多数记录所在的容器"作为规范位置。新增记录一律 push 到这里。
+     */
+    recHolder: (() => {
+      const count = new Map();
+      for (const r of recs) count.set(r.holder, (count.get(r.holder) || 0) + 1);
+      let best = null, n = -1;
+      for (const [h, c] of count) if (c > n) { best = h; n = c; }
+      return best || tree;
+    })(),
     /** 用原头里的参数 + 新体重新打包，尾原样保留 */
     pack(body) {
       const head = Buffer.alloc(20);
