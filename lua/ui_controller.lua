@@ -977,10 +977,35 @@ function Controller:build_layout()
   btn("action.reveal", "root", { x = 1790, y = 690, w = 110, h = 110 }, "揭示",
       { action = "reveal" }, "stamp.sm")
 
-  -- 留在顶栏的两个（参考图上它们对应「重置关卡 ↻」和「放大镜 🔍」）
-  btn("action.redo", "toolbar", { x = 1358, y = 26, w = 90, h = 52 }, "重做",
-      { action = "redo" }, "stamp.sm", vm.hud.can_redo)
-  btn("action.hint", "toolbar", { x = 1660, y = 26, w = 80, h = 52 }, "提示",
+  -- ★★★ 2026-09-30：**按参考图重排顶栏与右下角**（《派蒙的执律庭实习》局内 UI）。
+  --
+  --   参考图的四个位置：
+  --     左上   「返回菜单 ↰」 + 「重置关卡 ↻」
+  --     右下   「0/6」计数 + 一个**放大镜**
+  --     右侧竖 三个深色六边形（= 我们的 撤销/提交/揭示，上一轮已挪好）
+  --
+  --   对照关系（用户给的排除逻辑：重做→重置关卡、提示→放大镜）：
+  --     · `action.back`  ——「返回列表」，挪到**左上**
+  --     · `action.redo`  —— 按钮改成**「重置关卡」**，动作换成 `restart`
+  --       （`restart` 早就实现了：`core:reset()`。**重做没有消失** ——
+  --        键盘快捷键里仍然保留 `redo`，只是这个**按钮**让给了"重置关卡"。）
+  --     · `hud.progress` + `action.hint` —— 挪到**右下角**（计数 + 放大镜）
+  --
+  --   几何两处同源：这里（布局计划）+ `.gil`（`tools/gil/move_side_buttons.mjs`）。
+  local CORNER = 24
+  push({ id = "action.back", kind = "button", parent = "topbar", visible = true,
+         rect = { x = CORNER, y = CORNER, w = 300, h = 60 },
+         text = "返回列表", event = { action = "back" }, style = "stamp.sm" })
+  btn("action.redo", "topbar", { x = CORNER, y = CORNER + 70, w = 300, h = 60 }, "重置关卡",
+      { action = "restart" }, "stamp.sm")
+
+  -- 右下角：计数 + 放大镜（对齐参考图）
+  push({ id = "hud.progress", kind = "text", parent = "right",
+         rect = { x = L.right.x + 20, y = L.right.y + L.right.h - 150, w = 260, h = 44 },
+         text = string.format("已放置 %d / %d", self:placed_count(vm), vm.piece_count),
+         style = "stat" })
+  btn("action.hint", "right", { x = L.right.x + L.right.w - 140, y = L.right.y + L.right.h - 160,
+                                w = 110, h = 110 }, "放大镜",
       { action = "hint" }, "stamp.sm", vm.hud.can_hint)
 
   push({ id = "hud.timer", kind = "text", parent = "topbar",
@@ -1316,10 +1341,9 @@ function Controller:build_layout()
 
   -- ===== 右侧信息栏 =====
   push({ id = "right", kind = "container", parent = "root", rect = rect_of(L.right), style = "panel.right" })
-  push({ id = "hud.progress", kind = "text", parent = "right",
-         rect = { x = L.right.x + 20, y = L.right.y + 20, w = L.right.w - 40, h = 44 },
-         text = string.format("已放置 %d / %d", self:placed_count(vm), vm.piece_count),
-         style = "stat" })
+  -- ⚠️ `hud.progress` **不在这里** —— 它已经挪到右下角和放大镜做伴了
+  --   （见文件上半部分的"按参考图重排顶栏与右下角"）。
+  --   我第一版忘了删这一份，于是**同名控件建了两个** —— 正是"同名两处必然漂移"的老毛病。
   local got, total = self.core:score()
   push({ id = "hud.score", kind = "text", parent = "right",
          rect = { x = L.right.x + 20, y = L.right.y + 74, w = L.right.w - 40, h = 44 },

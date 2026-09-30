@@ -18,7 +18,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  readGil, encodeMsg, setPair, pairOf, stateBlocks,
+  readGil, encodeMsg, setPair, pairOf, pairValue, stateBlocks,
   findChildList, findChildListTop, ensureChildListTop, setChildList, asIdList,
 } from './gilread.mjs';
 
@@ -28,12 +28,29 @@ const argOf = (k) => { const a = argv.find((s) => s.startsWith('--' + k + '='));
 const IN = argOf('in') || path.join(ROOT, '完整界面33-主页可用.gil');
 const OUT = argOf('out') || path.join(ROOT, '完整界面34-右侧三按钮.gil');
 
-// 设计坐标（1920×1080）。右侧竖排、贴着右边留 20px 边距、整体垂直居中。
+// 设计坐标（1920×1080）。
+//
+// ★★★ 2026-09-30：**这个工具现在管两批挪位**（原来只管右侧三按钮）：
+//   ① 右侧竖排三个（撤销/提交/揭示）—— 上一轮做的
+//   ② 按参考图重排的四个 —— 本轮：
+//        左上  action.back（返回列表）+ action.redo（重置关卡）
+//        右下  hud.progress（计数）+ action.hint（放大镜）
+//      参考图右上还有「0/6 + 放大镜」，正好对应我们这两个。
+//
+//   布局常量必须和 `lua/ui_controller.lua` 里那份**同源**（`right` 面板 x=1420 y=128 w=460 h=880）。
+const RIGHT = { x: 1420, y: 128, w: 460, h: 880 };
 const X = 1790, W = 110, H = 110;
 const TARGETS = [
-  { id: 'action.undo',   y: 390 },
-  { id: 'action.submit', y: 540 },
-  { id: 'action.reveal', y: 690 },
+  // ① 右侧竖排三个
+  { id: 'action.undo',   parent: 'root',   x: X, y: 390, w: W, h: H },
+  { id: 'action.submit', parent: 'root',   x: X, y: 540, w: W, h: H },
+  { id: 'action.reveal', parent: 'root',   x: X, y: 690, w: W, h: H },
+  // ② 左上：返回列表 + 重置关卡（参考图左上那两个）
+  { id: 'action.back',   parent: 'topbar', x: 24, y: 24, w: 300, h: 60 },
+  { id: 'action.redo',   parent: 'topbar', x: 24, y: 94, w: 300, h: 60 },
+  // ③ 右下：计数 + 放大镜（参考图右下那两个）
+  { id: 'hud.progress',  parent: 'right',  x: RIGHT.x + 20, y: RIGHT.y + RIGHT.h - 150, w: 260, h: 44 },
+  { id: 'action.hint',   parent: 'right',  x: RIGHT.x + RIGHT.w - 140, y: RIGHT.y + RIGHT.h - 160, w: 110, h: 110 },
 ];
 
 const g = readGil(IN);
@@ -95,23 +112,31 @@ for (const t of TARGETS) {
   if (!rec) { console.log('  ⚠️ 找不到 ' + t.id + '（跳过）'); continue; }
   const oldParent = byId.get(rec.parentId);
   const oldName = oldParent ? oldParent.name : '?';
+  // 目标父级由表里的 `parent` 指定（原来写死 root —— 现在左上要挂 topbar、
+  // 右下要挂 right，所以必须按目标走）。找不到就退回 root，并**说清楚**。
+  let targetRec = g.byName.get(t.parent) || null;
+  if (targetRec == null) {
+    console.log('  ⚠️ ' + t.id + ' 目标父级 `' + t.parent + '` 不存在，退回 root');
+    targetRec = rootRec;
+  }
 
   // ① 从旧父级的子列表里摘掉
-  if (oldParent) {
+  if (oldParent && oldParent.id !== targetRec.id) {
     const ids = listOf(oldParent).filter((i) => i !== rec.id);
     setList(oldParent, ids);
   }
-  // ② 改 `#504` 指向 root
-  setParentField(rec, rootRec.id);
-  rec.parentId = rootRec.id;
-  // ③ 加进 root 的子列表
-  const rids = listOf(rootRec);
-  if (!rids.includes(rec.id)) { rids.push(rec.id); setList(rootRec, rids); }
+  // ② 改 `#504` 指向新父级
+  setParentField(rec, targetRec.id);
+  rec.parentId = targetRec.id;
+  // ③ 加进新父级的子列表
+  const rids = listOf(targetRec);
+  if (!rids.includes(rec.id)) { rids.push(rec.id); setList(targetRec, rids); }
   // ④ 几何
-  const n = setGeom(rec.field.sub, X, t.y, W, H);
+  const n = setGeom(rec.field.sub, t.x, t.y, t.w, t.h);
 
-  moved.push({ id: t.id, from: oldName, pairs: n });
-  console.log('  ✅ ' + t.id.padEnd(16) + ' ' + oldName + ' → root   位置=(' + X + ',' + t.y + ') 尺寸=' + W + 'x' + H + '  改了 ' + n + ' 组坐标');
+  moved.push({ id: t.id, from: oldName, to: targetRec.name, pairs: n });
+  console.log('  ✅ ' + t.id.padEnd(16) + ' ' + oldName + ' → ' + targetRec.name
+    + '   位置=(' + t.x + ',' + t.y + ') 尺寸=' + t.w + 'x' + t.h + '  改了 ' + n + ' 组坐标');
   if (n < 4) console.log('     ⚠️ 坐标组数不足 4（可能有字段没找到），请回读确认');
 }
 
@@ -133,14 +158,20 @@ for (const t of TARGETS) {
   const r = g2.byName.get(t.id);
   if (!r) { bad++; console.log('  ❌ ' + t.id + ' 丢了'); continue; }
   const p = b2.get(r.parentId);
+  // ★ 校验要按**这一项自己的目标父级**比，不能写死 root
+  //   —— 原来写死 root，加进左上/右下的挪位之后全报 ❌（其实都挪对了）。
   let pos = '?', size = '?';
-  for (const b of stateBlocks(r.field.sub, [])) {
-    const p4 = pairOf(b, 504), p5 = pairOf(b, 505);
-    if (p4) pos = (p4.f ? p4.f : p4).sub ? 'x' : pos;
+  for (const st of stateBlocks(r.field.sub, [])) {
+    const p4 = pairOf(st, 504), p5 = pairOf(st, 505);
+    if (p4) pos = pairValue(p4, 0) + ',' + pairValue(p4, 1);
+    if (p5) size = pairValue(p5, 0) + 'x' + pairValue(p5, 1);
   }
-  const ok = p && p.name === 'root';
+  const okParent = p && p.name === t.parent;
+  const okGeom = pos === (t.x + ',' + t.y) && size === (t.w + 'x' + t.h);
+  const ok = okParent && okGeom;
   if (!ok) bad++;
-  console.log('  ' + (ok ? '✅' : '❌') + ' ' + t.id.padEnd(16) + '父级=' + (p ? p.name : '?'));
+  console.log('  ' + (ok ? '✅' : '❌') + ' ' + t.id.padEnd(16) + '父级=' + (p ? p.name : '?')
+    + '(期望 ' + t.parent + ')  位置=' + pos + '(期望 ' + t.x + ',' + t.y + ') 尺寸=' + size);
 }
-console.log('\n' + (bad === 0 ? '★ 三个按钮都挪到 root 下了（编辑器里能看到）' : '❌ 有 ' + bad + ' 个没挂对'));
+console.log('\n' + (bad === 0 ? '★ ' + TARGETS.length + ' 个控件都挪到位了（编辑器里能看到）' : '❌ 有 ' + bad + ' 个没挂对'));
 process.exit(bad === 0 ? 0 : 4);

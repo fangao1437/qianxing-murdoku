@@ -232,9 +232,24 @@ console.log('\n=== 5. 撤销 / 重做');
 await click('action.undo'); await tick(0.05);
 ri = await get();
 check('撤销一次 → 退回 1/5', /1 \/ 5/.test(textOf(ri, 'hud.progress') || ''), textOf(ri, 'hud.progress'));
-await click('action.redo'); await tick(0.05);
+// ★★★ 2026-09-30：**这个按钮的语义变了**（按用户给的映射：重做 → 重置关卡）。
+//   参考图左上角是「返回菜单 ↰ + 重置关卡 ↻」，所以 `action.redo` 这个**按钮**
+//   改成 `restart`（`core:reset()`，早就实现了）。
+//   **重做没有消失** —— 键盘快捷键里仍然有 `redo`，只是这个按钮让给了"重置关卡"。
+//   ⇒ 断言从"重做回到 2/5"改成"重置关卡把进度清零"。
+await click('action.redo'); await tick(0.1);
 ri = await get();
-check('重做一次 → 回到 2/5', /2 \/ 5/.test(textOf(ri, 'hud.progress') || ''), textOf(ri, 'hud.progress'));
+check('「重置关卡」把棋盘清空（0/5）', /0 \/ 5/.test(textOf(ri, 'hud.progress') || ''),
+  textOf(ri, 'hud.progress'));
+check('该按钮的文案就是"重置关卡"', textOf(ri, 'action.redo') === '重置关卡',
+  JSON.stringify(textOf(ri, 'action.redo')));
+// 「返回列表」应该挪到了左上角（参考图的位置）——这里只验它在、文案对
+check('左上角有"返回列表"按钮', textOf(ri, 'action.back') === '返回列表',
+  JSON.stringify(textOf(ri, 'action.back')));
+// 右下角：计数 + 放大镜（参考图的 0/6 + 🔍）
+check('右下角有"放大镜"按钮', textOf(ri, 'action.hint') === '放大镜',
+  JSON.stringify(textOf(ri, 'action.hint')));
+await shot(c, 't05-reset.png');
 
 // ── 6. X 标记（单击空格直接切 ✗）────────────────────────────────────────────
 // 切回放置模式
