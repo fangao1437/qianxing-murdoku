@@ -3107,6 +3107,24 @@ function Adapter:bind_keys(spec, control_id)
             if self.cfg.debug_key then
               print("[murdoku] 按键事件 → " .. tostring(key_name))
             end
+            -- ★★★ 2026-09-30：**输入隔离的自检结论** —— 只在**第一次**按键时打一行，
+            --   而且**不依赖 debug_key**（这条是验收结论，不是调试信息）。
+            --
+            --   为什么需要它：目标 ⑦ 要回答的是
+            --   「给容器设了 `disableKeyEventPassthrough = true` 之后，
+            --     脚本自己的 `AddKeyEventListener` 还收不收得到按键？」
+            --   这个问题**只有真机能回答**（模拟器里这些字段根本不生效）。
+            --   ⇒ 把验证做成"按一个快捷键 + 看日志"，而不是靠主观判断：
+            --     看到这一行 ⇒ 屏蔽**没有**影响脚本自身的监听（最坏情况被排除）；
+            --     看不到     ⇒ 屏蔽把键盘也挡住了 ⇒ 去掉 `main.lua` 里的 `seal_containers`，
+            --                  或缩小到只用 `disableCursorEventPassthrough`（都是一行）。
+            if not self._key_first_seen then
+              self._key_first_seen = true
+              if print then
+                print("[murdoku] ✅ 键盘事件仍能收到（第一个键：" .. tostring(key_name)
+                  .. "）—— 「屏蔽按键事件穿透」没有影响脚本自身的监听，目标⑦的疑问到此处排除。")
+              end
+            end
             if self.on_input ~= nil then
               local evt = {}
               for k, v in pairs(event) do evt[k] = v end

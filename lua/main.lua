@@ -443,6 +443,16 @@ function Murdoku.start(level_id, opts)
     local sealed = adapter:seal_containers({ "home", "select" })
     if print then
       print(string.format("[murdoku] 2D/3D 输入隔离：主页/选关容器已屏蔽穿透 %d 个", sealed))
+      -- ★★★ 2026-09-30：**把验收方法直接写进日志**（目标⑦）。
+      --
+      --   「屏蔽之后脚本自己还收不收得到按键」只有真机能回答。与其等你来问，
+      --   不如启动时就说清楚**怎么确认**：
+      --     按任一键盘快捷键 → 看到 `✅ 键盘事件仍能收到` ⇒ 隔离没有副作用
+      --                       看不到 ⇒ 屏蔽把键盘也挡住了
+      --   （那条 ✅ 在 engine_adapter 的按键回调里，**只在第一次按键时打一次**，
+      --     且不依赖 debug_key。）
+      print("[murdoku]   验收：在关卡里按任一键盘快捷键 —— 出现「✅ 键盘事件仍能收到」"
+        .. "即说明隔离没有副作用；若没有，去掉 main.lua 里的 seal_containers 即可（一行）。")
     end
   end
 
