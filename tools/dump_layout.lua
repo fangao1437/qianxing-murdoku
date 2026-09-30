@@ -43,15 +43,16 @@ if #levels == 0 then
   os.exit(1)
 end
 
--- 关卡清单：界面层的「选关面板」按钮是按这份清单生成的。
--- 不传的话选关面板就是空的、`modal.level.*` 也不会进编辑器计划，
--- 运行时会报「控件未找到：modal.level.case_001」（2026-09-26 踩到过）。
-local level_list = {}
-for i = 1, #levels do
-  level_list[#level_list + 1] = {
-    id = levels[i].id, name = levels[i].name, difficulty = levels[i].difficulty,
-  }
-end
+-- 关卡清单：界面层的「选关面板 / 选关卡片」是按这份清单生成的。
+-- 不传的话选关面板就是空的、`home.*` / `select.*` 也不会进编辑器计划，
+-- 运行时会报「控件未找到：home.select」这类错误（2026-09-26 / 2026-09-30 都踩到过）。
+--
+-- ★★★ 2026-09-30：**改调 `Levels.ui_list()`，不再自己复制一份**。
+--   这里原来自己写了一版（只带 id/name/difficulty），和 `lua/main.lua` 那份**各写一遍**
+--   ⇒ 两处必然漂移：真机上选关卡片有尺寸/人数、而模拟器计划里没有（或反过来），
+--   于是"模拟器全绿、真机不对"这种最难查的差异就会出现。
+--   ⇒ 和 main.lua 用同一个来源。
+local level_list = Levels.ui_list()
 
 -- ── 逐关取布局计划并合并 ──────────────────────────────────────────────────
 local order, byId, rank = {}, {}, {}

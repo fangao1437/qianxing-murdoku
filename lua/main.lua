@@ -77,12 +77,17 @@ function Murdoku.start(level_id, opts)
   prepared_adapter = adapter
 
   -- 关卡清单交给界面层（界面层不认识 Levels 模块，只认这份数据）
-  local level_list = {}
-  for _, lv in ipairs(Levels.all()) do
-    level_list[#level_list + 1] = {
-      id = lv.id, name = lv.name, difficulty = lv.difficulty,
-    }
-  end
+  --
+  -- ★★★ 2026-09-30：**改调 `Levels.ui_list()` —— 这份清单只能有一处定义**。
+  --
+  --   原来这里和 `tools/dump_layout.lua` **各写了一份**（都只复制 id/name/difficulty），
+  --   后果有两个：
+  --     · 选关卡片要显示「NxN　M名嫌疑人+1名受害人」（参考《派蒙的执律庭实习》）时
+  --       **拿不到 size/suspects** ⇒ 界面上只剩关名
+  --     · 两边各写一份 ⇒ **必然漂移**（本项目已因此踩过多次，这是同一类错误的第 N 次）
+  --   ⇒ 统一到 `Levels.ui_list()`：卡片要 size/suspects，缩略图要 rooms/objects。
+  --     界面层仍然"不认识 Levels"，只是拿一份摘要。
+  local level_list = Levels.ui_list()
 
   -- ⚠️ 先声明再赋值：下面几个回调要在闭包里引用 controller 自己，
   --    而 `local x = f(...)` 里的 x 在构造器内还不存在（会变成全局 nil）。

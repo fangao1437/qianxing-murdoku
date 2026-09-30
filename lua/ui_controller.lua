@@ -1450,15 +1450,45 @@ end
 -- ────────────────────────────────────────────────────────────────────────
 -- 关卡卡片文字（murdoku 原作那种：关名 + 进度）。
 -- ⚠️ 文字存不进 .gil，只能脚本写；进度拿不到就只显示关名 —— **不编数据**。
+-- ★★★ 2026-09-30：**选关卡片显示什么**（参考《派蒙的执律庭实习》的卡片，
+--   见 `docs/美术改造规格-参考执律庭实习.md` 第一节）。
+--
+--   参考图每张卡片 = **关名（米色纸条）+ 棋盘缩略图 + 「NxN　M名嫌疑人+1名受害人」**。
+--   文字只能脚本写（存不进 `.gil`），所以这里生成：
+--
+--     案件 001 · 夜盗独行
+--     5x5　4名嫌疑人+1名受害人
+--     ★ 已破案 / · 进行中 / 未开始
+--
+--   ⚠️ 取值一律**从关卡数据里读**，读不到就**不写那一行** —— 不编数据
+--   （比如 `size` 缺失就只显示关名，而不是硬写一个 "5x5"）。
 function Controller:level_card_text(it)
   local name = tostring(it.name or it.id)
+  local lines = { name }
+
+  -- 第二行：网格尺寸 + 人数（都能读到才写）
+  local sz = it.size
+  local rows = type(sz) == "table" and tonumber(sz.rows) or nil
+  local cols = type(sz) == "table" and tonumber(sz.cols) or nil
+  local total = type(it.suspects) == "table" and #it.suspects or nil
+  if rows and cols and total and total >= 2 then
+    -- `suspects` 里**含受害人**（case_001 是 A/B/C/D + V）⇒ 嫌疑人数 = total − 1
+    lines[#lines + 1] = string.format("%dx%d　%d名嫌疑人+1名受害人", cols, rows, total - 1)
+  elseif rows and cols then
+    lines[#lines + 1] = string.format("%dx%d", cols, rows)
+  end
+
+  -- 第三行：进度（只有真的查得到记录才写）
   local p = self.opts.progress and self.opts.progress(it.id) or nil
-  if type(p) ~= "table" then return name end
-  local mark = "未开始"
-  if p.cleared then mark = "★ 已破案"
-  elseif p.started then mark = "· 进行中" end
-  if type(p.best) == "string" and p.best ~= "" then mark = mark .. "　" .. p.best end
-  return name .. "\n" .. mark
+  if type(p) == "table" then
+    local mark = "未开始"
+    if p.cleared then mark = "★ 已破案"
+    elseif p.started then mark = "· 进行中" end
+    if type(p.best) == "string" and p.best ~= "" then mark = mark .. "　" .. p.best end
+    lines[#lines + 1] = mark
+  end
+
+  return table.concat(lines, "\n")
 end
 
 function Controller:layout_plan()

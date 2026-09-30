@@ -61,6 +61,31 @@ console.log('\n=== 0. 主页四键');
     textOf(r0, 'home.select') === '选关', textOf(r0, 'home.select'));
   check('第二键是「从存档点开始」',
     textOf(r0, 'home.continue') === '从存档点开始', textOf(r0, 'home.continue'));
+  // ★ 选关卡片的内容（参考《派蒙的执律庭实习》）：关名 + 「NxN　M名嫌疑人+1名受害人」
+  //
+  //   ⚠️ 不要写死 `select.card.1` —— 第 1 张是 `demo_selftest`（框架自检样例），
+  //   它**没有 size/suspects** ⇒ 按"读不到就不写那一行"的规则，它只有关名。
+  //   （第一版我写死了 card.1，结果红了两条 —— 其实是**测试假设错**，不是功能错。）
+  //   ⇒ 遍历所有卡片，找出**真正的案件卡**来断言。
+  {
+    await click('home.select'); await tick(0.2);
+    const r9 = await get();
+    const idx9 = indexTree(r9);
+    let caseCard = null, caseText = '';
+    for (const [nm] of idx9) {
+      if (!/^select\.card\.\d+$/.test(nm)) continue;
+      const t = textOf(r9, nm) || '';
+      if (/案件/.test(t) && /\d+x\d+/.test(t)) { caseCard = nm; caseText = t; break; }
+    }
+    check('有关卡卡片显示了网格尺寸 NxN', caseCard !== null,
+      caseCard ? caseCard + ' → ' + JSON.stringify(caseText.slice(0, 70)) : '（没有卡片显示尺寸）');
+    check('该卡片有人数（M名嫌疑人+1名受害人）', /名嫌疑人\+1名受害人/.test(caseText),
+      JSON.stringify(caseText.slice(0, 70)));
+    check('卡片第一行是关名（不是状态词）', !/^未开始|^★|^·/.test(caseText.trim()),
+      JSON.stringify(caseText.slice(0, 30)));
+    await click('select.back'); await tick(0.2);
+    r0 = await get();
+  }
   // ★ 2D/3D 输入隔离（目标 ⑤）：适配期会打一行"已屏蔽穿透 N 个"。
   //   ⚠️ 模拟器**不暴露** `disableKeyEventPassthrough` 这些字段（读过，没有），
   //   所以这里断言的是**那行日志** —— 而 `seal_container` **只在字段存在且写入成功时才计数**，

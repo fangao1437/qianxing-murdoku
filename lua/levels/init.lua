@@ -82,4 +82,28 @@ function M.index_of(level_id)
   return nil
 end
 
+-- ★★★ 2026-09-30：**界面层要用的关卡摘要** —— 只有这一处定义。
+--
+--   为什么要收拢：`main.lua`（真机）和 `tools/dump_layout.lua`（生成模拟器的布局计划）
+--   **各自造了一份清单**，而且都只复制 `id/name/difficulty`。于是选关卡片要显示
+--   「NxN　M名嫌疑人+1名受害人」（参考《派蒙的执律庭实习》）时**拿不到数据**，
+--   界面上只剩关名；更糟的是两边各写一份 ⇒ **必然漂移**（本项目已因此踩过多次）。
+--   ⇒ 统一放这里，两边都调它。
+--
+--   只带"界面真要用的"：卡片要 `size`/`suspects`，缩略图要 `rooms`/`objects`。
+--   界面层不该知道规则细节（`rules`/`clues`/`solution` 一律不给）。
+function M.ui_list()
+  local out = {}
+  local list = M.all()
+  for i = 1, #list do
+    local lv = list[i]
+    out[i] = {
+      id = lv.id, name = lv.name, difficulty = lv.difficulty,
+      size = lv.size, suspects = lv.suspects, victim = lv.victim,
+      rooms = lv.rooms, objects = lv.objects,
+    }
+  end
+  return out
+end
+
 return M
