@@ -2740,6 +2740,13 @@ function Adapter:set_property(id, key, value)
     --   枚举用 GetChildren()（项目里已验证可用）。
     local vis = value and true or false
     if ctrl.SetVisible then pcall(function() ctrl:SetVisible(vis) end) end
+    -- ★ 记一份"当前被隐藏的 id"，交给每帧的 enforce_hidden_subtrees 兜底。
+    --   为什么要兜底：渲染**只在属性变化时**才下发（same_value 缓存）
+    --   ⇒ `cell.1.1` 的 visible=false 只在第一帧下发过一次，
+    --   而格子的子控件（content/face/…）是模板**之后**才实例化出来的
+    --   ⇒ 那一次递归隐藏根本没赶上它们（真机排行榜里 face/content 依然可见）。
+    self._hidden_ids = self._hidden_ids or {}
+    if vis then self._hidden_ids[id] = nil else self._hidden_ids[id] = true end
     -- ⚠️ **只在"隐藏"时递归** —— 我第一版连"显示"也递归，结果把各控件
     --   自己藏起来的子控件又显示出来了（play_test 立刻报：
     --   棋盘的弹窗是隐藏的 / 此时没有指认面板 / 从存档点开始进关时 board=true home=true）。
@@ -3503,6 +3510,47 @@ function Adapter:cancel(handle)
 end
 
 -- 由客户端 OnUpdate(dt) 驱动
+-- ★★★★ 2026-10-02 **每帧兜底：把"被隐藏的格子"的整棵子树也压下去。**
+--
+--   真机排行榜证明：`face` / `content`（格子模板自带的子控件）在主页和选关页上
+--   **依然可见** —— 它们铺在棋盘位置上，而 `cell.*` 自己绑了点击
+--   ⇒ 射线被格子接走 ⇒ 选关卡片点不到 ⇒ 用户报"点不动"。
+--
+--   为什么不能只靠 visible 分支里的递归：渲染**只在属性值变化时**下发
+--   （`same_value` 缓存），`cell.1.1` 的 visible=false 只在第一帧下发过一次，
+--   而格子的子控件是模板**之后**才实例化出来的 —— 那一脚没赶上。
+--   ⇒ 每帧扫一遍"被标记为隐藏的 cell.*"，幂等地把子树压下去（只对 cell. 生效）。
+function Adapter:enforce_hidden_subtrees()
+  local hid = self._hidden_ids
+  if hid == nil then return end
+  for id in pairs(hid) do
+    if id:sub(1, 5) == "cell." then
+      local c = self:find(id)
+      if c ~= nil then
+        local kids = nil
+        pcall(function() kids = c:GetChildren() end)
+        if type(kids) == "table" then
+          for i = 1, math.min(#kids, 64) do
+            local k = kids[i]
+            if k ~= nil and k.SetVisible then
+              pcall(function() k:SetVisible(false) end)
+              local kk = nil
+              pcall(function() kk = k:GetChildren() end)
+              if type(kk) == "table" then
+                for j = 1, math.min(#kk, 32) do
+                  if kk[j] ~= nil and kk[j].SetVisible then
+                    pcall(function() kk[j]:SetVisible(false) end)
+                  end
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+end
+
 function Adapter:on_tick(dt)
   self.clock = self.clock + (dt or 0)
   local due = {}
@@ -3513,6 +3561,8 @@ function Adapter:on_tick(dt)
     end
   end
   for i = #due, 1, -1 do due[i].fn() end
+  -- ★ 每帧兜底：把被隐藏的格子整棵子树压下去（见 enforce_hidden_subtrees 的注释）
+  pcall(function() self:enforce_hidden_subtrees() end)
   return self.clock
 end
 
