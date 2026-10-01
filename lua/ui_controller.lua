@@ -1012,6 +1012,11 @@ function Controller:build_layout()
         visible = true,
         image_id = p[1],                       -- 素材 id（存档里会写进 /#505/#503/#84/#503）
         imageColor = p[7],                     -- 乘算着色
+        -- ★ 真机日志显示：sync_plan 克隆出来的图元是 imageType=Basic（按原始像素铺），
+        --   而正常工作的 bg/face 都是 Stretch。Basic 时若素材本身很小，画出来就等于看不见
+        --   （这很可能就是「截图上什么都没有」的原因）。
+        --   imageType 不在存档里（比过 wall.left/wall.right，只差 id），只能运行时设。
+        imageType = "Stretch",
         rect = {
           x = cx + math.floor(p[2] * s + 0.5) - math.floor(w / 2),
           y = cy + math.floor(p[3] * s + 0.5) - math.floor(h / 2),

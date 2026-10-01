@@ -44,9 +44,19 @@ const byName = g.byName;
 // ── 选原型：容器用容器、其它用按钮/文本 ────────────────────────────────────
 const protoBox = g.byName.get('intro') || g.byName.get('modal') || g.byName.get('board');
 const protoBtn = g.byName.get('action.undo') || g.byName.get('action.hint');
-// 图片控件的原型：**必须是"source 对"的图片控件**。
-// `wall.right` 用的是 `100001`（基础形状-矩形），实测在真机上显示正常。
-const protoImg = g.byName.get('wall.right') || g.byName.get('wall.left') || g.byName.get('door.up');
+// 图片控件的原型：**必须是"source 对"、而且"visible=true"的图片控件**。
+//
+// ⚠️⚠️ 2026-10-01 **我在这里踩了《工作约定》里写明的那条坑**：
+//   「别拿"运行时状态为假"的控件当克隆原型 —— 例如墙/门在存档里是 `visible=false`，
+//     克隆出来的副本也是隐藏的」
+//   我第一版用 `wall.right`（**它是 visible=false**）当原型 ⇒ 18 个六边形图元
+//   全部 `visible=false` ⇒ 真机上「截图上什么都没有」。
+//   日志里能直接看到对比：
+//     action.submit.hex1(visible=false type=Basic id=100001)   ← id 全对，但隐藏
+//     wall.left  visible=true                                   ← 它是可见的
+//   ⇒ 改用 `wall.left`（同样 `imageId=100001`，但 **visible=true**）。
+const protoImg = g.byName.get('wall.left') || g.byName.get('wall.up')
+              || g.byName.get('door.left') || g.byName.get('wall.right');
 const protoText = g.byName.get('modal.title') || g.byName.get('hud.title') || g.byName.get('intro.title');
 if (!protoBox || !protoBtn) { console.error('❌ 找不到原型（需要 intro/modal/board 与 action.undo/action.hint）'); process.exit(3); }
 

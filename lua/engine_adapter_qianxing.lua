@@ -2542,6 +2542,35 @@ function Adapter:set_property(id, key, value)
         if o.SetVisible then pcall(function() o:SetVisible(false) end) end
       end
     end
+  elseif key == "imageType" then
+    -- ★★★ 2026-10-01：**强制图片的拉伸方式**（Basic = 按原始像素 / Stretch = 填满控件）。
+    --
+    --   背景（真机日志对比出来的）：
+    --     正常工作的：  bg(visible=true type=Enum.ImageType.Stretch id=100108)
+    --                   face(visible=true type=Enum.ImageType.Stretch id=106053)
+    --     我克隆出来的：action.submit.hex1(visible=false type=Enum.ImageType.Basic id=100001)
+    --   **Basic 就是"按原始像素铺"** —— 如果 `100001` 是 1×1，画出来就等于**看不见**。
+    --   日志自己也提示过：「静态引用大多不支持拉伸 —— 需要拉伸的地方请选「底板」类素材；
+    --   imageType 显示 Stretch 才说明这个素材支持，Basic 就只能按原样铺」。
+    --
+    --   而 `imageType` 是**读写**字段（docs/未验证清单.md 第 2 条那条「SetImage 之后
+    --   imageType 会不会变」的验证日志里记着），所以这里直接赋枚举值即可。
+    --
+    --   为什么要在脚本里设、而不是写进 `.gil`：`imageType` **不在存档记录里**
+    --   （我把 wall.left / wall.right 逐字段比过，只差 id，没有任何 visible/imageType 差异）
+    --   ⇒ 它是引擎按素材算出来的默认值 ⇒ 只能运行时改。
+    local want = nil
+    pcall(function() want = value end)
+    if want ~= nil then
+      local enum = nil
+      pcall(function() enum = Enum.ImageType[tostring(want)] end)
+      if enum ~= nil then
+        pcall(function() ctrl.imageType = enum end)
+        -- 子控件（face/obj）也有 imageType，一起设，免得"设了父级没生效"
+        local f = self:sub(id, "face")
+        if f ~= nil then pcall(function() f.imageType = enum end) end
+      end
+    end
   elseif key == "image" then
     -- 头像/格面/物件图标：图片来自子控件 "face"
     --
