@@ -670,6 +670,43 @@ function Murdoku.on_update(dt)
     --   那个探针控件就是用户看到的"白块"，已删除，不再创建。
 
   end
+  -- ★★★★ 2026-10-01 **射线落点探针**：给几个"容器/弹窗"也绑上点击。
+  --
+  --   为什么：选关页上 `select.back` / `select.card.*` 的 visible/坐标/bind 全对，
+  --   而用户"所有位置都点了一遍"却**零点击日志**。可 `select` 容器自己**没绑点击**
+  --   => "没日志"并不能区分"射线被别人吃了"和"射线落在没绑事件的控件上"。
+  --   => 给容器们绑一遍：**谁收到日志，射线就落在谁身上**。
+  --      容器能收到 => 射线到得了这一层，子控件却没收到 => 子控件的射线被谁挡住/顺序不对
+  --      容器也收不到 => 更上层还有东西（游戏自己的 UI 层）
+  if not Murdoku._ray_probe_done and (current.frames or 0) >= 100 then
+    Murdoku._ray_probe_done = true
+    local ad3 = current.adapter
+    local probe_ids = { "root", "home", "select", "intro", "toast", "modal", "board" }
+    for i = 1, #probe_ids do
+      local pid = probe_ids[i]
+      local c = nil
+      pcall(function() c = ad3:find(pid) end)
+      local clickEnum = nil
+      pcall(function() clickEnum = Enum.CursorEventType.CursorClick end)
+      if clickEnum == nil then
+        pcall(function() clickEnum = Enum.CursorEventType.CursorClickDown end)
+      end
+      if c ~= nil and c.AddCursorEventListener ~= nil and clickEnum ~= nil then
+        local okb = pcall(function()
+          c:AddCursorEventListener(clickEnum, function()
+            print("[murdoku] RAY-HIT = " .. pid .. " （射线落在这个容器上）")
+          end)
+        end)
+        print("[murdoku] 射线探针：" .. pid .. " 绑定=" .. tostring(okb))
+      elseif clickEnum == nil then
+        print("[murdoku] 射线探针：读不到 Enum.CursorEventType.CursorClick，跳过")
+        break
+      else
+        print("[murdoku] 射线探针：" .. pid .. " 找不到或不支持光标事件")
+      end
+    end
+    print("[murdoku] 射线探针装好了 —— 之后点任何地方，只要射线落在这些容器上就会打日志")
+  end
   Murdoku._last_screen = scr_now
   current.frames = (current.frames or 0) + 1
 end
