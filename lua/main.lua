@@ -515,13 +515,18 @@ function Murdoku.on_update(dt)
   --   ⇒ 这里在第 90 帧（约 1.5 秒，足够跑完开局渲染）打一次**实际读回来**的状态：
   --     能不能找到、visible / active 是多少、坐标尺寸是多少。
   --   只打一次，不影响性能，也不依赖 debug_* 开关（这是验收信息，不是调试噪音）。
-  if not Murdoku._screen_dumped and (current.frames or 0) >= 90 then
-    Murdoku._screen_dumped = true
+  -- ★★★★ 2026-10-01 改成"每次切屏都打一次"（原来只在第 90 帧打一次，只看到主页）。
+  --   起因：用户报"选关界面上所有按钮都无效"，而诊断只在主页打过 => 看不到选关页真实状态。
+  local scr_now = current.controller and current.controller.screen or "level"
+  if ((current.frames or 0) >= 90 or scr_now ~= Murdoku._last_screen)
+     and scr_now ~= Murdoku._dump_done_for then
+    Murdoku._dump_done_for = scr_now
     local ad = current.adapter
     print("[murdoku] ===== 开局诊断：屏幕上到底有什么（第 90 帧实测）=====")
     print("[murdoku]   controller.screen = " .. tostring(current.controller.screen))
     local ids = {
       "root", "home", "home.title", "home.select", "home.continue", "home.shop", "home.bag",
+      "select.back", "select.title", "select.card.1", "select.card.2",
       "select", "select.card.2",
       "board", "cell.1.1", "topbar", "clues", "action.undo", "hud.title",
     }
@@ -548,8 +553,10 @@ function Murdoku.on_update(dt)
           if type(w) == "table" then size = string.format("%.0fx%.0f", w.x or 0, w.y or 0)
           elseif w ~= nil then size = string.format("%.0fx%.0f", w, h or 0) end
         end)
-        print(string.format("[murdoku]   %-16s visible=%-5s active=%-5s 位置=%-14s 尺寸=%s",
-          id, tostring(v), tostring(a), pos, size))
+        local bnd = false
+        pcall(function() bnd = (current.adapter.bound and current.adapter.bound[id]) or false end)
+        print(string.format("[murdoku]   %-16s visible=%-5s active=%-5s 位置=%-14s 尺寸=%-12s bind=%s",
+          id, tostring(v), tostring(a), pos, size, tostring(bnd)))
       end
     end
     print("[murdoku] ===== 开局诊断结束 =====")
@@ -614,6 +621,7 @@ function Murdoku.on_update(dt)
     --   那个探针控件就是用户看到的"白块"，已删除，不再创建。
 
   end
+  Murdoku._last_screen = scr_now
   current.frames = (current.frames or 0) + 1
 end
 
