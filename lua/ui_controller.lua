@@ -767,7 +767,13 @@ function Controller:on_input(event)
     -- 打开选关面板（关卡清单由 main.lua 通过 opts.levels 给进来）
     self.modal = { kind = "levelselect" }
 
-  elseif a == "pick_level" then
+  elseif a == "select_page" then
+      -- ★ 选关翻页（夹紧由 build_layout 里的 page 计算负责，这里只管加减）
+      self.select_page = (tonumber(self.select_page) or 1) + (tonumber(event.delta) or 0)
+      if self.select_page < 1 then self.select_page = 1 end
+      self.dirty = true
+
+    elseif a == "pick_level" then
     if self.opts.on_pick_level then
       self.modal = nil
       self.screen = nil              -- ★ 点卡片 = 离开选关、进入关卡
@@ -779,7 +785,7 @@ function Controller:on_input(event)
     self.screen = "home"; self.modal = nil; self.dirty = true
 
   elseif a == "levelselect" then
-    self.screen = "select"; self.modal = nil; self.dirty = true
+    self.screen = "select"; self.modal = nil; self.dirty = true; self.select_page = 1
 
   elseif a == "continue" then
     -- 「从存档点开始」= 接续**最近游玩记录**（由 main.lua 提供，取不到就老实说）
@@ -1796,11 +1802,53 @@ function Controller:build_layout()
                text = b[2], event = { action = b[3] } })
       end
     elseif self.screen == "select" then
-      push({ id = "select.title", kind = "text", parent = "select", visible = true, text = "选择关卡",
+        local list = {}
+        local lv = self.opts.levels
+        if type(lv) == "function" then list = lv() or {}
+        elseif type(lv) == "table" then list = lv end
+        local PER = 8
+        local total = #list
+        local pages = math.max(1, math.ceil(total / PER))
+        local page = tonumber(self.select_page) or 1
+        if page < 1 then page = 1 end
+        if page > pages then page = pages end
+        self.select_page = page          -- 夹紧后存回去，免得越界状态一直留着
+        local lst_base = (page - 1) * PER
+        -- ⚠️⚠️ `opts.levels` 在 main.lua 里传的是**表**（`levels = level_list`），不是函数！
+        --   我第一版写成 `self.opts.levels()` ⇒ `attempt to call a table value (field 'levels')`
+        --   ⇒ **build_layout 直接抛错、整个渲染崩掉**。
+        --   ⚠️ 2026-10-01 又踩一次：我挪分页变量段时用 TrimStart 把这几行**吃掉了**，
+        --      报 `attempt to get length of a nil value (global 'list')`。
+        --      ⇒ 挪代码不要用 TrimStart 粗暴裁切，会连注释和相邻语句一起带走。
+
+        push({ id = "select.title", kind = "text", parent = "select", visible = true, text = "选择关卡",
              rect = { x = 460, y = 80, w = 1000, h = 90 } })
       push({ id = "select.back", kind = "button", parent = "select", visible = true,
              rect = { x = 120, y = 950, w = 260, h = 80 },
              text = "返回主页", event = { action = "home" } })
+        -- ★★★ 2026-10-01：**选关翻页**（关卡多于 8 个时才有意义）。
+        --   只有一页时整组隐藏（`visible=false`），不占视觉。
+        local pg_visible = (pages > 1)
+        if pg_visible then
+          push({ id = "select.prev", kind = "button", parent = "select",
+                 visible = (page > 1), text = "上一页",
+                 rect = { x = 700, y = 950, w = 220, h = 80 },
+                 event = { action = "select_page", delta = -1 } })
+          push({ id = "select.next", kind = "button", parent = "select",
+                 visible = (page < pages), text = "下一页",
+                 rect = { x = 1000, y = 950, w = 220, h = 80 },
+                 event = { action = "select_page", delta = 1 } })
+          push({ id = "select.page", kind = "text", parent = "select", visible = true,
+                 text = string.format("第 %d / %d 页", page, pages),
+                 rect = { x = 930, y = 955, w = 60, h = 70 } })
+        else
+          push({ id = "select.prev", kind = "button", parent = "select", visible = false,
+                 rect = { x = 700, y = 950, w = 220, h = 80 } })
+          push({ id = "select.next", kind = "button", parent = "select", visible = false,
+                 rect = { x = 1000, y = 950, w = 220, h = 80 } })
+          push({ id = "select.page", kind = "text", parent = "select", visible = false,
+                 rect = { x = 930, y = 955, w = 60, h = 70 } })
+        end
       -- ⚠️⚠️ `opts.levels` 在 main.lua 里传的是**表**（`levels = level_list`），不是函数！
       --   我第一版写成 `self.opts.levels()` ⇒ `attempt to call a table value (field 'levels')`
       --   ⇒ **build_layout 直接抛错、整个渲染崩掉**，
@@ -1812,8 +1860,17 @@ function Controller:build_layout()
       local lv = self.opts.levels
       if type(lv) == "function" then list = lv() or {}
       elseif type(lv) == "table" then list = lv end
-      for i = 1, 8 do
-        local it = list[i]
+              -- ★★★ 2026-10-01：**加分页**。
+        --
+        --   原来固定 `for i = 1, 8 do local it = list[i]` ⇒ **只有前 8 关能选**，
+        --   第 9 关之后**根本没有卡片**（关卡多起来就是死路）。
+        --   现在：8 个卡位不变，翻页只换"从第几个关卡开始"。
+        --
+        --   为什么不做滚动列表：卡片是 2 行 × 4 列的大格子（含棋盘缩略图），
+        --   一屏正好 8 张；翻页比滚动更贴合"选关"这个动作。
+        
+        for i = 1, 8 do
+          local it = list[lst_base + i]
         local r = { x = 160 + ((i - 1) % 4) * 420, y = 240 + math.floor((i - 1) / 4) * 240,
                     w = 380, h = 200 }
         if it ~= nil then
