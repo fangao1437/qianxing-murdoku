@@ -436,32 +436,27 @@ function Adapter:create_control(node)
   --   => 容器**本来就不需要被点到**（要点的永远是里面的按钮），
   --      所以给这两个全屏容器显式关掉射线。
   if node.id == "home" or node.id == "select" then
-    -- ⚠️ `pcall` 会**静默吞掉失败** —— 我第一版只写了一句 `ctrl.raycastTarget = false`
-    --    包在 pcall 里，真机上完全没反应也不报错。这里改成：
-    --    **多种写法都试一遍 + 回读 + 把结果打进日志**，一次问清"到底关没关掉"。
-    local before = "?"
-    pcall(function() before = tostring(ctrl.raycastTarget) end)
-    local tries = {}
-    if ctrl.raycastTarget ~= nil then
-      tries[#tries + 1] = "字段写=" .. tostring(pcall(function() ctrl.raycastTarget = false end))
-    else
-      tries[#tries + 1] = "字段写=没有这个字段"
+    -- 真机上才问清楚的事实：日志打出
+    --   容器 home 关射线：原=nil  字段写=没有这个字段  passthru字段存在
+    -- => 这个引擎**根本没有 raycastTarget 字段**，我前两版都在改一个不存在的属性。
+    -- 真正存在的是 disableCursorEventPassthrough（项目里 open_click_passthrough
+    -- 就是靠它让格子的点击到达按钮）。这里把相关字段全列一遍、并回读，一次问清。
+    local has = {}
+    for _, k in ipairs({ "raycastTarget", "disableCursorEventPassthrough",
+                          "disableKeyEventPassthrough", "interactable",
+                          "blockRaycast", "showCursor" }) do
+      local v = nil
+      pcall(function() v = ctrl[k] end)
+      has[#has + 1] = k .. "=" .. tostring(v)
     end
-    if ctrl.SetRaycastTarget then
-      tries[#tries + 1] = "SetRaycastTarget=" .. tostring(pcall(function() ctrl:SetRaycastTarget(false) end))
-    end
-    if ctrl.setRaycastTarget then
-      tries[#tries + 1] = "setRaycastTarget=" .. tostring(pcall(function() ctrl:setRaycastTarget(false) end))
-    end
-    -- 顺带试一下"屏蔽区域内点击事件穿透"这个字段的两个值（语义见上面的注释）
+    print("[murdoku] 容器 " .. node.id .. " 字段： " .. table.concat(has, "  "))
     if ctrl.disableCursorEventPassthrough ~= nil then
-      tries[#tries + 1] = "passthru字段存在"
-    end
-    local after = "?"
-    pcall(function() after = tostring(ctrl.raycastTarget) end)
-    print("[murdoku] 容器 " .. node.id .. " 关射线：原=" .. before
-      .. "  " .. table.concat(tries, "  ") .. "  ⇒ 回读=" .. after)
-  end
+      local o1 = pcall(function() ctrl.disableCursorEventPassthrough = false end)
+      local r1 = "?"
+      pcall(function() r1 = tostring(ctrl.disableCursorEventPassthrough) end)
+      print("[murdoku]   容器 " .. node.id .. " 写 disableCursorEventPassthrough=false 成功="
+        .. tostring(o1) .. " 回读=" .. r1)
+    end  end
   -- ★ 2026-09-26 修的严重 bug：bind_input 以前**定义了但从没被调用**，
   --   于是没有任何控件挂上光标监听 —— 整个界面点哪儿都没反应（模拟器和真机一样）。
   --   绑定放在这里（每个 id 只 create 一次），并让 bind_input 自己防重复。
