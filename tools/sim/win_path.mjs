@@ -82,15 +82,36 @@ ri = await get();
 check('已跳过开屏教程', visibleOf(ri, 'intro') === false);
 
 // ── 3. 按答案逐个摆放 ────────────────────────────────────────────────────
+//
+//   ★★★ 2026-10-01：**改成"放一个等一个"**。
+//
+//   原来每次只 `tick(0.03)` 就接着放下一个。单独跑没问题，但放进 `check_all`
+//   （前面刚跑完一堆重活）就变成 `case_003：5 通过 / 10 失败` —— 7×7 有 5 个角色、
+//   点击更多，**同样的固定 tick 在负载下不够**（和 audit_flow 那次一模一样）。
+//
+//   ⇒ 不猜时间：**放完一个就轮询到"已放置数真的 +1"为止**，再放下一个。
 console.log('\n=== 2. 按答案摆放全部角色');
+/** 读 `已放置 x / y` 里的 x */
+async function placedCount() {
+  const m = /已放置\s*(\d+)/.exec(String(textOf(await get(), 'hud.progress') || ''));
+  return m ? Number(m[1]) : -1;
+}
 for (const p of lv.pieces) {
   const trayId = 'tray.' + p.id;
   const cellId = `cell.${p.r}.${p.c}`;
   const t = indexTree(ri);
   if (!t.has(trayId)) { check('头像卡存在 ' + trayId, false); continue; }
-  await click(trayId); await tick(0.03);
-  await click(cellId); await tick(0.03);
-  await click(cellId); await tick(0.03);       // 第二下 = 双击 → 放置
+  const before = await placedCount();
+  await click(trayId); await tick(0.05);
+  await click(cellId); await tick(0.05);
+  await click(cellId);
+  // 等"放置数 +1"（最多 ~1.4s），等不到就把当前值交给断言去报
+  let ok = false;
+  for (let i = 0; i < 24; i++) {
+    await tick(0.06);
+    if (await placedCount() > before) { ok = true; break; }
+  }
+  if (!ok) console.log('    （注意：放 ' + p.id + ' 之后放置数没涨，before=' + before + '）');
   ri = await get();
 }
 const progress = textOf(ri, 'hud.progress');
@@ -160,9 +181,15 @@ await click('modal.next'); await tick(0.3);
 await click('intro.skip'); await tick(0.25);
 ri = await get();
 const afterTitle = String(textOf(ri, 'hud.title') || '');
-check('点结算里的「下一关」真的换了关（不是原地不动）',
-  visibleOf(ri, 'board') === true && afterTitle !== beforeTitle,
-  JSON.stringify(beforeTitle) + ' → ' + JSON.stringify(afterTitle));
+// ⚠️ **最后一关要单独判**：`case_003` 是最后一关 ⇒ 点「下一关」应该给提示
+//    「已经是最后一关了」而不是切关。我第一版写成"标题必须变"，
+//    于是 case_003 报 `["案件 003 · 第三方" → "案件 003 · 第三方"]` —— **断言错了，不是功能错了**。
+const toastNow = String(textOf(ri, 'hud.toast') || '');
+const isLast = /最后一关/.test(toastNow) || /最后一关/.test(String(ri.toast || ''));
+check('点结算里的「下一关」有明确结果（切到下一关 / 或提示已是最后一关）',
+  visibleOf(ri, 'board') === true && (afterTitle !== beforeTitle || isLast),
+  isLast ? '已是最后一关（给了提示 ✅）'
+         : JSON.stringify(beforeTitle) + ' → ' + JSON.stringify(afterTitle));
 
 // ② 回选关看卡片标记
 await click('action.back'); await tick(0.25);
