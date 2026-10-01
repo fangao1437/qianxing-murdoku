@@ -586,12 +586,15 @@ function Murdoku.on_update(dt)
             list[#list + 1] = { id = nm, w = w or 0, h = h or 0, area = area }
           end
         end
-        local n = 0
-        pcall(function() n = c.childCount or 0 end)
-        for i = 1, math.min(n, 80) do
-          local ch = nil
-          pcall(function() ch = c:GetChild(i - 1) end)
-          if ch ~= nil then walk(ch, depth + 1) end
+        -- ⚠️ 这里原来用 `c.childCount` + `c:GetChild(i-1)` —— **走不进子树**
+        --   （排行榜只报出 root 一个，而诊断里明明有一堆 visible=true 的控件）。
+        --   项目里能用的枚举是 `ctrl:GetChildren()`（见适配器 L235/L295/L612 等处）。
+        local kids = nil
+        pcall(function() kids = c:GetChildren() end)
+        if type(kids) == "table" then
+          for i = 1, math.min(#kids, 200) do
+            if kids[i] ~= nil then walk(kids[i], depth + 1) end
+          end
         end
       end
       local rt = nil
