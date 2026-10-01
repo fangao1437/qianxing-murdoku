@@ -882,6 +882,42 @@ function Controller:is_intro_active() return (self.intro_page or 1) <= #M.INTRO 
 
 local function rect_of(t) return { x = t.x, y = t.y, w = t.w, h = t.h } end
 
+-- ★★★★ 2026-10-01 **`pos_runtime` 沿子树继承**（用户实测定位的"最后一环"）。
+--
+--   用户实测结论：**运行时新建的控件看得见，编辑器里已有的看不见**。
+--   差别就在这一步 —— 适配器 `respect_editor_rect` 会让脚本**完全不去碰**
+--   存档里已有控件的位置/尺寸（连锚点都不设）：
+--       if respect_editor_rect and not instantiated and not runtime_rect then return end
+--   我原来只给 `home` / `select` 两个**容器**打了 `pos_runtime`，容器尺寸是修好了，
+--   但**它们的子控件还留着编辑器里的锚点 + 偏移**（诊断读回来 (960,404)）——
+--   在 1600×900 的父容器里 ⇒ 实际落到 (1760, 854) ⇒ **x 超出 1600 ⇒ 屏幕外**。
+--   （子控件的 rect 从来没被下发过，所以我自己算的"应该在 (800,337)"一直没生效。）
+--
+--   ⇒ 一处改：父级标了 `pos_runtime`，**整棵子树都算"运行时控件"**。
+--     以后再加子控件也不用逐个记得打标记（漏一个是必然会发生的）。
+--
+--   ⚠️ 必须**两个 `return nodes` 之前都调用**：`build_layout` 在"主页/选关"状态下
+--      会**提前 return**（只 push 主页/选关那几棵子树）。我第一版只加在函数末尾，
+--      结果主页状态根本跑不到 ⇒ 继承没生效（探针实测 `home.select` 仍是 false）。
+local function inherit_pos_runtime(nodes)
+  local pr = {}
+  for i = 1, #nodes do
+    if nodes[i].pos_runtime then pr[nodes[i].id] = true end
+  end
+  for _ = 1, 8 do
+    local changed = false
+    for i = 1, #nodes do
+      local n = nodes[i]
+      if (not n.pos_runtime) and n.parent ~= nil and pr[n.parent] then
+        n.pos_runtime = true
+        pr[n.id] = true
+        changed = true
+      end
+    end
+    if not changed then break end
+  end
+end
+
 function Controller:build_layout()
   local vm = self.core:view()
   local L = M.LAYOUT
@@ -1954,12 +1990,20 @@ function Controller:build_layout()
         end
       end
     end
+    -- ⚠️ **主页/选关这条提前 return 之前也必须调** —— 否则这两个屏幕的子树
+    --    拿不到继承过来的 `pos_runtime`，子控件继续用编辑器里的锚点+偏移
+    --    ⇒ 实际落到屏幕外（就是"界面空白"的直接原因）。
+    inherit_pos_runtime(nodes)
     return nodes
   end
 
+  -- ★★★★ 2026-10-01 **界面空白的最后一环（用户实测定位）**：
+  --   `pos_runtime` 必须**沿子树继承** —— 详见函数外 `inherit_pos_runtime` 的注释。
+  --   这一处是**关卡路径**的收口；主页/选关那条提前 return 之前也调了一次。
+  inherit_pos_runtime(nodes)
+
   return nodes
 end
-
 -- ────────────────────────────────────────────────────────────────────────
 -- 布局计划：把 build_layout() 摊平成「画布空间」清单，
 -- 供 ① 模拟器建树脚本 ② 编辑器搭建指南生成器 共用同一份数据。
