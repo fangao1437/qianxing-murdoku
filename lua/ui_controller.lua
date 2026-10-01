@@ -970,6 +970,62 @@ function Controller:build_layout()
   --
   --   注：父级从 `toolbar` 改成 `root` —— 右侧竖排的 y 已经超出 toolbar 的高度（104），
   --   挂在 toolbar 下会被裁掉。
+  -- ★★★ 2026-10-01：**右侧三个按钮的深色六边形底图**（参考图里就是六边形）。
+  --
+  --   数据来源：Miliastra Image Editor（https://qx.070077.xyz）的 **ELEMENTS 导出**。
+  --   我在那个网站上用基础图元摆出六边形，导出 `.lua` 拿到坐标/颜色，
+  --   再照搬到我们自己的界面里（不依赖"导入外部资产"那条路）。
+  --   见 docs/外部资产-怎么用与我做了什么.md。
+  --
+  --   六边形的拼法（**这是实测出来的**）：
+  --     中间一个矩形 + 上面一个三角 + 下面一个三角。
+  --     ⚠️ 别想用"两个三角形"拼 —— 那会得到**八角星**，不是六边形（我踩过）。
+  --
+  --   图元用的是**游戏自带素材**：
+  --     `100001` = 基础形状-矩形 / `100003` = 基础形状-三角
+  --   这两个 id 我们**已经在用**（`wall.right`/`door.*` 就是 `100001`，真机正常），
+  --   而且都在图片素材库的「基础形状」类里（6 个：100001~100006）。
+  --
+  --   ⚠️ 图片 id 必须在**存档里**写好（`tools/gil/sync_plan.mjs` 的 `setImageId`，
+  --   路径 `/#505/#503/#84/#503`）—— 运行时 `SetImage` 换图**不可靠**：
+  --   适配器里有实测记录，读回来的 `imageSource` 和存档里的不是同一个值，会配错图集。
+  local HEX_RECT, HEX_TRI = 100001, 100003
+  local HEX_PARTS = {
+    -- { 图元, dx, dy, w, h, 旋转, 颜色(ARGB) }
+    { HEX_RECT, 0,   0, 176, 102,   0, 0xFF1B2030 },   -- 描边·中
+    { HEX_TRI,  0,  77, 176,  52,   0, 0xFF1B2030 },   -- 描边·上（编辑器里 y 向上）
+    { HEX_TRI,  0, -77, 176,  52, 180, 0xFF1B2030 },   -- 描边·下
+    { HEX_RECT, 0,   0, 156,  90,   0, 0xFF2B3348 },   -- 内芯·中
+    { HEX_TRI,  0,  67, 156,  46,   0, 0xFF2B3348 },   -- 内芯·上
+    { HEX_TRI,  0, -67, 156,  46, 180, 0xFF2B3348 },   -- 内芯·下
+  }
+  -- 源场景是 256×256；按按钮边长等比缩放
+  local function hex_bg(btnId, cx, cy, size)
+    local s = size / 256
+    for i = 1, #HEX_PARTS do
+      local p = HEX_PARTS[i]
+      local w, h = math.floor(p[4] * s + 0.5), math.floor(p[5] * s + 0.5)
+      push({
+        id = btnId .. ".hex" .. i,
+        kind = "button",
+        parent = btnId,
+        visible = true,
+        image_id = p[1],                       -- 素材 id（存档里会写进 /#505/#503/#84/#503）
+        imageColor = p[7],                     -- 乘算着色
+        rect = {
+          x = cx + math.floor(p[2] * s + 0.5) - math.floor(w / 2),
+          y = cy + math.floor(p[3] * s + 0.5) - math.floor(h / 2),
+          w = w, h = h,
+        },
+        rot = p[6],
+        pos_runtime = false,                   -- 固定几何，编辑器说了算
+      })
+    end
+  end
+  hex_bg("action.undo",   1790, 390, 110)
+  hex_bg("action.submit", 1790, 540, 110)
+  hex_bg("action.reveal", 1790, 690, 110)
+
   btn("action.undo", "root", { x = 1790, y = 390, w = 110, h = 110 }, "撤销",
       { action = "undo" }, "stamp.sm", vm.hud.can_undo)
   btn("action.submit", "root", { x = 1790, y = 540, w = 110, h = 110 },
@@ -1925,6 +1981,11 @@ function Controller:layout_plan()
           cx = cv.cx, cy = cv.cy, w = cv.w, h = cv.h,
           text = n.text, visible = (n.visible ~= false),
           states = {},
+            -- ★ 2026-10-01：**图片素材/颜色/旋转也要进计划** —— 否则 sync_plan 建图片控件时
+            --   拿不到 image_id，新控件会带上原型（wall.right）的图。
+            --   链条：build_layout → **这里** → tools/dump_layout.lua → sync_plan.mjs，
+            --   三处都要带（我漏了两处，image_id 一路是 undefined）。
+            image_id = n.image_id, imageColor = n.imageColor, rot = n.rot,
         }
         byId[n.id] = prev
         order[#order + 1] = prev

@@ -88,6 +88,10 @@ for li = 1, #levels do
         cx = n.cx, cy = n.cy, w = n.w, h = n.h,
         text = n.text, visible = n.visible, states = n.states or {},
         levels = {},
+        -- ★ 2026-10-01：**图片素材必须带出来**，否则 `sync_plan` 建控件时
+        --   拿不到 `image_id`，新控件就带上原型的图。
+        --   （我第一版忘了这行，18 个六边形图元的 image_id 全是 undefined。）
+        image_id = n.image_id, imageColor = n.imageColor, rot = n.rot,
       }
       byId[n.id] = prev
       order[#order + 1] = prev

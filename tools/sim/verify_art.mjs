@@ -218,5 +218,38 @@ console.log('\n=== 棋盘区域的控件（"压在棋盘上"的候选）===');
   }
 }
 
+// ── 右侧三个按钮的「深色六边形底图」 ──────────────────────────────────────
+//
+//   ★ 2026-10-01：参考图里右侧是三个**六边形**按钮。我们用**基础图元拼**出来：
+//     中间一个矩形（100001）+ 上面一个三角 + 下面一个三角（都是 100003），
+//     再做一层内缩当描边 —— 共 6 个图元/按钮。
+//
+//   数据来自 Miliastra Image Editor 的 ELEMENTS 导出（见
+//   docs/外部资产-怎么用与我做了什么.md）。
+//
+//   ⚠️ 这条断言锁的是「**六个图元都在、图片 id 对**」——
+//     因为图片 id 必须在**存档里**写好（路径 `/#505/#503/#84/#503`），
+//     运行时 `SetImage` 换图**不可靠**：适配器里有实测记录，
+//     读回来的 imageSource 和存档里的不是同一个值，会配错图集（变紫）。
+{
+  const want = { 100001: 2, 100003: 4 };   // 每个按钮：2 个矩形 + 4 个三角
+  for (const b of ['action.undo', 'action.submit', 'action.reveal']) {
+    const counts = {};
+    let n = 0;
+    for (let i = 1; i <= 6; i++) {
+      const k = plan.nodes.find((x) => x.id === b + '.hex' + i);
+      if (!k) continue;
+      n++;
+      counts[k.image_id] = (counts[k.image_id] || 0) + 1;
+    }
+    const idsOk = Object.keys(want).length === Object.keys(counts).length
+      && Object.entries(want).every(([id, c]) => counts[id] === c);
+    check('「' + b + '」有 6 个六边形图元（100001×2 + 100003×4）',
+      n === 6 && idsOk, n + ' 个，' + JSON.stringify(counts));
+    const colored = plan.nodes.filter((x) => x.id.startsWith(b + '.hex') && typeof x.imageColor === 'number').length;
+    check('「' + b + '」的六边形图元都带着色（不然是原色，不是深色）', colored === 6, colored + ' / 6');
+  }
+}
+
 console.log('\n════════ 美术验证：' + pass + ' 通过 / ' + fail + ' 失败 ════════');
 process.exit(fail === 0 ? 0 : 1);

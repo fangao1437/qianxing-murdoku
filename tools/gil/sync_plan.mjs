@@ -44,6 +44,9 @@ const byName = g.byName;
 // ── 选原型：容器用容器、其它用按钮/文本 ────────────────────────────────────
 const protoBox = g.byName.get('intro') || g.byName.get('modal') || g.byName.get('board');
 const protoBtn = g.byName.get('action.undo') || g.byName.get('action.hint');
+// 图片控件的原型：**必须是"source 对"的图片控件**。
+// `wall.right` 用的是 `100001`（基础形状-矩形），实测在真机上显示正常。
+const protoImg = g.byName.get('wall.right') || g.byName.get('wall.left') || g.byName.get('door.up');
 const protoText = g.byName.get('modal.title') || g.byName.get('hud.title') || g.byName.get('intro.title');
 if (!protoBox || !protoBtn) { console.error('❌ 找不到原型（需要 intro/modal/board 与 action.undo/action.hint）'); process.exit(3); }
 
@@ -77,8 +80,33 @@ function setName(fs, text) {
   return done;
 }
 
+/**
+ * 写图片 id。
+ *
+ * ★★★ 2026-10-01：**图片 id 在 `/#505/#503/#84/#503`** —— 这是我在 4 个控件上
+ *   对比确认的（`wall.right`=100001、`wall.down`=100108、`x`=100101、`face`=106053）。
+ *   做法：把两个只有图不同的控件**逐字段对比**，唯一不同的就是它。
+ *
+ * ⚠️ 为什么必须在**存档里**写好、不能留给运行时 `SetImage`：
+ *   适配器里有过一条实测记录（L1503）——
+ *   「运行时 `SetImage(bg.imageSource, 100108)` 反而把它**覆盖成了紫色**，
+ *     说明运行时读到的 `imageSource` 和我写进存档的**不是同一个值**，配错了图集」
+ *   ⇒ 运行时按"读到的 source + 新 id"去换图**不可靠**；在存档里直接写好才稳。
+ */
+function setImageId(fieldSub, imageId) {
+  let done = false;
+  (function walk(fs, path) {
+    for (const x of fs) {
+      if (done) return;
+      if (x.wt === 0 && x.field === 503 && path === '/#505/#503/#84') { x.num = BigInt(imageId); done = true; return; }
+      if (x.wt === 2 && x.sub) walk(x.sub, path + '/#' + x.field);
+    }
+  })(fieldSub, '');
+  return done;
+}
+
 /** 克隆一个原型记录（**只克隆它自己，不带子控件** —— 我们要的是"空壳"） */
-function makeRecord(proto, name, parentRec, x, y, w, h) {
+function makeRecord(proto, name, parentRec, x, y, w, h, imageId) {
   const id = nextId++;
   const field = deepField(proto.field);
   // ① 本记录自己的 ID
@@ -103,6 +131,8 @@ function makeRecord(proto, name, parentRec, x, y, w, h) {
     const p5 = pairOf(b, 505); if (p5) { setPair(p5, w, h); n++; }
     const p4 = pairOf(b, 504); if (p4) { setPair(p4, x, y); n++; }
   }
+  // ⑥b 图片 id（只有图片控件才给）
+  if (imageId != null) setImageId(field.sub, imageId);
 
   const rec = { id, name, parentId: parentRec.id, field: null, holder: null, index: -1 };
   // ⚠️⚠️ **字段号必须用原型记录的**，不能写 0！
@@ -159,11 +189,19 @@ for (const n of planNodes) {
   const parentRec = g.byName.get(pid) || g.byName.get('root');
   if (!g.byName.get(pid) && pid !== 'root') { skipped.push(n.id + '(父 ' + pid + ' 不在)'); continue; }
 
-  const proto = n.kind === 'container' ? protoBox
+  // 原型选择：
+  //   · 图片控件（带 `image_id`）⇒ 用 `wall.right`（**它的 source 是对的**，
+  //     我们只改 id）。用按钮原型的话会带上按钮自己的图/source。
+  //   · 容器 ⇒ protoBox
+  //   · 文本 ⇒ protoText
+  //   · 其它 ⇒ protoBtn
+  const proto = n.image_id != null && protoImg ? protoImg
+              : n.kind === 'container' ? protoBox
               : (n.kind === 'text' && protoText ? protoText : protoBtn);
   const d = toDesign(n);
-  const r = makeRecord(proto, n.id, parentRec, d.x, d.y, d.w, d.h);
-  created.push({ id: n.id, kind: n.kind, parent: parentRec.name, rect: d, pairs: r.pairs });
+  const r = makeRecord(proto, n.id, parentRec, d.x, d.y, d.w, d.h, n.image_id);
+  created.push({ id: n.id, kind: n.kind, parent: parentRec.name, rect: d, pairs: r.pairs,
+                 img: n.image_id != null ? n.image_id : null });
 }
 
 console.log('  存档 ' + path.basename(GIL) + '  记录 ' + g.recs.length + ' → 新增 ' + created.length);
