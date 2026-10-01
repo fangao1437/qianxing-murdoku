@@ -3524,7 +3524,7 @@ function Adapter:enforce_hidden_subtrees()
   local hid = self._hidden_ids
   if hid == nil then return end
   for id in pairs(hid) do
-    if id:sub(1, 5) == "cell." then
+    if true then   -- ★ 对所有"被隐藏的控件"都兜底（原来只对 cell. 生效，范围开小了）
       local c = self:find(id)
       if c ~= nil then
         local kids = nil
