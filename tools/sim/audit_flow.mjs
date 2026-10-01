@@ -31,6 +31,24 @@ function check(name, ok, extra) {
 }
 /** 等一个小段时间（点击要经过一帧才反映到树上） */
 const settle = async (n = 3) => { for (let i = 0; i < n; i++) await tick(0.08); };
+
+/**
+ * **点一下 + 等到"页面真的变成 target"**。
+ *
+ * ★★★ 2026-10-01：为什么不能只 `click` 完 `tick` 固定几帧 ——
+ *   单独跑这个脚本是 17/0，但放进 `check_all` 里（前面刚跑完一堆重活）就变成 14/3：
+ *   **同一段代码、不同负载下 tick 几帧不够**。猜"睡多久"永远猜不准，
+ *   所以改成**轮询到状态真的变了为止**（有上限，不会挂死）。
+ */
+async function clickUntil(name, want, tries = 24) {
+  await click(name);
+  for (let i = 0; i < tries; i++) {
+    await tick(0.06);
+    const cur = where(await get());
+    if (cur === want) return cur;
+  }
+  return where(await get());
+}
 /** 当前在哪个页面 */
 function where(ri) {
   if (visibleOf(ri, 'home') === true) return 'home';
@@ -49,16 +67,16 @@ let ri = await get();
 // ① 主页 → 选关 → 返回主页
 console.log('\n── ① 主页 ⇄ 选关 ──');
 check('开局在主页', where(ri) === 'home', where(ri));
-await click('home.select'); await settle();
+await clickUntil('home.select', 'select');
 ri = await get();
 check('点「选关」进选关', where(ri) === 'select', where(ri));
-await click('select.back'); await settle();
+await clickUntil('select.back', 'home');
 ri = await get();
 check('点「返回主页」回主页', where(ri) === 'home', where(ri));
 
 // ② 主页 → 选关 → 卡片 → 关卡
 console.log('\n── ② 选关 → 关卡 ──');
-await click('home.select'); await settle();
+await clickUntil('home.select', 'select');
 await click('select.card.2'); await settle();
 await click('intro.skip'); await settle();
 ri = await get();
@@ -68,7 +86,7 @@ check('关卡标题是刚点的那一关', level1Title.length > 0, JSON.stringif
 
 // ③ 关卡 →「返回列表」→ 选关
 console.log('\n── ③ 关卡 → 返回列表 ──');
-await click('action.back'); await settle();
+await clickUntil('action.back', 'select');
 ri = await get();
 check('点「返回列表」回选关', where(ri) === 'select', where(ri));
 
