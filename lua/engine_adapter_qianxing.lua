@@ -1342,9 +1342,36 @@ end
 --
 -- 只扫一层是刻意的：face / note / x / text / bg 这些子控件在更深一层，
 -- 它们不是界面层排布的，不能被误伤。
+-- ★★★★★ 2026-10-02 **真机"点不动"的根因就在这里**：名单漏了 `home` / `select`。
+--
+--   引擎的点击派发条件是（见下面 `enable_cursor` 的注释）：
+--     for i = t; i; i = i.parent do
+--       if i.kind == "container" and i.showCursor then return true end
+--     end
+--   —— 一个控件要收到点击，**祖先链上必须有一个 kind=="container" 且 showCursor==true 的容器**。
+--
+--   脚本靠这份 `MANAGED` 名单去开那个开关（真机日志：`已由脚本打开 9 个容器的显示常驻光标`）。
+--   而 **`home` / `select` 不在名单里** ⇒ 它们的子控件（主页四键 / 选关卡片 / 返回键）
+--   全部落在门控②之外 ⇒ **点不动**。
+--   这也解释了那个一直没解释的不对称：`home.*` 在主页能点（`root` 那条链当时是通的），
+--   一切到选关就全废。
+--
+--   ⚠️ 这是本项目反复吃亏的"**门控②**"（docs/环境问题-诊断记录.md）：
+--      加一个新容器就**必须**同步加进这份名单 —— 我加 `home`/`select` 时漏了。
 local MANAGED = {
   "root", "topbar", "left", "tray", "clues", "board",
   "right", "actions", "modal", "intro",
+}
+
+-- ★ 只有"开常驻光标"这件事需要额外覆盖 `home` / `select`。
+--   `hide_unlisted` 用的是上面那份 MANAGED，语义不同，**不要混用**。
+--   （第一版我直接加进 MANAGED，play_test 立刻从 3 红变 4 红。）
+--   两份名单**分开**：MANAGED = "脚本托管的关卡内容器"；
+--   CURSOR_CONTAINERS = "需要打开「显示常驻光标」的容器"（**必须包含每个屏幕容器**）。
+local CURSOR_CONTAINERS = {
+  "root", "topbar", "left", "tray", "clues", "board",
+  "right", "actions", "modal", "intro",
+  "home", "select",
 }
 
 function Adapter:hide_unlisted(keep)
@@ -1741,12 +1768,28 @@ end
 -- 真机若不开放该字段，pcall 会失败 → 返回 0 → 上层只记一条提示，不影响运行。
 function Adapter:enable_cursor()
   local n = 0
-  for i = 1, #MANAGED do
+  for i = 1, #CURSOR_CONTAINERS do
     local ctrl = self:find(MANAGED[i])
     if ctrl ~= nil then
       local ok = pcall(function() ctrl.showCursor = true end)
       if ok then n = n + 1 end
     end
+  end
+  -- ★ 回读：把每个受管容器的 showCursor 实际值打出来。
+  --   门控②（祖先容器 showCursor=true）是"点不动"的头号原因，
+  --   而 `pcall` 会**静默吞掉失败** —— 改了必须回读才算数。
+  --   （我前面改 `raycastTarget` 时就是栽在"改了但没验"上。）
+  local parts = {}
+  for i = 1, #CURSOR_CONTAINERS do
+    local ctrl = self:find(MANAGED[i])
+    if ctrl ~= nil then
+      local sc = "?"
+      pcall(function() sc = tostring(ctrl.showCursor) end)
+      parts[#parts + 1] = MANAGED[i] .. "=" .. sc
+    end
+  end
+  if #parts > 0 and print then
+    print("[murdoku] 常驻光标回读（门控②）：" .. table.concat(parts, "  "))
   end
   return n
 end

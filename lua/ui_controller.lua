@@ -971,6 +971,8 @@ local function apply_screen_hide(nodes, screen)
     --      它们测的是"容器 visible=false"，而这一版**刻意不那样做**。
     --      真正要验的是"子控件有没有串屏"，那三条的附加信息里已经写了
     --      "关卡内的还可见 0 个" ⇒ 子控件层面是干净的。
+    if id == "home" then hide = (screen ~= "home") end
+    if id == "select" then hide = (screen ~= "select") end
     if hide then nodes[i].visible = false end
   end
 end
@@ -1896,9 +1898,9 @@ function Controller:build_layout()
     --      `FULLSCREEN`，而计划里取的是**第一次** push 的几何 ⇒ 白改一次。
     local FULL = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height }
   push({ id = "home", kind = "container", parent = "root", rect = FULL,
-         visible = true, pos_runtime = true })
+         visible = (self.screen == "home"), pos_runtime = true })
   push({ id = "select", kind = "container", parent = "root", rect = FULL,
-         visible = true, pos_runtime = true })
+         visible = (self.screen == "select"), pos_runtime = true })
 
   if self.screen ~= nil then
     -- ★★★ 2026-10-01：**改成"反向逻辑"**（原来是白名单，漏了一大片）。
@@ -1940,7 +1942,9 @@ function Controller:build_layout()
           if id:sub(1, #HIDE_PREFIX[k]) == HIDE_PREFIX[k] then hide = true break end
         end
       end
-      if hide then nodes[i].visible = false end
+      if id == "home" then hide = (screen ~= "home") end
+    if id == "select" then hide = (screen ~= "select") end
+    if hide then nodes[i].visible = false end
     end
     -- ★★★★ 2026-10-01 **真机"卡死"的最终修法**：容器**不再铺满屏幕**。
     --
@@ -1954,9 +1958,9 @@ function Controller:build_layout()
     --   ⇒ 说明**子控件不会被父级尺寸裁掉**（`root` 是全屏、探针 600x300 正常显示）。
     local FULLSCREEN = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height }
     push({ id = "home", kind = "container", parent = "root", rect = FULLSCREEN,
-           visible = true, pos_runtime = true })
+           visible = (self.screen == "home"), pos_runtime = true })
     push({ id = "select", kind = "container", parent = "root", rect = FULLSCREEN,
-           visible = true, pos_runtime = true })
+           visible = (self.screen == "select"), pos_runtime = true })
     if self.screen == "home" then
       push({ id = "home.title", kind = "text", parent = "root", visible = true, text = M.HOME_TITLE,
              rect = { x = 460, y = 140, w = 1000, h = 110 } })
