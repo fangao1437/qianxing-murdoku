@@ -918,6 +918,45 @@ local function inherit_pos_runtime(nodes)
   end
 end
 
+-- ★★★★ 2026-10-01 **屏幕隔离**（子控件不再靠父容器开关之后的必需品）。
+--
+--   背景：为了修"全屏容器把游戏自己的 UI 挡住、点不动"（用户报"卡死"），
+--   我把 `home.*` / `select.*` 的**父级从 home/select 容器改挂到了 root** ——
+--   因为证据表明 root 的子控件不会被裁（诊断三的探针挂在 root 下、用户确认看得见）。
+--   容器随之缩成 1x1，不再覆盖屏幕。
+--
+--   ⇒ 副作用：**父容器的 `visible` 不再能开关子树**了。所以这里显式按屏幕藏：
+--      · 关卡内（screen == nil）：藏 `home.` / `select.` 两棵子树
+--      · 主页 / 选关：藏**关卡内控件**（下面 HIDE / PREFIX 那两组）+ **另一个屏幕的子树**
+--
+--   ⚠️ `HIDE` 那一组**只在"主页/选关"时生效** —— 里面的 `intro` / `modal` / `toast`
+--      在关卡里是要显示的。我第一版没分组、无条件藏，会把教程和弹窗一起藏掉。
+local function apply_screen_hide(nodes, screen)
+  if nodes == nil then return end
+  local HIDE, PREFIX = {}, {}
+  if screen == nil then
+    PREFIX = { "home.", "select." }
+  else
+    HIDE = {
+      topbar = true, toolbar = true, left = true, board = true, right = true,
+      toast = true, modal = true, intro = true, clues = true,
+      ["action.back"] = true, ["action.redo"] = true, ["action.hint"] = true,
+      ["action.undo"] = true, ["action.submit"] = true, ["action.reveal"] = true,
+    }
+    PREFIX = { "cell.", "clue.", "hud.", "room.label.", "ruler", "tray.", "action.",
+               (screen == "home") and "select." or "home." }
+  end
+  for i = 1, #nodes do
+    local id = nodes[i].id
+    local hide = HIDE[id] == true
+    if not hide then
+      for k = 1, #PREFIX do
+        if id:sub(1, #PREFIX[k]) == PREFIX[k] then hide = true break end
+      end
+    end
+    if hide then nodes[i].visible = false end
+  end
+end
 function Controller:build_layout()
   local vm = self.core:view()
   local L = M.LAYOUT
@@ -1823,7 +1862,22 @@ function Controller:build_layout()
   --      于是主页/选关控件**留在关卡画面上**（美术检查报"棋盘区域有 1 个多余控件"）。
   --      原因：这两个容器在 `.gil` 里默认是可见的（要给编辑器里能看见、能调），
   --      所以**运行时必须由脚本负责关掉**。
-  local FULL = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height }
+  -- ★★★★ 2026-10-01 **真机"卡死"的最终修法：容器不再覆盖屏幕**。
+    --
+    --   为什么：`home` / `select` 铺满 1600x900 之后就成了**全屏射线靶子** ——
+    --   它把**游戏自己的 UI（退出按钮）**都盖住、点不到，用户报"只能选关进去、出不来了"。
+    --
+    --   改成 1x1 放在屏幕正中：**子控件是相对父级中心定位的**，父级中心没变
+    --   （仍是屏幕中心 (800,450)）⇒ **子控件坐标一个都不用动**，
+    --   而容器本身小到不可能挡住任何东西。
+    --
+    --   同时把 `home.*` / `select.*` 的**父级改挂到 `root`**（见下面各 push），
+    --   所以容器缩水不会让子控件被裁 —— 而且有证据：诊断三那个探针控件就挂在 `root` 下、
+    --   尺寸 600x300、用户确认**看得见** ⇒ root 的子控件不被裁。
+    --
+    --   ⚠️ 这两个常量（`FULL` 和 `FULLSCREEN`）**都要改** —— 我第一版只改了
+    --      `FULLSCREEN`，而计划里取的是**第一次** push 的几何 ⇒ 白改一次。
+    local FULL = { x = M.DESIGN.width * 0.5, y = M.DESIGN.height * 0.5, w = 1, h = 1 }
   push({ id = "home", kind = "container", parent = "root", rect = FULL,
          visible = (self.screen == "home"), pos_runtime = true })
   push({ id = "select", kind = "container", parent = "root", rect = FULL,
@@ -1871,13 +1925,23 @@ function Controller:build_layout()
       end
       if hide then nodes[i].visible = false end
     end
-    local FULLSCREEN = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height }
+    -- ★★★★ 2026-10-01 **真机"卡死"的最终修法**：容器**不再铺满屏幕**。
+    --
+    --   为什么：`home` / `select` 铺满 1600x900 之后就成了**全屏射线靶子** ——
+    --   它把**游戏自己的 UI（退出按钮）**都盖住、点不到，用户报"卡死"。
+    --   改成 1x1 放在屏幕正中：**子控件是相对父级中心定位的**，
+    --   父级中心没变（还是屏幕中心）⇒ **子控件坐标一个都不用动**，
+    --   而容器本身小到不可能挡住任何东西。
+    --
+    --   为什么敢这么做：诊断三那个探针控件是**挂在 `root` 下面**的，用户确认看得见
+    --   ⇒ 说明**子控件不会被父级尺寸裁掉**（`root` 是全屏、探针 600x300 正常显示）。
+    local FULLSCREEN = { x = M.DESIGN.width * 0.5, y = M.DESIGN.height * 0.5, w = 1, h = 1 }
     push({ id = "home", kind = "container", parent = "root", rect = FULLSCREEN,
            visible = (self.screen == "home"), pos_runtime = true })
     push({ id = "select", kind = "container", parent = "root", rect = FULLSCREEN,
            visible = (self.screen == "select"), pos_runtime = true })
     if self.screen == "home" then
-      push({ id = "home.title", kind = "text", parent = "home", visible = true, text = M.HOME_TITLE,
+      push({ id = "home.title", kind = "text", parent = "root", visible = true, text = M.HOME_TITLE,
              rect = { x = 460, y = 140, w = 1000, h = 110 } })
       -- 中列四键。用户要求：原左边的「选关」挪到**中列最上**，原位置（左下角）留空。
       local HOME_BTNS = {
@@ -1888,7 +1952,7 @@ function Controller:build_layout()
       }
       for i = 1, #HOME_BTNS do
         local b = HOME_BTNS[i]
-        push({ id = b[1], kind = "button", parent = "home", visible = true,
+        push({ id = b[1], kind = "button", parent = "root", visible = true,
                rect = { x = 730, y = b[4], w = 460, h = 88 },
                text = b[2], event = { action = b[3] } })
       end
@@ -1912,32 +1976,32 @@ function Controller:build_layout()
         --      报 `attempt to get length of a nil value (global 'list')`。
         --      ⇒ 挪代码不要用 TrimStart 粗暴裁切，会连注释和相邻语句一起带走。
 
-        push({ id = "select.title", kind = "text", parent = "select", visible = true, text = "选择关卡",
+        push({ id = "select.title", kind = "text", parent = "root", visible = true, text = "选择关卡",
              rect = { x = 460, y = 80, w = 1000, h = 90 } })
-      push({ id = "select.back", kind = "button", parent = "select", visible = true,
+      push({ id = "select.back", kind = "button", parent = "root", visible = true,
              rect = { x = 120, y = 950, w = 260, h = 80 },
              text = "返回主页", event = { action = "home" } })
         -- ★★★ 2026-10-01：**选关翻页**（关卡多于 8 个时才有意义）。
         --   只有一页时整组隐藏（`visible=false`），不占视觉。
         local pg_visible = (pages > 1)
         if pg_visible then
-          push({ id = "select.prev", kind = "button", parent = "select",
+          push({ id = "select.prev", kind = "button", parent = "root",
                  visible = (page > 1), text = "上一页",
                  rect = { x = 700, y = 950, w = 220, h = 80 },
                  event = { action = "select_page", delta = -1 } })
-          push({ id = "select.next", kind = "button", parent = "select",
+          push({ id = "select.next", kind = "button", parent = "root",
                  visible = (page < pages), text = "下一页",
                  rect = { x = 1000, y = 950, w = 220, h = 80 },
                  event = { action = "select_page", delta = 1 } })
-          push({ id = "select.page", kind = "text", parent = "select", visible = true,
+          push({ id = "select.page", kind = "text", parent = "root", visible = true,
                  text = string.format("第 %d / %d 页", page, pages),
                  rect = { x = 930, y = 955, w = 60, h = 70 } })
         else
-          push({ id = "select.prev", kind = "button", parent = "select", visible = false,
+          push({ id = "select.prev", kind = "button", parent = "root", visible = false,
                  rect = { x = 700, y = 950, w = 220, h = 80 } })
-          push({ id = "select.next", kind = "button", parent = "select", visible = false,
+          push({ id = "select.next", kind = "button", parent = "root", visible = false,
                  rect = { x = 1000, y = 950, w = 220, h = 80 } })
-          push({ id = "select.page", kind = "text", parent = "select", visible = false,
+          push({ id = "select.page", kind = "text", parent = "root", visible = false,
                  rect = { x = 930, y = 955, w = 60, h = 70 } })
         end
       -- ⚠️⚠️ `opts.levels` 在 main.lua 里传的是**表**（`levels = level_list`），不是函数！
@@ -1968,22 +2032,22 @@ function Controller:build_layout()
           -- ★★★ 2026-09-30：卡片改成**三段**（参考《派蒙的执律庭实习》的选关卡片：
           --   上面一条"关名"纸条、中间是**该关棋盘的缩略图**、下面一行"人数/进度"）。
           --   原来是一整块按钮 + 多行文字 —— 缩略图没地方放（文字会盖在它上面）。
-          push({ id = "select.card." .. i, kind = "button", parent = "select", visible = true,
+          push({ id = "select.card." .. i, kind = "button", parent = "root", visible = true,
                  rect = r, event = { action = "pick_level", id = it.id } })
           local t = self:level_card_parts(it)
-          push({ id = "select.card." .. i .. ".title", kind = "text", parent = "select",
+          push({ id = "select.card." .. i .. ".title", kind = "text", parent = "root",
                  visible = true, text = t.title, style = "card.title",
                  rect = { x = r.x + 16, y = r.y + 10, w = r.w - 32, h = 34 } })
-          push({ id = "select.card." .. i .. ".info", kind = "text", parent = "select",
+          push({ id = "select.card." .. i .. ".info", kind = "text", parent = "root",
                  visible = true, text = t.info, style = "muted",
                  rect = { x = r.x + 16, y = r.y + r.h - 42, w = r.w - 32, h = 32 } })
           self:push_room_thumb(push, "select.card." .. i, it, r, "select")
         else
-          push({ id = "select.card." .. i, kind = "button", parent = "select", visible = false,
+          push({ id = "select.card." .. i, kind = "button", parent = "root", visible = false,
                  rect = r })
           -- 空卡片的三个附件也要显式隐藏 —— 否则上一屏的内容会**残留在空位上**
           for _, suf in ipairs({ ".title", ".info" }) do
-            push({ id = "select.card." .. i .. suf, kind = "text", parent = "select", visible = false,
+            push({ id = "select.card." .. i .. suf, kind = "text", parent = "root", visible = false,
                    rect = { x = r.x, y = r.y, w = 1, h = 1 } })
           end
           self:push_room_thumb(push, "select.card." .. i, nil, r, "select")
@@ -1993,14 +2057,16 @@ function Controller:build_layout()
     -- ⚠️ **主页/选关这条提前 return 之前也必须调** —— 否则这两个屏幕的子树
     --    拿不到继承过来的 `pos_runtime`，子控件继续用编辑器里的锚点+偏移
     --    ⇒ 实际落到屏幕外（就是"界面空白"的直接原因）。
-    inherit_pos_runtime(nodes)
+    apply_screen_hide(nodes, self.screen)
+      inherit_pos_runtime(nodes)
     return nodes
   end
 
   -- ★★★★ 2026-10-01 **界面空白的最后一环（用户实测定位）**：
   --   `pos_runtime` 必须**沿子树继承** —— 详见函数外 `inherit_pos_runtime` 的注释。
   --   这一处是**关卡路径**的收口；主页/选关那条提前 return 之前也调了一次。
-  inherit_pos_runtime(nodes)
+  apply_screen_hide(nodes, self.screen)
+    inherit_pos_runtime(nodes)
 
   return nodes
 end
