@@ -144,6 +144,34 @@ const errsLog = (ri.logs || []).filter((l) => l.level === 'error' || l.level ===
 check('运行期没有错误日志', errsLog.length === 0,
   errsLog.slice(0, 3).map((l) => l.text).join(' | ') || '无');
 
+// ── ★★★ 2026-10-01：**通关之后的动线**（原来测到结算就结束了）──────────────
+//
+//   为什么补：结算弹窗有「重玩本关 / 分享棋局 / 下一关」，选关卡片上有「★ 已破案」
+//   标记 —— 这两条动线**从来没被测过**。而"打完一关，回选关看到它标记成已破案"
+//   正是玩家最直接的正反馈，坏了会很难受。
+console.log('\n=== 5. 通关之后的动线');
+await click('action.back'); await tick(0.25);
+ri = await get();
+check('通关后点「返回列表」回到选关', visibleOf(ri, 'select') === true,
+  'select=' + visibleOf(ri, 'select') + ' home=' + visibleOf(ri, 'home'));
+// 在 8 张卡片里找带「已破案」标记的那张
+let marked = false, cardInfo = '';
+for (let i = 1; i <= 8; i++) {
+  const info = textOf(ri, 'select.card.' + i + '.info') || '';
+  if (String(info).indexOf('已破案') >= 0) {
+    marked = true;
+    cardInfo = (textOf(ri, 'select.card.' + i + '.title') || '') + ' → ' + info;
+    break;
+  }
+}
+check('通关后卡片显示「★ 已破案」', marked, cardInfo || '（8 张卡片都没有这个标记）');
+// 再进一次同一关：确认"通关 → 回选关 → 再进"这条往返没问题（状态没残留）
+await click('select.card.2'); await tick(0.25);
+await click('intro.skip'); await tick(0.25);
+ri = await get();
+check('通关后还能再进关卡（往返没坏）', visibleOf(ri, 'board') === true,
+  'board=' + visibleOf(ri, 'board') + ' 步数=' + JSON.stringify(textOf(ri, 'hud.moves')));
+
 dumpJson('win-final.json', ri);
 console.log(`\n════════ ${lv.id}：${pass} 通过 / ${fail} 失败 ════════`);
 await c.play('stop', {});

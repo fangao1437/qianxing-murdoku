@@ -230,6 +230,13 @@ $okArt = Run-Step '8c/13 美术验证（外观/对齐/头像）' 'node' @('tools
     #
     #   ⇒ 素材齐了之后，把这行的 `--warn-only` 去掉即可变成守门。
     Run-Step '14/14 素材自检（只报告）' 'node' @('tools\gil\check_assets.mjs', '--warn-only') | Out-Null
+
+    # 15：**操作动线审计**（主页/选关/关卡的进出、切关、重置）。
+    #
+    #   ★ 2026-10-01：布局审计（audit_layout）看的是"东西摆在哪"，
+    #     这一条看的是"点进去出不出得来、切关后状态有没有残留" ——
+    #     后者是**状态机**的问题，布局审计看不见。
+    Run-Step '15/15 操作动线审计' 'node' @('tools\sim\audit_flow.mjs') | Out-Null
   } else {
     Write-Host "（跳过 8~13：布局计划不可信）" -ForegroundColor Yellow
     $results += [pscustomobject]@{ Step = '8/13 模拟器交互回归'; Exit = 'SKIP'; OK = 'SKIP' }
