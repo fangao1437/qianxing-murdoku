@@ -1768,9 +1768,9 @@ function Controller:build_layout()
   --      所以**运行时必须由脚本负责关掉**。
   local FULL = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height }
   push({ id = "home", kind = "container", parent = "root", rect = FULL,
-         visible = (self.screen == "home") })
+         visible = (self.screen == "home"), pos_runtime = true })
   push({ id = "select", kind = "container", parent = "root", rect = FULL,
-         visible = (self.screen == "select") })
+         visible = (self.screen == "select"), pos_runtime = true })
 
   if self.screen ~= nil then
     -- ★★★ 2026-10-01：**改成"反向逻辑"**（原来是白名单，漏了一大片）。
@@ -1816,9 +1816,9 @@ function Controller:build_layout()
     end
     local FULLSCREEN = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height }
     push({ id = "home", kind = "container", parent = "root", rect = FULLSCREEN,
-           visible = (self.screen == "home") })
+           visible = (self.screen == "home"), pos_runtime = true })
     push({ id = "select", kind = "container", parent = "root", rect = FULLSCREEN,
-           visible = (self.screen == "select") })
+           visible = (self.screen == "select"), pos_runtime = true })
     if self.screen == "home" then
       push({ id = "home.title", kind = "text", parent = "home", visible = true, text = M.HOME_TITLE,
              rect = { x = 460, y = 140, w = 1000, h = 110 } })
