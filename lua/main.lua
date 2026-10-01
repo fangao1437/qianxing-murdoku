@@ -560,6 +560,52 @@ function Murdoku.on_update(dt)
       end
     end
     print("[murdoku] ===== 开局诊断结束 =====")
+    -- ★★★★ 2026-10-01 **列出本屏所有"可见"控件、按面积从大到小**。
+    --
+    --   起因：诊断已经证明选关页上 `select.back` / `select.card.*` 的
+    --   visible=true、坐标在屏内、bind=true —— **一切正常却点不动**
+    --   ⇒ 只剩一种可能：**有别的东西盖在它们上面**（射线被上层控件接走）。
+    --   而原来只打了 12 个固定 id，看不到"谁盖住了谁"。
+    --   ⇒ 这里从 root 递归走一遍真实控件树，把所有 visible=true 的按面积排序打出来：
+    --     排在最前面的那几个大控件，就是"疑犯"。
+    print("[murdoku] ===== 屏幕占用排行（所有 visible=true 的控件，按面积）=====")
+    do
+      local list = {}
+      local function walk(c, depth)
+        if c == nil or depth > 6 then return end
+        local v, w, h, nm = nil, nil, nil, "?"
+        pcall(function() v = c.visible end)
+        pcall(function() nm = tostring(c.name) end)
+        if v == true then
+          pcall(function()
+            local a, b = c:GetSizeDelta()
+            if type(a) == "table" then w, h = a.x, a.y else w, h = a, b end
+          end)
+          local area = (w or 0) * (h or 0)
+          if area > 1000 then
+            list[#list + 1] = { id = nm, w = w or 0, h = h or 0, area = area }
+          end
+        end
+        local n = 0
+        pcall(function() n = c.childCount or 0 end)
+        for i = 1, math.min(n, 80) do
+          local ch = nil
+          pcall(function() ch = c:GetChild(i - 1) end)
+          if ch ~= nil then walk(ch, depth + 1) end
+        end
+      end
+      local rt = nil
+      pcall(function() rt = ad:find("root") end)
+      walk(rt, 0)
+      table.sort(list, function(x, y) return x.area > y.area end)
+      for i = 1, math.min(#list, 22) do
+        local e = list[i]
+        print(string.format("[murdoku]   %2d. %-22s %6.0fx%-6.0f  面积=%d",
+          i, e.id, e.w, e.h, math.floor(e.area)))
+      end
+      print("[murdoku]   （共 " .. tostring(#list) .. " 个面积>1000 的可见控件）")
+    end
+    print("[murdoku] ===== 排行榜结束 =====")
 
     -- ★★★★ 2026-10-01 **第二段诊断（真机仍看不见时用）**：
     --   容器尺寸/可见性/坐标全都对，但屏幕上还是没有 ⇒ 说明"卡在哪一层"还没查出来。
