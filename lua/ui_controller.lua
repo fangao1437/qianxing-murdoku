@@ -955,11 +955,22 @@ local function apply_screen_hide(nodes, screen)
       end
     end
     -- ★ 容器自己也要收口：前缀 `home.` 匹配不到 `home` 本身。
-    --   我在"把子控件改挂 root"那一轮漏了这两行 ⇒ 关卡/选关状态下 `home` 容器一直可见
-    --   ⇒ play_test 三条红（从存档点开始进关 board=true home=true / 选关页 home 没藏住 /
-    --   关卡内主页没藏住）。已用 git stash 对照确认：**这三条与后面的改动无关**，是那时漏的。
-    if id == "home" then hide = (screen ~= "home") end
-    if id == "select" then hide = (screen ~= "select") end
+    -- ★★★★ 2026-10-02 **容器不再跟着切屏显隐**（真机"选关点不动"的下一个假设）。
+    --
+    --   用户确认 `home`/`select` **是容器节点**（不是按钮）⇒ "全屏按钮吃点击"不成立，已撤回。
+    --   回到日志里唯一还没解释的不对称：
+    --     主页：点击有效  —— `home` 的 visible **从第一帧就是 true**
+    --     选关：点击全废  —— `select` 是**运行中由 false 变 true**
+    --   而两者的 bind / 坐标 / 尺寸都对，子控件也都在屏内。
+    --   ⇒ 假设：引擎在 `SetVisible(false)` 时把容器标成"不可交互"，
+    --     之后 `SetVisible(true)` **射线没有恢复** ⇒ 它的子控件收不到点击。
+    --   ⇒ 让两个容器**恒为可见**，屏幕隔离完全交给"按前缀藏子控件"那套
+    --     （`home.` / `select.` 前缀本来就覆盖了它们的全部子控件）。
+    --
+    --   ⚠️ 这会**故意**让 play_test 那三条断言（"主页/选关都藏了"）继续红 ——
+    --      它们测的是"容器 visible=false"，而这一版**刻意不那样做**。
+    --      真正要验的是"子控件有没有串屏"，那三条的附加信息里已经写了
+    --      "关卡内的还可见 0 个" ⇒ 子控件层面是干净的。
     if hide then nodes[i].visible = false end
   end
 end
@@ -1885,9 +1896,9 @@ function Controller:build_layout()
     --      `FULLSCREEN`，而计划里取的是**第一次** push 的几何 ⇒ 白改一次。
     local FULL = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height }
   push({ id = "home", kind = "container", parent = "root", rect = FULL,
-         visible = (self.screen == "home"), pos_runtime = true })
+         visible = true, pos_runtime = true })
   push({ id = "select", kind = "container", parent = "root", rect = FULL,
-         visible = (self.screen == "select"), pos_runtime = true })
+         visible = true, pos_runtime = true })
 
   if self.screen ~= nil then
     -- ★★★ 2026-10-01：**改成"反向逻辑"**（原来是白名单，漏了一大片）。
@@ -1943,9 +1954,9 @@ function Controller:build_layout()
     --   ⇒ 说明**子控件不会被父级尺寸裁掉**（`root` 是全屏、探针 600x300 正常显示）。
     local FULLSCREEN = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height }
     push({ id = "home", kind = "container", parent = "root", rect = FULLSCREEN,
-           visible = (self.screen == "home"), pos_runtime = true })
+           visible = true, pos_runtime = true })
     push({ id = "select", kind = "container", parent = "root", rect = FULLSCREEN,
-           visible = (self.screen == "select"), pos_runtime = true })
+           visible = true, pos_runtime = true })
     if self.screen == "home" then
       push({ id = "home.title", kind = "text", parent = "root", visible = true, text = M.HOME_TITLE,
              rect = { x = 460, y = 140, w = 1000, h = 110 } })
