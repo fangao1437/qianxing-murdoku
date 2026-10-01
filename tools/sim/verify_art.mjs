@@ -232,22 +232,21 @@ console.log('\n=== 棋盘区域的控件（"压在棋盘上"的候选）===');
 //     运行时 `SetImage` 换图**不可靠**：适配器里有实测记录，
 //     读回来的 imageSource 和存档里的不是同一个值，会配错图集（变紫）。
 {
-  const want = { 100001: 2, 100003: 4 };   // 每个按钮：2 个矩形 + 4 个三角
+  //   ⚠️ 2026-10-01 **约束变了**（不是为了让测试变绿）：
+  //     参考图右侧那三个**六边形**，现在改用**转存进来的真素材**
+  //     （`murdoku-btn-hex`，模板索引 1073742321）——比用基础图元拼像得多。
+  //     素材的接入方式是"按模板索引实例化"：`cfg.prefab_of[节点id] = 索引`
+  //     + `cfg.parent_of[节点id] = 父节点`（登记在 lua/entry_client_script.lua），
+  //     适配器用 `game.InstantiateClientUIControl` 把它造出来。
+  //
+  //     所以断言从"6 个图元 + id 分布"改成"**每个按钮有一个够大的底图节点**" ——
+  //     这才是现在真正要保证的用户可感知行为。
   for (const b of ['action.undo', 'action.submit', 'action.reveal']) {
-    const counts = {};
-    let n = 0;
-    for (let i = 1; i <= 6; i++) {
-      const k = plan.nodes.find((x) => x.id === b + '.hex' + i);
-      if (!k) continue;
-      n++;
-      counts[k.image_id] = (counts[k.image_id] || 0) + 1;
-    }
-    const idsOk = Object.keys(want).length === Object.keys(counts).length
-      && Object.entries(want).every(([id, c]) => counts[id] === c);
-    check('「' + b + '」有 6 个六边形图元（100001×2 + 100003×4）',
-      n === 6 && idsOk, n + ' 个，' + JSON.stringify(counts));
-    const colored = plan.nodes.filter((x) => x.id.startsWith(b + '.hex') && typeof x.imageColor === 'number').length;
-    check('「' + b + '」的六边形图元都带着色（不然是原色，不是深色）', colored === 6, colored + ' / 6');
+    const k = plan.nodes.find((x) => x.id === b + '.hexbg');
+    check('「' + b + '」有六边形底图节点（转存素材）', !!k,
+      k ? '位置 ' + k.cx + ',' + k.cy + ' 尺寸 ' + k.w + '×' + k.h : '（没有）');
+    check('「' + b + '」的底图铺满按钮（≥ 90×90）', !!k && k.w >= 90 && k.h >= 90,
+      k ? k.w + '×' + k.h : '-');
   }
 }
 

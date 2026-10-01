@@ -1027,9 +1027,35 @@ function Controller:build_layout()
       })
     end
   end
-  hex_bg("action.undo",   1790, 390, 110)
-  hex_bg("action.submit", 1790, 540, 110)
-  hex_bg("action.reveal", 1790, 690, 110)
+  -- ★★★ 2026-10-01：**改用转存进来的真素材**（`murdoku-btn-hex`，模板索引 1073742321）。
+  --
+  --   素材从哪来：https://qx.070077.xyz 画好 → 导出 .gia → **原样**放进
+  --     Beyond_Local_Export → 游戏里「导入外部资产 → 选中 → 转存所选资产」→ 素材库
+  --   然后用户把模板索引告诉我，登记在 `entry_client_script.lua` 的 `cfg.prefab_of`
+  --   （节点 id → 索引 + 父节点）⇒ 适配器 `InstantiateClientUIControl` 把它造出来。
+  --
+  --   下面这 6 个图元的旧写法（用游戏自带 100001/100003 拼）**保留**成 `hex_bg()`，
+  --   万一哪天外部资产不在素材库里，可以一行切回去。
+  local HEX_PREFAB = true          -- true = 用转存素材；false = 用基础图元拼
+  if HEX_PREFAB then
+    local btns = {
+      { "action.undo",   1790, 390 },
+      { "action.submit", 1790, 540 },
+      { "action.reveal", 1790, 690 },
+    }
+    for i = 1, #btns do
+      local b = btns[i]
+      push({
+        id = b[1] .. ".hexbg", kind = "button", parent = b[1], visible = true,
+        -- 素材是 256×256 的正方形，按钮是 110×110 ⇒ 铺满即可
+        rect = { x = b[2] - 55, y = b[3] - 55, w = 110, h = 110 },
+      })
+    end
+  else
+    hex_bg("action.undo",   1790, 390, 110)
+    hex_bg("action.submit", 1790, 540, 110)
+    hex_bg("action.reveal", 1790, 690, 110)
+  end
 
   btn("action.undo", "root", { x = 1790, y = 390, w = 110, h = 110 }, "撤销",
       { action = "undo" }, "stamp.sm", vm.hud.can_undo)

@@ -191,6 +191,16 @@ for (const n of planNodes) {
   if (byName.has(n.id)) { continue; }                    // 已有 ⇒ 不动（尊重编辑器）
   // 只处理我们关心的几类；`cell.*` / `tray.*` 等由脚本运行时生成，不进 .gil
   if (/^(cell\.|ruler|tray\.|portrait\.|hud\.|toast|fx\.)/.test(n.id)) { skipped.push(n.id); continue; }
+  // ★★★ 2026-10-01：**从「外部资产」转存进来的素材，必须由脚本按模板索引实例化，
+  //   绝对不能进 `.gil`** —— 一旦进了，适配器 `find(id)` 会先找到这个"编辑器里的空控件"，
+  //   于是永远不走 `InstantiateClientUIControl`，画面上就是**一块空白**。
+  //
+  //   这类节点的共同特征：在 `entry_client_script.lua` 的 `cfg.prefab_of` 里登记了模板索引。
+  //   对应 id：右侧按钮的 `.hexbg`、线索条的 `clue.N.bg`、背景板 `home.panel`/`select.panel`。
+  if (/\.hexbg$/.test(n.id) || /^clue\.\d+\.bg$/.test(n.id)
+      || n.id === 'home.panel' || n.id === 'select.panel') {
+    skipped.push(n.id + '(按模板索引实例化)'); continue;
+  }
   if (n.kind !== 'container' && n.kind !== 'button' && n.kind !== 'text' && n.kind !== 'cursor') {
     skipped.push(n.id); continue;
   }

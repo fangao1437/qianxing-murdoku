@@ -187,6 +187,40 @@ local function build_adapter()
     apply_rect = false,
     verbose    = false,
 
+    -- ★★★ 2026-10-01：**从「外部资产」转存进来的图片素材**（用户给的模板索引）。
+    --
+    --   流程：在 https://qx.070077.xyz 用基础图元画好 → 导出 .gia → **原样**放进
+    --     C:\Users\...\BeyondLocal\Beyond_Local_Export
+    --   → 游戏里「导入外部资产 → 选中 → 转存所选资产」→ 进素材库
+    --   → 用户把它的**控件模板索引**告诉我（下面这些数字）。
+    --
+    --   用法：`cfg.prefab_of[节点id] = 模板索引` + `cfg.parent_of[节点id] = 父节点`，
+    --   然后 `ui_controller` 只要 push 一个同 id 的节点，适配器就会
+    --   `game.InstantiateClientUIControl(索引, 父控件)` 把它造出来
+    --   （这条路和「脚本生成棋盘格子」是同一条，已经跑熟了）。
+    --
+    --   ⚠️ **改美术要改 scene JSON**（tools/qx/scenes/*.json）再重新导出转存，
+    --      **不要手改导出的 .gia** —— 我改过一次资产类型号，把一个能用的文件
+    --      改成了导入会卡住的（教训记在 docs/外部资产-怎么用与我做了什么.md）。
+    prefab_of = {
+      -- 六边形按钮底图（右侧三个按钮共用一张）
+      ["action.undo.hexbg"]   = 1073742321,
+      ["action.submit.hexbg"] = 1073742321,
+      ["action.reveal.hexbg"] = 1073742321,
+      -- 线索卡底条（深色横条 + 左端头像位），每条线索一个
+      -- （索引 1073742333；下面用循环补齐 clue.1..18）
+      -- 主页/选关的背景大板
+      ["home.panel"]   = 1073742337,
+      ["select.panel"] = 1073742337,
+    },
+    parent_of = {
+      ["action.undo.hexbg"]   = "action.undo",
+      ["action.submit.hexbg"] = "action.submit",
+      ["action.reveal.hexbg"] = "action.reveal",
+      ["home.panel"]   = "home",
+      ["select.panel"] = "select",
+    },
+
     -- 诊断信标：正式游玩保持 false（会改控件尺寸，肉眼可见）
     cells_beacon = false,
 
@@ -303,6 +337,19 @@ local function build_adapter()
     --   界面搭完、验收通过之后可以改成 false 让日志干净些。
     diagnose_cell = true,
   })
+
+  -- ★ 线索卡底条：每条线索一个（最多 18 条），索引 1073742333（murdoku-clue-row）。
+  --   用循环补，免得手抄 18 行 —— 这也是"一处定义"的做法。
+  do
+    local c = adapter.cfg
+    c.prefab_of = c.prefab_of or {}
+    c.parent_of = c.parent_of or {}
+    for i = 1, 18 do
+      local id = "clue." .. i .. ".bg"
+      c.prefab_of[id] = 1073742333
+      c.parent_of[id] = "clues"
+    end
+  end
   Murdoku.prepare(adapter)
   -- 离线测试钩子：让 tests/entry_smoke.lua 能直接驱动适配层
   -- （验调色板 / 染色 / 墙门这些需要构造场景的东西）。
