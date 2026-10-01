@@ -886,6 +886,27 @@ function Controller:build_layout()
   local vm = self.core:view()
   local L = M.LAYOUT
   local nodes = {}
+
+  -- ★★★★ 2026-10-01 **真机"界面空白"的最后一环：`root` 的尺寸是 0x0。**
+  --
+  --   真机诊断读回来：
+  --     root       visible=true  位置=(0,10)  尺寸=**0x0**      <-- 所有东西都装在它里面
+  --     home       visible=true  位置=(0,0)   尺寸=1600x900   （这一环上一版刚修好）
+  --     home.title visible=true  位置=(960,195) 尺寸=1000x110
+  --   ⇒ 子控件的尺寸和坐标都对，但父级 `root` 是 0×0 ⇒ **全被裁掉** ⇒ 屏幕上什么都没有。
+  --
+  --   `root` 是游戏自己的根节点，脚本原来**从来没给它设过尺寸**（布局里根本没 push 它），
+  --   它在 .gil 里就是 0×0 —— 而 `respect_editor_rect` 又让脚本不去碰它。
+  --   ⇒ 显式补一条：把 root 撑成整屏（`pos_runtime = true` 让它真的生效）。
+  --     画布本身就是 1600×900，所以这是"恢复默认"而不是"改设计"。
+  --
+  --   ⚠️ 这条必须放在 `local nodes = {}` **之后** —— 我第一版插在它前面，
+  --      dump_layout 当场报 `attempt to get length of a nil value (global 'nodes')`。
+  nodes[#nodes + 1] = {
+    id = "root", kind = "container", parent = nil, visible = true,
+    rect = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height },
+    pos_runtime = true,
+  }
   
     -- ★★★ 2026-10-01：**家具图标的调色板条目**（⑤ 的阻碍在这里清掉）。
     --
