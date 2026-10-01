@@ -419,6 +419,27 @@ function Adapter:create_control(node)
     return nil
   end
 
+  -- ★★★★ 2026-10-01 **真机"卡死"修复：全屏容器必须关掉射线。**
+  --
+  --   症状（用户实测）：点「选关」能进去，但**退不出来、进不了关卡，
+  --   连奇域本身的退出按钮都点不动** —— 整个界面像卡死。
+  --
+  --   根因：我为了修"界面空白"把 `home` / `select` 两个容器从 150x150
+  --   改成了**铺满整屏 1600x900**（inherit_pos_runtime 那一轮）。
+  --   容器一旦铺满 + 又吃射线（`raycastTarget` 默认就是 true），
+  --   它就**把整个屏幕盖住** —— 包括**游戏自己的 UI**（退出按钮）。
+  --   => "退出按钮点不了"正是这个，不是脚本自己的按钮坏了。
+  --      （我第一反应怀疑 `seal_containers` —— 翻了一眼实现，
+  --        它只把 `disableKeyEventPassthrough` 设 true，点击那条早就设成 false 了，
+  --        所以不是它。**先看代码再下结论**，这次差点又误判。）
+  --
+  --   => 容器**本来就不需要被点到**（要点的永远是里面的按钮），
+  --      所以给这两个全屏容器显式关掉射线。
+  if node.id == "home" or node.id == "select" then
+    if ctrl.raycastTarget ~= nil then
+      pcall(function() ctrl.raycastTarget = false end)
+    end
+  end
   -- ★ 2026-09-26 修的严重 bug：bind_input 以前**定义了但从没被调用**，
   --   于是没有任何控件挂上光标监听 —— 整个界面点哪儿都没反应（模拟器和真机一样）。
   --   绑定放在这里（每个 id 只 create 一次），并让 bind_input 自己防重复。
