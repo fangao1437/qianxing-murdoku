@@ -521,7 +521,7 @@ function Murdoku.on_update(dt)
     print("[murdoku] ===== 开局诊断：屏幕上到底有什么（第 90 帧实测）=====")
     print("[murdoku]   controller.screen = " .. tostring(current.controller.screen))
     local ids = {
-      "root", "home", "home.title", "home.select", "home.continue",
+      "root", "home", "home.title", "home.select", "home.continue", "home.shop", "home.bag",
       "select", "select.card.2",
       "board", "cell.1.1", "topbar", "clues", "action.undo", "hud.title",
     }
@@ -608,57 +608,11 @@ function Murdoku.on_update(dt)
       end
     end
     print("[murdoku] ===== 诊断二结束 =====")
+    -- ★ 诊断三（运行时新建控件做对照）已经在用户实测中完成使命：
+    --   **运行时新建的控件可见，编辑器里已有的不可见** —— 结论直接指向
+    --   `respect_editor_rect` 那一条（见 ui_controller 的 `inherit_pos_runtime`）。
+    --   那个探针控件就是用户看到的"白块"，已删除，不再创建。
 
-    -- ★★★★ 2026-10-01 **决定性实验：运行时新建一个控件，摆到屏幕正中**。
-    --
-    --   为什么要做：诊断二把能查的都查了 ——
-    --     父级链 root→home→home.select 全是 visible=true / active=true、
-    --     尺寸 1600x900 / 460x88 都对、坐标在屏内、alpha/scale 读不到（不是 0）、
-    --     **手动 SetVisible(true)+SetActive(true) 也不管用**。
-    --   ⇒ 说明问题**不在"脚本改属性"这条路上**。
-    --
-    --   于是做个对照：用**已经验证可用**的格子模板（cfg.cells.prefab，日志里
-    --   `模板索引 1073741876 验证通过（试造成功）`）**现造**一个控件，
-    --   摆到屏幕正中的一个显眼尺寸上，并显式 SetVisible(true)。
-    --
-    --   两种结果完全不同：
-    --     · **看得见**（屏幕正中多出一块）⇒ 运行时新建的能显示 ⇒
-    --       问题出在"编辑器里已有的那些控件"上 ⇒ 主页改成运行时新建即可。
-    --     · **看不见** ⇒ 连"已验证可用"的路子都画不出来 ⇒
-    --       是更底层的问题（这个关卡没在跑客户端 UI / 图层被整体盖住）。
-    print("[murdoku] ===== 诊断三：运行时新建一个控件试试能不能看见 =====")
-    local ad2 = current.adapter
-    local prefab = ad2.cfg and ad2.cfg.cells and ad2.cfg.cells.prefab
-    print("[murdoku]   用模板索引 " .. tostring(prefab) .. " 现造一个居中控件")
-    local made = nil
-    pcall(function()
-      if game and game.InstantiateClientUIControl and prefab then
-        local parent = ad2:find("root")
-        made = game.InstantiateClientUIControl(prefab, parent)
-      end
-    end)
-    if made == nil then
-      print("[murdoku]   ❌ InstantiateClientUIControl 返回 nil（造不出来）")
-    else
-      pcall(function() made.name = "__probe_marker" end)
-      -- 摆到屏幕正中：画布 1600x900 ⇒ 中心 (800,450)，尺寸给大一点好认
-      pcall(function()
-        if made.SetAnchorMin then made:SetAnchorMin(0.5, 0.5) end
-        if made.SetAnchorMax then made:SetAnchorMax(0.5, 0.5) end
-        if made.SetAnchoredPosition then made:SetAnchoredPosition(0, 0) end
-        if made.SetSizeDelta then made:SetSizeDelta(600, 300) end
-      end)
-      pcall(function() if made.SetVisible then made:SetVisible(true) end end)
-      pcall(function() if made.SetActive then made:SetActive(true) end end)
-      local mv, ma = "?", "?"
-      pcall(function() mv = tostring(made.visible) end)
-      pcall(function() ma = tostring(made.active) end)
-      print("[murdoku]   ✅ 造出来了：__probe_marker  visible=" .. mv .. " active=" .. ma)
-      print("[murdoku]   ⇒ **看屏幕正中有没有多出一块 600x300 的东西**：")
-      print("[murdoku]       · 有 ⇒ 运行时新建的能显示，问题在\"编辑器已有的控件\"上")
-      print("[murdoku]       · 没有 ⇒ 连验证过的路都画不出来，是更底层的问题")
-    end
-    print("[murdoku] ===== 诊断三结束 =====")
   end
   current.frames = (current.frames or 0) + 1
 end
