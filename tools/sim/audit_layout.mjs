@@ -18,6 +18,19 @@ const WANT = argOf('page');
 
 const CANVAS_W = 1600, CANVAS_H = 900;
 
+// ★ 真实父子关系（来自布局计划）—— 用来消掉"父子必然重叠"这类假阳性。
+//   我第一版用 id 前缀猜父子（`a.startsWith(b + '.')`），但 `clues` 和 `clue.1`
+//   这种根本猜不出来（一个是容器、一个是它的行），于是报了 92 条噪音。
+const PLAN = loadPlan();
+const PARENT = new Map();
+for (const n of (PLAN.nodes || [])) PARENT.set(n.id, n.parent || null);
+function isAncestor(a, b) {
+  let cur = PARENT.get(b), guard = 0;
+  while (cur != null && guard++ < 24) { if (cur === a) return true; cur = PARENT.get(cur); }
+  return false;
+}
+function related(a, b) { return isAncestor(a, b) || isAncestor(b, a); }
+
 // 自动查问题时**故意忽略**的 id —— 这些都是"设计上就该重叠/很小"的
 const IGNORE = [
   /^cell\.\d+\.\d+\./,        // 格子内部零件（face/note/x/wall/door/obj）本来就叠在格子上
@@ -112,7 +125,12 @@ function report(p, items) {
   const real = items.filter((i) => !ignored(i.id) && !isParked(i) && !isBackdrop(i));
   for (let a = 0; a < real.length; a++) for (let b = a + 1; b < real.length; b++) {
     const A = real[a], B = real[b];
-    if (A.id.startsWith(B.id + '.') || B.id.startsWith(A.id + '.')) continue;
+    if (related(A.id, B.id)) continue;                       // 父子/祖孙：本来就该叠
+    const contains = A.x <= B.x + 2 && A.y <= B.y + 2
+      && A.x + A.w >= B.x + B.w - 2 && A.y + A.h >= B.y + B.h - 2;
+    const containsR = B.x <= A.x + 2 && B.y <= A.y + 2
+      && B.x + B.w >= A.x + A.w - 2 && B.y + B.h >= A.y + A.h - 2;
+    if (contains || containsR) continue;                     // 一个把另一个整个包住：不是"叠"
     const ox = Math.min(A.x + A.w, B.x + B.w) - Math.max(A.x, B.x);
     const oy = Math.min(A.y + A.h, B.y + B.h) - Math.max(A.y, B.y);
     if (ox > 4 && oy > 4) {
