@@ -705,6 +705,61 @@ function Murdoku.on_update(dt)
         print("[murdoku] 射线探针：" .. pid .. " 找不到或不支持光标事件")
       end
     end
+    -- ★★★★★ 2026-10-02 **打印所有客户端 UI 根**。
+    --
+    --   为什么：用户的观察把范围压到了最后一格 ——
+    --     · 把 `home`/`select` 缩成 1x1 之后，**选关页该有的按钮消失了**（被父级裁剪）
+    --     · 而**"处处有音效"依旧** ⇒ 那个吃点击的全屏按钮**不是** home/select
+    --     · 排行榜里只有 `root` 一个全屏 ⇒ **它不在 root 的子树里**
+    --   ⇒ 结论：**它在另一个客户端 UI 根上**。
+    --   适配器注释里写着查找用的是 `game.GetClientUIRoots()`（**复数**），
+    --   而脚本从头到尾只用了一个 `root`。把这些根全部列出来，那个全屏按钮就会现形。
+    print("[murdoku] ===== 客户端 UI 根清单 =====")
+    do
+      local roots = nil
+      pcall(function() roots = game.GetClientUIRoots() end)
+      if type(roots) ~= "table" then
+        print("[murdoku]   读不到 game.GetClientUIRoots()（或返回非表）")
+      else
+        print("[murdoku]   共 " .. tostring(#roots) .. " 个根")
+        for i = 1, math.min(#roots, 12) do
+          local r = roots[i]
+          local nm, v, w, h = "?", "?", 0, 0
+          pcall(function() nm = tostring(r.name) end)
+          pcall(function() v = tostring(r.visible) end)
+          pcall(function()
+            local a, b = r:GetSizeDelta()
+            if type(a) == "table" then w, h = a.x, a.y else w, h = a, b end
+          end)
+          local kids = nil
+          pcall(function() kids = r:GetChildren() end)
+          local nk = (type(kids) == "table") and #kids or -1
+          print(string.format("[murdoku]     %d. %-18s visible=%-5s %6.0fx%-6.0f 子控件=%d",
+            i, nm, v, w or 0, h or 0, nk))
+          -- 根下面直接可见的大控件 —— 那个全屏按钮多半就在这一层
+          if type(kids) == "table" then
+            for k = 1, math.min(nk, 20) do
+              local c = kids[k]
+              if c ~= nil then
+                local cn, cv, cw, ch, hasCur = "?", "?", 0, 0, false
+                pcall(function() cn = tostring(c.name) end)
+                pcall(function() cv = tostring(c.visible) end)
+                pcall(function()
+                  local a, b = c:GetSizeDelta()
+                  if type(a) == "table" then cw, ch = a.x, a.y else cw, ch = a, b end
+                end)
+                pcall(function() hasCur = (c.AddCursorEventListener ~= nil) end)
+                if (cw or 0) * (ch or 0) > 20000 then
+                  print(string.format("[murdoku]        └ %-20s visible=%-5s %6.0fx%-6.0f 可接收光标=%s",
+                    cn, cv, cw or 0, ch or 0, tostring(hasCur)))
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+    print("[murdoku] ===== 根清单结束 =====")
     print("[murdoku] 射线探针装好了 —— 之后点任何地方，只要射线落在这些容器上就会打日志")
   end
   -- ★★★★ 2026-10-02 **按用户建议做的对比：主页 ⇄ 选关，"切换后到底改了什么"**。

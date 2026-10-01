@@ -1883,7 +1883,7 @@ function Controller:build_layout()
     --
     --   ⚠️ 这两个常量（`FULL` 和 `FULLSCREEN`）**都要改** —— 我第一版只改了
     --      `FULLSCREEN`，而计划里取的是**第一次** push 的几何 ⇒ 白改一次。
-    local FULL = { x = M.DESIGN.width * 0.5, y = M.DESIGN.height * 0.5, w = 1, h = 1 }
+    local FULL = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height }
   push({ id = "home", kind = "container", parent = "root", rect = FULL,
          visible = (self.screen == "home"), pos_runtime = true })
   push({ id = "select", kind = "container", parent = "root", rect = FULL,
@@ -1941,7 +1941,7 @@ function Controller:build_layout()
     --
     --   为什么敢这么做：诊断三那个探针控件是**挂在 `root` 下面**的，用户确认看得见
     --   ⇒ 说明**子控件不会被父级尺寸裁掉**（`root` 是全屏、探针 600x300 正常显示）。
-    local FULLSCREEN = { x = M.DESIGN.width * 0.5, y = M.DESIGN.height * 0.5, w = 1, h = 1 }
+    local FULLSCREEN = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height }
     push({ id = "home", kind = "container", parent = "root", rect = FULLSCREEN,
            visible = (self.screen == "home"), pos_runtime = true })
     push({ id = "select", kind = "container", parent = "root", rect = FULLSCREEN,
