@@ -505,6 +505,56 @@ function Murdoku.on_update(dt)
     current.last_tick = sec
     Murdoku.render()
   end
+
+  -- ★★★ 2026-10-01：**开局后的一次性"屏幕上到底有什么"诊断**。
+  --
+  --   为什么加：用户在真机上反馈"界面一片空白"，而日志里该建的东西都建了、
+  --   没有任何报错 —— 光靠现有日志**分不清**是
+  --     (a) 脚本把控件设成了隐藏，还是 (b) 控件坐标跑到屏幕外，还是
+  --     (c) 控件根本不存在（名字对不上）。
+  --   ⇒ 这里在第 90 帧（约 1.5 秒，足够跑完开局渲染）打一次**实际读回来**的状态：
+  --     能不能找到、visible / active 是多少、坐标尺寸是多少。
+  --   只打一次，不影响性能，也不依赖 debug_* 开关（这是验收信息，不是调试噪音）。
+  if not Murdoku._screen_dumped and (current.frames or 0) >= 90 then
+    Murdoku._screen_dumped = true
+    local ad = current.adapter
+    print("[murdoku] ===== 开局诊断：屏幕上到底有什么（第 90 帧实测）=====")
+    print("[murdoku]   controller.screen = " .. tostring(current.controller.screen))
+    local ids = {
+      "root", "home", "home.title", "home.select", "home.continue",
+      "select", "select.card.2",
+      "board", "cell.1.1", "topbar", "clues", "action.undo", "hud.title",
+    }
+    for i = 1, #ids do
+      local id = ids[i]
+      local c = nil
+      pcall(function() c = ad:find(id) end)
+      if c == nil then
+        print("[murdoku]   " .. id .. "  → **找不到控件**（名字对不上 / .gil 里没有）")
+      else
+        -- ⚠️ 读坐标**必须用 GetAnchoredPosition / GetSizeDelta 这两个方法** ——
+        --   我第一版写 `c.positionX` / `c.width`，真机上**全读成 nil**
+        --   （适配器里那段"逐格自检"就是这么踩过并改对的，我照抄了错的那半）。
+        local v, a, pos, size = nil, nil, "?", "?"
+        pcall(function() v = c.visible end)
+        pcall(function() a = c.active end)
+        pcall(function()
+          local px, py = c:GetAnchoredPosition()
+          if type(px) == "table" then pos = string.format("(%.0f,%.0f)", px.x or 0, px.y or 0)
+          elseif px ~= nil then pos = string.format("(%.0f,%.0f)", px, py or 0) end
+        end)
+        pcall(function()
+          local w, h = c:GetSizeDelta()
+          if type(w) == "table" then size = string.format("%.0fx%.0f", w.x or 0, w.y or 0)
+          elseif w ~= nil then size = string.format("%.0fx%.0f", w, h or 0) end
+        end)
+        print(string.format("[murdoku]   %-16s visible=%-5s active=%-5s 位置=%-14s 尺寸=%s",
+          id, tostring(v), tostring(a), pos, size))
+      end
+    end
+    print("[murdoku] ===== 开局诊断结束 =====")
+  end
+  current.frames = (current.frames or 0) + 1
 end
 
 function Murdoku.on_destroy()
