@@ -553,6 +553,61 @@ function Murdoku.on_update(dt)
       end
     end
     print("[murdoku] ===== 开局诊断结束 =====")
+
+    -- ★★★★ 2026-10-01 **第二段诊断（真机仍看不见时用）**：
+    --   容器尺寸/可见性/坐标全都对，但屏幕上还是没有 ⇒ 说明"卡在哪一层"还没查出来。
+    --   这一段做三件事：
+    --     ① 把 `home.select` 的**父级链逐层**读出来（哪一层被关掉了，一眼就看见）
+    --     ② 读**透明度/缩放**这类"看起来在、其实画不出来"的属性
+    --     ③ **手动 `SetVisible(true)` / `SetActive(true)` 之后再读一遍** ——
+    --        如果"手动设完就能看见"，说明是脚本下发的属性没生效（写法问题）；
+    --        如果"设完还是看不见"，说明是渲染层/图层的问题（另一条路）。
+    print("[murdoku] ===== 诊断二：父级链 + 透明度 + 手动显形 =====")
+    local leaf = nil
+    pcall(function() leaf = ad:find("home.select") end)
+    if leaf == nil then
+      print("[murdoku]   home.select 找不到，跳过")
+    else
+      -- ① 父级链
+      local chain, cur, guard = {}, leaf, 0
+      while cur ~= nil and guard < 8 do
+        local nm, vv, aa = "?", "?", "?"
+        pcall(function() nm = tostring(cur.name) end)
+        pcall(function() vv = tostring(cur.visible) end)
+        pcall(function() aa = tostring(cur.active) end)
+        chain[#chain + 1] = nm .. "(visible=" .. vv .. ",active=" .. aa .. ")"
+        local up = nil
+        pcall(function() up = cur.parent end)
+        if up == nil then pcall(function() up = cur:GetParent() end) end
+        cur = up
+        guard = guard + 1
+      end
+      print("[murdoku]   父级链（从 home.select 往上）：")
+      for i = 1, #chain do print("[murdoku]     " .. i .. ". " .. chain[i]) end
+      -- ② 透明度 / 缩放
+      local al, sc = "?", "?"
+      pcall(function() al = tostring(leaf.alpha) end)
+      pcall(function() sc = tostring(leaf.scale) end)
+      print("[murdoku]   home.select alpha=" .. al .. " scale=" .. sc)
+      -- ③ 手动显形 + 回读
+      local okv, oka = false, false
+      pcall(function() if leaf.SetVisible then leaf:SetVisible(true) okv = true end end)
+      pcall(function() if leaf.SetActive then leaf:SetActive(true) oka = true end end)
+      local v2, a2 = "?", "?"
+      pcall(function() v2 = tostring(leaf.visible) end)
+      pcall(function() a2 = tostring(leaf.active) end)
+      print("[murdoku]   手动 SetVisible=" .. tostring(okv) .. " SetActive=" .. tostring(oka)
+        .. "  ⇒ 回读 visible=" .. v2 .. " active=" .. a2)
+      -- 顺手把 home 容器也显形（它要是被关了，子控件画不出来）
+      local hm = nil
+      pcall(function() hm = ad:find("home") end)
+      if hm ~= nil then
+        pcall(function() if hm.SetVisible then hm:SetVisible(true) end end)
+        pcall(function() if hm.SetActive then hm:SetActive(true) end end)
+        print("[murdoku]   已对 home 容器也调了一次 SetVisible/SetActive")
+      end
+    end
+    print("[murdoku] ===== 诊断二结束 =====")
   end
   current.frames = (current.frames or 0) + 1
 end
