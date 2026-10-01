@@ -398,6 +398,36 @@ const errsLog = (ri.logs || []).filter((l) => l.level === 'error');
 console.log('\n运行期 error 日志 ' + errsLog.length + ' 条');
 for (const l of errsLog.slice(0, 10)) console.log('  [error] ' + l.text);
 
+// ── ★★★ 2026-10-01：**三个页面各自该显示什么** ─────────────────────────────
+//
+//   为什么加这条：原来藏屏幕用的是一张**9 个 id 的白名单**
+//   （topbar/toolbar/left/board/right/toast/modal/intro/action.back），
+//   于是 `clues` / `action.undo·submit·reveal` / `hud.*` / `cell.*` **全都没被藏**
+//   ⇒ 主页上会**同时看到棋盘格子、线索条、右侧三个按钮**。
+//
+//   已改成反向逻辑（只留 home/select 子树 + root）。这条断言锁的是
+//   **用户一眼能看到的东西**：每个页面只出现该页面的控件。
+{
+  const LEVEL_ONLY = ['board', 'clues', 'topbar', 'right', 'cell.1.1', 'action.undo', 'hud.title'];
+  const vis = (ri2, id) => visibleOf(ri2, id) === true;
+  await c.play('start', {}); await tick(0.35);
+  let r = await get();
+  check('主页：只显示主页（关卡内的东西都藏起来）',
+    vis(r, 'home') && !vis(r, 'select') && LEVEL_ONLY.every((id) => !vis(r, id)),
+    'home=' + vis(r, 'home') + '，关卡内的还可见 ' + LEVEL_ONLY.filter((id) => vis(r, id)).length + ' 个');
+  await click('home.select'); await tick(0.35);
+  r = await get();
+  check('选关：只显示选关',
+    vis(r, 'select') && !vis(r, 'home') && LEVEL_ONLY.every((id) => !vis(r, id)),
+    'select=' + vis(r, 'select') + '，关卡内的还可见 ' + LEVEL_ONLY.filter((id) => vis(r, id)).length + ' 个');
+  await click('select.card.2'); await tick(0.3);
+  await click('intro.skip'); await tick(0.3);
+  r = await get();
+  check('关卡内：关卡的 UI 都在，主页/选关都藏了',
+    !vis(r, 'home') && !vis(r, 'select') && vis(r, 'board') && vis(r, 'clues') && vis(r, 'action.undo'),
+    'board=' + vis(r, 'board') + ' clues=' + vis(r, 'clues') + ' action.undo=' + vis(r, 'action.undo'));
+}
+
 console.log('\n════════ 结果：' + pass + ' 通过 / ' + fail + ' 失败 ════════');
 await c.play('stop', {});
 await c.dispose();

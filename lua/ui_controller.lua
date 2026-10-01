@@ -1755,15 +1755,29 @@ function Controller:build_layout()
          visible = (self.screen == "select") })
 
   if self.screen ~= nil then
-    local HIDE = { topbar = true, toolbar = true, left = true, board = true, right = true,
-                   toast = true, modal = true, intro = true, ["action.back"] = true }
+    -- ★★★ 2026-10-01：**改成"反向逻辑"**（原来是白名单，漏了一大片）。
+    --
+    --   旧写法是一张 9 个 id 的白名单：
+    --     { topbar, toolbar, left, board, right, toast, modal, intro, action.back }
+    --   于是 **clues / action.undo·submit·reveal·hint·redo / hud.\* / cell.\*** 全都没被藏
+    --   ⇒ **主页上能同时看到棋盘格子、线索条、右侧三个按钮**。
+    --   （布局审计工具 tools/sim/audit_layout.mjs 抓到的：
+    --      home period 下 cell.1.1 / clue.1 / action.undo / hud.title 的 visible 都是 true。）
+    --
+    --   白名单每加一个新控件都得记得补一次，**必然会漏**（这次就漏了一片）
+    --   ⇒ 反过来：**只保留 home / select 这几棵子树 + root**，其余一律藏。
+    --     以后再加控件，默认就是"进入关卡才显示"，不会漏。
     for i = 1, #nodes do
-      if HIDE[nodes[i].id] then nodes[i].visible = false end
+      local id = nodes[i].id
+      local owned = (id == "root") or (id == "home") or (id == "select")
+        or (id:sub(1, 5) == "home.") or (id:sub(1, 7) == "select.")
+        or (id == "cursor")
+      if not owned then nodes[i].visible = false end
     end
-    local FULL = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height }
-    push({ id = "home", kind = "container", parent = "root", rect = FULL,
+    local FULLSCREEN = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height }
+    push({ id = "home", kind = "container", parent = "root", rect = FULLSCREEN,
            visible = (self.screen == "home") })
-    push({ id = "select", kind = "container", parent = "root", rect = FULL,
+    push({ id = "select", kind = "container", parent = "root", rect = FULLSCREEN,
            visible = (self.screen == "select") })
     if self.screen == "home" then
       push({ id = "home.title", kind = "text", parent = "home", visible = true, text = M.HOME_TITLE,
