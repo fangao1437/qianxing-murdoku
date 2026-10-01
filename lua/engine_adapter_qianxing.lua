@@ -2724,8 +2724,52 @@ function Adapter:set_property(id, key, value)
     end
 
   elseif key == "visible" then
-    if ctrl.SetVisible then ctrl:SetVisible(value and true or false) end
-
+    -- ★★★★ 2026-10-01 **隐藏要连子控件一起藏**（真机"点不动"的根因）。
+    --
+    --   真机排行榜（从 root 用 GetChildren 递归）显示选关页上还有：
+    --        tray 300x182 / legend 300x63 / face 135x135 / content 135x135 x十几
+    --   —— 全是**关卡内的东西**，而 content/face 是**格子模板自带的子控件**。
+    --
+    --   原因：`apply_screen_hide` 只把 `cell.1.1` 这类**格子本身**设成不可见，
+    --   格子的子控件（content/face/text/obj/wall…）是**模板实例化**带出来的，
+    --   脚本从没设过它们的 visible => 它们一直显示着，铺在棋盘位置上，
+    --   而 `cell.*` 自己绑了点击 => **射线被格子接走，选关卡片收不到**。
+    --
+    --   规则：隐藏时**递归隐藏所有子控件**；显示时同样递归显示
+    --   （格子的子控件本来就该跟着格子走，各自显隐由格子状态渲染另行覆盖）。
+    --   枚举用 GetChildren()（项目里已验证可用）。
+    local vis = value and true or false
+    if ctrl.SetVisible then pcall(function() ctrl:SetVisible(vis) end) end
+    -- ⚠️ **只在"隐藏"时递归** —— 我第一版连"显示"也递归，结果把各控件
+    --   自己藏起来的子控件又显示出来了（play_test 立刻报：
+    --   棋盘的弹窗是隐藏的 / 此时没有指认面板 / 从存档点开始进关时 board=true home=true）。
+    --   显示时不递归：子控件的显隐各有自己的负责人（格子渲染会逐个设
+    --   face/note/x 的 visible），脚本不该越权替它们决定。
+    -- ⚠️⚠️ 递归**只对 `cell.` 生效**。
+    --   我第一版对所有控件递归隐藏 —— play_test 立刻红了三条
+    --   （从存档点开始进关时 board=true home=true、选关页 home 没藏住、
+    --     关卡内主页/选关没藏住）。说明"隐藏容器就递归隐藏子控件"会打乱
+    --   各控件自己那套显隐责任划分。
+    --   而**真正需要递归的只有格子**：`cell.N.M` 的子控件（content/face/text/obj/wall…）
+    --   是**模板实例化**带出来的，脚本从不单独设它们的 visible
+    --   ⇒ 格子藏了它们还亮着 ⇒ 铺在棋盘位置上 ⇒ 射线被格子接走。
+    if vis == false and id:sub(1, 5) == "cell." then
+      local function hide_kids(node, depth)
+        if node == nil or depth > 4 then return end
+        local kids = nil
+        pcall(function() kids = node:GetChildren() end)
+        if type(kids) == "table" then
+          for i = 1, math.min(#kids, 64) do
+            local k = kids[i]
+            if k ~= nil then
+              if k.SetVisible then pcall(function() k:SetVisible(false) end) end
+              hide_kids(k, depth + 1)
+            end
+          end
+        end
+      end
+      hide_kids(ctrl, 0)
+    end
   elseif key == "enabled" then
     if ctrl.interactable ~= nil then ctrl.interactable = value and true or false end
 

@@ -954,6 +954,12 @@ local function apply_screen_hide(nodes, screen)
         if id:sub(1, #PREFIX[k]) == PREFIX[k] then hide = true break end
       end
     end
+    -- ★ 容器自己也要收口：前缀 `home.` 匹配不到 `home` 本身。
+    --   我在"把子控件改挂 root"那一轮漏了这两行 ⇒ 关卡/选关状态下 `home` 容器一直可见
+    --   ⇒ play_test 三条红（从存档点开始进关 board=true home=true / 选关页 home 没藏住 /
+    --   关卡内主页没藏住）。已用 git stash 对照确认：**这三条与后面的改动无关**，是那时漏的。
+    if id == "home" then hide = (screen ~= "home") end
+    if id == "select" then hide = (screen ~= "select") end
     if hide then nodes[i].visible = false end
   end
 end
