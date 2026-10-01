@@ -707,6 +707,80 @@ function Murdoku.on_update(dt)
     end
     print("[murdoku] 射线探针装好了 —— 之后点任何地方，只要射线落在这些容器上就会打日志")
   end
+  -- ★★★★ 2026-10-02 **按用户建议做的对比：主页 ⇄ 选关，"切换后到底改了什么"**。
+  --
+  --   用户原话：「我认为应该好好对比一下首页和选关切换后到底改了什么」
+  --   —— 这条方法是对的。我前面 9 轮都在猜机制（raycastTarget / childCount / 递归隐藏…），
+  --   而**事实是两份排行榜摆在那里**：
+  --     主页可见：root / home / home.title / home.*四键 / face / content / obj / bg×4 / label×4
+  --     选关可见：root / select / select.title / card.1~4 / back / face / content
+  --   ⇒ **交集只有 root + face + content** —— 后两个正是**格子模板的子控件（135x135）**，
+  --     也是我所有"隐藏"都没碰到的东西。
+  --   ⇒ 但它们只有一块 135x135，解释不了"所有位置都点不动" ⇒ **必须知道它们在屏幕的哪**。
+  --   ⇒ 这里拍两份快照（切屏前 / 切屏后），**带屏幕坐标**，并打印**差集**。
+  local function snap_visible()
+    local out = {}
+    local rt = nil
+    pcall(function() rt = ad:find("root") end)
+    if rt == nil then return out end
+    local function walk(c, ox, oy, depth)
+      if c == nil or depth > 6 then return end
+      local v = nil
+      pcall(function() v = c.visible end)
+      if v == true then
+        local nm, w, h, ax, ay = "?", 0, 0, 0, 0
+        pcall(function() nm = tostring(c.name) end)
+        pcall(function()
+          local a, b = c:GetSizeDelta()
+          if type(a) == "table" then w, h = a.x, a.y else w, h = a, b end
+        end)
+        pcall(function()
+          local a, b = c:GetAnchoredPosition()
+          if type(a) == "table" then ax, ay = a.x, a.y else ax, ay = a, b end
+        end)
+        if (w or 0) * (h or 0) > 1000 then
+          -- 屏幕坐标 = 父级屏幕位置 + 自身偏移（Y 向上）；根级以画布中心为原点
+          local sx = (ox or 0) + (ax or 0)
+          local sy = (oy or 0) + (ay or 0)
+          out[nm] = string.format("%dx%d @屏幕(%.0f,%.0f)", w or 0, h or 0, sx + 800, sy + 450)
+        end
+        local kids = nil
+        pcall(function() kids = c:GetChildren() end)
+        if type(kids) == "table" then
+          for i = 1, math.min(#kids, 120) do
+            walk(kids[i], (ox or 0) + (ax or 0), (oy or 0) + (ay or 0), depth + 1)
+          end
+        end
+      end
+    end
+    walk(rt, 0, 0, 0)
+    return out
+  end
+  if Murdoku._snap == nil or scr_now ~= Murdoku._snap_screen then
+    local now = snap_visible()
+    if Murdoku._snap ~= nil then
+      print("[murdoku] ===== 切屏对比：" .. tostring(Murdoku._snap_screen) .. " → " .. tostring(scr_now) .. " =====")
+      print("[murdoku]   【切过去之后**多出来**的可见控件】（嫌疑最大）")
+      local n_add = 0
+      for k, v in pairs(now) do
+        if Murdoku._snap[k] == nil then print("[murdoku]     + " .. k .. "  " .. v); n_add = n_add + 1 end
+      end
+      if n_add == 0 then print("[murdoku]     （没有多出来的）") end
+      print("[murdoku]   【切过去之后**消失**的可见控件】")
+      local n_del = 0
+      for k, v in pairs(Murdoku._snap) do
+        if now[k] == nil then print("[murdoku]     - " .. k .. "  " .. v); n_del = n_del + 1 end
+      end
+      if n_del == 0 then print("[murdoku]     （没有消失的）") end
+      print("[murdoku]   【**两个页面都在**的可见控件】—— 这些不随切屏变化，最可能是「挡在中间」的")
+      for k, v in pairs(now) do
+        if Murdoku._snap[k] ~= nil then print("[murdoku]     = " .. k .. "  " .. v .. "   （切屏前 " .. Murdoku._snap[k] .. "）") end
+      end
+      print("[murdoku] ===== 对比结束 =====")
+    end
+    Murdoku._snap = now
+    Murdoku._snap_screen = scr_now
+  end
   Murdoku._last_screen = scr_now
   current.frames = (current.frames or 0) + 1
 end
