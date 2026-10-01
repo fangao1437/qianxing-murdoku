@@ -150,6 +150,21 @@ check('运行期没有错误日志', errsLog.length === 0,
 //   标记 —— 这两条动线**从来没被测过**。而"打完一关，回选关看到它标记成已破案"
 //   正是玩家最直接的正反馈，坏了会很难受。
 console.log('\n=== 5. 通关之后的动线');
+// ① 先测结算弹窗的「下一关」（此时弹窗还开着）
+//
+//   `on_next_level` 的行为（main.lua）：有下一关就 `start_other(下一关)`，
+//   没有就给个 toast「已经是最后一关了」而不是静默无反应。
+//   这条**从来没被测过** —— 而"打完一关顺手点下一关"是最自然的操作。
+const beforeTitle = String(textOf(ri, 'hud.title') || '');
+await click('modal.next'); await tick(0.3);
+await click('intro.skip'); await tick(0.25);
+ri = await get();
+const afterTitle = String(textOf(ri, 'hud.title') || '');
+check('点结算里的「下一关」真的换了关（不是原地不动）',
+  visibleOf(ri, 'board') === true && afterTitle !== beforeTitle,
+  JSON.stringify(beforeTitle) + ' → ' + JSON.stringify(afterTitle));
+
+// ② 回选关看卡片标记
 await click('action.back'); await tick(0.25);
 ri = await get();
 check('通关后点「返回列表」回到选关', visibleOf(ri, 'select') === true,
