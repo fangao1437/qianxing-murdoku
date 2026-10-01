@@ -880,6 +880,39 @@ function Controller:build_layout()
   local vm = self.core:view()
   local L = M.LAYOUT
   local nodes = {}
+  
+    -- ★★★ 2026-10-01：**家具图标的调色板条目**（⑤ 的阻碍在这里清掉）。
+    --
+    --   用途：格子模板里的 `obj` 子控件按 `cd.object` 换图。适配器的 `object` 分支
+    --   走 `SetImage(obj.imageSource, 调色板[id])` —— 和头像卡 `portrait.*` 完全同一条路
+    --   （那条路真机上已经工作：日志 `SetImage 后 tray.A imageType = Stretch`）。
+    --
+    --   素材**不用自己画**：直接用**游戏自带的 1543 个图片素材**的 id
+    --   （目录 https://qx.070077.xyz/api/library/catalog 14 类，见 docs/美术素材从哪来-实地调查.md）。
+    --   看过接触表后挑的：
+    --     111051 = 一叠书页（书架）  111064 = 金色宝箱（展示柜）
+    --     111050 = 包裹木箱（书桌）  106053 = 白底板（地毯 —— 本来就该是色块，靠染色上色）
+    --
+    --   ⚠️ 关卡里物件是**中文名做键**（`["书架"]`），界面层用 `object_key_of` 翻成
+    --     `obj.<kind>`（写了 kind）或 `obj.<中文名>`（没写）—— 所以条目名必须是 obj.shelf 这种。
+    local OBJECT_PALETTE = {
+      ["obj.shelf"]  = 111051,
+      ["obj.case"]   = 111064,
+      ["obj.desk"]   = 111050,
+      ["obj.carpet"] = 106053,
+    }
+    --   ⚠️ 这里**不能用 `push`** —— `push` 是在下面才定义的局部函数，
+    --     在 `local nodes = {}` 后面直接调它会拿到 nil。
+    --     （我第一次就插在这里，dump_layout 当场报 `[C]: in ?`，
+    --      连带 play_test 红了 3 条。）直接往 nodes 里塞，绕开这个顺序问题。
+    for pid, pimg in pairs(OBJECT_PALETTE) do
+      -- 父级是编辑器里的 `assets` 容器（`read_palette` 扫它的子控件）
+      nodes[#nodes + 1] = {
+        id = pid, kind = "button", parent = "assets", visible = false,
+        image_id = pimg,
+        rect = { x = 0, y = 0, w = 48, h = 48 },
+      }
+    end
   -- ★ 每个节点都必须带**显式** visible：
   --   弹窗/教程的控件在编辑器里是一直存在的，开局由 render 统一藏起来；
   --   如果节点没有 visible 字段，增量渲染就永远不会把它重新显示出来
