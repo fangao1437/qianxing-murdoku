@@ -73,7 +73,7 @@ M.SHOW_TOOL_BUTTONS = false
 M.HOME_TITLE = "侦探推理 · 摆位谜题"
 M.LAYOUT = {
   topbar = { x = 0, y = 0, w = 1920, h = 104 },
-  title  = { x = 32, y = 18, w = 520, h = 50 },
+  title  = { x = 360, y = 18, w = 520, h = 50 },  -- ★ 让开左上角两个按钮（原 32，会撞）
   stats  = { x = 1520, y = 26, w = 380, h = 46 },
 
   -- 左侧面板：头像卡 + 线索卡 + 图例
@@ -1129,10 +1129,10 @@ function Controller:build_layout()
       { action = "hint" }, "stamp.sm", vm.hud.can_hint)
 
   push({ id = "hud.timer", kind = "text", parent = "topbar",
-         rect = { x = 520, y = 30, w = 140, h = 46 },
+         rect = { x = 1230, y = 30, w = 140, h = 46 },   -- ★ 让开标题组（原 520）
          text = self:format_time(vm.hud.time), style = "stat" })
   push({ id = "hud.moves", kind = "text", parent = "topbar",
-         rect = { x = 664, y = 30, w = 150, h = 46 },
+         rect = { x = 1390, y = 30, w = 150, h = 46 },  -- ★ 同上（原 664）
          text = string.format("%d 步", vm.hud.moves), style = "stat" })
 
   -- ===== 左侧面板：头像卡 + 线索卡 + 图例 =====
@@ -1549,7 +1549,7 @@ function Controller:build_layout()
   --   我第一版忘了删这一份，于是**同名控件建了两个** —— 正是"同名两处必然漂移"的老毛病。
   local got, total = self.core:score()
   push({ id = "hud.score", kind = "text", parent = "right",
-         rect = { x = L.right.x + 20, y = L.right.y + 74, w = L.right.w - 40, h = 44 },
+         rect = { x = L.right.x + 20, y = L.right.y + 74, w = L.right.w - 160, h = 44 },
          text = string.format("位置正确 %d / %d", got, total), style = "muted" })
   -- 区域推断面板（偷窃版 R3/R4 的可观测量，玩家自己也能数出来）
   local st = vm.structure or {}
@@ -1582,13 +1582,13 @@ function Controller:build_layout()
     st_lines[#st_lines + 1] = "· " .. vm.violations[i].text
   end
   push({ id = "hud.violations", kind = "text", parent = "right",
-         rect = { x = L.right.x + 20, y = L.right.y + 132, w = L.right.w - 40, h = 230 },
+         rect = { x = L.right.x + 20, y = L.right.y + 132, w = L.right.w - 160, h = 230 },
          text = table.concat(st_lines, "\n"), style = "muted" })
   push({ id = "hud.share", kind = "text", parent = "right",
-         rect = { x = L.right.x + 20, y = L.right.y + 360, w = L.right.w - 40, h = 120 },
+         rect = { x = L.right.x + 20, y = L.right.y + 360, w = L.right.w - 160, h = 120 },
          text = self.share_code and ("分享码：" .. self.share_code) or "", style = "muted" })
   push({ id = "hud.toast", kind = "text", parent = "right",
-         rect = { x = L.right.x + 20, y = L.right.y + 520, w = L.right.w - 40, h = 140 },
+         rect = { x = L.right.x + 20, y = L.right.y + 520, w = L.right.w - 160, h = 140 },
          text = self.toast or vm.last_message or "", style = "toast",
          visible = (self.toast ~= nil or vm.last_message ~= nil) })
   -- 顶部放不下的次级操作放这里（1920 内不会溢出）

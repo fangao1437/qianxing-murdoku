@@ -131,6 +131,13 @@ function report(p, items) {
     const containsR = B.x <= A.x + 2 && B.y <= A.y + 2
       && B.x + B.w >= A.x + A.w - 2 && B.y + B.h >= A.y + A.h - 2;
     if (contains || containsR) continue;                     // 一个把另一个整个包住：不是"叠"
+    // ★ 没有底图的容器**不可能遮挡**（它只是给子控件分组的框）——
+    //   `right` / `topbar` / `left` / `board` 都是这种，报它们纯属噪音。
+    const opaque = (id) => {
+      const n = PLAN.nodes.find((x) => x.id === id);
+      return !(n && n.kind === 'container' && n.image_id === undefined && n.text === undefined);
+    };
+    if (!opaque(A.id) || !opaque(B.id)) continue;
     const ox = Math.min(A.x + A.w, B.x + B.w) - Math.max(A.x, B.x);
     const oy = Math.min(A.y + A.h, B.y + B.h) - Math.max(A.y, B.y);
     if (ox > 4 && oy > 4) {
