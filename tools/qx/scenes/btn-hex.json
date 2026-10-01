@@ -1,0 +1,12 @@
+{
+  "canvas": { "width": 256, "height": 256, "background": "#00000000" },
+  "elements": [
+    { "id": "edge_mid",  "type": "rectangle", "x": 128, "y": 128, "width": 176, "height": 102, "rotation": 0,   "color": "#1b2030", "opacity": 1, "zIndex": 0 },
+    { "id": "edge_top",  "type": "triangle",  "x": 128, "y": 51,  "width": 176, "height": 52,  "rotation": 0,   "color": "#1b2030", "opacity": 1, "zIndex": 0 },
+    { "id": "edge_bot",  "type": "triangle",  "x": 128, "y": 205, "width": 176, "height": 52,  "rotation": 180, "color": "#1b2030", "opacity": 1, "zIndex": 0 },
+    { "id": "fill_mid",  "type": "rectangle", "x": 128, "y": 128, "width": 156, "height": 90,  "rotation": 0,   "color": "#2b3348", "opacity": 1, "zIndex": 1 },
+    { "id": "fill_top",  "type": "triangle",  "x": 128, "y": 61,  "width": 156, "height": 46,  "rotation": 0,   "color": "#2b3348", "opacity": 1, "zIndex": 1 },
+    { "id": "fill_bot",  "type": "triangle",  "x": 128, "y": 195, "width": 156, "height": 46,  "rotation": 180, "color": "#2b3348", "opacity": 1, "zIndex": 1 }
+  ],
+  "meta": { "sourceType": "editor", "sourceName": "btn-hex", "warnings": [] }
+}

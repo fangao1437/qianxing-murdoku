@@ -46,10 +46,20 @@ const isMain = (() => {
   try { return import.meta.url === pathToFileURL(process.argv[1]).href; } catch { return false; }
 })();
 
-/** 可用的图元类型（从编辑器 JS 包里读到的） */
+/**
+ * 可用的图元类型 —— **这是编辑器里 `baseShapePresets` 的确切清单**，
+ * 不是猜的。（我第一版猜了 `hexagon` / `line`，那两个**不存在**。）
+ *
+ * `baseShapePresets` 给了每种形状的默认色与尺寸：
+ *   ellipse #0f766e 88×88 / rectangle #c2410c 102×70 / triangle #7c3aed 96×86
+ *   four_point_star #0f4c81 90×90 / five_point_star #be123c 92×92 / ring #f59e0b 92×92
+ *   textbox #ffffff 180×40
+ *
+ * ⚠️ **没有 hexagon** —— 六边形要用基础图元拼，或者用素材库里的图。
+ */
 export const SHAPES = [
-  'rectangle', 'ellipse', 'triangle', 'four_point_star', 'five_point_star',
-  'hexagon', 'line', 'textbox', 'image',
+  'ellipse', 'rectangle', 'triangle', 'four_point_star', 'five_point_star',
+  'ring', 'textbox', 'image',
 ];
 
 /** 造一个空场景 */
