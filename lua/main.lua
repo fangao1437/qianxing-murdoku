@@ -836,6 +836,11 @@ function Murdoku.on_update(dt)
     Murdoku._snap = now
     Murdoku._snap_screen = scr_now
   end
+  -- ★ 每帧按屏幕排图层：把当前屏幕的容器（home/select）排到最上，另一个排到最下。
+  --   真机证明"用 visible 开关切屏"会让射线出问题，而"另一个容器压在上面"会吃光点击。
+  if current.adapter and current.adapter.enforce_screen_layers then
+    pcall(function() current.adapter:enforce_screen_layers(scr_now) end)
+  end
   Murdoku._last_screen = scr_now
   current.frames = (current.frames or 0) + 1
 end

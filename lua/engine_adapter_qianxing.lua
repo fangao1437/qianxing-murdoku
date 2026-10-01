@@ -2279,6 +2279,45 @@ end
 -- 实现技巧：**倒序**逐个 `SetAsFirstSibling()`。
 --   先处理"最上层"的那个 → 它到 0；再处理下一个 → 它到 0、前一个退到 1……
 --   全部处理完，列表里**最后一个**就在 0（最底），第一个在最高位 —— 正好是我们要的顺序。
+-- ★★★★★ 2026-10-02 **按屏幕排图层**（真机"选关点不动"的根因，用户指出的方向）。
+--
+--   用户的观察拼出了完整答案：
+--     · 「那个全屏按钮还在」            => 屏幕上有个**全屏的东西**在吃点击
+--     · 「界面内的按钮并没有被恢复回来」 => 它盖住了那些按钮
+--   而 `home` / `select` **都是 1600x900、都在 `root` 下** ——
+--   **谁在兄弟列表里靠后，谁就显示在上面**（官方 `SetSiblingIndex`「数值越大越靠上」）。
+--
+--   => 主页能点，是因为 `home` 恰好在上；
+--     选关不能点，是因为 **`select` 显示时 `home` 仍然压在它上面** ——
+--     那层 1600x900 的容器把选关页的点击全吃了。
+--     （我前几轮一直盯着 `select`，方向错了；**凶手是另一个容器**。）
+--
+--   => 修法：**不用 visible 开关**（真机证明"由藏变显"会让射线出问题），
+--     改成**每帧把当前屏幕的容器排到最上、另一个排到最下**。
+--     幂等、便宜、只动顺序。
+--
+--   ★ 这正是本项目反复吃亏的那一类错：**图层顺序**。
+--     （格子子控件排过 `enforce_layers`；这次轮到屏幕容器。）
+function Adapter:enforce_screen_layers(screen)
+  local function put(id, idx)
+    local c = self:find(id)
+    if c == nil then return end
+    if c.SetSiblingIndex ~= nil then
+      pcall(function() c:SetSiblingIndex(idx) end)
+    end
+  end
+  if screen == "home" then
+    put("select", 0)
+    put("home", 20)
+  elseif screen == "select" then
+    put("home", 0)
+    put("select", 20)
+  else
+    -- 关卡内：两个都压到最下面（棋盘/顶栏/线索才该在最上）
+    put("home", 0)
+    put("select", 1)
+  end
+end
 function Adapter:enforce_layers(cell_id)
   local order = (self.cfg.cells and self.cfg.cells.layer_order)
     or { "face", "obj",
