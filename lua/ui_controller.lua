@@ -1075,7 +1075,19 @@ function Controller:build_layout()
   --
   --   下面这 6 个图元的旧写法（用游戏自带 100001/100003 拼）**保留**成 `hex_bg()`，
   --   万一哪天外部资产不在素材库里，可以一行切回去。
-  local HEX_PREFAB = true          -- true = 用转存素材；false = 用基础图元拼
+  -- ⚠️⚠️ 2026-10-01 真机实测：**转存素材这条路走不通**
+  --
+  --   日志里出现（报错级）：
+  --     [murdoku] 这些控件还没建（共 3 个，按类分组）：
+  --       action.*  ×3   action.undo.hexbg action.reveal.hexbg action.submit.hexbg
+  --   ⇒ `InstantiateClientUIControl(1073742321, ...)` **实例化失败** ——
+  --     那 6 个素材是「**外部资产**」转存进来的**图片素材**，
+  --     而脚本能实例化的只有「**客户端控件模板**」里的控件（官方硬约束，
+  --     适配器里那段注释也写了这条路：模板索引指的不是图片资产 ID）。
+  --   ⇒ **切回"用基础图元拼"**（`100001` 矩形 + `100003` 三角，各 6 个图元/按钮）。
+  --     这条路的图片 id 是**直接写进存档**的，不依赖任何实例化 ⇒ 稳。
+  --   ⇒ 素材没白转存：以后要是拿到「客户端控件模板」索引，改回 true 即可。
+  local HEX_PREFAB = false         -- true = 用转存素材；false = 用基础图元拼
   if HEX_PREFAB then
     local btns = {
       { "action.undo",   1790, 390 },
@@ -1773,12 +1785,34 @@ function Controller:build_layout()
     --   白名单每加一个新控件都得记得补一次，**必然会漏**（这次就漏了一片）
     --   ⇒ 反过来：**只保留 home / select 这几棵子树 + root**，其余一律藏。
     --     以后再加控件，默认就是"进入关卡才显示"，不会漏。
+    -- ★★★ 2026-10-01 二次修正：**从"反向逻辑"改回"白名单"**。
+    --
+    --   我原来想用反向逻辑（只保留 home/select 子树，其余全藏）来根治"漏藏"，
+    --   但真机实测结果是 **整个界面空白** —— 太危险了：
+    --     · 它是**默认隐藏**：任何状态/顺序/时机上的意外，代价都是"全都看不见"
+    --     · 白名单是**默认显示**：漏掉某个新控件，代价只是"多显示了一个" ——
+    --       而且布局审计（tools/sim/audit_layout.mjs）能当场抓出来
+    --   ⇒ **可恢复的错 > 不可恢复的错**，改回白名单，但这次写全。
+    --
+    --   白名单内容 = 关卡内才该出现的东西（按 id + 按前缀两类）。
+    --   新增关卡内控件时**记得补一笔**，补完跑一次布局审计确认。
+    local HIDE = {
+      topbar = true, toolbar = true, left = true, board = true, right = true,
+      toast = true, modal = true, intro = true,
+      clues = true,
+      ["action.back"] = true, ["action.redo"] = true, ["action.hint"] = true,
+      ["action.undo"] = true, ["action.submit"] = true, ["action.reveal"] = true,
+    }
+    local HIDE_PREFIX = { "cell.", "clue.", "hud.", "room.label.", "ruler", "tray.", "action." }
     for i = 1, #nodes do
       local id = nodes[i].id
-      local owned = (id == "root") or (id == "home") or (id == "select")
-        or (id:sub(1, 5) == "home.") or (id:sub(1, 7) == "select.")
-        or (id == "cursor")
-      if not owned then nodes[i].visible = false end
+      local hide = HIDE[id] == true
+      if not hide then
+        for k = 1, #HIDE_PREFIX do
+          if id:sub(1, #HIDE_PREFIX[k]) == HIDE_PREFIX[k] then hide = true break end
+        end
+      end
+      if hide then nodes[i].visible = false end
     end
     local FULLSCREEN = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height }
     push({ id = "home", kind = "container", parent = "root", rect = FULLSCREEN,
