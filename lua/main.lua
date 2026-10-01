@@ -568,23 +568,32 @@ function Murdoku.on_update(dt)
     --   而原来只打了 12 个固定 id，看不到"谁盖住了谁"。
     --   ⇒ 这里从 root 递归走一遍真实控件树，把所有 visible=true 的按面积排序打出来：
     --     排在最前面的那几个大控件，就是"疑犯"。
-    print("[murdoku] ===== 屏幕占用排行（所有 visible=true 的控件，按面积）=====")
+    -- ★★★★★ 2026-10-02 **去掉 visible=true 这个过滤条件**（用户三条答案指出的"眼罩"）。
+    --
+    --   用户观察：那个拦截层**全透明、不消失、Esc 无反应** ⇒ 是一个**隐形输入层**。
+    --   而这一版之前所有排行榜都写着 `if v == true then`（只看可见控件）
+    --   ⇒ **一个 visible=false 但仍在拦截点击的控件，一次都没被列出来过**。
+    --   脚本用的是 `SetVisible()` —— 关掉的是**渲染**；诊断里所有控件的 `active`
+    --   都是 true ⇒ **不可见但仍然 active 的控件，很可能照样参与射线**。
+    --   ⇒ 改成"一律列出"，并把 visible / active **都打出来**，大的一律标 ★。
+    print("[murdoku] ===== 屏幕占用排行（**不管可见不可见**，按面积）=====")
     do
       local list = {}
       local function walk(c, depth)
         if c == nil or depth > 6 then return end
-        local v, w, h, nm = nil, nil, nil, "?"
+        local v, al, w, h, nm = nil, nil, nil, nil, "?"
         pcall(function() v = c.visible end)
+        pcall(function() al = c.active end)
         pcall(function() nm = tostring(c.name) end)
-        if v == true then
-          pcall(function()
-            local a, b = c:GetSizeDelta()
-            if type(a) == "table" then w, h = a.x, a.y else w, h = a, b end
-          end)
-          local area = (w or 0) * (h or 0)
-          if area > 1000 then
-            list[#list + 1] = { id = nm, w = w or 0, h = h or 0, area = area }
-          end
+        pcall(function()
+          local a, b = c:GetSizeDelta()
+          if type(a) == "table" then w, h = a.x, a.y else w, h = a, b end
+        end)
+        local area = (w or 0) * (h or 0)
+        -- 只列"大"的；阈值降到 20000（原来的 1000 会刷一屏小控件）
+        if area > 20000 then
+          list[#list + 1] = { id = nm, w = w or 0, h = h or 0, area = area,
+                              vis = tostring(v), act = tostring(al) }
         end
         -- ⚠️ 这里原来用 `c.childCount` + `c:GetChild(i-1)` —— **走不进子树**
         --   （排行榜只报出 root 一个，而诊断里明明有一堆 visible=true 的控件）。
@@ -601,12 +610,13 @@ function Murdoku.on_update(dt)
       pcall(function() rt = ad:find("root") end)
       walk(rt, 0)
       table.sort(list, function(x, y) return x.area > y.area end)
-      for i = 1, math.min(#list, 22) do
+      for i = 1, math.min(#list, 26) do
         local e = list[i]
-        print(string.format("[murdoku]   %2d. %-22s %6.0fx%-6.0f  面积=%d",
-          i, e.id, e.w, e.h, math.floor(e.area)))
+        print(string.format("[murdoku]   %2d. %-22s %6.0fx%-6.0f 可见=%-5s active=%-5s 面积=%d",
+          i, e.id, e.w, e.h, e.vis, e.act, math.floor(e.area)))
       end
-      print("[murdoku]   （共 " .. tostring(#list) .. " 个面积>1000 的可见控件）")
+      print("[murdoku]   （共 " .. tostring(#list) .. " 个面积>20000 的控件 —— **含不可见的**）")
+      print("[murdoku]   ★ 找那个「全屏 + 可见=false + active=true」的 —— 它就是隐形拦截层")
     end
     print("[murdoku] ===== 排行榜结束 =====")
 
@@ -782,7 +792,18 @@ function Murdoku.on_update(dt)
       if c == nil or depth > 6 then return end
       local v = nil
       pcall(function() v = c.visible end)
-      if v == true then
+      -- ★★★★★ 2026-10-02 **去掉 visible 过滤**（用户三条答案指出的"眼罩"）。
+      --
+      --   用户观察：那个拦截层**全透明、不消失、Esc 无反应** ⇒ 是一个**隐形输入层**。
+      --   而我之前所有排行榜都写着 `if v == true then`（只看 visible=true）
+      --   ⇒ **一个 visible=false 但仍在拦截点击的控件，我一次都没列出来过**。
+      --
+      --   而脚本用的是 `SetVisible()` —— 关掉的是**渲染**；诊断里所有控件的
+      --   `active` 都是 true ⇒ **不可见但仍然 active 的控件很可能照样参与射线**。
+      --   ⇒ 改成：**不管 visible，一律列出来**，并把 visible / active 都打出来。
+      local al = nil
+      pcall(function() al = c.active end)
+      if true then
         local nm, w, h, ax, ay = "?", 0, 0, 0, 0
         pcall(function() nm = tostring(c.name) end)
         pcall(function()
