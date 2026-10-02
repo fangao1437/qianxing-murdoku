@@ -244,7 +244,7 @@ local function build_adapter()
     --   现在改成**以 93.gil 为基底**（它有全部控件和素材）+ 把 97 的 stage 三条搬回来，
     --   ⇒ 界面控件重新由编辑器提供 ⇒ **自动创建必须关掉**，否则又是一堆白块。
     auto_create = false,   -- true 才让 create_control 按 kind 自动实例化
-    widgets     = false,   -- true 才让启动时创建 selbtn.*（93 里本来就有 select.card.*）
+    widgets     = true,    -- ★ 打开：启动时创建并显示 selbtn.1..N（102 验证过"能完成选关"的那四个方块）
     stage = {
       prefab = 1073742330,   -- 「容器节点」模板（用户 2026-10-02 提供）
       parent = "stage",
