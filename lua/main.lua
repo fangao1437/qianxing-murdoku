@@ -1162,11 +1162,34 @@ function Murdoku.on_update(dt)
       local n = 0
       for r = 1, rows do
         for c = 1, cols do
-          -- ★ 必须用适配器的 `sub()` —— `face` 装在中间容器 `content` 里，
-          --   裸 `GetChild("face")` 会返回 nil（这就是上一版"没打印也没生效"的原因）。
+          -- ★★★★★ 2026-10-02 这里**不能用 `adapter:sub()`** —— 项目自己的注释写着：
+          --     「`Adapter:sub()` 未命中会**永久缓存 false**，UI 就绪前查过一次就再也拿不到。」
+          --   我在 `_cells_paint` 里早查过一次（那时子控件还没完全就绪）⇒ 缓存了未命中
+          --   ⇒ 之后每帧 `sub()` 全部返回 nil ⇒ 这段的 n 恒为 0（所以"格子底图已点亮"没打印）。
+          --   ⇒ 改成**直接遍历子控件**（含 `content` 中间容器一层），完全不碰缓存。
           local cid = "cell." .. r .. "." .. c
+          local cell = nil
+          pcall(function() cell = current.adapter:find(cid) end)
           local face = nil
-          pcall(function() face = current.adapter:sub(cid, "face") end)
+          if cell ~= nil and cell.GetChildren ~= nil then
+            local kids = nil
+            pcall(function() kids = cell:GetChildren() end)
+            for _, k in ipairs(kids or {}) do
+              local kn = nil
+              pcall(function() kn = tostring(k.name) end)
+              if kn == "face" then face = k end
+              if face == nil and k.GetChildren ~= nil then
+                local kk = nil
+                pcall(function() kk = k:GetChildren() end)
+                for _, c2 in ipairs(kk or {}) do
+                  local cn = nil
+                  pcall(function() cn = tostring(c2.name) end)
+                  if cn == "face" then face = c2 end
+                end
+              end
+              if face ~= nil then break end
+            end
+          end
           if face ~= nil then
             pcall(function() face:SetVisible(true) end)
             n = n + 1
