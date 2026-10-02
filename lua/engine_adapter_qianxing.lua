@@ -2378,6 +2378,53 @@ end
 --
 --   ★ 这正是本项目反复吃亏的那一类错：**图层顺序**。
 --     （格子子控件排过 `enforce_layers`；这次轮到屏幕容器。）
+-- ★★★★★ 2026-10-02 **强制打开「可被光标射线检测」（`raycastTarget`）—— 真机"点不动"的正解**。
+--
+--   官方文档（docs/api-cache/mhd4fxr5v6la.txt）：
+--     「可被光标射线检测：可以检测到光标在控件范围内的悬浮和点击行为」
+--   项目自己的排查清单（docs/最小骨架控件清单.md:151 / 真机-cell.1.1-逐步指南.md:67）：
+--     「**可被光标射线检测**（raycastTarget）—— 脚本靠 AddCursorEventListener 收点击；**关掉就点不动**」
+--     「**界面看得见，但点哪儿都没反应**」= 没开这个开关
+--     「点不动卡片 → 选不了人」（本次搭建要求.md:416）
+--
+--   而官方 API：**预设按钮只有三个自有字段 `interactable` / `clickAudioId` / `raycastTarget`**
+--   —— `clickAudioId` 就是"点击音效" ⇒ **"处处有音效但什么也没发生" = 点到了按钮、但它 `raycastTarget=false`**。
+--
+--   我之前的错误：只对 **容器节点** 试过这个字段（容器没有它 ⇒ 读到 nil）
+--   ⇒ 误以为"这个字段在引擎里不存在" ⇒ **从来没对按钮读过/写过它**。
+--
+--   ⇒ 这里**遍历整棵控件树**，对每个控件尝试写 `raycastTarget = true`，并统计/回读。
+--     （只对"支持这个字段的控件"生效，别的控件 pcall 静默失败，无害。）
+function Adapter:enable_raycast()
+  local root = self:find("root")
+  if root == nil then return 0, 0, {} end
+  local set, seen, samples = 0, 0, {}
+  local function walk(c, depth)
+    if c == nil or depth > 6 then return end
+    local nm = "?"
+    pcall(function() nm = tostring(c.name) end)
+    -- 先读原值（判断它是不是"有 raycastTarget 的控件"）
+    local before = nil
+    pcall(function() before = c.raycastTarget end)
+    if before ~= nil then
+      seen = seen + 1
+      if before ~= true then
+        local ok = pcall(function() c.raycastTarget = true end)
+        if ok then
+          set = set + 1
+          if #samples < 6 then samples[#samples + 1] = nm .. ":" .. tostring(before) .. "->true" end
+        end
+      end
+    end
+    local kids = nil
+    pcall(function() kids = c:GetChildren() end)
+    if type(kids) == "table" then
+      for i = 1, math.min(#kids, 200) do walk(kids[i], depth + 1) end
+    end
+  end
+  walk(root, 0)
+  return seen, set, samples
+end
 function Adapter:enforce_screen_layers(screen)
   local function put(id, idx)
     local c = self:find(id)

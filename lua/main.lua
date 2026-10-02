@@ -516,6 +516,25 @@ function Murdoku.on_update(dt)
       print("[murdoku] 门控②重试：已打开 " .. tostring(n) .. " 个容器的「显示常驻光标」")
     end
   end
+
+  -- ★★★★★ 2026-10-02 **强制打开「可被光标射线检测」（`raycastTarget`）** —— 真机"点不动"的正解。
+  --
+  --   官方文档：预设按钮只有三个自有字段 `interactable` / `clickAudioId` / `raycastTarget`；
+  --   项目自己的清单写着：「关掉就点不动」「**界面看得见，但点哪儿都没反应**」。
+  --   而 `clickAudioId` 就是点击音效 ⇒ "处处有音效但什么也没发生" = 点到了按钮、但它 `raycastTarget=false`。
+  --   我之前只对容器试过这个字段（容器没有它）⇒ 误判成"引擎里不存在"⇒ 从没对按钮读过写过。
+  if current.adapter.enable_raycast and ((current.frames or 0) % 20 == 0) then
+    local seen, set, samples = current.adapter:enable_raycast()
+    local key = tostring(seen) .. "/" .. tostring(set)
+    if key ~= Murdoku._ray_key and print then
+      Murdoku._ray_key = key
+      print("[murdoku] 射线开关（raycastTarget）：有该字段的控件 " .. tostring(seen)
+        .. " 个，其中被打开 " .. tostring(set) .. " 个")
+      if type(samples) == "table" and #samples > 0 then
+        print("[murdoku]   本次打开的例子：" .. table.concat(samples, "  "))
+      end
+    end
+  end
   -- 时间只在整秒变化时重绘（省性能），但**任何其它状态变化也必须立刻重绘**：
   -- 单击落成铅笔笔记是在 tick 里做的（要等双击窗口），如果只按整秒重绘，
   -- 笔记要等到下一个整秒才画出来 —— 手感上就是"点了没反应"。
