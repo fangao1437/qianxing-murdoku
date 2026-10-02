@@ -810,25 +810,46 @@ function Murdoku.on_update(dt)
     print("[murdoku] ===== 根清单结束 =====")
     -- ★★★★★ 2026-10-02 **对照组诊断**：把"能点的样本"和"不能点的样本"逐一对比。
     --
-    --   真机现状（用户实测）：
-    --     · 关卡里 **能点**   —— 格子在 `board` 下（脚本建的）
-    --     · 主页   **能点**   —— 四键在 `home` 下（编辑器摆的）
-    --     · 选关页 **不能点** —— 卡片在 `select` 下（编辑器摆的）
-    --   三者都 showCursor=true、bind=true、坐标在屏内。
-    --   ⇒ 差别只可能藏在某个**可读属性**里 ⇒ 把两个样本的所有字段并列打出来，一眼看差。
+    --   ⚠️ 第一版这里全部报「找不到」—— 因为直接用了 `ad:find(id)`，
+    --   而同一份日志里「诊断二」用**同一个调用**却能拿到 `home.select`。
+    --   ⇒ 不再依赖 `find`：**自己从 `root` 遍历整棵树建一张 name→控件 的表**，
+    --     然后从表里取。这样"取不到"只可能是名字真不在树里。
     print("[murdoku] ===== 对照组：能点 vs 不能点 =====")
     do
+      local rootC = nil
+      pcall(function() rootC = ad:find("root") end)
+      -- 兜底：从 GetClientUIRoots 拿
+      if rootC == nil then
+        local rs = nil
+        pcall(function() rs = game.GetClientUIRoots() end)
+        if type(rs) == "table" and rs[1] ~= nil then rootC = rs[1] end
+      end
+      local map, count = {}, 0
+      if rootC ~= nil then
+        local function walk(c, depth)
+          if c == nil or depth > 6 then return end
+          local nm = nil
+          pcall(function() nm = c.name end)
+          if nm ~= nil and nm ~= "" and map[nm] == nil then map[nm] = c count = count + 1 end
+          local kids = nil
+          pcall(function() kids = c:GetChildren() end)
+          if type(kids) == "table" then
+            for k = 1, math.min(#kids, 200) do walk(kids[k], depth + 1) end
+          end
+        end
+        walk(rootC, 0)
+      end
+      print("[murdoku]   树里共收集 " .. tostring(count) .. " 个具名控件（root=" .. tostring(rootC ~= nil) .. "）")
       local fields = { "visible", "active", "showCursor", "interactable", "raycastTarget",
                        "clickAudioId", "disableCursorEventPassthrough", "disableKeyEventPassthrough",
                        "isolateNavigation", "alpha", "index", "zIndex", "sortingOrder",
                        "enable", "enabled", "blockRaycast", "grayed", "isEnabled" }
-      local samples = { "home.select", "select.card.1", "select.back", "cell.1.1", "board" }
+      local samples = { "home.select", "select.card.1", "select.back", "cell.1.1", "board", "select", "home" }
       for s = 1, #samples do
         local id = samples[s]
-        local c = nil
-        pcall(function() c = ad:find(id) end)
+        local c = map[id]
         if c == nil then
-          print("[murdoku]   " .. id .. "  —— **找不到**")
+          print("[murdoku]   " .. id .. "  —— **树里没有这个名字**")
         else
           local parts = {}
           for f = 1, #fields do
@@ -836,7 +857,6 @@ function Murdoku.on_update(dt)
             pcall(function() v = tostring(c[fields[f]]) end)
             if v ~= "nil" then parts[#parts + 1] = fields[f] .. "=" .. v end
           end
-          -- 父级链（谁在上面 / 谁的祖先有 showCursor）
           local chain, cur, guard = {}, c, 0
           while cur ~= nil and guard < 8 do
             local nm, sc, vv = "?", "?", "?"
@@ -846,6 +866,7 @@ function Murdoku.on_update(dt)
             chain[#chain + 1] = nm .. "(vis=" .. vv .. ",cur=" .. sc .. ")"
             local up = nil
             pcall(function() up = cur.parent end)
+            if up == nil then pcall(function() up = cur:GetParent() end) end
             cur = up
             guard = guard + 1
           end
