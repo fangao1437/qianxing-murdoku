@@ -1803,21 +1803,7 @@ function Adapter:enable_cursor()
       if kd == "nil" then pcall(function() kd = tostring(ctrl.type) end) end
       if kd == "nil" then pcall(function() kd = tostring(ctrl.controlType) end) end
       parts[#parts + 1] = CURSOR_CONTAINERS[i] .. "(kind=" .. kd .. ",cur=" .. sc .. ")"
-      -- ★ 第一次只对 root/home/select 三个多探一层：把能读到的"类型/名字"类字段全列出来，
-      --   这样即便 `kind` 不叫 kind，也能一眼看出它到底是什么。
-      if CURSOR_CONTAINERS[i] == "root" or CURSOR_CONTAINERS[i] == "home"
-         or CURSOR_CONTAINERS[i] == "select" then
-        local probes = {}
-        for _, f in ipairs({ "kind", "Kind", "type", "Type", "controlType", "className",
-                             "ctrlType", "nodeType", "name", "Name" }) do
-          local v = "?"
-          pcall(function() v = tostring(ctrl[f]) end)
-          if v ~= "nil" and v ~= "?" then probes[#probes + 1] = f .. "=" .. v end
-        end
-        if #probes > 0 and print then
-          print("[murdoku] 类型探测 " .. CURSOR_CONTAINERS[i] .. "：" .. table.concat(probes, "  "))
-        end
-      end
+      -- （类型探测已撤：它每 20 帧打一次，刷屏；结论已记录在 enable_cursor 上方）
     else
       parts[#parts + 1] = CURSOR_CONTAINERS[i] .. "=**找不到**"
     end
@@ -2498,20 +2484,24 @@ function Adapter:seal_container(id)
   local c = self:find(id)
   if c == nil then return false end
   local n = 0
-  -- ① 按键：**必须放开（false）**。
+  -- ① 按键：**屏蔽穿透 = true**（**这才是 2D/3D 隔离的正确开关**）。
   --
-  --   ★★★★★ 2026-10-02 **这里原来是 `true`，它是"原神自带对话框按 Enter 打不开"的元凶**。
+  --   ★★★★★ 2026-10-02 **真机 A/B 对比得出的结论，别再改错了**：
   --
   --   官方文档（docs/api-cache/mh3qqq9xc102.txt）：
   --     「**屏蔽按键事件穿透**：容器节点内的按键事件交互**不会穿透到界面外**」
-  --   ⇒ 设成 `true` = **按键被这个容器吃掉、传不到游戏** ⇒ 游戏原生的对话框收不到 Enter。
+  --   —— 这里的"界面外"指的是 **3D 世界**（不是游戏的原生 UI）。
+  --   ⇒ `true` = **按键不会传到 3D 角色**（隔离生效）。
   --
-  --   我当初设 `true` 的理由是"把 2D 界面和 3D 角色隔开" —— **那个理由不成立**：
-  --   游戏的 2D/3D 输入切换由引擎自己管，用"吃掉按键"去挡，挡掉的是**整个游戏的按键**。
-  --   而"键盘事件仍能收到"那条验收之所以一直通过，是因为**按键正是被我的容器吃掉的** ——
-  --   我把它当成了"隔离没副作用"，其实**副作用就是它**。
+  --   【A/B 实测】
+  --     · 设 `true`  + 回调 `return true`  ⇒ Enter 打不开原生对话框（按键被回调标记"已处理"）
+  --     · 设 `false` + 回调 `return false` ⇒ **点击/Enter 都通了，但隔离彻底失效**
+  --       （真机日志：`按键事件 → KeyboardJumpKeyDown` ⇒ 按跳跃键角色真的跳了）
+  --   ⇒ 真相：**"Enter 打不开"是回调 `return true` 造成的，跟这个字段无关**；
+  --     而这个字段设 `false` 才会让按键穿到 3D。
+  --   ⇒ **正确组合 = 本字段 `true`（隔离）+ 回调 `return false`（不标记已处理）**。
   if c.disableKeyEventPassthrough ~= nil then
-    if pcall(function() c.disableKeyEventPassthrough = false end) then n = n + 1 end
+    if pcall(function() c.disableKeyEventPassthrough = true end) then n = n + 1 end
   end
   -- ② 点击：**必须放开（false）**！
   --
