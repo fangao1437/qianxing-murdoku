@@ -1111,6 +1111,54 @@ function Murdoku.on_update(dt)
     --      上半段 `selbtn.*` 的循环也只在 `widgets = true` 时才让 `on_select` 为真，
     --      默认配置下它什么都不做，不会干扰 93 里原有的卡片。
   end
+  -- ★★★★★ 2026-10-02 **UI 容器定位诊断**：真机"right/topbar 可见=true 但看不到"，
+  --   所以把它们的**位置/尺寸/透明度/同级顺序**全打出来，一次看清问题在哪。
+  if (current.frames or 0) % 300 == 0 then
+    for _, nm in ipairs({ "topbar", "right" }) do
+      local c = nil
+      pcall(function() c = current.adapter:find(nm) end)
+      if c ~= nil then
+        local ax, ay, w, h, vis, alpha, sp = 0, 0, 0, 0, "?", "?", "?"
+        pcall(function()
+          local a, b = c:GetAnchoredPosition()
+          if type(a) == "table" then ax, ay = a.x, a.y else ax, ay = a, b end
+        end)
+        pcall(function()
+          local a, b = c:GetSizeDelta()
+          if type(a) == "table" then w, h = a.x, a.y else w, h = a, b end
+        end)
+        pcall(function() vis = tostring(c.visible) end)
+        pcall(function() alpha = tostring(c.alpha) end)
+        pcall(function() sp = tostring(c.sortingOrder) end)
+        if print then
+          print(string.format("[murdoku] UI定位 %s：pos=(%.0f,%.0f) size=%.0fx%.0f visible=%s alpha=%s sort=%s",
+            nm, ax, ay, w, h, vis, alpha, sp))
+        end
+        local k = nil
+        pcall(function()
+          local kids = c:GetChildren()
+          if type(kids) == "table" and kids[1] ~= nil then k = kids[1] end
+        end)
+        if k ~= nil then
+          local kx, ky, kw, kh, kn, kv = 0, 0, 0, 0, "?", "?"
+          pcall(function() kn = tostring(k.name) end)
+          pcall(function() kv = tostring(k.visible) end)
+          pcall(function()
+            local a, b = k:GetAnchoredPosition()
+            if type(a) == "table" then kx, ky = a.x, a.y else kx, ky = a, b end
+          end)
+          pcall(function()
+            local a, b = k:GetSizeDelta()
+            if type(a) == "table" then kw, kh = a.x, a.y else kw, kh = a, b end
+          end)
+          if print then
+            print(string.format("[murdoku]   子控件 %s：pos=(%.0f,%.0f) size=%.0fx%.0f visible=%s",
+              kn, kx, ky, kw, kh, kv))
+          end
+        end
+      end
+    end
+  end
   -- ★ 每 300 帧打印一次"第一个格子的屏幕坐标" —— 一眼看出棋盘在屏幕哪、有没有跑出去。
   if (current.frames or 0) % 300 == 0 then
     local c1 = nil
