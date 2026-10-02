@@ -3438,7 +3438,21 @@ function Adapter:bind_keys(spec, control_id)
               evt.key = key_name      -- 界面层按 `Enum.KeyEventType` 的**名字**分派
               self.on_input(evt)
             end
-            return true
+            -- ★★★★★ 2026-10-02 **不能返回 `true`**。
+            --
+            --   官方文档（docs/api-cache/mhtakr07vej4.txt:1379）：
+            --     「AddKeyEventListener(eventType, callback) …… 回调返回 boolean；
+            --       **同一个容器中，如果交互按键事件被 lua 回调响应，并标记为已处理，
+            --       容器内的其他按键不会也响应此次按键事件**」
+            --   ⇒ 返回 `true` = **把这次按键标记成"已处理"** ⇒ 后面的人收不到。
+            --   而这里的监听绑在 **`root`** 上（日志：`绑在 root 上，成功 24 个`）——
+            --   `root` 是**所有 UI 的祖先** ⇒ 它标记已处理之后，**游戏自己的功能收不到这个键**
+            --   （用户实测：**原神自带的对话框按 Enter 打不开**，而且**首页就不行**）。
+            --
+            --   ⇒ 改成 `return false`：**"我没处理，请继续传"**。
+            --     返回值只表示"是否已处理"，**不影响脚本自己收到事件**
+            --     （日志里「✅ 键盘事件仍能收到」照样会出现）。
+            return false
           end)
         end)
         if ok then n = n + 1 else failed = failed + 1 end
