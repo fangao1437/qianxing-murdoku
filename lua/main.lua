@@ -1174,6 +1174,15 @@ function Murdoku.on_update(dt)
           local cid = "cell." .. r .. "." .. c
           local cell = nil
           pcall(function() cell = current.adapter:find(cid) end)
+          -- 格子自己的实际尺寸 —— 用它去缩放 content / face / x（模板里这几个是 135×135，
+          -- 而格子可能只有 124×124 ⇒ 不缩放就会溢出、把格子间的缝隙填满）
+          local cw, ch = 124, 124
+          if cell ~= nil then
+            pcall(function()
+              local a, b = cell:GetSizeDelta()
+              if type(a) == "table" then cw, ch = a.x, a.y else cw, ch = a, b end
+            end)
+          end
           local face = nil
           if cell ~= nil and cell.GetChildren ~= nil then
             local kids = nil
@@ -1197,10 +1206,25 @@ function Murdoku.on_update(dt)
               --     其余（x / note / wall.* / door.* / obj / text）一律**不碰**。
               if kn == "content" or kn == "middle" or kn == "body" or kn == "root" then
                 pcall(function() k:SetVisible(true) end)
+                -- ★★★★★ 2026-10-02 **中间容器要跟格子同尺寸**。
+                --   真机截图（19:19）：棋盘成了一整块白 —— **格子之间没有空隙**。
+                --   原因：模板里 `content` 是 **135×135**，而格子只有 **124×124**
+                --   ⇒ 内容**溢出到相邻格子**、把缝隙填满了。
+                --   （`face` 我上一版已经设成 124，但 `content` 和里面的 `x` 没管。）
+                pcall(function() k:SetSizeDelta(cw, ch) end)
+                pcall(function() k:SetAnchoredPosition(0, 0) end)
               end
               if kn == "face" then
                 pcall(function() k:SetVisible(true) end)
+                pcall(function() k:SetSizeDelta(cw, ch) end)
+                pcall(function() k:SetAnchoredPosition(0, 0) end)
                 face = k
+              end
+              -- ★ 划掉标记 `x`：**别顶满格子**（用户："x 也太大了"）。
+              --   模板里它也是 135×135；这里按格子边长的 70% 摆。
+              if kn == "x" then
+                pcall(function() k:SetSizeDelta(cw * 0.7, ch * 0.7) end)
+                pcall(function() k:SetAnchoredPosition(0, 0) end)
               end
               if face == nil and k.GetChildren ~= nil then
                 local kk = nil
@@ -1210,7 +1234,12 @@ function Murdoku.on_update(dt)
                   pcall(function() cn = tostring(c2.name) end)
                   if cn == "face" then
                     pcall(function() c2:SetVisible(true) end)     -- 只点亮 face，别的孙子不动
+                    pcall(function() c2:SetSizeDelta(cw, ch) end)
+                    pcall(function() c2:SetAnchoredPosition(0, 0) end)
                     face = c2
+                  elseif cn == "x" then
+                    pcall(function() c2:SetSizeDelta(cw * 0.7, ch * 0.7) end)
+                    pcall(function() c2:SetAnchoredPosition(0, 0) end)
                   end
                 end
               end
