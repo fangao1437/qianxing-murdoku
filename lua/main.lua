@@ -1181,25 +1181,37 @@ function Murdoku.on_update(dt)
             for _, k in ipairs(kids or {}) do
               local kn = nil
               pcall(function() kn = tostring(k.name) end)
-              -- ★★★★★ 2026-10-02 **中间容器 `content` 也必须点亮** —— 这是最后一块拼图。
-              --   真机日志（18:35）：
-              --       `格子底图已点亮：25 个 face（每帧保持）`        ← face 我点亮成功了
-              --       `格子子控件实况（cell.1.1）：**content(vis=false,135x135,img=nil)**`
-              --   ⇒ 格子的直接子控件只有一个 `content`，而它 `visible=false`
-              --   ⇒ **父级不可见 ⇒ 子控件不可见** ⇒ face 点亮了也白搭
-              --     （和今天早上 `home` 那次是同一条规律）
-              --   ⇒ 所以这里把格子下的**所有子控件**（content / face / wall.* / x / note …）
-              --     统统点亮。格子本身该不该显示由 `cell.*` 自己的 visible 决定。
-              pcall(function() k:SetVisible(true) end)
-              if kn == "face" then face = k end
+              -- ★★★★★ 2026-10-02 **只点亮两样：中间容器 `content` 和底图 `face`**。
+              --
+              --   真机截图（18:51）证据：棋盘出来了，但**每个格子都亮着红色 ✗ 和深蓝色墙线**
+              --   —— 那些是"该隐藏的图层"。
+              --   根因就是我上一版图省事写了"把格子的**所有**子控件统统点亮"：
+              --       pcall(function() k:SetVisible(true) end)          -- ← 把 x / wall.* / note 也点亮了
+              --       pcall(function() c2:SetVisible(true) end)
+              --   ⇒ `x`（划掉标记）/ `wall.*` / `door.*` / `note` / `obj` 的显隐**是玩法状态**，
+              --     由脚本的状态逻辑负责。**我不能替它做决定。**
+              --
+              --   ⇒ 现在只点亮这两样：
+              --        · `content` —— 中间容器，不亮则里面全看不见（父级不可见 ⇒ 子不可见）
+              --        · `face`    —— 格子底图，应该常亮
+              --     其余（x / note / wall.* / door.* / obj / text）一律**不碰**。
+              if kn == "content" or kn == "middle" or kn == "body" or kn == "root" then
+                pcall(function() k:SetVisible(true) end)
+              end
+              if kn == "face" then
+                pcall(function() k:SetVisible(true) end)
+                face = k
+              end
               if face == nil and k.GetChildren ~= nil then
                 local kk = nil
                 pcall(function() kk = k:GetChildren() end)
                 for _, c2 in ipairs(kk or {}) do
-                  pcall(function() c2:SetVisible(true) end)     -- content 里的也点亮
                   local cn = nil
                   pcall(function() cn = tostring(c2.name) end)
-                  if cn == "face" then face = c2 end
+                  if cn == "face" then
+                    pcall(function() c2:SetVisible(true) end)     -- 只点亮 face，别的孙子不动
+                    face = c2
+                  end
                 end
               end
             end
