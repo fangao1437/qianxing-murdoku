@@ -1769,7 +1769,15 @@ end
 function Adapter:enable_cursor()
   local n = 0
   for i = 1, #CURSOR_CONTAINERS do
-    local ctrl = self:find(MANAGED[i])
+    -- ⚠️⚠️ 2026-10-02 **这里原来写的是 `MANAGED[i]`** —— 边界用 CURSOR_CONTAINERS（12 项），
+    --   取名字却用 MANAGED（只有 10 项）⇒ i=11/12 时 `MANAGED[i]` 是 **nil**
+    --   ⇒ `find(nil)` 返回 nil ⇒ **`home` / `select` 从来没被找到过**。
+    --   这就是"补了名单却完全没生效"的真正原因 —— **一行索引写错了数组**，
+    --   和"调用时机"无关（我昨晚那个"时机"推断是错的）。
+    --   回读那段当时也抄了同一个错，所以两边**一致地缺** `home`/`select` ——
+    --   反而让日志看起来"自洽"，更不容易发现。
+    --   ⇒ 教训：**同一份名单出现在两处时，索引必须指向同一份**。
+    local ctrl = self:find(CURSOR_CONTAINERS[i])
     if ctrl ~= nil then
       local ok = pcall(function() ctrl.showCursor = true end)
       if ok then n = n + 1 end
@@ -1778,14 +1786,15 @@ function Adapter:enable_cursor()
   -- ★ 回读：把每个受管容器的 showCursor 实际值打出来。
   --   门控②（祖先容器 showCursor=true）是"点不动"的头号原因，
   --   而 `pcall` 会**静默吞掉失败** —— 改了必须回读才算数。
-  --   （我前面改 `raycastTarget` 时就是栽在"改了但没验"上。）
   local parts = {}
   for i = 1, #CURSOR_CONTAINERS do
-    local ctrl = self:find(MANAGED[i])
+    local ctrl = self:find(CURSOR_CONTAINERS[i])
     if ctrl ~= nil then
       local sc = "?"
       pcall(function() sc = tostring(ctrl.showCursor) end)
-      parts[#parts + 1] = MANAGED[i] .. "=" .. sc
+      parts[#parts + 1] = CURSOR_CONTAINERS[i] .. "=" .. sc
+    else
+      parts[#parts + 1] = CURSOR_CONTAINERS[i] .. "=**找不到**"
     end
   end
   -- 只在内容变化时打（`enable_cursor` 现在每 20 帧重试一次，否则会刷屏）
