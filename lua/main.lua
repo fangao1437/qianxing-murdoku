@@ -1140,6 +1140,47 @@ function Murdoku.on_update(dt)
           ax, ay, w, h, 800 + sx + ax, 450 - (sy + ay)))
       end
     end
+    -- ★★★★★ 2026-10-02 **每帧把格子的底图 `face` 点亮（只在关卡内）**。
+    --
+    --   真机证据（用户 17:05 日志，同一个 face 前后矛盾）：
+    --       ✅ 子控件 face 存在（**visible=true**）   ← 体检时（`_cells_paint` 刚设完）
+    --       …后面「格子里的子控件清单」…
+    --       face  visible=**false**                  ← 每帧再读就变回 false 了
+    --   ⇒ 中间有别的"格子外观下发"把 `face` 又设回 false（那套逻辑按状态设
+    --     `note`/`x`/`wall.*`，但它**不知道 `face` 应该一直亮着**）。
+    --   ⇒ 与其去改那套逻辑的每一处（容易漏、容易再引入新问题），**在这里每帧重新点亮**：
+    --     这段每帧最后执行，顺序上必然赢。只在关卡内做（选关页不需要棋盘）。
+    if scr_now == nil then
+      local rows, cols = 5, 5
+      pcall(function()
+        local cfg = current.adapter and current.adapter.cfg
+        if cfg and cfg.cells then
+          rows = cfg.cells.rows or rows
+          cols = cfg.cells.cols or cols
+        end
+      end)
+      local n = 0
+      for r = 1, rows do
+        for c = 1, cols do
+          local cell = nil
+          pcall(function() cell = current.adapter:find("cell." .. r .. "." .. c) end)
+          if cell ~= nil then
+            local face = nil
+            pcall(function() face = cell:GetChild("face") end)
+            if face ~= nil then
+              pcall(function() face:SetVisible(true) end)
+              n = n + 1
+            end
+          end
+        end
+      end
+      if n > 0 and current._face_on ~= n then
+        current._face_on = n
+        if print then
+          print("[murdoku] 格子底图已点亮：" .. tostring(n) .. " 个 face（每帧保持）")
+        end
+      end
+    end
   end
   -- ★★★★★ 2026-10-02 **格子底图探针**：用户看到"只有一行一列"，日志显示只有
   --   `wall.up`(上边) / `wall.left`(左边) 是 visible=true，而**格子底图 `face` 是 false**。
