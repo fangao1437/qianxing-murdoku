@@ -1008,10 +1008,22 @@ end
 --
 --   ⇒ 这里自己来：打开 `face`、按格子几何铺满、塞一张底图（默认 106053 白色底）。
 --     每一步都 pcall + 可选日志，失败也不会中断生成。
-function Adapter:_cells_paint(ctrl, size)
-  if ctrl == nil or ctrl.GetChild == nil then return false end
+function Adapter:_cells_paint(ctrl, size, cell_id)
+  if ctrl == nil then return false end
+  -- ★★★★★ 2026-10-02 **必须用 `self:sub()`，不能用裸 `GetChild("face")`**。
+  --
+  --   真机日志自己写着：「ℹ️ 子控件装在中间容器 `content` 里（方案 A）—— 按路径查找」。
+  --   也就是说 `face` **不是格子的直接子控件**，而是 `cell.content.face`。
+  --   `GetChild("face")` 直接返回 nil ⇒ 我的第一版 `_cells_paint` 什么都没做、
+  --   连日志都没打（因为提前 return 了）⇒ 17:05 / 17:24 两次都没生效。
+  --   项目自己的 `sub()` 会依次尝试：直接子控件 → `content`/`root`/`body` → 深一层。
   local face = nil
-  pcall(function() face = ctrl:GetChild("face") end)
+  if cell_id ~= nil then
+    pcall(function() face = self:sub(cell_id, "face") end)
+  end
+  if face == nil and ctrl.GetChild ~= nil then
+    pcall(function() face = ctrl:GetChild("face") end)      -- 兜底：扁平配法
+  end
   if face == nil then return false end
   if face.SetVisible then pcall(function() face:SetVisible(true) end) end
   -- 铺满格子（子控件默认可能比格子小，或尺寸是 0 —— 两种都会让它"看不见"）
@@ -1399,7 +1411,7 @@ function Adapter:ensure_cells(rows, cols)
           --   ⇒ 所以这里**不依赖参照格子**，直接自己打开 `face` 并塞一张底图。
           --     图片 id 取 `cfg.cells.face_image`（默认 106053 —— 项目里已知的白色底），
           --     尺寸用格子自己算好的几何，保证铺满。
-          self:_cells_paint(ctrl, cell_size)
+          self:_cells_paint(ctrl, cell_size, id)
         elseif first_err == nil then
           first_err = tostring(obj)
         end

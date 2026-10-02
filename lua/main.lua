@@ -1162,15 +1162,14 @@ function Murdoku.on_update(dt)
       local n = 0
       for r = 1, rows do
         for c = 1, cols do
-          local cell = nil
-          pcall(function() cell = current.adapter:find("cell." .. r .. "." .. c) end)
-          if cell ~= nil then
-            local face = nil
-            pcall(function() face = cell:GetChild("face") end)
-            if face ~= nil then
-              pcall(function() face:SetVisible(true) end)
-              n = n + 1
-            end
+          -- ★ 必须用适配器的 `sub()` —— `face` 装在中间容器 `content` 里，
+          --   裸 `GetChild("face")` 会返回 nil（这就是上一版"没打印也没生效"的原因）。
+          local cid = "cell." .. r .. "." .. c
+          local face = nil
+          pcall(function() face = current.adapter:sub(cid, "face") end)
+          if face ~= nil then
+            pcall(function() face:SetVisible(true) end)
+            n = n + 1
           end
         end
       end
