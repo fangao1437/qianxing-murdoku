@@ -253,6 +253,10 @@ function Murdoku.start(level_id, opts)
       local ok, all = pcall(Levels.all)
       if ok and type(all) == "table" and #all > 0 then n_levels = #all end
     end
+    -- ★ 先无条件把"这个方法在不在"打出来 —— 上一版整段被 `if adapter.ensure_widgets then` 跳过、
+    --   连一行日志都没有，害我又猜了一轮。**先把存在性打出来，再调用。**
+    print("[murdoku] ensure_widgets 存在性：type=" .. type(adapter.ensure_widgets)
+      .. "，n_levels=" .. tostring(n_levels))
     if adapter.ensure_widgets then
       local made, err, existed = adapter:ensure_widgets(n_levels)
       print("[murdoku] 选关按钮（脚本创建）：新建 " .. tostring(made)
