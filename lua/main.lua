@@ -1052,7 +1052,19 @@ function Murdoku.on_update(dt)
     do
       local s = nil
       pcall(function() s = current.adapter:find("stage") end)
-      if s ~= nil then pcall(function() s:SetVisible(true) end) end
+      if s ~= nil then
+        pcall(function() s:SetVisible(true) end)
+        -- ★★★★★ 2026-10-02 **`stage` 要按"棋盘容器"的尺寸摆**，不能让它保持全屏。
+        --
+        --   为什么：格子的几何是**按父容器尺寸算**的（`cell_geometry` 读父级 sizeDelta）。
+        --   父级从旧 `board`（677x677）换成 `stage`（1600x900）之后：
+        --     旧：`边缘适配 wall.up：基准 80x20 → 目标 125x8`
+        --     新：`边缘适配 wall.up：基准 80x20 → 目标 167x8`   ← 格子被放大了 33%
+        --   ⇒ 棋盘虽然"存在且可见"，但布局跟设计对不上（用户："还没有棋盘出现"）。
+        --   ⇒ 这里把 `stage` 恢复成棋盘应有的尺寸并居中；`selbar`（选关条）自己另有尺寸。
+        pcall(function() s:SetSizeDelta(677, 677) end)
+        pcall(function() s:SetAnchoredPosition(0, 0) end)
+      end
       local bar = nil
       pcall(function() bar = current.adapter:find("selbar") end)
       if bar ~= nil then
@@ -1090,6 +1102,36 @@ function Murdoku.on_update(dt)
     local bk = nil
     pcall(function() bk = current.adapter:find("select.back") end)
     if bk ~= nil then pcall(function() bk:SetVisible(false) end) end
+  end
+  -- ★ 每 300 帧打印一次"第一个格子的屏幕坐标" —— 一眼看出棋盘在屏幕哪、有没有跑出去。
+  if (current.frames or 0) % 300 == 0 then
+    local c1 = nil
+    pcall(function() c1 = current.adapter:find("cell.1.1") end)
+    if c1 ~= nil then
+      local ax, ay, w, h = 0, 0, 0, 0
+      pcall(function()
+        local a, b = c1:GetAnchoredPosition()
+        if type(a) == "table" then ax, ay = a.x, a.y else ax, ay = a, b end
+      end)
+      pcall(function()
+        local a, b = c1:GetSizeDelta()
+        if type(a) == "table" then w, h = a.x, a.y else w, h = a, b end
+      end)
+      -- stage 自己的位置（父级中心在画布里的偏移）
+      local sx, sy = 0, 0
+      local s = nil
+      pcall(function() s = current.adapter:find("stage") end)
+      if s ~= nil then
+        pcall(function()
+          local a, b = s:GetAnchoredPosition()
+          if type(a) == "table" then sx, sy = a.x, a.y else sx, sy = a, b end
+        end)
+      end
+      if print then
+        print(string.format("[murdoku] 格子定位：cell.1.1 相对stage(%.0f,%.0f) %dx%d  ⇒ 屏幕(%.0f,%.0f)",
+          ax, ay, w, h, 800 + sx + ax, 450 - (sy + ay)))
+      end
+    end
   end
   Murdoku._last_screen = scr_now
   current.frames = (current.frames or 0) + 1
