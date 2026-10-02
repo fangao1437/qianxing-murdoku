@@ -2498,9 +2498,20 @@ function Adapter:seal_container(id)
   local c = self:find(id)
   if c == nil then return false end
   local n = 0
-  -- ① 按键：**屏蔽**（这才是"把 2D 界面和 3D 角色隔开"的关键）
+  -- ① 按键：**必须放开（false）**。
+  --
+  --   ★★★★★ 2026-10-02 **这里原来是 `true`，它是"原神自带对话框按 Enter 打不开"的元凶**。
+  --
+  --   官方文档（docs/api-cache/mh3qqq9xc102.txt）：
+  --     「**屏蔽按键事件穿透**：容器节点内的按键事件交互**不会穿透到界面外**」
+  --   ⇒ 设成 `true` = **按键被这个容器吃掉、传不到游戏** ⇒ 游戏原生的对话框收不到 Enter。
+  --
+  --   我当初设 `true` 的理由是"把 2D 界面和 3D 角色隔开" —— **那个理由不成立**：
+  --   游戏的 2D/3D 输入切换由引擎自己管，用"吃掉按键"去挡，挡掉的是**整个游戏的按键**。
+  --   而"键盘事件仍能收到"那条验收之所以一直通过，是因为**按键正是被我的容器吃掉的** ——
+  --   我把它当成了"隔离没副作用"，其实**副作用就是它**。
   if c.disableKeyEventPassthrough ~= nil then
-    if pcall(function() c.disableKeyEventPassthrough = true end) then n = n + 1 end
+    if pcall(function() c.disableKeyEventPassthrough = false end) then n = n + 1 end
   end
   -- ② 点击：**必须放开（false）**！
   --
