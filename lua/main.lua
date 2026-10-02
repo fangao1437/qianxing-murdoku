@@ -497,6 +497,25 @@ function Murdoku.on_update(dt)
   if not current then return end
   current.adapter:on_tick(dt)
   current.controller:tick(dt)
+
+  -- ★★★★★ 2026-10-02 **门控②必须反复重试，不能只在开局做一次**。
+  --
+  --   真机日志把原因暴露得很清楚：
+  --     常驻光标回读（门控②）：root=true topbar=true left=true ... intro=true
+  --     已由脚本打开 9 个容器的「显示常驻光标」     ← **还是 9 个，home/select 不在里面**
+  --   而 `enable_cursor` 只在 `Murdoku.start` 里调**一次** —— 那时 `home` / `select`
+  --   这两个**屏幕容器还没被 create_control**（它们是第一次渲染时才建的），
+  --   `find("home")` 返回 nil ⇒ 直接跳过 ⇒ **永远开不上** ⇒ 它们的子控件全部落在门控②之外。
+  --
+  --   ⇒ 改成每 20 帧重试一次（幂等、便宜），直到所有受管容器都拿得到为止。
+  if current.adapter.enable_cursor and ((current.frames or 0) % 20 == 0) then
+    local before = Murdoku._cursor_ok or 0
+    local n = current.adapter:enable_cursor()
+    Murdoku._cursor_ok = n
+    if n ~= before and print then
+      print("[murdoku] 门控②重试：已打开 " .. tostring(n) .. " 个容器的「显示常驻光标」")
+    end
+  end
   -- 时间只在整秒变化时重绘（省性能），但**任何其它状态变化也必须立刻重绘**：
   -- 单击落成铅笔笔记是在 tick 里做的（要等双击窗口），如果只按整秒重绘，
   -- 笔记要等到下一个整秒才画出来 —— 手感上就是"点了没反应"。

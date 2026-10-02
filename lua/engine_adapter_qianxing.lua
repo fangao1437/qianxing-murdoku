@@ -1788,8 +1788,11 @@ function Adapter:enable_cursor()
       parts[#parts + 1] = MANAGED[i] .. "=" .. sc
     end
   end
-  if #parts > 0 and print then
-    print("[murdoku] 常驻光标回读（门控②）：" .. table.concat(parts, "  "))
+  -- 只在内容变化时打（`enable_cursor` 现在每 20 帧重试一次，否则会刷屏）
+  local line = table.concat(parts, "  ")
+  if #parts > 0 and print and line ~= self._cursor_line then
+    self._cursor_line = line
+    print("[murdoku] 常驻光标回读（门控②）：" .. line)
   end
   return n
 end
