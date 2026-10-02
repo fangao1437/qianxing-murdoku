@@ -257,7 +257,7 @@ function Murdoku.start(level_id, opts)
     --   连一行日志都没有，害我又猜了一轮。**先把存在性打出来，再调用。**
     print("[murdoku] ensure_widgets 存在性：type=" .. type(adapter.ensure_widgets)
       .. "，n_levels=" .. tostring(n_levels))
-    if adapter.ensure_widgets then
+    if adapter.ensure_widgets and not (adapter.cfg and adapter.cfg.widgets == false) then
       local made, err, existed = adapter:ensure_widgets(n_levels)
       print("[murdoku] 选关按钮（脚本创建）：新建 " .. tostring(made)
         .. " 个，已存在 " .. tostring(existed or 0) .. " 个"
@@ -1045,7 +1045,8 @@ function Murdoku.on_update(dt)
       local ok, all = pcall(Levels.all)
       if ok and type(all) == "table" and #all > 0 then n_levels = #all end
     end
-    local on_select = (scr_now == "select")
+    local widgets_on = not (current.adapter.cfg and current.adapter.cfg.widgets == false)
+    local on_select = (scr_now == "select") and widgets_on
     -- ★★★★★ 2026-10-02 重建后的显隐：`stage` 与它下面的 `selbar` / `selbtn.*`。
     --   旧代码里那段"把 board 设为可见"已经没意义 —— `board` 在重建时被删了。
     --   现在链条是：root → stage（脚本容器的家）→ selbar（脚本创建的容器）→ selbtn.N（脚本创建的按钮）

@@ -424,7 +424,7 @@ function Adapter:create_control(node)
     end
     return ad.cfg.cells and ad.cfg.cells.prefab
   end
-  if ctrl == nil and game and game.InstantiateClientUIControl then
+  if ctrl == nil and self.cfg.auto_create ~= false and game and game.InstantiateClientUIControl then
     local prefab = (self.cfg.prefab_of and self.cfg.prefab_of[node.id]) or nil
     if prefab == nil then prefab = auto_prefab(self, node) end
     if prefab ~= nil then
