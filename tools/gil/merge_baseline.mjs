@@ -74,12 +74,38 @@ for (const m of moving) {
 console.log('  ✅ 改写 #504 指向 root（' + n504 + ' 处）');
 
 // ② 把它们的 id 加进 root 的子列表
+//
+// ★★★★★ 2026-10-02 **这里踩了一个大坑，务必看懂再改**：
+//
+//   我原来写的是：
+//       const cur = asIdList(lst).map(String);        // ← 在 93.gil 上**读出 0 个**
+//       setChildList(lst, cur.concat(addIds));        // ← 于是**用 3 个覆盖了整张子列表**
+//   后果（用户真机日志）：`root 子控件=3`、`对照组：树里共收集 4 个具名控件` ——
+//   **93 的 308 个控件全部从 root 上掉下来**（记录还在文件里，但 root 不再引用它们）
+//   ⇒ 首页消失、隔离失效、选关卡片不见。**"合并"把好存档改坏了。**
+//
+//   ⇒ 教训：**不要相信"读出来的旧子列表"**（读法可能不对，读到 0 就全毁了）。
+//     改用**可靠信息源**：`.gil` 里每条记录自己带父级 `#504` ⇒
+//     **root 的子级 = 所有 parentId == root.id 的记录**。这个信息是逐条存的，不会读错。
+//
+//   ⇒ 并且**写之前先核对**：如果算出来的数量比"读到的旧列表"少很多，就报错停下，别写出坏文件。
+const rootChildren = g.recs
+  .filter((r) => String(r.parentId) === String(rootId))
+  .map((r) => String(r.id));
 const lst = findChildListTop(rootRec.field.sub);
-if (!lst) { console.error('❌ 基底的 root 没有子列表'); process.exit(3); }
+if (!lst) { console.error('❌ 基底的 root 没有子列表字段'); process.exit(3); }
 const cur = asIdList(lst).map((x) => String(x));
-const addIds = moving.map((m) => String(m.rec.id)).filter((id) => !cur.includes(id));
-setChildList(lst, cur.concat(addIds));
-console.log('  ✅ root 子列表：' + cur.length + ' → ' + (cur.length + addIds.length) + ' 个');
+const childSet = new Set(rootChildren);
+for (const id of cur) childSet.add(id);               // 读到的旧列表也并进来（宁可多，不可少）
+const addIds = moving.map((m) => String(m.rec.id)).filter((id) => !childSet.has(id));
+const finalIds = [...childSet, ...addIds];
+setChildList(lst, finalIds);
+console.log('  ✅ root 子列表：读到旧值 ' + cur.length + ' 个，按 parentId 算出 ' + rootChildren.length
+  + ' 个，最终写 ' + finalIds.length + ' 个');
+if (finalIds.length < 5) {
+  console.error('❌ 算出来的 root 子级只有 ' + finalIds.length + ' 个 —— 明显不对，**不写出**（避免又毁一份存档）');
+  process.exit(4);
+}
 
 // ③ 写出（pack 需要 body）
 const buf = g.pack(encodeMsg(g.tree));
@@ -87,9 +113,30 @@ fs.writeFileSync(OUT, buf);
 console.log('  写出：' + path.basename(OUT) + '  ' + Math.round(buf.length / 1024) + ' KB');
 
 // ④ 回读验证
+//
+// ★ 上一次我只验证了"搬进去的 3 条在不在、父级对不对"，**没验证 root 一共有多少子级**
+//   —— 于是"root 子控件=3"这个致命问题直到用户真机跑了一遍才暴露。
+//   ⇒ 现在**必须**验证 root 的子级数量和几个关键控件的可达性。
 const g2 = readGil(OUT);
 console.log('  回读：记录 ' + g2.recs.length + ' 条');
+const root2 = g2.byName.get('root');
+const kids2 = g2.recs.filter((r) => String(r.parentId) === String(root2.id));
+console.log('  ★ root 子级 ' + kids2.length + ' 个：' + kids2.slice(0, 12).map((r) => r.name || r.id).join(' '));
+if (kids2.length < 5) {
+  console.error('❌ 回读后 root 只有 ' + kids2.length + ' 个子级 —— 这份文件是坏的，请勿交付！');
+  process.exit(5);
+}
+const must = ['home', 'home.select', 'select', 'select.card.1', 'select.back', 'board', 'cell.1.1', 'topbar', 'clues', 'tray'];
+let bad = 0;
+for (const n of must) {
+  const r = g2.byName.get(n);
+  if (!r) { console.log('    ❌ 关键控件 `' + n + '` **不在**'); bad++; }
+}
+console.log(bad === 0
+  ? '  ★ 关键控件全在（home / home.select / select / select.card.1 / select.back / board / cell.1.1 / topbar / clues / tray）✅'
+  : ('  ❌ 有 ' + bad + ' 个关键控件缺失 —— 不要交付这份文件'));
 for (const id of IDS) {
   const r = g2.byName ? g2.byName.get(id) : null;
   console.log('    ' + id + ' → ' + (r ? ('在，父级 id=' + r.parentId + (String(r.parentId) === String(rootId) ? ' ✅（= root）' : ' ⚠️')) : '**不在** ❌'));
 }
+if (bad > 0) process.exit(6);
