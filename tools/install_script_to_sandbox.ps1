@@ -89,11 +89,13 @@ foreach ($dir in $ordered) {
     [System.IO.File]::WriteAllBytes($dst, $bytes[3..($bytes.Length - 1)])
     $after = [System.IO.File]::ReadAllBytes($dst)
     $stillBom = ($after.Length -ge 3 -and $after[0] -eq 0xEF -and $after[1] -eq 0xBB -and $after[2] -eq 0xBF)
-    Write-Output ("[" + $tag + "] BOM 已剥掉 -> " + $dst + "  (" + $bytes.Length + " -> " + $after.Length + " bytes, 复查=" + $(if ($stillBom) { '★还在' } else { 'OK' }) + ")")
+    $recheck = 'OK'
+    if ($stillBom) { $recheck = 'STILL-BOM' }
+    Write-Output ("[" + $tag + "] BOM stripped -> " + $dst + "  (" + $bytes.Length + " -> " + $after.Length + " bytes, recheck=" + $recheck + ")")
   }
   # 源文件自己也不能带 BOM（否则每次都得靠上面这段补救）
   if ($srcLen -ne (Get-Item $dst).Length) {
-    Write-Output ("[" + $tag + "] 大小不一致 -> " + (Get-Item $dst).Length + " vs 源 " + $srcLen)
+    Write-Output ("[" + $tag + "] size mismatch -> " + (Get-Item $dst).Length + " vs src " + $srcLen)
   }
   $h = (Get-FileHash $dst -Algorithm SHA256).Hash
   $ok = 'HASH-MISMATCH'

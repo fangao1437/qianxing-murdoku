@@ -74,19 +74,38 @@ while (queue.length) {
 console.log('  将领养 ' + picked.size + ' 个控件：');
 console.log('    ' + [...picked.values()].slice(0, 40).map((r) => r.name || r.id).join(' '));
 
-// ── ② 安全检查：不许把"大块容器"搬进来（那类会抢射线）────────────────
-const BIG = 800 * 600;
-const danger = [];
+// ── ② 安全检查：不许一次塞太多"兄弟"（那才是抢射线的成因）──────────────
+//
+// ★★★★★ 2026-10-02 **判据修正**。
+//
+//   原来的判据是「**容器在源里的总子级数 ≥8 就拒绝**」。它挡住过真正的危险
+//   （整组导入抢走光标射线 ⇒ "点不动复活"），但**判错了对象**：
+//     · `clues` 在源里有 **92 个子级** ⇒ 用它自己的规则**永远过不了**，
+//       于是 `clues`/`left`/`legend`/`tray` 整条链全进不来（实测 34 批全灭）。
+//     · 而"抢射线"的成因**不是"容器子级多"**，是**同一批里塞了太多同级控件**
+//       （一次导入 30+ 个兄弟 ⇒ 新控件的层级/顺序把别人的射线盖掉）。
+//   ⇒ 现在改成看**这一批内部的"兄弟数"**：按 `parentId` 分组，
+//     任何一组超过 `MAX_SIBLINGS`（默认 8）才拒绝。
+//     领容器本身（哪怕它有 92 个子级）**是安全的** —— 只要不把它的子级一起带进来。
+const MAX_SIBLINGS = parseInt(process.env.MURDOKU_MAX_SIBLINGS || '8', 10);
+const sibCount = new Map();
 for (const r of picked.values()) {
-  // 源记录的名字里带不带容器语义、以及它的子级数量（容器通常有很多子级）
-  const nk = (kidsOf.get(String(r.id)) || []).length;
-  if (nk >= 8) danger.push((r.name || r.id) + '（子级 ' + nk + ' 个）');
+  const p = String(r.parentId);
+  sibCount.set(p, (sibCount.get(p) || 0) + 1);
+}
+const danger = [];
+for (const [p, n] of sibCount) {
+  if (n > MAX_SIBLINGS) {
+    const pname = idToRec.get(p) ? (idToRec.get(p).name || p) : p;
+    danger.push('父级 `' + pname + '` 名下有 ' + n + ' 个兄弟一起进来');
+  }
 }
 if (danger.length) {
-  console.error('❌ 清单里包含"大容器"（子级 ≥8）：' + danger.join('、'));
-  console.error('   这类控件很可能抢光标射线 —— 请拆小批次，或明确知道自己在做什么再改这个检查。');
+  console.error('❌ 同一批里的"兄弟"太多（上限 ' + MAX_SIBLINGS + '）：' + danger.join('、'));
+  console.error('   太多同级控件一次性进来会抢光标射线 —— 请拆小批次，或设 MURDOKU_MAX_SIBLINGS 明确放宽。');
   process.exit(3);
 }
+console.log('  ✅ 兄弟数检查通过（最大 ' + Math.max(0, ...sibCount.values()) + ' ≤ ' + MAX_SIBLINGS + '）');
 
 // ── ③ 决定每个领养控件的父级 ────────────────────────────────────────
 //
