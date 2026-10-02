@@ -19,7 +19,7 @@ import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const OUT = path.join(ROOT, 'docs', '布局图-关卡内-v2.png');
+const OUT = path.join(ROOT, 'docs', '布局图-关卡内-v3.png');
 
 const W = 1600, H = 900;
 const px = Buffer.alloc(W * H * 3, 255);
@@ -144,7 +144,8 @@ text('TIMER  00:33', 60, 190, 4, C.ink);
 
 // ④ 线索卡
 const CLX = 60, CLY = 262, CLW = 380, CLH = 88;
-text('CLUES  (SCROLL)', CLX, CLY - 24, 2, C.sub);
+text('SCROLLING CLUE CARDS', CLX, CLY - 24, 2, C.sub);
+  text('EACH CARD = AVATAR + CLUE TEXT  (MERGED, NO SEPARATE TRAY)', CLX, CLY - 40, 1, C.sub);
 for (let i = 0; i < 5; i++) {
   const y = CLY + i * (CLH + 10);
   fillRect(CLX, y, CLW, CLH, C.card);
@@ -152,6 +153,7 @@ for (let i = 0; i < 5; i++) {
   disc(CLX + 44, y + CLH / 2, 26, [120, 200, 210]);
   text('SUSPECT ' + String.fromCharCode(65 + i), CLX + 84, y + 22, 2, C.cardTxt);
   text('CLUE TEXT HERE', CLX + 84, y + 48, 2, C.cardTxt);
+  text('AVATAR + TEXT IN ONE CARD', CLX + 84, y + 66, 1, [150, 150, 155]);
   fillRect(CLX + CLW - 46, y + CLH - 38, 34, 28, C.gold);
   text(String.fromCharCode(65 + i), CLX + CLW - 38, y + CLH - 34, 2, C.ink);
 }
@@ -196,12 +198,13 @@ text('COURT', BX + 3 * cell + 8, BY + 4 * cell + 8, 1, C.ink);
 text('LEVEL PROGRESS', 1200, 664, 3, C.ink);
 text('0 / 6', 1276, 716, 3, C.ink);
 iconBox(1404, 694, 62, 'Q');
-text('MAGNIFIER (HINT)', 1380, 768, 2, C.sub);
+text('MAGNIFIER = HINT  (KEPT)', 1330, 792, 2, C.sub);
 
 // ⑧ 说明
 text('DELETED: REVEAL / SHARE / SCORE / VIOLATIONS / TOAST / OLD RESET / OLD SUBMIT', 620, 754, 1, C.sub);
 text('CONFIRM FLOW: BACK-TO-MENU | SUBMIT | RESET-LEVEL  ->  SHOW Y / X  ->  Y EXECUTES, X CANCELS', 620, 770, 1, C.sub);
-text('TOTAL INTERACTIVE KEYS = 7  (BACK, Y, X, SUBMIT, RESET, UNDO, MAGNIFIER)', 620, 786, 1, C.sub);
+text('TOTAL INTERACTIVE KEYS = 7  (BACK, Y, X, SUBMIT, RESET, UNDO, MAGNIFIER)', 620, 806, 1, C.sub);
+text('NOTE: THE SUSPECT TRAY IS GONE - - - AVATARS LIVE INSIDE THE SCROLLING CLUE CARDS', 620, 822, 1, C.sub);
 
 function crc32(buf) {
   let c, crc = 0xFFFFFFFF;
