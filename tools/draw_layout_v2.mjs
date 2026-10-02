@@ -195,10 +195,14 @@ text('HALL', BX + 1 * cell + 8, BY + 4 * cell + 8, 1, C.ink);
 text('COURT', BX + 3 * cell + 8, BY + 4 * cell + 8, 1, C.ink);
 
 // ⑦ 右下：关卡进度 + 0/6 + 放大镜
-text('LEVEL PROGRESS', 1200, 664, 3, C.ink);
-text('0 / 6', 1276, 716, 3, C.ink);
-iconBox(1404, 694, 62, 'Q');
-text('MAGNIFIER = HINT  (KEPT)', 1330, 792, 2, C.sub);
+// ★ 2026-10-02 用户要求：右下（0/6 + 放大镜）的**右边缘与右上三键的右边缘对齐**
+//   右上三键：x = IX = W-152, 尺寸 IS = 70  ⇒ 右边缘 = W-82
+//   ⇒ 右下这一组整体右对齐到同一条竖线（放大镜与三键**同列同尺寸**）
+const RB = IX + IS;                         // 右边缘基准线 = 1518
+iconBox(IX, 694, IS, 'Q');                  // 放大镜：与右上三键同 x、同尺寸
+text('MAGNIFIER = HINT (KEPT)', RB - tw('MAGNIFIER = HINT (KEPT)', 2), 792, 2, C.sub);
+text('LEVEL PROGRESS', RB - tw('LEVEL PROGRESS', 3), 664, 3, C.ink);
+text('0 / 6', IX - 24 - tw('0 / 6', 3), 722, 3, C.ink);   // 数字右对齐到放大镜左侧留 24px
 
 // ⑧ 说明
 text('DELETED: REVEAL / SHARE / SCORE / VIOLATIONS / TOAST / OLD RESET / OLD SUBMIT', 620, 754, 1, C.sub);
