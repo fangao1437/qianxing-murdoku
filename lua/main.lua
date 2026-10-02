@@ -1094,15 +1094,22 @@ function Murdoku.on_update(dt)
         end
       end
     end
-    -- 旧卡片/返回键：选关页也不显示（它们点不动）
-    for i = 1, 8 do
-      local c = nil
-      pcall(function() c = current.adapter:find("select.card." .. tostring(i)) end)
-      if c ~= nil then pcall(function() c:SetVisible(false) end) end
-    end
-    local bk = nil
-    pcall(function() bk = current.adapter:find("select.back") end)
-    if bk ~= nil then pcall(function() bk:SetVisible(false) end) end
+    -- ★★★★★ 2026-10-02 **删掉"把旧卡片/返回键藏起来"那段** —— 它就是你截图里
+    --   "选关界面的按钮没了"的元凶。
+    --
+    --   那是我 10-02 早上为了做"脚本创建选关按钮"的对照实验加的：
+    --       -- 旧卡片/返回键：选关页也不显示（它们点不动）
+    --       for i = 1, 8 do ... select.card.i : SetVisible(false) end
+    --       select.back : SetVisible(false)
+    --   它**每帧无条件执行**，于是：
+    --       · 「选择关卡」标题还在（那是 text 类型，脚本没动它）
+    --       · 4 张卡片 + 「返回」全没了（按钮类型，被这段藏了）
+    --   —— 用户给的两张截图正好对上：10-01 23:18（这段还不存在）里有按钮，
+    --      10-02 09:42（这段存在）里只剩标题。
+    --
+    --   ⇒ 现在删掉。可见性重新交给 `ui_controller` 的按屏规则（选关页显示 `select.*`）。
+    --      上半段 `selbtn.*` 的循环也只在 `widgets = true` 时才让 `on_select` 为真，
+    --      默认配置下它什么都不做，不会干扰 93 里原有的卡片。
   end
   -- ★ 每 300 帧打印一次"第一个格子的屏幕坐标" —— 一眼看出棋盘在屏幕哪、有没有跑出去。
   if (current.frames or 0) % 300 == 0 then
