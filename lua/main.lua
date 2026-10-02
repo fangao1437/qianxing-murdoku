@@ -521,8 +521,34 @@ function Murdoku.on_start(level_id, opts)
   -- 控件可能还没就绪：先把必要控件探一遍，找不到就返回 nil 让上层重试
   local adapter = (opts and opts.adapter) or prepared_adapter
   if adapter then
-    local probe = adapter:find("board") or adapter:find("cell.1.1")
-    if probe == nil then return nil end
+    -- ★★★★★ 2026-10-02 **这里原来写死了 `board` / `cell.1.1`** ——
+    --   重建时这两个控件被删掉了 ⇒ **判据永远为假** ⇒ `on_start` **永远返回 nil**
+    --   ⇒ 上层每帧重试、`started` 一直 false ⇒ 主页设置在 `on_start` 里 ⇒
+    --   **主页消失 + 隔断失效**（用户 13:5x 实测）。
+    --
+    --   ⚠️ 同一个判据在 `entry_client_script.lua` 的 `probe_or_dump()` 里**也有一份**
+    --   （那处上一轮已改）—— **两处必须一致**，这就是"判据写死旧名字"第三次咬人的地方。
+    --
+    --   新判据（按"重建后什么一定存在"）：
+    --     ① 旧结构：board / cell.1.1 任一
+    --     ② 新结构：stage / home 任一
+    --     ③ 兜底：root 存在且已有 >3 个子控件
+    local ready = false
+    pcall(function()
+      if adapter:find("board") ~= nil or adapter:find("cell.1.1") ~= nil then
+        ready = true
+      elseif adapter:find("stage") ~= nil or adapter:find("home") ~= nil then
+        ready = true
+      else
+        local rt = adapter:find("root")
+        if rt ~= nil and rt.GetChildren ~= nil then
+          local kids = nil
+          pcall(function() kids = rt:GetChildren() end)
+          if type(kids) == "table" and #kids > 3 then ready = true end
+        end
+      end
+    end)
+    if not ready then return nil end
   end
   local self, err = Murdoku.start(level_id, opts)
   if not self and printerr then printerr("[murdoku] 开局失败：" .. tostring(err)) end
