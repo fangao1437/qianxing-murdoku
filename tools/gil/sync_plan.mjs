@@ -187,7 +187,28 @@ function parentPlanId(pid) {
   return p ? p.parent : 'root';
 }
 
-for (const n of planNodes) {
+// ★★★★★ 2026-10-02 **必须按"父级先建"的顺序处理** —— 这是本节最关键的一处修正。
+//
+//   原来直接 `for (const n of planNodes)`，按**计划里的排列顺序**走。
+//   而 `parentRecOf()` 是 `g.byName.get(pid) || g.byName.get('root')` ——
+//   **父级只有在"已经被建出来"时才找得到**。计划里 `select.card.1` 排在 `select` 前面时，
+//   父级查不到 ⇒ **静默退回 `root`** ⇒ 实测后果：`select` 那 36 个子控件全挂到 root 下，
+//   **root 子级数 9 → 42**（之前"点不动复活"就是 root 子级 37 那次）⇒ 有抢光标射线的风险。
+//
+//   ⇒ 修法：按"祖先链长度"升序排（深度浅的先建）。这样任何节点的父级在处理它之前就已经存在。
+const depthOf = (id) => {
+  let d = 0, cur = id, guard = 0;
+  while (cur && guard++ < 64) {
+    const p = planById.get(cur);
+    if (!p || !p.parent) break;
+    cur = p.parent; d++;
+  }
+  return d;
+};
+const orderedPlan = [...planNodes].sort((a, b) => depthOf(a.id) - depthOf(b.id));
+console.log('  处理顺序：按层级深度升序（最深 ' + Math.max(...planNodes.map((n) => depthOf(n.id)), 0) + ' 层）');
+
+for (const n of orderedPlan) {
   if (byName.has(n.id)) { continue; }                    // 已有 ⇒ 不动（尊重编辑器）
   // 只处理我们关心的几类；`cell.*` / `tray.*` 等由脚本运行时生成，不进 .gil
   if (/^(cell\.|ruler|tray\.|portrait\.|hud\.|toast|fx\.)/.test(n.id)) { skipped.push(n.id); continue; }
