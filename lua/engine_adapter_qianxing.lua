@@ -997,6 +997,45 @@ function Adapter:_cells_prefab(g)
   return nil
 end
 
+-- ★★★★★ 2026-10-02 **给脚本生成的格子"上底图"**（纯模板模式专用，不依赖参照格子）。
+--
+--   真机症状（用户 16:51）：格子在树上 `visible=true`、位置尺寸都对，但画面上
+--   **只有两条细边框**（`wall.up` / `wall.left`），看起来像"棋盘没出现"。
+--   日志里 `face visible=false` ⇒ 底图是关的。
+--
+--   为什么关着：`_cells_stamp` 需要**参照格子**才能"照抄图片"；重建后是纯模板模式
+--   （没有 `cell.1.1`）⇒ 那条路不执行 ⇒ 副本保留模板快照的状态（模板里 `face` 就是关的）。
+--
+--   ⇒ 这里自己来：打开 `face`、按格子几何铺满、塞一张底图（默认 106053 白色底）。
+--     每一步都 pcall + 可选日志，失败也不会中断生成。
+function Adapter:_cells_paint(ctrl, size)
+  if ctrl == nil or ctrl.GetChild == nil then return false end
+  local face = nil
+  pcall(function() face = ctrl:GetChild("face") end)
+  if face == nil then return false end
+  if face.SetVisible then pcall(function() face:SetVisible(true) end) end
+  -- 铺满格子（子控件默认可能比格子小，或尺寸是 0 —— 两种都会让它"看不见"）
+  if size ~= nil and face.SetSizeDelta then
+    pcall(function() face:SetSizeDelta(size, size) end)
+  end
+  if face.SetAnchoredPosition then pcall(function() face:SetAnchoredPosition(0, 0) end) end
+  local img = (self.cfg.cells and self.cfg.cells.face_image) or 106053
+  if face.SetImage then
+    local ok = pcall(function() face:SetImage(nil, img) end)
+    if not ok then pcall(function() face:SetImage(img) end) end      -- 两种签名都试
+  end
+  -- 读回，把结果说出来（否则又是"改了没生效"却看不出来）
+  local vis, iid = "?", "?"
+  pcall(function() vis = tostring(face.visible) end)
+  pcall(function() iid = tostring(face.imageId) end)
+  if self.cfg.cells and self.cfg.cells.debug_paint ~= false then
+    self:warn_once("cells:paint",
+      "格子底图已设置：face(visible=" .. vis .. ", imageId=" .. iid .. ")"
+      .. "（如果画面上棋盘还是不出现，就把这行贴给我）")
+  end
+  return true
+end
+
 -- 把参照格子的 face 图片「盖章」到目标格子上。
 -- 为什么要这一步：「另存为模板」存的是**当时的快照**。如果之后又给格子加了底图，
 -- 用旧模板生成出来的副本会全是透明的（看起来像"没生成"）。
@@ -1343,6 +1382,24 @@ function Adapter:ensure_cells(rows, cols)
           ctrl = obj
           made = made + 1
           self:_cells_stamp(ctrl, ref)     -- ★ 把参照格子的图片盖上去
+          -- ★★★★★ 2026-10-02 **纯模板模式下必须自己给格子上底图** —— 这就是
+          --   "棋盘没出现 / 只有一行一列"的真正原因。
+          --
+          --   真机日志（用户 16:51）：
+          --       cell.1.1  visible=true  位置=(-237,237) 124x124    ← 格子本身可见
+          --         face      visible=**false**  imageType=Stretch  imageId=106053
+          --         wall.up   visible=true     ← 只有这两条边框是亮的
+          --         wall.left visible=true
+          --   ⇒ 格子"存在且可见"，但**底图 `face` 是关的** ⇒ 画面上只有两条细边框。
+          --
+          --   根因：`_cells_stamp` 只在**有参照格子**（`cell.1.1`）时才能"盖章"，
+          --   而重建后是**纯模板模式**（没有参照格子）⇒ 整条补图路径不执行 ⇒
+          --   副本的 `face` 保持"模板快照里的状态"（模板里它就是关的）。
+          --
+          --   ⇒ 所以这里**不依赖参照格子**，直接自己打开 `face` 并塞一张底图。
+          --     图片 id 取 `cfg.cells.face_image`（默认 106053 —— 项目里已知的白色底），
+          --     尺寸用格子自己算好的几何，保证铺满。
+          self:_cells_paint(ctrl, cell_size)
         elseif first_err == nil then
           first_err = tostring(obj)
         end
