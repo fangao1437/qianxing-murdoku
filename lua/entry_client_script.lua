@@ -384,9 +384,35 @@ end
 --     · 树里**有节点**但没有 board/cell.1.1 → 立刻打（这是真的名字/层级问题，等也没用）。
 local function probe_or_dump(final)
   if adapter == nil then return false end
-  local probe = nil
-  pcall(function() probe = adapter:find("board") or adapter:find("cell.1.1") end)
-  if probe ~= nil then return true end
+  -- ★★★★★ 2026-10-02 **就绪判据不能写死 `board` / `cell.1.1`**。
+  --
+  --   真机后果（用户 13:31 日志）：重建时这两个控件被删了 ⇒ 判据**永远为假**
+  --   ⇒ 一直重试到上限 ⇒ 打印"放弃自动开局" ⇒ **`Murdoku.on_start` 从未真正执行**
+  --   ⇒ 于是：
+  --        · `home` 停在 `vis=false` ⇒ **主页整个消失**（子控件都是 true，父级不显示）
+  --        · `seal_containers` 没跑到 ⇒ **2D/3D 隔离失效**
+  --   ⇒ 症状看着是两件事，**根因是同一个**。
+  --
+  --   新判据（按"重建后什么才一定存在"来写）：
+  --     ① 旧结构：`board` / `cell.1.1` 任一存在（向后兼容老存档）
+  --     ② 新结构：`stage` / `home` 任一存在（重建后一定有）
+  --     ③ 兜底：`root` 存在且已经有 >3 个子控件 ⇒ 树就绪
+  local ready = false
+  pcall(function()
+    if adapter:find("board") ~= nil or adapter:find("cell.1.1") ~= nil then
+      ready = true
+    elseif adapter:find("stage") ~= nil or adapter:find("home") ~= nil then
+      ready = true
+    else
+      local rt = adapter:find("root")
+      if rt ~= nil and rt.GetChildren ~= nil then
+        local kids = nil
+        pcall(function() kids = rt:GetChildren() end)
+        if type(kids) == "table" and #kids > 3 then ready = true end
+      end
+    end
+  end)
+  if ready then return true end
   if tree_dumped then return false end
 
   -- 先量一下树有多大（只数不打印），据此决定话术的轻重
@@ -405,7 +431,7 @@ local function probe_or_dump(final)
   tree_dumped = true
 
   if printerr then
-    printerr("[murdoku] 找不到 board / cell.1.1，下面把「脚本能看到的客户端控件」全列出来")
+    printerr("[murdoku] 就绪判据未满足（board/cell.1.1/stage/home 都不在），下面把「脚本能看到的客户端控件」全列出来")
   end
 
   if adapter.dump_names ~= nil then
