@@ -1111,6 +1111,23 @@ function Murdoku.on_update(dt)
     --      上半段 `selbtn.*` 的循环也只在 `widgets = true` 时才让 `on_select` 为真，
     --      默认配置下它什么都不做，不会干扰 93 里原有的卡片。
   end
+  -- ★★★★★ 2026-10-02 **把 topbar / right 的锚点归零** —— 修"子控件双重偏移"。
+  --
+  --   真机日志（20:03，关卡内）：
+  --       UI定位 right：pos=(575,-23)            ← right 自己靠右（对）
+  --         子控件 hud.progress：pos=(508,-283)  ← ★ 相对 right 又偏 508
+  --       ⇒ 实际 X = 800 + 575 + 508 = **1883** ⇒ 超出 1600 宽的画布 ⇒ **跑到屏幕外**
+  --   原因：从 93 领养来的这批子控件，坐标是**相对屏幕中心**的绝对值（编辑器里摆的），
+  --   而它们现在的父级 `right` 自己也有偏移 ⇒ **父级偏移 + 子控件绝对坐标 = 双重偏移**。
+  --   ⇒ 对策：把这两个容器的锚点设成 (0,0)（居中）⇒ 子控件的相对坐标就等于绝对坐标，
+  --     位置立刻回到编辑器里摆的地方。
+  for _, nm in ipairs({ "topbar", "right" }) do
+    local c = nil
+    pcall(function() c = current.adapter:find(nm) end)
+    if c ~= nil then
+      pcall(function() c:SetAnchoredPosition(0, 0) end)
+    end
+  end
   -- ★★★★★ 2026-10-02 **UI 容器定位诊断**：真机"right/topbar 可见=true 但看不到"，
   --   所以把它们的**位置/尺寸/透明度/同级顺序**全打出来，一次看清问题在哪。
   if (current.frames or 0) % 300 == 0 then
