@@ -1786,13 +1786,38 @@ function Adapter:enable_cursor()
   -- ★ 回读：把每个受管容器的 showCursor 实际值打出来。
   --   门控②（祖先容器 showCursor=true）是"点不动"的头号原因，
   --   而 `pcall` 会**静默吞掉失败** —— 改了必须回读才算数。
+  --
+  --   ★★ 2026-10-02 追加 `kind`：派发条件是 **`i.kind == "container" and i.showCursor`**，
+  --   `showCursor` 已经全 true 了（真机回读证实），而点击依旧不通 ⇒ **剩下的变量就是 `kind`**。
+  --   如果 `root`/`home`/`select` 的 `kind` 不是 `"container"`（比如是别的名字），
+  --   门控②**永远不满足** ⇒ 点不动 —— 而且能解释探针那句"所有容器都不支持光标事件"。
   local parts = {}
   for i = 1, #CURSOR_CONTAINERS do
     local ctrl = self:find(CURSOR_CONTAINERS[i])
     if ctrl ~= nil then
-      local sc = "?"
+      local sc, kd = "?", "?"
       pcall(function() sc = tostring(ctrl.showCursor) end)
-      parts[#parts + 1] = CURSOR_CONTAINERS[i] .. "=" .. sc
+      -- `kind` 可能叫别的名字，多试几个写法，读不到就留 "?"
+      pcall(function() kd = tostring(ctrl.kind) end)
+      if kd == "nil" then pcall(function() kd = tostring(ctrl.Kind) end) end
+      if kd == "nil" then pcall(function() kd = tostring(ctrl.type) end) end
+      if kd == "nil" then pcall(function() kd = tostring(ctrl.controlType) end) end
+      parts[#parts + 1] = CURSOR_CONTAINERS[i] .. "(kind=" .. kd .. ",cur=" .. sc .. ")"
+      -- ★ 第一次只对 root/home/select 三个多探一层：把能读到的"类型/名字"类字段全列出来，
+      --   这样即便 `kind` 不叫 kind，也能一眼看出它到底是什么。
+      if CURSOR_CONTAINERS[i] == "root" or CURSOR_CONTAINERS[i] == "home"
+         or CURSOR_CONTAINERS[i] == "select" then
+        local probes = {}
+        for _, f in ipairs({ "kind", "Kind", "type", "Type", "controlType", "className",
+                             "ctrlType", "nodeType", "name", "Name" }) do
+          local v = "?"
+          pcall(function() v = tostring(ctrl[f]) end)
+          if v ~= "nil" and v ~= "?" then probes[#probes + 1] = f .. "=" .. v end
+        end
+        if #probes > 0 and print then
+          print("[murdoku] 类型探测 " .. CURSOR_CONTAINERS[i] .. "：" .. table.concat(probes, "  "))
+        end
+      end
     else
       parts[#parts + 1] = CURSOR_CONTAINERS[i] .. "=**找不到**"
     end
