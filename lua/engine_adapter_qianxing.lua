@@ -997,22 +997,36 @@ end
 --   按钮 id：`selbtn.1` … `selbtn.N`（N = 关卡数，由调用方传）
 function Adapter:ensure_widgets(count)
   count = count or 8
-  local prefab = self.cfg.cells and self.cfg.cells.prefab
-  if prefab == nil then
-    return 0, "没有 cfg.cells.prefab（没有可用的客户端控件模板）"
-  end
   if game == nil or game.InstantiateClientUIControl == nil then
     return 0, "环境没有 game.InstantiateClientUIControl"
   end
-  local parent = self:find("board")
-  if parent == nil then return 0, "找不到父容器 board" end
+  -- ① 先建**容器**：容器模板来自 cfg.stage.prefab（用户 2026-10-02 给的 1073742330）
+  local bar = self:find("selbar")
+  if bar == nil then
+    local cprefab = self.cfg.stage and self.cfg.stage.prefab
+    if cprefab == nil then return 0, "没有 cfg.stage.prefab（没有容器模板）" end
+    local cparent = self:find("stage")
+    if cparent == nil then return 0, "找不到父容器 stage" end
+    local ok, obj = pcall(game.InstantiateClientUIControl, cprefab, cparent)
+    if not ok or obj == nil then
+      return 0, "容器模板 " .. tostring(cprefab) .. " 实例化失败（它可能不是「客户端控件模板」）"
+    end
+    pcall(function() obj.name = "selbar" end)
+    self.controls["selbar"] = obj
+    self.instantiated = self.instantiated or {}
+    self.instantiated["selbar"] = true
+    bar = obj
+  end
+  -- ② 再在容器下建**按钮**（cell 模板 —— 真机验证过能实例化、能收到点击）
+  local prefab = self.cfg.cells and self.cfg.cells.prefab
+  if prefab == nil then return 0, "没有 cfg.cells.prefab（没有按钮模板）" end
   local made, existed = 0, 0
   for i = 1, count do
     local id = "selbtn." .. tostring(i)
     if self:find(id) ~= nil then
       existed = existed + 1
     else
-      local ok, obj = pcall(game.InstantiateClientUIControl, prefab, parent)
+      local ok, obj = pcall(game.InstantiateClientUIControl, prefab, bar)
       if ok and obj then
         pcall(function() obj.name = id end)
         local got = nil
