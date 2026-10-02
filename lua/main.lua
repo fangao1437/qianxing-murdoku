@@ -262,9 +262,20 @@ function Murdoku.start(level_id, opts)
       print("[murdoku] 选关按钮（脚本创建）：新建 " .. tostring(made)
         .. " 个，已存在 " .. tostring(existed or 0) .. " 个"
         .. (err and ("　⚠️ " .. tostring(err)) or ""))
-      -- 逐个绑点击 → 事件 pick/1..N
+      -- 逐个绑点击 → ★ 用**和现有卡片一模一样**的事件写法：
+      --     event = { action = "pick_level", id = <关卡 id> }
+      --   上一版我编了个 `event = "pick/1"`（字符串）⇒ 日志里 `事件=nil/-`
+      --   —— `bind_input` 读的是 `node.event.action`，字段名错了就整条绑成兜底事件。
+      local ok_all, all = pcall(Levels.all)
       for i = 1, n_levels do
-        adapter:bind_input("selbtn." .. tostring(i), { id = "selbtn." .. tostring(i), event = "pick/" .. tostring(i) })
+        local lv_id = nil
+        if ok_all and type(all) == "table" and all[i] ~= nil then
+          lv_id = all[i].id
+        end
+        adapter:bind_input("selbtn." .. tostring(i), {
+          id = "selbtn." .. tostring(i),
+          event = { action = "pick_level", id = lv_id },
+        })
       end
     end
   end
@@ -869,7 +880,7 @@ function Murdoku.on_update(dt)
                        "clickAudioId", "disableCursorEventPassthrough", "disableKeyEventPassthrough",
                        "isolateNavigation", "alpha", "index", "zIndex", "sortingOrder",
                        "enable", "enabled", "blockRaycast", "grayed", "isEnabled" }
-      local samples = { "home.select", "select.card.1", "select.back", "cell.1.1", "board", "select", "home" }
+      local samples = { "home.select", "select.card.1", "select.back", "cell.1.1", "selbtn.1", "selbtn.2", "board", "select", "home" }
       for s = 1, #samples do
         local id = samples[s]
         local c = map[id]
