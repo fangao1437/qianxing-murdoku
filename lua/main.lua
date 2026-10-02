@@ -243,6 +243,27 @@ function Murdoku.start(level_id, opts)
     end
   end
 
+  -- ★★★★★ 2026-10-02 **用"脚本创建"重做选关按钮**（用户指定的路线）。
+  --   真机证明只有脚本创建的控件能收到点击（关卡里的格子 ✅、编辑器摆的卡片 ❌）
+  --   ⇒ 选关页改为用**同一个模板**在 `board` 下建按钮，点击走和格子一模一样的代码路径。
+  --   数量取关卡数（不确定就按 8 个建，多余的藏起来）。
+  do
+    local n_levels = 8
+    if Levels ~= nil and type(Levels.all) == "function" then
+      local ok, all = pcall(Levels.all)
+      if ok and type(all) == "table" and #all > 0 then n_levels = #all end
+    end
+    if adapter.ensure_widgets then
+      local made, err, existed = adapter:ensure_widgets(n_levels)
+      print("[murdoku] 选关按钮（脚本创建）：新建 " .. tostring(made)
+        .. " 个，已存在 " .. tostring(existed or 0) .. " 个"
+        .. (err and ("　⚠️ " .. tostring(err)) or ""))
+      -- 逐个绑点击 → 事件 pick/1..N
+      for i = 1, n_levels do
+        adapter:bind_input("selbtn." .. tostring(i), { id = "selbtn." .. tostring(i), event = "pick/" .. tostring(i) })
+      end
+    end
+  end
   -- ② 用模板批量补齐棋盘格子（编辑器里已摆好的不会被动；没配 cfg.cells 就什么都不做）
   if adapter.ensure_cells then
     local made = adapter:ensure_cells(core.rows, core.cols)
@@ -973,6 +994,40 @@ function Murdoku.on_update(dt)
   --   真机现象是"主页能点、选关不能点"，而主页时 select 被排到最下 ⇒ 排序**恰好与现象相关**
   --   ⇒ 撤掉，做一次单一变量的真机实验。
   --   （`Adapter:enforce_screen_layers` 本体留在适配器里，随时可以再开。）
+  -- ★★★★★ 2026-10-02 **选关按钮的每帧排布**（脚本创建的控件）。
+  --   选关页：4 个一行摆在屏幕中上部（棋子大小用格子的几何，视觉一致）；
+  --   其它屏：全部隐藏（避免抢射线）。
+  --   同时把编辑器摆的旧卡片/返回键**藏起来** —— 它们收不到点击，留着只会挡路。
+  do
+    local n_levels = 8
+    do
+      local ok, all = pcall(Levels.all)
+      if ok and type(all) == "table" and #all > 0 then n_levels = #all end
+    end
+    local on_select = (scr_now == "select")
+    for i = 1, n_levels do
+      local c = nil
+      pcall(function() c = current.adapter:find("selbtn." .. tostring(i)) end)
+      if c ~= nil then
+        pcall(function() c:SetVisible(on_select) end)
+        if on_select then
+          -- 一行摆开：间距 200，起点居中
+          local x = (i - (n_levels + 1) / 2) * 200
+          pcall(function() c:SetAnchoredPosition(x, 120) end)
+          pcall(function() c:SetSizeDelta(160, 160) end)
+        end
+      end
+    end
+    -- 旧卡片/返回键：选关页也不显示（它们点不动）
+    for i = 1, 8 do
+      local c = nil
+      pcall(function() c = current.adapter:find("select.card." .. tostring(i)) end)
+      if c ~= nil then pcall(function() c:SetVisible(false) end) end
+    end
+    local bk = nil
+    pcall(function() bk = current.adapter:find("select.back") end)
+    if bk ~= nil then pcall(function() bk:SetVisible(false) end) end
+  end
   Murdoku._last_screen = scr_now
   current.frames = (current.frames or 0) + 1
 end

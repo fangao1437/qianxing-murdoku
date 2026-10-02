@@ -981,6 +981,55 @@ end
 
 -- 确保 board 下有全部 cell.<r>.<c>：编辑器里已摆好的不动，缺的按模板生成。
 -- 返回"新建了几个"。没有配置 cfg.cells 时直接返回 0（不影响纯手摆的用法）。
+-- ★★★★★ 2026-10-02 **用"脚本创建"重做选关按钮**（用户指定的另一条路线）。
+--
+--   为什么：真机证明**只有脚本创建的控件能收到点击** ——
+--     关卡里的 25 个格子（脚本用 `game.InstantiateClientUIControl` 建）**能点**；
+--     而编辑器里摆的 `select.card.*` / `select.back` **点了没反应**。
+--   用户决定：**先用脚本创建把选关页做出来**，成功后再回头查"编辑器控件为什么不行"。
+--
+--   实现要点（照抄 `ensure_cells` 那条**已验证可行**的路）：
+--     · 用**同一个模板索引** `cfg.cells.prefab`（真机验证过它能实例化）
+--     · 父级挂在 **`board`** 下 —— 因为真机证明"`board` 下的脚本控件能收到点击"
+--     · 改名 + **读回核对**（改名不生效会让 `find` 找不到，这个坑格子那轮踩过）
+--     · 记进 `self.instantiated`（只有脚本生成的才允许销毁）
+--
+--   按钮 id：`selbtn.1` … `selbtn.N`（N = 关卡数，由调用方传）
+function Adapter:ensure_widgets(count)
+  count = count or 8
+  local prefab = self.cfg.cells and self.cfg.cells.prefab
+  if prefab == nil then
+    return 0, "没有 cfg.cells.prefab（没有可用的客户端控件模板）"
+  end
+  if game == nil or game.InstantiateClientUIControl == nil then
+    return 0, "环境没有 game.InstantiateClientUIControl"
+  end
+  local parent = self:find("board")
+  if parent == nil then return 0, "找不到父容器 board" end
+  local made, existed = 0, 0
+  for i = 1, count do
+    local id = "selbtn." .. tostring(i)
+    if self:find(id) ~= nil then
+      existed = existed + 1
+    else
+      local ok, obj = pcall(game.InstantiateClientUIControl, prefab, parent)
+      if ok and obj then
+        pcall(function() obj.name = id end)
+        local got = nil
+        pcall(function() got = tostring(obj.name) end)
+        if got ~= id then
+          self:warn_once("selbtn:name:" .. id,
+            "选关按钮改名字没生效：想要 `" .. id .. "`，读回来是 `" .. tostring(got) .. "`。")
+        end
+        self.controls[id] = obj
+        self.instantiated = self.instantiated or {}
+        self.instantiated[id] = true
+        made = made + 1
+      end
+    end
+  end
+  return made, nil, existed
+end
 function Adapter:ensure_cells(rows, cols)
   local g = self.cfg.cells
   if g == nil then return 0 end
