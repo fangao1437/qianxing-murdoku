@@ -808,6 +808,53 @@ function Murdoku.on_update(dt)
       end
     end
     print("[murdoku] ===== 根清单结束 =====")
+    -- ★★★★★ 2026-10-02 **对照组诊断**：把"能点的样本"和"不能点的样本"逐一对比。
+    --
+    --   真机现状（用户实测）：
+    --     · 关卡里 **能点**   —— 格子在 `board` 下（脚本建的）
+    --     · 主页   **能点**   —— 四键在 `home` 下（编辑器摆的）
+    --     · 选关页 **不能点** —— 卡片在 `select` 下（编辑器摆的）
+    --   三者都 showCursor=true、bind=true、坐标在屏内。
+    --   ⇒ 差别只可能藏在某个**可读属性**里 ⇒ 把两个样本的所有字段并列打出来，一眼看差。
+    print("[murdoku] ===== 对照组：能点 vs 不能点 =====")
+    do
+      local fields = { "visible", "active", "showCursor", "interactable", "raycastTarget",
+                       "clickAudioId", "disableCursorEventPassthrough", "disableKeyEventPassthrough",
+                       "isolateNavigation", "alpha", "index", "zIndex", "sortingOrder",
+                       "enable", "enabled", "blockRaycast", "grayed", "isEnabled" }
+      local samples = { "home.select", "select.card.1", "select.back", "cell.1.1", "board" }
+      for s = 1, #samples do
+        local id = samples[s]
+        local c = nil
+        pcall(function() c = ad:find(id) end)
+        if c == nil then
+          print("[murdoku]   " .. id .. "  —— **找不到**")
+        else
+          local parts = {}
+          for f = 1, #fields do
+            local v = "?"
+            pcall(function() v = tostring(c[fields[f]]) end)
+            if v ~= "nil" then parts[#parts + 1] = fields[f] .. "=" .. v end
+          end
+          -- 父级链（谁在上面 / 谁的祖先有 showCursor）
+          local chain, cur, guard = {}, c, 0
+          while cur ~= nil and guard < 8 do
+            local nm, sc, vv = "?", "?", "?"
+            pcall(function() nm = tostring(cur.name) end)
+            pcall(function() sc = tostring(cur.showCursor) end)
+            pcall(function() vv = tostring(cur.visible) end)
+            chain[#chain + 1] = nm .. "(vis=" .. vv .. ",cur=" .. sc .. ")"
+            local up = nil
+            pcall(function() up = cur.parent end)
+            cur = up
+            guard = guard + 1
+          end
+          print("[murdoku]   " .. id .. "  " .. table.concat(parts, "  "))
+          print("[murdoku]       祖先链：" .. table.concat(chain, " ← "))
+        end
+      end
+    end
+    print("[murdoku] ===== 对照组结束 =====")
     print("[murdoku] 射线探针装好了 —— 之后点任何地方，只要射线落在这些容器上就会打日志")
   end
   -- ★★★★ 2026-10-02 **按用户建议做的对比：主页 ⇄ 选关，"切换后到底改了什么"**。
