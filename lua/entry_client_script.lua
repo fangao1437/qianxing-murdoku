@@ -382,6 +382,47 @@ end
 --     · 树是空的、**还有重试机会**（final=false）→ 只说一句"稍后重试"，不打树、不打病因；
 --     · 树是空的、**已经放弃重试**（final=true）→ 打完整诊断（三条原因）；
 --     · 树里**有节点**但没有 board/cell.1.1 → 立刻打（这是真的名字/层级问题，等也没用）。
+-- ★★★★★ 2026-10-02 **安全调用 `on_start`：把失败原因打出来**。
+--
+--   真机现象（用户 13:45 日志）：日志在"键盘快捷键已绑定"之后**直接 destroyed** ——
+--   没有 `started:`、没有"放弃自动开局"、什么错都没有。
+--   ⇒ 说明 `Murdoku.on_start` **被调用了但返回 nil（或抛错被引擎吞掉）**，
+--     于是 `started` 一直 false ⇒ 每帧重试 ⇒ 而重试时不再打印（已 dump 过）⇒ **完全静默**。
+--   ⇒ 这里用 pcall 包住 + 把"抛错"和"返回 nil"这两种情况**都打成正常日志**。
+local function safe_on_start(tag)
+  local f = Murdoku.on_start
+  if f == nil then
+    if printerr then printerr("[murdoku] on_start 不存在（模块没加载完整）") end
+    return nil
+  end
+  local retry_screen = "home"
+  if FORCE_LEVEL ~= nil then retry_screen = nil end
+  local ok, a, b = pcall(f, FORCE_LEVEL, {
+    adapter      = adapter,
+    restore_save = (FORCE_LEVEL == nil),
+    screen       = retry_screen,
+  })
+  if not ok then
+    if printerr then
+      printerr("[murdoku] ⚠️ on_start 抛错了（" .. tostring(tag) .. "）：" .. tostring(a))
+    end
+    return nil
+  end
+  local self = a
+  if self == nil then
+    if printerr then
+      printerr("[murdoku] ⚠️ on_start 返回 nil（" .. tostring(tag)
+        .. "）—— 没有抛错，说明它内部主动放弃了。"
+        .. "常见原因：控件树缺关键控件（比如棋盘容器 / 参照格子）时就 return nil。")
+    end
+    return nil
+  end
+  if print then
+    print("[murdoku] ✅ on_start 成功（" .. tostring(tag) .. "）：level="
+      .. tostring(self.level and self.level.id) .. "  screen=" .. tostring(self.screen or "(关卡内)"))
+  end
+  return self
+end
 local function probe_or_dump(final)
   if adapter == nil then return false end
   -- ★★★★★ 2026-10-02 **就绪判据不能写死 `board` / `cell.1.1`**。
@@ -608,11 +649,7 @@ function OnStart()
   --     （`tools/sim/kit.mjs` 的 `enterLevel()`）；钉死关卡（测试模式）则直接进关。
   local start_screen = "home"
   if FORCE_LEVEL ~= nil then start_screen = nil end
-  local self = Murdoku.on_start(FORCE_LEVEL, {
-    adapter      = adapter,
-    restore_save = (FORCE_LEVEL == nil),
-    screen       = start_screen,
-  })
+  local self = safe_on_start("首次")
   if self then
     started = true
     if print then print("[murdoku] started: " .. tostring(self.level and self.level.id)) end
@@ -650,11 +687,7 @@ function OnUpdate(dt)
           --    所以：**只要三元式里有一个分支是 nil/false，就必须写 if**。
           local retry_screen = "home"
           if FORCE_LEVEL ~= nil then retry_screen = nil end
-          local self = Murdoku.on_start(FORCE_LEVEL, {
-            adapter = adapter,
-            restore_save = (FORCE_LEVEL == nil),
-            screen = retry_screen,
-          })
+          local self = safe_on_start("重试")
           if self then
             started = true
             if print then print("[murdoku] started (retry " .. retry_tries .. ")") end
