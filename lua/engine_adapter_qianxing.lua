@@ -402,15 +402,57 @@ function Adapter:create_control(node)
   self.handlers[node.id] = node
   local ctrl = self:find(node.id)
 
-  if ctrl == nil and self.cfg.prefab_of and self.cfg.prefab_of[node.id]
-     and game and game.InstantiateClientUIControl then
-    local parent = self:find((self.cfg.parent_of and self.cfg.parent_of[node.id]) or "root")
-    if parent then
-      ctrl = game.InstantiateClientUIControl(self.cfg.prefab_of[node.id], parent)
-      if ctrl and node.id then ctrl.name = node.id end
-      self.controls[node.id] = ctrl
-      self.instantiated = self.instantiated or {}
-      self.instantiated[node.id] = true      -- 记下来：这个是我们自己生成的，可以销毁
+  -- ★★★★★ 2026-10-02 **重建之后：所有界面控件都由脚本创建**。
+  --
+  --   背景：用户把编辑器里的 `select`/`board`/`left`/`right`/`topbar`/`toolbar`/
+  --   `modal`/`intro`/`assets` **全部删掉**（只留 `home` + `stage` + 三个模板引用），
+  --   于是 `ui_controller` 里规划的那些控件**全都不存在了**（真机日志：
+  --   "这些控件还没建（共 108 个，按类分组）"）。
+  --
+  --   ⇒ 这里加一条**按 kind 自动选模板**的规则，把"显式 prefab_of"变成可选：
+  --       · 容器类 kind  → 容器模板 `cfg.stage.prefab`（1073742330）
+  --       · 其它 kind    → 通用控件模板 `cfg.cells.prefab`（1073741876，带 face/text 子控件）
+  --     父级仍按 `cfg.parent_of[id]`（没有就用 `stage`）。
+  --
+  --   ⚠️ 与 `ensure_cells` / `ensure_widgets` 同一套路：改名 + 读回核对 + 记录 + 允许销毁。
+  local AUTO_CONTAINER_KINDS = {
+    container = true, panel = true, layer = true, list = true, box = true,
+  }
+  local function auto_prefab(ad, nd)
+    if AUTO_CONTAINER_KINDS[nd.kind] then
+      return ad.cfg.stage and ad.cfg.stage.prefab
+    end
+    return ad.cfg.cells and ad.cfg.cells.prefab
+  end
+  if ctrl == nil and game and game.InstantiateClientUIControl then
+    local prefab = (self.cfg.prefab_of and self.cfg.prefab_of[node.id]) or nil
+    if prefab == nil then prefab = auto_prefab(self, node) end
+    if prefab ~= nil then
+      local pname = (self.cfg.parent_of and self.cfg.parent_of[node.id]) or "stage"
+      local parent = self:find(pname)
+      if parent == nil and pname ~= "stage" then parent = self:find("stage") end
+      if parent == nil then parent = self:find("root") end
+      if parent then
+        local ok, obj = pcall(game.InstantiateClientUIControl, prefab, parent)
+        if ok and obj then
+          pcall(function() obj.name = node.id end)
+          local got = nil
+          pcall(function() got = tostring(obj.name) end)
+          if got ~= node.id then
+            self:warn_once("auto:name:" .. tostring(node.id),
+              "自动创建的控件改名没生效：想要 `" .. tostring(node.id) .. "`，读回来 `" .. tostring(got) .. "`。")
+          end
+          ctrl = obj
+          self.controls[node.id] = ctrl
+          self.instantiated = self.instantiated or {}
+          self.instantiated[node.id] = true
+          self._auto_made = (self._auto_made or 0) + 1
+        else
+          self:warn_once("auto:fail:" .. tostring(node.id),
+            "自动创建 `" .. tostring(node.id) .. "` 失败（模板 " .. tostring(prefab) .. "）"
+            .. "err=" .. tostring(obj))
+        end
+      end
     end
   end
 
