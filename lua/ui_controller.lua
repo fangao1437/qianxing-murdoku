@@ -95,7 +95,10 @@ M.LAYOUT = {
   --   现在放 18 行（382 + 18*28 = 886 ≤ 902），够本项目所有关卡用。
   --   写更多线索的关卡请同步调大 clue_max_visible / 调小 clue_row_h，
   --   并跑 `lua tests/ui_math.lua` 确认没压到图例。
-  clues  = { x = 40, y = 382, w = 360, h = 520 },   -- 9 行 × 52 = 468 ≤ 520
+  -- ★★★★★ 2026-10-02 **线索区吃满左栏**（头像卡取消后腾出来的地方全给它）：
+  --   原来 y 382..902（tray 占 148..366）；现在从 148 一直到图例上方 888。
+  --   行数 9 → 14（14 × 52 = 728 ≤ 740）。滚动窗口依旧，超出的靠 ▲▼ 翻。
+  clues  = { x = 40, y = 148, w = 360, h = 740 },   -- 14 行 × 52 = 728 ≤ 740
   clue_row_h = 52,          -- ★ 2026-09-30：28 → 52（参考图的卡片是"头像 + 两行"，比原来高）
   clue_max_visible = 18,    -- 硬上限：仍要够 case_003 的 18 条线索
   -- ★★★ 2026-09-30：**线索区改成"可滚动窗口"**（参考《派蒙的执律庭实习》左侧那个带滚轮的列表）。
@@ -109,7 +112,7 @@ M.LAYOUT = {
   --
   --   引擎**没有滚轮事件**（查过 API），但有**光标拖拽**；本实现先给
   --   「↑ / ↓ 两个按钮 + 一条滚动条 + 焦点自动滚入视图」，够用且好测。
-  clue_rows = 9,            -- 一屏显示几条
+  clue_rows = 14,           -- 一屏显示几条（★ 2026-10-02：9 → 14，吃满左栏）
   legend = { x = 40, y = 916, w = 360, h = 76 },
 
   -- ★★ 2026-09-28 修：**棋盘与底部动作条重叠了 116px**（用户报"动作条压住第 5 行"）。
@@ -138,6 +141,37 @@ M.LAYOUT = {
   action_btn = { w = 168, h = 56, gap = 14 },
 
   modal = { w = 760, h = 460 },
+
+  --------------------------------------------------------------------------
+  -- ★★★★★ 2026-10-02 **按用户给的两张美术参考重排按键**（第二轮定稿）
+  --
+  --   参考：`docs/美术参考/参考1-布局.jpg` + `参考2-图标与确认键.jpg`
+  --   布局图：`docs/布局图-关卡内-v3.png`（用户已确认"就是这样"）
+  --
+  --   最终交互键 **只有 7 个**：
+  --     · action.back   返回菜单      —— 左上（保留）
+  --     · confirm.ok   ✓  执行        —— 左上偏右，**默认隐藏**
+  --     · confirm.no   ✗  取消        —— 同上
+  --     · action.submit 提交          —— **右上第 1 个**
+  --     · action.redo   重置关卡      —— **右上第 2 个**（从左上搬来，用同一个 ↻ 图标）
+  --     · action.undo   撤销          —— **右上第 3 个**
+  --     · action.hint   放大镜（提示）—— **右下**，与右上三键**右边缘对齐**
+  --
+  --   **删掉的**（参考图里没提到的）：`action.reveal` 揭示、
+  --     `hud.score` 分数、`hud.violations` 违规、`hud.share` 分享、`hud.toast` 提示条、
+  --     以及**独立的头像卡 `tray`**（用户：头像卡已并进滚动线索卡）。
+  --
+  --   确认流程：点 `action.back` / `action.submit` / `action.redo` 中任一个
+  --     ⇒ 显示 ✓/✗ ⇒ 点 ✓ 执行、点 ✗ 取消（状态机在 `main.lua` 的 `confirm_*`）。
+  --------------------------------------------------------------------------
+
+  -- 右上三键：**上→下 = 提交 / 重置关卡 / 撤销**，右边缘 = RIGHT_EDGE
+  side_key = { size = 110, gap = 40, top = 26, right_edge = 1904 },
+  -- 右下：进度文字 + 0/6 + 放大镜，**右边缘与右上三键对齐**
+  progress = { y = 900, h = 60, num_w = 150, icon_gap = 24 },
+  -- 左上：返回菜单 + ✓/✗ 确认条
+  back_btn = { x = 24, y = 22, w = 300, h = 66 },
+  confirm  = { x = 344, y = 22, size = 66, gap = 14 },
 }
 
 M.EFFECTS = {
@@ -231,6 +265,61 @@ function Controller:finish_accuse(thief, has_acc, acc)
   self.dirty = true
   return res
 end
+
+--------------------------------------------------------------------------------
+-- ★★★★★ 2026-10-02 **✓/✗ 确认流程**（用户定稿，参考 `参考2-图标与确认键.jpg`）
+--
+--   参考图里的用法：点「返回菜单」这类**不可逆**的操作 ⇒ 旁边冒出 ✓ 和 ✗
+--   ⇒ 点 ✓ 才真的执行，点 ✗ 就当没点过。
+--
+--   三个动作走这条路：`back`（返回菜单）/ `submit`（提交）/ `restart`（重置关卡）。
+--   「撤销 / 放大镜」不需要确认 —— 它们是可逆/无副作用的。
+--
+--   ⚠️ 控件 `confirm.ok` / `confirm.no` 在 `build_layout` 里**建出来就是 visible=false**，
+--      每帧由 `sync_confirm()` 按 `self.pending` 决定显隐。
+--      为什么不直接 `SetVisible`：这个项目里"控件树是每帧重建的"，
+--      布局层给的是初始值，跨帧状态必须由控制器每帧重新下发（和 `pos_runtime` 同理）。
+
+--- 按 `self.pending` 同步 ✓/✗ 的显隐。
+function Controller:sync_confirm()
+  local want = (self.pending ~= nil)
+  self._confirm_shown = want
+  self.dirty = true
+  return want
+end
+
+--- 真正执行"提交"。逻辑与原来的 `submit` 分支一字不差，只是**挪进来**，
+--- 让"要不要先确认"和"确认后干什么"分开。
+function Controller:do_submit()
+  local core = self.core
+  if core == nil or core.submit == nil then return end
+  local res = core:submit()
+  self:fx("action.submit", M.EFFECTS.SUBMIT)
+  -- 规格 5.3：提交只给硬约束反馈，不揭晓任何线索层面的对错（连条数都不说）
+  self.toast = res and res.message or nil
+  if res ~= nil and res.ok then
+    self.modal = { kind = "accuse_thief" }
+  end
+  self.dirty = true
+end
+
+--- 真正执行"重置关卡"。
+function Controller:do_restart()
+  local core = self.core
+  if core ~= nil and core.reset ~= nil then core:reset() end
+  self.modal = nil
+  self.toast = nil
+  self.dirty = true
+end
+
+--- 真正执行"返回菜单"（= 回选关界面，原作循环是"选关 → 关卡 → 退出 → 选关"）。
+function Controller:do_back()
+  self.screen = "select"
+  self.modal = nil
+  self.dirty = true
+  if self.opts.on_back then self.opts.on_back() end
+end
+
 function Controller:format_time(sec)
   sec = math.max(0, math.floor(sec or 0))
   return string.format("%02d:%02d", math.floor(sec / 60), sec % 60)
@@ -692,6 +781,48 @@ function Controller:on_input(event)
     end
     core:set_mode(event.mode)
 
+  -- ★★★★★ 2026-10-02 **✓/✗ 确认状态机**（用户定稿，参考 `参考2-图标与确认键.jpg`）
+  --
+  --   规则：点「返回菜单 / 提交 / 重置关卡」中**任一个** ⇒ **不立刻执行**，
+  --         而是把动作存进 `self.pending` 并显示 ✓/✗；
+  --         点 ✓ = 执行，点 ✗ = 取消。
+  --         「撤销 / 放大镜」**不需要确认**，直接执行。
+  --
+  --   为什么这么做：这三个都是**不可逆**的（回菜单、交卷、清空整局），
+  --   参考图里也是"点一下先问、再执行"的两段式。
+  elseif a == "back_confirm" then
+    self.pending = { action = "back" }
+    self:sync_confirm()
+
+  elseif a == "submit" then
+    self.pending = { action = "submit" }
+    self:sync_confirm()
+
+  elseif a == "restart" then
+    self.pending = { action = "restart" }
+    self:sync_confirm()
+
+  elseif a == "confirm_no" then
+    self.pending = nil
+    self:sync_confirm()
+    self.toast = "已取消"
+
+  elseif a == "confirm_yes" then
+    local p = self.pending
+    self.pending = nil
+    self:sync_confirm()
+    if p ~= nil then
+      -- 二次进分发：这次 `self.pending` 已是 nil，但 `submit`/`restart` 分支会**再**设 pending
+      -- ⇒ 所以这里直接走"真正执行"的内部函数，不再绕回分发。
+      if p.action == "submit" then
+        self:do_submit()
+      elseif p.action == "restart" then
+        self:do_restart()
+      elseif p.action == "back" then
+        self:do_back()
+      end
+    end
+
   elseif a == "undo" then
     if core:undo() then self:fx("action.undo", M.EFFECTS.UNDO) end
 
@@ -712,16 +843,7 @@ function Controller:on_input(event)
     end
     self.toast = "已揭示答案"
 
-  elseif a == "submit" then
-    local res = core:submit()
-    self:fx("action.submit", M.EFFECTS.SUBMIT)
-    -- 规格 5.3：提交只给硬约束反馈，不揭晓任何线索层面的对错（连条数都不说）
-    self.toast = res.message
-    if res.ok then
-      self.modal = { kind = "accuse_thief" }
-    end
-
-  elseif a == "accuse_thief" then
+  -- ★ 2026-10-02：提交现在**先要 ✓ 确认**（见上面 confirm_yes 分支）⇒ 这里只留"真正执行"。
     self.pending_thief = event.id
     self.modal = { kind = "accuse_accomplice", thief = event.id }
 
@@ -733,14 +855,7 @@ function Controller:on_input(event)
 
   elseif a == "accuse" then
     -- 兼容入口：只给盗窃者，同伙按关卡声明处理
-    self:finish_accuse(event.id, nil, nil)
-
-  elseif a == "restart" then
-    core:reset()
-    self.modal = nil
-    self.toast = nil
-
-  elseif a == "share" then
+  -- ★ 2026-10-02：重置关卡也要 ✓ 确认。
     local code = core:encode_state()
     self.share_code = code
     self.modal = { kind = "share", code = code }
@@ -1154,6 +1269,7 @@ function Controller:build_layout()
     { HEX_TRI,  0, -67, 156,  46, 180, 0xFF2B3348 },   -- 内芯·下
   }
   -- 源场景是 256×256；按按钮边长等比缩放
+  local HEX_PREFAB = false         -- true = 用转存素材；false = 用基础图元拼（2026-10-01 实测：转存素材实例化失败，保持 false）
   local function hex_bg(btnId, cx, cy, size)
     local s = size / 256
     for i = 1, #HEX_PARTS do
@@ -1181,55 +1297,48 @@ function Controller:build_layout()
       })
     end
   end
-  -- ★★★ 2026-10-01：**改用转存进来的真素材**（`murdoku-btn-hex`，模板索引 1073742321）。
+  -- ★★★★★ 2026-10-02 **右上三键 = 提交 / 重置关卡 / 撤销**（用户定稿，见 LAYOUT 尾部那段注释）
   --
-  --   素材从哪来：https://qx.070077.xyz 画好 → 导出 .gia → **原样**放进
-  --     Beyond_Local_Export → 游戏里「导入外部资产 → 选中 → 转存所选资产」→ 素材库
-  --   然后用户把模板索引告诉我，登记在 `entry_client_script.lua` 的 `cfg.prefab_of`
-  --   （节点 id → 索引 + 父节点）⇒ 适配器 `InstantiateClientUIControl` 把它造出来。
-  --
-  --   下面这 6 个图元的旧写法（用游戏自带 100001/100003 拼）**保留**成 `hex_bg()`，
-  --   万一哪天外部资产不在素材库里，可以一行切回去。
-  -- ⚠️⚠️ 2026-10-01 真机实测：**转存素材这条路走不通**
-  --
-  --   日志里出现（报错级）：
-  --     [murdoku] 这些控件还没建（共 3 个，按类分组）：
-  --       action.*  ×3   action.undo.hexbg action.reveal.hexbg action.submit.hexbg
-  --   ⇒ `InstantiateClientUIControl(1073742321, ...)` **实例化失败** ——
-  --     那 6 个素材是「**外部资产**」转存进来的**图片素材**，
-  --     而脚本能实例化的只有「**客户端控件模板**」里的控件（官方硬约束，
-  --     适配器里那段注释也写了这条路：模板索引指的不是图片资产 ID）。
-  --   ⇒ **切回"用基础图元拼"**（`100001` 矩形 + `100003` 三角，各 6 个图元/按钮）。
-  --     这条路的图片 id 是**直接写进存档**的，不依赖任何实例化 ⇒ 稳。
-  --   ⇒ 素材没白转存：以后要是拿到「客户端控件模板」索引，改回 true 即可。
-  local HEX_PREFAB = false         -- true = 用转存素材；false = 用基础图元拼
+  --   原来是「撤销 / 提交 / 揭示」竖排在右侧中部（x=1790, y=390/540/690）。
+  --   现在按参考图挪到**右上角**，并把「揭示」换成**重置关卡**（从左上搬来）：
+  --     上 → 下：提交 / 重置关卡 / 撤销
+  --   右边缘 = `LAYOUT.side_key.right_edge`，**右下角那组（0/6 + 放大镜）也贴这条线**。
+  local SK = L.side_key
+  local sk_x = SK.right_edge - SK.size
+  local sk_y = { SK.top, SK.top + SK.size + SK.gap, SK.top + (SK.size + SK.gap) * 2 }
+  -- 六边形底图（三个键各一层）
   if HEX_PREFAB then
     local btns = {
-      { "action.undo",   1790, 390 },
-      { "action.submit", 1790, 540 },
-      { "action.reveal", 1790, 690 },
+      { "action.submit", sk_x, sk_y[1] },
+      { "action.redo",   sk_x, sk_y[2] },
+      { "action.undo",   sk_x, sk_y[3] },
     }
     for i = 1, #btns do
       local b = btns[i]
       push({
         id = b[1] .. ".hexbg", kind = "button", parent = b[1], visible = true,
-        -- 素材是 256×256 的正方形，按钮是 110×110 ⇒ 铺满即可
         rect = { x = b[2] - 55, y = b[3] - 55, w = 110, h = 110 },
       })
     end
   else
-    hex_bg("action.undo",   1790, 390, 110)
-    hex_bg("action.submit", 1790, 540, 110)
-    hex_bg("action.reveal", 1790, 690, 110)
+    hex_bg("action.submit", sk_x + 55, sk_y[1] + 55, SK.size)
+    hex_bg("action.redo",   sk_x + 55, sk_y[2] + 55, SK.size)
+    hex_bg("action.undo",   sk_x + 55, sk_y[3] + 55, SK.size)
   end
 
-  btn("action.undo", "root", { x = 1790, y = 390, w = 110, h = 110 }, "撤销",
-      { action = "undo" }, "stamp.sm", vm.hud.can_undo)
-  btn("action.submit", "root", { x = 1790, y = 540, w = 110, h = 110 },
+  -- 上 → 下：提交 / 重置关卡 / 撤销
+  btn("action.submit", "root", { x = sk_x, y = sk_y[1], w = SK.size, h = SK.size },
       vm.hud.filled and "提交" or "提交（先摆满）", { action = "submit" }, "stamp.primary", vm.hud.filled)
-  btn("action.reveal", "root", { x = 1790, y = 690, w = 110, h = 110 }, "揭示",
-      { action = "reveal" }, "stamp.sm")
+  btn("action.redo", "root", { x = sk_x, y = sk_y[2], w = SK.size, h = SK.size }, "重置关卡",
+      { action = "restart" }, "stamp.sm")
+  btn("action.undo", "root", { x = sk_x, y = sk_y[3], w = SK.size, h = SK.size }, "撤销",
+      { action = "undo" }, "stamp.sm", vm.hud.can_undo)
 
+  -- ★ 删除（参考图里没有）：`action.reveal` 揭示 / `hud.score` / `hud.violations`
+  --   / `hud.share` / `hud.toast`。删除方式 = **不再 push 这些节点** ——
+  --   `layout_plan` 与 `build_layout` 同源，不再出现的节点在编辑器指南里也会消失。
+  --   （`.gil` 里若还残留同名控件，`tools/gil/prune_nodes.mjs` 负责清掉。）
+  --
   -- ★★★ 2026-09-30：**按参考图重排顶栏与右下角**（《派蒙的执律庭实习》局内 UI）。
   --
   --   参考图的四个位置：
@@ -1245,20 +1354,42 @@ function Controller:build_layout()
   --     · `hud.progress` + `action.hint` —— 挪到**右下角**（计数 + 放大镜）
   --
   --   几何两处同源：这里（布局计划）+ `.gil`（`tools/gil/move_side_buttons.mjs`）。
-  local CORNER = 24
+  -- ★★★★★ 2026-10-02 **左上 = 返回菜单 + ✓/✗ 确认条；右下 = 进度 + 放大镜（右对齐）**
+  --   用户定稿（`docs/布局图-关卡内-v3.png`）：
+  --     · 左上只留「返回菜单」；`action.redo`（重置关卡）**已搬到右上第 2 个**
+  --     · 它右边是 ✓ / ✗  —— **默认 visible=false**，点「返回菜单 / 提交 / 重置关卡」时出现
+  --     · 右下 = `hud.progress`（0/6 计数）+ `action.hint`（放大镜 = 继承的提示功能）
+  --       两者**右边缘与右上三键对齐**（同一列，右边缘 = L.side_key.right_edge）
+  local BK = L.back_btn
   push({ id = "action.back", kind = "button", parent = "topbar", visible = true,
-         rect = { x = CORNER, y = CORNER, w = 300, h = 60 },
-         text = "返回列表", event = { action = "back" }, style = "stamp.sm" })
-  btn("action.redo", "topbar", { x = CORNER, y = CORNER + 70, w = 300, h = 60 }, "重置关卡",
-      { action = "restart" }, "stamp.sm")
+         rect = { x = BK.x, y = BK.y, w = BK.w, h = BK.h },
+         text = "返回菜单", event = { action = "back_confirm" }, style = "stamp.sm" })
 
-  -- 右下角：计数 + 放大镜（对齐参考图）
+  -- ✓ / ✗ 确认条：**默认隐藏**（visible=false）。真正的显隐由 main.lua 的
+  --   `confirm_show()/confirm_hide()` 每帧按 `pending_action` 决定 ——
+  --   这里只负责"建出来 + 给个初始隐藏状态 + 绑事件"。
+  -- ✓ / ✗ 确认条：**默认隐藏**（visible=false）。
+  --   显隐规则：只有 `self.pending ~= nil`（点了 返回菜单 / 提交 / 重置关卡）时才出现。
+  --   `build_layout` 是**每帧重建**的（见文件头"控件树每帧重建"那段）⇒
+  --   直接把 `self.pending` 折进 `visible` 就够了，不需要额外的跨帧状态。
+  local CF = L.confirm
+  local pending_on = (self.pending ~= nil)
+  push({ id = "confirm.ok", kind = "button", parent = "topbar", visible = pending_on,
+         rect = { x = CF.x, y = CF.y, w = CF.size, h = CF.size },
+         text = "✓", event = { action = "confirm_yes" }, style = "stamp.primary" })
+  push({ id = "confirm.no", kind = "button", parent = "topbar", visible = pending_on,
+         rect = { x = CF.x + CF.size + CF.gap, y = CF.y, w = CF.size, h = CF.size },
+         text = "✗", event = { action = "confirm_no" }, style = "stamp.sm" })
+
+  -- 右下：计数 + 放大镜。右边缘 = 右上三键的右边缘（用户要求对齐）。
+  local RB = L.side_key.right_edge
+  local PG = L.progress
   push({ id = "hud.progress", kind = "text", parent = "right",
-         rect = { x = L.right.x + 20, y = L.right.y + L.right.h - 150, w = 260, h = 44 },
-         text = string.format("已放置 %d / %d", self:placed_count(vm), vm.piece_count),
+         rect = { x = RB - 110 - PG.icon_gap - PG.num_w, y = PG.y, w = PG.num_w, h = PG.h },
+         text = string.format("%d / %d", self:placed_count(vm), vm.piece_count),
          style = "stat" })
-  btn("action.hint", "right", { x = L.right.x + L.right.w - 140, y = L.right.y + L.right.h - 160,
-                                w = 110, h = 110 }, "放大镜",
+  btn("action.hint", "right", { x = RB - L.side_key.size, y = PG.y - 26,
+                                w = L.side_key.size, h = L.side_key.size }, "放大镜",
       { action = "hint" }, "stamp.sm", vm.hud.can_hint)
 
   push({ id = "hud.timer", kind = "text", parent = "topbar",
@@ -1270,14 +1401,20 @@ function Controller:build_layout()
 
   -- ===== 左侧面板：头像卡 + 线索卡 + 图例 =====
   push({ id = "left", kind = "container", parent = "root", rect = rect_of(L.left), style = "panel.left" })
-  push({ id = "tray", kind = "container", parent = "left", rect = rect_of(L.tray), style = "tray" })
+  -- ★★★★★ 2026-10-02 用户定稿：**头像卡（tray）并进"滚动线索卡"** ——
+  --   每张线索卡 = 头像 + 线索文本 + 字母徽章（见下面 `clue.<i>.face` 那段）。
+  --   所以这里**不再单独建头像卡**：容器留着但 `visible = false`
+  --   （老存档里还有这个控件名，留个空壳比直接删更稳，不会让"控件找不到"的报警刷屏）。
+  push({ id = "tray", kind = "container", parent = "left", rect = rect_of(L.tray),
+         style = "tray", visible = false })
   -- 头像卡的**列数自适应**：保证永远只占 2 行。
   --   踩过的坑：写死 3 列时，7 个角色的关卡会排到第 3 行，
   --   而 tray 容器只有 2 行高 —— 卡片溢出容器、压住了下面的线索。
   --   规则：per_row = max(3, ceil(人数 / 2))，卡片宽度按剩余宽度均分。
   local gx = L.tray_gap_x or 12
   local gy = L.tray_gap_y or 10
-  local n_tray = #vm.tray
+  -- ★★★ 2026-10-02：**清零** —— 头像卡已并进线索卡，不再单独摆（见上面 tray 那段注释）。
+  local n_tray = 0
   local per_row = math.max(L.tray_per_row or 3, math.ceil(n_tray / 2))
   local item_w = math.floor((L.tray.w - (per_row - 1) * gx) / per_row)
   local item_h = L.tray_item_h
@@ -1680,50 +1817,12 @@ function Controller:build_layout()
   -- ⚠️ `hud.progress` **不在这里** —— 它已经挪到右下角和放大镜做伴了
   --   （见文件上半部分的"按参考图重排顶栏与右下角"）。
   --   我第一版忘了删这一份，于是**同名控件建了两个** —— 正是"同名两处必然漂移"的老毛病。
-  local got, total = self.core:score()
-  push({ id = "hud.score", kind = "text", parent = "right",
-         rect = { x = L.right.x + 20, y = L.right.y + 74, w = L.right.w - 160, h = 44 },
-         text = string.format("位置正确 %d / %d", got, total), style = "muted" })
-  -- 区域推断面板（偷窃版 R3/R4 的可观测量，玩家自己也能数出来）
-  local st = vm.structure or {}
-  local st_lines = {}
-  if st.victim_room == nil then
-    st_lines[#st_lines + 1] = "把受害者摆上棋盘后，这里会显示区域推断"
-  else
-    st_lines[#st_lines + 1] = string.format("受害者区域 #%d，区内 %d 人（k=%d）",
-                                            st.victim_room, st.k or 0, st.k or 0)
-    st_lines[#st_lines + 1] = string.format("→ 同伙：%s",
-      (st.k or 0) >= 2 and "必然是 1 人" or "可有可无，看线索与假话预算")
-    local adj = st.adjacent or {}
-    if #adj == 0 then
-      st_lines[#st_lines + 1] = "相邻区域：无（关卡非法）"
-    else
-      local parts = {}
-      for i = 1, #adj do
-        local room = adj[i]
-        parts[#parts + 1] = string.format("#%d 无辜 %d", room, (st.innocent_counts or {})[room] or 0)
-      end
-      st_lines[#st_lines + 1] = "门相邻区域：" .. table.concat(parts, "、")
-      if st.best_rooms and #st.best_rooms == 1 then
-        st_lines[#st_lines + 1] = string.format("→ 盗窃者应在 #%d（无辜人数最多）", st.best_rooms[1])
-      elseif st.best_rooms and #st.best_rooms > 1 then
-        st_lines[#st_lines + 1] = "相邻区域无辜人数并列（本关允许并列）"
-      end
-    end
-  end
-  for i = 1, #(vm.violations or {}) do
-    st_lines[#st_lines + 1] = "· " .. vm.violations[i].text
-  end
-  push({ id = "hud.violations", kind = "text", parent = "right",
-         rect = { x = L.right.x + 20, y = L.right.y + 132, w = L.right.w - 160, h = 230 },
-         text = table.concat(st_lines, "\n"), style = "muted" })
-  push({ id = "hud.share", kind = "text", parent = "right",
-         rect = { x = L.right.x + 20, y = L.right.y + 360, w = L.right.w - 160, h = 120 },
-         text = self.share_code and ("分享码：" .. self.share_code) or "", style = "muted" })
-  push({ id = "hud.toast", kind = "text", parent = "right",
-         rect = { x = L.right.x + 20, y = L.right.y + 520, w = L.right.w - 160, h = 140 },
-         text = self.toast or vm.last_message or "", style = "toast",
-         visible = (self.toast ~= nil or vm.last_message ~= nil) })
+  -- ★★★★★ 2026-10-02 **按用户定稿删除**（参考图里没提到的按键全删）：
+  --     `hud.score`（位置正确 N/M）、`hud.violations`（区域推断 + 违规）、
+  --     `hud.share`（分享码）、`hud.toast`（提示条）—— 全部**不再 push**。
+  --   原来那段还算了 `vm.structure`（区域推断文案），一并删掉 ——
+  --   它是给 `hud.violations` 用的，没有控件就不必算。
+  --   保留的右栏内容只有：`hud.progress`（右下角，与放大镜同排）——见上面那段。
   -- 顶部放不下的次级操作放这里（1920 内不会溢出）
   local rx = L.right.x + 20
   -- ★★ 2026-09-29：`action.howto` / `action.share` / `action.restart` 三个按钮

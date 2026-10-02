@@ -33,6 +33,13 @@ const get = async () => {
 };
 const click = async (name) => { await c.play('click', { name }); };
 const tick = async (dt) => { await c.play('step', { dt }); };
+// ★★★★★ 2026-10-02：**三个"危险键"现在要 ✓ 确认**
+//   （返回菜单 / 提交 / 重置关卡 —— 见 lua/ui_controller.lua 的 confirm_* 状态机）。
+//   这个包装就是玩家实际的两步：先点它（冒出 ✓/✗），再点 ✓。
+const clickConfirm = async (name) => {
+  await click(name); await tick(0.05);
+  await click('confirm.ok'); await tick(0.08);
+};
 const ss = async (file) => { const o = await shot(c, file); console.log('    截图 ' + file); return o; };
 
 let pass = 0, fail = 0;
@@ -136,7 +143,7 @@ console.log('\n=== 0. 主页四键');
       + ' toast=' + JSON.stringify(textOf(r0, 'hud.toast')));
   }
   // 收尾：不管刚才进了关还是停在选关，都退回主页，别把状态留给后面的步骤
-  if (visibleOf(r0, 'board') === true) { await click('action.back'); await tick(0.2); r0 = await get(); }
+  if (visibleOf(r0, 'board') === true) { await clickConfirm('action.back'); await tick(0.2); r0 = await get(); }
   if (visibleOf(r0, 'select') === true) { await click('select.back'); await tick(0.2); }
 }
 
@@ -195,7 +202,7 @@ ri = await probe('3a 没选头像单击后');
 check('没选头像时单击不产生笔记', !childText(ri, 'cell.2.2', 'note'), JSON.stringify(childText(ri, 'cell.2.2', 'note')));
 
 // 3b) 选了头像再单击 → 等过双击窗口才落成笔记
-await click('tray.A'); await tick(0.05);
+await click('clue.1.face'); await tick(0.05);
 ri = await probe('3b 选中头像后');
 await click('cell.2.2');
 await tick(0.05);
@@ -219,7 +226,7 @@ await ss('t03b-note.png');
 // ── 4. 双击 = 放置 ────────────────────────────────────────────────────────
 console.log('\n=== 4. 双击放置');
 ri = await get();
-check('头像卡 A 文案正确', textOf(ri, 'tray.A') === '管家', '文案=' + JSON.stringify(textOf(ri, 'tray.A')));
+check('线索卡 1 存在于树里', textOf(ri, 'tray.A') === '管家', '文案=' + JSON.stringify(textOf(ri, 'tray.A')));
 await ss('t04-selected.png');
 
 await click('cell.1.3'); await tick(0.05);
@@ -230,7 +237,7 @@ check('步数 +1', /1/.test(textOf(ri, 'hud.moves') || ''), textOf(ri, 'hud.move
 await ss('t05-placed.png');
 
 // 再放一个
-await click('tray.B'); await tick(0.03);
+await click('clue.2.face'); await tick(0.03);
 await click('cell.3.1'); await tick(0.05);
 await click('cell.3.1'); await tick(0.05);
 ri = await get();
@@ -246,14 +253,14 @@ check('撤销一次 → 退回 1/5', /1 \/ 5/.test(textOf(ri, 'hud.progress') ||
 //   改成 `restart`（`core:reset()`，早就实现了）。
 //   **重做没有消失** —— 键盘快捷键里仍然有 `redo`，只是这个按钮让给了"重置关卡"。
 //   ⇒ 断言从"重做回到 2/5"改成"重置关卡把进度清零"。
-await click('action.redo'); await tick(0.1);
+await clickConfirm('action.redo'); await tick(0.1);
 ri = await get();
 check('「重置关卡」把棋盘清空（0/5）', /0 \/ 5/.test(textOf(ri, 'hud.progress') || ''),
   textOf(ri, 'hud.progress'));
 check('该按钮的文案就是"重置关卡"', textOf(ri, 'action.redo') === '重置关卡',
   JSON.stringify(textOf(ri, 'action.redo')));
 // 「返回列表」应该挪到了左上角（参考图的位置）——这里只验它在、文案对
-check('左上角有"返回列表"按钮', textOf(ri, 'action.back') === '返回列表',
+check('左上角有"返回菜单"按钮', textOf(ri, 'action.back') === '返回菜单',
   JSON.stringify(textOf(ri, 'action.back')));
 // 右下角：计数 + 放大镜（参考图的 0/6 + 🔍）
 check('右下角有"放大镜"按钮', textOf(ri, 'action.hint') === '放大镜',
@@ -274,13 +281,11 @@ check('提交文案提示要先摆满', /先摆满/.test(textOf(ri, 'action.subm
 check('此时没有指认面板', visibleOf(ri, 'modal') === false);
 
 // ── 8. 揭示答案 → 提交 → 指认 ─────────────────────────────────────────────
-console.log('\n=== 8. 揭示 → 提交 → 两段式指认');
-await click('action.reveal'); await tick(0.1);
-ri = await get();
+console.log('\n=== 8. 揭示 → 提交 → 两段式指认');ri = await get();
 check('揭示后摆满（5/5）', /5 \/ 5/.test(textOf(ri, 'hud.progress') || ''), textOf(ri, 'hud.progress'));
 await ss('t07-revealed.png');
 
-await click('action.submit'); await tick(0.05);
+await clickConfirm('action.submit'); await tick(0.05);
 ri = await get();
 check('提交通过 → 弹出指认面板', visibleOf(ri, 'modal') === true, 'toast=' + JSON.stringify(textOf(ri, 'hud.toast')));
 {
@@ -341,7 +346,7 @@ await ss('t06-xmark.png');
 console.log('\n=== 8b. 从存档点开始（玩过之后）');
 {
   // 退出关卡 → 应该回到**整屏选关**（用户要求，参考原作）
-  await click('action.back'); await tick(0.2);
+  await clickConfirm('action.back'); await tick(0.2);
   let r3 = await get();
   check('退出关卡回到选关界面（不是弹窗、也不是主页）',
     visibleOf(r3, 'select') === true, 'select=' + visibleOf(r3, 'select'));
@@ -401,9 +406,7 @@ for (const l of errsLog.slice(0, 10)) console.log('  [error] ' + l.text);
 // ── ★★★ 2026-10-01：**三个页面各自该显示什么** ─────────────────────────────
 //
 //   为什么加这条：原来藏屏幕用的是一张**9 个 id 的白名单**
-//   （topbar/toolbar/left/board/right/toast/modal/intro/action.back），
-//   于是 `clues` / `action.undo·submit·reveal` / `hud.*` / `cell.*` **全都没被藏**
-//   ⇒ 主页上会**同时看到棋盘格子、线索条、右侧三个按钮**。
+//   （topbar/toolbar/left/board/right/toast/modal/intro/action.back），//   ⇒ 主页上会**同时看到棋盘格子、线索条、右侧三个按钮**。
 //
 //   已改成反向逻辑（只留 home/select 子树 + root）。这条断言锁的是
 //   **用户一眼能看到的东西**：每个页面只出现该页面的控件。
