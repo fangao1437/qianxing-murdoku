@@ -1150,7 +1150,11 @@ function Murdoku.on_update(dt)
     --     `note`/`x`/`wall.*`，但它**不知道 `face` 应该一直亮着**）。
     --   ⇒ 与其去改那套逻辑的每一处（容易漏、容易再引入新问题），**在这里每帧重新点亮**：
     --     这段每帧最后执行，顺序上必然赢。只在关卡内做（选关页不需要棋盘）。
-    if scr_now == nil then
+    -- ★★★★★ 2026-10-02 **注意：`scr_now` 永远不会是 nil！**
+    --   L620 写的是 `…controller.screen or "level"` —— 关卡内 controller.screen 是 nil，
+    --   但这行把 nil 变成了字符串 "level"。所以我前两版写的 `if scr_now == nil then`
+    --   **永远为假** ⇒ 这段每帧代码从来没跑过（连我加的诊断打印都没出现，原因就是这个）。
+    if scr_now == "level" then
       local rows, cols = 5, 5
       pcall(function()
         local cfg = current.adapter and current.adapter.cfg
@@ -1208,7 +1212,7 @@ function Murdoku.on_update(dt)
   --   `wall.up`(上边) / `wall.left`(左边) 是 visible=true，而**格子底图 `face` 是 false**。
   --   ⇒ 这一版把 `face` 的真实情况打出来（尺寸 / 图片 / 是否被脚本设过），
   --     这样"底图为什么没铺开"就不用猜了。
-  if (current.frames or 0) % 300 == 0 and scr_now == nil then
+  if (current.frames or 0) % 300 == 0 and scr_now == "level" then
     local c1 = nil
     pcall(function() c1 = current.adapter:find("cell.1.1") end)
     if c1 ~= nil then
