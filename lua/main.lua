@@ -1121,82 +1121,17 @@ function Murdoku.on_update(dt)
   --   而它们现在的父级 `right` 自己也有偏移 ⇒ **父级偏移 + 子控件绝对坐标 = 双重偏移**。
   --   ⇒ 对策：把这两个容器的锚点设成 (0,0)（居中）⇒ 子控件的相对坐标就等于绝对坐标，
   --     位置立刻回到编辑器里摆的地方。
-    -- ★★★★★ 2026-10-02 **所有"面板类容器"锚点归零**（真机 23:17 日志确定的规律：
-    --   容器锚点 = 屏幕中心 (0,0)、子控件用**画布绝对坐标**。
-    --   `board`(-35,8)/`action.undo`(741,132) 因父级本就是 (0,0) 而位置正确；
-    --   而 `clues`(0,41)/`hud.title`(-283,7) 因父级偏了、子控件又是绝对坐标 ⇒ 跑到画面中间。）
-    for _, nm in ipairs({ "topbar", "right", "left", "tray", "clues", "board", "ruler",
-                          "intro", "modal", "select", "toolbar", "legend" }) do
+  for _, nm in ipairs({ "topbar", "right" }) do
     local c = nil
     pcall(function() c = current.adapter:find(nm) end)
     if c ~= nil then
       pcall(function() c:SetAnchoredPosition(0, 0) end)
     end
   end
-    -- ★★★★★ 2026-10-02 **真机"点不动又回来了"的直接原因**：
-    --   `ruler`（刻度尺）在 .gil 里是 **677×677、visible=true** 的实心容器，
-    --   和 `board` 一样大 ⇒ **整个盖在棋盘上、抢走所有光标射线** ⇒ 关卡内除了它谁也点不到。
-    --   `toolbar`（1600×87，已废弃）同理，全宽挡在顶部。
-    --   ⇒ 处理：这两个"纯装饰/废弃"容器**一律屏蔽穿透**（不接收射线、也不拦截），
-    --     并且把 `toolbar` 直接隐藏。其余面板容器的屏蔽交给 `seal_containers`。
-    -- ★★★★★ 2026-10-02 **用户更正后的第二个元凶：`select.card.*`**。
-    --
-    --   现象（用户 23:24 更正）：
-    --     · 选关界面：**点哪里都会进入关卡**（不是"只有四个方块能点"）
-    --     · 关卡内：**什么都点不动**
-    --   日志（23:17）里：`select` 1600×900 可见、`select.card.1..8` 各 380×200 可见
-    --   ⇒ 8 张卡铺满选关页，且被绑上了 `pick_level` ⇒ **点哪都落在某张卡上 ⇒ 都进关卡**。
-    --   这 8 张卡是 `sync_plan` 按规划补进来的（规划里它们是"选关卡"），
-    --   但**我们选关页真正用的是脚本建的 `selbtn.1..4`** ⇒ 这批卡是多余的。
-    --   ⇒ 处理：**一律隐藏 + 屏蔽穿透**（不删控件，避免"控件找不到"报警刷屏）。
-    for i = 1, 12 do
-      for _, suffix in ipairs({ "", ".title", ".info" }) do
-        local nm = "select.card." .. i .. suffix
-        local c = nil
-        pcall(function() c = current.adapter:find(nm) end)
-        if c ~= nil then
-          pcall(function() c:SetVisible(false) end)
-          pcall(function() c.disableCursorEventPassthrough = true end)
-          pcall(function() c.disableKeyEventPassthrough = true end)
-          pcall(function() c.showCursor = false end)
-        end
-      end
-    end
-    -- 同样处理选关页那批"新补进来、我们不用"的控件
-    for _, nm in ipairs({ "select.title", "select.prev", "select.next", "select.page",
-                          "select.back", "legend" }) do
-      local c = nil
-      pcall(function() c = current.adapter:find(nm) end)
-      if c ~= nil then
-        pcall(function() c:SetVisible(false) end)
-        pcall(function() c.disableCursorEventPassthrough = true end)
-        pcall(function() c.showCursor = false end)
-      end
-    end
-    for _, nm in ipairs({ "ruler", "toolbar", "legend", "bg" }) do
-      local c = nil
-      pcall(function() c = current.adapter:find(nm) end)
-      if c ~= nil then
-        -- ★★★★★ 2026-10-02 **这一行原来是 `SetVisible(nm ~= "toolbar")` —— 是我的 bug**。
-        --   它把 `ruler`/`legend`/`bg` **强行设成 visible=true** ⇒ `ruler` 是 677×677 的实心块、
-        --   又可见 ⇒ **整个盖在屏幕上、点哪都点不动**（真机 23:35 日志：
-        --   `UI定位 ruler：pos=(0,0) size=677x677 visible=true`）。
-        --   这一段的**本意只是"屏蔽穿透"**，绝不该改可见性 ⇒ 一律设 false。
-        pcall(function() c:SetVisible(false) end)
-        pcall(function() c.disableCursorEventPassthrough = true end)
-        pcall(function() c.disableKeyEventPassthrough = true end)
-        pcall(function() c.showCursor = false end)
-      end
-    end
   -- ★★★★★ 2026-10-02 **UI 容器定位诊断**：真机"right/topbar 可见=true 但看不到"，
   --   所以把它们的**位置/尺寸/透明度/同级顺序**全打出来，一次看清问题在哪。
   if (current.frames or 0) % 300 == 0 then
-    -- ★★★★★ 2026-10-02 **所有"面板类容器"锚点归零**（真机 23:17 日志确定的规律：
-    --   容器锚点 = 屏幕中心 (0,0)、子控件用**画布绝对坐标**。
-    --   `board`(-35,8)/`action.undo`(741,132) 因父级本就是 (0,0) 而位置正确；
-    --   而 `clues`(0,41)/`hud.title`(-283,7) 因父级偏了、子控件又是绝对坐标 ⇒ 跑到画面中间。）
-    for _, nm in ipairs({ "topbar", "right", "left", "tray", "clues", "board", "ruler",
-                          "intro", "modal", "select", "toolbar", "legend" }) do
+    for _, nm in ipairs({ "topbar", "right" }) do
       local c = nil
       pcall(function() c = current.adapter:find(nm) end)
       if c ~= nil then
@@ -1237,61 +1172,6 @@ function Murdoku.on_update(dt)
             print(string.format("[murdoku]   子控件 %s：pos=(%.0f,%.0f) size=%.0fx%.0f visible=%s",
               kn, kx, ky, kw, kh, kv))
           end
-    -- ★★★★★ 2026-10-02 **真机"点不动又回来了"的直接原因**：
-    --   `ruler`（刻度尺）在 .gil 里是 **677×677、visible=true** 的实心容器，
-    --   和 `board` 一样大 ⇒ **整个盖在棋盘上、抢走所有光标射线** ⇒ 关卡内除了它谁也点不到。
-    --   `toolbar`（1600×87，已废弃）同理，全宽挡在顶部。
-    --   ⇒ 处理：这两个"纯装饰/废弃"容器**一律屏蔽穿透**（不接收射线、也不拦截），
-    --     并且把 `toolbar` 直接隐藏。其余面板容器的屏蔽交给 `seal_containers`。
-    -- ★★★★★ 2026-10-02 **用户更正后的第二个元凶：`select.card.*`**。
-    --
-    --   现象（用户 23:24 更正）：
-    --     · 选关界面：**点哪里都会进入关卡**（不是"只有四个方块能点"）
-    --     · 关卡内：**什么都点不动**
-    --   日志（23:17）里：`select` 1600×900 可见、`select.card.1..8` 各 380×200 可见
-    --   ⇒ 8 张卡铺满选关页，且被绑上了 `pick_level` ⇒ **点哪都落在某张卡上 ⇒ 都进关卡**。
-    --   这 8 张卡是 `sync_plan` 按规划补进来的（规划里它们是"选关卡"），
-    --   但**我们选关页真正用的是脚本建的 `selbtn.1..4`** ⇒ 这批卡是多余的。
-    --   ⇒ 处理：**一律隐藏 + 屏蔽穿透**（不删控件，避免"控件找不到"报警刷屏）。
-    for i = 1, 12 do
-      for _, suffix in ipairs({ "", ".title", ".info" }) do
-        local nm = "select.card." .. i .. suffix
-        local c = nil
-        pcall(function() c = current.adapter:find(nm) end)
-        if c ~= nil then
-          pcall(function() c:SetVisible(false) end)
-          pcall(function() c.disableCursorEventPassthrough = true end)
-          pcall(function() c.disableKeyEventPassthrough = true end)
-          pcall(function() c.showCursor = false end)
-        end
-      end
-    end
-    -- 同样处理选关页那批"新补进来、我们不用"的控件
-    for _, nm in ipairs({ "select.title", "select.prev", "select.next", "select.page",
-                          "select.back", "legend" }) do
-      local c = nil
-      pcall(function() c = current.adapter:find(nm) end)
-      if c ~= nil then
-        pcall(function() c:SetVisible(false) end)
-        pcall(function() c.disableCursorEventPassthrough = true end)
-        pcall(function() c.showCursor = false end)
-      end
-    end
-    for _, nm in ipairs({ "ruler", "toolbar", "legend", "bg" }) do
-      local c = nil
-      pcall(function() c = current.adapter:find(nm) end)
-      if c ~= nil then
-        -- ★★★★★ 2026-10-02 **这一行原来是 `SetVisible(nm ~= "toolbar")` —— 是我的 bug**。
-        --   它把 `ruler`/`legend`/`bg` **强行设成 visible=true** ⇒ `ruler` 是 677×677 的实心块、
-        --   又可见 ⇒ **整个盖在屏幕上、点哪都点不动**（真机 23:35 日志：
-        --   `UI定位 ruler：pos=(0,0) size=677x677 visible=true`）。
-        --   这一段的**本意只是"屏蔽穿透"**，绝不该改可见性 ⇒ 一律设 false。
-        pcall(function() c:SetVisible(false) end)
-        pcall(function() c.disableCursorEventPassthrough = true end)
-        pcall(function() c.disableKeyEventPassthrough = true end)
-        pcall(function() c.showCursor = false end)
-      end
-    end
         end
       end
     end

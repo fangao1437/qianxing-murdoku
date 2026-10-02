@@ -202,39 +202,21 @@ local function build_adapter()
     --   ⚠️ **改美术要改 scene JSON**（tools/qx/scenes/*.json）再重新导出转存，
     --      **不要手改导出的 .gia** —— 我改过一次资产类型号，把一个能用的文件
     --      改成了导入会卡住的（教训记在 docs/外部资产-怎么用与我做了什么.md）。
-    -- ★★★★★ 2026-10-02 **按"转存后实测"改正索引**。
-    --
-    --   用户走完了「导入外部资产 → 选中 → 转存所选资产」，我从他给的
-    --   `124，含资产.gil` 里把**实际落下来的 6 个客户端控件模板**读了出来：
-    --
-    --       1073742333  murdoku-btn-hex      ← 六边形按钮（右上三键共用）
-    --       1073742337  murdoku-card-frame   ← 深色卡框
-    --       1073742341  murdoku-cell         ← 格子
-    --       1073742345  murdoku-clue-row     ← 线索条（每行一条）
-    --       1073742349  murdoku-panel        ← 面板
-    --       1073742352  murdoku-tape         ← 胶带
-    --
-    --   ⚠️ 改之前这里写的是**猜的值**：`hexbg = 1073742321`（旧的失败索引），
-    --      而 `1073742333` 被当成"线索条" —— 实际它是**六边形按钮**。两边错位了。
-    --   ⇒ 现在一律以"从 .gil 里读出来的真实索引"为准。
-    --
-    --   ★ 关键差别（解开了之前"实例化失败"那个结）：
-    --     上次转存的是**图片素材**，而 `InstantiateClientUIControl` 只能实例化
-    --     「**客户端控件模板**」⇒ 必然返回 nil。**这次转存下来的就是客户端控件模板**
-    --     （每个都带 `1`/`2`/`3` 图形子层）⇒ 这条路现在通了。
     prefab_of = {
-      -- 六边形按钮底图（右上三键共用一张）
-      ["action.submit.hexbg"] = 1073742333,
-      ["action.redo.hexbg"]   = 1073742333,
-      ["action.undo.hexbg"]   = 1073742333,
-      -- 深色卡框（主页 / 选关的背景大板）
+      -- 六边形按钮底图（右侧三个按钮共用一张）
+      ["action.undo.hexbg"]   = 1073742321,
+      ["action.submit.hexbg"] = 1073742321,
+      ["action.reveal.hexbg"] = 1073742321,
+      -- 线索卡底条（深色横条 + 左端头像位），每条线索一个
+      -- （索引 1073742333；下面用循环补齐 clue.1..18）
+      -- 主页/选关的背景大板
       ["home.panel"]   = 1073742337,
       ["select.panel"] = 1073742337,
     },
     parent_of = {
-      ["action.submit.hexbg"] = "action.submit",
-      ["action.redo.hexbg"]   = "action.redo",
       ["action.undo.hexbg"]   = "action.undo",
+      ["action.submit.hexbg"] = "action.submit",
+      ["action.reveal.hexbg"] = "action.reveal",
       ["home.panel"]   = "home",
       ["select.panel"] = "select",
     },
@@ -384,9 +366,7 @@ local function build_adapter()
     diagnose_cell = true,
   })
 
-  -- ★ 线索卡底条：每条线索一个（最多 18 条），索引 **1073742345**（murdoku-clue-row）。
-  --   ⚠️ 2026-10-02 修正：原来这里写 1073742333，但转存实测 1073742333 是 **murdoku-btn-hex**（六边形按钮），
-  --     真正的线索条是 **1073742345** —— 两个索引被写反了，见上面 prefab_of 那段注释。
+  -- ★ 线索卡底条：每条线索一个（最多 18 条），索引 1073742333（murdoku-clue-row）。
   --   用循环补，免得手抄 18 行 —— 这也是"一处定义"的做法。
   do
     local c = adapter.cfg
@@ -394,7 +374,7 @@ local function build_adapter()
     c.parent_of = c.parent_of or {}
     for i = 1, 18 do
       local id = "clue." .. i .. ".bg"
-      c.prefab_of[id] = 1073742345   -- murdoku-clue-row（转存实测）
+      c.prefab_of[id] = 1073742333
       c.parent_of[id] = "clues"
     end
   end
