@@ -1121,17 +1121,43 @@ function Murdoku.on_update(dt)
   --   而它们现在的父级 `right` 自己也有偏移 ⇒ **父级偏移 + 子控件绝对坐标 = 双重偏移**。
   --   ⇒ 对策：把这两个容器的锚点设成 (0,0)（居中）⇒ 子控件的相对坐标就等于绝对坐标，
   --     位置立刻回到编辑器里摆的地方。
-  for _, nm in ipairs({ "topbar", "right" }) do
+    -- ★★★★★ 2026-10-02 **所有"面板类容器"锚点归零**（真机 23:17 日志确定的规律：
+    --   容器锚点 = 屏幕中心 (0,0)、子控件用**画布绝对坐标**。
+    --   `board`(-35,8)/`action.undo`(741,132) 因父级本就是 (0,0) 而位置正确；
+    --   而 `clues`(0,41)/`hud.title`(-283,7) 因父级偏了、子控件又是绝对坐标 ⇒ 跑到画面中间。）
+    for _, nm in ipairs({ "topbar", "right", "left", "tray", "clues", "board", "ruler",
+                          "intro", "modal", "select", "toolbar", "legend" }) do
     local c = nil
     pcall(function() c = current.adapter:find(nm) end)
     if c ~= nil then
       pcall(function() c:SetAnchoredPosition(0, 0) end)
     end
   end
+    -- ★★★★★ 2026-10-02 **真机"点不动又回来了"的直接原因**：
+    --   `ruler`（刻度尺）在 .gil 里是 **677×677、visible=true** 的实心容器，
+    --   和 `board` 一样大 ⇒ **整个盖在棋盘上、抢走所有光标射线** ⇒ 关卡内除了它谁也点不到。
+    --   `toolbar`（1600×87，已废弃）同理，全宽挡在顶部。
+    --   ⇒ 处理：这两个"纯装饰/废弃"容器**一律屏蔽穿透**（不接收射线、也不拦截），
+    --     并且把 `toolbar` 直接隐藏。其余面板容器的屏蔽交给 `seal_containers`。
+    for _, nm in ipairs({ "ruler", "toolbar", "legend", "bg" }) do
+      local c = nil
+      pcall(function() c = current.adapter:find(nm) end)
+      if c ~= nil then
+        pcall(function() c:SetVisible(nm ~= "toolbar") end)
+        pcall(function() c.disableCursorEventPassthrough = true end)
+        pcall(function() c.disableKeyEventPassthrough = true end)
+        pcall(function() c.showCursor = false end)
+      end
+    end
   -- ★★★★★ 2026-10-02 **UI 容器定位诊断**：真机"right/topbar 可见=true 但看不到"，
   --   所以把它们的**位置/尺寸/透明度/同级顺序**全打出来，一次看清问题在哪。
   if (current.frames or 0) % 300 == 0 then
-    for _, nm in ipairs({ "topbar", "right" }) do
+    -- ★★★★★ 2026-10-02 **所有"面板类容器"锚点归零**（真机 23:17 日志确定的规律：
+    --   容器锚点 = 屏幕中心 (0,0)、子控件用**画布绝对坐标**。
+    --   `board`(-35,8)/`action.undo`(741,132) 因父级本就是 (0,0) 而位置正确；
+    --   而 `clues`(0,41)/`hud.title`(-283,7) 因父级偏了、子控件又是绝对坐标 ⇒ 跑到画面中间。）
+    for _, nm in ipairs({ "topbar", "right", "left", "tray", "clues", "board", "ruler",
+                          "intro", "modal", "select", "toolbar", "legend" }) do
       local c = nil
       pcall(function() c = current.adapter:find(nm) end)
       if c ~= nil then
@@ -1172,6 +1198,22 @@ function Murdoku.on_update(dt)
             print(string.format("[murdoku]   子控件 %s：pos=(%.0f,%.0f) size=%.0fx%.0f visible=%s",
               kn, kx, ky, kw, kh, kv))
           end
+    -- ★★★★★ 2026-10-02 **真机"点不动又回来了"的直接原因**：
+    --   `ruler`（刻度尺）在 .gil 里是 **677×677、visible=true** 的实心容器，
+    --   和 `board` 一样大 ⇒ **整个盖在棋盘上、抢走所有光标射线** ⇒ 关卡内除了它谁也点不到。
+    --   `toolbar`（1600×87，已废弃）同理，全宽挡在顶部。
+    --   ⇒ 处理：这两个"纯装饰/废弃"容器**一律屏蔽穿透**（不接收射线、也不拦截），
+    --     并且把 `toolbar` 直接隐藏。其余面板容器的屏蔽交给 `seal_containers`。
+    for _, nm in ipairs({ "ruler", "toolbar", "legend", "bg" }) do
+      local c = nil
+      pcall(function() c = current.adapter:find(nm) end)
+      if c ~= nil then
+        pcall(function() c:SetVisible(nm ~= "toolbar") end)
+        pcall(function() c.disableCursorEventPassthrough = true end)
+        pcall(function() c.disableKeyEventPassthrough = true end)
+        pcall(function() c.showCursor = false end)
+      end
+    end
         end
       end
     end
