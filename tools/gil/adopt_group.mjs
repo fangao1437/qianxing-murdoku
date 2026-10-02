@@ -89,21 +89,31 @@ if (danger.length) {
 }
 
 // ── ③ 决定每个领养控件的父级 ────────────────────────────────────────
+//
+// ★★★★★ 2026-10-02 **重大修正：不要重新编号！**
+//
+//   我原来给每个领养控件分配了新 id（`nextId++`）并写了 `r.id = newId` ——
+//   但 `r.id` 只是**解析出来的 JS 属性**，**文件里的 id 字段并没有被改写**。
+//   后果（真机 + 读回都证实）：子控件的 `#504` 被改成了 `1073742333`（新 id），
+//   而父级记录 `right` 在文件里的 id 仍是 `1073741919`
+//   ⇒ **子控件指向一个不存在的父级** ⇒ 引擎不加载 ⇒ "看不见右栏控件"。
+//   （工具自己的回读检查当时还打了 ✅ —— 因为检查是在**内存**里按改过的 `r.id` 算的。）
+//
+//   ⇒ 现在的做法：**id 原样沿用**（已验证 93 与 118 的 id 不冲突），
+//     只有当"源父级不在本次领养清单里"时，才把 `#504` 改成基线里同名控件的 id。
 const baseIds = new Map(g.recs.map((r) => [String(r.id), r]));
-const nextId = Math.max(...g.recs.map((r) => r.id)) + 1;
-const idMap = new Map();                // 源 id -> 新 id
-let cursor = nextId;
-for (const r of picked.values()) idMap.set(String(r.id), cursor++);
+const idMap = new Map();                // 保留结构：源 id -> 源 id（不再换号）
+for (const r of picked.values()) idMap.set(String(r.id), r.id);
 
-/** 改写记录内的 #504（第一个）与所有 id 引用，返回新 id */
+/** 只处理父级：父级在领养清单里 ⇒ 原样（id 没变，天然正确）；
+ *  父级不在清单里 ⇒ 按"源父级名字"在基线里找同名控件，改 `#504` 指向它。 */
 function retarget(fields, state) {
   for (const f of fields) {
     if (f.wt === 0 && f.field === 504 && !state.parentDone) {
       const srcParent = String(f.num);
-      const mapped = idMap.get(srcParent);
-      if (mapped !== undefined) f.num = BigInt(mapped);
-      else {
-        // 父级不在清单里 —— 必须能在基线里按"源父级名字"找到同名控件
+      if (idMap.has(srcParent)) {
+        f.num = BigInt(idMap.get(srcParent));          // 同一批领养：id 不变
+      } else {
         const srcParentRec = idToRec.get(srcParent);
         const pname = srcParentRec ? srcParentRec.name : null;
         const target = pname ? g.byName.get(pname) : null;
@@ -114,9 +124,6 @@ function retarget(fields, state) {
         f.num = BigInt(target.id);
       }
       state.parentDone = true;
-    } else if (f.wt === 0 && (f.field === 1 || f.field === 2) && typeof f.num === 'bigint') {
-      const mapped = idMap.get(String(f.num));
-      if (mapped !== undefined) f.num = BigInt(mapped);      // 引用型字段一起换 id
     } else if (f.sub) retarget(f.sub, state);
   }
 }
@@ -126,12 +133,11 @@ for (const r of picked.values()) {
   const st = { parentDone: false, bad: null };
   retarget(r.field.sub, st);
   if (st.bad) { console.error('❌ ' + (r.name || r.id) + '：' + st.bad); process.exit(4); }
-  states.push([r, idMap.get(String(r.id))]);
+  states.push([r, r.id]);
 }
 
 // ── ④ 写进基线 ──────────────────────────────────────────────────────
-for (const [r, newId] of states) {
-  r.id = newId;
+for (const [r] of states) {
   g.recHolder.push(r.field);
   g.recs.push(r);                     // 让后续查找/统计看得到
 }
