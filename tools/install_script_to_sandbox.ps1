@@ -77,6 +77,24 @@ foreach ($dir in $ordered) {
     Write-Output ("[" + $tag + "] FAILED  -> " + $dir)
     continue
   }
+  # ★★★★★ 2026-10-02 **BOM 必须剥掉**。
+  #
+  #   引擎日志（`%LOCALAPPDATA%Low\miHoYo\原神\output_log.txt`，2026-10-02 22:39:47）写着：
+  #       Read text file with BOM header may cause Lua error, file is 93b17eac / f668c022 / 2109080b
+  #   而当天真的踩到了：`Beyond_Local_Save_Level\1073741929\external_lua_file\client_script.lua`
+  #   比别处多 **正好 3 字节**（EF BB BF）⇒ 那一份是**带 BOM 的**，而用户当时测的就是它。
+  #   ⇒ 每次同步后**就地检查并剥掉**，并且**写回后再验一次**（不能只信"我剥了"）。
+  $bytes = [System.IO.File]::ReadAllBytes($dst)
+  if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
+    [System.IO.File]::WriteAllBytes($dst, $bytes[3..($bytes.Length - 1)])
+    $after = [System.IO.File]::ReadAllBytes($dst)
+    $stillBom = ($after.Length -ge 3 -and $after[0] -eq 0xEF -and $after[1] -eq 0xBB -and $after[2] -eq 0xBF)
+    Write-Output ("[" + $tag + "] BOM 已剥掉 -> " + $dst + "  (" + $bytes.Length + " -> " + $after.Length + " bytes, 复查=" + $(if ($stillBom) { '★还在' } else { 'OK' }) + ")")
+  }
+  # 源文件自己也不能带 BOM（否则每次都得靠上面这段补救）
+  if ($srcLen -ne (Get-Item $dst).Length) {
+    Write-Output ("[" + $tag + "] 大小不一致 -> " + (Get-Item $dst).Length + " vs 源 " + $srcLen)
+  }
   $h = (Get-FileHash $dst -Algorithm SHA256).Hash
   $ok = 'HASH-MISMATCH'
   if ((Get-Item $dst).Length -eq $srcLen) { $ok = 'ok' }
