@@ -1177,7 +1177,12 @@ function Murdoku.on_update(dt)
       local c = nil
       pcall(function() c = current.adapter:find(nm) end)
       if c ~= nil then
-        pcall(function() c:SetVisible(nm ~= "toolbar") end)
+        -- ★★★★★ 2026-10-02 **这一行原来是 `SetVisible(nm ~= "toolbar")` —— 是我的 bug**。
+        --   它把 `ruler`/`legend`/`bg` **强行设成 visible=true** ⇒ `ruler` 是 677×677 的实心块、
+        --   又可见 ⇒ **整个盖在屏幕上、点哪都点不动**（真机 23:35 日志：
+        --   `UI定位 ruler：pos=(0,0) size=677x677 visible=true`）。
+        --   这一段的**本意只是"屏蔽穿透"**，绝不该改可见性 ⇒ 一律设 false。
+        pcall(function() c:SetVisible(false) end)
         pcall(function() c.disableCursorEventPassthrough = true end)
         pcall(function() c.disableKeyEventPassthrough = true end)
         pcall(function() c.showCursor = false end)
@@ -1276,7 +1281,12 @@ function Murdoku.on_update(dt)
       local c = nil
       pcall(function() c = current.adapter:find(nm) end)
       if c ~= nil then
-        pcall(function() c:SetVisible(nm ~= "toolbar") end)
+        -- ★★★★★ 2026-10-02 **这一行原来是 `SetVisible(nm ~= "toolbar")` —— 是我的 bug**。
+        --   它把 `ruler`/`legend`/`bg` **强行设成 visible=true** ⇒ `ruler` 是 677×677 的实心块、
+        --   又可见 ⇒ **整个盖在屏幕上、点哪都点不动**（真机 23:35 日志：
+        --   `UI定位 ruler：pos=(0,0) size=677x677 visible=true`）。
+        --   这一段的**本意只是"屏蔽穿透"**，绝不该改可见性 ⇒ 一律设 false。
+        pcall(function() c:SetVisible(false) end)
         pcall(function() c.disableCursorEventPassthrough = true end)
         pcall(function() c.disableKeyEventPassthrough = true end)
         pcall(function() c.showCursor = false end)
