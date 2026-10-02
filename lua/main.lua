@@ -1020,6 +1020,15 @@ function Murdoku.on_update(dt)
       if ok and type(all) == "table" and #all > 0 then n_levels = #all end
     end
     local on_select = (scr_now == "select")
+    -- ★★★★★ 2026-10-02 **这是"四个按钮看不见"的原因**：
+    --   `selbtn.*` 的父级是 **`board`**，而 `board` 在选关页是 `visible=false`
+    --   ⇒ **父级不可见，子控件跟着不可见** ⇒ 脚本再怎么 `SetVisible(true)` 都白搭。
+    --   ⇒ 选关页把 `board` 也设为可见（棋盘格 `cell.*` 本来就是藏着的，不会露出来）。
+    do
+      local b = nil
+      pcall(function() b = current.adapter:find("board") end)
+      if b ~= nil then pcall(function() b:SetVisible(on_select) end) end
+    end
     for i = 1, n_levels do
       local c = nil
       pcall(function() c = current.adapter:find("selbtn." .. tostring(i)) end)
