@@ -1181,17 +1181,27 @@ function Murdoku.on_update(dt)
             for _, k in ipairs(kids or {}) do
               local kn = nil
               pcall(function() kn = tostring(k.name) end)
+              -- ★★★★★ 2026-10-02 **中间容器 `content` 也必须点亮** —— 这是最后一块拼图。
+              --   真机日志（18:35）：
+              --       `格子底图已点亮：25 个 face（每帧保持）`        ← face 我点亮成功了
+              --       `格子子控件实况（cell.1.1）：**content(vis=false,135x135,img=nil)**`
+              --   ⇒ 格子的直接子控件只有一个 `content`，而它 `visible=false`
+              --   ⇒ **父级不可见 ⇒ 子控件不可见** ⇒ face 点亮了也白搭
+              --     （和今天早上 `home` 那次是同一条规律）
+              --   ⇒ 所以这里把格子下的**所有子控件**（content / face / wall.* / x / note …）
+              --     统统点亮。格子本身该不该显示由 `cell.*` 自己的 visible 决定。
+              pcall(function() k:SetVisible(true) end)
               if kn == "face" then face = k end
               if face == nil and k.GetChildren ~= nil then
                 local kk = nil
                 pcall(function() kk = k:GetChildren() end)
                 for _, c2 in ipairs(kk or {}) do
+                  pcall(function() c2:SetVisible(true) end)     -- content 里的也点亮
                   local cn = nil
                   pcall(function() cn = tostring(c2.name) end)
                   if cn == "face" then face = c2 end
                 end
               end
-              if face ~= nil then break end
             end
           end
           if face ~= nil then
