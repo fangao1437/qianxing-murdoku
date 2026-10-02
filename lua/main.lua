@@ -963,11 +963,16 @@ function Murdoku.on_update(dt)
     Murdoku._snap = now
     Murdoku._snap_screen = scr_now
   end
-  -- ★ 每帧按屏幕排图层：把当前屏幕的容器（home/select）排到最上，另一个排到最下。
-  --   真机证明"用 visible 开关切屏"会让射线出问题，而"另一个容器压在上面"会吃光点击。
-  if current.adapter and current.adapter.enforce_screen_layers then
-    pcall(function() current.adapter:enforce_screen_layers(scr_now) end)
-  end
+  -- ★★★ 2026-10-02 **撤掉每帧的图层排序**（`enforce_screen_layers`）。
+  --
+  --   为什么撤：新版「对照组诊断」证明 `home` 与 `select` 的**容器设置完全一致**
+  --   （showCursor / disableCursorEventPassthrough / disableKeyEventPassthrough 都一样），
+  --   子控件的 interactable / raycastTarget / clickAudioId 也一致 ⇒
+  --   **"home 压住 select"这个当初的假设从来不是问题** ⇒ 这个排序没被证明有用，
+  --   却可能有害（它把 select 排到最后 = 最上）。
+  --   真机现象是"主页能点、选关不能点"，而主页时 select 被排到最下 ⇒ 排序**恰好与现象相关**
+  --   ⇒ 撤掉，做一次单一变量的真机实验。
+  --   （`Adapter:enforce_screen_layers` 本体留在适配器里，随时可以再开。）
   Murdoku._last_screen = scr_now
   current.frames = (current.frames or 0) + 1
 end
