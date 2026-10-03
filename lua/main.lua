@@ -1103,18 +1103,41 @@ function Murdoku.on_update(dt)
       local s = nil
       pcall(function() s = current.adapter:find("stage") end)
       if s ~= nil then
-        local okimg = pcall(function() s:SetImage(STAGE_BG_ID) end)
-        if not okimg then pcall(function() s:SetImage(nil, STAGE_BG_ID) end) end
-        local okcol = false
-        pcall(function() s.imageColor = STAGE_BG_ARG; okcol = true end)
-        pcall(function() s.imageType = "Stretch" end)
-        local rid, rcol = "?", "?"
-        pcall(function() rid = tostring(s.imageId) end)
-        pcall(function() rcol = tostring(s.imageColor) end)
-        print("[murdoku] 棋盘底色：stage 设图 " .. tostring(STAGE_BG_ID)
-          .. " → 回读 imageId=" .. rid
-          .. "；染色 " .. tostring(STAGE_BG_ARG) .. " → 回读 " .. rcol
-          .. "（okcol=" .. tostring(okcol) .. "）")
+        -- ★★★★★ 2026-10-03 **实测结论：`stage` 不是图片控件** ——
+        --   真机日志（23:12）：`stage 设图 106053 → 回读 imageId=nil；okcol=false`
+        --   ⇒ `SetImage` / `imageColor` 对它都被忽略 ⇒ "给 stage 铺底"走不通。
+        --   ⇒ 改用**客户端图片模板**（`cfg.prefab_icon` = 1073742357）另建一个
+        --     铺满棋盘的图片控件 `board.bg`，放在 `stage` 里当底板。
+        local bg = nil
+        pcall(function() bg = current.adapter:find("board.bg") end)
+        if bg == nil and game ~= nil and game.InstantiateClientUIControl ~= nil then
+          local ip = current.adapter.cfg and current.adapter.cfg.prefab_icon
+          if ip ~= nil then
+            local okb, ob = pcall(game.InstantiateClientUIControl, ip, s)
+            if okb and ob ~= nil then
+              pcall(function() ob.name = "board.bg" end)
+              pcall(function() ob:SetSizeDelta(677, 677) end)
+              pcall(function() ob:SetAnchoredPosition(0, 0) end)
+              pcall(function() ob:SetVisible(true) end)
+              current.adapter.controls = current.adapter.controls or {}
+              current.adapter.controls["board.bg"] = ob
+              bg = ob
+            end
+          end
+        end
+        local okimg = false
+        if bg ~= nil then
+          local oki = pcall(function() bg:SetImage(STAGE_BG_ID) end)
+          if not oki then oki = pcall(function() bg:SetImage(nil, STAGE_BG_ID) end) end
+          okimg = oki
+          pcall(function() bg.imageType = "Stretch" end)
+        end
+        local rid = "?"
+        if bg ~= nil then pcall(function() rid = tostring(bg.imageId) end) end
+        if print then
+          print("[murdoku] 棋盘底板：board.bg 建=" .. tostring(bg ~= nil)
+            .. " 设图=" .. tostring(okimg) .. " imageId=" .. rid)
+        end
       end
     end
     -- ★★★★★ 2026-10-02 **这是"四个按钮看不见"的原因**：
