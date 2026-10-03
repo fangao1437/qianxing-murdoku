@@ -1210,7 +1210,15 @@ function Murdoku.on_update(dt)
     --   L620 写的是 `…controller.screen or "level"` —— 关卡内 controller.screen 是 nil，
     --   但这行把 nil 变成了字符串 "level"。所以我前两版写的 `if scr_now == nil then`
     --   **永远为假** ⇒ 这段每帧代码从来没跑过（连我加的诊断打印都没出现，原因就是这个）。
-    if scr_now == "level" then
+    -- ★★★★★ 2026-10-03 **移动端负载优化**：下面这段"每帧点亮 25 个 face"原本**每帧**都跑，
+    --   每帧约 25×(字符串拼接 + find + GetSizeDelta + GetChildren + 若干 tostring + 约 6 次 SetXXX)
+    --   ≈ **375 次 pcall**，60fps 下就是 22500 次/秒 —— PC 无感，**移动端就是掉帧/发热/耗电**。
+    --   而写进去的值绝大多数与上一帧完全相同（幂等）⇒ 纯浪费。
+    --   ⇒ 改成**每 30 帧跑一次**（每秒 2 次），开销降到约 1/30。
+    --     正确性：引擎若在状态变化后关掉 `face`，**最多 0.5 秒后会被这段自动点亮**，视觉无感。
+    --   ⚠️ 想调频率只改下面的 `30`；想恢复原行为就改成 `1`（= 每帧）。
+    --   ★ 实现方式：**只改这个 if 的条件，不新增 if** —— 避免上次"新增 if 导致 end 配对错位"的坑。
+    if scr_now == "level" and ((current.frames or 0) % 30) == 0 then
       local rows, cols = 5, 5
       pcall(function()
         local cfg = current.adapter and current.adapter.cfg
