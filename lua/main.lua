@@ -1291,34 +1291,7 @@ function Murdoku.on_update(dt)
   --   `wall.up`(上边) / `wall.left`(左边) 是 visible=true，而**格子底图 `face` 是 false**。
   --   ⇒ 这一版把 `face` 的真实情况打出来（尺寸 / 图片 / 是否被脚本设过），
   --     这样"底图为什么没铺开"就不用猜了。
-  if (current.frames or 0) % 300 == 0 and scr_now == "level" then   -- 还原（原条件）
-    local c1 = nil
-    pcall(function() c1 = current.adapter:find("cell.1.1") end)
-    if c1 ~= nil then
-      local kids = nil
-      pcall(function() kids = c1:GetChildren() end)
-      local parts = {}
-      if type(kids) == "table" then
-        for i = 1, math.min(#kids, 20) do
-          local k = kids[i]
-          local nm, vv, w, h, it, iid = "?", "?", 0, 0, "?", "?"
-          pcall(function() nm = tostring(k.name) end)
-          pcall(function() vv = tostring(k.visible) end)
-          pcall(function()
-            local a, b = k:GetSizeDelta()
-            if type(a) == "table" then w, h = a.x, a.y else w, h = a, b end
-          end)
-          pcall(function() it = tostring(k.imageType) end)
-          pcall(function() iid = tostring(k.imageId) end)
-          parts[#parts + 1] = nm .. "(vis=" .. vv .. "," .. string.format("%.0fx%.0f", w or 0, h or 0)
-            .. ",img=" .. iid .. ")"
-        end
-      end
-      if print then
-        print("[murdoku] 格子子控件实况（cell.1.1）：" .. table.concat(parts, "  "))
-      end
-    end
-  end
+  -- ★ 2026-10-03 删除「关卡内定位」诊断块（纯只读 + print）。注意：**「每帧点亮 face」那段在它外面**，不受影响。
   Murdoku._last_screen = scr_now
   current.frames = (current.frames or 0) + 1
 end
