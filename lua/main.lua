@@ -1184,7 +1184,12 @@ function Murdoku.on_update(dt)
   --     · 返回非 nil ⇒ 实例化这条路是通的，问题在"我们没让它建"（计划/配置）
   --     · 返回 nil   ⇒ 这条路本身不通（索引不对 / 该模板不是客户端控件模板）
   if (current.frames or 0) % 300 == 60 then
-    local IDX = 1073742333   -- murdoku-btn-hex（用户转存实测）
+    -- ★ 2026-10-03 **两个索引对比着试**：
+    --   `1073742333` = murdoku-btn-hex 的**素材记录**（不是模板）⇒ 真机实测返回 nil
+    --   `1073742380` = 用户把 `m` **另存为模板**后的索引（`133.gil` 里确认：name=m, id=1073742380）
+    --   —— 而格子的模板 `1073741876` 就是这么用的、**真机已验证"试造成功"**，
+    --      所以 `1073742380` 大概率也能成。这一轮就把它俩并排打出来。
+    local CANDIDATES = { 1073742380, 1073742333, 1073741876 }
     if print then
       print("[murdoku] ==== 六边形素材实例化探针 ====")
       print("[murdoku] game 表存在=" .. tostring(game ~= nil)
@@ -1193,16 +1198,21 @@ function Murdoku.on_update(dt)
       pcall(function() host = current.adapter:find("root") end)
       print("[murdoku] 宿主 root=" .. tostring(host ~= nil))
       if game ~= nil and game.InstantiateClientUIControl ~= nil and host ~= nil then
-        local okc, made = pcall(function() return game.InstantiateClientUIControl(IDX, host) end)
-        print("[murdoku] pcall 成功=" .. tostring(okc)
-          .. "  返回值=" .. tostring(made) .. "  类型=" .. type(made))
-        if made ~= nil then
-          local nm, vis = "?", "?"
-          pcall(function() nm = tostring(made.name) end)
-          pcall(function() vis = tostring(made.visible) end)
-          print("[murdoku] 造出来了：name=" .. nm .. " visible=" .. vis)
-          pcall(function() made:SetVisible(false) end)   -- 探针不留痕
-          pcall(function() made:SetName("__probe_hexbg") end)
+        for ci = 1, #CANDIDATES do
+          local IDX = CANDIDATES[ci]
+          local okc, made = pcall(function() return game.InstantiateClientUIControl(IDX, host) end)
+          local tag = "?"
+          if IDX == 1073742380 then tag = "m模板(用户另存)" elseif IDX == 1073742333 then tag = "btn-hex素材" elseif IDX == 1073741876 then tag = "格子模板(对照组)" end
+          print("[murdoku] 索引 " .. IDX .. "（" .. tag .. "）pcall=" .. tostring(okc)
+            .. "  返回=" .. tostring(made) .. " 类型=" .. type(made))
+          if made ~= nil then
+            local nm, vis = "?", "?"
+            pcall(function() nm = tostring(made.name) end)
+            pcall(function() vis = tostring(made.visible) end)
+            print("[murdoku]    ★ 造出来了：name=" .. nm .. " visible=" .. vis)
+            pcall(function() made:SetVisible(false) end)
+            pcall(function() made:SetName("__probe_" .. IDX) end)
+          end
         end
       end
       print("[murdoku] ==== 探针结束 ====")
