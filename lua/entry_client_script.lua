@@ -165,6 +165,14 @@ local function check_canvas()
     end
     local same = (math.abs(w - CANVAS_EXPECT.w) < 0.6) and (math.abs(h - CANVAS_EXPECT.h) < 0.6)
     if same then
+      -- ★★★★★ 2026-10-03 **版本标记**：日志**第一行**就自报"我是哪一版"。
+      --
+      --   起因：改完代码、真机跑了一遍，贴回来的日志**时间戳还是上一轮的**，
+      --   里面既没有新打印、`cell` 尺寸也还是旧值 ⇒ 我误以为"改动没生效"，
+      --   实际是**贴了旧日志**。加这一行后，一看首行就能确认跑的是哪一版。
+      if print then
+        print("[murdoku] ===== 构建标记 v032 / 2026-10-03 23:05 / gap=6 · stage铺底 · 版本标记 =====")
+      end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
       if printerr then
