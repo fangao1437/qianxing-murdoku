@@ -1201,6 +1201,7 @@ function Controller:build_layout()
         visible = (a[1] ~= "hex.ok" and a[1] ~= "hex.no"),
         image_id = a[2],
         imageType = "Stretch",                 -- 图标要能拉伸到目标尺寸
+        icon_template = true,                  -- ★ 用 cfg.prefab_icon（干净模板），不要格子模板
         rect = { x = D(a[3]), y = D(a[4]), w = D(a[5]), h = D(a[6]) },
       }
     end
