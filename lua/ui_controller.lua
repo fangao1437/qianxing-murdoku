@@ -1050,7 +1050,20 @@ local function apply_screen_hide(nodes, screen)
   if nodes == nil then return end
   local HIDE, PREFIX = {}, {}
   if screen == nil then
-    PREFIX = { "home.", "select." }
+    -- ★★★★★ 2026-10-03 **真机 bug 的真正根因就在这一行**（原来是 `{ "home.", "select." }`）。
+    --
+    --   日志（22:40，关卡内 `controller.screen = nil`）：
+    --       home             visible=**true**     ← ★ home 容器在关卡里还亮着
+    --       home.select      visible=**true**     ← ★ "选关"按钮跟着露出来
+    --   ⇒ 玩家看到的"第二行几个格子上面压着返回菜单按钮、点了回选关"就是它。
+    --
+    --   为什么漏：前缀判断是 `id:sub(1, #PREFIX[k]) == PREFIX[k]`，
+    --   原来那条 **带点**（`"home."`）⇒ 能匹配 `home.select`，
+    --   **但匹配不到 `home` 自己**（不带点）⇒ `hide = false`
+    --   ⇒ 走 `else` 被 `SetVisible(true)` ⇒ **父容器可见 ⇒ 四个子按钮全露**。
+    --
+    --   ⇒ 去掉那个点：`"home"` 同时匹配 `home` 自己和它全部子控件；`select` 同理。
+    PREFIX = { "home", "select" }
   else
     HIDE = {
       topbar = true, toolbar = true, left = true, board = true, right = true,
