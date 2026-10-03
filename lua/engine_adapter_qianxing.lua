@@ -445,6 +445,74 @@ function Adapter:create_control(node)
           ctrl = obj
           self.controls[node.id] = ctrl
           self.instantiated = self.instantiated or {}
+
+          -- ★★★★★ 2026-10-03 **把规划里的 `image_id` 真正设到控件上**。
+          --
+          --   为什么必须在这里做：在这之前，整个适配器**没有任何一处消费 `node.image_id`**
+          --   （我 grep 过 `.image_id`，结果为空）。而 `build_layout` 里一直有节点带着
+          --   `image_id`（`obj.shelf` 那批 OBJECT_PALETTE，以及本轮新加的七个 `hex.*` 图标）
+          --   ⇒ **控件建出来了、却是没有图的空白** ⇒ 真机表现就是**"控件不可见"**。
+          --   这也正是 `obj.*` 自始至终没出现过的原因。
+          --
+          --   做法照抄已经跑通的格子那条路（`_cells_stamp`）：
+          --   先看控件自己有没有 SetImage，没有就往下找第一个带 SetImage 的子控件
+          --   （客户端控件模板通常把图片放在 `img` / `icon` / `face` 这类子节点上）。
+          if node.image_id ~= nil then
+            local target = nil
+            pcall(function()
+              if ctrl.SetImage ~= nil then target = ctrl end
+            end)
+            if target == nil then
+              for _, cn in ipairs({ "img", "icon", "face", "bg", "image" }) do
+                local c = nil
+                pcall(function() c = ctrl:GetChild(cn) end)
+                if c ~= nil then
+                  local has = false
+                  pcall(function() has = (c.SetImage ~= nil) end)
+                  if has then target = c break end
+                end
+              end
+            end
+            -- 还找不到就遍历全部子控件，挑第一个有 SetImage 的
+            if target == nil and ctrl.GetChildCount ~= nil then
+              local n = 0
+              pcall(function() n = ctrl:GetChildCount() end)
+              for i = 1, n do
+                local c = nil
+                pcall(function() c = ctrl:GetChild(i - 1) end)
+                if c == nil then pcall(function() c = ctrl:GetChild(i) end) end
+                if c ~= nil then
+                  local has = false
+                  pcall(function() has = (c.SetImage ~= nil) end)
+                  if has then target = c break end
+                end
+              end
+            end
+            if target ~= nil then
+              local src = nil
+              pcall(function() src = target.imageSource end)
+              local ok2 = pcall(function() target:SetImage(src, node.image_id) end)
+              if not ok2 then pcall(function() target:SetImage(node.image_id) end) end
+              if node.imageColor ~= nil then
+                pcall(function() target.imageColor = node.imageColor end)
+              end
+              if node.imageType ~= nil then
+                pcall(function() target.imageType = node.imageType end)
+              end
+              local readback = "?"
+              pcall(function() readback = tostring(target.imageId) end)
+              if print then
+                print("[murdoku] 图标设图 " .. tostring(node.id)
+                  .. "  imageId=" .. tostring(node.image_id)
+                  .. " → 回读 " .. readback
+                  .. "  目标=" .. tostring(ok2))
+              end
+            else
+              self:warn_once("icon:target:" .. tostring(node.id),
+                "控件 `" .. tostring(node.id) .. "` 建好了，但**找不到可设图的子控件**"
+                .. "（自己和子控件都没有 SetImage）⇒ 它会是一块空白。")
+            end
+          end
           self.instantiated[node.id] = true
           self._auto_made = (self._auto_made or 0) + 1
         else
