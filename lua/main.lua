@@ -1228,7 +1228,11 @@ function Murdoku.on_update(dt)
     --   而这三组是**运行时由 `ensure_widgets` 现建的**，根本不在 `nodes` 里 ⇒ 加 HIDE/PREFIX 无效。
     --
     --   ⇒ 所以在这里按"当前屏幕"直接改它们的可见性。挂在**每 30 帧**的节流位上，开销可忽略。
-    if ((current.frames or 0) % 30) == 0 then
+    -- ★ 2026-10-03 **改成每帧**（原来是每 30 帧）：`tpl-container` 用每 30 帧就够（没人跟它抢），
+    --   但真机日志（22:14）显示 `selbar` 仍为 `可见=true` —— 它会被 `ensure_widgets` 在开局时
+    --   设回 true，而我的同步每 30 帧才轮到一次 ⇒ 必须**每帧压住**才稳。
+    --   代价：7 个控件的 find+SetVisible ≈ 14 次 pcall/帧，相比原来 375 次可忽略。
+    do
       local ad_vis = current.adapter
       if ad_vis ~= nil then
         local in_level = (scr_now == "level")
