@@ -1062,7 +1062,18 @@ local function apply_screen_hide(nodes, screen)
     --   主页/选关时把它们一起藏掉。关卡内不加进任何 HIDE/PREFIX ——
     --   那 5 个按键图标初始就是 visible=true，直接显示；
     --   确认卡的 hex.ok/hex.no 初始 visible=false，由 `sync_confirm()` 单独控制。
+    -- ★★★★★ 2026-10-03 **修了一个真机 bug**：关卡界面里 `selbar`（选关按钮条，
+    --   1500×700，覆盖整个棋盘区域）**没被藏掉** ⇒ 它的 4 个 `selbtn.*` 压在棋盘第二行上，
+    --   而 `selbtn` 绑的是 `pick_level` ⇒ 玩家点到它们就"返回选关"。
+    --   真机日志证据（22:00）：
+    --      16. selbtn.2   160x160  可见=true     ← 关卡里还亮着
+    --      17. selbtn.3 …  18. selbtn.1 …  19. selbtn.4 …
+    --      20. tpl-container 150x150 可见=true  ← 模板引用控件也没藏
+    --   ⇒ 三样都补进隐藏名单：`selbar`（容器本身）、`selbtn.`（它的子按钮）、`tpl-`（模板引用控件）。
+    HIDE["selbar"] = true
+    HIDE["tpl-container"] = true
     PREFIX = { "cell.", "clue.", "hud.", "room.label.", "ruler", "tray.", "action.", "hex.",
+               "selbtn.", "tpl.",
                (screen == "home") and "select." or "home." }
   end
   for i = 1, #nodes do
