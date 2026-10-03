@@ -1255,6 +1255,36 @@ function Adapter:ensure_widgets(count)
       end
     end
   end
+  -- ★★★★★ 2026-10-03 **源头修 bug**：创建完 `selbar` 与 `selbtn.*` 后**立刻按当前屏幕设可见性**。
+  --
+  --   背景（真机 22:14 日志）：关卡界面里 `selbar`(1500x700) + 4 个 `selbtn.*` **一直可见**，
+  --   压在棋盘第二行上；而 `selbtn` 绑的是 `pick_level` ⇒ 玩家点到就"返回选关"。
+  --   我在 `main.lua` 的每帧同步里压过，但**压不住** ⇒ 说明源头（这里）每次开局都把它们
+  --   设成可见，而且时机在我的同步之后 ⇒ 必须**在创建处**就设对。
+  --
+  --   ⚠️ 这里读不到 `Murdoku` 的 screen 状态（适配层不该依赖上层），
+  --      所以用一个简单约定：**建好后一律先隐藏**；真正的显隐由 `main.lua` 的
+  --      `apply_screen_hide` / 每帧同步按屏幕打开。若某处需要"建完就显示"，它会自己再打开。
+  local hide_selbar = function(c)
+    if c == nil then return end
+    pcall(function() c:SetVisible(false) end)
+  end
+  if bar ~= nil then hide_selbar(bar) end
+  for i = 1, count do
+    local c = nil
+    pcall(function() c = self:find("selbtn." .. tostring(i)) end)
+    hide_selbar(c)
+  end
+  -- 诊断（每局一次）：把这三组的实际可见性读回来，方便真机核对
+  if print then
+    local rb = "?"
+    pcall(function() rb = tostring(bar and bar.visible) end)
+    local r1 = "?"
+    pcall(function() local c = self:find("selbtn.1") if c then r1 = tostring(c.visible) end end)
+    local rt = "?"
+    pcall(function() local c = self:find("tpl-container") if c then rt = tostring(c.visible) end end)
+    print("[murdoku] 选关条创建后已隐藏：selbar=" .. rb .. "  selbtn.1=" .. r1 .. "  tpl-container=" .. rt)
+  end
   return made, nil, existed
 end
 function Adapter:ensure_cells(rows, cols)
