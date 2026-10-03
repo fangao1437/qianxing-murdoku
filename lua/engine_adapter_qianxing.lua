@@ -471,36 +471,43 @@ function Adapter:create_control(node)
           --   先看控件自己有没有 SetImage，没有就往下找第一个带 SetImage 的子控件
           --   （客户端控件模板通常把图片放在 `img` / `icon` / `face` 这类子节点上）。
           if node.image_id ~= nil then
-            local target = nil
-            pcall(function()
-              if ctrl.SetImage ~= nil then target = ctrl end
-            end)
-            if target == nil then
-              for _, cn in ipairs({ "img", "icon", "face", "bg", "image" }) do
-                local c = nil
-                pcall(function() c = ctrl:GetChild(cn) end)
-                if c ~= nil then
-                  local has = false
-                  pcall(function() has = (c.SetImage ~= nil) end)
-                  if has then target = c break end
+            -- ★ 2026-10-03 **递归找**：真机日志证明"只找直接子控件"是不够的 ——
+            --   `ClientUIPresetButtonControl`（格子模板建出来的那个）的直接子控件只有一个
+            --   `content`，而图片 `face` 在 `content` 的**里面**（日志原文：
+            --   `格子子控件实况（cell.1.1）：content(vis=true,124x124,img=nil)`）。
+            --   所以这里往下递归最多 4 层：先按常见名字（face/img/icon/bg/image/content）钻，
+            --   再兜底遍历全部子控件。
+            local function has_setimage(c)
+              local has = false
+              pcall(function() has = (c.SetImage ~= nil) end)
+              return has
+            end
+            local found_name = nil
+            local function find_target(c, depth)
+              if c == nil or depth > 4 then return nil end
+              if has_setimage(c) then return c end
+              for _, cn in ipairs({ "face", "img", "icon", "bg", "image", "content" }) do
+                local kid = nil
+                pcall(function() kid = c:GetChild(cn) end)
+                if kid ~= nil then
+                  local r = find_target(kid, depth + 1)
+                  if r ~= nil then found_name = cn return r end
                 end
               end
-            end
-            -- 还找不到就遍历全部子控件，挑第一个有 SetImage 的
-            if target == nil and ctrl.GetChildCount ~= nil then
               local n = 0
-              pcall(function() n = ctrl:GetChildCount() end)
-              for i = 1, n do
-                local c = nil
-                pcall(function() c = ctrl:GetChild(i - 1) end)
-                if c == nil then pcall(function() c = ctrl:GetChild(i) end) end
-                if c ~= nil then
-                  local has = false
-                  pcall(function() has = (c.SetImage ~= nil) end)
-                  if has then target = c break end
+              pcall(function() n = c:GetChildCount() end)
+              for i = 0, n - 1 do
+                local kid = nil
+                pcall(function() kid = c:GetChild(i) end)
+                if kid ~= nil then
+                  local r = find_target(kid, depth + 1)
+                  if r ~= nil then return r end
                 end
               end
+              return nil
             end
+            local target = find_target(ctrl, 0)
+
             if target ~= nil then
               local src = nil
               pcall(function() src = target.imageSource end)
@@ -512,18 +519,34 @@ function Adapter:create_control(node)
               if node.imageType ~= nil then
                 pcall(function() target.imageType = node.imageType end)
               end
+              pcall(function() target:SetVisible(true) end)
               local readback = "?"
               pcall(function() readback = tostring(target.imageId) end)
               if print then
                 print("[murdoku] 图标设图 " .. tostring(node.id)
                   .. "  imageId=" .. tostring(node.image_id)
                   .. " → 回读 " .. readback
-                  .. "  目标=" .. tostring(ok2))
+                  .. "  经 " .. tostring(found_name or "子控件")
+                  .. "  调用成功=" .. tostring(ok2))
               end
             else
+              -- 一个都没找到：把子控件清单打出来，方便下一次直接看出结构
+              local desc = {}
+              local n = 0
+              pcall(function() n = ctrl:GetChildCount() end)
+              for i = 0, n - 1 do
+                local kid = nil
+                pcall(function() kid = ctrl:GetChild(i) end)
+                if kid ~= nil then
+                  local nm, cnt = "?", 0
+                  pcall(function() nm = tostring(kid.name) end)
+                  pcall(function() cnt = kid:GetChildCount() end)
+                  desc[#desc + 1] = nm .. "(" .. cnt .. ")"
+                end
+              end
               self:warn_once("icon:target:" .. tostring(node.id),
-                "控件 `" .. tostring(node.id) .. "` 建好了，但**找不到可设图的子控件**"
-                .. "（自己和子控件都没有 SetImage）⇒ 它会是一块空白。")
+                "控件 `" .. tostring(node.id) .. "` 建好了，但递归 4 层也没找到带 SetImage 的控件。"
+                .. "它的子控件：" .. (table.concat(desc, " ") ~= "" and table.concat(desc, " ") or "（一个都没有）"))
             end
           end
           self.instantiated[node.id] = true
