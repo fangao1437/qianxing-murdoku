@@ -1189,7 +1189,16 @@ function Murdoku.on_update(dt)
     --   `1073742380` = 用户把 `m` **另存为模板**后的索引（`133.gil` 里确认：name=m, id=1073742380）
     --   —— 而格子的模板 `1073741876` 就是这么用的、**真机已验证"试造成功"**，
     --      所以 `1073742380` 大概率也能成。这一轮就把它俩并排打出来。
-    local CANDIDATES = { 1073742380, 1073742333, 1073741876 }
+    -- ★★★★★ 2026-10-03 **用户纠正后的最终定论**（详见 docs/客户端控件vs服务器控件.md）：
+    --   官方原文：「除**客户端控件容器画布中的客户端控件**以及**客户端控件模板中的控件**外，
+    --             其他控件均为**服务器控件**，**服务器控件的模板索引无法被客户端脚本调用**」
+    --   ⇒ 1073742380 是 `m` **右键另存为模板**得到的 ⇒ **服务器控件模板** ⇒ **一定返回 nil**。
+    --     同理 1073742333（素材记录）也一定 nil。
+    --   ⇒ **只有 1073741876（客户端控件模板）会成功** —— 它是从
+    --     「界面控件组管理 → 界面控件组库 → 客户端控件模板 → 添加客户端控件」那条路做的。
+    --   ⇒ 所以这个探针现在只留两个：**一个预期成功（对照组）、一个预期失败（说明服务器模板调不动）**，
+    --     用来把这条规律**在真机上钉死一次**，之后就不再试了。
+    local CANDIDATES = { 1073741876, 1073742380 }
     if print then
       print("[murdoku] ==== 六边形素材实例化探针 ====")
       print("[murdoku] game 表存在=" .. tostring(game ~= nil)
@@ -1202,7 +1211,7 @@ function Murdoku.on_update(dt)
           local IDX = CANDIDATES[ci]
           local okc, made = pcall(function() return game.InstantiateClientUIControl(IDX, host) end)
           local tag = "?"
-          if IDX == 1073742380 then tag = "m模板(用户另存)" elseif IDX == 1073742333 then tag = "btn-hex素材" elseif IDX == 1073741876 then tag = "格子模板(对照组)" end
+          if IDX == 1073742380 then tag = "m的服务器模板(预期nil)" elseif IDX == 1073741876 then tag = "格子的客户端模板(预期成功)" else tag = "?" end
           print("[murdoku] 索引 " .. IDX .. "（" .. tag .. "）pcall=" .. tostring(okc)
             .. "  返回=" .. tostring(made) .. " 类型=" .. type(made))
           if made ~= nil then
