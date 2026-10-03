@@ -1058,7 +1058,11 @@ local function apply_screen_hide(nodes, screen)
       ["action.back"] = true, ["action.redo"] = true, ["action.hint"] = true,
       ["action.undo"] = true, ["action.submit"] = true, ["action.reveal"] = true,
     }
-    PREFIX = { "cell.", "clue.", "hud.", "room.label.", "ruler", "tray.", "action.",
+    -- ★ 2026-10-03 **图标（hex.*）只在关卡内显示**：
+    --   主页/选关时把它们一起藏掉。关卡内不加进任何 HIDE/PREFIX ——
+    --   那 5 个按键图标初始就是 visible=true，直接显示；
+    --   确认卡的 hex.ok/hex.no 初始 visible=false，由 `sync_confirm()` 单独控制。
+    PREFIX = { "cell.", "clue.", "hud.", "room.label.", "ruler", "tray.", "action.", "hex.",
                (screen == "home") and "select." or "home." }
   end
   for i = 1, #nodes do
@@ -1147,6 +1151,57 @@ function Controller:build_layout()
         id = pid, kind = "button", parent = "assets", visible = false,
         image_id = pimg,
         rect = { x = 0, y = 0, w = 48, h = 48 },
+      }
+    end
+
+    -- ★★★★★ 2026-10-03 **六个图标改走「官方素材 + 脚本创建」**（用户定稿的路线）
+    --
+    --   为什么换路线：外部资产（.gia 转存的）**只能挂服务器控件**、**尺寸生成时定死**、
+    --   脚本还不能创建它 —— 前几轮就卡在这三条上。
+    --   而**官方素材**（游戏自带 sprite）没有这些限制：脚本 `SetImage(src, imageId)` 设图、
+    --   `imageColor` 乘算调色、`SetSizeDelta` 改尺寸、`SetAnchoredPosition` 摆位置，一条龙。
+    --   （现成佐证：`cell.x` 一直用 `100101` 画叉，跑得好好的。）
+    --
+    --   ⇒ **编辑器里不用摆任何图标** —— 这里 push 出来，适配器建控件 + 设图。
+    --
+    --   素材 ID 全部来自官方「功能图标-单色」类（100101–100213，接触表 tools/qx/out/cat-3.png）：
+    --     100109 弯钩返回箭头 ↰     100126 循环箭头 ↻       100120 放大镜
+    --     100127 逆时针箭头 ↶       100110 向上箭头 ↑       100102 勾 ✓   100101 叉 ✗
+    --
+    --   ⚠️ `rect` 用的是**规划那套坐标（y 从**上**边算、与 LAYOUT 一致）**，
+    --      与你在编辑器里看到的（左下角原点）是同一位置的两种显示，不要混。
+    --      换算：编辑器 y = 900 − rect.y − rect.h
+    --
+    --   图标位置直接取自布局图（docs/布局图-关卡内-v3.png 的画法）：
+    --     返回菜单 (60,48,62×62) · 确认卡两枚 (438/500,52,54×54)
+    --     右上三键 (1448, 48/144/240, 70×70) · 右下放大镜 (1448, 694, 70×70)
+    --   ⚠️⚠️ `rect` 用的是**设计空间 1920×1080**（规划会 ×5/6 缩放到画布 1600×900），
+    --       而布局图量出来的是**画布空间**的值 ⇒ **这里要 ×6/5 换回设计空间**。
+    --       （我第一次直接填了画布值，dump 出来 `hex.back` 只有 52×52、`cy=834`，
+    --        比目标小了 17% —— 就是漏了这一步。）
+    --       y 方向：布局图的 y 是**从上**算的，与 `rect.y` 同向，**不用翻转**；
+    --       规划会自动把它转成画布的 `cy`（从下算）。
+    local K = 6 / 5                                    -- 画布 → 设计空间
+    local function D(v) return math.floor(v * K + 0.5) end
+    local ICON_ASSETS = {
+      -- id           素材ID    x(画布) y(画布) w    h     说明
+      { "hex.back",   100109,   60,   48,  62,  62 },   -- 返回菜单（弯钩箭头 ↰）
+      { "hex.submit", 100110, 1448,   48,  70,  70 },   -- 提交（向上箭头 ↑）
+      { "hex.redo",   100126, 1448,  144,  70,  70 },   -- 重置关卡（循环箭头 ↻）
+      { "hex.undo",   100127, 1448,  240,  70,  70 },   -- 撤回（逆时针箭头 ↶）
+      { "hex.hint",   100120, 1448,  694,  70,  70 },   -- 提示（放大镜）
+      { "hex.ok",     100102,  438,   52,  54,  54 },   -- 确认卡 ✓
+      { "hex.no",     100101,  500,   52,  54,  54 },   -- 确认卡 ✗
+    }
+    for i = 1, #ICON_ASSETS do
+      local a = ICON_ASSETS[i]
+      nodes[#nodes + 1] = {
+        id = a[1], kind = "button", parent = "root",
+        -- 5 个按键图标关卡内常显；确认卡的 hex.ok / hex.no 默认藏，由 sync_confirm 控制
+        visible = (a[1] ~= "hex.ok" and a[1] ~= "hex.no"),
+        image_id = a[2],
+        imageType = "Stretch",                 -- 图标要能拉伸到目标尺寸
+        rect = { x = D(a[3]), y = D(a[4]), w = D(a[5]), h = D(a[6]) },
       }
     end
   -- ★ 每个节点都必须带**显式** visible：
