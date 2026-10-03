@@ -1268,8 +1268,21 @@ function Controller:build_layout()
     { HEX_TRI,  0,  67, 156,  46,   0, 0xFF2B3348 },   -- 内芯·上
     { HEX_TRI,  0, -67, 156,  46, 180, 0xFF2B3348 },   -- 内芯·下
   }
-  -- 源场景是 256×256；按按钮边长等比缩放
-  local HEX_PREFAB = false         -- true = 用转存素材；false = 用基础图元拼（2026-10-01 实测：转存素材实例化失败，保持 false）
+  -- ★★★★★ 2026-10-03 **第一组：打开「六边形按钮素材」**（用户走完转存后的第一次接入）
+  --
+  --   为什么要打开：索引已按"从 .gil 读出的真实值"登记好
+  --   （`murdoku-btn-hex = 1073742333`，见 `entry_client_script.lua` 的 `prefab_of`），
+  --   而上一轮"实例化失败"的真正原因是**当时转存的是图片素材，不是客户端控件模板** ——
+  --   这一次转存下来的就是控件模板（每个带 2~3 层图形子记录）⇒ 这条路通了。
+  --
+  --   ⚠️ 一个变量原则：**这一轮只开这个开关**，其它一律不动
+  --   （坐标、锚点、可见性都保持基点的样子）。
+  --
+  --   底图挂在哪几个键上：**只挂 `.gil` 里真实存在的三个**
+  --   —— 基点的存档里只有 `action.back`（返回列表）/ `action.redo`（重置关卡）/
+  --      `action.hint`（放大镜）；`action.submit` / `action.undo` **还没有**，
+  --      给不存在的键挂底图只会多出三个孤儿控件。
+  local HEX_PREFAB = true          -- ★ 第一组：用转存素材（murdoku-btn-hex）
   local function hex_bg(btnId, cx, cy, size)
     local s = size / 256
     for i = 1, #HEX_PARTS do
@@ -1308,22 +1321,27 @@ function Controller:build_layout()
   local sk_y = { SK.top, SK.top + SK.size + SK.gap, SK.top + (SK.size + SK.gap) * 2 }
   -- 六边形底图（三个键各一层）
   if HEX_PREFAB then
+    -- ★ 第一组：只给"存档里真实存在"的三个键挂底图。
+    --   ⚠️ 坐标故意留 `nil` —— 由适配器按 `cfg.parent_of` 把它实例化到**父控件**身上，
+    --      位置跟着父控件走。写死 `sk_x/sk_y`（右上角那套）会和 `.gil` 里
+    --      `action.back`/`action.redo` 的真实位置（在 `topbar` 里）对不上 ⇒ 底图飘在别处。
     local btns = {
-      { "action.submit", sk_x, sk_y[1] },
-      { "action.redo",   sk_x, sk_y[2] },
-      { "action.undo",   sk_x, sk_y[3] },
+      { "action.back" },
+      { "action.redo" },
+      { "action.hint" },
     }
     for i = 1, #btns do
       local b = btns[i]
       push({
         id = b[1] .. ".hexbg", kind = "button", parent = b[1], visible = true,
-        rect = { x = b[2] - 55, y = b[3] - 55, w = 110, h = 110 },
+        rect = { x = 0, y = 0, w = 110, h = 110 },
+        pos_runtime = true,          -- 位置跟着父控件（按钮）走
       })
     end
   else
-    hex_bg("action.submit", sk_x + 55, sk_y[1] + 55, SK.size)
-    hex_bg("action.redo",   sk_x + 55, sk_y[2] + 55, SK.size)
-    hex_bg("action.undo",   sk_x + 55, sk_y[3] + 55, SK.size)
+    hex_bg("action.back", sk_x + 55, sk_y[1] + 55, SK.size)
+    hex_bg("action.redo", sk_x + 55, sk_y[2] + 55, SK.size)
+    hex_bg("action.hint", sk_x + 55, sk_y[3] + 55, SK.size)
   end
 
   -- 上 → 下：提交 / 重置关卡 / 撤销

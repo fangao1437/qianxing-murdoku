@@ -202,21 +202,37 @@ local function build_adapter()
     --   ⚠️ **改美术要改 scene JSON**（tools/qx/scenes/*.json）再重新导出转存，
     --      **不要手改导出的 .gia** —— 我改过一次资产类型号，把一个能用的文件
     --      改成了导入会卡住的（教训记在 docs/外部资产-怎么用与我做了什么.md）。
+    -- ★★★★★ 2026-10-03 **第一组改动：给三个动作键挂上「六边形按钮」素材**。
+    --
+    --   索引来源：用户走完「导入外部资产 → 转存所选资产」后给的 `124，含资产.gil`，
+    --   用 `tools/gil/diff_ids.mjs` 比对出来（新增 1073742333~1073742354 共 22 条记录）：
+    --       1073742333  murdoku-btn-hex      ← 六边形按钮（三个键共用）
+    --       1073742337  murdoku-card-frame   ← 深色卡框
+    --       1073742341  murdoku-cell         ← 格子
+    --       1073742345  murdoku-clue-row     ← 线索条
+    --       1073742349  murdoku-panel        ← 面板
+    --       1073742352  murdoku-tape         ← 胶带
+    --
+    --   ⚠️ 原来这里写的是**猜的值** `1073742321`（第一次转存失败的那个），而且把
+    --      `1073742333` 当成了"线索条" —— 两边错位。现在一律以"从 .gil 读出的真实索引"为准。
+    --
+    --   ★ 这一类**不进 `.gil`**（`sync_plan.mjs` 里也专门跳过 `.hexbg`）：
+    --     它们由脚本按模板索引 `InstantiateClientUIControl` 现场创建。
+    --     一旦 .gil 里也有同名控件，适配器 `find()` 会先找到那个"编辑器里的空控件"，
+    --     于是永远不走实例化 ⇒ 画面上是一块空白。
     prefab_of = {
-      -- 六边形按钮底图（右侧三个按钮共用一张）
-      ["action.undo.hexbg"]   = 1073742321,
-      ["action.submit.hexbg"] = 1073742321,
-      ["action.reveal.hexbg"] = 1073742321,
-      -- 线索卡底条（深色横条 + 左端头像位），每条线索一个
-      -- （索引 1073742333；下面用循环补齐 clue.1..18）
-      -- 主页/选关的背景大板
+      -- 六边形按钮底图（三个动作键共用一张素材）
+      ["action.back.hexbg"] = 1073742333,
+      ["action.redo.hexbg"] = 1073742333,
+      ["action.hint.hexbg"] = 1073742333,
+      -- 深色卡框（主页 / 选关的背景大板）—— 下一组再启用
       ["home.panel"]   = 1073742337,
       ["select.panel"] = 1073742337,
     },
     parent_of = {
-      ["action.undo.hexbg"]   = "action.undo",
-      ["action.submit.hexbg"] = "action.submit",
-      ["action.reveal.hexbg"] = "action.reveal",
+      ["action.back.hexbg"] = "action.back",
+      ["action.redo.hexbg"] = "action.redo",
+      ["action.hint.hexbg"] = "action.hint",
       ["home.panel"]   = "home",
       ["select.panel"] = "select",
     },
