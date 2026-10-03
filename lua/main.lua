@@ -1130,7 +1130,7 @@ function Murdoku.on_update(dt)
   end
   -- ★★★★★ 2026-10-02 **UI 容器定位诊断**：真机"right/topbar 可见=true 但看不到"，
   --   所以把它们的**位置/尺寸/透明度/同级顺序**全打出来，一次看清问题在哪。
-  if (current.frames or 0) % 300 == 0 then
+  if false then   -- ★ 2026-10-03 瘦身：常驻诊断关掉（原来每 300 帧刷一遍，含大量 pcall+字符串拼接）
     for _, nm in ipairs({ "topbar", "right" }) do
       local c = nil
       pcall(function() c = current.adapter:find(nm) end)
@@ -1183,7 +1183,7 @@ function Murdoku.on_update(dt)
   --   按"先看输出、再解释现象"的规矩，这里**直接调一次实例化并把返回值打出来**：
   --     · 返回非 nil ⇒ 实例化这条路是通的，问题在"我们没让它建"（计划/配置）
   --     · 返回 nil   ⇒ 这条路本身不通（索引不对 / 该模板不是客户端控件模板）
-  if (current.frames or 0) % 300 == 60 then
+  if false then   -- ★ 2026-10-03 瘦身：实例化探针关掉（每次真的去建两个控件，是"棋盘出现慢"的主因）
     -- ★ 2026-10-03 **两个索引对比着试**：
     --   `1073742333` = murdoku-btn-hex 的**素材记录**（不是模板）⇒ 真机实测返回 nil
     --   `1073742380` = 用户把 `m` **另存为模板**后的索引（`133.gil` 里确认：name=m, id=1073742380）
@@ -1228,7 +1228,7 @@ function Murdoku.on_update(dt)
     end
   end
   -- ★ 每 300 帧打印一次"第一个格子的屏幕坐标" —— 一眼看出棋盘在屏幕哪、有没有跑出去。
-  if (current.frames or 0) % 300 == 0 then
+  if false then   -- ★ 2026-10-03 瘦身：常驻诊断关掉（原来每 300 帧刷一遍，含大量 pcall+字符串拼接）
     local c1 = nil
     pcall(function() c1 = current.adapter:find("cell.1.1") end)
     if c1 ~= nil then
@@ -1379,7 +1379,7 @@ function Murdoku.on_update(dt)
   --   `wall.up`(上边) / `wall.left`(左边) 是 visible=true，而**格子底图 `face` 是 false**。
   --   ⇒ 这一版把 `face` 的真实情况打出来（尺寸 / 图片 / 是否被脚本设过），
   --     这样"底图为什么没铺开"就不用猜了。
-  if (current.frames or 0) % 300 == 0 and scr_now == "level" then
+  if false then   -- ★ 2026-10-03 瘦身：关卡内定位诊断关掉
     local c1 = nil
     pcall(function() c1 = current.adapter:find("cell.1.1") end)
     if c1 ~= nil then
