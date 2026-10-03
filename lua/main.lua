@@ -617,32 +617,12 @@ function Murdoku.on_update(dt)
   --   只打一次，不影响性能，也不依赖 debug_* 开关（这是验收信息，不是调试噪音）。
   -- ★★★★ 2026-10-01 改成"每次切屏都打一次"（原来只在第 90 帧打一次，只看到主页）。
   --   起因：用户报"选关界面上所有按钮都无效"，而诊断只在主页打过 => 看不到选关页真实状态。
-  -- ★★★★★ 2026-10-03 **手动显形（分家后）** —— 从下面那个"诊断块"里搬出来的**功能代码**。
-  --
-  --   为什么要搬：原来这两句藏在 `if (frames >= 90 or 切屏) … then` 的诊断块里，
-  --   注释写着"不影响性能、是验收信息"，但实际它每次切屏都会**强制**把
-  --   `home.select` 和 `home` 容器设成可见 —— 这是当初为了修"主页按钮不显示"加的，
-  --   属于**功能**，不是诊断。
-  --   ⇒ 一旦整块删掉诊断，主页按钮就会再次消失（和 009 那次同类事故）。
-  --   ⇒ 所以按《安全瘦身规程》第 ① 步：**先把功能搬到诊断块外面无条件执行**，
-  --     本轮**只搬不删**；确认无误后下一轮才删那个诊断块。
-  do
-    local ad0 = current.adapter
-    if ad0 ~= nil then
-      local leaf0 = nil
-      pcall(function() leaf0 = ad0:find("home.select") end)
-      if leaf0 ~= nil then
-        pcall(function() if leaf0.SetVisible then leaf0:SetVisible(true) end end)
-        pcall(function() if leaf0.SetActive  then leaf0:SetActive(true)  end end)
-      end
-      local hm0 = nil
-      pcall(function() hm0 = ad0:find("home") end)
-      if hm0 ~= nil then
-        pcall(function() if hm0.SetVisible then hm0:SetVisible(true) end end)
-        pcall(function() if hm0.SetActive  then hm0:SetActive(true)  end end)
-      end
-    end
-  end
+    -- ★★★★★ 2026-10-03 **删掉"手动显形（分家后）"整段**。
+    --   它是我 019 版从切屏诊断块里"分家"出来的，当时误判成"修主页按钮不显示"的功能代码；
+    --   实际它只是诊断用的"手动试试能不能显示"。搬到块外后变成**每帧**把 `home.select`
+    --   与 `home` 容器强制设成 `SetVisible(true)` ⇒ **覆盖了所有按屏幕隐藏的逻辑** ⇒
+    --   真机表现就是"关卡里棋盘上压着返回菜单按钮、点了回选关"（22:45 日志）。
+    --   ⇒ 删掉。隐藏逻辑回归 `apply_screen_hide` + 下面那段按屏幕同步。
 
   local scr_now = current.controller and current.controller.screen or "level"
   if ((current.frames or 0) >= 90 or scr_now ~= Murdoku._last_screen)
