@@ -1218,6 +1218,37 @@ function Murdoku.on_update(dt)
     --     正确性：引擎若在状态变化后关掉 `face`，**最多 0.5 秒后会被这段自动点亮**，视觉无感。
     --   ⚠️ 想调频率只改下面的 `30`；想恢复原行为就改成 `1`（= 每帧）。
     --   ★ 实现方式：**只改这个 if 的条件，不新增 if** —— 避免上次"新增 if 导致 end 配对错位"的坑。
+    -- ★★★★★ 2026-10-03 **按屏幕同步"运行时创建的控件"的可见性**。
+    --
+    --   真机 bug（22:00 / 22:07 日志）：关卡界面里 `selbar`(1500x700) 和它的 4 个 `selbtn.*`
+    --   **一直可见**，压在棋盘第二行上；而 `selbtn` 绑的是 `pick_level` ⇒ 玩家点到就回选关。
+    --   还有 `tpl-container`(模板引用控件) 也没藏。
+    --
+    --   **为什么 `apply_screen_hide` 管不到它们**：那个函数只遍历**规划表 `nodes`** 里的控件，
+    --   而这三组是**运行时由 `ensure_widgets` 现建的**，根本不在 `nodes` 里 ⇒ 加 HIDE/PREFIX 无效。
+    --
+    --   ⇒ 所以在这里按"当前屏幕"直接改它们的可见性。挂在**每 30 帧**的节流位上，开销可忽略。
+    if ((current.frames or 0) % 30) == 0 then
+      local ad_vis = current.adapter
+      if ad_vis ~= nil then
+        local in_level = (scr_now == "level")
+        local in_select = (scr_now == "select")
+        local function setv(nm, want)
+          local c = nil
+          pcall(function() c = ad_vis:find(nm) end)
+          if c ~= nil then pcall(function() c:SetVisible(want) end) end
+        end
+        -- 选关按钮条：**只在选关页可见**
+        setv("selbar", in_select)
+        for i = 1, 6 do setv("selbtn." .. tostring(i), in_select) end
+        -- 模板引用控件：**哪个页面都不该显示**（它只是模板的引用）
+        setv("tpl-container", false)
+        -- 关卡内的棋盘格子：只在关卡内可见
+        if in_level then
+          for r = 1, 5 do for c = 1, 5 do setv("cell." .. r .. "." .. c, true) end end
+        end
+      end
+    end
     if scr_now == "level" and ((current.frames or 0) % 30) == 0 then
       local rows, cols = 5, 5
       pcall(function()
