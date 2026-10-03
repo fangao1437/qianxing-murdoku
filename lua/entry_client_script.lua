@@ -411,9 +411,9 @@ local function build_adapter()
     -- 而 adapter 读的是 `self.cfg.debug_key` → **永远 nil** → 诊断一行都不打，
     -- 白白多跑了一轮真机才查出来。
     -- 教训：`cfg.cells.<名>` 与 `cfg.<名>` 是**两张表**，加开关时先确认读取处写的是哪个。
-    debug_key   = true,   -- 打出 KeyEventType 解析结果的类型 + 实际收到的按键名
-    debug_image = true,   -- 打出 SetImage 之后 face 的 imageType
-    debug_event = true,   -- 打出每条控件绑定到了什么事件 + 点击时实际派发的事件
+    debug_key   = false,   -- 打出 KeyEventType 解析结果的类型 + 实际收到的按键名
+    debug_image = false,   -- 打出 SetImage 之后 face 的 imageType
+    debug_event = false,   -- 打出每条控件绑定到了什么事件 + 点击时实际派发的事件
 
     -- ★ 头像卡按人数自适应列数：编辑器按"最挤的情况"摆好，
     --   运行时由 Adapter:apply_tray_layout 用 ui_controller 算好的几何摆正。
