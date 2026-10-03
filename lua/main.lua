@@ -1190,10 +1190,11 @@ function Murdoku.on_update(dt)
           if type(a) == "table" then sx, sy = a.x, a.y else sx, sy = a, b end
         end)
       end
-      if print then
-        print(string.format("[murdoku] 格子定位：cell.1.1 相对stage(%.0f,%.0f) %dx%d  ⇒ 屏幕(%.0f,%.0f)",
-          ax, ay, w, h, 800 + sx + ax, 450 - (sy + ay)))
-      end
+        -- ★★★★★ 2026-10-03 **删掉每帧打印的「格子定位」**（原 L1193~1196）。
+        --   它是**每帧**执行的 `string.format` + `print`，真机日志里同一行连续出现十几次，
+        --   是当前脚本**最大的单点开销**。整块只有打印，没有功能 ⇒ 直接删掉。
+        --   需要恢复时：git 上取本提交之前的版本，或看向导里的 `versions\019`。
+        --   ⚠️ 下面「每帧点亮 face」那段是**功能**（SetVisible），保留不动。
     end
     -- ★★★★★ 2026-10-02 **每帧把格子的底图 `face` 点亮（只在关卡内）**。
     --
