@@ -259,7 +259,27 @@ local function build_adapter()
     --   但脚本只有两个模板 ⇒ 造出来全是白块，而且把用户精心摆的界面（含素材）盖掉了。
     --   现在改成**以 93.gil 为基底**（它有全部控件和素材）+ 把 97 的 stage 三条搬回来，
     --   ⇒ 界面控件重新由编辑器提供 ⇒ **自动创建必须关掉**，否则又是一堆白块。
-    auto_create = false,   -- true 才让 create_control 按 kind 自动实例化
+    auto_create = false,   -- true 才让 create_control 按 kind 自动实例化（全局开关，保持关）
+    -- ★★★★★ 2026-10-03 **按 id 的白名单**：只有名单里的节点才允许自动创建。
+    --
+    --   为什么需要它：`auto_create = false` 是个**全局**开关，一关就全关 ——
+    --   于是我新加的七个官方素材图标（`hex.*`，见 `ui_controller.lua` 的 ICON_ASSETS）
+    --   也一起被挡在外面，真机日志里它们出现在"这些控件还没建 ×7"就是这条造成的。
+    --   但**不能**把 `auto_create` 改回 true：那会一次性去建规划里缺的 96 个控件
+    --   （`clue.*` `ruler.*` `room.*` `obj.*` …），又会变成"一堆白块盖住界面"。
+    --
+    --   ⇒ 折中：**只放行这七个图标**。它们走 `auto_prefab`（= 格子的客户端控件模板
+    --     1073741876，真机已多次验证可实例化），建出来后由适配器新加的那段
+    --     `SetImage(node.image_id)` 把官方素材贴上去。
+    auto_create_only = {
+      ["hex.back"]   = true,
+      ["hex.submit"] = true,
+      ["hex.redo"]   = true,
+      ["hex.undo"]   = true,
+      ["hex.hint"]   = true,
+      ["hex.ok"]     = true,
+      ["hex.no"]     = true,
+    },
     widgets     = true,    -- ★ 打开：启动时创建并显示 selbtn.1..N（102 验证过"能完成选关"的那四个方块）
     stage = {
       prefab = 1073742330,   -- 「容器节点」模板（用户 2026-10-02 提供）
