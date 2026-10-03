@@ -1282,7 +1282,19 @@ function Controller:build_layout()
   --   —— 基点的存档里只有 `action.back`（返回列表）/ `action.redo`（重置关卡）/
   --      `action.hint`（放大镜）；`action.submit` / `action.undo` **还没有**，
   --      给不存在的键挂底图只会多出三个孤儿控件。
-  local HEX_PREFAB = true          -- ★ 第一组：用转存素材（murdoku-btn-hex）
+  -- ★★★★★ 2026-10-03 **改回 false** —— 真机探针（16:17）实测：
+  --     `InstantiateClientUIControl(1073742333, root)` → **pcall 成功、但返回 nil**
+  --   ⇒ 「按模板索引实例化素材」这条路**走不通**（与当初 1073742321 完全一样）。
+  --
+  --   用户实验得到的两条正确用法：
+  --     ① **素材尺寸在"生成时就定好"** —— 之后改素材尺寸或图片尺寸都不会影响显示；
+  --     ② **图片必须挂在客户端容器之外**（即只能是**服务器控件**）——
+  --        客户端控件容器的子级里，图片加载不了外部资产。
+  --
+  --   ⇒ 正确做法 = **在编辑器里用「图片 → 静态引用」把素材放进一个控件**（用户的 `m`），
+  --     再用 `tools/gil/clone_asset_image.mjs` **克隆那个现成控件**到需要的位置。
+  --     —— 而不是让脚本去实例化索引。
+  local HEX_PREFAB = false         -- false = 走"克隆现成素材控件"那条（见上面注释）
   local function hex_bg(btnId, cx, cy, size)
     local s = size / 256
     for i = 1, #HEX_PARTS do
