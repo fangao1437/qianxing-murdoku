@@ -1,0 +1,23 @@
+版本：013-图标纯图模板
+时间：2026/10/3 20:59:50
+配套 .gil：完整界面143-图标纯图模板.gil
+说明：以用户 142.gil(94条) 为基底；prefab_icon=1073742357（客户端控件容器里另存的纯图片模板 hex）
+
+文件清单：
+  engine_adapter.lua              5397 字节
+  engine_adapter_qianxing.lua     219603 字节
+  entry_client_script.lua         42320 字节
+  main.lua                        83818 字节
+  murdoku_core.lua                102564 字节
+  room_map.lua                    5227 字节
+  ui_controller.lua               148826 字节
+  client_script.lua               638628 字节（真机跑的就是这份）
+  完整界面143-图标纯图模板.gil              728895 字节（配套存档）
+
+用途：**这一版是"当时能跑的那一份"**。要回退：
+  1) 把本目录的 *.lua 拷回 qianxing-murdoku\lua\
+  2) 跑 node tools/bundle_client_script.lua，再 powershell -File tools/install_script_to_sandbox.ps1
+     （或直接用本目录的 client_script.lua 覆盖沙箱里的那份，省掉打包）
+  3) 导入本目录里的 .gil
+
+规则（重要）：**每轮一个新编号，不删旧的、不覆盖**。
