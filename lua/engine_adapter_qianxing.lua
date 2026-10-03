@@ -485,8 +485,16 @@ function Adapter:create_control(node)
             local found_name = nil
             local function find_target(c, depth)
               if c == nil or depth > 4 then return nil end
-              if has_setimage(c) then return c end
-              for _, cn in ipairs({ "face", "img", "icon", "bg", "image", "content" }) do
+              -- ★★ 2026-10-03 **顺序很关键**：先"按名字往下钻"，**钻完再考虑自己**。
+              --
+              --   上一轮我把"自己有没有 SetImage"放在最前面，结果首个命中就是 `content`
+              --   （它是中间容器，也有 SetImage）⇒ 把图设到了容器上，并把 7 个用格子模板
+              --   建出来的图标控件变成了"迷你格子"（自带 wall.* / door.* / face），
+              --   真机表现就是**棋盘跟着一起变样/不见**。
+              --
+              --   而格子自己的做法是给 **`content/face`** 设图（日志：
+              --   `子控件 face 存在（visible=true）imageId=106053`）⇒ **face 才是图片控件**。
+              for _, cn in ipairs({ "face", "img", "icon", "image", "bg", "content" }) do
                 local kid = nil
                 pcall(function() kid = c:GetChild(cn) end)
                 if kid ~= nil then
@@ -494,6 +502,7 @@ function Adapter:create_control(node)
                   if r ~= nil then found_name = cn return r end
                 end
               end
+              if has_setimage(c) then return c end
               local n = 0
               pcall(function() n = c:GetChildCount() end)
               for i = 0, n - 1 do
