@@ -1176,6 +1176,38 @@ function Murdoku.on_update(dt)
       end
     end
   end
+  -- ★★★★★ 2026-10-03 **六边形素材：直接测实例化**（第一组接入的诊断）
+  --
+  --   真机日志（16:13）里，`action.hint.hexbg` / `action.redo.hexbg` 出现在
+  --   "这些控件还没建"清单里 ⇒ **它们压根没被创建**，不是"位置不对"。
+  --   按"先看输出、再解释现象"的规矩，这里**直接调一次实例化并把返回值打出来**：
+  --     · 返回非 nil ⇒ 实例化这条路是通的，问题在"我们没让它建"（计划/配置）
+  --     · 返回 nil   ⇒ 这条路本身不通（索引不对 / 该模板不是客户端控件模板）
+  if (current.frames or 0) % 300 == 60 then
+    local IDX = 1073742333   -- murdoku-btn-hex（用户转存实测）
+    if print then
+      print("[murdoku] ==== 六边形素材实例化探针 ====")
+      print("[murdoku] game 表存在=" .. tostring(game ~= nil)
+        .. "  InstantiateClientUIControl 类型=" .. tostring(game and type(game.InstantiateClientUIControl)))
+      local host = nil
+      pcall(function() host = current.adapter:find("root") end)
+      print("[murdoku] 宿主 root=" .. tostring(host ~= nil))
+      if game ~= nil and game.InstantiateClientUIControl ~= nil and host ~= nil then
+        local okc, made = pcall(function() return game.InstantiateClientUIControl(IDX, host) end)
+        print("[murdoku] pcall 成功=" .. tostring(okc)
+          .. "  返回值=" .. tostring(made) .. "  类型=" .. type(made))
+        if made ~= nil then
+          local nm, vis = "?", "?"
+          pcall(function() nm = tostring(made.name) end)
+          pcall(function() vis = tostring(made.visible) end)
+          print("[murdoku] 造出来了：name=" .. nm .. " visible=" .. vis)
+          pcall(function() made:SetVisible(false) end)   -- 探针不留痕
+          pcall(function() made:SetName("__probe_hexbg") end)
+        end
+      end
+      print("[murdoku] ==== 探针结束 ====")
+    end
+  end
   -- ★ 每 300 帧打印一次"第一个格子的屏幕坐标" —— 一眼看出棋盘在屏幕哪、有没有跑出去。
   if (current.frames or 0) % 300 == 0 then
     local c1 = nil
