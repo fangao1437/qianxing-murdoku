@@ -1,33 +1,57 @@
 {
   "canvas": {
-    "width": 256,
-    "height": 256,
+    "width": 70,
+    "height": 70,
     "background": "#00000000"
   },
   "elements": [
     {
-      "id": "shaft",
+      "id": "edge",
       "type": "rectangle",
-      "x": 128,
-      "y": 152,
-      "width": 34,
-      "height": 116,
+      "x": 35,
+      "y": 35,
+      "width": 70,
+      "height": 70,
       "rotation": 0,
-      "color": "#FFFFFF",
+      "color": "#5A5A5F",
       "opacity": 1,
       "zIndex": 0
     },
     {
+      "id": "base",
+      "type": "rectangle",
+      "x": 35,
+      "y": 35,
+      "width": 66,
+      "height": 66,
+      "rotation": 0,
+      "color": "#1E1E22",
+      "opacity": 1,
+      "zIndex": 1
+    },
+    {
+      "id": "shaft",
+      "type": "rectangle",
+      "x": 35,
+      "y": 41,
+      "width": 9,
+      "height": 30,
+      "rotation": 0,
+      "color": "#F5F5F5",
+      "opacity": 1,
+      "zIndex": 3
+    },
+    {
       "id": "head",
       "type": "triangle",
-      "x": 128,
-      "y": 62,
-      "width": 92,
-      "height": 84,
+      "x": 35,
+      "y": 21,
+      "width": 24,
+      "height": 22,
       "rotation": 0,
-      "color": "#FFFFFF",
+      "color": "#F5F5F5",
       "opacity": 1,
-      "zIndex": 0
+      "zIndex": 4
     }
   ],
   "meta": {

@@ -1,45 +1,69 @@
 {
   "canvas": {
-    "width": 256,
-    "height": 256,
+    "width": 62,
+    "height": 62,
     "background": "#00000000"
   },
   "elements": [
     {
-      "id": "bar",
+      "id": "edge",
       "type": "rectangle",
-      "x": 132,
-      "y": 128,
-      "width": 150,
-      "height": 38,
+      "x": 31,
+      "y": 31,
+      "width": 62,
+      "height": 62,
       "rotation": 0,
-      "color": "#FFFFFF",
+      "color": "#5A5A5F",
       "opacity": 1,
       "zIndex": 0
+    },
+    {
+      "id": "base",
+      "type": "rectangle",
+      "x": 31,
+      "y": 31,
+      "width": 58,
+      "height": 58,
+      "rotation": 0,
+      "color": "#1E1E22",
+      "opacity": 1,
+      "zIndex": 1
+    },
+    {
+      "id": "bar",
+      "type": "rectangle",
+      "x": 30,
+      "y": 33,
+      "width": 34,
+      "height": 9,
+      "rotation": 0,
+      "color": "#F5F5F5",
+      "opacity": 1,
+      "zIndex": 3
     },
     {
       "id": "head",
       "type": "triangle",
-      "x": 60,
-      "y": 128,
-      "width": 92,
-      "height": 92,
+      "x": 14,
+      "y": 33,
+      "width": 20,
+      "height": 22,
       "rotation": 270,
-      "color": "#FFFFFF",
+      "color": "#F5F5F5",
       "opacity": 1,
-      "zIndex": 0
+      "zIndex": 4
     },
     {
       "id": "stem",
       "type": "rectangle",
-      "x": 188,
-      "y": 92,
-      "width": 38,
-      "height": 96,
+      "x": 45,
+      "y": 25,
+      "width": 9,
+      "height": 22,
       "rotation": 0,
-      "color": "#FFFFFF",
+      "color": "#F5F5F5",
       "opacity": 1,
-      "zIndex": 0
+      "zIndex": 3
     }
   ],
   "meta": {

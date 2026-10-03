@@ -1,33 +1,57 @@
 {
   "canvas": {
-    "width": 256,
-    "height": 256,
+    "width": 70,
+    "height": 70,
     "background": "#00000000"
   },
   "elements": [
     {
-      "id": "lens",
-      "type": "ring",
-      "x": 110,
-      "y": 108,
-      "width": 132,
-      "height": 132,
+      "id": "edge",
+      "type": "rectangle",
+      "x": 35,
+      "y": 35,
+      "width": 70,
+      "height": 70,
       "rotation": 0,
-      "color": "#FFFFFF",
+      "color": "#5A5A5F",
       "opacity": 1,
       "zIndex": 0
     },
     {
+      "id": "base",
+      "type": "rectangle",
+      "x": 35,
+      "y": 35,
+      "width": 66,
+      "height": 66,
+      "rotation": 0,
+      "color": "#1E1E22",
+      "opacity": 1,
+      "zIndex": 1
+    },
+    {
+      "id": "lens",
+      "type": "ring",
+      "x": 31,
+      "y": 31,
+      "width": 36,
+      "height": 36,
+      "rotation": 0,
+      "color": "#F5F5F5",
+      "opacity": 1,
+      "zIndex": 3
+    },
+    {
       "id": "grip",
       "type": "rectangle",
-      "x": 180,
-      "y": 178,
-      "width": 34,
-      "height": 96,
+      "x": 48,
+      "y": 48,
+      "width": 9,
+      "height": 22,
       "rotation": 45,
-      "color": "#FFFFFF",
+      "color": "#F5F5F5",
       "opacity": 1,
-      "zIndex": 0
+      "zIndex": 4
     }
   ],
   "meta": {
