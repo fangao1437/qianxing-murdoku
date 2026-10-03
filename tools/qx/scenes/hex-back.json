@@ -1,0 +1,50 @@
+{
+  "canvas": {
+    "width": 256,
+    "height": 256,
+    "background": "#00000000"
+  },
+  "elements": [
+    {
+      "id": "bar",
+      "type": "rectangle",
+      "x": 132,
+      "y": 128,
+      "width": 150,
+      "height": 38,
+      "rotation": 0,
+      "color": "#FFFFFF",
+      "opacity": 1,
+      "zIndex": 0
+    },
+    {
+      "id": "head",
+      "type": "triangle",
+      "x": 60,
+      "y": 128,
+      "width": 92,
+      "height": 92,
+      "rotation": 270,
+      "color": "#FFFFFF",
+      "opacity": 1,
+      "zIndex": 0
+    },
+    {
+      "id": "stem",
+      "type": "rectangle",
+      "x": 188,
+      "y": 92,
+      "width": 38,
+      "height": 96,
+      "rotation": 0,
+      "color": "#FFFFFF",
+      "opacity": 1,
+      "zIndex": 0
+    }
+  ],
+  "meta": {
+    "sourceType": "editor",
+    "sourceName": "murdoku-hex-back",
+    "warnings": []
+  }
+}

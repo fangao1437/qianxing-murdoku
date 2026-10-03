@@ -1,0 +1,38 @@
+{
+  "canvas": {
+    "width": 256,
+    "height": 256,
+    "background": "#00000000"
+  },
+  "elements": [
+    {
+      "id": "shaft",
+      "type": "rectangle",
+      "x": 128,
+      "y": 152,
+      "width": 34,
+      "height": 116,
+      "rotation": 0,
+      "color": "#FFFFFF",
+      "opacity": 1,
+      "zIndex": 0
+    },
+    {
+      "id": "head",
+      "type": "triangle",
+      "x": 128,
+      "y": 62,
+      "width": 92,
+      "height": 84,
+      "rotation": 0,
+      "color": "#FFFFFF",
+      "opacity": 1,
+      "zIndex": 0
+    }
+  ],
+  "meta": {
+    "sourceType": "editor",
+    "sourceName": "murdoku-hex-submit",
+    "warnings": []
+  }
+}

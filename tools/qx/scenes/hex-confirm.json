@@ -1,0 +1,86 @@
+{
+  "canvas": {
+    "width": 256,
+    "height": 256,
+    "background": "#00000000"
+  },
+  "elements": [
+    {
+      "id": "card",
+      "type": "rectangle",
+      "x": 128,
+      "y": 128,
+      "width": 236,
+      "height": 108,
+      "rotation": 0,
+      "color": "#232838",
+      "opacity": 1,
+      "zIndex": 0
+    },
+    {
+      "id": "card2",
+      "type": "rectangle",
+      "x": 128,
+      "y": 128,
+      "width": 224,
+      "height": 96,
+      "rotation": 0,
+      "color": "#1B2030",
+      "opacity": 1,
+      "zIndex": 1
+    },
+    {
+      "id": "ok1",
+      "type": "rectangle",
+      "x": 76,
+      "y": 134,
+      "width": 20,
+      "height": 52,
+      "rotation": -45,
+      "color": "#FFFFFF",
+      "opacity": 1,
+      "zIndex": 2
+    },
+    {
+      "id": "ok2",
+      "type": "rectangle",
+      "x": 98,
+      "y": 116,
+      "width": 20,
+      "height": 76,
+      "rotation": 45,
+      "color": "#FFFFFF",
+      "opacity": 1,
+      "zIndex": 2
+    },
+    {
+      "id": "no1",
+      "type": "rectangle",
+      "x": 184,
+      "y": 128,
+      "width": 20,
+      "height": 76,
+      "rotation": 45,
+      "color": "#FFFFFF",
+      "opacity": 1,
+      "zIndex": 2
+    },
+    {
+      "id": "no2",
+      "type": "rectangle",
+      "x": 184,
+      "y": 128,
+      "width": 20,
+      "height": 76,
+      "rotation": -45,
+      "color": "#FFFFFF",
+      "opacity": 1,
+      "zIndex": 2
+    }
+  ],
+  "meta": {
+    "sourceType": "editor",
+    "sourceName": "murdoku-hex-confirm",
+    "warnings": []
+  }
+}

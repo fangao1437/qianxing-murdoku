@@ -1,0 +1,38 @@
+{
+  "canvas": {
+    "width": 256,
+    "height": 256,
+    "background": "#00000000"
+  },
+  "elements": [
+    {
+      "id": "ring",
+      "type": "ring",
+      "x": 128,
+      "y": 132,
+      "width": 168,
+      "height": 168,
+      "rotation": 0,
+      "color": "#FFFFFF",
+      "opacity": 1,
+      "zIndex": 0
+    },
+    {
+      "id": "head",
+      "type": "triangle",
+      "x": 60,
+      "y": 48,
+      "width": 62,
+      "height": 62,
+      "rotation": 270,
+      "color": "#FFFFFF",
+      "opacity": 1,
+      "zIndex": 0
+    }
+  ],
+  "meta": {
+    "sourceType": "editor",
+    "sourceName": "murdoku-hex-undo",
+    "warnings": []
+  }
+}

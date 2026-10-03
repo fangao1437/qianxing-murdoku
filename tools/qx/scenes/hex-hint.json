@@ -1,0 +1,38 @@
+{
+  "canvas": {
+    "width": 256,
+    "height": 256,
+    "background": "#00000000"
+  },
+  "elements": [
+    {
+      "id": "lens",
+      "type": "ring",
+      "x": 110,
+      "y": 108,
+      "width": 132,
+      "height": 132,
+      "rotation": 0,
+      "color": "#FFFFFF",
+      "opacity": 1,
+      "zIndex": 0
+    },
+    {
+      "id": "grip",
+      "type": "rectangle",
+      "x": 180,
+      "y": 178,
+      "width": 34,
+      "height": 96,
+      "rotation": 45,
+      "color": "#FFFFFF",
+      "opacity": 1,
+      "zIndex": 0
+    }
+  ],
+  "meta": {
+    "sourceType": "editor",
+    "sourceName": "murdoku-hex-hint",
+    "warnings": []
+  }
+}
