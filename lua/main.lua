@@ -1083,6 +1083,40 @@ function Murdoku.on_update(dt)
         end
       end
     end
+    -- ★★★★★ 2026-10-03 **A 方案：给 `stage`（棋盘容器）铺一层底板，用它的底色当"网格线"**。
+    --
+    --   背景（用户 22:54 提出的真问题）：格子之间**没有缝**而底板是纯色 ⇒ 5×5 会连成
+    --   一整块色块、**看不出格子边界**；而棋盘又不能用外部资产，官方素材里也没有"格子边框"。
+    --
+    --   ⇒ 方案 A：`cfg.cells.gap = 6`（格子 size = 129 < pitch = 135）⇒ 缝里露出
+    --     `stage` 的**底色** ⇒ 天然网格线。**0 个额外控件**，移动端无负担。
+    --
+    --   ⚠️ 染色说明：本项目真机实测**环境里没有全局函数 `Color`**
+    --      （日志：`环境没有全局函数 Color，染色跳过`）⇒ `imageColor` 可能设不进去。
+    --      所以这段**两条路都试**：
+    --        ① 直接给 `imageColor` 赋一个**整数**（部分版本接受 ARGB 数值）
+    --        ② 不行就**不染色**，改用**本身就深色**的官方底板素材（换 `STAGE_BG_ID` 即可）
+    --      并把回读打出来，方便你按结果决定下一步。
+    do
+      local STAGE_BG_ID   = 106053          -- 官方「底板」类素材（支持 Stretch）；想换就改这里
+      local STAGE_BG_ARG  = 0xFF2C2820      -- 想要的深暖色 #2C2820（ARGB）
+      local s = nil
+      pcall(function() s = current.adapter:find("stage") end)
+      if s ~= nil then
+        local okimg = pcall(function() s:SetImage(STAGE_BG_ID) end)
+        if not okimg then pcall(function() s:SetImage(nil, STAGE_BG_ID) end) end
+        local okcol = false
+        pcall(function() s.imageColor = STAGE_BG_ARG; okcol = true end)
+        pcall(function() s.imageType = "Stretch" end)
+        local rid, rcol = "?", "?"
+        pcall(function() rid = tostring(s.imageId) end)
+        pcall(function() rcol = tostring(s.imageColor) end)
+        print("[murdoku] 棋盘底色：stage 设图 " .. tostring(STAGE_BG_ID)
+          .. " → 回读 imageId=" .. rid
+          .. "；染色 " .. tostring(STAGE_BG_ARG) .. " → 回读 " .. rcol
+          .. "（okcol=" .. tostring(okcol) .. "）")
+      end
+    end
     -- ★★★★★ 2026-10-02 **这是"四个按钮看不见"的原因**：
     --   `selbtn.*` 的父级是 **`board`**，而 `board` 在选关页是 `visible=false`
     --   ⇒ **父级不可见，子控件跟着不可见** ⇒ 脚本再怎么 `SetVisible(true)` 都白搭。
