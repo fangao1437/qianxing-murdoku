@@ -422,6 +422,13 @@ function Adapter:create_control(node)
     if AUTO_CONTAINER_KINDS[nd.kind] then
       return ad.cfg.stage and ad.cfg.stage.prefab
     end
+    -- ★ 2026-10-03 **图标用专用模板**（用户提供的干净客户端模板 `cfg.prefab_icon`）。
+    --   原来七个 hex.* 走的是 `cells.prefab`（格子模板），那会**连带一整套格子子控件**
+    --   （content / wall.* / door.* / note / x）⇒ 真机表现：画面上多出 7 个"迷你格子"
+    --   把棋盘搅乱，而且 SetImage 打不到图片节点（只能落到 content 容器上）。
+    if nd.icon_template == true and ad.cfg.prefab_icon ~= nil then
+      return ad.cfg.prefab_icon
+    end
     return ad.cfg.cells and ad.cfg.cells.prefab
   end
   -- ★★★★★ 2026-10-03 **`auto_create` 的粒度问题**：
