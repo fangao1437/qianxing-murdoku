@@ -1238,8 +1238,19 @@ function Murdoku.on_update(dt)
         local in_level = (scr_now == "level")
         local in_select = (scr_now == "select")
         local function setv(nm, want)
+          -- ★★★★★ 2026-10-03 **改用 `adapter.controls` 直接取引用，不再依赖 `find`**。
+          --
+          --   真机证据链（22:33 日志）：
+          --     · `ensure_widgets` 里用**局部变量 `bar`** 调 `SetVisible(false)` ⇒ **成功**
+          --       （诊断行：`选关条创建后已隐藏：selbar=false  selbtn.1=false`）
+          --     · 但 `main.lua` 里所有"先 `adapter:find("selbar")` 拿句柄再设"的地方 ⇒ **全都无效**
+          --       （进关卡后日志仍是 `selbar 可见=true`）
+          --   ⇒ 结论：**`find` 拿不到这些运行时创建/改过名的控件**
+          --     （项目注释早写过「`Adapter:sub()` 未命中会**永久缓存 false**」）
+          --   ⇒ 走 `controls` 里那份**直接引用**；拿不到再退回 `find` 兜底。
           local c = nil
-          pcall(function() c = ad_vis:find(nm) end)
+          if ad_vis.controls ~= nil then c = ad_vis.controls[nm] end
+          if c == nil then pcall(function() c = ad_vis:find(nm) end) end
           if c ~= nil then pcall(function() c:SetVisible(want) end) end
         end
         -- 选关按钮条：**只在选关页可见**
