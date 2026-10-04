@@ -157,7 +157,12 @@ M.LAYOUT = {
   --
   --   换算回设计空间（×6/5）：584 → **700.8**；x 608 → **729.6**；y 138 → **165.6**
   board  = { x = 730, y = 166, w = 701, h = 701 },   -- y 166..867，中心 (1080.5, 563.5) 设计
-  ruler  = 44,
+  -- ★★★★★ 2026-10-04 **`ruler` = 棋盘边框厚度**（不是"坐标尺"）。
+  --   逐像素量 `docs/布局图-关卡内-v3.png`：棋盘外框 584、**边框四边均匀 12px**（画布空间）
+  --   ⇒ 设计空间 = 12 × 6/5 = 14.4 ≈ **14**。
+  --   ⚠️ 它是**两边各一份**的（见下面 `avail = board.w - 2*ruler`）——
+  --      原来 `44` 是按"坐标尺条"想的，而且只扣一边，两个错叠在一起。
+  ruler  = 14,
   cell   = 160,        -- 仅参考
   cell_gap = 4,        -- 仅参考
   wall_thickness = 10,
@@ -1793,8 +1798,8 @@ function Controller:build_layout()
   -- 不需要为每个尺寸重摆一次编辑器布局（编辑器里按**最大的 N** 建够格子即可，
   -- 小尺寸关卡多出来的格子由界面层隐藏、位置由脚本运行时摆正）。
   local n = math.max(vm.rows, vm.cols)
-  local avail_w = L.board.w - L.ruler
-  local avail_h = L.board.h - L.ruler
+  local avail_w = L.board.w - 2 * L.ruler     -- ★ 边框**两边各一份**（原来只扣一边）
+  local avail_h = L.board.h - 2 * L.ruler
   local pitch = math.floor(math.min(avail_w, avail_h) / n)
   local gap   = math.max(2, math.floor(pitch * 0.03))
   local cell  = pitch - gap

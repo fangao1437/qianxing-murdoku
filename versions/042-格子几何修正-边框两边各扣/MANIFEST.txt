@@ -1,0 +1,23 @@
+版本：042-格子几何修正-边框两边各扣
+时间：2026/10/4 16:32:23
+配套 .gil：完整界面173-格子几何修正.gil
+说明：逐像素测量纠正两处：① 规划图棋盘画的是 6x6（不是 5x5），边框四边均匀 12px（我第一版量成 14，把内侧 2px 网格线算进边框了），缝 4px，内区 584-24=560；N=6 时 pitch=93.33、格=89.33（图上实测 93/94、89/90 交替），换成 N=5 就是 112/108。② 因此 cell_geometry 的 area 从 avail-ruler 改成 avail-2*ruler（边框两边各一份）——这才是根子，原来只扣一边会让格子偏右下一格。cfg.cells 只留 ruler=12/gap=4 两个常量，pitch/size/margin 不再写死，让 5x5/6x6/7x7 自适应。ui_controller 的 ruler 44->14（设计空间）、avail 同样改成减两边。tests/ui_math.lua 里的桩常量 ruler=37/gap=3 是旧的，同步成 12/4（否则测的是两套不同配置）。脚本 v040->v041。
+
+文件清单：
+  engine_adapter.lua              5397 字节
+  engine_adapter_qianxing.lua     230269 字节
+  entry_client_script.lua         48408 字节
+  main.lua                        95414 字节
+  murdoku_core.lua                102564 字节
+  room_map.lua                    5227 字节
+  ui_controller.lua               154744 字节
+  client_script.lua               672896 字节（真机跑的就是这份）
+  完整界面173-格子几何修正.gil              762664 字节（配套存档）
+
+用途：**这一版是"当时能跑的那一份"**。要回退：
+  1) 把本目录的 *.lua 拷回 qianxing-murdoku\lua\
+  2) 跑 node tools/bundle_client_script.lua，再 powershell -File tools/install_script_to_sandbox.ps1
+     （或直接用本目录的 client_script.lua 覆盖沙箱里的那份，省掉打包）
+  3) 导入本目录里的 .gil
+
+规则（重要）：**每轮一个新编号，不删旧的、不覆盖**。

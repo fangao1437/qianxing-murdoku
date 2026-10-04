@@ -100,12 +100,17 @@ local function check_board(n)
   if not board then return end
 
   -- 运行时算法：用 board 的实际画布尺寸算「相对父级中心的偏移」
+  --
+  -- ★★★★★ 2026-10-04 **这两个常量必须和 `cfg.cells` 保持一致**，否则测的是"两套不同的配置"。
+  --   原来是 `ruler = 37, gap = 3` —— 那是按旧棋盘（677）和"坐标尺"想的，
+  --   现在按规划图量出来的真值是 **边框 12 / 缝 4**（见 `docs/布局图-关卡内-v3.png` 测量）。
+  --   ⚠️ 注意 `cell_geometry` 里 `ruler` 是**两边各扣一份**。
   local ad = Qianxing.new({
     cells = {
       probe = "cell.1.1", parent = "board",
       -- 故意不给 parent_w/h：让它退回默认值，所以显式传实际值来模拟"读到了实际尺寸"
       parent_w = board.w, parent_h = board.h,
-      ruler = 37, gap = 3,
+      ruler = 12, gap = 4,          -- ← 与 entry_client_script.lua 的 cfg.cells 同步
     },
   })
 

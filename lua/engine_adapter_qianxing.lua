@@ -675,12 +675,22 @@ function Adapter:cell_geometry(n)
   end
 
   local avail = math.min(pw, ph)
-  local ruler = g.ruler or math.floor(avail * 0.06)     -- 坐标尺占的边（对应界面里的 ruler）
-  local area  = avail - ruler
+  -- ★★★★★ 2026-10-04 **`ruler` 是"边框"，两边都有** —— 原来只扣一边（`avail - ruler`）是错的。
+  --
+  --   判据是 `docs/布局图-关卡内-v3.png` 的逐像素测量（1600×900，已经是画布空间）：
+  --     棋盘外框 584×584，**边框四边均匀 12px**
+  --     内区 = 584 − 2×12 = **560**
+  --     图上画的是 **6×6**：pitch = 560/6 = **93.33**（实测格心间距 93/94 交替）
+  --                       格 = pitch − 4 = **89.33**（实测 89/90 交替）
+  --     ⇒ 同一个公式换成本项目在用的 N=5：pitch = 560/5 = **112**、格 = **108** ✅
+  --   ⇒ 所以"棋盘外框固定、格子按关卡 N 自适应"这条设计是成立的，
+  --     错的只是**边框只扣了一边**，导致格子偏右下一格。
+  local ruler = g.ruler or math.floor(avail * 0.06)     -- 边框厚度（左/右、上/下各一份）
+  local area  = avail - 2 * ruler
   local pitch = math.floor(area / n)
   local gap   = g.gap or math.max(2, math.floor(pitch * 0.03))
   local size  = math.max(8, pitch - gap)
-  -- 居中：格子区域在可用区里左右上下都居中
+  -- 居中：格子区域在"扣掉两边边框之后"的区域里居中
   local margin = ruler + math.floor((area - (n * pitch - gap)) / 2)
 
   -- 显式配置优先（想钉死某个值时用；不写就自动算）
