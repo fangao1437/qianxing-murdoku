@@ -1,0 +1,23 @@
+版本：037-格子正四边形定型
+时间：2026/10/4 15:50:52
+配套 .gil：完整界面168-格子正四边形定型.gil
+说明：以用户 166.gil(真机当前存档) 为底座：把模板本体 face(1073741889) 的图号 106053 -> 100001（同长度3字节替换，位置11921），使运行时克隆出的格子天生就是正四边形；内嵌脚本 v037。控制记录里仅此 1 处字段变化，记录数 95 不变，往返校验逐字节一致，#503/#504 双向一致 0 异常
+
+文件清单：
+  engine_adapter.lua              5397 字节
+  engine_adapter_qianxing.lua     229439 字节
+  entry_client_script.lua         48627 字节
+  main.lua                        93609 字节
+  murdoku_core.lua                102564 字节
+  room_map.lua                    5227 字节
+  ui_controller.lua               150612 字节
+  client_script.lua               666348 字节（真机跑的就是这份）
+  完整界面168-格子正四边形定型.gil            757606 字节（配套存档）
+
+用途：**这一版是"当时能跑的那一份"**。要回退：
+  1) 把本目录的 *.lua 拷回 qianxing-murdoku\lua\
+  2) 跑 node tools/bundle_client_script.lua，再 powershell -File tools/install_script_to_sandbox.ps1
+     （或直接用本目录的 client_script.lua 覆盖沙箱里的那份，省掉打包）
+  3) 导入本目录里的 .gil
+
+规则（重要）：**每轮一个新编号，不删旧的、不覆盖**。
