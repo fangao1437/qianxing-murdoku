@@ -1,0 +1,23 @@
+版本：048-清理旧控件
+时间：2026/10/4 17:16:09
+配套 .gil：完整界面179-旧控件已清理.gil
+说明：新增 tools/gil/delete_controls.mjs；166.gil 删除 hud.score/violations/share/toast + action.redo(+bg,label) + action.hint(+bg,label) 共 10 条 => 93->83 记录。action.back 收窄到图上文字范围；确认卡锚点移到文字右侧。脚本 v046。详见提交说明与 完整界面178-清理旧控件.gil。
+
+文件清单：
+  engine_adapter.lua              5397 字节
+  engine_adapter_qianxing.lua     230269 字节
+  entry_client_script.lua         48415 字节
+  main.lua                        100665 字节
+  murdoku_core.lua                102564 字节
+  room_map.lua                    5227 字节
+  ui_controller.lua               162844 字节
+  client_script.lua               686254 字节（真机跑的就是这份）
+  完整界面179-旧控件已清理.gil              768641 字节（配套存档）
+
+用途：**这一版是"当时能跑的那一份"**。要回退：
+  1) 把本目录的 *.lua 拷回 qianxing-murdoku\lua\
+  2) 跑 node tools/bundle_client_script.lua，再 powershell -File tools/install_script_to_sandbox.ps1
+     （或直接用本目录的 client_script.lua 覆盖沙箱里的那份，省掉打包）
+  3) 导入本目录里的 .gil
+
+规则（重要）：**每轮一个新编号，不删旧的、不覆盖**。

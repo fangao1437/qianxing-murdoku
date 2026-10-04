@@ -1518,10 +1518,11 @@ function Controller:build_layout()
     --   ⚠️ 坐标故意留 `nil` —— 由适配器按 `cfg.parent_of` 把它实例化到**父控件**身上，
     --      位置跟着父控件走。写死 `sk_x/sk_y`（右上角那套）会和 `.gil` 里
     --      `action.back`/`action.redo` 的真实位置（在 `topbar` 里）对不上 ⇒ 底图飘在别处。
+    -- ★ 2026-10-04：只留 `action.back` —— `action.redo` / `action.hint` **已从存档里删掉**
+    --   （它们与 `hex.redo` / `hex.hint` 重叠且动作重复，用户已批准清理旧控件）。
+    --   父控件没了，这两枚底图节点也就没有意义，一并去掉。
     local btns = {
       { "action.back" },
-      { "action.redo" },
-      { "action.hint" },
     }
     for i = 1, #btns do
       local b = btns[i]
