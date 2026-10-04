@@ -26,6 +26,18 @@ local current = nil            -- 当前会话
 local prepared_adapter = nil   -- OnInit 里建好的适配器
 local signals_registered = false
 
+-- ★★★★★ 2026-10-04 **棋盘容器（`stage`）的几何 —— 全工程只此一处定义。**
+--
+--   依据：逐像素量 `docs/布局图-关卡内-v3.png`（1600×900，已经是画布空间）——
+--     棋盘外框 x 608..1191 / y 138..721 ⇒ **584 × 584**，中心 (900, 470)（自下往上）
+--   相对屏幕中心 (800, 450) 的偏移 = (900−800, 470−450) = **(100, 20)**。
+--
+--   ⚠️ 这两组数有**两处**要用：① 建控件**之前**（否则 `cell_geometry` 会读到 .gil 里的
+--      1600×900，算出格子 171 —— 真机日志 `边缘适配 wall.up：目标 171x8` 就是这么来的）；
+--      ② on_update 里每帧兜底。抽成常量就不会漂。
+local BOARD_W, BOARD_H = 584, 584
+local BOARD_X, BOARD_Y = 100, 20
+
 function Murdoku.prepare(adapter)
   prepared_adapter = adapter
   return adapter
@@ -240,6 +252,41 @@ function Murdoku.start(level_id, opts)
     local cur = adapter:enable_cursor()
     if cur > 0 and print then
       print("[murdoku] 已由脚本打开 " .. cur .. " 个容器的「显示常驻光标」")
+    end
+  end
+
+  -- ★★★★★ 2026-10-04 **建控件之前，先把 `stage` 摆成棋盘尺寸。**
+  --
+  --   为什么必须在这里（而不是等 on_update）：`ensure_widgets` → `cell_geometry(n)`
+  --   读的是**父级 `stage` 的实时尺寸**，而 `stage` 在 `.gil` 里是 **1600×900**。
+  --   于是那一刻算出来的是：
+  --       avail = min(1600,900) = 900 → area = 900−24 = 876 → pitch 175 → **格子 171**
+  --   真机日志（16:35，v041）两条实证：
+  --       `边缘适配 wall.up：基准 80x20 → 目标 171x8`      ← 墙按 171 的格子算
+  --       占用排行里 25 个 `face 171x171`                    ← 底图也按 171 铺
+  --   而 main.lua 把 stage 缩成 584 是在**之后的 on_update** 里 ⇒ 那一次算出来的
+  --   格子/墙/底图尺寸**全是 171 系的**，只有格子控件自己的 sizeDelta 后来被改对了。
+  --   ⇒ 在这里先摆好，on_update 里那份保留（当每帧兜底）。
+  --
+  --   ⚠️ 这里**故意不用 `adapter:find("stage")`**：`find` 未命中会**永久缓存 false**
+  --      （适配器里早写明了这个坑），万一此刻树还没就绪，就会把 on_update 那条路也一起弄死。
+  --      走 `root:GetChild("stage")` 现查，不带缓存。
+  do
+    local root = nil
+    pcall(function() root = adapter:find("root") end)
+    local s = nil
+    if root ~= nil then pcall(function() s = root:GetChild("stage") end) end
+    if s ~= nil then
+      pcall(function() s:SetSizeDelta(BOARD_W, BOARD_H) end)
+      pcall(function() s:SetAnchoredPosition(BOARD_X, BOARD_Y) end)
+      if print then
+        local w, h = nil, nil
+        pcall(function() w, h = s:GetSizeDelta() end)
+        print("[murdoku] 建控件前先摆好 stage：" .. tostring(w) .. "x" .. tostring(h)
+          .. "（这样 cell_geometry 读到的就是 " .. tostring(BOARD_W) .. "）")
+      end
+    elseif print then
+      print("[murdoku] ⚠️ 建控件前没找到 stage（root 底下没有）—— 格子几何会退回默认尺寸")
     end
   end
 
@@ -1077,8 +1124,8 @@ function Murdoku.on_update(dt)
         --     边框四边均匀 14px；内区 556 ⇒ 5 格 × 108 + 4 条 × 4px 缝
         --   旧值是 677×677 @ (0,0)：**大了 93px 且位置偏**（中心 764,451 vs 900,470）
         --   —— 用户原话「底板大小可以调一下，溢出边框了」「棋盘也没有位移」。
-        pcall(function() s:SetSizeDelta(584, 584) end)
-        pcall(function() s:SetAnchoredPosition(100, 20) end)
+        pcall(function() s:SetSizeDelta(BOARD_W, BOARD_H) end)
+        pcall(function() s:SetAnchoredPosition(BOARD_X, BOARD_Y) end)
       end
       local bar = nil
       pcall(function() bar = current.adapter:find("selbar") end)
@@ -1230,6 +1277,33 @@ function Murdoku.on_update(dt)
         if bg ~= nil and just_built then
           -- 新建的控件默认可见，但我们要的是"关卡内可见"的统一口径 ⇒ 交给下面的状态同步
           current._board_bg_vis = nil
+        end
+        -- ★★★★★ 2026-10-04 **把底板撑成棋盘大小** —— 修"底板溢出棋盘"。
+        --
+        --   真机日志（16:35，v041）：`board.bg 677x677 可见=true` 而 `stage 584x584`
+        --   ⇒ 底板比棋盘**大 93px**（每边多 46.5）⇒ 就是用户说的"底板还是溢出了棋盘"。
+        --
+        --   为什么：`board.bg` 是**你在编辑器里摆的**（当初我让你按 677×677 摆，
+        --   那是按没量过的 812 推出来的尺寸）。脚本这边只认领、从不动它的几何 ⇒
+        --   棋盘缩到 584 之后，它还是 677。
+        --   ⇒ 现在让它**跟着 stage 走**：尺寸 = stage 的实时尺寸，位置 (0,0) 对齐中心。
+        --     只在尺寸变化时写一次（移动端：不做每帧 SetSizeDelta）。
+        if bg ~= nil and s ~= nil then
+          local sw, sh = nil, nil
+          pcall(function() sw, sh = s:GetSizeDelta() end)
+          if type(sw) == "number" and type(sh) == "number" and sw > 0 and sh > 0 then
+            if current._board_bg_size ~= sw then
+              pcall(function() bg:SetSizeDelta(sw, sh) end)
+              pcall(function() bg:SetAnchoredPosition(0, 0) end)
+              current._board_bg_size = sw
+              local rw, rh = nil, nil
+              pcall(function() rw, rh = bg:GetSizeDelta() end)
+              if print then
+                print("[murdoku] 底板对齐棋盘：stage " .. tostring(sw) .. "x" .. tostring(sh)
+                  .. " → board.bg 回读 " .. tostring(rw) .. "x" .. tostring(rh))
+              end
+            end
+          end
         end
         -- ★ 显隐：**只在状态变化时**写一次（不再每帧 SetVisible ⇒ 省一次跨引擎调用）
         if bg ~= nil then
