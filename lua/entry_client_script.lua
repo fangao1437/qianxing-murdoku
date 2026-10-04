@@ -171,7 +171,7 @@ local function check_canvas()
       --   里面既没有新打印、`cell` 尺寸也还是旧值 ⇒ 我误以为"改动没生效"，
       --   实际是**贴了旧日志**。加这一行后，一看首行就能确认跑的是哪一版。
       if print then
-        print("[murdoku] ===== 构建标记 v049 / 2026-10-04 18:20 / 七图标改走_cells_paint(补 face 尺寸,原来尺寸=0所以看不见) =====")
+        print("[murdoku] ===== 构建标记 v050 / 2026-10-04 18:40 / 图标纯贴图(hex.*)+独立透明热区(hit.*) · 反馈打贴图 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -302,6 +302,16 @@ local function build_adapter()
       ["hex.hint"]   = true,
       ["hex.ok"]     = true,
       ["hex.no"]     = true,
+      -- ★ 2026-10-04 **七个透明热区**（用户构思：图标纯贴图 + 交互按钮单独做）。
+      --   它们走 `cfg.cells.prefab`（真机验证可点），且**不给 image_id**
+      --   ⇒ face 不会被点亮 ⇒ 完全透明，只负责收点击。
+      ["hit.back"]   = true,
+      ["hit.submit"] = true,
+      ["hit.redo"]   = true,
+      ["hit.undo"]   = true,
+      ["hit.hint"]   = true,
+      ["hit.ok"]     = true,
+      ["hit.no"]     = true,
     },
 
     -- ★★★★★ 2026-10-03 **图标专用模板**（用户 20:45 提供索引 **1073742356**）

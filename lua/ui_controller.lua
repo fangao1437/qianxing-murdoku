@@ -1126,7 +1126,7 @@ local function apply_screen_hide(nodes, screen)
     --   ⇒ 三样都补进隐藏名单：`selbar`（容器本身）、`selbtn.`（它的子按钮）、`tpl-`（模板引用控件）。
     HIDE["selbar"] = true
     HIDE["tpl-container"] = true
-    PREFIX = { "cell.", "clue.", "hud.", "room.label.", "ruler", "tray.", "action.", "hex.",
+    PREFIX = { "cell.", "clue.", "hud.", "room.label.", "ruler", "tray.", "action.", "hex.", "hit.",
                "selbtn.", "tpl.",
                (screen == "home") and "select." or "home." }
   end
@@ -1287,7 +1287,6 @@ function Controller:build_layout()
       { "hex.ok",     100102,  438,   52,  54,  54, "confirm_yes"  },  -- 确认卡 ✓ → 执行 pending
       { "hex.no",     100101,  500,   52,  54,  54, "confirm_no"   },  -- 确认卡 ✗ → 取消
     }
-    -- 确认卡两枚的显隐 = `self.pending ~= nil`（和下面 `confirm.*` 用的是同一个判据）。
     -- `build_layout` 每帧重建 ⇒ 直接把当前状态折进 `visible` 就够，不需要额外跨帧状态。
     --
     -- ★★★★★ 2026-10-04 **确认卡要出现在"被按下的那个键"旁边**（用户要求）。
@@ -1312,6 +1311,22 @@ function Controller:build_layout()
     local pend_action = (self.pending and self.pending.action) or nil
     local anchor = CONFIRM_ANCHOR[pend_action] or CONFIRM_ANCHOR.back
     local icon_pending_on = (self.pending ~= nil)
+    -- ★★★★★ 2026-10-04 **两件东西分开做：图标纯贴图 + 独立透明热区**（用户原本的构思，现已验证）
+    --
+    --   用户做了一次**对照实验**，把结论钉死了：
+    --     同一个存档（178-清理旧控件）+ 旧脚本 v037（走 `prefab_icon` 纯图片模板）
+    --       ⇒ 日志「图标设图 hex.back imageId=100109 → 回读 100109 **经 子控件** 调用成功=true」
+    --       ⇒ **图标看得见**。
+    --     而 v045 起换成 `cfg.cells.prefab`（格子模板）⇒ 图标全部消失。
+    --   ⇒ 两条路各有各的硬伤，**谁也替代不了谁**：
+    --       · 纯图片模板：**能渲染**，但图片控件**收不到光标事件**（引擎逐条报"不支持光标事件"）。
+    --       · 格子模板  ：**能收点击**（`selbtn.*` 已验证），但它的 `face` 默认尺寸 0、得额外补尺寸。
+    --   ⇒ 所以按用户原本的构思拆开：
+    --       **贴图** = `hex.*`（纯图片模板，无事件）—— 负责"看得见"
+    --       **热区** = `hit.*`（格子模板，无 image_id ⇒ face 不会被点亮 ⇒ 完全透明）—— 负责"点得动"
+    --     反馈由 `self:fx("hex.*", …)` 打在**贴图**上（点击特效本来就是脚本驱动的）。
+    --   ⚠️ 顺序要紧：热区**必须排在贴图之后**（后建的在上面）⇒ 射线落在热区上，
+    --      不会被不能处理事件的图片控件吞掉。
     for i = 1, #ICON_ASSETS do
       local a = ICON_ASSETS[i]
       local is_confirm = (a[1] == "hex.ok" or a[1] == "hex.no")
@@ -1319,18 +1334,24 @@ function Controller:build_layout()
       local ax, ay = a[3], a[4]
       if a[1] == "hex.ok" then ax, ay = anchor.x, anchor.y end
       if a[1] == "hex.no" then ax, ay = anchor.x + 54 + CONFIRM_GAP, anchor.y end
+      local vis = (not is_confirm) or icon_pending_on
+      local rect = { x = D(ax), y = D(ay), w = D(a[5]), h = D(a[6]) }
+      -- ① 贴图：纯图片模板，**不绑事件**
       nodes[#nodes + 1] = {
         id = a[1], kind = "button", parent = "root",
-        -- 5 个按键图标关卡内常显；确认卡两枚只在 pending 时出现
-        visible = (not is_confirm) or icon_pending_on,
+        visible = vis,
         image_id = a[2],
-        imageType = "Stretch",                 -- 图标要能拉伸到目标尺寸
-        -- ★ 2026-10-04：**不再 `icon_template = true`** —— 那会走 `cfg.prefab_icon`
-        --   （纯图片模板）而**图片控件收不到光标事件**（真机日志逐条报"不支持光标事件"）。
-        --   去掉它 ⇒ 退回 `cfg.cells.prefab`（格子模板），与 `selbtn.*` 同一条路，
-        --   而那条路**真机验证过能收到点击**。详见本段开头那段长注释。
-        event = { action = a[7] },             -- ★ 上一轮加的：接上确认状态机
-        rect = { x = D(ax), y = D(ay), w = D(a[5]), h = D(a[6]) },
+        imageType = "Stretch",
+        icon_template = true,          -- ★ 走 cfg.prefab_icon（真机验证：图标看得见）
+        rect = rect,
+      }
+      -- ② 热区：格子模板、**不给 image_id**（所以 face 不会被点亮 ⇒ 完全透明），只负责收点击
+      nodes[#nodes + 1] = {
+        id = "hit." .. a[1]:sub(5), kind = "button", parent = "root",
+        visible = vis,
+        event = { action = a[7] },
+        icon_template = false,         -- 走 cfg.cells.prefab（真机验证：能收到点击）
+        rect = rect,
       }
     end
   -- ★ 每个节点都必须带**显式** visible：
