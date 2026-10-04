@@ -171,7 +171,7 @@ local function check_canvas()
       --   里面既没有新打印、`cell` 尺寸也还是旧值 ⇒ 我误以为"改动没生效"，
       --   实际是**贴了旧日志**。加这一行后，一看首行就能确认跑的是哪一版。
       if print then
-        print("[murdoku] ===== 构建标记 v047 / 2026-10-04 17:45 / 七图标显式挂 root(修右移92px) · 点击反馈改打 hex.* =====")
+        print("[murdoku] ===== 构建标记 v048 / 2026-10-04 18:00 / 给 stage 补规划节点(修图标偏移) · 图标仍挂 stage =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -241,27 +241,20 @@ local function build_adapter()
       ["action.back.hexbg"] = "action.back",
       -- ★ 已删：action.redo / action.hint 的底图（父控件本身已从存档里清掉）
 
-      -- ★★★★★ 2026-10-04 **七个图标必须显式挂到 `root`** —— 修"按钮都不见了"。
+      -- ★★★★★ 2026-10-04 **七个图标不要显式挂 root —— 让它们留在 `stage` 下。**
       --
-      --   真机截图（17:02，v044）量出来：四个图标全部**右移 92px**、被右边缘切掉。
-      --     规划中心 hex.submit/redo/undo/hint = (1483, …)，截图实测 **1575 / 1576 / 1583 / 1575**。
-      --   根因：适配器自动创建控件时父级是**写死的 `stage`**
-      --     （`engine_adapter_qianxing.lua` 的 `local pname = (cfg.parent_of and …) or "stage"`），
-      --   而**规划里声明的是 `root`**。运行时的偏移按「规划中心 − **规划父级**中心」算，
-      --   却挂在**真实父级 `stage`** 上 ⇒ 差一个 `stage` 中心的位移。
-      --     v044 时 `stage` 在 (−35, 8)，正好抵消掉一部分，所以那时看着还行；
-      --     把 `stage` 挪到 (100, 20) 之后就变成整组 **+100/+20**。
-      --   ⇒ 显式指定 `root`，让真实父级和规划父级一致。
+      --   踩坑记录（两个方向都试过了）：
+      --     · 默认（挂 `stage`）：`stage` 在 (100,20) 而规划父级写的是 `root`
+      --       ⇒ 偏移按 root 算、却落在 stage 上 ⇒ **整组右移 92px** 被右边缘切掉。
+      --     · 改成显式 `root`：偏移对了，但 **7 个键在关卡里完全不显示**
+      --       （真机 17:30 截图：root 子控件 7→14、图也设上了，就是看不见）。
+      --   ⇒ 正解是**让"规划父级"和"真实父级"一致，而不是把真实父级搬走**：
+      --     留在 `stage` 下（这套渲染正常），同时**在规划里给 `stage` 补一个节点**
+      --     （见 `ui_controller.build_layout` 里那句 `id = "stage"`），
+      --     于是「规划中心 − 规划父级中心」= (1483−900, 817−470) 落在 stage 的真实中心上
+      --     ⇒ 正好回到 (1483, 817) ✅
       --
-      --   ⚠️ 同理，确认卡（`hex.ok` / `hex.no`）也在这张表里 —— 它们在截图里
-      --      出现在画面中上方（✓ 在 x≈565、规划是 465），**正好也是这 +100**。
-      ["hex.back"]   = "root",
-      ["hex.submit"] = "root",
-      ["hex.redo"]   = "root",
-      ["hex.undo"]   = "root",
-      ["hex.hint"]   = "root",
-      ["hex.ok"]     = "root",
-      ["hex.no"]     = "root",
+      --   （`hex.*` 的 parent_of 覆盖**故意删掉**，让适配器走它自己的默认值 `stage`。）
 
       ["home.panel"]   = "home",
       ["select.panel"] = "select",

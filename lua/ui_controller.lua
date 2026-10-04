@@ -1349,6 +1349,23 @@ function Controller:build_layout()
 
   push({ id = "root", kind = "container", rect = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height }, style = "screen" })
 
+  -- ★★★★★ 2026-10-04 **把 `stage` 也写进规划** —— 它原来"不在计划里"，导致子控件偏移算错。
+  --
+  --   背景：适配器自动创建控件（`auto_create_only` 名单，如七个 `hex.*`）时，
+  --   真实父级默认是 **`stage`**；而规划里那七个图标的 `parent` 写的是 `root`。
+  --   运行时下发的是「**规划**中心 − **规划父级**中心」，却挂在**真实父级**上解释
+  --   ⇒ 差的正好是一个 `stage` 中心的位移：
+  --       `stage` 在 (100,20)（棋盘中心 (900,470)）⇒ 整组右移 100、上移 20。
+  --   真机实测（17:02 截图）：四图标全部右移 92px、被右边缘切掉。
+  --
+  --   两个方向都试过了：
+  --     · 改 `cfg.parent_of` 挂到 `root` ⇒ 偏移对了，但 **7 个键在关卡里完全不显示**。
+  --     · ⇒ 正解：**让"规划父级"和"真实父级"一致**，而不是把真实父级搬走 ——
+  --       给 `stage` 补上这条规划节点，父级中心就有了正确来源。
+  --   ⚠️ 这条 rect 必须和 `main.lua` 里强制的 `BOARD_W/H = 584`、`BOARD_X/Y = (100,20)`
+  --      说的是同一个矩形（`L.board` 就是它），否则又会对不上。
+  push({ id = "stage", kind = "container", parent = "root", rect = rect_of(L.board), style = "stage" })
+
   -- ===== 顶部工具条 =====
   push({ id = "topbar", kind = "container", parent = "root", rect = rect_of(L.topbar), style = "topbar" })
   -- 工具条容器：与 topbar 同区（视觉上仍是一条顶栏），只是树里分开，HUD 文字不再和按钮混杂。
