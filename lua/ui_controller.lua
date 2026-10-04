@@ -1253,6 +1253,23 @@ function Controller:build_layout()
     --   ⚠️ 顺便消掉一处**重复设计**：`confirm.ok` / `confirm.no` 那对节点和
     --      `hex.ok` / `hex.no` **位置一模一样**（438/500, 52, 54×54），
     --      而后者是**运行时已经建好、图也设好**的那一套 ⇒ 保留 hex，删掉 confirm 那对。
+    -- ★★★★★ 2026-10-04 **七图标改用"能点"的模板** —— 修"所有按键都没有功能反馈"。
+    --
+    --   真机日志（17:00，v044）每个图标一条：
+    --       `控件 hex.back 不支持光标事件（请用「预设按钮」或「光标检测区域」控件）`
+    --   ⇒ 根因：这七个走的是 `cfg.prefab_icon`（**纯图片**客户端模板）——
+    --     **图片控件收不到光标事件**（引擎自己这么回的）。上一轮给节点加 `event` 是
+    --     **必要但不充分**：事件挂上去了，控件本身接不住。
+    --
+    --   出路就在同一份日志里：`selbtn.1` 点击成功（`事件=pick_level`），而
+    --   `Adapter:ensure_widgets` 建它时用的是 **`cfg.cells.prefab`（格子模板）**，
+    --   代码注释原文：「再在容器下建**按钮**（cell 模板 —— 真机验证过能实例化、**能收到点击**）」。
+    --   ⇒ 所以这里**去掉 `icon_template = true`**，让它们退回 `cfg.cells.prefab`。
+    --
+    --   ⚠️ 当初改用纯图片模板是因为"格子模板会连带一整套子控件，画面上多出 7 个迷你格子"。
+    --      这个副作用由**子控件默认隐藏**兜住：真机日志里 `wall.*` / `door.*` / `x` 全是
+    --      `visible=false`，只有 `face` 会被点亮（`格子底图已点亮：25 个 face`）⇒
+    --      每个键看起来就是"一张图"，和纯图片模板的观感一致。
     local ICON_ASSETS = {
       -- id           素材ID    x(画布) y(画布) w    h     事件动作        说明
       { "hex.back",   100109,   60,   48,  62,  62, "back_confirm" },  -- 返回菜单（弯钩箭头 ↰）→ 先问 ✓/✗
@@ -1265,19 +1282,42 @@ function Controller:build_layout()
     }
     -- 确认卡两枚的显隐 = `self.pending ~= nil`（和下面 `confirm.*` 用的是同一个判据）。
     -- `build_layout` 每帧重建 ⇒ 直接把当前状态折进 `visible` 就够，不需要额外跨帧状态。
+    --
+    -- ★★★★★ 2026-10-04 **确认卡要出现在"被按下的那个键"旁边**（用户要求）。
+    --   规划图上那对 ✓/✗ 画在 (438/500, 52)，旁边还有一行注解：
+    --       `APPEARS WHEN SUBMIT / RESET / BACK IS PRESSED`
+    --   —— 图里画在 BACK 旁边只是"以返回菜单为例"，**它跟着按下的键走**。
+    --   而 SUBMIT / RESET 在右上角（x 1448）⇒ 固定在左上 438 就离得太远了。
+    --   ⇒ 三个锚点：返回菜单放**右侧**（跟图上一致）；提交 / 重置关卡放**左侧**
+    --     （右边已经贴到画布边缘 1600，放不下）。
+    local CONFIRM_GAP = 8
+    local CONFIRM_ANCHOR = {
+      back    = { x = 60 + 62 + CONFIRM_GAP,               y = 48  },  -- hex.back  右边缘 + 8
+      submit  = { x = 1448 - CONFIRM_GAP - 54 - CONFIRM_GAP - 54, y = 48  },  -- hex.submit 左侧
+      restart = { x = 1448 - CONFIRM_GAP - 54 - CONFIRM_GAP - 54, y = 144 },  -- hex.redo   左侧
+    }
+    local pend_action = (self.pending and self.pending.action) or nil
+    local anchor = CONFIRM_ANCHOR[pend_action] or CONFIRM_ANCHOR.back
     local icon_pending_on = (self.pending ~= nil)
     for i = 1, #ICON_ASSETS do
       local a = ICON_ASSETS[i]
       local is_confirm = (a[1] == "hex.ok" or a[1] == "hex.no")
+      -- 确认卡的位置按锚点算；其余五个用各自在 `ICON_ASSETS` 里写死的坐标
+      local ax, ay = a[3], a[4]
+      if a[1] == "hex.ok" then ax, ay = anchor.x, anchor.y end
+      if a[1] == "hex.no" then ax, ay = anchor.x + 54 + CONFIRM_GAP, anchor.y end
       nodes[#nodes + 1] = {
         id = a[1], kind = "button", parent = "root",
         -- 5 个按键图标关卡内常显；确认卡两枚只在 pending 时出现
         visible = (not is_confirm) or icon_pending_on,
         image_id = a[2],
         imageType = "Stretch",                 -- 图标要能拉伸到目标尺寸
-        icon_template = true,                  -- ★ 用 cfg.prefab_icon（干净模板），不要格子模板
-        event = { action = a[7] },             -- ★ 这一行就是本轮的修复
-        rect = { x = D(a[3]), y = D(a[4]), w = D(a[5]), h = D(a[6]) },
+        -- ★ 2026-10-04：**不再 `icon_template = true`** —— 那会走 `cfg.prefab_icon`
+        --   （纯图片模板）而**图片控件收不到光标事件**（真机日志逐条报"不支持光标事件"）。
+        --   去掉它 ⇒ 退回 `cfg.cells.prefab`（格子模板），与 `selbtn.*` 同一条路，
+        --   而那条路**真机验证过能收到点击**。详见本段开头那段长注释。
+        event = { action = a[7] },             -- ★ 上一轮加的：接上确认状态机
+        rect = { x = D(ax), y = D(ay), w = D(a[5]), h = D(a[6]) },
       }
     end
   -- ★ 每个节点都必须带**显式** visible：
@@ -1487,21 +1527,24 @@ function Controller:build_layout()
     hex_bg("action.hint", sk_x + 55, sk_y[3] + 55, SK.size)
   end
 
-  -- 上 → 下：提交 / 重置关卡 / 撤销
-  btn("action.submit", "root", { x = sk_x, y = sk_y[1], w = SK.size, h = SK.size },
-      vm.hud.filled and "提交" or "提交（先摆满）", { action = "submit" }, "stamp.primary", vm.hud.filled)
-  -- ★★★★★ 2026-10-04 **父级必须是 `topbar`，不能写 `root`。**
+  -- ★★★★★ 2026-10-04 **右上三键（提交 / 重置关卡 / 撤销）的旧文字按钮 —— 已删。**
   --
-  --   运行时会按「规划中心 − 规划父级中心」下发 `anchoredPosition`，而这个偏移是
-  --   相对**真实父级**解释的 ⇒ **规划里的父级必须和存档里的父级一致**，否则整支偏。
-  --   存档里 `action.redo`(1073741929) 的父就是 `topbar`，而这里原来写 `root`：
-  --     · 归零 `topbar` 的年代两者中心都是屏幕中心 ⇒ **碰巧无害**；
-  --     · 2026-10-04 把 `topbar` 的偏移还回去之后 ⇒ 它会**高出 407px**（= topbar 的 y 偏移）。
-  --   ⇒ 改成 `topbar`：偏移变成 (1495−800, 146−857) = (695,−711)，落在真实父级上正好回到 (1495,146) ✅
-  btn("action.redo", "topbar", { x = sk_x, y = sk_y[2], w = SK.size, h = SK.size }, "重置关卡",
-      { action = "restart" }, "stamp.sm")
-  btn("action.undo", "root", { x = sk_x, y = sk_y[3], w = SK.size, h = SK.size }, "撤销",
-      { action = "undo" }, "stamp.sm", vm.hud.can_undo)
+  --   用户反馈「右侧四键的位置不对」。实测两套键**重叠且动作重复**（画布中心）：
+  --       action.submit (1541,833) 92x92  vs  hex.submit (1483,817) 70x70
+  --       action.redo   (1541,708)        vs  hex.redo   (1483,721)
+  --       action.undo   (1541,583)        vs  hex.undo   (1483,625)
+  --       action.hint   (1541,126)        vs  hex.hint   (1483,171)
+  --   布局图定稿的是**七个 `hex.*` 图标**（位置逐项吻合，且已经有素材图），
+  --   而旧文字键偏右上 58px、还大一圈 ⇒ 画面上就是"两套键叠着"。
+  --   ⇒ 留图上那套，删掉这四个旧节点。
+  --   ⚠️ `action.redo` / `action.hint` 在用户存档里**真实存在**（编辑器摆的）——
+  --      删掉计划节点后它们会落进"不在计划里"的名单，由 `Adapter:hide_unlisted` 收起。
+  --
+  --   （历史注释：`action.redo` 的父级必须与存档一致，否则运行时按「规划中心 − 规划父级中心」
+  --     下发的偏移会落到错的父级上、整支偏 407px。这条仍然成立，只是该节点已删。）
+
+  -- 提交 / 重置关卡 / 撤销 / 提示 的入口 = 上面 `ICON_ASSETS` 里的 `hex.submit` /
+  -- `hex.redo` / `hex.undo` / `hex.hint`（已接上确认状态机）。
 
   -- ★ 删除（参考图里没有）：`action.reveal` 揭示 / `hud.score` / `hud.violations`
   --   / `hud.share` / `hud.toast`。删除方式 = **不再 push 这些节点** ——
@@ -1551,16 +1594,14 @@ function Controller:build_layout()
   --   （真机日志：`confirm.no 读回 nil`）⇒ 保留能用的那套。
   --   ⇒ 确认键 = `hex.ok` / `hex.no`，显隐跟着 `self.pending` 走（见上面 ICON_ASSETS 那段）。
 
-  -- 右下：计数 + 放大镜。右边缘 = 右上三键的右边缘（用户要求对齐）。
+  -- 右下：计数。放大镜的入口 = `hex.hint`（图上那枚，已接 `hint` 动作）——
+  --   旧的 `action.hint` 文字按钮已删（与本轮右上三键同样的理由：与 `hex.hint` 重叠且动作重复）。
   local RB = L.side_key.right_edge
   local PG = L.progress
   push({ id = "hud.progress", kind = "text", parent = "right",
          rect = { x = RB - 110 - PG.icon_gap - PG.num_w, y = PG.y, w = PG.num_w, h = PG.h },
          text = string.format("%d / %d", self:placed_count(vm), vm.piece_count),
          style = "stat" })
-  btn("action.hint", "right", { x = RB - L.side_key.size, y = PG.y - 26,
-                                w = L.side_key.size, h = L.side_key.size }, "放大镜",
-      { action = "hint" }, "stamp.sm", vm.hud.can_hint)
 
   -- ★★★★★ 2026-10-04 **计时器跟着标题进左边栏**（图上 TIMER 就在 TITLE 下面一行）。
   --   量图：字形带 x 60..343、y 190..217 ⇒ 中心 (201.5, 203.5) 画布

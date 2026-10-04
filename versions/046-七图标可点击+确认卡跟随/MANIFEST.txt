@@ -1,0 +1,23 @@
+版本：046-七图标可点击+确认卡跟随
+时间：2026/10/4 17:05:55
+配套 .gil：完整界面177-七图标可点击.gil
+说明：见提交说明：① 七图标去掉 icon_template，改用 cfg.cells.prefab（真机验证可点击），修'所有按键没有功能反馈'；② 删右上四个旧文字键（与图标重叠且动作重复）；③ 确认卡位置跟随 pending.action（back 右侧 / submit·restart 左侧）。计划 322->318 节点。脚本 v045。
+
+文件清单：
+  engine_adapter.lua              5397 字节
+  engine_adapter_qianxing.lua     230269 字节
+  entry_client_script.lua         48426 字节
+  main.lua                        100665 字节
+  murdoku_core.lua                102564 字节
+  room_map.lua                    5227 字节
+  ui_controller.lua               160628 字节
+  client_script.lua               684049 字节（真机跑的就是这份）
+  完整界面177-七图标可点击.gil              773817 字节（配套存档）
+
+用途：**这一版是"当时能跑的那一份"**。要回退：
+  1) 把本目录的 *.lua 拷回 qianxing-murdoku\lua\
+  2) 跑 node tools/bundle_client_script.lua，再 powershell -File tools/install_script_to_sandbox.ps1
+     （或直接用本目录的 client_script.lua 覆盖沙箱里的那份，省掉打包）
+  3) 导入本目录里的 .gil
+
+规则（重要）：**每轮一个新编号，不删旧的、不覆盖**。
