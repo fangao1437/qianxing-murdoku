@@ -704,6 +704,120 @@ function Adapter:cell_offset(r, c, n)
   return x, y
 end
 
+-- ★★★★★ 2026-10-04 **「这张图到底该设在哪个控件上」** —— 从 `ensure_widgets` 里那段
+--   已经跑通的 `find_target` 原样抽出来，供别处复用（目前是 main.lua 的棋盘底板）。
+--
+--   为什么必须抽出来：真机日志（2026-10-04 14:18）证明
+--       `棋盘底板：board.bg 建=true 设图=false imageId=0`
+--   ——**运行时新建的客户端控件，在"根节点"上 `SetImage` 直接返回 false、`imageId` 一直是 0**。
+--   而同一批模板建出来的七个图标走「子控件」那条路就成功了
+--   （日志：`图标设图 hex.back imageId=100109 → 回读 100109  经 子控件  调用成功=true`）。
+--   ⇒ 结论：**图片挂在子控件上，模板的根只是个容器** —— 设图必须往下钻，不能设在根上。
+--
+--   ★ 顺序很关键（这条是上一轮踩出来的，不能改）：
+--     **先按名字往下钻，钻完再考虑自己。**
+--     反过来会让 `content` 这种"中间容器"抢先命中，把图设到容器上，
+--     真机表现是控件变成"迷你格子"或整体不见。
+--
+--   ★ 2026-10-04 增加的判据：优先选 **`imageSource` 非 nil** 的那个控件。
+--     原因：真机上 `SetImage(nil, id)` 会失败，而 `target:SetImage(src, id)`（src 取自
+--     `target.imageSource`）才是验证过能成功的形式 ⇒ 没有 imageSource 的控件设不进图。
+--     所以"有 SetImage"只是及格线，"有 SetImage 且 imageSource 非 nil"才算合格。
+--
+--   返回：target（找不到就是 nil）、命中的子控件名（自己命中时为 nil，调用方显示"根"）
+function Adapter:image_target(ctrl)
+  if ctrl == nil then return nil end
+  local found_name = nil
+
+  local function has_setimage(c)
+    local has = false
+    pcall(function() has = (c.SetImage ~= nil) end)
+    return has
+  end
+  -- 「合格」= 有 SetImage 且 imageSource 读得到（否则 SetImage 会失败）
+  local function usable(c)
+    if c == nil or not has_setimage(c) then return false end
+    local src = nil
+    pcall(function() src = c.imageSource end)
+    return src ~= nil
+  end
+
+  local function dive(c, depth)
+    if c == nil or depth > 4 then return nil end
+    -- ① 按名字往下钻（face/img/icon/... 是官方模板给图片子节点起的常见名字）
+    for _, cn in ipairs({ "face", "img", "icon", "image", "bg", "content" }) do
+      local kid = nil
+      pcall(function() kid = c:GetChild(cn) end)
+      if kid ~= nil then
+        local r = dive(kid, depth + 1)
+        if r ~= nil then found_name = cn return r end
+      end
+    end
+    -- ② 自己：先看"合格"的，再看"只是有 SetImage"的（保持与旧行为一致，只是更好）
+    if usable(c) then return c end
+    if has_setimage(c) then return c end
+    -- ③ 兜底：遍历全部子控件（模板里的图片节点不一定用上面那六个名字）
+    local n = 0
+    pcall(function() n = c:GetChildCount() end)
+    for i = 0, n - 1 do
+      local kid = nil
+      pcall(function() kid = c:GetChild(i) end)
+      if kid ~= nil then
+        local r = dive(kid, depth + 1)
+        if r ~= nil then return r end
+      end
+    end
+    return nil
+  end
+
+  local t = dive(ctrl, 0)
+  return t, found_name
+end
+
+-- 把图设到 `image_target` 找到的那个控件上，并把**回读**打出来。
+--
+--   为什么回读必须打：这个工程反复吃亏在"调了 API 就当成功了"。
+--   真机上 `SetImage` 有的重载**静默失败**，只有 `imageId` 回读才能证明图真的设进去了。
+--
+--   image_type：一般给 "Stretch"（底板类素材才支持拉伸）。
+--   image_color：32 位整数（`Color()` 全局函数在真机上不存在，所以只能直接写整数）。
+--                传 nil 就不动颜色。
+--   label：日志前缀（传 nil 就不打日志）。
+--
+--   返回：hit(布尔：回读等于要设的 id 才算真成功)、命中描述(字符串)、回读 imageId(字符串)
+function Adapter:set_image_deep(ctrl, image_id, image_type, image_color, label)
+  if ctrl == nil then return false, "没有控件", "?" end
+  local target, found = self:image_target(ctrl)
+  if target == nil then
+    return false, "找不到可设图的子控件", "?"
+  end
+  -- ★ 先试 (src, id) 两参形式 —— 这条路在真机上验通过；失败再试单参形式。
+  local okcall = false
+  local src = nil
+  pcall(function() src = target.imageSource end)
+  okcall = pcall(function() target:SetImage(src, image_id) end)
+  if not okcall then
+    okcall = pcall(function() target:SetImage(image_id) end)
+  end
+  if image_type  ~= nil then pcall(function() target.imageType  = image_type  end) end
+  if image_color ~= nil then pcall(function() target.imageColor = image_color end) end
+
+  local rid, rcol = "?", "?"
+  pcall(function() rid  = tostring(target.imageId)   end)
+  pcall(function() rcol = tostring(target.imageColor) end)
+  local hit = (rid == tostring(image_id))
+  if print and label ~= nil then
+    print("[murdoku] 设图 " .. tostring(label)
+      .. "  imageId=" .. tostring(image_id)
+      .. " → 回读 " .. rid
+      .. "  imageColor 回读 " .. rcol
+      .. "  经 " .. tostring(found or "根")
+      .. "  调用成功=" .. tostring(okcall)
+      .. "  真的设上了=" .. tostring(hit))
+  end
+  return hit, (found or "根"), rid
+end
+
 -- 「不用日志也能看出结果」的诊断信号。
 -- 找一个"改了外观就会变"的控件，把它的边长设成 v（正方形），肉眼即可读数。
 --

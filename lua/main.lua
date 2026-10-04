@@ -1083,33 +1083,94 @@ function Murdoku.on_update(dt)
         end
       end
     end
-    -- ★★★★★ 2026-10-03 **A 方案：给 `stage`（棋盘容器）铺一层底板，用它的底色当"网格线"**。
+    -- ★★★★★ 2026-10-04 **棋盘底板：这一轮修掉用户报的三个问题。**
     --
-    --   背景（用户 22:54 提出的真问题）：格子之间**没有缝**而底板是纯色 ⇒ 5×5 会连成
-    --   一整块色块、**看不出格子边界**；而棋盘又不能用外部资产，官方素材里也没有"格子边框"。
+    --   目标（不变）：`cfg.cells.gap = 6`（格子 size = 129 < pitch = 135）⇒ 格子之间留 6px 缝，
+    --   缝里露出**一块更深色的底** ⇒ 天然网格线。**1 个额外控件**，移动端无负担。
     --
-    --   ⇒ 方案 A：`cfg.cells.gap = 6`（格子 size = 129 < pitch = 135）⇒ 缝里露出
-    --     `stage` 的**底色** ⇒ 天然网格线。**0 个额外控件**，移动端无负担。
+    --   用户 2026-10-04 报的三个现象 + 真机日志给出的真凶：
+    --     ① 三个界面都出现   ← 这段**每帧无条件** `SetVisible(true)`
+    --     ② 图层在棋盘之上   ← 运行时新建的控件**追加**在父级子列表**末尾** = 最上
+    --     ③ 没有配图         ← 在**根节点**上调 `SetImage` 静默失败（`imageId` 恒为 0）
     --
-    --   ⚠️ 染色说明：本项目真机实测**环境里没有全局函数 `Color`**
-    --      （日志：`环境没有全局函数 Color，染色跳过`）⇒ `imageColor` 可能设不进去。
-    --      所以这段**两条路都试**：
-    --        ① 直接给 `imageColor` 赋一个**整数**（部分版本接受 ARGB 数值）
-    --        ② 不行就**不染色**，改用**本身就深色**的官方底板素材（换 `STAGE_BG_ID` 即可）
-    --      并把回读打出来，方便你按结果决定下一步。
+    --   ★★ 而且日志里 `棋盘底板：board.bg 建=true 设图=false imageId=0` **重复了上百次**
+    --      ⇒ 这段**每帧都在新建一块底板**。原因：`Adapter:find()` 未命中会**永久缓存 false**
+    --      （适配器里早写明了这个坑），所以 `find("board.bg")` 永远是 nil
+    --      ⇒ 每帧 `bg == nil` ⇒ 每帧再造一个 677×677 的空白控件叠上去。
+    --      上百块白板压在棋盘上，正好同时解释三个现象。
+    --
+    --   ⇒ 四条修法（一一对应）：
+    --     · 引用走 `adapter.controls["board.bg"]` 直接引用，**不再用 `find`**（并加"只建一次"的语义）
+    --     · 建完立刻 `SetSiblingIndex(0)` 把它压到**最底层**（盖不住 25 个格子）
+    --     · 配图走**子控件**：`Adapter:set_image_deep()`（根上设图无效，已验证）
+    --     · 显隐只在**关卡内**为真，且**只在状态变化时**调 `SetVisible`（不再每帧写）
+    --
+    --   ⚠️ 染色：真机**没有全局函数 `Color`** ⇒ `imageColor` 只能直接写 32 位整数，
+    --      且 `imageColor` 是**乘算**（乘白=不变色、乘深色=压暗，**压不出比素材更亮的颜色**）。
+    --      ⇒ 首选**本身就深**的官方底板素材（改 `STAGE_BG_ID`），不到万不得已不染色。
     do
-      local STAGE_BG_ID   = 106053          -- 官方「底板」类素材（支持 Stretch）；想换就改这里
-      local STAGE_BG_ARG  = 0xFF2C2820      -- 想要的深暖色 #2C2820（ARGB）
+      -- ⚠️ **换底板只改这一行。**
+      --
+      --   ★ 2026-10-04 **实测选型（全量解码量的，不是猜的）**：把官方素材全量下载后逐张解码，
+      --     量了「不透明像素的均值色 / 覆盖率 / 色彩标准差（越小越素）」+ 逐张看图：
+      --       · 「底板-单色」`106001–106096` **95 张全是白的**（亮度 242–255）
+      --         ⇒ 那是**给编辑器填充色用的白模**，当底必须染色 ⇒ 不可靠（本项目染色不可用）。
+      --       · `106053`（25 个格子 `face` 用的那张）= 96x96 白模 ⇒ 当底会和格子**同色**，缝看不见。
+      --       · 「底板-彩色」`107xxx` 里，**又暗又素又不透明**的第一名是 `107003`：
+      --         336x256，均值 **rgb(39.1,38.5,50.2)**（亮度 40.0），标准差 **4.0**，
+      --         覆盖率 0.985，其中 **98.39% 的像素完全不透明**（只有圆角一点点透明）。
+      --         看图 = **一块近乎纯色的深色面板**（四角只有极小的装饰星），**没有大花纹**。
+      --     ⇒ 选 **107003**：它是整库里最"干净的深色底板"，拉伸到 677x677 不会变成怪图。
+      --
+      --   ★ 想要**暖色**（设计取样色 rgb(44,40,32)）的备选，改这一行即可：
+      --       `107239` rgb(44.2,39.4,32.3) —— **颜色最准**，但它是"票券/便签"形状
+      --               （齿轮、虚线齿孔、波浪边、两侧缺口，2.48:1），当整块方底板会看出形变；
+      --       `107249` rgb(63.1,48.5,41.7) —— 暖棕素面板、近正方形，但偏亮且 28% 是透明边。
+      --     本期先要"**可靠**"（用户报的就是"没有配图"），所以选最不透明的 `107003`。
+      --
+      --   ★ 为什么形变基本无所谓：底板 677x677，而 25 个格子铺 675x675（每边 1px 余量）
+      --     ⇒ **底板只从 6px 的缝和 1px 的边框里露出来**，图案几乎全被格子盖住。
+      local STAGE_BG_ID   = 107003
+      -- 只有素材本身不够深时才需要染色（32 位整数，乘算）。留 nil = 不染色。
+      -- （`107003` 亮度 40，对白色格子已经足够暗 ⇒ 不需要染色。）
+      local STAGE_BG_TINT = nil
+      local in_level = (scr_now == "level")
       local s = nil
       pcall(function() s = current.adapter:find("stage") end)
-      if s ~= nil then
+      -- ★ 只有**棋盘界面（关卡内）**要底板。主页 / 选关页一律收起。
+      if s ~= nil and not in_level then
+        -- 离开关卡：先藏起来（只在状态变化时调，避免每帧写属性），再丢掉引用。
+        -- 丢引用是必要的：换关时控件树会重开，旧引用已经失效；
+        -- 而下次进关卡会先在**活树**上按名字找一次（`s:GetChild`，不吃 find 的缓存），
+        -- 找得到就复用、找不到才新建 ⇒ 不会重复建，也不会用死引用。
+        local old = (current.adapter.controls and current.adapter.controls["board.bg"]) or nil
+        if old ~= nil then
+          if current._board_bg_vis ~= false then
+            pcall(function() old:SetVisible(false) end)
+            current._board_bg_vis = false
+          end
+          pcall(function() current.adapter.controls["board.bg"] = nil end)
+        end
+      elseif s ~= nil then
         -- ★★★★★ 2026-10-03 **实测结论：`stage` 不是图片控件** ——
         --   真机日志（23:12）：`stage 设图 106053 → 回读 imageId=nil；okcol=false`
         --   ⇒ `SetImage` / `imageColor` 对它都被忽略 ⇒ "给 stage 铺底"走不通。
-        --   ⇒ 改用**客户端图片模板**（`cfg.prefab_icon` = 1073742357）另建一个
-        --     铺满棋盘的图片控件 `board.bg`，放在 `stage` 里当底板。
-        local bg = nil
-        pcall(function() bg = current.adapter:find("board.bg") end)
+        --   ⇒ 改用**客户端图片模板**（`cfg.prefab_icon`）另建一个铺满棋盘的控件
+        --     `board.bg`，放进 `stage` 当底板。
+        --
+        --   ★ 2026-10-04：**这段必须"只建一次"**。旧代码用 `find("board.bg")` 判存在，
+        --     而 `find` 未命中会永久缓存 false ⇒ 每帧都判成"不存在" ⇒ 每帧新建一块。
+        --     现在改成先读 `controls["board.bg"]`（直接引用），必要时再查活树。
+        local bg = (current.adapter.controls and current.adapter.controls["board.bg"]) or nil
+        if bg == nil then
+          -- 活树查询（`GetChild` 直连，不吃 find 的名字缓存）
+          pcall(function() bg = s:GetChild("board.bg") end)
+          if bg ~= nil then
+            current.adapter.controls = current.adapter.controls or {}
+            current.adapter.controls["board.bg"] = bg
+          end
+        end
+        local just_built = false
         if bg == nil and game ~= nil and game.InstantiateClientUIControl ~= nil then
           local ip = current.adapter.cfg and current.adapter.cfg.prefab_icon
           if ip ~= nil then
@@ -1118,25 +1179,57 @@ function Murdoku.on_update(dt)
               pcall(function() ob.name = "board.bg" end)
               pcall(function() ob:SetSizeDelta(677, 677) end)
               pcall(function() ob:SetAnchoredPosition(0, 0) end)
-              pcall(function() ob:SetVisible(true) end)
+              -- ★★ 图层：运行时新建的控件会被**追加**到父级子列表末尾 = 显示在**最上**。
+              --    不排一下，底板就会盖住 25 个格子（用户报的"图层在棋盘之上"）。
+              --    官方：`SetSiblingIndex` 数值越大越靠上 ⇒ 0 = 最底。
+              --
+              --    ★ 两个 API **都调**，不二选一：`SetSiblingIndex` 在本项目**没有真机验证过**
+              --      （`enforce_screen_layers` 里那条被注释掉了，当时代码注释写的是"撤掉做单一变量实验"），
+              --      而 `SetAsFirstSibling` 是 `enforce_layers` 一直在用的。
+              --      只调一次、两条腿都走，比赌一个 API 靠谱；回读的兄弟序号会告诉我们到底有没有生效。
+              local layered = {}
+              if ob.SetSiblingIndex ~= nil then
+                if pcall(function() ob:SetSiblingIndex(0) end) then layered[#layered + 1] = "SetSiblingIndex(0)" end
+              end
+              if ob.SetAsFirstSibling ~= nil then
+                if pcall(function() ob:SetAsFirstSibling() end) then layered[#layered + 1] = "SetAsFirstSibling()" end
+              end
+              if #layered == 0 then layered[#layered + 1] = "没排（两个 API 都没有）" end
+              -- 回读兄弟序号：`pcall` 为真只说明"没报错"，序号才说明**真的排上了**
+              -- （0 = 最底 ⇒ 底板在 25 个格子下面）
+              local sib = "?"
+              pcall(function() sib = tostring(ob:GetSiblingIndex()) end)
+              -- ★★ 配图：**根节点设图无效**（真机 `设图=false imageId=0`），
+              --    必须走子控件 ⇒ 用适配器里那条已经跑通的路（`Adapter:set_image_deep`）。
+              local okimg, via, rid = current.adapter:set_image_deep(
+                ob, STAGE_BG_ID, "Stretch", STAGE_BG_TINT, "board.bg")
+              if print then
+                print("[murdoku] 棋盘底板：新建 board.bg（素材 " .. tostring(STAGE_BG_ID) .. "）"
+                  .. " 设图成功=" .. tostring(okimg)
+                  .. "  imageId 回读=" .. tostring(rid)
+                  .. "  经 " .. tostring(via)
+                  .. "  图层=" .. table.concat(layered, "+")
+                  .. "  兄弟序号回读=" .. tostring(sib) .. "（0=最底）"
+                  .. "  —— 这一行**只应出现一次**；若重复出现说明「只建一次」没生效")
+              end
               current.adapter.controls = current.adapter.controls or {}
               current.adapter.controls["board.bg"] = ob
               bg = ob
+              just_built = true
             end
           end
         end
-        local okimg = false
-        if bg ~= nil then
-          local oki = pcall(function() bg:SetImage(STAGE_BG_ID) end)
-          if not oki then oki = pcall(function() bg:SetImage(nil, STAGE_BG_ID) end) end
-          okimg = oki
-          pcall(function() bg.imageType = "Stretch" end)
+        if bg ~= nil and just_built then
+          -- 新建的控件默认可见，但我们要的是"关卡内可见"的统一口径 ⇒ 交给下面的状态同步
+          current._board_bg_vis = nil
         end
-        local rid = "?"
-        if bg ~= nil then pcall(function() rid = tostring(bg.imageId) end) end
-        if print then
-          print("[murdoku] 棋盘底板：board.bg 建=" .. tostring(bg ~= nil)
-            .. " 设图=" .. tostring(okimg) .. " imageId=" .. rid)
+        -- ★ 显隐：**只在状态变化时**写一次（不再每帧 SetVisible ⇒ 省一次跨引擎调用）
+        if bg ~= nil then
+          local want = true
+          if current._board_bg_vis ~= want then
+            pcall(function() bg:SetVisible(want) end)
+            current._board_bg_vis = want
+          end
         end
       end
     end
