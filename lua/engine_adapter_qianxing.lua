@@ -780,11 +780,19 @@ end
 --   真机上 `SetImage` 有的重载**静默失败**，只有 `imageId` 回读才能证明图真的设进去了。
 --
 --   image_type：一般给 "Stretch"（底板类素材才支持拉伸）。
---   image_color：32 位整数（`Color()` 全局函数在真机上不存在，所以只能直接写整数）。
---                传 nil 就不动颜色。
+--   image_color：32 位整数 ARGB（`Color()` 全局函数在真机上不存在，所以只能直接写整数）。
+--                传 nil 就不动颜色。**乘算着色**：素材是白模时，染成什么色就是什么色。
 --   label：日志前缀（传 nil 就不打日志）。
 --
---   返回：hit(布尔：回读等于要设的 id 才算真成功)、命中描述(字符串)、回读 imageId(字符串)
+--   返回：hit(布尔：回读等于要设的 id 才算真成功)、命中描述(字符串)、回读 imageId(字符串)、
+--         tint_ok(布尔/nil：没要求染色时是 nil；要求了就看回读**是不是真变成了那个色**)
+--
+--   ★★ 为什么要回读颜色而不是"调了就算成功"（2026-10-04）：
+--     用户点名要"把底板换成**纯色图形**"，而官方素材库里**所有形状/底板都是白模**
+--     （`100001` 纯白方块、`106xxx` 单色底板全是白的）⇒ 想要纯色就**必须靠染色**。
+--     而 `imageColor` 能不能用**整数**写进去，本项目**至今没有真机证据**
+--     （文档里只有"离线冒烟"验过 `face.imageColor.r=10`，真机只验过"没有全局函数 `Color`"）。
+--     ⇒ 所以这里把"染色到底成没成"变成一个**可判定的事实**，调用方据此决定要不要回退。
 function Adapter:set_image_deep(ctrl, image_id, image_type, image_color, label)
   if ctrl == nil then return false, "没有控件", "?" end
   local target, found = self:image_target(ctrl)
@@ -804,18 +812,56 @@ function Adapter:set_image_deep(ctrl, image_id, image_type, image_color, label)
 
   local rid, rcol = "?", "?"
   pcall(function() rid  = tostring(target.imageId)   end)
-  pcall(function() rcol = tostring(target.imageColor) end)
+  -- ★ 颜色回读**分两种形态**处理：真机 `fontColor` 读出来是整数，但 `imageColor`
+  --   官方类型是 `ColorValue` ⇒ 也可能是"有 r/g/b/a 字段的对象"。两种都认。
+  local tint_ok = nil
+  if image_color ~= nil then
+    local want = tonumber(image_color) or 0
+    local wr = math.floor(want / 65536) % 256
+    local wg = math.floor(want / 256) % 256
+    local wb = want % 256
+    local wa = math.floor(want / 16777216) % 256
+    tint_ok = false
+    local v = nil
+    pcall(function() v = target.imageColor end)
+    if type(v) == "number" then
+      -- 形态①：整数（按 ARGB 解）
+      local gr = math.floor(v / 65536) % 256
+      local gg = math.floor(v / 256) % 256
+      local gb = v % 256
+      tint_ok = (math.abs(gr - wr) <= 2 and math.abs(gg - wg) <= 2 and math.abs(gb - wb) <= 2)
+      rcol = tostring(v)
+    elseif v ~= nil then
+      -- 形态②：ColorValue 对象（读 r/g/b/a 字段）
+      local gr, gg, gb, ga = nil, nil, nil, nil
+      pcall(function() gr = v.r end)
+      pcall(function() gg = v.g end)
+      pcall(function() gb = v.b end)
+      pcall(function() ga = v.a end)
+      rcol = "(" .. tostring(gr) .. "," .. tostring(gg) .. "," .. tostring(gb)
+        .. "," .. tostring(ga) .. ")"
+      if type(gr) == "number" and type(gg) == "number" and type(gb) == "number" then
+        tint_ok = (math.abs(gr - wr) <= 2 and math.abs(gg - wg) <= 2 and math.abs(gb - wb) <= 2)
+        if type(ga) == "number" and math.abs(ga - wa) > 2 then tint_ok = false end
+      end
+    else
+      rcol = "nil（读不到 imageColor）"
+    end
+  else
+    pcall(function() rcol = tostring(target.imageColor) end)
+  end
   local hit = (rid == tostring(image_id))
   if print and label ~= nil then
     print("[murdoku] 设图 " .. tostring(label)
       .. "  imageId=" .. tostring(image_id)
       .. " → 回读 " .. rid
       .. "  imageColor 回读 " .. rcol
+      .. "  染色成功=" .. tostring(tint_ok)
       .. "  经 " .. tostring(found or "根")
       .. "  调用成功=" .. tostring(okcall)
       .. "  真的设上了=" .. tostring(hit))
   end
-  return hit, (found or "根"), rid
+  return hit, (found or "根"), rid, tint_ok
 end
 
 -- 「不用日志也能看出结果」的诊断信号。
