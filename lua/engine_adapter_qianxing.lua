@@ -565,6 +565,19 @@ function Adapter:create_control(node)
                 .. "它的子控件：" .. (table.concat(desc, " ") ~= "" and table.concat(desc, " ") or "（一个都没有）"))
             end
           end
+          -- ★★★★★ 2026-10-04 **再走一遍 `_cells_paint`** —— 这条才是**真能渲染出来**的那条路。
+          --
+          --   上面那段"递归找带 SetImage 的子控件"只做了两件事：设图 + SetVisible(true)，
+          --   **没设尺寸**。而格子模板建出来的 `face` **默认尺寸是 0** ⇒ 图设上了、
+          --   `visible=true`，**画面上什么都没有** —— 真机日志"图标设图 … 调用成功=true"
+          --   却看不见，就是这个。
+          --   对照证据：v044（纯图片模板）下同样这段代码是**看得见**的，因为纯图片模板的
+          --   图片子节点自带尺寸；v045 换成格子模板后就消失了。
+          --   `_cells_paint` 是 25 个格子正在用的那条路（`格子底图已点亮：25 个 face`），
+          --   它多做两件事：`face:SetSizeDelta(size)` + `face:SetAnchoredPosition(0,0)`。
+          --   第 4 个参数传该图标自己的素材；`size` 传 nil ⇒ 它按控件实际尺寸算。
+          pcall(function() self:_cells_paint(ctrl, nil, node.id, node.image_id) end)
+
           self.instantiated[node.id] = true
           self._auto_made = (self._auto_made or 0) + 1
         else
@@ -1298,7 +1311,7 @@ end
 --
 --   ⇒ 这里自己来：打开 `face`、按格子几何铺满、塞一张底图（默认 106053 白色底）。
 --     每一步都 pcall + 可选日志，失败也不会中断生成。
-function Adapter:_cells_paint(ctrl, size, cell_id)
+function Adapter:_cells_paint(ctrl, size, cell_id, img)
   if ctrl == nil then return false end
   -- ★★★★★ 2026-10-02 **必须用 `self:sub()`，不能用裸 `GetChild("face")`**。
   --
@@ -1316,15 +1329,30 @@ function Adapter:_cells_paint(ctrl, size, cell_id)
   end
   if face == nil then return false end
   if face.SetVisible then pcall(function() face:SetVisible(true) end) end
-  -- 铺满格子（子控件默认可能比格子小，或尺寸是 0 —— 两种都会让它"看不见"）
+  -- 铺满格子（子控件默认可能比格子小，**甚至尺寸是 0** —— 两种都会让它"看不见"）
+  --
+  -- ★★★★★ 2026-10-04 **`size` 允许省略：不给就按控件自己的实际尺寸算。**
+  --   为什么加这条：七个 `hex.*` 图标是**运行时按规划尺寸**建出来的，
+  --   调用点手上没有"格子边长"这个量；但控件的 `sizeDelta` 就是答案。
+  --   真机证据（17:02→17:31 两版对比）：同一条"深层设图"路径在 v044（纯图片模板）
+  --   下图标是**看得见**的，换成格子模板后就看不见了 —— 差异正是**尺寸**：
+  --   纯图片模板的图片子节点自带尺寸，格子模板的 `face` 默认尺寸是 0。
+  if size == nil and ctrl.GetSizeDelta ~= nil then
+    local w, h = nil, nil
+    pcall(function() w, h = ctrl:GetSizeDelta() end)
+    if type(w) == "number" and type(h) == "number" and w > 0 and h > 0 then
+      size = math.min(w, h)
+    end
+  end
   if size ~= nil and face.SetSizeDelta then
     pcall(function() face:SetSizeDelta(size, size) end)
   end
   if face.SetAnchoredPosition then pcall(function() face:SetAnchoredPosition(0, 0) end) end
-  local img = (self.cfg.cells and self.cfg.cells.face_image) or 106053
+  -- 图片：第 4 个参数优先（七个图标各用各的素材），否则用格子的默认底图
+  local use_img = img or (self.cfg.cells and self.cfg.cells.face_image) or 106053
   if face.SetImage then
-    local ok = pcall(function() face:SetImage(nil, img) end)
-    if not ok then pcall(function() face:SetImage(img) end) end      -- 两种签名都试
+    local ok = pcall(function() face:SetImage(nil, use_img) end)
+    if not ok then pcall(function() face:SetImage(use_img) end) end      -- 两种签名都试
   end
   -- 读回，把结果说出来（否则又是"改了没生效"却看不出来）
   local vis, iid = "?", "?"
