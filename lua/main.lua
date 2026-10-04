@@ -1179,11 +1179,22 @@ function Murdoku.on_update(dt)
       pcall(function() s = current.adapter:find("stage") end)
       -- ★ 只有**棋盘界面（关卡内）**要底板。主页 / 选关页一律收起。
       if s ~= nil and not in_level then
-        -- 离开关卡：先藏起来（只在状态变化时调，避免每帧写属性），再丢掉引用。
-        -- 丢引用是必要的：换关时控件树会重开，旧引用已经失效；
-        -- 而下次进关卡会先在**活树**上按名字找一次（`s:GetChild`，不吃 find 的缓存），
-        -- 找得到就复用、找不到才新建 ⇒ 不会重复建，也不会用死引用。
+        -- 离开关卡（或从没进过关卡）：把底板藏起来。
+        --
+        -- ★★★★★ 2026-10-04 **不能再只依赖 `controls["board.bg"]` 那个缓存引用。**
+        --
+        --   真机日志（16:40，v042）：**三屏都是 `board.bg 可见=true`** ——
+        --   用户报「底板在首页和选关界面的显示没有关掉」。
+        --   原因：`board.bg` 是**在编辑器里摆的**，它自带 `visible=true`；
+        --   而认领它只发生在**进过关卡**之后（下面那个 `elseif`）。
+        --   所以「首页 → 选关」这条路上 `controls["board.bg"]` 一直是 nil ⇒
+        --   这段 `if old ~= nil` 直接跳过 ⇒ 底板保持编辑器里的可见，而在选关页
+        --   `stage` 是可见的（脚本每帧强制打开）⇒ **底板就露在选关页上**。
+        --   ⇒ 这里改成：缓存没有就**去活树上按名字现查一次**（`GetChild` 不吃 find 的缓存）。
         local old = (current.adapter.controls and current.adapter.controls["board.bg"]) or nil
+        if old == nil then
+          pcall(function() old = s:GetChild("board.bg") end)
+        end
         if old ~= nil then
           if current._board_bg_vis ~= false then
             pcall(function() old:SetVisible(false) end)
