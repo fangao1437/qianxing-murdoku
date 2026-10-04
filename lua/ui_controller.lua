@@ -1439,7 +1439,15 @@ function Controller:build_layout()
   -- 上 → 下：提交 / 重置关卡 / 撤销
   btn("action.submit", "root", { x = sk_x, y = sk_y[1], w = SK.size, h = SK.size },
       vm.hud.filled and "提交" or "提交（先摆满）", { action = "submit" }, "stamp.primary", vm.hud.filled)
-  btn("action.redo", "root", { x = sk_x, y = sk_y[2], w = SK.size, h = SK.size }, "重置关卡",
+  -- ★★★★★ 2026-10-04 **父级必须是 `topbar`，不能写 `root`。**
+  --
+  --   运行时会按「规划中心 − 规划父级中心」下发 `anchoredPosition`，而这个偏移是
+  --   相对**真实父级**解释的 ⇒ **规划里的父级必须和存档里的父级一致**，否则整支偏。
+  --   存档里 `action.redo`(1073741929) 的父就是 `topbar`，而这里原来写 `root`：
+  --     · 归零 `topbar` 的年代两者中心都是屏幕中心 ⇒ **碰巧无害**；
+  --     · 2026-10-04 把 `topbar` 的偏移还回去之后 ⇒ 它会**高出 407px**（= topbar 的 y 偏移）。
+  --   ⇒ 改成 `topbar`：偏移变成 (1495−800, 146−857) = (695,−711)，落在真实父级上正好回到 (1495,146) ✅
+  btn("action.redo", "topbar", { x = sk_x, y = sk_y[2], w = SK.size, h = SK.size }, "重置关卡",
       { action = "restart" }, "stamp.sm")
   btn("action.undo", "root", { x = sk_x, y = sk_y[3], w = SK.size, h = SK.size }, "撤销",
       { action = "undo" }, "stamp.sm", vm.hud.can_undo)
