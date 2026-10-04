@@ -204,7 +204,11 @@ M.LAYOUT = {
   -- 右下：进度文字 + 0/6 + 放大镜，**右边缘与右上三键对齐**
   progress = { y = 900, h = 60, num_w = 150, icon_gap = 24 },
   -- 左上：返回菜单 + ✓/✗ 确认条
-  back_btn = { x = 24, y = 22, w = 300, h = 66 },
+  -- ★★★★★ 2026-10-04 **收窄成"图上那行文字"的范围**（原来 24,22,300×66 会连带盖住深色方块）：
+  --   画布 x 134..347、y 64..84 → 设计空间 x 161..416、y 77..101。
+  --   理由见 `action.back` 那段注释：不收窄的话，它和 `hex.back`、以及**跟随出现的 ✓/✗ 确认卡**
+  --   三者位置打架，确认卡会被压住点不到。
+  back_btn = { x = 161, y = 77, w = 255, h = 28 },
   confirm  = { x = 344, y = 22, size = 66, gap = 14 },
 }
 
@@ -1292,9 +1296,15 @@ function Controller:build_layout()
     --     （右边已经贴到画布边缘 1600，放不下）。
     local CONFIRM_GAP = 8
     local CONFIRM_ANCHOR = {
-      back    = { x = 60 + 62 + CONFIRM_GAP,               y = 48  },  -- hex.back  右边缘 + 8
-      submit  = { x = 1448 - CONFIRM_GAP - 54 - CONFIRM_GAP - 54, y = 48  },  -- hex.submit 左侧
-      restart = { x = 1448 - CONFIRM_GAP - 54 - CONFIRM_GAP - 54, y = 144 },  -- hex.redo   左侧
+      -- ★ 返回菜单这一档，锚点取**文字右边缘 + 8**，不是"方块右边缘 + 8"。
+      --   判据是规划图：图上 ✓/✗ 外面那个虚线框在 **x 430..580**，而
+      --   `BACK TO MENU` 文字到 **347** 结束、深色方块在 60..122 ⇒ 图里的确认卡
+      --   是画在**整条「返回菜单」控件之后**的，不是紧贴那个方块。
+      --   ⚠️ 我第一版取 `60+62+8 = 130` ⇒ 确认卡 (130..246) 正好压在
+      --      `action.back` 文字 (133.5..346.5) 上，✓/✗ 会被挡住点不到。
+      back    = { x = 347 + CONFIRM_GAP,                            y = 48  },  -- 文字右缘 + 8
+      submit  = { x = 1448 - CONFIRM_GAP - 54 - CONFIRM_GAP - 54,   y = 48  },  -- hex.submit 左侧
+      restart = { x = 1448 - CONFIRM_GAP - 54 - CONFIRM_GAP - 54,   y = 144 },  -- hex.redo   左侧
     }
     local pend_action = (self.pending and self.pending.action) or nil
     local anchor = CONFIRM_ANCHOR[pend_action] or CONFIRM_ANCHOR.back
@@ -1572,6 +1582,17 @@ function Controller:build_layout()
   --     · 它右边是 ✓ / ✗  —— **默认 visible=false**，点「返回菜单 / 提交 / 重置关卡」时出现
   --     · 右下 = `hud.progress`（0/6 计数）+ `action.hint`（放大镜 = 继承的提示功能）
   --       两者**右边缘与右上三键对齐**（同一列，右边缘 = L.side_key.right_edge）
+  -- ★★★★★ 2026-10-04 **`action.back` 缩到"BACK TO MENU 文字"那一段** —— 它原来和两样东西重叠。
+  --
+  --   原来 `back_btn = {x=24, y=22, w=300, h=66}`（设计空间）⇒ 画布 x 20..270、y 826..881，
+  --   而规划图 v3 上这两块是分开的：
+  --     · 深色方块 + `<` 弯钩箭头   x 60..122、y 48..110   （画布）← 由 `hex.back` 负责
+  --     · 文字 `BACK TO MENU`       x 134..347、y 64..84   （画布）← 这一块才是 `action.back`
+  --   ⇒ 旧值把方块和文字**一起盖住**，于是和 `hex.back`(60..122) 重叠；
+  --     更要命的是**确认卡**现在出现在 `hex.back` 右侧（x 130..246、y 798..852）
+  --     ⇒ 旧 `action.back` 正好压在同一片区域上，✓/✗ 会被它挡住点不到。
+  --   ⇒ 按图上文字的实际范围收窄：画布 x 134..347、y 64..84
+  --     ⇒ 设计空间 x 161..416、y 77..101 ⇒ 取 {x=161, y=77, w=255, h=28}。
   local BK = L.back_btn
   push({ id = "action.back", kind = "button", parent = "topbar", visible = true,
          rect = { x = BK.x, y = BK.y, w = BK.w, h = BK.h },
