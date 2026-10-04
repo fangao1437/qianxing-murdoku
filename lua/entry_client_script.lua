@@ -171,7 +171,7 @@ local function check_canvas()
       --   里面既没有新打印、`cell` 尺寸也还是旧值 ⇒ 我误以为"改动没生效"，
       --   实际是**贴了旧日志**。加这一行后，一看首行就能确认跑的是哪一版。
       if print then
-        print("[murdoku] ===== 构建标记 v037 / 2026-10-04 15:50 / 模板本体face并入(100001) · 底板纯色 · 格子正四边形 =====")
+        print("[murdoku] ===== 构建标记 v038 / 2026-10-04 16:15 / 顶栏文本归位(topbar 不再归零,子控件回顶部) =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

@@ -1,0 +1,23 @@
+版本：039-顶栏文本归位
+时间：2026/10/4 16:09:37
+配套 .gil：完整界面170-顶栏文本归位.gil
+说明：修 hud.title/timer/moves/subtitle/action.back 掉到画面中间 407px：topbar 的子控件 y 是按相对 topbar 存的，而 main.lua 每帧把 topbar 归零，等于抹掉 topbar 自己的 y=407。三条数字精确吻合（规划414-存储7=407=topbar_y；hud.timer 406-407=-1 与存储完全一致；截图标题 y≈457=450+7 而规划是 864）。2026-10-02 那次归零是为修 right 的双重偏移，topbar 是被顺手捎上的 ⇒ 只保留 right。脚本 v038。控制记录 0 变化（本版只改脚本）。
+
+文件清单：
+  engine_adapter.lua              5397 字节
+  engine_adapter_qianxing.lua     229439 字节
+  entry_client_script.lua         48617 字节
+  main.lua                        94939 字节
+  murdoku_core.lua                102564 字节
+  room_map.lua                    5227 字节
+  ui_controller.lua               150612 字节
+  client_script.lua               667668 字节（真机跑的就是这份）
+  完整界面170-顶栏文本归位.gil              757436 字节（配套存档）
+
+用途：**这一版是"当时能跑的那一份"**。要回退：
+  1) 把本目录的 *.lua 拷回 qianxing-murdoku\lua\
+  2) 跑 node tools/bundle_client_script.lua，再 powershell -File tools/install_script_to_sandbox.ps1
+     （或直接用本目录的 client_script.lua 覆盖沙箱里的那份，省掉打包）
+  3) 导入本目录里的 .gil
+
+规则（重要）：**每轮一个新编号，不删旧的、不覆盖**。
