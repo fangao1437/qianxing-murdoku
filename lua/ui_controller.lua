@@ -1241,25 +1241,42 @@ function Controller:build_layout()
     --       规划会自动把它转成画布的 `cy`（从下算）。
     local K = 6 / 5                                    -- 画布 → 设计空间
     local function D(v) return math.floor(v * K + 0.5) end
+    -- ★★★★★ 2026-10-04 **给这 7 个图标绑上事件** —— 这才是"第 4 块：补齐控件"的第一刀。
+    --
+    --   之前它们只是**图片**：`build_layout` 里建了、位置对、图也设上了（真机 7 行回读全对），
+    --   但 `nodes` 里**没有 `event` 字段** ⇒ 适配层不会给它们绑光标事件 ⇒
+    --   画面上看得见、点下去什么都没发生。
+    --
+    --   而"确认状态机"（`self.pending` / `sync_confirm()` / `back_confirm` / `submit` /
+    --   `restart` / `confirm_yes` / `confirm_no`）**代码早就写好了**，只差这 7 个入口。
+    --
+    --   ⚠️ 顺便消掉一处**重复设计**：`confirm.ok` / `confirm.no` 那对节点和
+    --      `hex.ok` / `hex.no` **位置一模一样**（438/500, 52, 54×54），
+    --      而后者是**运行时已经建好、图也设好**的那一套 ⇒ 保留 hex，删掉 confirm 那对。
     local ICON_ASSETS = {
-      -- id           素材ID    x(画布) y(画布) w    h     说明
-      { "hex.back",   100109,   60,   48,  62,  62 },   -- 返回菜单（弯钩箭头 ↰）
-      { "hex.submit", 100110, 1448,   48,  70,  70 },   -- 提交（向上箭头 ↑）
-      { "hex.redo",   100126, 1448,  144,  70,  70 },   -- 重置关卡（循环箭头 ↻）
-      { "hex.undo",   100127, 1448,  240,  70,  70 },   -- 撤回（逆时针箭头 ↶）
-      { "hex.hint",   100120, 1448,  694,  70,  70 },   -- 提示（放大镜）
-      { "hex.ok",     100102,  438,   52,  54,  54 },   -- 确认卡 ✓
-      { "hex.no",     100101,  500,   52,  54,  54 },   -- 确认卡 ✗
+      -- id           素材ID    x(画布) y(画布) w    h     事件动作        说明
+      { "hex.back",   100109,   60,   48,  62,  62, "back_confirm" },  -- 返回菜单（弯钩箭头 ↰）→ 先问 ✓/✗
+      { "hex.submit", 100110, 1448,   48,  70,  70, "submit"       },  -- 提交（向上箭头 ↑）→ 先问 ✓/✗
+      { "hex.redo",   100126, 1448,  144,  70,  70, "restart"      },  -- 重置关卡（循环箭头 ↻）→ 先问 ✓/✗
+      { "hex.undo",   100127, 1448,  240,  70,  70, "undo"         },  -- 撤回（逆时针箭头 ↶）→ 直接执行
+      { "hex.hint",   100120, 1448,  694,  70,  70, "hint"         },  -- 提示（放大镜）→ 直接执行
+      { "hex.ok",     100102,  438,   52,  54,  54, "confirm_yes"  },  -- 确认卡 ✓ → 执行 pending
+      { "hex.no",     100101,  500,   52,  54,  54, "confirm_no"   },  -- 确认卡 ✗ → 取消
     }
+    -- 确认卡两枚的显隐 = `self.pending ~= nil`（和下面 `confirm.*` 用的是同一个判据）。
+    -- `build_layout` 每帧重建 ⇒ 直接把当前状态折进 `visible` 就够，不需要额外跨帧状态。
+    local icon_pending_on = (self.pending ~= nil)
     for i = 1, #ICON_ASSETS do
       local a = ICON_ASSETS[i]
+      local is_confirm = (a[1] == "hex.ok" or a[1] == "hex.no")
       nodes[#nodes + 1] = {
         id = a[1], kind = "button", parent = "root",
-        -- 5 个按键图标关卡内常显；确认卡的 hex.ok / hex.no 默认藏，由 sync_confirm 控制
-        visible = (a[1] ~= "hex.ok" and a[1] ~= "hex.no"),
+        -- 5 个按键图标关卡内常显；确认卡两枚只在 pending 时出现
+        visible = (not is_confirm) or icon_pending_on,
         image_id = a[2],
         imageType = "Stretch",                 -- 图标要能拉伸到目标尺寸
         icon_template = true,                  -- ★ 用 cfg.prefab_icon（干净模板），不要格子模板
+        event = { action = a[7] },             -- ★ 这一行就是本轮的修复
         rect = { x = D(a[3]), y = D(a[4]), w = D(a[5]), h = D(a[6]) },
       }
     end
@@ -1524,14 +1541,15 @@ function Controller:build_layout()
   --   显隐规则：只有 `self.pending ~= nil`（点了 返回菜单 / 提交 / 重置关卡）时才出现。
   --   `build_layout` 是**每帧重建**的（见文件头"控件树每帧重建"那段）⇒
   --   直接把 `self.pending` 折进 `visible` 就够了，不需要额外的跨帧状态。
-  local CF = L.confirm
-  local pending_on = (self.pending ~= nil)
-  push({ id = "confirm.ok", kind = "button", parent = "topbar", visible = pending_on,
-         rect = { x = CF.x, y = CF.y, w = CF.size, h = CF.size },
-         text = "✓", event = { action = "confirm_yes" }, style = "stamp.primary" })
-  push({ id = "confirm.no", kind = "button", parent = "topbar", visible = pending_on,
-         rect = { x = CF.x + CF.size + CF.gap, y = CF.y, w = CF.size, h = CF.size },
-         text = "✗", event = { action = "confirm_no" }, style = "stamp.sm" })
+  -- ★★★★★ 2026-10-04 **这里原本还 push 了 `confirm.ok` / `confirm.no` 两个节点 —— 已删。**
+  --
+  --   为什么删：它们和上面 `ICON_ASSETS` 里的 `hex.ok` / `hex.no` **位置一模一样**
+  --   （438/500, 52, 54×54 —— 都是从同一张布局图上量的），事件也一样
+  --   （`confirm_yes` / `confirm_no`）⇒ **同一件事两处实现**。
+  --   而 `hex.ok` / `hex.no` 是**运行时由脚本从模板建出来的**（真机日志：`图标设图 hex.ok
+  --   imageId=100102 → 回读 100102` 成功），`confirm.ok` / `confirm.no` 在存档里**根本不存在**
+  --   （真机日志：`confirm.no 读回 nil`）⇒ 保留能用的那套。
+  --   ⇒ 确认键 = `hex.ok` / `hex.no`，显隐跟着 `self.pending` 走（见上面 ICON_ASSETS 那段）。
 
   -- 右下：计数 + 放大镜。右边缘 = 右上三键的右边缘（用户要求对齐）。
   local RB = L.side_key.right_edge
@@ -2561,6 +2579,13 @@ function Controller:layout_plan()
             --   链条：build_layout → **这里** → tools/dump_layout.lua → sync_plan.mjs，
             --   三处都要带（我漏了两处，image_id 一路是 undefined）。
             image_id = n.image_id, imageColor = n.imageColor, rot = n.rot,
+            -- ★★★★★ 2026-10-04 **`event` 也必须进计划** —— 和上面 `image_id` 是**同一类链子问题**：
+            --   这里是**再建一张新表**、字段写死，`build_layout` 里挂的 `event` 会被整片丢掉。
+            --   后果：导出的规划表里 `event` 全是 nil（实测 **0 / 322**），
+            --   于是"这个按钮点下去有没有动作"**完全无法核对** ——
+            --   我这一轮给七个 `hex.*` 图标加了 `event`，导出来却仍是 `动作=undefined`，
+            --   差点误判成"没设上"。只取 `action`（适配层就是按它分发）。
+            action = n.event and n.event.action or nil,
         }
         byId[n.id] = prev
         order[#order + 1] = prev

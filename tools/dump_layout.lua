@@ -92,6 +92,14 @@ for li = 1, #levels do
         --   拿不到 `image_id`，新控件就带上原型的图。
         --   （我第一版忘了这行，18 个六边形图元的 image_id 全是 undefined。）
         image_id = n.image_id, imageColor = n.imageColor, rot = n.rot,
+        -- ★★★★★ 2026-10-04 **`event` 也要带出来** —— 少了它，"这个按钮点下去有没有动作"
+        --   在导出的规划表里**完全看不出来**（我这一轮就因此差点漏判：七个 `hex.*` 图标
+        --   明明已经在 `nodes` 里绑好了 `event`，导出来却是 `动作=undefined`）。
+        --   只取 `action`（适配层就是按它分发），序列化成字符串，JSON 才干净。
+        --   ⚠️ 注意这里读的是 **`n.action`**：`layout_plan()` 已经把 `event.action` 摊平成了
+        --      `action` 字段。我第一次写成 `n.event.action` —— 而 `layout_plan()` 的节点里
+        --      **没有 `event`** ⇒ 导出来又是 `undefined`（白改一轮）。
+        action = n.action,
       }
       byId[n.id] = prev
       order[#order + 1] = prev
