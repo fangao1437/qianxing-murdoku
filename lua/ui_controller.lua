@@ -1344,17 +1344,20 @@ function Controller:build_layout()
       local rect = { x = D(ax), y = D(ay), w = D(a[5]), h = D(a[6]) }
       -- ① 贴图：纯图片模板，**不绑事件**
       --
-      -- ★★★★★ 2026-10-04 **`parent` 必须是 `stage`，不能写 `root`** —— 修"位置还不对"。
-      --   真机日志（17:55）的**点击坐标**把偏差算了出来：
-      --       `hit.redo 点击坐标 1579,745`（规划中心 1483,721）⇒ 差 **(+96, +24)**
-      --       `hit.undo 点击坐标 1575,657`（规划中心 1483,625）⇒ 差 **(+92, +32)**
-      --   而 `stage` 自己的偏移正是 **(+100, +20)** ⇒ 偏移**仍然按 `root` 算的**。
-      --   原因：上一轮给 `stage` 补了规划节点，**但这里两个 `parent` 还写着 `root`**
-      --   ⇒ 「规划父级中心」取的是 root(800,450)，而真实父级是 stage(900,470)。
-      --   ⚠️ 适配器自动创建控件时真实父级**默认就是 `stage`**
-      --      （`local pname = (cfg.parent_of and …) or "stage"`）⇒ 规划必须跟它一致。
+      -- ★★★★★ 2026-10-04 **`parent` = `root`，而且真实父级也必须是 `root`** —— 修"位置还不对"。
+      --
+      --   两轮真机日志的**点击坐标**给出的结论（v050 与 v051 数值几乎一样 ⇒ 改规划父级无效）：
+      --       `hit.hint 点击 (1573,195)`（规划 1483,171）⇒ 差 **(+90, +24)**
+      --       `hit.undo 点击 (1585,638)`（规划 1483,625）⇒ 差 **(+102, +13)**
+      --       `hit.back 点击 (178,850)`（规划 91,821）  ⇒ 差 **(+87, +29)**
+      --   而 `stage` 自己的偏移正是 **(+100, +20)** ⇒ **运行时始终以 `root` 为参照**，
+      --   真实父级 `stage` 又叠了自己那一层。⇒ 把**真实父级**也改成 `root`，两层才能抵消。
+      --   ⚠️ 早前"挂 root 就看不见"的判断是**错的**：那时图标还在用**格子模板**
+      --      （`face` 尺寸 0 ⇒ 什么都不画）。现在贴图已改回纯图片模板
+      --      （日志：`图标设图 hex.* … 经 子控件 调用成功=true`）⇒ 挂 root 既可见、位置又对。
+      --   对应地 `cfg.parent_of` 里 14 个 id 都写 "root"（适配器自动创建的默认父级是 stage）。
       nodes[#nodes + 1] = {
-        id = a[1], kind = "button", parent = "stage",
+        id = a[1], kind = "button", parent = "root",
         visible = vis,
         image_id = a[2],
         imageType = "Stretch",
@@ -1363,7 +1366,7 @@ function Controller:build_layout()
       }
       -- ② 热区：格子模板、**不给 image_id**（所以 face 不会被点亮 ⇒ 完全透明），只负责收点击
       nodes[#nodes + 1] = {
-        id = "hit." .. a[1]:sub(5), kind = "button", parent = "stage",
+        id = "hit." .. a[1]:sub(5), kind = "button", parent = "root",
         visible = vis,
         event = { action = a[7] },
         icon_template = false,         -- 走 cfg.cells.prefab（真机验证：能收到点击）

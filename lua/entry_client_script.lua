@@ -171,7 +171,7 @@ local function check_canvas()
       --   里面既没有新打印、`cell` 尺寸也还是旧值 ⇒ 我误以为"改动没生效"，
       --   实际是**贴了旧日志**。加这一行后，一看首行就能确认跑的是哪一版。
       if print then
-        print("[murdoku] ===== 构建标记 v051 / 2026-10-04 19:00 / 图标与热区规划父级改 stage(修+92偏移) · 三个确认键按下即反馈 =====")
+        print("[murdoku] ===== 构建标记 v052 / 2026-10-04 19:20 / 图标与热区真实父级也改 root(与规划一致,消掉stage那层偏移) =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -241,21 +241,29 @@ local function build_adapter()
       ["action.back.hexbg"] = "action.back",
       -- ★ 已删：action.redo / action.hint 的底图（父控件本身已从存档里清掉）
 
-      -- ★★★★★ 2026-10-04 **七个图标不要显式挂 root —— 让它们留在 `stage` 下。**
+      -- ★★★★★ 2026-10-04 **14 个 id 全部显式挂 `root`** —— 修"位置还不对"。
       --
-      --   踩坑记录（两个方向都试过了）：
-      --     · 默认（挂 `stage`）：`stage` 在 (100,20) 而规划父级写的是 `root`
-      --       ⇒ 偏移按 root 算、却落在 stage 上 ⇒ **整组右移 92px** 被右边缘切掉。
-      --     · 改成显式 `root`：偏移对了，但 **7 个键在关卡里完全不显示**
-      --       （真机 17:30 截图：root 子控件 7→14、图也设上了，就是看不见）。
-      --   ⇒ 正解是**让"规划父级"和"真实父级"一致，而不是把真实父级搬走**：
-      --     留在 `stage` 下（这套渲染正常），同时**在规划里给 `stage` 补一个节点**
-      --     （见 `ui_controller.build_layout` 里那句 `id = "stage"`），
-      --     于是「规划中心 − 规划父级中心」= (1483−900, 817−470) 落在 stage 的真实中心上
-      --     ⇒ 正好回到 (1483, 817) ✅
-      --
-      --   （`hex.*` 的 parent_of 覆盖**故意删掉**，让适配器走它自己的默认值 `stage`。）
-
+      --   真机日志的**点击坐标**两轮几乎一样（v050 与 v051），说明改规划父级无效：
+      --       hit.hint 点击 (1573,195)（规划 1483,171）⇒ +90,+24
+      --       hit.undo 点击 (1585,638)（规划 1483,625）⇒ +102,+13
+      --   而 `stage` 的偏移正是 (+100,+20) ⇒ **运行时以 `root` 为参照**，
+      --   真实父级 `stage` 又叠了一层 ⇒ 必须让**真实父级也是 `root`**，两层才抵消。
+      --   ⚠️ 早前"挂 root 就看不见"的判断是错的：那时图标用格子模板（face 尺寸 0）；
+      --      现在贴图走纯图片模板，挂 root 既可见、位置又对。
+      ["hex.back"]   = "root",
+      ["hex.submit"] = "root",
+      ["hex.redo"]   = "root",
+      ["hex.undo"]   = "root",
+      ["hex.hint"]   = "root",
+      ["hex.ok"]     = "root",
+      ["hex.no"]     = "root",
+      ["hit.back"]   = "root",
+      ["hit.submit"] = "root",
+      ["hit.redo"]   = "root",
+      ["hit.undo"]   = "root",
+      ["hit.hint"]   = "root",
+      ["hit.ok"]     = "root",
+      ["hit.no"]     = "root",
       ["home.panel"]   = "home",
       ["select.panel"] = "select",
     },
