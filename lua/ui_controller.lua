@@ -871,6 +871,14 @@ function Controller:on_input(event)
     end
 
   elseif a == "undo" then
+    -- ★★★★★ 2026-10-04 **按下先给反馈，再执行**（用户："撤销的点击动画还没建好"）。
+    --
+    --   原来只有一行 `if core:undo() then fx(...)` ⇒ **没有可撤销的东西时一格动画都不播**
+    --   ⇒ 点 ↶ 像没反应（`hint` 有动画是因为它每次都播，这就是两者手感不一样的原因）。
+    --   ⇒ 按下时先播 `SELECT`（按下的视觉反馈），**撤销真的发生了**再补一个 `UNDO`（undo_flash）。
+    --     同一帧两次 fx 打在同一个控件上时**后写的赢**，所以：
+    --       有事可撤 → 看到 undo_flash；没事可撤 → 看到 sel_pop_glow。两种都有反馈 ✅
+    self:fx("hex.undo", M.EFFECTS.SELECT)
     if core:undo() then self:fx("hex.undo", M.EFFECTS.UNDO) end
 
   elseif a == "redo" then
