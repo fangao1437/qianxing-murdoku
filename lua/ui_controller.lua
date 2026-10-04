@@ -332,7 +332,10 @@ function Controller:do_submit()
   local core = self.core
   if core == nil or core.submit == nil then return end
   local res = core:submit()
-  self:fx("action.submit", M.EFFECTS.SUBMIT)
+  -- ★ 2026-10-04 **反馈目标改成 `hex.submit`** —— `action.submit` 那批旧文字键已从计划里删掉，
+  --   特效打在已不存在的控件上 = **点了没有任何视觉反馈**（用户反馈的正是这条）。
+  --   七个图标改用「格子模板」后是**真正可点的控件**，`fx()` 的动画就能落在它们身上。
+  self:fx("hex.submit", M.EFFECTS.SUBMIT)
   -- 规格 5.3：提交只给硬约束反馈，不揭晓任何线索层面的对错（连条数都不说）
   self.toast = res and res.message or nil
   if res ~= nil and res.ok then
@@ -862,15 +865,15 @@ function Controller:on_input(event)
     end
 
   elseif a == "undo" then
-    if core:undo() then self:fx("action.undo", M.EFFECTS.UNDO) end
+    if core:undo() then self:fx("hex.undo", M.EFFECTS.UNDO) end
 
   elseif a == "redo" then
-    if core:redo() then self:fx("action.redo", M.EFFECTS.UNDO) end
+    if core:redo() then self:fx("hex.redo", M.EFFECTS.UNDO) end
 
   elseif a == "hint" then
     local ok, msg = core:hint()
     self.toast = msg
-    if ok then self:fx("action.hint", M.EFFECTS.SELECT) end
+    if ok then self:fx("hex.hint", M.EFFECTS.SELECT) end
 
   elseif a == "reveal" then
     -- 直接揭示答案（照 murdoku 的 Reveal，用于教学/放弃）
