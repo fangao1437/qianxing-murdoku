@@ -1683,6 +1683,30 @@ function Adapter:_cells_paint(ctrl, size, cell_id, img)
   if face == nil then return false end
   if face.SetVisible then pcall(function() face:SetVisible(true) end) end
 
+  -- ★★★★★ 2026-10-06 **每帧重放墙/门的可见性** ✗✓ —— 这是本轮真正的修法 ✓
+  --
+  --   为什么必须有（★ 用户那句"是不是接管了两次"直接指到了这里 ✓）：
+  --     · 屏幕层现在**不碰** `cell.*` ✓（`"cell."` 已从 PREFIX 里去掉 ✓）
+  --     · 但适配层还有**第二处** ✗：`set_property` 的 `visible` 分支里
+  --         `if vis == false and id:sub(1,5) == "cell." then hide_kids(ctrl, 0) end`
+  --       ⇒ ★ 主页时 `cell.*` 被设 false ✗ ⇒ **递归把子控件全设 false** ✗
+  --     · 而它**只在隐藏时递归** ✗ ⇒ 进关卡后 `cell.*` 变 true ✓
+  --       ★★ 但 `wall.*` / `door.*` 还是 false ✗ ⇒ 不画 ✓✓
+  --     · ★ 它每帧都会跑（`_cells_paint` 是 face 的"每帧保持"那条路 ✓）
+  --       ⇒ ★★ 这里重放一次 ⇒ **被递归藏了也会被救回来** ✓✓
+  --   ⚠️ 只重放**已经记录过**的格子 ✗ —— 没下发过就什么都不做（不越权 ✓）
+  if cell_id ~= nil and self._edge_want ~= nil then
+    local w = self._edge_want[cell_id]
+    if w ~= nil then
+      for name, want in pairs(w) do
+        local s2 = self:sub(cell_id, name)
+        if s2 ~= nil and s2.SetVisible ~= nil then
+          pcall(function() s2:SetVisible(want) end)
+        end
+      end
+    end
+  end
+
   -- ★★★★★ 2026-10-05 **每帧重放墙/门的可见性** ✗✓ —— 这是本轮的定案修法 ✓
   --
   --   真机日志给出的对照（同一份日志里 ✓）：
@@ -3838,6 +3862,29 @@ function Adapter:_apply_edges(id, prefix, flags)
   --     ⇒ ★ 屏幕上看不见 ✓ —— ★ 而我的读回是在**这一刻**读的 ✓ ⇒ 当然读到 true ✓✓
   --       ⇒ ★★ "读回 true 而屏幕没有"的最后一层就在这里 ✓
   --   ⇒ 记下来，在 `_cells_paint`（每帧那条路 ✓）里重放 ✓ —— 与 `face` 同等待遇 ✓
+  do
+    self._edge_want = self._edge_want or {}
+    local w = self._edge_want[id]
+    if w == nil then w = {}; self._edge_want[id] = w end
+    for i = 1, #sides do
+      local s = sides[i]
+      w[prefix .. "." .. s] = (flags[s] and not skip[s]) and true or false
+    end
+  end
+
+  -- ★★★★★ 2026-10-06 **记下"该亮哪些边"，供每帧重放** ✗✓ —— 对抗 `hide_kids` 的递归藏 ✓
+  --
+  --   ★★ 这是"墙/门第一次进关不画"的**第二半**（也是真正的凶手 ✓）：
+  --     · 适配层 `set_property(…, "visible", false)` 里有一段 ✗：
+  --         `if vis == false and id:sub(1,5) == "cell." then hide_kids(ctrl, 0) end`
+  --       ⇒ ★ 它把格子的**全部子控件递归设成 false** ✗（`face` / `wall.*` / `door.*` ✓）
+  --     · ★ 而它**只在 `vis == false` 时递归** ✗（那段的注释自己说"显示时不递归" ✓）
+  --       ⇒ ★★ **单向** ✗ ⇒ `cell.*` 一旦被藏过 ⇒ 子控件永不恢复 ✓✓
+  --     · ★ 为什么"第二关正常"✗：★ 第二关【不重建格子】✗
+  --       ⇒ `cell.*` 没有 `false → true` 的过程 ✗ ⇒ **从不触发那个分支** ✓
+  --       ⇒ 子控件从没被递归藏过 ✓ —— ★★ 这解释了"只有第一关坏" ✓✓
+  --   ⇒ ★ 修法：★ **把"该亮"记下来，在每帧都会跑的 `_cells_paint` 里重放** ✓
+  --     这与 `face` 的"每帧保持"是**同一个套路** ✓（那段注释也是这么写的 ✓）
   do
     self._edge_want = self._edge_want or {}
     local w = self._edge_want[id]
