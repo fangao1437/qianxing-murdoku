@@ -1017,8 +1017,25 @@ function Controller:on_input(event)
     elseif a == "pick_level" then
     if self.opts.on_pick_level then
       self.modal = nil
-      self.screen = nil              -- ★ 点卡片 = 离开选关、进入关卡
+      -- ★★★★★ 2026-10-05 **顺序修好了** ✗✓ —— 原来 `self.screen = nil` 写在回调**之前** ✗
+      --
+      --   症状（用户实测 + 两张截图 + 新加的引擎侧体检 ✓）：
+      --     · 直接进第一关 ✓ 正常；去过别的关卡再回来 ✗ ★【只剩棋盘，线索区整片没了】✗
+      --     · 退出重进第一关没用 ✗；必须去一次别的关卡才行 ✓
+      --     · ★ 引擎侧读数：`clues(vis=false)` 而 `clues.bg(vis=true)` `clues.grid(vis=true)` ✗✓
+      --       ⇒ ★ 父容器被藏 ⇒ 整片线索区不显示 ✓（这就是那张"只剩棋盘"的图 ✓）
+      --
+      --   为什么：真机日志里点完卡片后 ★ `controller.screen = **home**` ✗ ——
+      --     而这一行**本来置的是 `nil`** ✓ ⇒ ★ 说明是**紧接着的回调**把它改回去的 ✗✓
+      --     （`on_pick_level` 在 `main.lua` 那头会走开局/重试那条路 ✓ 中途会重设 screen ✓）
+      --   ⇒ ★ 于是 `apply_screen_hide(nodes, "home")` ⇒ HIDE 名单生效 ⇒ `clues` 被藏 ✗
+      --     ⇒ 而"进关卡后该显示"的那条路【从来没走到】✗（`self.screen` 一直是 "home" ✓）
+      --     ⇒ ★★ 永久丢失 ✓ —— 只有切屏（去别的关卡）才会把它改回 `nil` ✓✓
+      --
+      --   ★ 修法：**先回调，后置 nil**，并在回调之后再兜一次 ✗
+      --     这样无论回调中途把 `screen` 设成什么，回到这里都一定被纠正成"在关卡里" ✓
       self.opts.on_pick_level(event.id)
+      self.screen = nil              -- ★ 点卡片 = 离开选关、进入关卡（放在回调【之后】✓）
     end
 
   -- ★★★ 2026-09-29 新增：主页四键 + 整屏切换（用户要求的布局与流程）

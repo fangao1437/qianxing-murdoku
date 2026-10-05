@@ -223,6 +223,23 @@ function Murdoku.start(level_id, opts)
       Murdoku.remember_level(id)
       if id ~= level.id then
         start_other(id)
+        -- ★★★★★ 2026-10-05 **重建出来的控制器必须【纠正屏幕状态】** ✗✓
+        --
+        --   症状（用户实测 + 两张截图 + 引擎侧体检读数 ✓）：
+        --     · 在关卡里点【别的】关卡卡片 ⇒ ★ 回到棋盘时【只剩棋盘】✗
+        --       线索区整片不见（`clues(vis=false)` 而 `clues.bg/grid(vis=true)` ✗）
+        --     · 退出重进没用 ✗；点过一次别的关卡【之后】才正常 ✓
+        --
+        --   为什么：`start_other(id)` 会**重建控制器** ✗ ⇒ 新控制器从
+        --     `UIC.new(..., { screen = want_screen })`（见上面 L190-196）拿到
+        --     ★ `screen = opts.screen` = **入口传的 `"home"`** ✗✓
+        --     ⇒ `apply_screen_hide(nodes, "home")` ⇒ HIDE 名单生效 ⇒
+        --       ★ `clues` 被藏 ✗（`clues.bg` / `clues.grid` 自己是对的 ✓ 但父级藏了 ✗）
+        --     ⇒ 而"进关卡后该显示"的那条路【永远走不到】✗（screen 一直是 "home" ✓）
+        --
+        --   ★ 所以这里必须补一句 —— 与下面"点的是当前这一关"那支（L228）**同一套写法** ✓
+        --     （"同一件事两处实现必然漂移"是本项目反复踩到的病 ⇒ 两支都要写 ✓）
+        if controller ~= nil then controller.screen = nil end
       else
         -- 点的是当前这一关：只是退出选关界面，不用重开
         controller.screen = nil
