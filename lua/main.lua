@@ -1589,6 +1589,7 @@ function Murdoku.on_update(dt)
         end
       end
     end
+  end
     if scr_now == "level" and ((current.frames or 0) % 30) == 0 then
       local rows, cols = 5, 5
       pcall(function()
@@ -1693,7 +1694,6 @@ function Murdoku.on_update(dt)
         end
       end
     end
-  end
   -- ★★★★★ 2026-10-02 **格子底图探针**：用户看到"只有一行一列"，日志显示只有
   --   `wall.up`(上边) / `wall.left`(左边) 是 visible=true，而**格子底图 `face` 是 false**。
   --   ⇒ 这一版把 `face` 的真实情况打出来（尺寸 / 图片 / 是否被脚本设过），
