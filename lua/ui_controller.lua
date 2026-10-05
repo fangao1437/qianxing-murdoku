@@ -1108,6 +1108,25 @@ local function inherit_pos_runtime(nodes)
   end
 end
 
+-- ★★★★★ 2026-10-05 **「老一套线索控件」的 id 判据（全项目唯一一份）**。
+--
+--   为什么必须收成一处：这份名单要同时被三个地方用 ——
+--     · `build_layout`：网格视窗在用时，这一段**整段不发**（见下面那道守卫）；
+--     · `build_layout` 收口：发完再扫一遍，规划里**绝不允许**残留老 id；
+--     · `render`：切到网格视窗的那一帧，`_shown` / `_created` 里还留着老 id，
+--       差集循环**必须跳过**它们（不许再 set_property、不许销毁）。
+--   三处各写一份名单 = 必然漂移；漏掉一处就是"又按名字抓到已回收的列表项"。
+--
+--   ⚠️ 前缀用 **`clue.`（带点）**：`clues` / `clues.bg` / `clues.grid` 是"线索区"自己的
+--      东西，不能被误伤（`clues` ≠ `clue.`）。
+local function is_legacy_clue_id(id)
+  if type(id) ~= "string" then return false end
+  if id:sub(1, 5) == "clue." then return true end
+  return id == "clues.up" or id == "clues.down" or id == "clues.track"
+      or id == "clues.knob" or id == "clues.count" or id == "clues.more"
+      or id == "clues.bar"
+end
+
 -- ★★★★ 2026-10-01 **屏幕隔离**（子控件不再靠父容器开关之后的必需品）。
 --
 --   背景：为了修"全屏容器把游戏自己的 UI 挡住、点不动"（用户报"卡死"），
@@ -1848,6 +1867,38 @@ function Controller:build_layout()
          -- 免得"老卡片回来了、但网格还盖在上面" —— 见 `Controller:sync_clue_grid`
          visible = (self._grid_state ~= "off"),
          pos_runtime = false })
+  -- ★★★★★ 2026-10-05 **网格视窗在用时，老的一套线索控件"整段不进规划"**。
+  --
+  --   真机证据（用户实测，每帧刷、永久刷）：
+  --     attempt to call method 'imageSource' on an invalid object
+  --       client_script:10043 set_property ← 6485 render ← 11832 on_update（start 时也来过一次）
+  --   根因链条（已在代码里对上，不是猜的）：
+  --     ① 列表项模板（1073742421）的子控件**名字和旧卡片一字不差**：
+  --        `clue.1.backrop1` / `backrop2` / `face` / `who` / `what` / `letter`；
+  --     ② 适配层 `Adapter:set_property` 第一步就是 `self:find(id)` —— 它按**名字**
+  --        在客户端控件树上深度优先搜，**而且把首次命中缓存进 `self.controls[name]`**；
+  --     ③ 网格视窗的列表项是**复用**的（官方：只加载可见范围内的列表项）⇒ 名字
+  --        `clue.1.face` 抓到的很可能是**已经被回收的那一个列表项** ⇒ 句柄失效；
+  --     ④ `clue.N.face` 这个节点带着 `image = ...` ⇒ 走 set_property 的 `image` 分支，
+  --        里面那行 `local src = target.imageSource`（适配器 3347 行）**没有 pcall** ⇒ 抛错。
+  --   ⇒ 所以旧写法（"照旧 push、只把 visible 改成 false"）根本挡不住：节点还在规划里，
+  --     每帧照样 `set_property` 一次，`clue.N.face` 的 `image` 照样下发 ⇒ 每帧抛一次。
+  --     更糟的是错误从 `render` 里抛 ⇒ **后面的节点全没处理** ⇒ 用户看到的两条连带症状：
+  --     模板格子出不来、`clues.bg` 时有时无（都不是它们自己的问题）。
+  --
+  --   ⇒ 这一版的让位 = **从源头不发**：不建、不摆、不点亮、连动效都不排队。
+  --     判据用 `is_legacy_clue_id`（本文件唯一一份名单，`render` 那边共用同一个函数）。
+  --
+  --   ⚠️ 下面这一大段的**缩进故意保持原样**（不退不进）：它只是被一个开关括起来，
+  --      重排两百多行缩进会让"这一轮到底改了什么"完全看不出来 ⇒
+  --      宁可用一个醒目的 `end` + 行尾注释来收口（Lua 不看缩进，语义完全一致）。
+  local grid_on = (self._grid_state == "on")
+  if grid_on then
+    self:_grid_log("giveway", "网格视窗：老的一套线索控件**整段不进规划**（不建 / 不摆 / 不点亮 / "
+      .. "连动效都不排队）—— 只藏起来不够：`clue.N.*` 这个名字会被按名字抓到已回收的列表项")
+  else
+  -- ── 走**老路径**（cfg.use_grid=false / 找不到网格视窗 / 填内容失败）：
+  --    下面这一段（到 2095 行那个 `end` 为止）才是手写滚动的那一套，照旧照发 ──
   -- ★ 2026-10-05 **滚动条点击区 `clues.bar`** —— 用户新做的隐形热区（画布 24×520），
   --   规划里原来没有它 ⇒ 脚本不认它（"还没建"名单里反过来没有它才怪 ✗）。
   --   位置：条心 x = 464 画布、纵向与卡片区同高 ⇒ 设计 x = (464−16)×6/5 ≈ 537.6、
@@ -2043,51 +2094,32 @@ function Controller:build_layout()
          rect = { x = L.clues.x, y = L.clues.y + rows * L.clue_row_h, w = L.clues.w, h = 30 },
          text = string.format("还有 %d 条线索", math.max(0, #vm.clues - shown)),
          style = "muted", visible = (#vm.clues > shown) })
+  end   -- ← 老一套线索控件到此为止：网格视窗在用时**整段跳过**（见上面那道守卫的长注释）
 
-  -- ★★★★★ 2026-10-05 **网格视窗接管时，"老的一套"整体让位**（只改 visible，坐标一个不碰）。
+  -- ★★★★★ 2026-10-05 **收口：规划里绝不允许出现老一套的 id**（守卫之外的第二道闸）。
   --
-  --   为什么必须让位：网格视窗和手写滚动画的是**同一块区域、同一条线索**——
-  --   两套同时可见就是"每条线索叠两遍"（而且老卡片会被按在编辑器几何上，什么都不对）。
-  --   用户的说法是"用网格视窗替换手写滚动"，失败时才回退 ⇒ 成功时老的必须收起来。
+  --   守卫管的是"这一段不发"；这里管的是"发完再扫一遍"——
+  --   以后谁在守卫外面又加了一条 `clue.*` / `clues.up` 的 push，
+  --   会被这里当场剔除**并打一行日志**，不会又变回"每帧按名字抓到已回收的列表项"。
+  --   （两道闸共用一个判据 `is_legacy_clue_id`，不会漂移。）
   --
-  --   为什么写成**一次收口**而不是逐个去改上面的 `visible = ...`：
-  --     老路径的控件散在十几处 push 里（卡片本体 + 两张底图 + 头像/名字/正文/徽章 × N、
-  --     ▲▼ / 轨道 / 滑块 / 计数 / "还有 N 条" / 滚动热区）——
-  --     **逐个改必然漏一处**，而漏一处就是"两套 UI 叠在一起"这种最难看出来的错。
-  --     这里按 id 收口，以后再加老控件只要名字还叫 `clue.*` / `clues.*` 就漏不掉。
-  --
-  --   ⚠️ 前缀判断用 **`clue.`（带点）**：`clues.grid` / `clues.bg` 是"线索区"自己的东西，
-  --      不能被误伤（`clues` ≠ `clue.`）。
-  if self._grid_state == "on" then
-    -- ★★★★★ 2026-10-05 **必须"根本不下发"，而不能只是 `visible = false`** —— 真机实测的教训。
-    --
-    --   症状（用户实测，每帧刷、永久刷）：
-    --     attempt to call method 'imageSource' on an invalid object
-    --       client_script:10043 set_property ← 6485 render ← 11832 on_update
-    --   根因：网格视窗的**列表项模板子控件名字和旧卡片完全一样**
-    --     （clue.1.backrop1 / backrop2 / face / who / what / letter）
-    --     ⇒ 只要规划里还留着 `clue.*`，渲染层就会按**名字**去 set_property，
-    --       而这个名字此刻命中的是网格视窗里**已经被回收的列表项** ⇒ 句柄失效 ⇒ 抛错。
-    --   连带症状：错误从 `render` 里抛出 ⇒ **后面的初始化全被打断**
-    --     ⇒ 模板格子出不来、`clues.bg` 时有时无（都不是它们自己的问题）。
-    --   ⇒ 结论：让位 = **从 `nodes` 里剔除**，不是藏起来。
-    local gave_way, kept = 0, 0
+  --   为什么剔除还不够、必须连"名字"都不碰：见 `render` 里 `stale_legacy` 那段注释。
+  if grid_on then
+    local dropped, kept = 0, 0
     for i = 1, #nodes do
-      local id = nodes[i].id
-      if id:sub(1, 5) == "clue."
-         or id == "clues.up" or id == "clues.down"
-         or id == "clues.track" or id == "clues.knob" or id == "clues.count"
-         or id == "clues.more" or id == "clues.bar" then
-        gave_way = gave_way + 1
+      if is_legacy_clue_id(nodes[i].id) then
+        dropped = dropped + 1
       else
         kept = kept + 1
         nodes[kept] = nodes[i]
       end
     end
     for i = #nodes, kept + 1, -1 do nodes[i] = nil end
-    self._grid_gave_way = gave_way
-    self:_grid_log("giveway", "网格视窗：老的一套**从规划里剔除**（" .. tostring(gave_way)
-      .. " 个：clue.N 卡片 + ▲▼/滚动条/计数/热区）—— 只藏起来不够：会被按名字抓到已回收的列表项")
+    self._grid_gave_way = dropped
+    if dropped > 0 then
+      self:_grid_log("giveway_leak", "网格视窗：**守卫之外**还漏发了 " .. tostring(dropped)
+        .. " 个老线索控件，已在收口处剔除（查一下是不是新加了 `clue.*` 的 push）")
+    end
   end
 
   -- 操作提示**按设备换文案** —— 同一套界面同时给 PC 键鼠和移动端触碰用，
@@ -3358,6 +3390,38 @@ end
 -- 增量渲染
 ----------------------------------------------------------------------------
 
+-- ★★★★★ 2026-10-05 **写属性的唯一入口：一律包 `pcall`**。
+--
+--   为什么：真机上那个"每帧刷、永久刷"的报错就是 set_property 抛出来的
+--     （`attempt to call method 'imageSource' on an invalid object`，
+--       见 `build_layout` 里那段根因注释），而它是在 `render` **里面**抛的 ⇒
+--     后面所有节点全没处理 ⇒ 连带症状一大串（模板格子出不来、`clues.bg` 时有时无）。
+--   ⇒ 原则：**一个属性写不进去，只该少显示一样东西，绝不该把整帧渲染打断**。
+--     适配层那边"句柄可能是引擎回收过的列表项"这件事我们管不了（不在本文件里），
+--     但"它抛错会不会连累整帧"是我们能兜住的。
+--
+--   ⚠️ 报错**按 id + 键各报一次**，而且**最多只列 8 条**（第 9 条换成一句总结）：
+--      一个坏句柄会每帧抛，不去重/不限量就是拿日志刷屏 —— 那正是用户这一轮最烦的事。
+function Controller:_set_prop(adapter, id, key, value)
+  local ok, err = pcall(function() adapter:set_property(id, key, value) end)
+  if not ok then
+    local k = tostring(id) .. "." .. tostring(key)
+    self._prop_err_seen = self._prop_err_seen or {}
+    if not self._prop_err_seen[k] then
+      self._prop_err_seen[k] = true
+      self._prop_err_n = (self._prop_err_n or 0) + 1
+      if self._prop_err_n <= 8 then
+        self:_grid_log("prop_err:" .. k, "属性下发失败（已跳过这一条，不再每帧刷）：`"
+          .. k .. "` ← " .. tostring(err))
+      elseif self._prop_err_n == 9 then
+        self:_grid_log("prop_err_more", "属性下发失败：已经列了前 8 条，后面的不再逐条打印"
+          .. "（同一类【句柄失效】，只影响个别控件，**不会再打断整帧渲染**）")
+      end
+    end
+  end
+  return ok
+end
+
 function Controller:render(adapter, force)
   -- ★★★★★ 2026-10-05 **网格视窗先探一步**（必须在 `build_layout` 之前）。
   --
@@ -3369,6 +3433,22 @@ function Controller:render(adapter, force)
   self:sync_clue_grid(adapter)
 
   local nodes = self:build_layout()
+
+  -- ★★★★★ 2026-10-05 **网格视窗在用时，"老一套线索控件"的名字一个都不许再碰。**
+  --
+  --   为什么：适配层的 `find(name)` 是**按名字**深度优先搜的，而网格视窗的列表项模板
+  --   子控件就叫 `clue.1.who` / `clue.1.face` …（用户是照着第 1 张卡另存的模板）
+  --   ⇒ 碰这些名字 = 可能抓到**已经被回收的列表项** ⇒ 句柄失效 ⇒ 属性下发抛错
+  --     （真机日志见 `build_layout` 里那段根因注释）。
+  --
+  --   为什么在 `render` 里还要再拦一道：**切换的那一帧**。
+  --     `_grid_state` 是上一帧渲染末尾才可能从 nil 变成 "on" 的（`sync_clue_grid`
+  --     要等 RefreshItems 真的回调成功），所以 `_shown` / `_created` 里可能还留着
+  --     上一帧按老路径建过的 `clue.N` —— 差集循环会拿它们去"藏起来"，清理循环
+  --     会拿它们去"销毁"（那会把网格视窗正在复用的列表项关掉/毁掉）。
+  --   ⇒ 判据和 `build_layout` 共用 `is_legacy_clue_id`（一处定义，三处使用）。
+  local grid_on = (self._grid_state == "on")
+  local function stale_legacy(id) return grid_on and is_legacy_clue_id(id) end
 
   -- 设备档位（pc / touch / gamepad）只在第一次渲染时探一次，用来决定提示文案。
   -- 界面本身完全一样 —— 两种模式走的是同一套光标事件。
@@ -3393,20 +3473,25 @@ function Controller:render(adapter, force)
   if self._shown == nil then
     local all = self:layout_plan()
     for i = 1, #all do
-      if not seen[all[i].id] then
-        adapter:set_property(all[i].id, "visible", false)
+      if not seen[all[i].id] and not stale_legacy(all[i].id) then
+        self:_set_prop(adapter, all[i].id, "visible", false)
       end
     end
     -- ★ 上面只能藏住"当前这一关自己的布局里没有的"控件。
     --   但编辑器是照**所有关卡的最大并集**建的，多出来的控件（cell.6.6 / clue.12 /
     --   tray.F …）界面层根本不知道它们存在，只能让适配层去控件树上扫。
+    --
+    --   ⚠️ `hide_unlisted` **照旧要调**（即使网格视窗在跑）：它扫的是 `clues` 这一类
+    --      托管容器的**直接子控件**，网格视窗的列表项挂在 `clues.grid` 下面、不在这一层，
+    --      不会被误伤；而它正好负责把编辑器里遗留的老卡片（`clue.1..18` 本体）关掉。
     if adapter.hide_unlisted ~= nil then
       adapter:hide_unlisted(seen)
     end
   else
     for id in pairs(self._shown) do
-      if not seen[id] then
-        adapter:set_property(id, "visible", false)
+      -- ⚠️ 切换帧：上一帧的老线索 id **不藏也不销毁**（名字现在归网格视窗的列表项所有）
+      if not seen[id] and not stale_legacy(id) then
+        self:_set_prop(adapter, id, "visible", false)
       end
     end
   end
@@ -3415,15 +3500,22 @@ function Controller:render(adapter, force)
   for i = 1, #nodes do
     local n = nodes[i]
     if not self._created[n.id] then
-      adapter:create_control(n)
-      self._created[n.id] = true
+      -- create_control 也包一层：它内部会 `find` 控件树，真机上"某个节点不提供方法"
+      -- 这种事本项目已经踩过（`GetChildren` 那个坑）。建不出来只该少一样东西，
+      -- **不该让整帧渲染停在这里**。
+      local ok_c, err_c = pcall(function() adapter:create_control(n) end)
+      if not ok_c then
+        self:_grid_log("create_err:" .. tostring(n.id), "创建控件失败（已跳过这一条，不再每帧刷）：`"
+          .. tostring(n.id) .. "` ← " .. tostring(err_c))
+      end
+      self._created[n.id] = true     -- 记上：免得每帧重试 + 重刷日志
       self._props[n.id] = {}
     end
     local last = self._props[n.id]
     for k, v in pairs(n) do
       if k ~= "id" and k ~= "rect" then
         if not same_value(last[k], v) then
-          adapter:set_property(n.id, k, v)
+          self:_set_prop(adapter, n.id, k, v)
           last[k] = v
         end
       end
@@ -3449,20 +3541,33 @@ function Controller:render(adapter, force)
         adapter.runtime_rect = adapter.runtime_rect or {}
         adapter.runtime_rect[n.id] = true
       end
-      adapter:set_property(n.id, "rect", n.rect)
+      self:_set_prop(adapter, n.id, "rect", n.rect)
       last.__rect = { x = n.rect.x, y = n.rect.y, w = n.rect.w, h = n.rect.h }
     end
   end
   for id in pairs(self._created) do
     if not seen[id] then
-      adapter:destroy_control(id)
-      self._created[id] = nil
-      self._props[id] = nil
+      if stale_legacy(id) then
+        -- ★ 切换帧：这个 id 是上一帧按老路径建的，而这一帧网格视窗已经接管。
+        --   **只清账本、不销毁** —— 那个名字现在归网格视窗的列表项所有，
+        --   `destroy_control` 会按名字反查并把控件 `SetVisible(false)`（甚至在
+        --   `instantiated` 名单里时**真销毁**）⇒ 等于把网格里的线索卡关掉/毁掉。
+        self._created[id] = nil
+        self._props[id] = nil
+      else
+        pcall(function() adapter:destroy_control(id) end)
+        self._created[id] = nil
+        self._props[id] = nil
+      end
     end
   end
   for i = 1, #self.effects do
     local e = self.effects[i]
-    adapter:play_effect(e.target, e.kind, e)
+    -- ⚠️ 动效也走 pcall + 跳过老线索目标：`play_effect` 第一步同样是 `find(id)`，
+    --    命中已回收的列表项时后面的 `read_pose`/`Tween` 都会在**渲染途中**抛错。
+    if not stale_legacy(e.target) then
+      pcall(function() adapter:play_effect(e.target, e.kind, e) end)
+    end
   end
   self.effects = {}
   self.dirty = false
