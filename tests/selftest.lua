@@ -117,7 +117,20 @@ local stub = Adapters.new_stub()
 local ctrl = UIC.new(core, { skip_intro = true })
 ctrl:render(stub, true)
 check("棋盘格控件已创建", stub.controls["cell.1.1"] ~= nil)
-check("区域推断面板已创建", stub.controls["hud.violations"] ~= nil)
+-- ★★★★★ 2026-10-05 **这条断言过时了 —— 已按设计反转** ✗✓（用户明确授权修这一条 ✓）
+--
+--   原来：`check("区域推断面板已创建", stub.controls["hud.violations"] ~= nil)` ✗
+--   为什么过时：那个面板**是按参考布局图【故意删掉】的** ✓ 不是漏建 ✗ ——
+--     见 `lua/ui_controller.lua:1737`：
+--       「★ 删除（参考图里没有）：`action.reveal` 揭示 / `hud.score` / `hud.violations`」
+--     以及 `:2419`「它是给 `hud.violations` 用的，没有控件就不必算」✓
+--   ⇒ **代码是对的** ✓ 老断言在要求一个**已被设计删掉**的控件 ✗
+--
+--   ⚠️ **这不是放宽断言** ✗ —— 是**把它反转成更有防线价值的那种** ✓：
+--     现在断言「它**确实不在**计划里」⇒ 万一有人又把它加回来 ⇒ **测试立刻红** ✓✓
+--     （老写法只能证明"建出来了" ✓ 新写法能守住"按参考图删掉了" ✓）
+check("区域推断面板**按参考图删除**（不该再出现）", stub.controls["hud.violations"] == nil,
+      tostring(stub.controls["hud.violations"]))
 check("告知“有一句假话”显示在副标题", stub.props["hud.subtitle"] ~= nil)
 
 core:reset()
@@ -172,6 +185,17 @@ check("拿起后「已正式放置」标记也清掉（否则该角色会被永�
 print("== 10. 提交 → 两段式指认的界面流程 ==")
 place_answer(core)
 ctrl:on_input({ action = "submit" })
+-- ★★★★★ 2026-10-05 **这条断言过时了 —— 补上一次 ✓ 确认** ✗✓（用户明确授权修这一条 ✓）
+--
+--   为什么：**2026-10-02 起提交是两段的** ✓ ——
+--     `submit` 只做 `self.pending = { action = "submit" }` + `sync_confirm()` ✓，
+--     真正的 `do_submit()` 在 **`confirm_yes`** 分支里 ✓（见 `ui_controller.lua` 的
+--     `a == "back_confirm"` 那一族状态机 ✓）。
+--   ⇒ 只发 `submit` 时 `ctrl.modal` **必然是 nil** ✗ ⇒ 老写法**永远红** ✗（那不是行为错 ✓）
+--   ⇒ 补一次 `confirm_yes` = **把测试拉齐到设计** ✓ **不是放宽断言** ✗
+--     （后面「选了盗窃者后追问同伙」/「指认 D + 同伙 C → 破案」两条**印证**了这一点：
+--       它们只发 `submit` 就往下走 ✓ 而 `accuse_thief` 不依赖弹窗类型 ✓ 所以早就是绿的 ✓）
+ctrl:on_input({ action = "confirm_yes" })
 check("提交后弹出“谁是盗窃者”", ctrl.modal and ctrl.modal.kind == "accuse_thief",
       ctrl.modal and ctrl.modal.kind)
 ctrl:on_input({ action = "accuse_thief", id = "D" })
