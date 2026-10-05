@@ -108,6 +108,20 @@ do
   attach(rt, make_ctrl("home"))
   attach(rt, make_ctrl("select"))
   local st = make_ctrl("stage")
+  -- ★★★★★ 2026-10-05 Round 78 **补上漏掉的一行 `attach(rt, st)`** ✗
+  --
+  --   症状（由一位代理逐行定位 ✓）：`st` 建出来之后，**从来没有挂到 `rt` 上** ✗ ⇒
+  --     `stage.__parent == nil` ⇒ 它下面那整棵子树（25 个 cell / selbar / selbtn.* /
+  --     tpl-container）**在 `root` 上不可达** ✗ ⇒ 实测后果：
+  --       · `adapter:find("stage")` = false ⇒ `ensure_widgets` 在「找不到父容器 stage」
+  --         处**提前返回** ⇒ **`selbar` 从未被创建**（`controls["selbar"] == nil`）✗
+  --       · `find("cell.1.1")` = false ⇒ `setv()` 拿不到任何控件 ✗
+  --   ⇒ **A/B 两节的计数被结构钉死在 0，与 `%30`/`%300` 门毫无关系** ✗✓
+  --     ⇒ 那 4 条红**不是**代码没生效 ✓ 而是**这个假树缺一行** ✓✓
+  --
+  --   ⚠️ 补这一行**不是**放宽断言 ✗ —— 恰恰相反：补上之后那 4 条断言才**真的能红能绿** ✓
+  --     （判据：补上后它们应从"结构性 0"变成**能反映真实写入次数** ✓）
+  attach(rt, st)
   for r = 1, 5 do
     for c = 1, 5 do
       local cell = make_ctrl("cell." .. r .. "." .. c)
