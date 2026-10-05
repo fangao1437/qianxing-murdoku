@@ -2592,8 +2592,6 @@ end
     print(string.format("  SetImage 成功 %d 个，缺失/失败 %d 个", done, miss))
     print("[murdoku] --- 按钮底图上色结束 ---")
   end
-  -- ← 这个 `return moved` 才是 `apply_tray_layout` 的返回：
-  --   它**不在** `btn_art` 块里 ⇒ `cfg.btn_art` 关着时照样返回重排个数 ✓
   return moved
 end
 -- ⚠️ 这个 `end` 关的就是 `apply_tray_layout`（`function` 在 2244 行）。
