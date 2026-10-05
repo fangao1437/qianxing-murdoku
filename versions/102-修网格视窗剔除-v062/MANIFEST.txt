@@ -1,0 +1,23 @@
+版本：102-修网格视窗剔除-v062
+时间：2026/10/5 14:44:46
+配套 .gil：195-修网格视窗剔除.gil
+说明：真机每帧刷 attempt to call method imageSource on an invalid object 的根因修复：网格视窗列表项模板的子控件名与旧卡片同名(clue.1.backrop1/who/what/letter)，只把老的一套 visible=false 时规划里仍有 clue.*，渲染层按名字命中的是网格视窗已回收的列表项⇒句柄失效⇒抛错并打断 render(连带模板格子不出/底板时有时无)。改为把老的一套**从 nodes 里剔除**。网格关时老路径 146 节点仍在。
+
+文件清单：
+  engine_adapter.lua              5397 字节
+  engine_adapter_qianxing.lua     232449 字节
+  entry_client_script.lua         50165 字节
+  main.lua                        102818 字节
+  murdoku_core.lua                102564 字节
+  room_map.lua                    5227 字节
+  ui_controller.lua               204538 字节
+  client_script.lua               734028 字节（真机跑的就是这份）
+  195-修网格视窗剔除.gil                 829657 字节（配套存档）
+
+用途：**这一版是"当时能跑的那一份"**。要回退：
+  1) 把本目录的 *.lua 拷回 qianxing-murdoku\lua\
+  2) 跑 node tools/bundle_client_script.lua，再 powershell -File tools/install_script_to_sandbox.ps1
+     （或直接用本目录的 client_script.lua 覆盖沙箱里的那份，省掉打包）
+  3) 导入本目录里的 .gil
+
+规则（重要）：**每轮一个新编号，不删旧的、不覆盖**。

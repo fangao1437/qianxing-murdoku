@@ -2059,22 +2059,35 @@ function Controller:build_layout()
   --   ⚠️ 前缀判断用 **`clue.`（带点）**：`clues.grid` / `clues.bg` 是"线索区"自己的东西，
   --      不能被误伤（`clues` ≠ `clue.`）。
   if self._grid_state == "on" then
-    local gave_way = 0
+    -- ★★★★★ 2026-10-05 **必须"根本不下发"，而不能只是 `visible = false`** —— 真机实测的教训。
+    --
+    --   症状（用户实测，每帧刷、永久刷）：
+    --     attempt to call method 'imageSource' on an invalid object
+    --       client_script:10043 set_property ← 6485 render ← 11832 on_update
+    --   根因：网格视窗的**列表项模板子控件名字和旧卡片完全一样**
+    --     （clue.1.backrop1 / backrop2 / face / who / what / letter）
+    --     ⇒ 只要规划里还留着 `clue.*`，渲染层就会按**名字**去 set_property，
+    --       而这个名字此刻命中的是网格视窗里**已经被回收的列表项** ⇒ 句柄失效 ⇒ 抛错。
+    --   连带症状：错误从 `render` 里抛出 ⇒ **后面的初始化全被打断**
+    --     ⇒ 模板格子出不来、`clues.bg` 时有时无（都不是它们自己的问题）。
+    --   ⇒ 结论：让位 = **从 `nodes` 里剔除**，不是藏起来。
+    local gave_way, kept = 0, 0
     for i = 1, #nodes do
       local id = nodes[i].id
       if id:sub(1, 5) == "clue."
          or id == "clues.up" or id == "clues.down"
          or id == "clues.track" or id == "clues.knob" or id == "clues.count"
          or id == "clues.more" or id == "clues.bar" then
-        if nodes[i].visible ~= false then
-          nodes[i].visible = false
-          gave_way = gave_way + 1
-        end
+        gave_way = gave_way + 1
+      else
+        kept = kept + 1
+        nodes[kept] = nodes[i]
       end
     end
+    for i = #nodes, kept + 1, -1 do nodes[i] = nil end
     self._grid_gave_way = gave_way
-    self:_grid_log("giveway", "网格视窗：老的一套让位（隐藏 " .. tostring(gave_way)
-      .. " 个控件：clue.N 卡片 + ▲▼/滚动条/计数/热区）；cfg.use_grid=false 可整体回退")
+    self:_grid_log("giveway", "网格视窗：老的一套**从规划里剔除**（" .. tostring(gave_way)
+      .. " 个：clue.N 卡片 + ▲▼/滚动条/计数/热区）—— 只藏起来不够：会被按名字抓到已回收的列表项")
   end
 
   -- 操作提示**按设备换文案** —— 同一套界面同时给 PC 键鼠和移动端触碰用，
