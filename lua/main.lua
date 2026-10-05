@@ -1590,6 +1590,89 @@ function Murdoku.on_update(dt)
       end
     end
   end
+  -- ★★★★★ 2026-10-05 **在这里关掉上面那个 `% 300 == 0` 的 `if`**（它的 `end` 原本在
+  --   下面"每 30 帧点亮 face"整段之后 ⇒ 把 `%30` 套进了 `%300` 里，实际每 300 帧才跑一次）。
+  --   判据：`luac -p lua/main.lua` 必须 exit 0；`tools/audit/check_nesting.mjs` 的
+  --         `[节流嵌套]` 必须 0 处、块深度不平衡 0 个文件。
+  --   ⚠️ 这里只动**配对**，下面 `%30` 那个数字**保持 30 不变**。
+  --   ※ 本行缩进 2 空格（与它关掉的那个 `if` 对齐）；下面 `%30` 块保留原来的缩进。
+  -- ★★★★★ 2026-10-05 **「每帧压住」改成「强压窗口 + 写值记忆」**（用户定的口径）。
+  --
+  --   改之前：这 33 个控件（selbar / selbtn.1..6 / tpl-container / 25 个 cell）
+  --   每帧无条件 `SetVisible` ⇒ **33 次引擎写/帧**，60fps = 1980 次/秒。
+  --   PC 无感，**移动端不可接受**（和上面"每帧点亮 25 个 face"同一类问题）；
+  --   而写进去的值稳态下与上一帧完全相同（幂等）⇒ 纯浪费。
+  --
+  --   ⇒ 现在两段式：
+  --     ① **强压窗口**：进关 / 换屏 / 换关（= `(scr_now, level_id)` 变了）之后，
+  --        连续 **60 帧（1 秒）**每帧照写 —— 覆盖 `ensure_widgets` 在开局之后
+  --        把 `selbar` 设回 `true` 的那段时序（那个老 bug 就是它引回来的）。
+  --     ② **稳态**：只在该控件"目标可见性 ≠ 上次真的写下去的值"时才写
+  --        ⇒ **稳态 0 次写/帧**。
+  --
+  --   ⚠️ 为什么不能只留 ②：`ensure_widgets` 会在我们写完很久之后把 `selbar` 设回 `true`，
+  --      而我们的记忆里还是 `false` ⇒ 再也不会重写 ⇒ 玩家点到棋盘就回选关。
+  --      所以 ① 那个窗口是拿掉这个老 bug 的**唯一保险**，不能删；
+  --      换屏/换关时 `(scr_now, level_id)` 一变就重新开窗 ⇒ 每次开局都被重新压住。
+  --
+  --   ⚠️ 本段现在**每帧**执行（原来挂在 `%300` 那个节流位上）：
+  --      稳态下每帧只有 33 次表查找 + 33 次比较，**0 次引擎写**。
+  if murdoku_vis_memo == nil then murdoku_vis_memo = {} end
+  do
+    local lev = current.level
+    local lid = (lev ~= nil) and (lev.id or lev.key or lev.name) or nil
+    local key = tostring(scr_now) .. "|" .. tostring(lid)
+    if key ~= murdoku_vis_key then
+      murdoku_vis_key = key
+      murdoku_vis_force_to = (tonumber(rawget(current, "frames")) or 0) + 60
+    end
+  end
+  do
+    local ad_vis = current.adapter
+    if ad_vis ~= nil then
+      local in_level = (scr_now == "level")
+      local in_select = (scr_now == "select")
+      local fnow = tonumber(rawget(current, "frames")) or 0
+      local forcing = (fnow < (murdoku_vis_force_to or 0))
+      local wrote = 0
+      local function setv(nm, want)
+        -- ★★★★★ 2026-10-03 **改用 `adapter.controls` 直接取引用，不再依赖 `find`**。
+        --
+        --   真机证据链（22:33 日志）：
+        --     · `ensure_widgets` 里用**局部变量 `bar`** 调 `SetVisible(false)` ⇒ **成功**
+        --       （诊断行：`选关条创建后已隐藏：selbar=false  selbtn.1=false`）
+        --     · 但 `main.lua` 里所有"先 `adapter:find("selbar")` 拿句柄再设"的地方 ⇒ **全都无效**
+        --       （进关卡后日志仍是 `selbar 可见=true`）
+        --   ⇒ 结论：**`find` 拿不到这些运行时创建/改过名的控件**
+        --     （项目注释早写过「`Adapter:sub()` 未命中会**永久缓存 false**」）
+        --   ⇒ 走 `controls` 里那份**直接引用**；拿不到再退回 `find` 兜底。
+        local c = nil
+        if ad_vis.controls ~= nil then c = ad_vis.controls[nm] end
+        if c == nil then pcall(function() c = ad_vis:find(nm) end) end
+        if c == nil then return end
+        -- ② 稳态那一条：目标与"上次真的写下去的值"相同 ⇒ **一次引擎写都不做**。
+        --    ⚠️ 写失败（pcall 返回 false）时不记这笔 ⇒ 下一帧还会重试。
+        if (not forcing) and murdoku_vis_memo[nm] == want then return end
+        local okw = pcall(function() c:SetVisible(want) end)
+        if okw then
+          murdoku_vis_memo[nm] = want
+          wrote = wrote + 1
+        end
+      end
+      -- 选关按钮条：**只在选关页可见**
+      setv("selbar", in_select)
+      for i = 1, 6 do setv("selbtn." .. tostring(i), in_select) end
+      -- 模板引用控件：**哪个页面都不该显示**（它只是模板的引用）
+      setv("tpl-container", false)
+      -- 关卡内的棋盘格子：只在关卡内可见
+      if in_level then
+        for r = 1, 5 do for c = 1, 5 do setv("cell." .. r .. "." .. c, true) end end
+      end
+      -- ★ 每帧把"这一帧写了几笔"记在 `current` 上（纯记账，给离线探针/真机日志量成本用）。
+      current._vis_wrote = wrote
+      current._vis_forcing = forcing
+    end
+  end
     if scr_now == "level" and ((current.frames or 0) % 30) == 0 then
       local rows, cols = 5, 5
       pcall(function()

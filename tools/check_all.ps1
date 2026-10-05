@@ -168,9 +168,12 @@ Run-Step '2k/13 编码/BOM 哨兵' 'node' @('tools\check_encoding.mjs') | Out-Nu
 #     这里从 cfg / MANAGED / ui_controller 的容器层级 / layout-plan 抠事实再生成，
 #     所以它**不可能过期**。
 Run-Step '2h/13 生成「本次搭建要求」' 'node' @('tools\gen_setup_requirements.mjs') | Out-Null
-# 2i：界面发出的 action vs 分发器分支 —— 抓"点了没反应"的死按钮。
+# 2m：界面发出的 action vs 分发器分支 —— 抓"点了没反应"的死按钮。
 #     首跑就抓到 `focus_clue` 发了却没分支（2026-09-27 已修），固化成步骤防回归。
-$okAct = Run-Step '2i/13 交互 action 对账' 'node' @('tools\audit\check_actions.mjs')
+#   ★ 2026-10-05 Round 65 改标签：**它原来叫 `2i`，与结构哨兵那一步重名** ✗
+#     ⇒ 日志里两条都显示 `2i/13`，红了分不清是哪条 ✓ ⇒ 本步改为 **2m** ✓
+#     （编号历史：2h 搭建要求 / 2i 结构哨兵 / 2j 静态检查 / **2k 编码哨兵** / **2m 本步**）
+$okAct = Run-Step '2m/13 交互 action 对账' 'node' @('tools\audit\check_actions.mjs')
 # 2j：Lua 静态检查 + 格式体检（**只报告**）。
 #
 #   ★ 2026-10-05 新增。工具与装法见 docs/插件与工具-调研与安装记录.md。
