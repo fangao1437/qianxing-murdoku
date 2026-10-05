@@ -1114,10 +1114,20 @@ function Adapter:diagnose_grid(rows, cols)
   end
 
   -- ③ 被挪走的引用控件现在在哪（确认"挪出画布"真的生效了）
+  --
+  -- ★ 2026-10-05 账本按**控件身份**去重（见 `_note_parked`），所以这段**每关只打一次**。
+  --   真机 v062 的日志里它是 1 行 → 2 行 → 3 行（同一个 `tpl.cell`），
+  --   很容易被读成"每次进关多出一个模板引用控件"—— 离线探针实测：控件始终只有 1 个。
+  --   重复登记的次数在这里明说，免得下次又看错。
   local parked = self.cells_parked
   if type(parked) == "table" and #parked > 0 then
     print_("[murdoku] 已挪出画布的引用控件（确认位置真的到 200000 了吗）：")
     for i = 1, #parked do print_(describe(parked[i])) end
+    local again = self.cells_parked_again or 0
+    if again > 0 then
+      print_("[murdoku]   （另有 " .. again .. " 次「同一个控件」的重复登记，已按控件身份去重 —— "
+        .. "进 N 次关卡不会多出 N 行，也**不会**多出控件）")
+    end
   end
 
   print_("[murdoku] ===== 逐格自检结束 =====")
@@ -1167,6 +1177,39 @@ end
 -- 官方文档写着 `active` **只读**，且「true 时控件可见」，也就是**可见性由 active 参与决定**，
 -- 脚本改不了 active。所以最稳的办法是**把它挪出画布**：不管可见性语义怎么算，
 -- 它都不可能在屏幕上盖住任何东西。
+
+-- 把"这个控件已经挪出画布了"记进诊断账本。
+--
+-- ★★★★★ 2026-10-05 **账本必须按控件身份去重**（真机 v062 日志的"每次进关多一行 tpl.cell"）。
+--
+--   现象（用户日志）：一次游玩里进 3 次关卡，`diagnose_grid` 那块打印的是
+--       1 行 → 2 行 → 3 行，三行**一模一样**（都是 `tpl.cell  编辑器摆的 … 不在 stage 下`），
+--     看着像"每进一次关就多出一个模板引用控件（ClientUIReferenceControl）"。
+--
+--   实测（离线探针进 3 次关卡，照 196-网格视窗兜底.gil 的树形：`tpl.cell` 挂在 `root` 下）：
+--       · `root` 下名叫 `tpl.cell` 的子控件**始终是 1 个**；
+--       · 账本里所有条目指向的是**同一个控件对象**；
+--       · 它每次都停在 (200000,200000) —— `_park_control` 是幂等的。
+--   ⇒ 多出来的**不是控件，是这本流水账**：`ensure_cells` 每次进关都会把同一个控件再登记一遍
+--     （`hide_names` 那段每关都跑，而 `tpl.cell` 的名字不改，所以每关都命中）。
+--
+--   ⇒ 所以这里按**控件身份**去重（拿不到控件对象时才退回按名字），重复登记只累加计数，
+--     由 `diagnose_grid` 用一句话说明"重复了几次" —— 账本仍然回答得了
+--     "现在有哪些东西被挪走了"，但不会再让同一样东西看起来有 N 份。
+function Adapter:_note_parked(name, ctrl)
+  if name == nil then return false end
+  self.cells_parked = self.cells_parked or {}
+  self.cells_parked_seen = self.cells_parked_seen or {}
+  local key = ctrl or name      -- ★ 有控件就用控件身份当键（"是不是同一个控件"才是这里的问题）
+  if self.cells_parked_seen[key] then
+    self.cells_parked_again = (self.cells_parked_again or 0) + 1
+    return false
+  end
+  self.cells_parked_seen[key] = true
+  self.cells_parked[#self.cells_parked + 1] = name
+  return true
+end
+
 function Adapter:_park_control(ctrl)
   if ctrl == nil then return false end
   local ok = false
@@ -1546,8 +1589,7 @@ function Adapter:ensure_cells(rows, cols)
               self.controls[id] = nil          -- 清掉旧名字的缓存，find 会重新走树
               self.controls[newname] = ctrl
               self:_park_control(ctrl)         -- ★ 挪出画布（不依赖 visible/active 语义）
-              self.cells_parked = self.cells_parked or {}
-              self.cells_parked[#self.cells_parked + 1] = newname
+              self:_note_parked(newname, ctrl) -- ★ 记账（按控件身份去重，进 N 次关也只记一次）
               moved = moved + 1
             end
           end
@@ -1585,8 +1627,7 @@ function Adapter:ensure_cells(rows, cols)
           -- ★ 用 _park_control（挪出画布 + 缩 0 + 隐藏），不只用 SetVisible：
           --   真机截图证明 `tpl.cell` 仍然占着一个格子位置。
           if self:_park_control(c) then
-            self.cells_parked = self.cells_parked or {}
-            self.cells_parked[#self.cells_parked + 1] = n
+            self:_note_parked(n, c)      -- ★ 记账（同一个控件进 N 次关也只登记一次）
             hid = hid + 1
           end
         end

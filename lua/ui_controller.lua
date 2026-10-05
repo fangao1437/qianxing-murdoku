@@ -3515,8 +3515,36 @@ function Controller:render(adapter, force)
     for k, v in pairs(n) do
       if k ~= "id" and k ~= "rect" then
         if not same_value(last[k], v) then
-          self:_set_prop(adapter, n.id, k, v)
-          last[k] = v
+          -- ★★★★★ 2026-10-05 **只有"真的写进去了"才记账** —— 修"第一次进关画得少、第二次正常"。
+          --
+          --   真机证据（用户实测）：首次进关卡时门/墙 `visible` 读到 true 却**没画出来**，
+          --   第二次进同一关（同样的数据）就正常了 —— 这正是"首关限定"的形状。
+          --
+          --   机制：适配层在 `find(id) == nil` 时是**静默 no-op**（不报错、也不写），
+          --   而这里原来是**无条件** `last[k] = v` ⇒ 首次没送达的属性被记成"已下发"
+          --   ⇒ **本关内永不重试** ⇒ 只有等下一关（控制器重建、`_props` 清空）才补上。
+          --
+          --   ⚠️ 但不能无脑每帧重试：规划里有 ~105 个"本关还没建"的控件（日志里那句
+          --      「这些控件还没建」），无脑重试 = 每帧白跑 + 噪音 ⇒ **同一个 id.键 最多试
+          --      N 次**，超了就认输（记账、不再试），既补上"晚一帧就绪"的控件，
+          --      又不会变成性能回退。
+          local exists = false
+          if adapter.find ~= nil then
+            local e2, r2 = pcall(function() return adapter:find(n.id) end)
+            exists = (e2 and r2 ~= nil)
+          end
+          local ok = self:_set_prop(adapter, n.id, k, v)
+          if ok and exists then
+            last[k] = v
+          else
+            local rk = tostring(n.id) .. "\1" .. tostring(k)
+            self._prop_retry = self._prop_retry or {}
+            local n_try = (self._prop_retry[rk] or 0) + 1
+            self._prop_retry[rk] = n_try
+            if n_try >= 10 then
+              last[k] = v          -- 认输：不再重试（避免每帧白跑）
+            end
+          end
         end
       end
     end
