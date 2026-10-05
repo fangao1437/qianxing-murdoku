@@ -589,6 +589,12 @@ end
 out(string.format("      ★ action.back 300 帧总账：find=%d 次（= %.1f/帧）  set_property=%d 次（= %.1f/帧）",
   finds_of("action.back"), finds_of("action.back") / 300,
   C.setprop_names["action.back"] or 0, (C.setprop_names["action.back"] or 0) / 300))
+-- ★ 剩下的 `find` 都是谁在调（给"继续顺查"用：这里全是**缓存命中**，
+--   一次 = 一次表查找，不是一次搜树；`搜空` 才是真的走树，见上面那张表）。
+do
+  local fl, fk = top_hist(C.find_names, 8)
+  out("      ★ 这 300 帧里 `find` 的调用方（按名字，前 8 名，共 " .. tostring(fk) .. " 种）：" .. fl)
+end
 out(string.format("      ★ 失败写入（set_property 返回 false）：%d 次 / 300 帧", C.setprop_fail))
 if C.setprop_fail > 0 then
   local fl, fk = top_hist(C.fail_keys, 8)
@@ -757,6 +763,60 @@ do
   if kinds > 0 then out("      失败明细（前 6）：" .. line) end
 end
 
+-- ── 口径 J：射线开关（raycastTarget）——「停了」和「还救得回来」两件事都要钉住 ──
+--
+-- ★ 2026-10-05 新增。第 (3) 条改的是"**不再每 20 帧永远重扫**"，于是有两个**必须同时成立**
+--   的承诺，少一个就是 bug：
+--     ① 省下来：收敛之后，普通帧**一趟都不扫**（这就是收益本身）；
+--     ② 救得回来：本项目有明确的「控件晚一步才进树」案例（`home`/`select` 是第一次渲染
+--        时才 `create_control` 的）⇒ 换屏/换关必须**重新武装并真的重扫**，把晚到的按钮开上。
+--   另外 ③：引擎运行时克隆出来的列表项（`RefreshItems`）走的是"就地开"那条 O(1) 的路
+--        （原来靠整树重扫顺带盖住，现在由 `_grid_bind_item_click` 显式补上）。
+--   ⚠️ 这三条一起才是完整的 —— 只钉"停了"会鼓励别人把功能删掉。
+local J = { idle_calls = 0, rearm_calls = 0, late_on = false, one_on = false }
+do
+  -- 先跑到收敛（不换屏，纯帧推进）
+  pcall(function() for _ = 1, 120 do OnUpdate(1 / 60) end end)
+  J.done = (cur ~= nil and cur.adapter ~= nil and cur.adapter._ray ~= nil
+            and cur.adapter._ray.done == true)
+
+  -- ① 收敛之后的 120 帧：一趟都不该扫
+  reset()
+  pcall(function() for _ = 1, 120 do OnUpdate(1 / 60) end end)
+  J.idle_calls = RAY.calls
+
+  -- ② 造一个"晚到的按钮"（模拟 `home`/`select` 那种第一次渲染才进树的屏幕控件），
+  --    然后**换屏** ⇒ 必须重新武装 + 重扫 + 把它开上。
+  local late = make_ctrl("late.btn")
+  late.kind = "button"
+  late.raycastTarget = false
+  attach(tree[1], late)
+  ctrl.screen = "home"
+  ctrl.dirty = true
+  reset()
+  pcall(function() for _ = 1, 40 do ctrl.dirty = true; OnUpdate(1 / 60) end end)
+  J.rearm_calls = RAY.calls
+  J.late_on = (late.raycastTarget == true)
+  ctrl.screen = nil
+  ctrl.dirty = true
+  pcall(function() for _ = 1, 3 do ctrl.dirty = true; OnUpdate(1 / 60) end end)
+
+  -- ③ `ensure_raycast`：单个晚到控件 O(1) 生效（列表项那条补偿走的就是它）
+  local one = make_ctrl("late.item")
+  one.kind = "button"
+  one.raycastTarget = false
+  local okc = pcall(function() J.one_on = (cur.adapter:ensure_raycast(one) == true) end)
+  J.one_on = okc and J.one_on and (one.raycastTarget == true)
+
+  out("\n== J. 射线开关：收敛之后「停了」与「还救得回来」==")
+  out(string.format("  [J1] 收敛之后 120 帧（不换屏）：`enable_raycast` 走树 %d 趟"
+    .. "（改之前：每 20 帧一趟 = 6 趟，且**永远继续**）", J.idle_calls))
+  out(string.format("  [J2] 换屏之后 40 帧：重新扫了 %d 趟，晚到的按钮被开上=%s",
+    J.rearm_calls, tostring(J.late_on)))
+  out(string.format("  [J3] `ensure_raycast(单个控件)`：O(1) 生效=%s（列表项那条补偿）",
+    tostring(J.one_on)))
+end
+
 -- ── 汇总 ──────────────────────────────────────────────────────────────────
 out("\n================ 汇总（真机上是这些调用被引擎执行）================")
 out(string.format("  稳态一次 render      ：find %d（真搜树 %d / 搜空 %d）、set_property %d、"
@@ -844,6 +904,19 @@ ck(I.text_fail == 0,
   string.format("实测 %d 次 / %d 个格子（改之前：25 格 × 3 次补发 = 75 次）；"
     .. "本次口径 I 全部失败写入 %d 次（其余 %d 次是假树没有 wall.* 造成，见输出）",
     I.text_fail, I.text_keys or 0, I.fail, I.other_fail))
+-- ★★★★★ 2026-10-05 新增两条（口径 J）：射线开关**"停了"**与**"还救得回来"**必须同时钉住。
+--   只钉"停了"会鼓励后来的人把功能整个删掉；只钉"救得回来"则等于没测省下多少。
+ck(J.done and J.idle_calls == 0,
+  "★ 射线开关收敛之后：普通帧**一趟都不再扫**（`enable_raycast` 走树 = 0）",
+  string.format("收敛=%s；收敛后 120 帧走树 %d 趟（改之前：每 20 帧一趟 ⇒ 6 趟，且永不停止）",
+    tostring(J.done), J.idle_calls))
+ck(J.rearm_calls >= 1 and J.late_on,
+  "★ 射线开关：换屏**重新武装并真的重扫**，晚到才进树的按钮照样被开上（保住「控件晚一步才进树」）",
+  string.format("换屏后 40 帧扫了 %d 趟；晚到按钮 raycastTarget=%s",
+    J.rearm_calls, tostring(J.late_on)))
+ck(J.one_on,
+  "★ `ensure_raycast(单个控件)` O(1) 生效 —— 引擎运行时克隆的列表项走这条（原来靠整树重扫顺带盖住）",
+  tostring(J.one_on))
 
 out(string.format("\n%d passed, %d failed", pass, fail))
 os.exit(fail == 0 and 0 or 1)

@@ -3561,6 +3561,19 @@ end
 --   重复挂监听会一次点击触发多遍 ⇒ 用一个**弱键表**按控件身份去重（控件回收后自动释放）。
 function Controller:_grid_bind_item_click(adapter, grid, item)
   if item == nil or item.AddCursorEventListener == nil then return end
+  -- ★★★★★ 2026-10-05 **列表项是"引擎运行时克隆出来的按钮"，它的 `raycastTarget` 必须就地开**
+  --   （每帧成本第 (3) 条的有意补偿）。
+  --
+  --   为什么：`Adapter:enable_raycast` 原来**每 20 帧整树重扫**，顺带盖住了
+  --   "引擎后来克隆出来的列表项"；收敛之后不再重扫 ⇒ 晚到的卡片**没人给它开这个字段**
+  --   ⇒ 「卡片点不动」。这里补上，而且更强：绑定那一刻就开（原来最多晚 20 帧），
+  --   成本 1 次字段读写（原来是一趟 ≈ 470 个 `GetChildren`）。
+  --   ⚠️ 放在**去重判断之前**：回收复用的项也要过这一道（引擎有可能把字段重置回去）。
+  --   ⚠️ 也放在 `enum_at` 那个提前 return **之前** —— 离线环境没有 Enum，
+  --      但真机上这个字段照样得开，两件事不相干。
+  if adapter ~= nil and adapter.ensure_raycast ~= nil then
+    pcall(function() adapter:ensure_raycast(item) end)
+  end
   self._grid_bound = self._grid_bound
     or setmetatable({}, { __mode = "k" })          -- 弱键：列表项被引擎回收后不会攒着
   if self._grid_bound[item] then

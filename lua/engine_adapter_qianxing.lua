@@ -3226,6 +3226,29 @@ function Adapter:rearm_raycast(why)
   end
 end
 
+-- ★★★★★ 2026-10-05 **单个控件的 `raycastTarget` 就地打开（O(1)）**。
+--
+--   给谁用：**引擎在运行时克隆出来的控件** —— 最典型的就是网格视窗的列表项
+--   （`RefreshItems` 里由引擎实例化的线索卡）。
+--
+--   为什么必须补这一条（**这是有意的补偿，不是顺手加的**）：
+--     `enable_raycast` 原来**每 20 帧整树重扫**，顺带就把"引擎后来克隆出来的列表项"
+--     也扫进去了；收敛/放弃之后不再重扫 ⇒ 那些**晚到**的按钮**没人给它们开这个字段**
+--     ⇒ 「卡片点不动」。所以在这一边补上，而且比原来那趟重扫**更强**：
+--       · 时机：**绑定的那一刻就开**（原来是"最多晚 20 帧"）；
+--       · 成本：**1 次字段读写**（原来是一趟 ≈ 470 个 `GetChildren`）。
+--   ⚠️ 三条返回值都有意义：`false` = 这个控件没有该字段（**容器**就是这种，
+--      真机上读容器拿到的是 nil）—— 那不是失败，只是"不适用"。
+function Adapter:ensure_raycast(c)
+  if c == nil then return false end
+  local before = nil
+  pcall(function() before = c.raycastTarget end)
+  if before == nil then return false end          -- 没有该字段 ⇒ 不适用
+  if before == true then return true end          -- 已经是开的 ⇒ 幂等，不重复写
+  local ok = pcall(function() c.raycastTarget = true end)
+  return ok == true
+end
+
 function Adapter:enable_raycast()
   local st = self._ray
   if st == nil then
