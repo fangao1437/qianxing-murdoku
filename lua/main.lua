@@ -1236,7 +1236,19 @@ function Murdoku.on_update(dt)
       local bar = nil
       pcall(function() bar = current.adapter:find("selbar") end)
       if bar ~= nil then
-        pcall(function() bar:SetVisible(on_select) end)
+        -- ★★★★★ 2026-10-05 Round 74 **删掉这里的 `bar:SetVisible(on_select)`** ✗
+        --
+        --   为什么删：它**每帧无条件写** ✗ —— 实测（`tests/_wip/probe_throttle_cost.lua`，
+        --   稳态 600 帧）它一个人就写了 **603 笔** ✓ ⇒ 而**下面那段**（`setv("selbar", in_select)`）
+        --   已经**每帧**在维护同一个控件 ✓，而且做得更好：
+        --     · **读回真实 `visible`** ⇒ 已经等于目标就**一笔都不写** ✓
+        --     · **写值记忆** + **进关/换屏后 60 帧强压窗口** ✓
+        --   两处都在写同一个控件 ⇒ **一条规则两个权威** ✗ ⇒ 必然互相抵消、白烧引擎写 ✗
+        --   （本项目刚在 BOM 规则上踩过同一个坑：两条相反规则互相拆台 ✗）
+        --
+        --   ⚠️ 下面 `if on_select then … 摆位置/尺寸 … end` **必须保留** ✓
+        --      —— 那是**布局**逻辑 ✓ 与"可见性归谁管"无关 ✓
+        --   验收：`probe_throttle_cost.lua` 第 [2] 段「稳态每帧写次数」应从 8.7 → 0 ✓
         if on_select then
           pcall(function() bar:SetAnchoredPosition(0, 0) end)
           pcall(function() bar:SetSizeDelta(1500, 700) end)
@@ -1441,7 +1453,11 @@ function Murdoku.on_update(dt)
       local c = nil
       pcall(function() c = current.adapter:find("selbtn." .. tostring(i)) end)
       if c ~= nil then
-        pcall(function() c:SetVisible(on_select) end)
+        -- ★★★★★ 2026-10-05 Round 74 **同样删掉这里的 `c:SetVisible(on_select)`** ✗
+        --   与上面 `selbar` 那处同一个理由 ✓：它对 6 个 `selbtn.*` **每帧无条件写** ✗，
+        --   而下面那段（`setv("selbtn."..i, in_select)`）已经每帧在维护同一批控件 ✓
+        --   且**只在值真的变了时才写** ✓ ⇒ 两处同时写 = 白烧引擎写 ✗ + 互相抵消 ✗
+        --   ⚠️ 下面的摆位置/尺寸**保留** ✓（布局逻辑 ✓）
         if on_select then
           -- 一行摆开：间距 200，起点居中
           local x = (i - (n_levels + 1) / 2) * 200
