@@ -3761,10 +3761,20 @@ function Adapter:_apply_edges(id, prefix, flags)
   --     · `vis=false` ✗ ⇒ ★ `SetVisible(want)` 当帧没生效 ⇒ 句柄/引擎 ✓
   --     · `vis` 与 `want` 不一致 ✗ ⇒ ★ 有人在别处覆盖它 ✓
   --   ⚠️ 只读 ✓ 每格只打一次（`self._edge_readback`）✗ 不刷屏 ✓
+  -- ★★★★★ 2026-10-05 **去重键必须带 `prefix`** ✗✓ —— 否则读回是假象 ✓
+  --
+  --   我第一版用 `self._edge_readback[id]` ✗ ⇒ 而 `_apply_edges` 对**同一个格子**
+  --   会被调用**两次**（`prefix="wall"` 一次 ✓ `prefix="door"` 一次 ✓）
+  --   ⇒ ★★ 只记了第一次 ⇒ 真机日志里**只有 `door.*`** ✗ ⇒ 看起来"只有门没有墙" ✓✓
+  --   ⇒ ★ 那是我探针的假象 ✗ —— ★ 离线探针已证明 `wall_set` 有 **7 条** ✓
+  --     `view()` 有 **34 条墙边** ✓ ⇒ ★ 数据是对的 ✓
+  --   ⚠️ 结论：★ **诊断代码的假象比被测 bug 更能骗人** ✓ —— 这次连吃了两次
+  --     （上次是 `print_` ✗ 这次是去重键 ✗）
   do
     self._edge_readback = self._edge_readback or {}
-    if not self._edge_readback[id] then
-      self._edge_readback[id] = true
+    local rk = tostring(id) .. "\1" .. tostring(prefix)
+    if not self._edge_readback[rk] then
+      self._edge_readback[rk] = true
       local parts = {}
       for i = 1, #sides do
         local s = sides[i]
