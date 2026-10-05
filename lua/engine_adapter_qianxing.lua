@@ -149,8 +149,29 @@ function M.new(cfg)
   --      `handlers[pid]` 反查**父控件**（`pid` 是控件 id，不是规划节点键），
   --      那里本来就该按 id —— 一个 id 只有一个引擎控件。
   self.events = {}         -- 规划节点键 -> 事件表
-  -- 控件 id -> **最近一次**写 event 的那个规划节点键。派发（`bind_input` 的 live_event）用它，
-  -- 语义与旧版**逐字一致**（后写的赢）—— 这一轮**没有换人**，只是"表里两份都在"了。
+  -- ★★★★★ 2026-10-05 **B2（用户拍板 ✓）：派发改用「认领者」** ——
+  --   控件 id -> **第一个**为这个 id 写 event 的规划节点键（= 这颗控件的语义归属者）。
+  --
+  --   为什么不是"最后写的那个赢"（三条硬证据，全部在同一份源码里，可现场核对 ✓）：
+  --     · `ui_controller.lua:1389` 左上那颗 ↰ 图标按钮（`hex.back`）声明的是 `back_confirm`
+  --       ⇒ 点它 **先弹 ✓/✗**（`ui_controller.lua:854`：`a == "back_confirm"` ⇒
+  --       `self.pending = { action = "back" }` ⇒ 进确认状态机）。
+  --     · `ui_controller.lua:1761` **topbar** 节点声明的同样是 `back_confirm`（「返回菜单」↰）。
+  --     · `ui_controller.lua:2412` **right** 节点声明的是 `back`（「返回列表」，`tab` 样式）。
+  --   ⇒ 现状**自相矛盾** ✗：**热键 ↰ 先弹 ✓/✗**，而**鼠标点同一颗按钮**却**直接跳列表**
+  --     （因为派发取的是"最后写的"= `right` 的 `back`）。**同一颗按钮、两种语义**，
+  --     玩家看到的差别只取决于"用键盘还是用鼠标" ⇒ 这是 bug，不是设计。
+  --   ⇒ B2：派发给**认领这颗控件的那个节点**（先写的那个 = `topbar`）⇒ **点击与热键一致**（都先弹 ✓/✗）。
+  --
+  --   ⚠️ 规则：**只认第一次**（见 `set_property` 的 `key == "event"` 分支里那行 `== nil` 判断）
+  --      ⇒ 后续任何节点再写都不换人 ⇒ 派发**稳定、可预测**，不受"这一帧谁后渲染"影响。
+  --   ⚠️ `forget_events_of(id)` 必须**连它一起清**：控件销毁重建后，新控件要能重新认领
+  --      （否则会认领到那个**已经不存在**的旧规划节点 ⇒ 派发读到 nil）。
+  self.event_claim = {}
+  -- ⚠️⚠️ `event_latest` **保留，但已不是派发依据**（**纯诊断记录** ✓）：
+  --   id -> **最近一次**写 event 的节点键。留着它是为了排查"这颗控件上谁后写过事件"
+  --   （例如回答"属性/文字实际是哪个节点的"—— `right` 与 `topbar` 写的是**同一个控件**）。
+  --   ★ **任何人都不许再拿它做派发** ✗ —— 那正是 B2 要修掉的行为（"最后写的赢"）。
   self.event_latest = {}
   self.subs = {}           -- "id.child" -> 子控件（或 false）
   self.timers = {}
@@ -3147,6 +3168,11 @@ end
 --   （那个键再也不会被写、也再也不会被读，纯泄漏）。
 --   ⚠️ 前缀匹配是安全的：分隔符 `\1` 不可能出现在控件 id 里（同一条约定见
 --      ui_controller 的 `drop_props_of`），所以 `id .. "\1"` 只会命中**这个 id** 的节点键。
+--   ★★★★★ 2026-10-05 **B2 追加：`event_claim` 也要一起清**（同一件事，不能只做一半）。
+--      `event_claim[id]` 指着"认领这个控件的那把节点键" —— 控件销毁重建后，那把键**已经
+--      不存在**（上面刚被清掉）⇒ 不清就会**认领到旧节点** ✗：
+--      `live_event()` 读 `self.events[旧键]` = nil ⇒ 静默退回 `node.event`，
+--      看起来"还能点"，实际派发的可能不是这颗新控件的语义（而且新节点再也认领不上 ✗）。
 function Adapter:forget_events_of(id)
   local pre = tostring(id) .. "\1"
   local stale = nil
@@ -3159,6 +3185,7 @@ function Adapter:forget_events_of(id)
   if stale ~= nil then
     for i = 1, #stale do self.events[stale[i]] = nil end
   end
+  self.event_claim[id] = nil   -- ★ B2：控件没了 ⇒ 认领关系作废（新控件要能重新认领）
   self.event_latest[id] = nil
   self.handlers[id] = nil
 end
@@ -4113,8 +4140,14 @@ function Adapter:set_property(id, key, value, nkey)
     --      `bind_input("selbtn.N", {...})` 那条路，以及离线假适配器/老测试）。
     local k = nkey or id
     self.events[k] = value
-    -- 派发用：记住"这个控件最近一次被哪个规划节点写了事件"。
-    -- 语义 = 旧版的"后写的赢"（**没有换人**），只是现在先写的**不会被丢掉**了。
+    -- ★★★★★ 2026-10-05 **B2（用户拍板 ✓）：认领者赢 —— 只认第一次。**
+    --   `event_claim[id]` = **第一个**给这个控件写过事件的规划节点 = 这颗控件的语义归属者
+    --   （理由与三条硬证据见 `Adapter.new` 里 `self.event_claim` 那段）。
+    --   ⚠️⚠️ 这里**必须是 `== nil` 判断**（"只认第一次"）：后写的节点**不许换人** ✗
+    --     —— 一旦写成无条件赋值，就等于退回"最后写的赢"（B2 要修的就是这个 ✗）。
+    if self.event_claim[id] == nil then self.event_claim[id] = k end
+    -- ⚠️ 诊断用（**不再是派发依据**）：这个控件最近一次被哪个节点写过事件。
+    --   `topbar` 与 `right` 写的是**同一个控件**，所以它记的是"最后那份"（`right`）。
     self.event_latest[id] = k
 
   elseif key == "rect" then
@@ -4400,10 +4433,24 @@ function Adapter:bind_input(id, node)
     --
     --   旧写法读 `self.handlers[id].event`（那张表兼任事件表，已于本轮拆开）。
     --   照旧写会读到一个**再也不会被更新的**创建期快照 ⇒ 点了不对（静默）。
-    --   取谁：`self.event_latest[id]` = 这个控件**最近一次**被哪个规划节点写过事件。
-    --   ⚠️ 这一条的**语义与旧版逐字一致（后写的赢）** —— 本轮**没有换人**：
-    --      改的只是"先写的那一份不再被吃掉"（表里两份都在），派发仍是最后写的那份。
-    local k = self.event_latest[id]
+    --
+    --   ★★ **取谁：`self.event_claim[id]` = 认领这颗控件的那个规划节点（第一个写的）** ★★
+    --      —— **这就是 B2 的核心一行**（用户 2026-10-05 拍板 ✓）。
+    --
+    --      为什么不是 `self.event_latest[id]`（"最后写的"）：一个 id 只有一个引擎控件、
+    --      只有一次绑定（`create_control` 按 id 建）⇒ **只能派发一份事件** ——
+    --      所以"选哪一份"就是**这颗按钮到底是什么意思**的决定。
+    --      计划里 `action.back` 有两个节点：`topbar`（「返回菜单」/ `back_confirm`，先写）
+    --      与 `right`（「返回列表」/ `back`，后写）。取"最后写的" ⇒ 派发 `back` ⇒
+    --      **鼠标点这颗按钮直接跳列表**，而左上那颗 ↰ 图标按 `back_confirm` **先弹 ✓/✗** ✗
+    --      ⇒ 同一颗按钮、两种语义，差别只取决于"点的哪一颗"（`action.back` 还是 `hex.back`）
+    --      ⇒ 这是**自相矛盾**，不是设计（三条硬证据见 `Adapter.new` 里 `self.event_claim`）。
+    --      取"认领者" ⇒ 派发 `back_confirm` ⇒ **点击与 ↰ 一致，都先弹 ✓/✗** ✓
+    --      （`ui_controller.lua:854` 收到 `back_confirm` ⇒ `self.pending = { action = "back" }`）。
+    --
+    --   ⚠️ 兜底顺序**保持不变**：认领者的那一份 → 绑定时的 `node.event` → `{ action = "click" }`。
+    --      （认领者还没有时 —— 例如控件刚建出来、渲染还没轮到它 —— 仍按老路兜底 ✓）
+    local k = self.event_claim[id]
     local cur = nil
     if k ~= nil then cur = self.events[k] end
     return cur or node.event or { action = "click" }

@@ -3864,11 +3864,17 @@ function Controller:render(adapter, force)
   --      （`Adapter:set_property` 的 `key == "event"` 分支）——
   --      **本文件把这个 `nkey` 原样传下去**（见 `_set_prop` 的第 5 个参数），
   --      适配层不另造键。
-  --   ⚠️ **点击派发没有换人**：一个 id 只有一个引擎控件、只有一次绑定，所以只能派发
-  --      **一份**事件 —— 适配层按"最近一次写 event 的那个节点"取（`event_latest`），
-  --      语义 = 旧版的"后写的赢"。对 `action.back` 而言仍是 `right`（`back`）。
-  --      这一轮**改的不是派发规则**，而是"先写的那一份不再被静默吃掉"：
-  --      原先 `topbar` 的 `back_confirm` 会被覆盖到查无此物（探针改前实测：表里只剩 1 条）。
+  --   ⚠️ **点击派发改用「认领者」（B2，用户 2026-10-05 拍板 ✓）**：一个 id 只有一个引擎控件、
+  --      只有一次绑定，所以只能派发**一份**事件 ⇒ "选哪一份"就是"这颗按钮是什么意思"的决定。
+  --      适配层取 `event_claim[id]` = **第一个**给这个控件写 event 的规划节点（**先写的赢**），
+  --      不再是"最后写的那个"（`event_latest` 已降级为**纯诊断记录**）。
+  --      对 `action.back` 而言 = `topbar` 的那一份 = **`back_confirm`**（「返回菜单」）
+  --      ⇒ **鼠标点它和点左上 ↰ 图标走同一条路：先弹 ✓/✗**
+  --      （`ui_controller.lua:854` `a == "back_confirm"` ⇒ `self.pending = { action = "back" }`）。
+  --      为什么：改之前是"最后写的赢" = `right` 的 `back` ⇒ **鼠标直接跳列表**，而 ↰ 图标
+  --      却是 `back_confirm` **先弹 ✓/✗** ⇒ 同一颗按钮两种语义（自相矛盾 ✗）。
+  --      三条硬证据与完整理由见 `lua/engine_adapter_qianxing.lua` 的 `Adapter.new`
+  --      `self.event_claim` 那段（那里是这条规则的**唯一权威**）。
   local node_seq = {}
   local function node_key(n)
     local base = tostring(n.id) .. "\1" .. tostring(n.parent)

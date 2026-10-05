@@ -236,18 +236,33 @@ do
   -- ★★★★★ 2026-10-05 **事件表也按「规划节点」记了**（`Adapter:set_property` 的
   --   `key == "event"` 分支）—— 键就是上面那把 `node_key`（`id \1 父容器 \1 序号`）。
   --
-  --   ⚠️⚠️ **这一段的读法变了（期望值一个字没变）** —— 必须在这里说清楚，否则下一个人
+  --   ⚠️⚠️ **这一段的读法变了（上一次改动；期望值一个字没变）** —— 必须在这里说清楚，否则下一个人
   --      会以为是我把断言改松了：
   --     · 原来读 `adapter.handlers["action.back"].event`。本轮 `self.handlers` **退回成
   --       纯节点登记表**（`rect` 分支要用 `handlers[pid]` 反查父控件，那里只能按控件 id），
   --       `event` 分支**不再写它** ⇒ 照旧读会读到一个**创建期的旧快照**。
   --       实测：那样读到的是 `back_confirm` —— 那是 `topbar` 节点的**原始事件**，
   --       **不是派发值** ✗（一个"看着过了/看着红了"都可能是假象的读法）。
-  --     · 派发值现在走 `adapter.event_latest[id]` → `adapter.events[那个键]`。
-  --   ⇒ 断言**要守的东西完全没变**：① 派发的那一份仍是 `right` 的 `back`（没换人）；
-  --     ② 稳态里每个规划节点各自的事件都在位、不被隔壁节点改写。
-  --     第 ② 条比原来**更强**：老写法只比对 `handlers[id]` 同一张表的引用（恒真），
-  --     现在要求**两份**都在、且逐帧稳定。
+  --     · 派发值走 `adapter.event_claim[id]` → `adapter.events[那个键]`（见下面 `live_action`）。
+  --
+  --   ⚠️⚠️⚠️ **2026-10-05 的第二次改动（B2，用户拍板 ✓）：读法再变一次、期望值也变了** ——
+  --      同上：写在这里，免得下一个人以为断言被改松了 ✗。
+  --     · **期望值 `back` → `back_confirm`** ★ —— 这是 **B2 的语义变化本身**，不是"迁就实现"：
+  --       用户 2026-10-05 **明确拍板 B2**：派发从"**最后**写的赢"改成"**认领该控件的那个
+  --       节点**赢"（= 第一个写的；`event_claim`，只认第一次、后续不换人）。
+  --       ⇒ 这颗 `action.back` 控件从此派发 `topbar` 的 `back_confirm`（不是 `right` 的 `back`）。
+  --     · **为什么这是对的**（三条硬证据，同一份源码里可现场核对 ✓）：
+  --         `ui_controller.lua:1389` 左上 ↰ 图标（`hex.back`）声明 `back_confirm` ⇒ **先弹 ✓/✗**；
+  --         `ui_controller.lua:854` `a == "back_confirm"` ⇒ `self.pending = { action = "back" }`；
+  --         `ui_controller.lua:1761` `topbar` 节点声明的同样是 `back_confirm`（「返回菜单」）；
+  --         `ui_controller.lua:2412` `right` 节点声明的是 `back`（「返回列表」）。
+  --       ⇒ 改之前**自相矛盾**：↰ 图标先弹 ✓/✗、鼠标点同一颗按钮却直接跳列表（"最后写的赢"= `right`）。
+  --         B2 之后**点击与 ↰ 一致**（都先弹 ✓/✗）。理由的**唯一权威**在
+  --         `lua/engine_adapter_qianxing.lua` 的 `Adapter.new` `self.event_claim` 那段。
+  --     · ⚠️ 读法改用 `adapter.event_claim[id]`：`event_latest[id]` **仍然存在**，但它已经
+  --       **降级成纯诊断记录**（"最后写的那个节点"）—— **它不再是派发依据** ✗
+  --       ⇒ 照旧读它虽然不会报错，量的却是**过去的行为**（一个"永远过"的假读法）。
+  --     · ✅ 本条以外：**其余断言的期望值一个字都没动**，也**一条都没删**（只增不减）。
   local SEP = "\1"
   -- 读出这个 id 名下**所有规划节点**的事件：parent → action
   local function event_map_of(id)
@@ -260,16 +275,16 @@ do
     end
     return map
   end
-  -- 真正会**派发**的那一份（= 最近一次写 event 的规划节点）
+  -- 真正会**派发**的那一份（B2：= **认领**这颗控件的那个规划节点 = 第一个写的）
   local function live_action(id)
-    local k = adapter.event_latest and adapter.event_latest[id]
+    local k = adapter.event_claim and adapter.event_claim[id]
     local ev = (k ~= nil) and (adapter.events or {})[k] or nil
     return ev and ev.action or nil
   end
 
-  ok(live_action("action.back") == "back",
-    "★ ② 点击动作**没有换人**：稳态下派发的仍是最后那个节点（`right` = back）"
-    .. "（改之前每帧翻面两次、稳态值同样是 back）",
+  ok(live_action("action.back") == "back_confirm",
+    "★ ② **B2：派发 = 认领这颗控件的节点（`topbar` 先写 ⇒ back_confirm，先弹 ✓/✗）**"
+    .. "（B2 之前 = 最后写的 `right` = back，鼠标点它直接跳列表）",
     "实际 action=" .. tostring(live_action("action.back")))
   -- 稳定性 + 「两份都在」（**比原来那条更强**：老写法只比对同一张表的引用，恒真）：
   --   稳态再跑一段，两个规划节点的事件都得原样在位，谁也不许被隔壁改写。
