@@ -1059,33 +1059,101 @@ function Adapter:diagnose_grid(rows, cols)
       "wall.up", "wall.down", "wall.left", "wall.right",
       "door.up", "door.down", "door.left", "door.right",
     }
-    local have, miss = {}, {}
-    for i = 1, #want do
-      local s = self:sub("cell.1.1", want[i])
-      if s ~= nil then have[#have + 1] = s else miss[#miss + 1] = want[i] end
+    -- ★★★★★ 2026-10-05 **内部格也必须列一遍，不能只看 cell.1.1**。
+    --
+    --   为什么：`cell.1.1` 是**角格** —— 按 core 的 `view()`
+    --     `walls.up = (r == 1)`、`walls.left = (c == 1)` **本来就为真**
+    --   ⇒ 日志里"up/left 亮着"既可能是**脚本下发的**、也可能是**模板默认**、
+    --     甚至是上一关留下的状态 —— **这个格子分辨不了**，而用户的症状恰恰是
+    --     "第一次进关墙/门没画出来、第二次正常"（要判的就是"脚本设的"有没有生效）。
+    --   内部格（`cell.2.2`）四个方向都有邻居 ⇒ 四面墙该不该亮**只可能来自脚本**
+    --   ⇒ 只有把两个格子并排看（角格亮 / 内部格不亮 = 脚本那条 `walls` 没送达），
+    --     结论才站得住。
+    local function list_cell(probe, why)
+      local have, miss = {}, {}
+      for i = 1, #want do
+        local s = self:sub(probe, want[i])
+        if s ~= nil then have[#have + 1] = s else miss[#miss + 1] = want[i] end
+      end
+      print_("[murdoku] --- 格子里的子控件清单（" .. probe .. "，" .. why .. "）---")
+      if #have == 0 then
+        print_("[murdoku]   ⚠️ 一个都没找到。若你把它们装进了中间容器，容器名必须是 "
+          .. "content / root / body 之一（配置项 cfg.cells.sub_roots）。")
+      end
+      for i = 1, #have do
+        local s = have[i]
+        local nm, vis, it, iid = "?", "?", "?", "?"
+        pcall(function() nm = tostring(s.name) end)
+        pcall(function() vis = tostring(s.visible) end)
+        pcall(function() it = tostring(s.imageType) end)
+        pcall(function() iid = tostring(s.imageId) end)
+        print_("  " .. string.format("%-12s", nm)
+          .. " visible=" .. string.format("%-5s", vis)
+          .. " imageType=" .. string.format("%-26s", it)
+          .. " imageId=" .. iid)
+      end
+      if #miss > 0 then
+        print_("[murdoku]   没有配的：" .. table.concat(miss, " "))
+      end
     end
-    print_("[murdoku] --- 格子里的子控件清单（cell.1.1）---")
-    if #have == 0 then
-      print_("[murdoku]   ⚠️ 一个都没找到。若你把它们装进了中间容器，容器名必须是 "
-        .. "content / root / body 之一（配置项 cfg.cells.sub_roots）。")
-    end
-    for i = 1, #have do
-      local s = have[i]
-      local nm, vis, it, iid = "?", "?", "?", "?"
-      pcall(function() nm = tostring(s.name) end)
-      pcall(function() vis = tostring(s.visible) end)
-      pcall(function() it = tostring(s.imageType) end)
-      pcall(function() iid = tostring(s.imageId) end)
-      print_("  " .. string.format("%-12s", nm)
-        .. " visible=" .. string.format("%-5s", vis)
-        .. " imageType=" .. string.format("%-26s", it)
-        .. " imageId=" .. iid)
-    end
-    if #miss > 0 then
-      print_("[murdoku]   没有配的：" .. table.concat(miss, " "))
+    list_cell("cell.1.1", "角格：up/left 本来就该亮，分不清是谁设的")
+    if rows >= 2 and cols >= 2 then
+      list_cell("cell.2.2", "内部格：四邻都有 ⇒ 四面墙只可能来自脚本")
+    else
+      print_("[murdoku]   （本关只有 " .. rows .. "×" .. cols .. " 格，没有内部格可对照 —— "
+        .. "角格分不清「脚本设的」和「模板默认」，这一条判不了。）")
     end
     print_("[murdoku]   （**静态引用大多不支持拉伸** —— 需要拉伸的地方请选「底板」类素材；"
       .. "imageType 显示 Stretch 才说明这个素材支持，Basic 就只能按原样铺。）")
+
+    -- ★★★★★ 2026-10-05 **层序 / 锚点实测 —— 判「白色 face 把墙盖住了」这个假设**。
+    --
+    --   为什么要单独读这一组数：
+    --     引擎的层序规则是「**兄弟索引大的画在上面**」（见 `enforce_layers` 那段注释），
+    --     而脚本的层序是**倒序逐个 `SetAsFirstSibling()`** 排出来的 —— 也就是
+    --     "最后一次 SetAsFirstSibling 的那个，索引最小 = 最下面"。
+    --     这一串有没有真的生效，光看 `visible` 是看不出来的：
+    --     墙 `visible=true` 也可能**被上面的 face 挡住**（用户看到的就是"墙没画出来"）。
+    --   ⇒ 所以直接把 `face` 和 `wall.up` 的**实测兄弟索引**并排打出来：
+    --        face 索引 **大于** wall.up ⇒ face 盖住墙（就是被遮挡，不是没设）。
+    --     顺带把 `wall.up` 的锚点/位置/尺寸打出来 —— "墙被贴到画布外面去了"这一假设
+    --     （`_apply_edges` 里那段按 `cell_geometry` 算的贴边代码）也一并可判。
+    do
+      local probe = (rows >= 2 and cols >= 2) and "cell.2.2" or "cell.1.1"
+      local function idx_of(c)
+        local v = "?"
+        if c ~= nil then pcall(function() v = c:GetSiblingIndex() end) end
+        return tostring(v)
+      end
+      local function f0(v) return (type(v) == "number") and string.format("%.0f", v) or "?" end
+      local function geom_of(c)
+        if c == nil then return "（取不到这个子控件）" end
+        local ax, ay, bx, by, x, y, w, h = nil, nil, nil, nil, nil, nil, nil, nil
+        pcall(function() ax, ay = c.anchorMinX, c.anchorMinY end)
+        pcall(function() bx, by = c.anchorMaxX, c.anchorMaxY end)
+        pcall(function() x, y = c.anchoredPositionX, c.anchoredPositionY end)
+        pcall(function() w, h = c.sizeDeltaX, c.sizeDeltaY end)
+        if w == nil then pcall(function() w, h = c:GetSizeDelta() end) end
+        if x == nil then
+          pcall(function()
+            local a, b = c:GetAnchoredPosition()
+            if type(a) == "table" then x, y = a.x, a.y else x, y = a, b end
+          end)
+        end
+        return "anchorMin=(" .. f0(ax) .. "," .. f0(ay) .. ")"
+          .. " anchorMax=(" .. f0(bx) .. "," .. f0(by) .. ")"
+          .. " 位置=(" .. f0(x) .. "," .. f0(y) .. ")"
+          .. " 尺寸=" .. f0(w) .. "x" .. f0(h)
+      end
+      local face = self:sub(probe, "face")
+      local wu = self:sub(probe, "wall.up")
+      print_("[murdoku] --- 层序/锚点实测（" .. probe .. "，判「白色 face 是否盖住墙」）---")
+      print_("[murdoku]   face     兄弟索引=" .. idx_of(face) .. "  " .. geom_of(face))
+      print_("[murdoku]   wall.up  兄弟索引=" .. idx_of(wu) .. "  " .. geom_of(wu))
+      print_("[murdoku]   （判读：引擎是「**索引大的画在上面**」⇒ face 的索引 **大于** wall.up"
+        .. " ⇒ 白色 face 把墙**盖住**了（不是没设上）；若 wall.up 取不到或位置/尺寸是 0，"
+        .. "则是墙**根本没摆上去**。两种症状长得一样，只能靠这三行分开。）")
+    end
 
     -- ★★ 对账：**本关需要哪些边** vs **模板里配了哪些子控件**
     --
@@ -1757,6 +1825,8 @@ function Adapter:ensure_cells(rows, cols)
   end
   local n = math.max(rows, cols)
   local cell_size = self:cell_geometry(n)
+  -- ★ 图层顺序那一趟的实测账：排过几个格子、一共排上几个子控件（见 1889 行附近的说明）。
+  local layer_cells, layer_subs = 0, 0
   for r = 1, rows do
     for c = 1, cols do
       local id = self:cell_id(r, c)
@@ -1818,7 +1888,18 @@ function Adapter:ensure_cells(rows, cols)
         -- ★ 再把图层顺序排定 —— 官方 `SetSiblingIndex`「数值越大越靠上」。
         --   用户提醒：层级**按模板里的位置**决定、不看生成顺序，且会互相覆盖，
         --   所以必须规划 + 显式排一遍（`cfg.cells.layer_order`，从下到上）。
-        self:enforce_layers(id)
+        --
+        -- ★★★★★ 2026-10-05 **返回值现在不当废物丢掉了**：它 = 这个格子里**真的排上了
+        --   几个子控件**（`SetAsFirstSibling` 成功次数）。以前 `self:enforce_layers(id)`
+        --   的结果没人看，于是"层序到底排没排上"在日志里**一个字都没有** ——
+        --   而"白色 face 压住墙"（层序问题）和"墙根本没设"（属性问题）在画面上**长得一模一样**。
+        --     · 每格 ≈ `#layer_order` ⇒ 层序确实排过；
+        --     · =0 ⇒ 这个格子里**没有任何** `layer_order` 里的子控件名（模板没配/名字不同）
+        --             ⇒ 层序**完全没动过**，遮挡就出在这里。
+        --   累加后在关卡末尾**打一行**（放循环里会刷 25 行）。
+        local n_layer = self:enforce_layers(id)
+        layer_cells = layer_cells + 1
+        layer_subs = layer_subs + (tonumber(n_layer) or 0)
         if ctrl.SetAnchorMin then pcall(function() ctrl:SetAnchorMin(0.5, 0.5) end) end
         if ctrl.SetAnchorMax then pcall(function() ctrl:SetAnchorMax(0.5, 0.5) end) end
         if ctrl.SetPivot     then pcall(function() ctrl:SetPivot(0.5, 0.5) end) end
@@ -1890,6 +1971,32 @@ function Adapter:ensure_cells(rows, cols)
     self.cells_index = prefab
     self.cells_made = made
     self.cells_total = rows * cols
+  end
+
+  -- ★★★★★ 2026-10-05 **图层顺序这一趟的实测结果 —— 每关一行**。
+  --
+  --   为什么必须打：`enforce_layers` 的返回值（= 真的排上了几个子控件）以前**被直接丢掉**，
+  --   于是"层序到底动没动过"在日志里一个字都没有。而真机上"墙没画出来"有两个长得
+  --   一模一样的成因：① 属性没送达；② 送达到了但**被上面的白色 face 盖住**（层序）。
+  --   这一行 + 上面那两行"兄弟索引"合起来才能把 ① 和 ② 分开。
+  --
+  --   判读：
+  --     · 每格 ≈ `#layer_order`（默认 12）⇒ 层序确实排过，遮挡不在这一步；
+  --     · 平均 = 0 ⇒ 每个格子里都**没有任何** `layer_order` 里的子控件名
+  --         ⇒ 层序**完全没动过**（`face` 就可能压在 `wall.*` 上面）；
+  --     · 格子数 = 0 ⇒ 这一趟**根本没跑**（`cfg.cells.force_position = false`）。
+  if print then
+    if layer_cells == 0 then
+      print("[murdoku] 图层顺序：本次进关**没有排过层序**（cfg.cells.force_position=false，"
+        .. "或者这一关一个格子都没有）")
+    elseif layer_subs == 0 then
+      print("[murdoku] 图层顺序：对 " .. layer_cells .. " 个格子排过层序，"
+        .. "但**一个子控件都没排上**（layer_order 里的名字一个都取不到）"
+        .. " ⇒ 层序等于没动过，「白色 face 压住墙」这类遮挡就会长这样")
+    else
+      print(string.format("[murdoku] 图层顺序：对 %d 个格子排过层序，子控件成功置底 %d 个（平均 %.1f/格）",
+        layer_cells, layer_subs, layer_subs / layer_cells))
+    end
   end
   return made
 end
@@ -3118,7 +3225,9 @@ function Adapter:open_click_passthrough(cell_id)
 end
 
 function Adapter:_apply_edges(id, prefix, flags)
-  if type(flags) ~= "table" then return end
+  -- ⚠️ 返回值 = "**这一趟真的把边下发成功了吗**"（true/false），见下面 `missing_sub` 那段。
+  --    没有边要画（flags 不是表）时算成功 —— 没东西要送，不该让上层一直重试。
+  if type(flags) ~= "table" then return true end
 
   -- ★★ 内部边**只画一次** —— 否则同一条边被两格各画一条，屏幕上出现两条平行线。
   --
@@ -3144,12 +3253,24 @@ function Adapter:_apply_edges(id, prefix, flags)
   --   而日志里当时**什么都没说** —— 全靠人看截图才发现。
   self.edges_needed = self.edges_needed or {}
   local sides = { "up", "down", "left", "right" }
+  -- ★★★★★ 2026-10-05 **"这一趟到底送出去了没有"要答得上来**（返回值 → `set_property` → 界面层）。
+  --
+  --   为什么：`self:sub()` 查不到子控件时，下面这段是**静默跳过**的 —— 属性在界面层
+  --   看起来"已经下发"，实际**一次 `SetVisible` 都没调用**。而 `sub` 只缓存命中、
+  --   不缓存未命中（见它的注释），所以"首帧/首次进关子控件还没就绪"是完全可恢复的：
+  --   只要上层**再下发一次**就能补上 —— 这正是用户报的
+  --   "第一次进关墙/门没画出来、第二次正常"最可能的形状。
+  --   ⇒ 这里把**本关真需要、却取不到子控件**的边记下来，函数返回 false；
+  --     界面层按"有限次重试"补发（次数有上限，不会变成每帧死循环）。
+  local missing_sub = {}
   for i = 1, #sides do
     local s = sides[i]
     local want = (flags[s] and not skip[s]) and true or false
     if want then self.edges_needed[prefix .. "." .. s] = true end
     local sub = self:sub(id, prefix .. "." .. s)
-    if sub ~= nil and sub.SetVisible ~= nil then
+    if sub == nil then
+      if want then missing_sub[#missing_sub + 1] = prefix .. "." .. s end
+    elseif sub.SetVisible ~= nil then
       pcall(function() sub:SetVisible(want) end)
     end
   end
@@ -3174,6 +3295,17 @@ function Adapter:_apply_edges(id, prefix, flags)
     pcall(function() cw = self:cell_geometry(n) end)
     local ch = cw
     if type(cw) ~= "number" or cw <= 0 then cw, ch = nil, nil end
+
+    -- ★★★★★ 2026-10-05 **"算不出格子边长"必须说出来**（否则这一整段是静默跳过的）。
+    --
+    --   为什么：下面 `if cw ~= nil then` 一旦为假，**整个几何适配（缩放 + 贴边）都不跑**，
+    --   日志里却一个字都没有 —— 而"什么都没做"和"做了但没生效"在画面上完全一样，
+    --   排查时会往错的方向找（比如怀疑贴图/层序）。
+    if cw == nil and print and not self._edge_no_geo_noted then
+      self._edge_no_geo_noted = true
+      print("[murdoku] 边缘适配：**算不出格子边长**（cell_geometry(" .. tostring(n)
+        .. ") 返回 0/nil）⇒ 墙/门的**缩放与贴边整段跳过**（按编辑器里摆的原样显示）")
+    end
 
     -- 墙/门的**目标厚度**（画布单位）。做成配置项，这样"看起来多粗"是确定的数字，
     -- 而不是"看你素材多大"。
@@ -3221,6 +3353,29 @@ function Adapter:_apply_edges(id, prefix, flags)
                 end
               end
             end
+          else
+            -- ★★★★★ 2026-10-05 **基准读成 0 ⇒ 这一段是"静默跳过"的，必须明说**。
+            --
+            --   判据：`base_l` / `base_t` 取的是控件自己的 `GetSizeDelta()`（"编辑器里摆的尺寸"），
+            --   它是**缩放倍率的分母**。分母是 0 或读不到时，这段（缩放）**整段不执行**，
+            --   而下面的"贴边"照旧执行 —— 于是画面上是"墙在正确的位置上，但是原来那么大"
+            --   （或者根本看不见），很容易被读成"贴边也没生效"。
+            --   ⇒ 直接把读到的原始值打出来：这行和上面那行「基准 …→ 目标 …（倍率 …）」
+            --     **互斥**（一个成功一个失败），日志里看到哪一行就知道走了哪条路。
+            if self.cfg.cells and self.cfg.cells.edge_fit_log ~= false then
+              self._edge_fit_seen = self._edge_fit_seen or {}
+              local skip_key = "skip:" .. prefix .. "." .. s
+              if not self._edge_fit_seen[skip_key] then
+                self._edge_fit_seen[skip_key] = true
+                if print then
+                  print(string.format(
+                    "[murdoku] 边缘适配 %s.%s：**基准读成 0 / 读不到**（w=%s h=%s）"
+                    .. "⇒ 缩放这一段整段跳过（贴边照做）；原因通常是子控件尺寸还没定下来，"
+                    .. "或编辑器里没给它尺寸",
+                    prefix, s, tostring(w), tostring(h)))
+                end
+              end
+            end
           end
           -- 贴到对应边（缩放绕中心，所以位置按"目标厚度"算，不再依赖控件自身尺寸）
           local x, y = 0, 0
@@ -3234,11 +3389,25 @@ function Adapter:_apply_edges(id, prefix, flags)
       end
     end
   end
+  -- ★ 只有"本关真需要的边**全都取到了子控件**"才算下发成功；取不到的交给上层**有限次**重发。
+  --   ⚠️ 这里**只对"子控件取不到"负责**：倍率/贴边那两段也有各自静默跳过的情形
+  --      （比如基准尺寸读成 0），但那些不是"缺控件"，把它们也算成失败会让每条边都反复重发，
+  --      纯粹是噪音 —— 那两种情形已经各自打了日志（见上面两处「边缘适配 …」）。
+  return #missing_sub == 0
 end
 
 function Adapter:set_property(id, key, value)
+  -- ★★★★★ 2026-10-05 **返回值 = "这次真的送达了吗"**（true/false），界面层据此决定记账 or 重发。
+  --
+  --   为什么要有返回值：这里在 `find(id) == nil` 时是**静默 no-op**（既不报错也不写），
+  --   而界面层原来是**无条件**把属性记成"已下发" ⇒ 首次进关时"控件还没进树"
+  --   就把状态记死了 ⇒ 本关内**永不重发**，只能出关重进
+  --   ⇒ 用户看到的"第一次进关渲染得比第二次少"。
+  --   ⇒ 契约：**true = 该做的都做了（可以记账）；false = 这次没送到（上层可以重发）**。
+  --     ⚠️ 只有"确实没送到"才返回 false —— 故意的空操作（如 `respect_editor_rect`
+  --     跳过位置）要算 true，否则那些属性会被无意义地反复重发。
   local ctrl = self:find(id)
-  if ctrl == nil then return end
+  if ctrl == nil then return false end
 
   if key == "text" then
     -- ★★ 2026-09-28：**按钮的文字走 `label` 子控件**。
@@ -3271,8 +3440,12 @@ function Adapter:set_property(id, key, value)
     end
     if not done then
       local c = self:sub(id, "text")
-      if c and c.text ~= nil then c.text = tostring(value) end
+      if c and c.text ~= nil then c.text = tostring(value); done = true end
     end
+    -- ★ 三条路都走不通（没有 label / 自己不能写字 / 没有 text 子控件）⇒ 这次**没送到**。
+    --   真机意义：按钮文案是运行时填的（不进 .gly），首帧"label 子控件还没就绪"时
+    --   这里会返回 false，界面层就会**下一帧再补一次** —— 而不是让按钮永远空着。
+    return done
 
   elseif key == "object" then
     -- ★★ 2026-09-28 新增：**物件图标的显隐**。
@@ -3288,7 +3461,7 @@ function Adapter:set_property(id, key, value)
       -- `false` 是 ui_controller 约定的"没有物件"哨兵（nil 会让这个键在 `pairs` 里消失）
       if value == false or value == nil then
         if o.SetVisible then pcall(function() o:SetVisible(false) end) end
-        return
+        return true          -- ★ "藏起来"就是这次要做的全部 ⇒ 算送达（不要重发）
       end
       -- ⚠️ 这里**不要用 `resolve_asset`** —— 它查不到会 `warn_once` 打**报错**，
       --    而"调色板里还没有 obj.* 素材"是**当前阶段的正常状态**（物件美术还没配），
@@ -3414,10 +3587,12 @@ function Adapter:set_property(id, key, value)
 
   -- ★ 每格四边的墙 / 门（靠固定子控件 + SetVisible 开关，不用为每格做模板）
   elseif key == "walls" then
-    self:_apply_edges(id, "wall", value)
+    -- ★ 返回值直达上层：`_apply_edges` 只有在"本关真需要的边全都取到子控件"时才返回 true
+    --   （见它内部 `missing_sub` 那段）。首帧子控件没就绪 ⇒ false ⇒ 界面层下一帧补发。
+    return self:_apply_edges(id, "wall", value)
 
   elseif key == "doors" then
-    self:_apply_edges(id, "door", value)
+    return self:_apply_edges(id, "door", value)
 
   -- ★ 染色：`imageColor` 官方是 **读写**（ColorValue、Tweenable），
   --   所以"同底图 + 不同颜色区分区域"是零额外素材的做法。
@@ -3550,7 +3725,8 @@ function Adapter:set_property(id, key, value)
     if self.cfg.respect_editor_rect ~= false
        and not (self.instantiated and self.instantiated[id])
        and not (self.runtime_rect and self.runtime_rect[id]) then
-      return
+      -- ★ 这是**故意的空操作**（"位置归编辑器管"）⇒ 算送达，否则这个属性会被反复重发。
+      return true
     end
 
     -- ⚠️⚠️ 2026-09-28：这一段是**事故后重建**的。
@@ -3677,6 +3853,11 @@ function Adapter:set_property(id, key, value)
       if c and c.SetVisible then c:SetVisible((value and value[dirs[i]]) and true or false) end
     end
   end
+
+  -- ★★★★★ 2026-10-05 **默认"送达成功"** —— 这条 `return true` 是上面那条契约的另一半：
+  --   只有明确知道"没送到"的分支（`ctrl == nil`、文字无处可写、墙/门缺子控件）才返回 false，
+  --   其余分支（tint / style / visible / image …）照旧一律算成功，**行为与改动前完全一致**。
+  return true
 end
 
 ----------------------------------------------------------------------------

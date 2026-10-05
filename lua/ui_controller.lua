@@ -3403,7 +3403,18 @@ end
 --   ⚠️ 报错**按 id + 键各报一次**，而且**最多只列 8 条**（第 9 条换成一句总结）：
 --      一个坏句柄会每帧抛，不去重/不限量就是拿日志刷屏 —— 那正是用户这一轮最烦的事。
 function Controller:_set_prop(adapter, id, key, value)
-  local ok, err = pcall(function() adapter:set_property(id, key, value) end)
+  -- ★★★★★ 2026-10-05 **返回值从"没抛错"升级成"真的送到了"**。
+  --
+  --   为什么：适配层 `set_property` 在 `find(id) == nil` 时是**静默 no-op**（不抛错、也不写），
+  --   而这里原来只回传 `pcall` 的结果 ⇒ **静默 no-op 也算成功** ⇒ 调用方（`render` 的
+  --   增量账本）把这条属性记成"已下发" ⇒ 本关内**永不补发**，只能出关重进
+  --   ⇒ 真机表现就是我们这一轮在查的"**第一次进关渲染得比第二次少**"。
+  --   ⇒ 现在把适配层的判定原样往上传：`true` = 送达（可以记账），`false` = 没送到（可以补发）。
+  --
+  --   ⚠️ 兼容老适配器 / 离线假适配器：它们**不返回值**（`res == nil`）——
+  --      这里只有**明确的 `false`** 才算失败。把"没返回值"当成失败，会让每个属性每帧重发
+  --      （离线测试立刻炸：那是"查不了 = 不存在"的老坑）。
+  local ok, res = pcall(function() return adapter:set_property(id, key, value) end)
   if not ok then
     local k = tostring(id) .. "." .. tostring(key)
     self._prop_err_seen = self._prop_err_seen or {}
@@ -3412,14 +3423,14 @@ function Controller:_set_prop(adapter, id, key, value)
       self._prop_err_n = (self._prop_err_n or 0) + 1
       if self._prop_err_n <= 8 then
         self:_grid_log("prop_err:" .. k, "属性下发失败（已跳过这一条，不再每帧刷）：`"
-          .. k .. "` ← " .. tostring(err))
+          .. k .. "` ← " .. tostring(res))
       elseif self._prop_err_n == 9 then
         self:_grid_log("prop_err_more", "属性下发失败：已经列了前 8 条，后面的不再逐条打印"
           .. "（同一类【句柄失效】，只影响个别控件，**不会再打断整帧渲染**）")
       end
     end
   end
-  return ok
+  return ok and (res ~= false)
 end
 
 function Controller:render(adapter, force)
@@ -3510,6 +3521,17 @@ function Controller:render(adapter, force)
       end
       self._created[n.id] = true     -- 记上：免得每帧重试 + 重刷日志
       self._props[n.id] = {}
+      -- ★ 新的一生 ⇒ 补发额度也归零（见下面「认输」那段）。
+      --   不清的话，"被销毁后又重建回来"的控件会**继承上一次的失败次数**，
+      --   第一次没写进去就直接认输 —— 那就把这一轮修的毛病又放回来了。
+      if self._prop_retry ~= nil then
+        local pre = tostring(n.id) .. "\1"
+        local stale = {}
+        for rk in pairs(self._prop_retry) do
+          if rk:sub(1, #pre) == pre then stale[#stale + 1] = rk end
+        end
+        for j = 1, #stale do self._prop_retry[stale[j]] = nil end
+      end
     end
     local last = self._props[n.id]
     for k, v in pairs(n) do
@@ -3540,6 +3562,11 @@ function Controller:render(adapter, force)
           local ok = self:_set_prop(adapter, n.id, k, v)
           if ok and exists then
             last[k] = v
+            -- ★ 成功就把它那份补发计数清掉：下次属性再变化时，补发额度是**完整的**，
+            --   不会被上一轮的历史失败拖累（"上一关失败几次"不该影响"这一关能补几次"）。
+            if self._prop_retry ~= nil then
+              self._prop_retry[tostring(n.id) .. "\1" .. tostring(k)] = nil
+            end
           else
             local rk = tostring(n.id) .. "\1" .. tostring(k)
             self._prop_retry = self._prop_retry or {}
@@ -3547,6 +3574,24 @@ function Controller:render(adapter, force)
             self._prop_retry[rk] = n_try
             if n_try >= 10 then
               last[k] = v          -- 认输：不再重试（避免每帧白跑）
+              -- ★ 认输也要留一句话，否则"这条属性到底补上没有"在日志里查不到 ——
+              --   而这正是这一轮要回答的问题（首次进关 vs 第二次进关的差别）。
+              --   ⚠️ **不能每条都打**：脚本里"本关还没建"的控件有 ~105 个（`layout_plan`
+              --   那句「这些控件还没建」已经逐类列过），这条再逐条打就是刷屏 ——
+              --   所以照 `prop_err` 的老规矩：**最多 5 条 + 一句汇总**。
+              self._prop_giveup_n = (self._prop_giveup_n or 0) + 1
+              if self._prop_giveup_n <= 5 then
+                self:_grid_log("prop_giveup:" .. rk,
+                  "属性补发 " .. n_try .. " 次仍未送达，已停止补发：`"
+                  .. tostring(n.id) .. "." .. tostring(k) .. "`（"
+                  .. (not exists and "控件一直没找到（find 返回 nil）"
+                      or "控件在、但适配层说这次没写进去") .. "）")
+              elseif self._prop_giveup_n == 6 then
+                self:_grid_log("prop_giveup_more",
+                  "属性补发失败：已经列了前 5 条，后面的不再逐条打印"
+                  .. "（脚本里「本关还没建」的控件本来就有 ~105 个，它们都会走到这里；"
+                  .. "具体是哪些见上面那句「这些控件还没建」）")
+              end
             end
           end
         end
