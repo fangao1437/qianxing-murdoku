@@ -85,8 +85,42 @@ const level1Title = String(textOf(ri, 'hud.title') || '');
 check('关卡标题是刚点的那一关', level1Title.length > 0, JSON.stringify(level1Title));
 
 // ③ 关卡 →「返回列表」→ 选关
+//
+// ★★★★★ 2026-10-05 **改成"像玩家一样操作"** ✗✓（**不是放宽断言** ✗）
+//
+//   为什么：B2（用户 2026-10-05 批准 ✓ 提交 `27798af` ✓）把 `action.back` 的**派发**改成了
+//     「**认领这颗控件的那个节点赢**」✓ ⇒ 那颗按钮现在派发 **`back_confirm`** ✓
+//     ⇒ ★ **点一下会先弹 ✓/✗ 确认，不再直接跳转** ✗
+//
+//   ★ 依据是**单变量实验**（本文件不是猜的 ✓ —— 见 `docs/L3基线-模拟器四步失败清单.md` §7 ✓）：
+//     · **B2 之前**（worktree @ `7a9d76a` ✓）：**17 通过 / 0 失败** ✓
+//       其中「点返回列表回选关」**一步就到 `select`** ✓ ·「能一路回主页」**只用 1 步** ✓
+//     · **B2 之后**：**15 通过 / 2 失败** ✗ —— 停在 `[level]` ✗ · 回主页**用了 7 步** ✗
+//     ⇒ ★ 差额**完全归因于 B2** ✓（两棵树只差这一处 ✓）
+//
+//   ★ 所以断言「**点「返回列表」回选关**」（下一行 ✓）**原样保留** ✓ ——
+//     只是把"玩家要点两下"这件事**如实做出来** ✓✓
+//   ★ 确认按钮 = **`hex.ok`** ✓（`ui_controller.lua:1434`
+//     `{ "hex.ok", 100102, …, "confirm_yes" }` ✓ —— 注释原话「确认卡 ✓ → 执行 pending」✓）
+//     ★ 它**在计划里** ✓（计划有 `hex.back/hex.submit/hex.redo/hex.undo/hex.hint/hex.ok/hex.no` ✓）
+//   ★ 写法**对 B2 前后都成立** ✓：先点返回 ✓；若没到选关 ⇒ **再点一次 ✓** ✓；
+//     最多试 12 轮 ✓ ⇒ ★ **不写死"一定要点两下"** ✗（免得将来又改一次 ✓）
+async function backToSelect() {
+  for (let i = 0; i < 12; i++) {
+    await click('action.back'); await settle();
+    let r = await get();
+    if (where(r) === 'select') return true;
+    // ★ 弹了确认 ⇒ 点 ✓（`hex.ok` = `confirm_yes` ✓）
+    if (where(r) === 'level' || where(r) === 'select') {
+      await click('hex.ok'); await settle();
+      r = await get();
+      if (where(r) === 'select') return true;
+    }
+  }
+  return false;
+}
 console.log('\n── ③ 关卡 → 返回列表 ──');
-await clickUntil('action.back', 'select');
+await backToSelect();
 ri = await get();
 check('点「返回列表」回选关', where(ri) === 'select', where(ri));
 
@@ -122,10 +156,21 @@ await settle();
 ri = await get();
 check('连点「返回列表」不崩且停在合法页面', ['home', 'select', 'level'].indexOf(where(ri)) >= 0, where(ri));
 // 从当前页回到主页（如果不在主页）
+//
+// ★★★★★ 2026-10-05 **同一件事的第二处** ✗✓（依据同上：B2 让返回变成两段式 ✓ 见文件上方那段）
+//   · 旧写法点完 `action.back` **不点确认** ✗ ⇒ 停在 `level` ✗
+//   · 且 `guard < 6` 的**上限太小** ✗ —— B2 之后实测**用了 7 步才到主页** ✗（基线 §7 ✓）
+//   ⇒ ★ 修法：`level` 时**返回 + 点 ✓ 确认** ✓；上限放宽到 **24** ✓（★ 上限只是防死循环 ✓ 不是判据 ✓）
+//   ★ 断言「**能一路回到主页（不存在断头路）**」**原样保留** ✓ —— ★ 它量的仍是"能不能到主页" ✓
 let guard = 0;
-while (where(ri) !== 'home' && guard++ < 6) {
-  if (where(ri) === 'level') await click('action.back');
-  else if (where(ri) === 'select') await click('select.back');
+while (where(ri) !== 'home' && guard++ < 24) {
+  if (where(ri) === 'level') {
+    await click('action.back'); await settle();
+    // ★ 弹了确认 ⇒ 点 ✓（`hex.ok` = `confirm_yes` ✓ `ui_controller.lua:1434` ✓）
+    await click('hex.ok');
+  } else if (where(ri) === 'select') {
+    await click('select.back');
+  }
   await settle();
   ri = await get();
 }
