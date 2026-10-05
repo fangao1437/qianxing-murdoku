@@ -124,7 +124,173 @@ MBS 是唯一做了基准的公开仓库，但它测的是 Web/Fengari，作者�
 
 ## 2. 渲染与生命周期
 
-（本节编写中）
+> 本节是**最高价值**的一节：MBS 的真机探针（`evidence_source=observed`, `device`）
+> 逐条记录了生命周期与层级语义。这些是**真机观察**，不是模拟器策略，
+> 但作者本人反复声明「单条探针不等于完整游戏真机启动通过」。
+
+### 2.1 【社区经验·真机】脚本生命周期顺序
+
+**顺序（真机 2026-08-29）**：
+`OnInit → OnEnable → OnStart`；**`EnableUpdate` 之前不会有 `OnUpdate`**；
+退出 `OnDisable → OnDestroy`。
+
+- `SetActive(false)` **立刻** `OnDisable`；`SetActive(true)` 再 `OnEnable`，
+  **不重跑 `OnStart`**。
+- 来源：`client/lua-runtime/docs/observed-contract.md:5`（真机 2026-08-29）。
+- 挂载顺序补充：执行 chunk → `OnInit` → `OnEnable` → `OnStart`
+  （`client/lua-runtime/docs/architecture.md:18`）。
+
+**可执行推论（【推断】）**：
+- **不要把「只做一次」的初始化放在 `OnEnable`** —— 它每次重新激活都会跑。
+- **不要把「每帧」逻辑建立在「`OnStart` 里已经缓存好了」的假设上**，
+  因为 `OnStart` 只跑一次，而 `SetActive` 往返不会重跑它。
+- 本项目 `Murdoku` 若用「隐藏/显示整页」做页面切换，实际触发的是
+  `OnEnable/OnDisable`，**不是** `OnStart`。
+
+### 2.2 【社区经验·真机】`EnableUpdate` 是显式的
+
+`script:EnableUpdate(true)` 必须在 `OnStart` 里调用，否则 `OnUpdate` 不会被调用。
+来源：MBS 基准脚本 `studio/scripts/bench-play-perf.mjs:41-44`（社区通行写法）。
+- **推论**：`OnUpdate` 空转也有成本 —— 不用时用 `EnableUpdate(false)` 关掉
+  （推断，MBS 未直接断言 `false` 的行为）。
+
+### 2.3 【社区经验·真机】控件树的「就绪时机」是明确的坑
+
+**`InstantiateClientUIControl` 在 `OnInit` / `OnDestroy` 返回 `nil`；
+只在 `OnStart`（以及 running 之后）成功。**
+
+- 来源：`client/lua-runtime/docs/observed-contract.md:6`；
+  `client/lua-runtime/docs/architecture.md:18`。
+- 原话：「官方 API 未记载生命周期限制。探针：OnInit/OnDestroy → nil；
+  OnStart → 控件；**未观察到父 `OnStart` 重入**。」
+- ✅ **这正是「首帧 / 首次进关卡子控件晚到」的机制解释**：
+  在 `OnInit` 里拿不到刚实例化的控件，因为那个时机实例化**根本不会成功**。
+
+**可执行推论（【推断】）**：
+- 一切「按模板造控件」的动作**必须放在 `OnStart` 之后**。
+- 若 `Murdoku` 在 `OnInit` 里建 UI 树并缓存引用，那就必然拿到 `nil`，
+  后续所有 `SetVisible`/`SetText` 静默失败或报错 —— **符合本项目
+  `docs/真机问题-选关点不动-定位与修法.md` 描述的「点了没反应」形态**。
+
+### 2.4 【社区经验·真机】同层绘制顺序的两套规则（**极易踩**）
+
+这条是**层级排序**最容易搞错的地方：
+
+| 场景 | 规则 | 来源 |
+|---|---|---|
+| 编辑器同级列表 | **先出现的在上**（靠前=更靠前显示） | `observed-contract.md:18` |
+| 显式层级数值 | **数值大的在上** | `observed-contract.md:18` |
+| Lua `sibling` 索引 | **大索引置顶**；`First` 置底、`Last` 置顶 | `observed-contract.md:18` |
+| 动态实例化的新根 | **默认置于已有同父兄弟上方**（= 最大 Lua sibling 索引） | `observed-contract.md:19` |
+| 模板内部静态子列表 | **保持原序**，不受父级实例化顺序影响 | `observed-contract.md:19` |
+
+- 证据口径：编辑器规则来自**官方原始快照 rev223**；`First/Last` 方向另有
+  **2026-09-06 用户真机反馈**。
+- ⚠️ 作者明确标注：`Last` 置顶这条**真机独立复核仍为 `device_status=pending`**
+  （`observed-contract.md:67`）。
+- ⚠️ **「编辑器同级列表先出现的在上」与「API 数值反向映射」是两个坐标系**，
+  MBS 因此在 `scene.js` 里把 API 数值**反向映射**到内部前到后 `children` 列表，
+  绘制与命中**共享同一棵树**。意思是：**你不能同时按两种直觉推理层级**。
+
+### 2.5 【社区经验】「首帧不可见 / 全挡」的已知成因：全屏不透明兄弟节点
+
+MBS 技能里有一条**明确的布局禁令**：
+
+> 「缩放容器**不要**再加全屏不透明兄弟节点（试玩页**同级先出现的子节点会盖住
+> 后面的舞台**）。」 —— `skill/SKILL.md:182`
+
+- 排障条目也对应：「用户说试玩页空/全挡时，**以 `play_screenshot` 截图为准**，
+  不要另走扁平 `paint` 列表来否定用户画面。」（`skill/SKILL.md:41`）
+- **推论（【推断】）**：本项目若为「缩放容器」加了一个全屏底板，
+  且在兄弟顺序里**先于**舞台，就会出现**整屏被盖住**——
+  这正是「首关渲染修复」类问题的典型形态。
+
+### 2.6 【社区经验·真机】「改了 visible 又被改回去」——有记载，但**不是被引擎复位**
+
+**MBS 没有「引擎把 `visible` 复位」的记载**。查到的是**相邻机制**，请注意区分：
+
+1. **实例的 `active`/`visible` 继承模板定义，运行时不再强制打开。**
+   来源：`observed-contract.md:6`（真机）。
+   → 你**明明实例化出来了却看不见**，最常见原因是**模板本身**是
+   `active=false` / `visible=false`，实例老实继承。
+2. **`ClientUIBaseControl.active` 的默认值三方不一致**（`observed-contract.md:7`）：
+   - 官方加工稿写「默认为 `false`」；
+   - **真机未改过的客户端模板实例为 `true`**；明确设 `false` 的模板实例为 `false`；
+   - 编辑器 Authoring 新建节点默认 `true`；
+   - MBS 运行时在 spec 省略该字段时仍按 `false`（**手写树**），
+     compile 时带入编辑器保存值。
+   → **手写控件树漏写 `active` 会比编辑器里新建的节点「少一层可见性」**，
+     看起来就像「我改了 visible 又被改回去」。
+3. **`SetVisible(false)`/`SetActive(false)` 不停补间**（`observed-contract.md:36`）。
+   → 隐藏期间 Tween **继续在跑**；重新显示时会看到「位置/数值已经不是我上次设的了」。
+   **这条最贴近「改了又被改回去」的现象**：不是被复位，而是**Tween 在后台继续写**。
+4. **两个 Tween 写同一字段：按 `Play` 顺序后者覆盖，先完成者停止写入**
+   （`observed-contract.md:36`）。
+   → 两个 Tween 打架时字段值会呈现「跳回去」的外观。
+
+**结论**：**「引擎把 visible 复位」未能确认**。
+已确认的同类现象有四个可查成因（模板继承 / `active` 默认值不一致 /
+隐藏期 Tween 继续写 / 双 Tween 覆盖），排查应优先查这四个。
+
+### 2.7 【社区经验·真机】回调时机：**回调内写入立即生效**（已推翻创作者说法）
+
+- 真机 KEYRD v1（2026-10-01，PC，按键与点击各 1 次）：**按键回调与点击回调时机相同**，
+  都在「第 N 帧 `OnUpdate` 结束后、第 N+1 帧之前」执行；
+  **回调内直接写文本 / 位置 / 颜色 / 显隐、启动 Tween 均正常显示**。
+- 来源：`observed-contract.md:29`。
+- 作者明确记录：「创作者『按键回调帧外写入不重绘』的回传**未复现**」。
+- ⚠️ 该条同时标注「原故障真机状态为 failed，模拟器测试不等同于完整游戏真机启动通过」。
+- **推论（【推断】）**：**不需要**为了「让渲染刷新」而在回调里手工触发一次空更新。
+  本项目若存在「写完再延迟一帧」的补丁式写法，可按此条复核。
+
+### 2.8 【社区经验】五画布与锚点解算
+
+- 画布 5 个：`pc-16-9`(1600×900)、`pc-21-9`(2100×900)、`mobile-16-9`(1280×720)、
+  `mobile-19.5-9`(1560×720)、`mobile-4-3`(1280×960)；
+  **原点左下，锚点相对父矩形 0–1**。来源：`skill/SKILL.md:181`。
+- **2D 游戏布局基准是手机 16:9（1280×720）**，整屏构图必须在该画布完整可见；
+  PC 用固定设计尺寸的板 + `min(canvas/design)` 等比缩放，**禁止按 PC 铺满后再在手机上裁切**。
+  来源：`skill/SKILL.md:182`。
+- 切设备时「只改画布宽高并选用对应平台的 RectTransform 槽位
+  （PC→KEYBOARD/KeyboardAndMouse，手机→TOUCHSCREEN/Mobile），
+  **锚点在新父矩形下重新解算**」。来源：`skill/SKILL.md:183`。
+- 真机画布值（PC）默认 1600×900；`GetUICanvasSize` 与预设像素同一套
+  （`skill/SKILL.md:43`）。
+- ⚠️ **`game` 全局函数必须用点号调用**：真机回传
+  `game:GetClientUIRoots()` 报 `bad argument count ... (0 expected, got 1)`；
+  `game:GetUICanvasSize()` 同理。来源：`observed-contract.md:25`（真机）。
+- **旋转的坑**：`localRotationX/Y/Z` 与 `GetLocalRotation` **读回的是按 Z-X-Y
+  四元数往返后的欧拉角，落在 [0,360)、恒为浮点**。
+  写入 X=-116 读回 **296**、写入 90.5 读回 **89.5**（`observed-contract.md:47`，真机）。
+  → **补间起点取读回值**，所以「绝对 -116 → -136」实际走的是 **244 → -136**（绕远路）。
+  - **推论（【推断】）**：本项目若有旋转动画，不要用负数角度做绝对 Tween 的起点。
+- **旋转与命中**：旋转进入运行时，但**点击命中按旋转前轴对齐矩形计算**
+  （`skill/SKILL.md:185`；MBS 在 `architecture.md:47` 承认模拟器「不做精确旋转盒」）。
+  → **旋转过的按钮，热区仍是不旋转的矩形**。
+
+### 2.9 【社区经验】裁切 / 遮罩
+
+- 素材库支持**矩形/圆形遮罩**，可用在自定义开关 / 自定义按钮 / 悬浮交互页 /
+  页签 / 单选项视窗 / 图片控件里。来源：本工程 `research/官方文档索引.md:114-115`。
+- 渲染模式：`时序渲染(旧)` vs **`层级渲染(新)`**（月之六版本引入，之后新建存档默认新的）。
+  **旧的层级参数不生效，后加控件会串层；官方建议统一用新的。**
+  来源：本工程 `research/官方文档索引.md:112-113`。
+- **文本视窗/网格视窗的滚动在运行时有运行偏移，且不写回 Authoring JSON**；
+  偏移保存在各玩家运行时控件上，停止/重开复位
+  （`studio/docs/control-support.md:30`）。
+- **网格视窗只有 `RefreshItems` 管理的模板项随列表移动和裁切；静态子控件保持原位**
+  （`control-support.md:28`）。→ 这是「列表内容不跟着滚」的根因类别。
+
+### 2.10 【推断】未确认的渲染问题
+
+**未能确认**：
+- 「容器 `visible` 被引擎复位」——**没有任何来源记载**（见 2.6 的四个替代成因）。
+- 首帧是否有**官方**规定的「控件树就绪事件」——MBS 只观察到
+  `InstantiateClientUIControl` 的时机关联，没有官方「树就绪」信号记载。
+- 层级排序在**父子跨容器**场景下的官方顺序：MBS 注明
+  「父子层级和不同容器的官方顺序仍未确定」（`architecture.md:50`）。
+- 层级排序的「创作者预告后续版本同层级上层控件先接收事件」：
+  **属于待版更规则，新版真机尚未验证**（`architecture.md:50`）。
 
 ---
 
