@@ -3528,10 +3528,14 @@ function Controller:render(adapter, force)
           --      「这些控件还没建」），无脑重试 = 每帧白跑 + 噪音 ⇒ **同一个 id.键 最多试
           --      N 次**，超了就认输（记账、不再试），既补上"晚一帧就绪"的控件，
           --      又不会变成性能回退。
-          local exists = false
-          if adapter.find ~= nil then
+          --   ⚠️ **适配器没有 `find` 时一律当作"存在"**（=退回旧行为）：
+          --      假适配器（离线测试）就没有 find —— 把"查不了"当成"不存在"会让
+          --      每个属性每帧都重写一遍（board_bg 立刻从 28/0 变 0/1 就是这条）。
+          --      **查不了就别改变行为**是这里的唯一正确语义。
+          local exists = true
+          if type(adapter.find) == "function" then
             local e2, r2 = pcall(function() return adapter:find(n.id) end)
-            exists = (e2 and r2 ~= nil)
+            if e2 then exists = (r2 ~= nil) end
           end
           local ok = self:_set_prop(adapter, n.id, k, v)
           if ok and exists then
