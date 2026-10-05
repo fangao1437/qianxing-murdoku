@@ -246,6 +246,15 @@ ok(C2.err == nil, "（前置）进关卡这几帧 OnUpdate 不抛错", tostring(
 
 ----------------------------------------------------------------------------
 out("\n== A. 关卡内稳态 60 帧：节流位到底在哪一档 ==")
+-- ⚠️⚠️ 【口径无效，别拿 A/B 两节当证据】2026-10-05 实测：
+--   本文件的假树**与真机不同构** —— `OnInit/OnStart` 期间 `stage`（连同 25 个 `cell.*`）
+--   被 `ensure_cells` / `_park_control` 改名或挪走，`adapter:find("cell.1.1")` 恒为 nil
+--   ⇒ `setv()` 拿不到控件 ⇒ 这里的计数**必然是 0，与 `%300` 门无关** ✗。
+--   证据：下面 §B 的 `[诊断] find 逐个` 那两行。
+--   ⇒ 「`%30` 被 `%300` 套住」这条结论的**有效证据是静态块深度**：
+--        node tools/audit/check_nesting.mjs --depths=lua/main.lua:1480-1590
+--        （`%30` 那行 depth=2 ⇒ 在外层 `%300` 的 `if` 里面）
+--   A/B 两节先留着当**诊断输出**；要让它们恢复有效，得先把假树补成同构（find 能命 central cell.*）。
 local f0 = frames_now()
 out(string.format("  起始帧号 = %d（下一次 frames%%300==0 在第 %d 帧）",
   f0, (math.floor(f0 / 300) + 1) * 300))
