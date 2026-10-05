@@ -8,3 +8,9 @@ docs/community-cache/
 # 杂项
 *.log
 tools/check_all_last.log
+
+# ── 第三方下载物 / 工具二进制（2026-10-05：让它们留在磁盘、不进仓库）──
+tools/bin/
+tools/_dl/
+docs/research-raw/_*.cjs
+tests/_wip/
