@@ -870,6 +870,15 @@ function Murdoku.on_update(dt)
       -- ★ 2026-10-03 **分家**：`leaf:SetVisible(true)` / `leaf:SetActive(true)` 两行
       --   已经搬到本 if 块**外面**无条件执行（见上面那段「手动显形（分家后）」），
       --   这里只保留回读与打印（方案 A：只搬不删）。
+      -- ★ 2026-10-05 Round 43 修：`v2` / `a2` **原来漏写 `local`** ✗
+      --   后果有两层（都由 selene 静态检查抓出，`tools/lua_tooling/` 里的配置）：
+      --     ① 它们**泄漏成引擎全局变量**（`_G.v2` / `_G.a2`）—— 污染全局表，
+      --        而真机/模拟器**共享同一张全局表** ⇒ 可能被别的脚本看到 ✗；
+      --     ② 更直接：下面 L876 用 `.. v2 ..` / `.. a2 ..` **直接拼接**，
+      --        而这两个 pcall 一旦失败（`leaf.visible` 抛错、leaf 是特殊控件…），
+      --        变量就是 **nil** ⇒ Lua 里**拼接 nil 会抛错** ✗ ⇒ **打断整帧**。
+      --   ⇒ 修法：声明成局部变量并给**兜底默认值 `"?"`** ✓（只影响日志显示，不影响任何逻辑 ✓）
+      local v2, a2 = "?", "?"
       pcall(function() v2 = tostring(leaf.visible) end)
       pcall(function() a2 = tostring(leaf.active) end)
       print("[murdoku]   手动 SetVisible=" .. tostring(okv) .. " SetActive=" .. tostring(oka)

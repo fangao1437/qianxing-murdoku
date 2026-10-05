@@ -2394,16 +2394,13 @@ function Adapter:apply_tray_layout(layout)
     --       守卫**恒为假** ⇒「行标/列标对齐」与「相交诊断」**从来没跑过**（静默，零报错）✗
     --
     --   收口做法：两个方法整段**挪到本函数之后**（真正的文件顶层），
-    --   末尾的上色循环留在本函数内 ⇒ 底下那两个 `end` 才真正关掉
-    --   `btn_art` 块 与 `tray_diag` 体检块 ✓
+    --   上色循环留在本函数内（默认关闭）⇒ 本行的 `end` 关掉 `btn_art` 块 ✓
     --   ⇒ `node tools/audit/check_nesting.mjs` 的 `[嵌套]` 必须降到 **0 处** ✓
   end
-  -- ⚠️ 上面那个 `end` 关的是 **`btn_art` 块**（它与 `tray_diag` 体检块是并列的兄弟，
-  --   `tray_diag` 早在"体检结束"那里（`print("[murdoku] --- 体检结束 ---")` 之后）就关掉了）✓
-  --   ⚠️ 这个 `end` **不能删**：删了 ⇒ 下一个顶层 `function` 被吞进来
-  --   （＝又变回本 bug 的形状：编译得过、方法静默不存在 ✗）。
-end
--- ⚠️ 上面这个 `end` 是 `apply_tray_layout` 的结束 —— 它必须在下面两个方法**之前**。
+  -- ⚠️ 上面那个 `end` 关的是 **`btn_art` 块**。
+  --   `apply_tray_layout` **还没有结束** —— 它在函数末尾「按钮底图上色」之后才 `end`，
+  --   且中间那个 `return moved` 在 `btn_art` 块**外面**（`cfg.btn_art` 关着也照样返回）✓
+  --   （`tray_diag` 体检块早在"体检结束"那里就配平关掉了 ✓）
 
 -- 行标 / 列标按**格子的实际位置**对齐（顶层方法，加载时即存在）。
 --
@@ -2584,8 +2581,12 @@ end
     print(string.format("  SetImage 成功 %d 个，缺失/失败 %d 个", done, miss))
     print("[murdoku] --- 按钮底图上色结束 ---")
   end
+  -- ← 这个 `return moved` 才是 `apply_tray_layout` 的返回：
+  --   它**不在** `btn_art` 块里 ⇒ `cfg.btn_art` 关着时照样返回重排个数 ✓
   return moved
 end
+-- ⚠️ 这个 `end` 关的就是 `apply_tray_layout`（`function` 在 2244 行）。
+--   上面那个 `end` 关 `btn_art` 块 ⇒ **两个都要在**：少任一个，全文末深度就不是 0 ✗
 
 -- 尝试由**脚本自己**打开容器的「显示常驻光标」(`showCursor`)。
 --
