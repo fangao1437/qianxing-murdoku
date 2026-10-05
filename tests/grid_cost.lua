@@ -763,6 +763,43 @@ do
   if kinds > 0 then out("      失败明细（前 6）：" .. line) end
 end
 
+-- ── 口径 I′：**同一份产物里的 A/B** —— 把 `push_cell_text` 打开 = "改之前的行为" ──
+--
+-- ★ 2026-10-05 新增。为什么不能拿 `versions/112-…-v071` 当"改之前"来量这一条：
+--   那一版的 `set_property` 失败契约 / 账本都还没长成现在这样，同一段口径在它上面**量到 0**
+--   （实测：v071 跑这份文件是 `[I] 失败写入 0 次`）—— 拿它当 before 会得出
+--   "本来就没问题"的错误结论。**唯一站得住的对照是"同一份产物、只把这一个开关翻过来"。**
+--   而 `main.lua` 特意留了 `cfg.cells.push_text` 这个口（就是为了"将来配了文字子控件能恢复"），
+--   这里正好用它当 A/B 开关：**不用改代码、不用回滚**，before/after 在同一趟里就能看到。
+local Ip = { fail = 0, text_fail = 0, keys = 0 }
+do
+  local saved = ctrl.opts.push_cell_text
+  ctrl.opts.push_cell_text = true          -- ⇒ 恢复"每格都推 text"的旧行为
+  ctrl._props = {}
+  ctrl._prop_retry = {}
+  ctrl._prop_giveup_n = 0
+  ctrl.screen = nil
+  reset()
+  pcall(function() for _ = 1, I.renders do ctrl.dirty = true; OnUpdate(1 / 60) end end)
+  Ip.fail = C.setprop_fail
+  for k, v in pairs(C.fail_keys) do
+    if k:match("^cell%.%d+%.%d+%.text$") ~= nil then
+      Ip.text_fail = Ip.text_fail + v
+      Ip.keys = Ip.keys + 1
+    end
+  end
+  ctrl.opts.push_cell_text = saved         -- 还原（后面口径 J 还要用）
+  ctrl._props = {}
+  ctrl._prop_retry = {}
+  ctrl.screen = nil
+  pcall(function() for _ = 1, 3 do ctrl.dirty = true; OnUpdate(1 / 60) end end)
+  out(string.format("  [I′] **同一个开关翻过来**（`push_cell_text = true` = 改之前的行为）："
+    .. "总共失败写入 %d 次，其中 `cell.*.text` **%d 次 / %d 个格子**",
+    Ip.fail, Ip.text_fail, Ip.keys))
+  out(string.format("       ⇒ A/B 差 = %d → %d 次失败写入（同一份产物、同一段口径）",
+    Ip.text_fail, I.text_fail))
+end
+
 -- ── 口径 J：射线开关（raycastTarget）——「停了」和「还救得回来」两件事都要钉住 ──
 --
 -- ★ 2026-10-05 新增。第 (3) 条改的是"**不再每 20 帧永远重扫**"，于是有两个**必须同时成立**
