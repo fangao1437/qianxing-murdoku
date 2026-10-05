@@ -112,12 +112,14 @@ M.LAYOUT = {
   --   ⇒ 设计空间：x 72、y 314、宽 456、卡高 105.6、行距 ≈115、5 张 = 575
   --   之所以必须往下挪：标题/计时器现在在**左边栏上方**（图里就在卡片上面），
   --   原来的 `y = 148` 会和它们重叠。
-  clues  = { x = 36, y = 151.8, w = 480, h = 652.8 },  -- ★ 2026-10-05：{72,314,456,575} → 本行
+  clues  = { x = 36, y = 275.4, w = 480, h = 652.8 },  -- ★ 2026-10-05：{72,314,456,575} → 本行
   --   ★★★★★ 为什么改：真机日志（11:31）显示运行时 `clues = 380×479`，而用户在编辑器里摆的是
   --   **400×544 @ 中心 (230, 398.5)** ⇒ **脚本按旧规划把用户的版面冲掉了** ✗
-  --   （380×479 = 456×5/6 × 575×5/6 —— 正是旧值 ✓）
-  --   ⇒ 换算：画布 400×544、中心 (230,398.5) → 设计 ×6/5 = **480×652.8**、中心 (276,478.2)
-  --     ⇒ 左下角 x = 276−240 = **36**、y = 478.2−326.4 = **151.8** ✓
+  --   ★★★ **y 的语义（本轮反推出来的，很重要）**：`rect_of` 的 `y` 是**从画布顶部往下量**的，
+  --   不是从底边。验证：先按"底边"给 151.8 设计 ⇒ 顶部 = 126.5 画布 ⇒ 中心 = 900−126.5−272
+  --   = **501.5 ≈ 502** ✓ 与规划读到的 502 **完全吻合** ⇒ 语义确认 ✓
+  --   ⇒ 要中心落在画布 398.5：顶部 = 900−398.5−272 = 229.5 画布 = **275.4 设计** ✓
+  --   换算：画布 400×544 → 设计 ×6/5 = 480×652.8；x = 中心 230 − 200 = 30 画布 = **36 设计** ✓
   --   校验：h 652.8 ÷ clue_row_h 127.2 = **5 行** ✓（与 clue_rows 一致）
   clue_row_h = 127.2,       -- ★★★★★ 2026-10-05：115 → **127.2**（= 画布 106 ⇒ 设计 106×6/5）。
                             --   用户 2026-10-05 把卡片改成**画布 360×96**、卡距 **10**（行距 106），
@@ -1759,7 +1761,7 @@ function Controller:build_layout()
   --   ⇒ 补一条规划节点（`kind = "container"`：只摆位置/显隐，**不设图不设色**，图与色归编辑器）。
   --   尺寸与容器同尺寸（画布 400×544）、挂在 `clues` 下、坐标相对父级 ⇒ (0,0) ✓
   push({ id = "clues.bg", kind = "container", parent = "clues",
-         rect = { x = 0, y = 0, w = L.clues.w, h = L.clues.h } })
+         rect = { x = L.clues.x, y = L.clues.y, w = L.clues.w, h = L.clues.h } })
   local shown = math.min(#vm.clues, L.clue_max_visible)
   local rows = L.clue_rows or 9
   -- ★ 滚动位置：0 表示从第 1 条开始。**所有 `shown` 条控件都照旧建出来**
@@ -1863,7 +1865,7 @@ function Controller:build_layout()
     -- 这一条落在窗口的第几行（不在窗口里就整条隐藏 —— 但**控件仍然存在**，能滚到）
     local slot = i - self.clue_scroll
     local inWin = (slot >= 1 and slot <= rows)
-    local y = L.clues.y + (slot - 1) * L.clue_row_h
+    local y = L.clues.y + 15 + (slot - 1) * L.clue_row_h   -- +15 设计 = 上内边距 12.5 画布
     -- ★★★★★ 2026-10-05：行高由 `clue_row_h − 6` 改成 **`− 12`**，宽度由 `L.clues.w − 16` 改成
     --   **`CLUE_W`（= 432 设计 = 360 画布）** —— 为了跟用户在编辑器里摆的卡片对齐。
     --   真机日志（11:31）证明旧值把用户的版面冲掉了：`clue.N 367x91`
@@ -1886,7 +1888,7 @@ function Controller:build_layout()
       id = "clue." .. i,
       kind = "text",
       parent = "clues",
-      rect = { x = L.clues.x, y = y, w = CLUE_W, h = h },
+      rect = { x = L.clues.x + CLUE_PAD, y = y, w = CLUE_W, h = h },
       text = cl.text,
       style = style,
       visible = inWin,
@@ -1904,10 +1906,10 @@ function Controller:build_layout()
     --
     --   尺寸：backrop2 比 backrop1 四边各小 3.6 设计（= 3 画布）⇒ 露出 3px 描边 ✓
     push({ id = "clue." .. i .. ".backrop1", kind = "container", parent = "clue." .. i,
-           rect = { x = 0, y = 0, w = CLUE_W, h = h },
+           rect = { x = L.clues.x + CLUE_PAD, y = y, w = CLUE_W, h = h },
            visible = inWin, pos_runtime = true })
     push({ id = "clue." .. i .. ".backrop2", kind = "container", parent = "clue." .. i,
-           rect = { x = 3.6, y = 3.6, w = CLUE_W - 7.2, h = h - 7.2 },
+           rect = { x = L.clues.x + CLUE_PAD + 3.6, y = y + 3.6, w = CLUE_W - 7.2, h = h - 7.2 },
            visible = inWin, pos_runtime = true })
 
     local who, pre, post, wid, wportrait = split_by_name(tostring(cl.text or ""))    local tx = L.clues.x + PAD + FACE + PAD      -- 文字起点：让开左边的头像
