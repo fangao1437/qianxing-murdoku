@@ -4358,6 +4358,37 @@ function Adapter:set_property(id, key, value, nkey)
       end
       hide_kids(ctrl, 0)
     end
+    -- ★★★★★ 2026-10-06 **对称：格子重新可见时，把该亮的子控件放回来** ✗✓
+    --
+    --   ★ 这是用户复盘出来的那条 ✓（原话：「要么 PREFIX 里的 cell. 没重新删掉，
+    --     要么合并的有问题」✓ —— **是合并引入了触发器** ✓）：
+    --     · 上面那段递归【一直在】✗ —— ★ 但删掉 PREFIX 的 `"cell."` 之后
+    --       **没人再写 `cell.* = false`** ✗ ⇒ ★ 它**从不触发** ✓（墙门正常 ✓）
+    --     · 而把 `visible = (self.screen == nil)` 加进规划 ✗
+    --       ⇒ ★ 主页时规划写 `cell.* = false` ✗ ⇒ **递归被重新触发** ✗
+    --       ⇒ ★★ 子控件（`face` / `wall.*` / `door.*`）全灭 ⇒ **墙门又不见了** ✓✓
+    --   ⇒ ★ 上面那段**只在隐藏时递归** ✗（它自己的注释也写着"显示时不递归"✓）
+    --     ⇒ ★★ **单向** ✗ ⇒ 藏过的子控件**永远回不来** ✓✓
+    --   ⇒ ★ 这里补上**对称的那一半** ✓：★ 格子变可见 ⇒
+    --     · `face` 点亮 ✓（底图 ✓）
+    --     · `wall.*` / `door.*` 按 `_edge_want` 恢复 ✓（★ 就是"该亮哪些边" ✓）
+    --   ⚠️ 只在 `vis == true` **且**这一刻确实是格子的根时做 ✗（过渡时一次 ✓ 不是每帧 ✓）
+    if vis == true and id:sub(1, 5) == "cell." then
+      local face = nil
+      pcall(function() face = self:sub(id, "face") end)
+      if face ~= nil and face.SetVisible ~= nil then
+        pcall(function() face:SetVisible(true) end)
+      end
+      local w = (self._edge_want ~= nil) and self._edge_want[id] or nil
+      if w ~= nil then
+        for name, want in pairs(w) do
+          local s2 = self:sub(id, name)
+          if s2 ~= nil and s2.SetVisible ~= nil then
+            pcall(function() s2:SetVisible(want) end)
+          end
+        end
+      end
+    end
   elseif key == "enabled" then
     if ctrl.interactable ~= nil then ctrl.interactable = value and true or false end
 
