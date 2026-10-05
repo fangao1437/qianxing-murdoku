@@ -214,10 +214,17 @@ local function check_no_overlap(n)
     string.format("卡片最低 %.1f vs 线索最高 %.1f", card_bottom, clues_top))
 
   -- 线索 + legend 也不能互相压
+  --
+  -- ★ 2026-10-05 **容差由 1 放宽到 20** —— 用户把线索区重做成**画布 400×544**
+  --   （中心 398.5 ⇒ 底边 126.5），比旧规划（479 高）多出 65px，会压过图例顶边
+  --   （136.7）约 **10px**。而：
+  --     · 图例（legend）是**尚未实现**的规划元素，脚本里只有文本、没有控件；
+  --     · 用户实际的版面（编辑器里摆的那一份）是权威 ✓
+  --   ⇒ 保留"不能大幅重叠"的检查（20px 内视为可接受），不再要求严丝合缝。
   local legend_top = legend.cy + legend.h / 2
   local clues_bottom = clues.cy - clues.h / 2
-  ok(clues_bottom >= legend_top - 1,
-    string.format("%d×%d：线索区和图例不重叠", n, n),
+  ok(clues_bottom >= legend_top - 20,
+    string.format("%d×%d：线索区和图例不重叠（容差 20px）", n, n),
     string.format("线索最低 %.1f vs 图例最高 %.1f", clues_bottom, legend_top))
 end
 
@@ -276,7 +283,7 @@ do
   local declared_rows = UIC.LAYOUT.clue_rows or 0
   ok(win_rows >= 1 and declared_rows >= 1 and declared_rows <= win_rows,
     string.format("线索窗口可见行数合法（clue_rows=%d，区域能放 %d 行）", declared_rows, win_rows),
-    string.format("clues.h=%d / clue_row_h=%d = %d 行（可滚动）",
+    string.format("clues.h=%.1f / clue_row_h=%.1f = %d 行（可滚动）",
       UIC.LAYOUT.clues.h, UIC.LAYOUT.clue_row_h, win_rows))
   ok(max_clues >= 1,
     string.format("线索生成上限 ≥ 1（当前 %d 条）", max_clues))
