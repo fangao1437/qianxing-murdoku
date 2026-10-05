@@ -3776,7 +3776,13 @@ function Adapter:_apply_edges(id, prefix, flags)
         local want = (flags[s] and not skip[s]) and true or false
         parts[#parts + 1] = nm .. "(want=" .. tostring(want) .. " vis=" .. v .. ")"
       end
-      print_("[murdoku] 关卡内墙/门读回 · " .. tostring(id) .. "：" .. table.concat(parts, "  "))
+      -- ⚠️ 用 `print` 而【不是 `print_`】✗✓ —— 我第一版写成 `print_`，
+      --   而 `_apply_edges` 的作用域里**根本没有 `print_`** ✗
+      --   ⇒ 真机日志：`属性下发失败… cell.1.1.walls ← attempt to call a nil value (global 'print_')` ✗✗
+      --   ⇒ ★ 每一次 `walls` 下发都抛错 ⇒ `set_property` 整条失败 ⇒
+      --     ★★ **下面那些 `SetVisible` 全都没执行** ⇒ **墙/门一律不显示** ✓✓
+      --     —— ★ 也就是说：这一行日志把"墙/门为什么不显示"直接答了 ✓
+      print("[murdoku] 关卡内墙/门读回 · " .. tostring(id) .. "：" .. table.concat(parts, "  "))
     end
   end
 
