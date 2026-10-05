@@ -1,4 +1,4 @@
-﻿# tools/check_all.ps1 —— 一键全量自检
+# tools/check_all.ps1 —— 一键全量自检
 #
 # 跑法（在工程根目录）：
 #   powershell -ExecutionPolicy Bypass -File tools\check_all.ps1
@@ -115,6 +115,25 @@ Run-Step '2f/13 生成四方对照表 + 未验证清单' 'node' @('tools\audit\r
 #     判据很硬：那行的 ASCII 双引号个数必为奇数。
 Run-Step '2g/13 Lua 引号隐患扫描' 'powershell' @('-ExecutionPolicy', 'Bypass',
   '-File', 'tools\lua_quote_scan.ps1') | Out-Null
+# 2i：结构哨兵 —— 「嵌套配错」与「节流退化」。**只读**，机械判据，不联网。
+#
+#   起因（2026-10-05，本项目真实踩到的两个静默坑 ✗）：
+#     ① `lua/engine_adapter_qianxing.lua` 里 `if self.cfg.btn_art == true and print then` **没闭合** ✗
+#        ⇒ `apply_ruler_layout` / `diagnose_overlap` 被嵌成了 `apply_tray_layout` 的子闭包 ✗
+#        ⇒ 它们**从未被定义** ⇒ `main.lua` 的 `~= nil` 守卫恒假 ⇒ **行标/列标对齐、相交诊断从来没跑过**
+#        （Lua 不报错、不崩溃 —— 功能静默失效 ✗）。
+#     ② `lua/main.lua` 的 `if (current.frames or 0) % 300 == 0 then` **没闭合** ✗
+#        ⇒ 底下"**每帧**压住 selbar / selbtn / tpl-container + 25 个 cell"实际**每 300 帧**才跑 ✗
+#        ⇒ 玩家**点到棋盘就回选关**的老 bug 随时复发（那正是当初加这段的原因 ✗）。
+#
+#   判据（tools/audit/check_nesting.mjs）：
+#     `[嵌套]`      = 顶格写的 `function`/`if` 实际落在别的块里 ⇒ `end` 配对错位；
+#     `[节流嵌套]`  = `if (frames % N) == 0` 套在更大的 `% M == 0` 里 ⇒ 内层节流退化。
+#
+#   ⚠️ **当前这一步是故意保持红的** ✓ —— 上面那两个嵌套还没修完（深度 2→1 已做，1→0 未做）。
+#      修好它**自动变绿** ✓。**不许**为了让它变绿而放宽判据 / 加白名单（那是挪球门 ✗，
+#      也正是社区知识 §5.11「假绿」清单里点名要防的 ✗）。
+Run-Step '2i/13 结构哨兵（嵌套/节流）' 'node' @('tools\audit\check_nesting.mjs') | Out-Null
 # 2h：「本次搭建要求」也从**代码**生成。
 #     起因：用户说"因为改了很多次脚本，重新确认一下本次实验的搭建要求" ——
 #     散落在各 .md 里的搭建说明必然会和代码脱节，靠人同步一定漏。
