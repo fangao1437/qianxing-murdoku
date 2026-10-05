@@ -1,4 +1,4 @@
-﻿# tools/open_script_root.ps1
+# tools/open_script_root.ps1
 # Print (and open in Explorer) every sandbox "script root" folder:
 #   ...\BeyondLocal\<uid>\Beyond_Local_Save_Level\<levelSaveId>\external_lua_file\
 #

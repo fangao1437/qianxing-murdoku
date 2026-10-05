@@ -44,7 +44,18 @@ function Test-NonAscii([string]$text) {
 }
 
 $files = Get-ChildItem -Path $root -Recurse -File -Include *.ps1, *.lua, *.md |
-  Where-Object { $_.FullName -notmatch '\\node_modules\\' }
+  Where-Object { $_.FullName -notmatch '\\node_modules\\' } |
+  # ★ 2026-10-05 Round 89 **排除冻结归档** ✓
+  #
+  #   为什么：`versions/` 下是**历史快照**（每轮交付时的 Lua 源码副本）✓
+  #     它们**不该被本脚本改写** ✗ —— 改了就不再是"那一次交付的原样" ✓
+  #     （本项目规矩：不覆盖历史 ✓ 保留可回退 ✓）
+  #   实测：加排除之前，`-Check` 报 26 个文件状态不符 ✓ 其中**绝大多数在 `versions/`** ✗
+  #     ⇒ 这条检查**永远红** ✗ ⇒ 变成"噪音红" ⇒ 真问题会被淹掉 ✓
+  #   ⚠️ 本文件是**纯 ASCII**（见文件头 L27 的说明 ✓）⇒ 用 `edit` 工具改它**不会**丢 BOM ✓
+  #     （非 ASCII 的 `.ps1` 才需要 BOM ✓ —— 改完要补 ✓）
+  Where-Object { $_.FullName -notmatch '\\versions\\' } |
+  Where-Object { $_.FullName -notmatch '\\_backup\\' }
 
 foreach ($f in $files) {
   $bytes = [System.IO.File]::ReadAllBytes($f.FullName)
