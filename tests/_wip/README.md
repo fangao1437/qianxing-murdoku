@@ -19,6 +19,23 @@
 (b) 或者测试的假引擎没走到那条路（因为第 1 条已经证明假引擎有问题 ✗）。
 ⇒ **未能确认**，修好假引擎后重测才能定案。
 
+## probe_accuse_flow.lua（2026-10-05，本次「补 accuse_thief + 去掉分享」的证据，**可信**）
+
+**为什么可信**：它**能红能绿** —— 对**改前**的 `ui_controller.lua` 跑 = **5 通过 / 11 失败**（exit 1），
+对改后的跑 = **16 通过 / 0 失败**（exit 0）。跑法：
+
+```
+lua tests/_wip/probe_accuse_flow.lua              # 用本仓库 lua/
+lua tests/_wip/probe_accuse_flow.lua <别的root>   # 对旧版跑（要那 root 下有 lua/ 一套）
+```
+
+它覆盖：`submit → ✓confirm_yes → accuse_thief(D) → accuse_pick_accomplice(C) → 破案(SOLVED)` 的真实通路、
+第二阶段把被指认者排除、结算计划里没有 `modal.share` 节点（且 `modal.again/next` 还在 —— 防"空集通过"）、
+以及 `reveal` 不再弹出"那同伙是谁？"。
+
+⚠️ 它仍然**不算回归防线**（`_wip` 的规矩不变，见下）；它是**这一次改动的证据**。
+要长期留，请在 `lua/` 稳定后把它按同样断言搬进 `tests/` 根目录的套件里。
+
 ## 规矩
 - 从 `_wip` 毕业的条件：**跑通且能红能绿**（跑旧版会红 ⇒ 说明有方向 ✓）。
 - **不许**把 `_wip` 里的失败计入"预存在红榜"（那是 `entry_smoke` 11 / `selftest` 4 的专属）。
