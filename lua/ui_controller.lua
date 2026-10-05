@@ -3508,6 +3508,48 @@ function Controller:render(adapter, force)
   end
   self._shown = seen          -- 记住这一帧显示了什么，下一帧据此算差集
 
+  -- ★★★★★ 2026-10-05 **"补发"这套规则只在这里实现一份**（属性循环和 rect 两条路共用）。
+  --
+  --   为什么必须**有上限**：规划里有 ~105 个"本关还没建"的控件（见 `layout_plan` 那句
+  --   「这些控件还没建」），它们每一条属性都**必然**失败 —— 无上限重试就是
+  --   "每帧白跑（`find` 是深度优先搜控件树）+ 日志刷屏"，正是这一轮最不该引入的回退。
+  --   ⇒ 同一个 (控件, 属性) 最多补发 `PROP_RETRY` 次；到顶就**认输**：
+  --     记账（`last[k] = v` ⇒ 下一帧不再看见它）+ **只报一次**。
+  --   额度为什么是 10：`render` 由 main.lua 的 tick 驱动（**每秒至少一次**，另加"有变化时"），
+  --   所以 10 次 ≈ 十几秒内 —— 足够覆盖"控件晚一步才进树"这种可恢复情形，
+  --   而真不存在的控件最多也就白跑这 10 次。**它是常数，不会随时间增长。**
+  local PROP_RETRY = 10
+  -- 成功 ⇒ 清掉这个键的计数（额度不跨"属性变化"累积：这一关失败过几次，不该影响下一次）。
+  local function retry_clear(id, key)
+    if self._prop_retry ~= nil then
+      self._prop_retry[tostring(id) .. "\1" .. tostring(key)] = nil
+    end
+  end
+  -- 失败 ⇒ 记一次。返回 true = **还有额度，下一帧再试**；false = **认输，调用方该记账了**。
+  local function retry_more(id, key, why)
+    local rk = tostring(id) .. "\1" .. tostring(key)
+    self._prop_retry = self._prop_retry or {}
+    local n_try = (self._prop_retry[rk] or 0) + 1
+    self._prop_retry[rk] = n_try
+    if n_try < PROP_RETRY then return true end
+    -- ★ 认输也要留一句话：否则"这条属性到底补上没有"在日志里查不到 ——
+    --   而这正是这一轮要回答的问题（第一次进关 vs 第二次进关的差别）。
+    --   ⚠️ **不能每条都打**：那 ~105 个没建的控件的属性会一起走到这里 ⇒
+    --      照 `prop_err` 的老规矩：**最多 5 条 + 一句汇总**。
+    self._prop_giveup_n = (self._prop_giveup_n or 0) + 1
+    if self._prop_giveup_n <= 5 then
+      self:_grid_log("prop_giveup:" .. rk,
+        "属性补发 " .. n_try .. " 次仍未送达，已停止补发：`"
+        .. tostring(id) .. "." .. tostring(key) .. "`（" .. tostring(why) .. "）")
+    elseif self._prop_giveup_n == 6 then
+      self:_grid_log("prop_giveup_more",
+        "属性补发失败：已经列了前 5 条，后面的不再逐条打印"
+        .. "（脚本里「本关还没建」的控件本来就有 ~105 个，它们都会走到这里；"
+        .. "具体是哪些见上面那句「这些控件还没建」）")
+    end
+    return false
+  end
+
   for i = 1, #nodes do
     local n = nodes[i]
     if not self._created[n.id] then
@@ -3562,36 +3604,16 @@ function Controller:render(adapter, force)
           local ok = self:_set_prop(adapter, n.id, k, v)
           if ok and exists then
             last[k] = v
-            -- ★ 成功就把它那份补发计数清掉：下次属性再变化时，补发额度是**完整的**，
-            --   不会被上一轮的历史失败拖累（"上一关失败几次"不该影响"这一关能补几次"）。
-            if self._prop_retry ~= nil then
-              self._prop_retry[tostring(n.id) .. "\1" .. tostring(k)] = nil
-            end
+            retry_clear(n.id, k)
           else
-            local rk = tostring(n.id) .. "\1" .. tostring(k)
-            self._prop_retry = self._prop_retry or {}
-            local n_try = (self._prop_retry[rk] or 0) + 1
-            self._prop_retry[rk] = n_try
-            if n_try >= 10 then
-              last[k] = v          -- 认输：不再重试（避免每帧白跑）
-              -- ★ 认输也要留一句话，否则"这条属性到底补上没有"在日志里查不到 ——
-              --   而这正是这一轮要回答的问题（首次进关 vs 第二次进关的差别）。
-              --   ⚠️ **不能每条都打**：脚本里"本关还没建"的控件有 ~105 个（`layout_plan`
-              --   那句「这些控件还没建」已经逐类列过），这条再逐条打就是刷屏 ——
-              --   所以照 `prop_err` 的老规矩：**最多 5 条 + 一句汇总**。
-              self._prop_giveup_n = (self._prop_giveup_n or 0) + 1
-              if self._prop_giveup_n <= 5 then
-                self:_grid_log("prop_giveup:" .. rk,
-                  "属性补发 " .. n_try .. " 次仍未送达，已停止补发：`"
-                  .. tostring(n.id) .. "." .. tostring(k) .. "`（"
-                  .. (not exists and "控件一直没找到（find 返回 nil）"
-                      or "控件在、但适配层说这次没写进去") .. "）")
-              elseif self._prop_giveup_n == 6 then
-                self:_grid_log("prop_giveup_more",
-                  "属性补发失败：已经列了前 5 条，后面的不再逐条打印"
-                  .. "（脚本里「本关还没建」的控件本来就有 ~105 个，它们都会走到这里；"
-                  .. "具体是哪些见上面那句「这些控件还没建」）")
-              end
+            -- 两种失败要**分开报**（下一份真机日志就靠这句区分假设）：
+            --   · `exists == false` ⇒ 控件这次根本不在树上（首帧没就绪 / 本关没建）；
+            --   · `exists == true` 但 `ok == false` ⇒ 控件在，是**里面那一步**没成
+            --     （按钮的 label 子控件没就绪 / 墙门的 wall.* 子控件取不到）。
+            local why = (not exists) and "控件一直没找到（find 返回 nil）"
+              or "控件在、但适配层说这次没写进去（子控件没就绪？）"
+            if retry_more(n.id, k, why) == false then
+              last[k] = v          -- 认输：记账，免得每帧再看见它
             end
           end
         end
@@ -3618,8 +3640,15 @@ function Controller:render(adapter, force)
         adapter.runtime_rect = adapter.runtime_rect or {}
         adapter.runtime_rect[n.id] = true
       end
-      self:_set_prop(adapter, n.id, "rect", n.rect)
-      last.__rect = { x = n.rect.x, y = n.rect.y, w = n.rect.w, h = n.rect.h }
+      -- ★ 位置也一样：**写成功才记账**（和上面那段属性同一个道理）。
+      --   ⚠️ `respect_editor_rect` 打开时适配层会**故意跳过**位置 —— 那属于"故意的空操作"，
+      --      它返回 true ⇒ 不会变成每帧重发。
+      if self:_set_prop(adapter, n.id, "rect", n.rect) then
+        last.__rect = { x = n.rect.x, y = n.rect.y, w = n.rect.w, h = n.rect.h }
+        retry_clear(n.id, "__rect")
+      elseif retry_more(n.id, "__rect", "位置没写进去（控件没找到 / 句柄失效）") == false then
+        last.__rect = { x = n.rect.x, y = n.rect.y, w = n.rect.w, h = n.rect.h }
+      end
     end
   end
   for id in pairs(self._created) do
