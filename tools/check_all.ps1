@@ -1,4 +1,4 @@
-﻿# tools/check_all.ps1 —— 一键全量自检
+# tools/check_all.ps1 —— 一键全量自检
 #
 # 跑法（在工程根目录）：
 #   powershell -ExecutionPolicy Bypass -File tools\check_all.ps1
@@ -130,8 +130,21 @@ Run-Step '2g/13 Lua 引号隐患扫描' 'powershell' @('-ExecutionPolicy', 'Bypa
 #     `[嵌套]`      = 顶格写的 `function`/`if` 实际落在别的块里 ⇒ `end` 配对错位；
 #     `[节流嵌套]`  = `if (frames % N) == 0` 套在更大的 `% M == 0` 里 ⇒ 内层节流退化。
 #
-#   ⚠️ **当前这一步是故意保持红的** ✓ —— 上面那两个嵌套还没修完（深度 2→1 已做，1→0 未做）。
-#      修好它**自动变绿** ✓。**不许**为了让它变绿而放宽判据 / 加白名单（那是挪球门 ✗，
+#   ★ 状态（2026-10-05 Round 50 更新）：**两处嵌套已经修好了** ✓✓
+#     · `apply_ruler_layout` / `diagnose_overlap` 现在是**真正的顶层方法** ✓
+#       修法：把落底的上色循环抽成顶层 helper `Adapter:_tray_btn_art(moved, names, done, miss)` ✓，
+#             再让 `apply_tray_layout` 在它们**之前**收 `end` ✓
+#       （为什么不能只补一个 `end` ✗：那段循环用着 `apply_tray_layout` 的局部变量 ✓，
+#        它必须整段移出去 ⇒ 只能抽 helper ✓）
+#     · **独立硬证据**：`luac -l -p` 里两个 prototype 从「落在 `apply_tray_layout` 的
+#       `2244,2598` 之内」✗ 变成**互不包含**的 `2474,2547` / `2557,2608` ✓✓
+#     · **另一条独立判据**：`tests/perframe_throttle.lua` 第 0 节
+#       **`[PASS] 全部存在（37 个守卫型调用点）`** ✓（修前是「缺失 2 个」✗）
+#   ⇒ 本步骤**剩下的唯一红**是 `[节流嵌套] lua/main.lua:*` ✗ ——
+#     那是**另一个已登记的任务**（"每帧压住 selbar"实际每 300 帧 ⇒ 按口径改成
+#     进关/换屏**强压窗口** + 之后**变化才写** ✓ 稳态 0 次/帧 ✓），
+#     **不是**这一步的判据失效 ✓ ⇒ 看到它红请去修 `main.lua`，**不要**动这里的判据 ✗
+#   ⚠️ **不许**为了让它变绿而放宽判据 / 加白名单（那是挪球门 ✗，
 #      也正是社区知识 §5.11「假绿」清单里点名要防的 ✗）。
 Run-Step '2i/13 结构哨兵（嵌套/节流）' 'node' @('tools\audit\check_nesting.mjs') | Out-Null
 # 2h：「本次搭建要求」也从**代码**生成。
