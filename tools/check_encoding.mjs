@@ -71,26 +71,37 @@ function walk(dir, out = []) {
 }
 
 const files = walk(ROOT);
-let bad = 0, checked = 0;
+let bad = 0, checked = 0, ps1NoBom = 0;
 const byRule = {};
 
 for (const f of files) {
   const rel = relative(ROOT, f).replace(/\\/g, '/');
-  const rule = RULES[extname(f).toLowerCase()];
+  const ext = extname(f).toLowerCase();
+  const rule = RULES[ext];
   let buf;
   try { buf = readFileSync(f); } catch { continue; }
   checked++;
   const hasBom = buf.length >= 3 && buf[0] === 0xEF && buf[1] === 0xBB && buf[2] === 0xBF;
 
-  // ① BOM 是否符合规则
-  if (hasBom !== rule.bom) {
+  // ① BOM 是否符合规则（.ps1 **不在**规则表里 ⇒ 走下面的"仅报告" ✓）
+  if (rule && hasBom !== rule.bom) {
     bad++;
-    byRule[extname(f).toLowerCase()] = (byRule[extname(f).toLowerCase()] || 0) + 1;
+    byRule[ext] = (byRule[ext] || 0) + 1;
     console.log(`  ✗ ${rel}`);
     console.log(`      BOM=${hasBom}，应为 BOM=${rule.bom} —— ${rule.why}`);
   }
 
-  // ② 是否合法 UTF-8（用严格解码复验；Node 的 toString 会静默替换坏字节 ⇒ 用 fatal 再试一次）
+  // ② ★ `.ps1`：**只报告，不判红** ✓（权威归 `tools/normalize_encoding.ps1` = check_all 步骤 2c ✓）
+  //    为什么要报告：**PS 5.1** 读**无 BOM 且含中文**的 `.ps1` ⇒ 按 GBK 解码 ⇒ **解析失败** ✗
+  //      而 `edit`/`write` 工具写文件**不带 BOM** ⇒ 每次改 `.ps1` 都会悄悄剥掉它 ✗
+  //      （本项目已因此栽过 4 次 ✓ ⇒ 必须让它**在每次 check_all 里可见** ✓）
+  if (ext === '.ps1' && !hasBom) {
+    ps1NoBom++;
+    console.log(`  ℹ ${rel} —— .ps1 无 BOM ⚠️ 若它会被 PowerShell 5.1（`powershell`）执行，可能按 GBK 解码而解析失败 ✗`);
+    console.log(`      权威归步骤 2c 的 normalize_encoding.ps1 ✓ 这里只报告、不判红 ✓（两侧规则曾互相抵消 ✗）`);
+  }
+
+  // ③ 是否合法 UTF-8（严格解码复验；Node 的 toString 会静默替换坏字节 ⇒ 用 fatal 再试一次）
   try {
     new TextDecoder('utf-8', { fatal: true }).decode(buf);
   } catch {
@@ -100,8 +111,9 @@ for (const f of files) {
 }
 
 console.log(`== 编码/BOM 哨兵 ==  检查 ${checked} 个文件`);
+if (ps1NoBom > 0) console.log(`  ℹ 另有 ${ps1NoBom} 个 .ps1 无 BOM（仅提示 ✓ 权威在 2c）`);
 if (bad === 0) {
-  console.log('  ✓ 全过（.lua/.mjs/.md/.json 无 BOM；.ps1 有 BOM ✓）');
+  console.log('  ✓ 全过（.lua/.mjs/.md/.json 无 BOM ✓）');
 } else {
   console.log(`  ⇒ ${bad} 项违规 ✗`);
   console.log('  修法：');
