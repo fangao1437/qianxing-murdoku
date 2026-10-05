@@ -2374,20 +2374,41 @@ function Adapter:apply_tray_layout(layout)
     --    （真机日志 `SetImage 成功 19 个` 暴露的）。
     --    改成由调用方传入（`main.lua` 从规划里取 `kind == "button"`），有多少算多少。
     --
-    -- ★★★★★ 2026-10-05 **这两行必须提到 `if` 之前**（Round 35 的结构性修复）。
-    --   原因：它们被**两个地方**用 —— 上面这个 `btn_art` 块（L2514 起的上色循环），
-    --   以及**下面两个本该是顶层的方法**。原代码把 `if` 忘了闭合 ✗ ⇒
-    --   `apply_ruler_layout` / `diagnose_overlap` 被嵌成了 `apply_tray_layout` 的子闭包 ✗
-    --   ⇒ `main.lua` 里 `if a.apply_ruler_layout ~= nil` 的守卫**恒为假** ✗
-    --   ⇒ **行标/列标对齐、相交诊断从来没跑过**（静默，无报错）。
-    --   证据：`node tools/audit/check_nesting.mjs` 报 L2378/L2461 深度=2 ✗；
-    --         `luac -l -p` 里这两个 CLOSURE 落在 `apply_tray_layout` 的 prototype 内 ✗。
-    --   ⇒ 修法：locals 上提 + 在此**补一个 `end`** 关闭 `btn_art`，函数回到顶层；
-    --      并在 `diagnose_overlap` 结束后**重新打开**同一个 `if`（见 L2513 附近）✓
+    -- ★★★★★ 2026-10-05 **这两个 local 必须提到这里**（Round 35 的结构性修复，最后一步）。
+    --   原因：它们被**两个地方**用 —— 本 `btn_art` 块（函数末尾的上色循环，
+    --   见下面 `--- 按钮底图上色（运行时）---` 那段），以及**两个彻底独立的功能**
+    --   （`apply_ruler_layout` / `diagnose_overlap`，它们已挪到 `apply_tray_layout` 外面）。
+    --   代价说明：现在 `cfg.btn_art ~= true` 时也会读一次 `cfg.btn_list`、建两个数 ——
+    --   `apply_tray_layout` 只在开局摆一次，这点成本可忽略（不给每帧路径加负担）。
     local names = self.cfg.btn_list or {}
     local done, miss = 0, 0
-    end   -- ← 关闭原来那个 `btn_art` 块（不加 `if`！它的 `end` 本来就在 L2547，
-          --    上色循环在 `diagnose_overlap` 之后用**同一个** `if` 重新打开 ✓）
+    -- ★ ★ ★★★ 2026-10-05 **Round 35 收口**：块账在这里收平 ✓
+    --
+    --   历史（这条 bug 的形状很值得记）：
+    --     L2371 的 `if self.cfg.btn_art == true and print then` 原来**一直没被关闭** ✗
+    --     ⇒ 后面两个**顶层方法定义**被当成它的语句体吞了进去：
+    --       `Adapter:apply_ruler_layout`（原 L2391）与 `Adapter:diagnose_overlap`（原 L2474）
+    --     ⇒ Lua **不报错**（`end` 总数平衡），但这两个方法**只在 `apply_tray_layout`
+    --       被调用过之后**才存在 ✗
+    --     ⇒ `lua/main.lua` 的 `if a.apply_ruler_layout ~= nil then …` / `if diagnose_overlap then …`
+    --       守卫**恒为假** ⇒「行标/列标对齐」与「相交诊断」**从来没跑过**（静默，零报错）✗
+    --
+    --   收口做法：两个方法整段**挪到本函数之后**（真正的文件顶层），
+    --   末尾的上色循环留在本函数内 ⇒ 底下那两个 `end` 才真正关掉
+    --   `btn_art` 块 与 `tray_diag` 体检块 ✓
+    --   ⇒ `node tools/audit/check_nesting.mjs` 的 `[嵌套]` 必须降到 **0 处** ✓
+  end
+  -- ⚠️ 上面那个 `end` 关的是 **`btn_art` 块**（它与 `tray_diag` 体检块是并列的兄弟，
+  --   `tray_diag` 早在"体检结束"那里（`print("[murdoku] --- 体检结束 ---")` 之后）就关掉了）✓
+  --   ⚠️ 这个 `end` **不能删**：删了 ⇒ 下一个顶层 `function` 被吞进来
+  --   （＝又变回本 bug 的形状：编译得过、方法静默不存在 ✗）。
+end
+-- ⚠️ 上面这个 `end` 是 `apply_tray_layout` 的结束 —— 它必须在下面两个方法**之前**。
+
+-- 行标 / 列标按**格子的实际位置**对齐（顶层方法，加载时即存在）。
+--
+-- ⚠️ 曾被吞进 `apply_tray_layout` 体内 ⇒ `main.lua` 的守卫恒假 ⇒ **从未运行过**。
+--    挪出来后 `main.lua:75/532` 的守卫才成立：`render()` 每次都调（见「新开销」说明）。
 function Adapter:apply_ruler_layout(rows, cols)
   local g = self.cfg.cells or {}
   local ruler = self:find("ruler")
