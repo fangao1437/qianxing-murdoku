@@ -1826,7 +1826,14 @@ function Murdoku.on_update(dt)
                 pcall(function() k:SetAnchoredPosition(0, 0) end)
               end
               if kn == "face" then
-                pcall(function() k:SetVisible(true) end)
+                -- ★★★★★ 2026-10-05 Round 82 **读回再决定写不写** ✓（原来无条件写 ✗）
+                --   实测（探针第 [7] 节）：`face` 是**最后一个**每帧写者 ⇒ **1.67 笔/帧** ✗
+                --   （本段每 30 帧一轮 × 25 格 × 2 处 ✓）。
+                --   `face` 本来就该常亮 ⇒ 读到 `true` 就永不重写 ✓ 与 `content` 那处同一口径 ✓
+                --   ⚠️ 读不到就照写 ✓（不许因为读不到而让格子黑掉 ✗）
+                local fv = nil
+                pcall(function() fv = k.visible end)
+                if fv ~= true then pcall(function() k:SetVisible(true) end) end
                 pcall(function() k:SetSizeDelta(cw, ch) end)
                 pcall(function() k:SetAnchoredPosition(0, 0) end)
                 face = k
@@ -1844,7 +1851,12 @@ function Murdoku.on_update(dt)
                   local cn = nil
                   pcall(function() cn = tostring(c2.name) end)
                   if cn == "face" then
-                    pcall(function() c2:SetVisible(true) end)     -- 只点亮 face，别的孙子不动
+                    -- ★★★★★ 2026-10-05 Round 82 同上：**读回再决定写不写** ✓
+                    --   这是 `face` 的**第二处**写法（孙控件路径 ✓ —— 只有 `face == nil` 时才走到 ✓）
+                    --   ⇒ 两处都加守卫 ⇒ `face` 的 1.67 笔/帧应降到 ~0 ✓
+                    local gv = nil
+                    pcall(function() gv = c2.visible end)
+                    if gv ~= true then pcall(function() c2:SetVisible(true) end) end   -- 只点亮 face，别的孙子不动
                     pcall(function() c2:SetSizeDelta(cw, ch) end)
                     pcall(function() c2:SetAnchoredPosition(0, 0) end)
                     face = c2
