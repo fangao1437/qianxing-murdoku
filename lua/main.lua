@@ -1697,6 +1697,9 @@ function Murdoku.on_update(dt)
       -- ★ 每帧把"这一帧写了几笔"记在 `current` 上（纯记账，给离线探针/真机日志量成本用）。
       current._vis_wrote = wrote
       current._vis_forcing = forcing
+      current._vis_frames = fnow
+      current._vis_until = murdoku_vis_force_to
+      current._vis_keynow = _vis_key
     end
   end
     if scr_now == "level" and ((current.frames or 0) % 30) == 0 then
