@@ -1711,8 +1711,24 @@ function Controller:build_layout()
     end
   else
     hex_bg("action.back", sk_x + 55, sk_y[1] + 55, SK.size)
-    hex_bg("action.redo", sk_x + 55, sk_y[2] + 55, SK.size)
-    hex_bg("action.hint", sk_x + 55, sk_y[3] + 55, SK.size)
+    -- ★★★★★ 2026-10-05 **删掉这两行：`action.redo` / `action.hint` 的六边形底图** ✗
+    --
+    --   为什么删（真 bug ✓）：
+    --     `hex_bg(parent, …)` 会给 `parent` 建 6 个子节点（`parent..".hex1"`…`".hex6"` ✓）。
+    --     但 **`action.redo` 与 `action.hint` 这两个父节点，已经在下面 L1718-1740 被删掉了**
+    --     （2026-10-04「旧文字按钮 —— 已删」✓ —— 它们的功能改由 `hex.redo`/`hex.hint`
+    --      贴图节点 + `hit.redo`/`hit.hint` 热区承担 ✓）。
+    --   ⇒ 于是计划里**凭空多了 12 个"父级不存在"的悬空节点** ✗
+    --   ⇒ 后果（实测）：模拟器的 `kit.mjs:74`
+    --       `parentId = (n.parent && idOf[n.parent]) || canvasRoot.id`
+    --     **静默回落到画布根** ✗ ⇒ 父级中心算错 ⇒ 那 12 个 button 又被补上
+    --     `bg`(白图 `100108`) + `label` ⇒ ★ **模拟器里凭空多出 12 个白块** ✗✓
+    --   ⇒ 这**不改变**任何一条断言的通过/失败条数 ✓，但它**持续污染**所有几何类、
+    --     "多余控件"类的断言 ✗（例如 `verify_art.mjs` 的「棋盘区域没有多余控件」✓）
+    --
+    --   ⚠️ **`action.back` 那一行必须保留** ✓ —— 它是**确实存在于计划里**的父节点
+    --     （`layout-plan.json` 实测有 `action.back` 与 `action.back.hex1..6` ✓✓）。
+    --   依据：`docs/计划与脚本漂移-根因调查.md` 的 **T3** 条 ✓（提交 `73dd2d8` ✓）
   end
 
   -- ★★★★★ 2026-10-04 **右上三键（提交 / 重置关卡 / 撤销）的旧文字按钮 —— 已删。**
