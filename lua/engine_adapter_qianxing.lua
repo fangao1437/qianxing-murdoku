@@ -1682,6 +1682,26 @@ function Adapter:_cells_paint(ctrl, size, cell_id, img)
   end
   if face == nil then return false end
   if face.SetVisible then pcall(function() face:SetVisible(true) end) end
+
+  -- ★★★★★ 2026-10-05 **每帧重放墙/门的可见性** ✗✓ —— 这是本轮的定案修法 ✓
+  --
+  --   真机日志给出的对照（同一份日志里 ✓）：
+  --     · 「格子底图已点亮：25 个 face（**每帧保持**）」✓ —— ★ `face` 走的就是这条路 ✓
+  --     · 而墙/门只在属性下发那趟设一次 ✗ ⇒ ★★ 被覆盖后**没人救**✗ ⇒ 看不见 ✓
+  --     · 而那一刻读回 `wall.up(vis=true)` ✓ ⇒ ★★ 读回 true 与屏幕空白**同时成立** ✓✓
+  --   ⇒ 在这里（每帧都会跑 ✓）把 `_apply_edges` 记下的意图重放一遍 ✓
+  --   ⚠️ 只重放**已经记录过**的格子 ✗ —— 没下发过就什么都不做（不越权 ✓）
+  if cell_id ~= nil and self._edge_want ~= nil then
+    local w = self._edge_want[cell_id]
+    if w ~= nil then
+      for name, want in pairs(w) do
+        local s2 = self:sub(cell_id, name)
+        if s2 ~= nil and s2.SetVisible ~= nil then
+          pcall(function() s2:SetVisible(want) end)
+        end
+      end
+    end
+  end
   -- 铺满格子（子控件默认可能比格子小，**甚至尺寸是 0** —— 两种都会让它"看不见"）
   --
   -- ★★★★★ 2026-10-04 **`size` 允许省略：不给就按控件自己的实际尺寸算。**
@@ -3809,6 +3829,25 @@ function Adapter:_apply_edges(id, prefix, flags)
   --     `view()` 有 **34 条墙边** ✓ ⇒ ★ 数据是对的 ✓
   --   ⚠️ 结论：★ **诊断代码的假象比被测 bug 更能骗人** ✓ —— 这次连吃了两次
   --     （上次是 `print_` ✗ 这次是去重键 ✗）
+  -- ★★★★★ 2026-10-05 **把这一刻的"该亮哪些边"记下来** ✗✓ —— 供每帧重放 ✓
+  --
+  --   为什么必须记：★ `face` 是【每帧】被点亮的 ✓（真机日志：
+  --   「格子底图已点亮：25 个 face（每帧保持）」✓ 走的是 `_cells_paint` ✓）
+  --   而 `wall.*` / `door.*` 只在**属性下发那一趟**设一次 ✗
+  --   ⇒ ★★ 只要之后任何一帧有人把它们覆盖回 false ✗ ⇒ **`face` 会被救回来 ✓ 而墙/门不会** ✗✓
+  --     ⇒ ★ 屏幕上看不见 ✓ —— ★ 而我的读回是在**这一刻**读的 ✓ ⇒ 当然读到 true ✓✓
+  --       ⇒ ★★ "读回 true 而屏幕没有"的最后一层就在这里 ✓
+  --   ⇒ 记下来，在 `_cells_paint`（每帧那条路 ✓）里重放 ✓ —— 与 `face` 同等待遇 ✓
+  do
+    self._edge_want = self._edge_want or {}
+    local w = self._edge_want[id]
+    if w == nil then w = {}; self._edge_want[id] = w end
+    for i = 1, #sides do
+      local s = sides[i]
+      w[prefix .. "." .. s] = (flags[s] and not skip[s]) and true or false
+    end
+  end
+
   do
     self._edge_readback = self._edge_readback or {}
     local rk = tostring(id) .. "\1" .. tostring(prefix)
