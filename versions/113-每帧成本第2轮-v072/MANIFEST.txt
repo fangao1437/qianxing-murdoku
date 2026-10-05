@@ -1,0 +1,23 @@
+版本：113-每帧成本第2轮-v072
+时间：2026/10/5 16:19:03
+配套 .gil：205-每帧成本第2轮.gil
+说明：每帧成本第2轮: ① 属性账本由按 id 改按【规划节点】存(node_key = id+parent+序号, 配套 drop_props_of) —— action.back 被 push 两次时两份各自记账,不再每帧互相覆盖重发(~10次搜空/帧) ② Controller:tick 不再无条件置 dirty,改为按『整秒变了』+ #effects>0 置脏 —— 300帧不再白跑300次render×重建260节点。新增 tests/prop_ledger.lua 13/0 作为账本语义回归防线。7套测试全绿。
+
+文件清单：
+  engine_adapter.lua              5397 字节
+  engine_adapter_qianxing.lua     260112 字节
+  entry_client_script.lua         50205 字节
+  main.lua                        102818 字节
+  murdoku_core.lua                102564 字节
+  room_map.lua                    5227 字节
+  ui_controller.lua               242070 字节
+  client_script.lua               799263 字节（真机跑的就是这份）
+  205-每帧成本第2轮.gil                 894892 字节（配套存档）
+
+用途：**这一版是"当时能跑的那一份"**。要回退：
+  1) 把本目录的 *.lua 拷回 qianxing-murdoku\lua\
+  2) 跑 node tools/bundle_client_script.lua，再 powershell -File tools/install_script_to_sandbox.ps1
+     （或直接用本目录的 client_script.lua 覆盖沙箱里的那份，省掉打包）
+  3) 导入本目录里的 .gil
+
+规则（重要）：**每轮一个新编号，不删旧的、不覆盖**。

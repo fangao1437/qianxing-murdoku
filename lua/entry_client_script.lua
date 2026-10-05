@@ -171,7 +171,7 @@ local function check_canvas()
       --   里面既没有新打印、`cell` 尺寸也还是旧值 ⇒ 我误以为"改动没生效"，
       --   实际是**贴了旧日志**。加这一行后，一看首行就能确认跑的是哪一版。
       if print then
-        print("[murdoku] ===== 构建标记 v071 / 2026-10-05 16:5x / 每帧成本大幅下降: 兜底隐藏与按名查找改事件驱动+否定缓存(GetChildren 1565043→19317、选关页 6186→62/帧) =====")
+        print("[murdoku] ===== 构建标记 v072 / 2026-10-05 17:0x / 每帧成本第2轮: 属性账本按规划节点存(干掉action.back每帧10次搜空)+tick真变化才重绘(干掉300帧300次render) =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

@@ -25,12 +25,28 @@
 
   跑法：lua tests/grid_cost.lua
   前置：先 `lua tools/bundle_client_script.lua` 产出 dist/client_script.lua
+
+  ★ 2026-10-05 追加的三个**只加不减**的计数（这一轮修 (3)(4) 两条要用）：
+    · `setprop_fail`：`set_property` **返回 false**（= 适配层明确说"这次没送到"）的次数。
+      改之前每个 cell 的 `text` 必然落进这里（模板没有 text 子控件），25 格 × 补发额度；
+      改之后必须为 **0**（判定段最后一条断言就钉它）。
+    · `find_names`：`find` **按名字**的直方图 —— 用来单独盯 `action.back` 这种
+      "同一个 id 出现在两个规划节点上"的控件（`miss_names` 只记"搜空"的，收敛之后就看不见了）。
+    · `fail_keys`：失败的 `<id>.<键>` 直方图（失败到底长什么样，一眼可查）。
+    ⚠️ 这三个都是**新加的观测**，没有动、也没有放松任何一条原断言。
+
+  ★ 可选：命令行给一个别的产物 ⇒ 同一份断言可以直接量"改之前"那一份
+    （`versions/112-每帧成本大降-v071/client_script.lua`），用来核对每条断言的**方向**。
+    跑法：lua tests/grid_cost.lua versions/112-每帧成本大降-v071/client_script.lua
+    （与 `tests/prop_ledger.lua` 同一个约定）
 ----------------------------------------------------------------------------]]--
 
 local here = (arg and arg[0]) or "tests/grid_cost.lua"
 local root = here:gsub("tests[/\\]grid_cost%.lua$", "")
 if root == "" then root = "./" end
 if root:sub(-1) ~= "/" and root:sub(-1) ~= "\\" then root = root .. "/" end
+
+local SCRIPT_PATH = (arg and arg[1]) or (root .. "dist/client_script.lua")
 
 local out = print
 
@@ -76,6 +92,11 @@ local C = {
   cb = 0,           -- RefreshItems 回调被进入次数
   add_listener = 0, -- 列表项 AddCursorEventListener 调用次数
   text_write = 0,   -- 列表项文字写入次数
+  -- ★ 2026-10-05 追加（只加不减，见文件头）：
+  setprop_fail = 0, -- set_property 返回 **false**（适配层明确说"没送到"）的次数
+  find_names = {},  -- find 的**按名字**直方图（盯 action.back 这种同名节点）
+  setprop_names = {}, -- set_property 的**按 id**直方图（同上，看它到底重发了几笔）
+  fail_keys = {},   -- 失败直方图：`<id>.<键>` → 次数
 }
 local function reset() for k, v in pairs(C) do
   if type(v) == "number" then C[k] = 0 elseif type(v) == "table" then C[k] = {} end
@@ -298,8 +319,8 @@ _G.script = {
 _G.Enum = nil
 
 -- ── 加载产物 ──────────────────────────────────────────────────────────────
-out("== 加载 dist/client_script.lua ==")
-local chunk, lerr = loadfile(root .. "dist/client_script.lua")
+out("== 加载 " .. SCRIPT_PATH .. " ==")
+local chunk, lerr = loadfile(SCRIPT_PATH)
 if chunk == nil then
   out("  加载失败：" .. tostring(lerr) .. "　→ 先跑 `lua tools/bundle_client_script.lua`")
   os.exit(1)
@@ -324,6 +345,7 @@ do
   local of = adapter.find
   adapter.find = function(self, name)
     C.find = C.find + 1
+    C.find_names[name] = (C.find_names[name] or 0) + 1
     local cached = self.controls[name]
     local r = of(self, name)
     if r == nil then
@@ -335,7 +357,15 @@ do
   local osp = adapter.set_property
   adapter.set_property = function(self, id, k, v)
     C.set_prop = C.set_prop + 1
-    return osp(self, id, k, v)
+    local r = osp(self, id, k, v)
+    -- ★ 只认**明确的 false**（适配层的契约：false = 这次没送到）；老适配器不返回值 ⇒ 不算失败
+    --   （同一个约定见 ui_controller 的 `_set_prop`）。
+    if r == false then
+      C.setprop_fail = C.setprop_fail + 1
+      local fk = tostring(id) .. "." .. tostring(k)
+      C.fail_keys[fk] = (C.fail_keys[fk] or 0) + 1
+    end
+    return r
   end
   local osub = adapter.sub
   adapter.sub = function(self, a, b)
@@ -348,15 +378,24 @@ do
   ctrl.render = function(self, ...) C.render = C.render + 1 return orend(self, ...) end
 end
 
--- 「搜空」直方图：打印前 N 名 —— 每帧白跑的到底是哪些名字
-local function top_miss(limit)
+-- 直方图 → "名字×次数 名字×次数"，按次数降序（通用的那个；`top_miss` 走它）
+local function top_hist(hist, limit)
   local t = {}
-  for name, n in pairs(C.miss_names) do t[#t + 1] = { name = name, n = n } end
+  for name, n in pairs(hist) do t[#t + 1] = { name = name, n = n } end
   table.sort(t, function(a, b) if a.n ~= b.n then return a.n > b.n end return a.name < b.name end)
   local out_t = {}
   for i = 1, math.min(limit, #t) do out_t[i] = t[i].name .. "×" .. t[i].n end
   return table.concat(out_t, "  "), #t
 end
+
+-- 「搜空」直方图：打印前 N 名 —— 每帧白跑的到底是哪些名字
+local function top_miss(limit) return top_hist(C.miss_names, limit) end
+
+-- ★ 2026-10-05 追加：单独把某个名字的 `find` 次数取出来。
+--   为什么不能只看 `miss_names`：账本按计划节点记账**修好之后**，`action.back` 就不再"搜空"了
+--   ⇒ 它在 `miss_names` 里直接消失，**"0 次"和"没统计"分不开**。
+--   要报 before/after 就必须看**全部 find**，所以这里是 `find_names`。
+local function finds_of(name) return C.find_names[name] or 0 end
 
 local n_clues = #((core:view() or {}).clues or {})
 out(string.format("  关卡=%s  棋盘=%dx%d  线索=%d 条  cfg.use_grid=%s  prefab=%s",
@@ -392,8 +431,20 @@ out(string.format("  [A1] 一次 render：find=%d（真搜树 %d / 搜空 %d）s
   .. "view=%d  GetChildren=%d  grid_refresh=%d  cb=%d",
   C.find, C.find_deep, C.find_miss, C.set_prop, C.sub, C.view, C.getchildren,
   C.grid_refresh, C.cb))
+-- ★ 2026-10-05：把 `action.back` **单独拎出来报**（同一个 id 有两个规划节点的那个控件）。
+--   `uic` 那两行是 `uic_controller.lua` 里 `action.back` 的**两个**节点：
+--     一个挂 `topbar`（L1759）、一个挂 `right`（L2384）。
+--   账本按节点记账**修好之前**：两个节点每帧互相覆盖 ⇒ 每个键都"变了" ⇒ 每帧重发
+--     ⇒ 稳态**一次 render** 就要为它白跑 `find` 若干次 + `set_property` 若干次。
+out(string.format("      ★ action.back 单独账（稳态一次 render）：find=%d 次  set_property=%d 次",
+  finds_of("action.back"), (function()
+    local n = 0
+    for k, v in pairs(C.fail_keys) do if k:sub(1, 11) == "action.back" then n = n + v end end
+    return n
+  end)()))
 local A = { find = C.find, deep = C.find_deep, miss = C.find_miss, sp = C.set_prop,
-            view = C.view, gc = C.getchildren, gr = C.grid_refresh, cb = C.cb }
+            view = C.view, gc = C.getchildren, gr = C.grid_refresh, cb = C.cb,
+            back_find = finds_of("action.back"), fail = C.setprop_fail }
 
 -- ── 口径 B：一次**冷**RefreshItems（进关那一下，7 个可见列表项）────────────
 out("\n== B. 一次冷 RefreshItems（进关那一下：句柄/文案都还没缓存）==")

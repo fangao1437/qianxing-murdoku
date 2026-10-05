@@ -1057,11 +1057,40 @@ function Controller:on_input(event)
   return self.effects
 end
 
+-- ★★★★★ 2026-10-05 **`tick` 不再无条件 `self.dirty = true`**（这一轮最后一条每帧成本）。
+--
+--   改之前：`tick` 每帧置 dirty ⇒ `Murdoku.on_update`（main.lua L682）见 dirty 就重绘
+--     ⇒ 离线实测（`tests/grid_cost.lua` [E]）**300 帧 = 300 次 render**，
+--       而每次 render 都要重建 **260 个计划节点**、再走一遍属性账本 —— 用户说的
+--       "看着不动也卡"里，这是与"兜底隐藏"并列的第二笔固定开销。
+--
+--   为什么可以改（先把"它到底在维护什么"数清楚）：`tick` 真正改的只有两件事，
+--   而这两件事各自都自带"什么时候才需要重画"的判据 ——
+--     · `core:set_elapsed(+dt)`：HUD 计时器显示的是 `Controller:format_time()`，
+--       它 `math.floor` 到**秒**（MM:SS）⇒ 只有**整秒变了**才需要重画，不是每帧；
+--     · `flush_pending_note()`：真的落成笔记时**它自己**置 dirty（L474），
+--       没落成 = 状态没变 = 不需要重画。
+--   其余所有会让画面变化的东西，在各自的入口**已经**置了 dirty（本文件 26 处；
+--   其中 `on_input` 末尾 L1056 那一处就覆盖了全部光标 / 键盘事件）。
+--   ⇒ 唯一"没人管"的就是计时器那一秒，在这里按"整秒变了"补上。
+--
+--   ⚠️ 这条判据与 `main.lua` 的整秒心跳（`sec ~= current.last_tick`）**相同** ——
+--      是有意的双保险：哪天那条被改动，计时器也不会停。
+--   ⚠️ `#self.effects > 0` 同理：动效是"排进队列 → 下一次 render 放掉并清空"。
+--      正常情况下置 dirty 的是调用方（`fx()` 的 12 个调用点旁边都有 dirty），
+--      这一条只是保证"将来有人只调 fx() 忘了置 dirty"时它下一帧仍会被放出去；
+--      render 结束会把 `effects` 清空 ⇒ **不会退化成每帧重绘**。
 function Controller:tick(dt)
   self.now = (self.now or 0) + (dt or 0)
-  self.core:set_elapsed((self.core.elapsed or 0) + (dt or 0))
-  self:flush_pending_note()      -- 挂起的单击到点就落成笔记
-  self.dirty = true
+  local elapsed = (self.core.elapsed or 0) + (dt or 0)
+  self.core:set_elapsed(elapsed)
+  self:flush_pending_note()      -- 挂起的单击到点就落成笔记（成功时它自己置 dirty）
+  local sec = math.floor(elapsed)
+  if sec ~= (self._hud_sec or sec) then
+    self._hud_sec = sec
+    self.dirty = true
+  end
+  if #self.effects > 0 then self.dirty = true end
 end
 
 function Controller:is_intro_active() return (self.intro_page or 1) <= #M.INTRO end
@@ -2548,26 +2577,36 @@ function Controller:build_layout()
     --
     --   白名单内容 = 关卡内才该出现的东西（按 id + 按前缀两类）。
     --   新增关卡内控件时**记得补一笔**，补完跑一次布局审计确认。
-    local HIDE = {
-      topbar = true, toolbar = true, left = true, board = true, right = true,
-      toast = true, modal = true, intro = true,
-      clues = true,
-      ["action.back"] = true, ["action.redo"] = true, ["action.hint"] = true,
-      ["action.undo"] = true, ["action.submit"] = true, ["action.reveal"] = true,
-    }
-    local HIDE_PREFIX = { "cell.", "clue.", "hud.", "room.label.", "ruler", "tray.", "action." }
-    for i = 1, #nodes do
-      local id = nodes[i].id
-      local hide = HIDE[id] == true
-      if not hide then
-        for k = 1, #HIDE_PREFIX do
-          if id:sub(1, #HIDE_PREFIX[k]) == HIDE_PREFIX[k] then hide = true break end
-        end
-      end
-      if id == "home" then hide = (screen ~= "home") end
-    if id == "select" then hide = (screen ~= "select") end
-    if hide then nodes[i].visible = false end
-    end
+    -- ★★★★★ 2026-10-05 **这一段"内联白名单隐藏"整段删掉** —— 它和下面那次重复 push 一起，
+    --   是"选关页/主页看着不动也在烧 CPU"的真正来源。
+    --
+    --   它错在哪（可复现，`tools/_probe_setvis.lua`）：
+    --     判据写的是**全局 `screen`** —— `build_layout` 里根本没有这个局部变量
+    --     ⇒ 恒为 nil ⇒ `hide = (nil ~= "home")` **恒真**
+    --     ⇒ 它把上面刚 push 的 `home` / `select` **每一帧都改成 `visible=false`**；
+    --     而紧接着（原 L2582-2585）又 push 了**第二份** `home` / `select`
+    --     （`visible = (self.screen == …)`）把可见性"救"回来
+    --     ⇒ 计划里从此有**两个同 id 的节点**，而属性账本 `self._props` 是**按 id** 记账的
+    --     ⇒ 两个节点每帧互相覆盖，永远收敛不了：
+    --         第 N 帧：节点1 写 visible=false（和上一帧节点2 写的 true 不同）
+    --         第 N 帧：节点2 写 visible=true （和节点1 刚写的 false 不同）
+    --         第 N+1 帧：一模一样再来一遍
+    --   实测代价（选关页稳态 60 帧）：
+    --     · `tools/_probe_setvis.lua`：`select.visible` **每帧真写 2 次**（true/false 各一）；
+    --     · 而 `set_property` 的 visible 分支会置 `_subtree_dirty`（那是兜底隐藏的触发源）
+    --       ⇒ **`enforce_hidden_subtrees` 每帧都被重新触发**（实测 65 帧跑 65 次）
+    --       ⇒ 146 次 `SetVisible`/帧、1230 次 `GetChildren`/帧
+    --         （`tests/grid_cost.lua` 的小树上同一件事是 6 次 / 62 次）。
+    --
+    --   为什么可以整段删：这两件事**都已经有一份正确的实现** ——
+    --     · 函数末尾的 `apply_screen_hide(nodes, self.screen)`：判据是**参数** `screen`
+    --       （就是这里想读却读不到的那个值），而且它的 HIDE/PREFIX 名单是这里内联版的
+    --       **超集**（多 `selbar` / `tpl-container` / `hex.` / `hit.` / `selbtn.` / `tpl.`
+    --        以及"另一个屏幕的前缀"）⇒ 内联这段能藏的，它全藏；
+    --     · `home` / `select` 的可见性：上面那次 push 的
+    --       `visible = (self.screen == "home"/"select")` 已经给对了。
+    --   ⇒ 删除后**行为一字不变**，只是每帧那两笔互相打架的写入消失了。
+    --     （"同一件事两处实现必然漂移"是本项目反复踩到的病 —— 这就是最新的一例。）
     -- ★★★★ 2026-10-01 **真机"卡死"的最终修法**：容器**不再铺满屏幕**。
     --
     --   为什么：`home` / `select` 铺满 1600x900 之后就成了**全屏射线靶子** ——
@@ -2578,11 +2617,14 @@ function Controller:build_layout()
     --
     --   为什么敢这么做：诊断三那个探针控件是**挂在 `root` 下面**的，用户确认看得见
     --   ⇒ 说明**子控件不会被父级尺寸裁掉**（`root` 是全屏、探针 600x300 正常显示）。
-    local FULLSCREEN = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height }
-    push({ id = "home", kind = "container", parent = "root", rect = FULLSCREEN,
-           visible = (self.screen == "home"), pos_runtime = true })
-    push({ id = "select", kind = "container", parent = "root", rect = FULLSCREEN,
-           visible = (self.screen == "select"), pos_runtime = true })
+    -- ★★★★★ 2026-10-05 **原来这里还有一份 `home` / `select` 的重复 push —— 已删**（见上）。
+    --
+    --   它俩和上面那次 push **几何完全相同**（`FULLSCREEN` 与 `FULL` 都是 0,0,DESIGN 尺寸），
+    --   存在的唯一作用就是把上面那段内联隐藏错判掉的可见性"救"回来。
+    --   内联那段既然删了，这一份也就只剩坏处：
+    --     · 计划里多两个同 id 节点 ⇒ `render` 的属性循环对一个控件发两遍；
+    --     · 一旦两处 `visible` 写得不一样，就是上面那种"每帧互相覆盖"的无限打架。
+    --   ⚠️ 以后要改这两个容器的几何/可见性，**只改上面那一处**（L2521-2525）。
     if self.screen == "home" then
       push({ id = "home.title", kind = "text", parent = "root", visible = true, text = M.HOME_TITLE,
              rect = { x = 460, y = 140, w = 1000, h = 110 } })
@@ -3731,8 +3773,51 @@ function Controller:render(adapter, force)
     return false
   end
 
+  -- ★★★★★ 2026-10-05 **属性账本按「计划节点」记账，不按控件 id。**
+  --
+  --   为什么（这一轮实测抓到的真凶之一）：`build_layout` 里**同一个 id 会出现在两个节点上**
+  --   （最典型：`action.back` —— 一个挂 `topbar`、一个挂 `right`，见 L1730 与 L2355）。
+  --   而账本原来是 `self._props[n.id]`，**两个节点共用一份"上一帧发过什么"**
+  --   ⇒ 节点1 写 `parent=topbar`、节点2 立刻写 `parent=right`（对同一个键来说永远"变了"）
+  --   ⇒ 下一帧又是同样两笔，**永远收敛不了**：
+  --     · 每帧白跑一次 `find`（深树存在性探测）+ 一次 `set_property`；
+  --     · 实测（`tests/grid_cost.lua` [A1]/[E]）：稳态一次 render 里 **10 次搜空**
+  --       全是这两个 `action.back`（300 帧 = 3000 次），`rect`/`text`/`style`/`parent`
+  --       四个键每个都发两遍。
+  --
+  --   键 = `id \1 父容器 \1 同(id,父容器)的第几次出现`：
+  --     · 带上**父容器**：`action.back` 的两个节点就此分开（各自记账、各自收敛）；
+  --     · 带上**出现序号**：万一将来同一个 id 在同一父容器下也出现两次，仍然分得开；
+  --     · 用 `\1` 作分隔符（本文件里 `_prop_retry` 已经用这个约定，且 id 里不可能有它）。
+  --   ⚠️ `self._created` **仍然按 id** —— 一个 id 只对应**一个**引擎控件，
+  --      `create_control`（含事件绑定 `handlers[id]`）只能跑一次。
+  --      这一条是行为承诺：`action.back` 的点击动作仍然由**第一个**节点
+  --      （`topbar` 那个 = `back_confirm`，即"点了先弹 ✓/✗"）决定，没有换人。
+  local node_seq = {}
+  local function node_key(n)
+    local base = tostring(n.id) .. "\1" .. tostring(n.parent)
+    local seq = (node_seq[base] or 0) + 1
+    node_seq[base] = seq
+    return base .. "\1" .. tostring(seq)
+  end
+  -- 控件离开计划时，把它名下**所有**计划节点的账本一起扔掉（前缀匹配，见上面的键格式）。
+  local function drop_props_of(id)
+    local pre = tostring(id) .. "\1"
+    local stale = nil
+    for k in pairs(self._props) do
+      if type(k) == "string" and k:sub(1, #pre) == pre then
+        stale = stale or {}
+        stale[#stale + 1] = k
+      end
+    end
+    if stale ~= nil then
+      for i = 1, #stale do self._props[stale[i]] = nil end
+    end
+  end
+
   for i = 1, #nodes do
     local n = nodes[i]
+    local nkey = node_key(n)
     if not self._created[n.id] then
       -- create_control 也包一层：它内部会 `find` 控件树，真机上"某个节点不提供方法"
       -- 这种事本项目已经踩过（`GetChildren` 那个坑）。建不出来只该少一样东西，
@@ -3743,7 +3828,6 @@ function Controller:render(adapter, force)
           .. tostring(n.id) .. "` ← " .. tostring(err_c))
       end
       self._created[n.id] = true     -- 记上：免得每帧重试 + 重刷日志
-      self._props[n.id] = {}
       -- ★ 新的一生 ⇒ 补发额度也归零（见下面「认输」那段）。
       --   不清的话，"被销毁后又重建回来"的控件会**继承上一次的失败次数**，
       --   第一次没写进去就直接认输 —— 那就把这一轮修的毛病又放回来了。
@@ -3756,7 +3840,14 @@ function Controller:render(adapter, force)
         for j = 1, #stale do self._prop_retry[stale[j]] = nil end
       end
     end
-    local last = self._props[n.id]
+    -- ⚠️ 账本**必须在这里兜底建出来**（不能再放在上面 `if not self._created` 里面）：
+    --    第二个同 id 节点永远不会进那个分支（`_created[id]` 已经是 true），
+    --    照旧写法它的 `last` 就是 nil ⇒ 每个键都"变了" ⇒ 每帧重发，等于没修。
+    local last = self._props[nkey]
+    if last == nil then
+      last = {}
+      self._props[nkey] = last
+    end
     for k, v in pairs(n) do
       if k ~= "id" and k ~= "rect" then
         if not same_value(last[k], v) then
@@ -3880,11 +3971,11 @@ function Controller:render(adapter, force)
         --   `destroy_control` 会按名字反查并把控件 `SetVisible(false)`（甚至在
         --   `instantiated` 名单里时**真销毁**）⇒ 等于把网格里的线索卡关掉/毁掉。
         self._created[id] = nil
-        self._props[id] = nil
+        drop_props_of(id)
       else
         pcall(function() adapter:destroy_control(id) end)
         self._created[id] = nil
-        self._props[id] = nil
+        drop_props_of(id)
       end
     end
   end
