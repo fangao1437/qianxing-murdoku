@@ -309,6 +309,51 @@ do
   late.visible = false
 end
 
+-- ── 7.5 [丙] ★★ 对称性：格子「藏 ⇒ 显」必须对称 ─────────────────────────────
+--
+--   ★★★ 2026-10-06 补。**这一条就是当初漏掉的方向** ✓
+--
+--   本文件前面所有断言都只测【藏】："藏完子树真的全 false" ✓。
+--   而**从不断言【显】**✗ ⇒ 于是"递归只藏不显"这个单向行为
+--   被这套测试**当成了契约** ✗ ⇒ 几百轮里「11 套全绿」一直在说
+--   "这个 bug 是对的" ✓✓
+--
+--   ⚠️⚠️⚠️ **本节当前是【未验证】状态 —— 不要当它是保护网** ✗
+--
+--   2026-10-06 的破坏验证（★ 唯一可信的验证方式 ✓）：
+--     把适配层那行 `if vis == true and id:sub(1,5) == "cell." then`
+--     改成 `if false and …`（即**关掉对称恢复** ✗）
+--     ⇒ ★★ 本节这三条**仍然全绿** ✗✗
+--     ⇒ 说明它**没有走到被破坏的那条路** ⇒ ★ **假绿** ✓
+--   原因尚未查明（怀疑：夹具里 `sub()` 取到的句柄与断言用的不是同一个对象 ✗）。
+--   ⇒ ★★ **在弄清它为什么假绿之前，这三条不算证据** ✓
+--   ⚠️ 留着它的唯一理由：★ 记录"该往哪个方向补"✗ —— 而**不是**"这里已经被保护" ✓
+out("\n== 7.5 [丙] 格子「藏 ⇒ 显」必须对称（★ 未验证 · 见上方警告 ✗）==")
+do
+  adapter:drop_lookup("cell.1.1")
+  local content = adapter:sub("cell.1.1", "content")
+  local wup = attach(content, make_ctrl("wall.up"))   -- 夹具里原本只配了 face/note/x
+  local face = adapter:sub("cell.1.1", "face")
+
+  -- ① 先记下"该亮哪些边"（等价于属性下发时那一步）
+  adapter:_apply_edges("cell.1.1", "wall", { up = true })
+
+  -- ② 藏：递归把子控件压下去（这是【旧行为】✓ 保留 ✓）
+  adapter:set_property("cell.1.1", "visible", false)
+  ok(face.visible == false and wup.visible == false,
+    "★ 格子藏起来 ⇒ 子控件被递归压下去（旧行为，保留）",
+    "face=" .. tostring(face.visible) .. " wall.up=" .. tostring(wup.visible))
+
+  -- ③ 显：★★ 必须有对称恢复 ✗ —— ★ 改之前这里永远回不来 ✓ 就是那个 bug ✓
+  adapter:set_property("cell.1.1", "visible", true)
+  ok(face.visible == true,
+    "★★ 格子重新可见 ⇒ `face` 必须被点亮（改之前：永远 false ⇒ 底图不见）",
+    "face=" .. tostring(face.visible))
+  ok(wup.visible == true,
+    "★★ 格子重新可见 ⇒ `wall.up` 按 `_edge_want` 恢复（改之前：永远 false ⇒ 墙/门不画）",
+    "wall.up=" .. tostring(wup.visible))
+end
+
 -- ── 8. 不许有运行时报错（防"修出来的新 bug"）─────────────────────────────
 --   口径与 tests/board_bg.lua 一致：只看**真的抛错**那种 printerr
 --   （`attempt to` / `nil value` / `bad argument`）。离线假控件树缺 `Enum`、
