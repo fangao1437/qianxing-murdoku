@@ -28,12 +28,29 @@ const SKIP = new Set([
 ]);
 
 // 规则表：扩展名 → 期望
+//
+// ⚠️⚠️ 2026-10-05 Round 62：**`.ps1` 那条规则撤销了** ✗ —— 因为它与项目既有的
+//    `tools/normalize_encoding.ps1`（`check_all` 步骤 **2c**）**直接打架** ✓✓：
+//      · 本哨兵（Round 51 加的）曾要求 `.ps1` **必须有 BOM**；
+//      · 2c 要求 `.ps1` **必须没有 BOM** ⇒ 它每次都会把本哨兵补的 BOM **再剥掉** ✗。
+//    两边**互相抵消** ⇒ 仓库里同时存在两条相反的规则 ✗ ⇒ 必须撤掉一条 ✓。
+//
+//    谁对？**证据是分裂的** ✓：
+//      · **PS 5.1**（`powershell`）读**无 BOM 且含中文**的 `.ps1` ⇒ 按 GBK 解码 ⇒ **解析失败** ✗
+//        （工具代理实测：给 `check_all.ps1` 补 3 字节 BOM 之后就能跑了 ✓）
+//      · **PS 7**（`pwsh`，本会话用的）默认 UTF-8 ⇒ **不需要 BOM** ✓
+//    ⇒ **规则取决于"哪个 shell 解析它"** ✗ ⇒ 一个仓库里不该有两条互相抵消的规则 ✓
+//
+//    ⇒ **处置**：本哨兵**让出这条规则的权威** ✓ —— 不再对 `.ps1` 判红 ✗，
+//      只在**同一文件同时被两种 shell 使用时**给提示 ✓；权威归 **2c** ✓
+//      （一条规则一个权威 ✓ 否则工具之间会互相拆台 ✓）
 const RULES = {
   '.lua':  { bom: false, why: 'Lua 引擎解析器不收 BOM ✓' },
   '.mjs':  { bom: false, why: 'Node 会把 BOM 当内容（多数情况无害，但统一不要 ✓）' },
   '.js':   { bom: false, why: '同上' },
   '.cjs':  { bom: false, why: '同上' },
-  '.ps1':  { bom: true,  why: 'PowerShell 5.1 靠 BOM 判编码；无 BOM 且含中文 ⇒ 按 GBK 解码 ⇒ 整份解析失败 ✗' },
+  // '.ps1' 故意**不列**：BOM 要求取决于解析它的 PowerShell 版本 ✗
+  //   ⇒ 权威归 `tools/normalize_encoding.ps1`（步骤 2c）✓ 见上面那段说明
   '.md':   { bom: false, why: '文档统一无 BOM ✓' },
   '.json': { bom: false, why: 'JSON 规范不建议 BOM ✓' },
 };
