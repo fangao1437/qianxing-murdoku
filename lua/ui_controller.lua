@@ -1777,6 +1777,13 @@ function Controller:build_layout()
   --   尺寸与容器同尺寸（画布 400×544）、挂在 `clues` 下、坐标相对父级 ⇒ (0,0) ✓
   push({ id = "clues.bg", kind = "container", parent = "clues",
          rect = { x = L.clues.x, y = L.clues.y, w = L.clues.w, h = L.clues.h } })
+  -- ★ 2026-10-05 **滚动条点击区 `clues.bar`** —— 用户新做的隐形热区（画布 24×520），
+  --   规划里原来没有它 ⇒ 脚本不认它（"还没建"名单里反过来没有它才怪 ✗）。
+  --   位置：条心 x = 464 画布、纵向与卡片区同高 ⇒ 设计 x = (464−16)×6/5 ≈ 537.6、
+  --   y/h 与卡片块一致（用 L.clues 的行距算）。⚠️ 等真机日志回来再微调。
+  push({ id = "clues.bar", kind = "button", parent = "clues",
+         rect = { x = L.clues.x + 480, y = L.clues.y, w = 28.8, h = L.clue_row_h * 5 - 12 },
+         visible = true })
   local shown = math.min(#vm.clues, L.clue_max_visible)
   local rows = L.clue_rows or 9
   -- ★ 滚动位置：0 表示从第 1 条开始。**所有 `shown` 条控件都照旧建出来**
@@ -1948,6 +1955,12 @@ function Controller:build_layout()
       -- 字母徽章（右边）：就是嫌疑人的字母 id（A/B/C/D/V），参考图那样
       if wid ~= nil and wid ~= "" then
         push({ id = "clue." .. i .. ".badge", kind = "text", parent = "clue." .. i,
+               rect = { x = 400.8, y = 64.8, w = 40.8, h = 33.6 },
+               text = wid, style = "clue.who", visible = inWin, pos_runtime = true })
+        -- ★ 2026-10-05 **同一徽章再发一份，名字用 `letter`** —— 用户在编辑器里把它命名成
+        --   `clue.N.letter`，而规划里叫 `badge` ⇒ 名字对不上就写不进去、**字母不显示** ✗
+        --   两份都发（同 rect 同文字）：谁存在谁被点亮，另一个只是"还没建"的无害条目 ✓
+        push({ id = "clue." .. i .. ".letter", kind = "text", parent = "clue." .. i,
                rect = { x = 400.8, y = 64.8, w = 40.8, h = 33.6 },
                text = wid, style = "clue.who", visible = inWin, pos_runtime = true })
       end
