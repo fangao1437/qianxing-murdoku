@@ -4342,16 +4342,16 @@ function Adapter:_fire(event, phase, data, src_id)
   --   ⚠️ 这是"每帧扫"被去掉之后，**唯一**能兜住"引擎自己改显隐"的触发点，
   --      所以宁可多置一次位（一次 enforce ≈ 几百个节点），也不能漏。
   self._subtree_dirty = true
-  -- ★★★ 临时计数（2026-10-05 · 一次性定位「第三层」，跑完必删）
-  self._t3_fire = (self._t3_fire or 0) + 1
-  local _t3n = self._t3_fire
-  -- Q4：on_input 是不是 nil
-  if _t3n <= 24 and print then
+  -- T3PROBE-C
+  self._t3f = (self._t3f or 0) + 1
+  local _t3n = self._t3f
+  if _t3n <= 30 and print then
     print("[T3Q] _fire#" .. _t3n .. " phase=" .. tostring(phase)
       .. " src_id=" .. tostring(src_id)
-      .. " action=" .. tostring(event and event.action)
+      .. " act=" .. tostring(event and event.action)
       .. " on_input=" .. tostring(self.on_input ~= nil))
   end
+  -- T3PROBE-C-END
   if self.on_input == nil then return end
   local evt = {}
   for k, v in pairs(event) do evt[k] = v end
@@ -4382,13 +4382,6 @@ function Adapter:_fire(event, phase, data, src_id)
       evt.r = tonumber(R)
       evt.c = tonumber(C)
     end
-  end
-  -- ★★★ 临时计数（2026-10-05 · 一次性定位「第三层」，跑完必删）
-  if _t3n <= 24 and print then
-    print("[T3Q] _fire#" .. _t3n .. " 补后 evt.r=" .. tostring(evt.r)
-      .. " (" .. type(evt.r) .. ") evt.c=" .. tostring(evt.c)
-      .. " (" .. type(evt.c) .. ") action=" .. tostring(evt.action)
-      .. " phase=" .. tostring(evt.phase))
   end
   self.on_input(evt)
 end
@@ -4442,6 +4435,18 @@ function Adapter:input_profile()
 end
 
 function Adapter:bind_input(id, node)
+  -- T3PROBE-D
+  self._t3b = (self._t3b or 0) + 1
+  self._t3bcell = self._t3bcell or 0
+  if tostring(id):match("^cell%.") then self._t3bcell = self._t3bcell + 1 end
+  if print then
+    if self._t3b <= 12 or tostring(id):match("^cell%.1%.[13]$") then
+      print("[T3Q] bind_input#" .. self._t3b .. " id=" .. tostring(id)
+        .. " 其中格子累计=" .. self._t3bcell
+        .. " event=" .. tostring(node.event ~= nil))
+    end
+  end
+  -- T3PROBE-D-END
   local ctrl = self:find(id)
   if ctrl == nil then return end
   if ctrl.AddCursorEventListener == nil then
@@ -4550,16 +4555,30 @@ function Adapter:bind_input(id, node)
   end)
 
   -- 按下 / 抬起：界面层据此自己合成"长按"
+  --
+  -- ★★★★★ 2026-10-05 **必须把 `id` 一起传下去** ✗ —— 否则**长按抬起会崩** ✓
+  --
+  --   与 `click`（上面那条）是**同一个病**：界面层认格子靠的是 `event.r` / `event.c`
+  --   （`ui_controller.lua:810/814` → `on_cell_down/on_cell_up(event.r, event.c, …)`），
+  --   而 `_fire` 里**只有拿到 `src_id` 才**从 `cell.<行>.<列>` 解析出 `r`/`c` ✓。
+  --
+  --   不传 `id` 的实测反事实：`live_event()` 落到兜底 `{ action = "click" }` 时，
+  --   down/up 两边的 `_press` 都成了 `{ r = nil, c = nil }` ⇒ `on_cell_down` 存进去、
+  --   `on_cell_up` 取出来比 `dt` ⇒ **崩**：
+  --     `murdoku_core.lua:1917: attempt to compare nil with number`
+  --   （`_press.r`/`_press.c` 是 nil，长按判定那一步拿 nil 去比数字。）
+  --
+  --   `id` 就在 `bind_input(id, node)` 的形参作用域里 ✓（同一闭包，见上面 `click` 那条注释 ✓）。
   local down = E("CursorEventType.CursorDown")
   if down ~= nil then
     ctrl:AddCursorEventListener(down, function(data)
-      self:_fire(live_event(), "down", data)
+      self:_fire(live_event(), "down", data, id)
     end)
   end
   local up = E("CursorEventType.CursorUp")
   if up ~= nil then
     ctrl:AddCursorEventListener(up, function(data)
-      self:_fire(live_event(), "up", data)
+      self:_fire(live_event(), "up", data, id)
     end)
   end
 
@@ -4574,10 +4593,21 @@ function Adapter:bind_input(id, node)
   --
   -- 界面层还会再比一次坐标位移（见 Controller:on_cell_drag），所以就算某个实现
   -- 在同一点狂发 Drag，也不会误取消。
+  --
+  -- ★★★★★ 2026-10-05 **`drag` 也要传 `id`** ✓ —— 和 down/up 同一条理由 ✓。
+  --
+  --   不传会**静默**丢掉这个功能（不崩，但等于没做 ✓）：
+  --     `_fire` 拿不到 `src_id` ⇒ `evt.r`/`evt.c` 恒为 nil ✗
+  --     ⇒ `on_input`（`ui_controller.lua:818`）转给 `on_cell_drag(nil, nil, x, y)` ✗
+  --     ⇒ 函数第一句 `local p = self._press` 之后、`p.r ~= r or p.c ~= c` 那一比就
+  --       **直接 return false** ⇒ 位移容差那几行**永远跑不到** ✗
+  --     ⇒ 长按期间手抖/滑动**不会取消** ⇒ 移动端"按住想微调、结果落子了"又回来了 ✗
+  --   （上面那段注释写的就是"这条救回来的"那个功能 —— 不传 id 等于把它悄悄删掉。）
+  --   ⇒ ★ 传 `id` 之后 `r`/`c` 才解析得出来，位移判断才真的生效 ✓
   local drag = E("CursorEventType.CursorDrag")
   if drag ~= nil then
     ctrl:AddCursorEventListener(drag, function(data)
-      self:_fire(live_event(), "drag", data)
+      self:_fire(live_event(), "drag", data, id)
     end)
   end
 end
