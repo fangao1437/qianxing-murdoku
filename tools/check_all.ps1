@@ -1,4 +1,4 @@
-# tools/check_all.ps1 —— 一键全量自检
+﻿# tools/check_all.ps1 —— 一键全量自检
 #
 # 跑法（在工程根目录）：
 #   powershell -ExecutionPolicy Bypass -File tools\check_all.ps1
