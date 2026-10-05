@@ -3747,6 +3747,39 @@ function Adapter:_apply_edges(id, prefix, flags)
     end
   end
 
+  -- ★★★★★ 2026-10-05 **关卡内读回：每个格子只打一次** ✗✓ —— 时机对了才有意义 ✓
+  --
+  --   为什么要在【这里】打（而不是"逐格自检"那里 ✓）：
+  --     · 上一版打在 `逐格自检` 里 ✗ ⇒ 而那一刻 `controller.screen` 还是 `"home"` ✗
+  --       （真机日志紧接着就打了 `controller.screen = home` ✓）
+  --       ⇒ ★ 读数全是 `vis=false` ✗ —— 而【同一行】的 `clues` 也是 false ✗
+  --         可用户实测【线索区是好的】✓ ⇒ ★★ 证明那行读数【不在关卡内】✗✓
+  --     · 而 `_apply_edges` 是**每帧渲染**都会走的 ✓ ⇒ ★ 这里才是"关卡内真实状态" ✓
+  --
+  --   ★ 判据（这次时机是对的 ✓）：
+  --     · `vis=true` ✓ 而屏幕上没有 ✗ ⇒ ★ 层序/素材（但 sib/sx 已排除 ✓）
+  --     · `vis=false` ✗ ⇒ ★ `SetVisible(want)` 当帧没生效 ⇒ 句柄/引擎 ✓
+  --     · `vis` 与 `want` 不一致 ✗ ⇒ ★ 有人在别处覆盖它 ✓
+  --   ⚠️ 只读 ✓ 每格只打一次（`self._edge_readback`）✗ 不刷屏 ✓
+  do
+    self._edge_readback = self._edge_readback or {}
+    if not self._edge_readback[id] then
+      self._edge_readback[id] = true
+      local parts = {}
+      for i = 1, #sides do
+        local s = sides[i]
+        local nm = prefix .. "." .. s
+        local sub2 = self:sub(id, nm)
+        local v = "?"
+        if sub2 == nil then v = "**找不到**"
+        else pcall(function() v = tostring(sub2.visible) end) end
+        local want = (flags[s] and not skip[s]) and true or false
+        parts[#parts + 1] = nm .. "(want=" .. tostring(want) .. " vis=" .. v .. ")"
+      end
+      print_("[murdoku] 关卡内墙/门读回 · " .. tostring(id) .. "：" .. table.concat(parts, "  "))
+    end
+  end
+
   -- ★★ 「图片类型 = 基础」的图**按原尺寸画，不会填充控件** ——
   --    真机 2026-09-27 05:13 实测：同一面墙，素材选「拉伸」时是**满宽蓝条**，
   --    换成「基础」后只剩**左上角一小段**（"显示不完全"）。
