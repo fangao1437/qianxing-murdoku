@@ -1,0 +1,16 @@
+# tools/lua-tooling/stylua.toml —— 本工程的 Lua 格式化配置
+#
+# ⚠️ 用途是**只读的格式体检**（stylua --check），不是自动改写。
+#    本工程的 lua/** 是手写对齐的风格（等号对齐、表字段对齐、注释成块），
+#    stylua 一定会想重排 —— 所以 check_all 里那一步**只报告、不判失败**，
+#    也**绝不要**在没有人工过目的情况下跑 `stylua`（不带 --check）去写文件。
+#
+# 这份配置只负责让「缩进/行宽/换行符」这三项与工程现状一致，
+# 这样报告出来的差异才集中在**真正的排版分歧**上，而不是满屏的缩进噪音。
+indent_type = "Spaces"
+indent_width = 2          # 实测 lua/** 全部是 2 空格缩进（0 行用 Tab）
+column_width = 140        # 官方默认 120，本工程有大量长注释行
+line_endings = "Unix"     # 与 tools/normalize_encoding.ps1 的口径一致
+quote_style = "AutoPreferDouble"
+call_parentheses = "Always"
+collapse_simple_statement = "Never"

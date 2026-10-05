@@ -1109,7 +1109,19 @@ function Murdoku.on_update(dt)
           -- 屏幕坐标 = 父级屏幕位置 + 自身偏移（Y 向上）；根级以画布中心为原点
           local sx = (ox or 0) + (ax or 0)
           local sy = (oy or 0) + (ay or 0)
-          out[nm] = string.format("%dx%d @屏幕(%.0f,%.0f)", w or 0, h or 0, sx + 800, sy + 450)
+          -- ★★★★★ 2026-10-05 **第一遍代码体检修（第 2 处，也是被第 1 处掩盖住的那处）**：
+          --   这里原来是 `"%dx%d @屏幕(%.0f,%.0f)"` —— **`%d` 收到带小数的数会抛错**
+          --   （Lua 5.3：`bad argument #2 to 'format' (number has no integer representation)`）。
+          --   而 `w`/`h` 直接来自引擎的 `GetSizeDelta()`，真机上就是浮点。
+          --   证据：把上面那个幻影变量 `ad` 修好、这段**第一次真的跑起来**之后，
+          --     `tools/_probe_pcall_err.lua` 立刻抓到
+          --     `./dist/client_script.lua:13368: bad argument #2 to 'format' (number has no integer representation)`
+          --     而且它抛在 `walk()` 里、**外面没有 pcall** ⇒ 整帧 `on_update` 被打断
+          --     ⇒ `tests/grid_cost.lua` 的 J2（换屏后 40 帧重扫射线）当场从 13/0 变 12/1。
+          --   ⇒ 两个 bug 是**叠在一起**的：幻影 `ad` 让它永不执行，从而**掩盖**了这个 `%d`。
+          --     只修前一个 = 把"静默空转"换成"每帧抛错"。所以必须一起修。
+          --   改法：`%d` → `%.0f`（同文件上面那段"屏幕占用排行"用的就是 `%6.0f`，一致）。
+          out[nm] = string.format("%.0fx%.0f @屏幕(%.0f,%.0f)", w or 0, h or 0, sx + 800, sy + 450)
         end
         local kids = nil
         pcall(function() kids = c:GetChildren() end)

@@ -2373,8 +2373,21 @@ function Adapter:apply_tray_layout(layout)
     --    （`action.q.*`、`modal.level.*` …）**从没被验证过**
     --    （真机日志 `SetImage 成功 19 个` 暴露的）。
     --    改成由调用方传入（`main.lua` 从规划里取 `kind == "button"`），有多少算多少。
+    --
+    -- ★★★★★ 2026-10-05 **这两行必须提到 `if` 之前**（Round 35 的结构性修复）。
+    --   原因：它们被**两个地方**用 —— 上面这个 `btn_art` 块（L2514 起的上色循环），
+    --   以及**下面两个本该是顶层的方法**。原代码把 `if` 忘了闭合 ✗ ⇒
+    --   `apply_ruler_layout` / `diagnose_overlap` 被嵌成了 `apply_tray_layout` 的子闭包 ✗
+    --   ⇒ `main.lua` 里 `if a.apply_ruler_layout ~= nil` 的守卫**恒为假** ✗
+    --   ⇒ **行标/列标对齐、相交诊断从来没跑过**（静默，无报错）。
+    --   证据：`node tools/audit/check_nesting.mjs` 报 L2378/L2461 深度=2 ✗；
+    --         `luac -l -p` 里这两个 CLOSURE 落在 `apply_tray_layout` 的 prototype 内 ✗。
+    --   ⇒ 修法：locals 上提 + 在此**补一个 `end`** 关闭 `btn_art`，函数回到顶层；
+    --      并在 `diagnose_overlap` 结束后**重新打开**同一个 `if`（见 L2513 附近）✓
     local names = self.cfg.btn_list or {}
     local done, miss = 0, 0
+    end   -- ← 关闭原来那个 `btn_art` 块（不加 `if`！它的 `end` 本来就在 L2547，
+          --    上色循环在 `diagnose_overlap` 之后用**同一个** `if` 重新打开 ✓）
 function Adapter:apply_ruler_layout(rows, cols)
   local g = self.cfg.cells or {}
   local ruler = self:find("ruler")
@@ -2511,6 +2524,11 @@ function Adapter:diagnose_overlap()
   return hits
 end
 
+    -- ★★★★★ 2026-10-05 **重新打开 `btn_art` 块**（Round 35 的结构性修复）。
+    --   上面在 `apply_ruler_layout` 之前补了一个 `end` 关掉了原来的 `if`，
+    --   这里必须用**同一个条件**再打开一次 ⇒ 底下的"按钮底图上色（运行时）"才仍然受 `cfg.btn_art` 控制 ✓
+    --   而上面那两个方法**回到了顶层** ⇒ `main.lua` 的 `~= nil` 守卫终于会成立 ✓
+    if self.cfg.btn_art == true and print then
     print("[murdoku] --- 按钮底图上色（运行时）---")
     for i = 1, #names do
       local cid = names[i]
