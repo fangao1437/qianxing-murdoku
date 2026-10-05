@@ -4003,12 +4003,54 @@ function Controller:render(adapter, force)
     end
   end
   -- 失败 ⇒ 记一次。返回 true = **还有额度，下一帧再试**；false = **认输，调用方该记账了**。
-  local function retry_more(id, key, why)
+  --
+  -- ★★★★★ 2026-10-05 **两种失败必须分开给额度** ✗✓（用户实测：**第一关渲染不齐、之后正常**）
+  --
+  --   为什么：真机日志（`日志_2026/10/05_22:18:35`）把区别指出来了 ——
+  --     · **第一遍进关**：`棋盘格子：25 / 25 存在（★ 本次新建 25 个，模板索引 1073741876）` ✗
+  --     · **之后任何一关**：`棋盘格子：25 / 25 存在（★ 本次新建 0 个，模板索引 nil）` ✓
+  --   ⇒ ★★ 只有"**本次新建**"的那一次，模板子控件（`wall.*` / `door.*` / `note` / `x`）
+  --      不是同一帧就绪 ✗ ⇒ `_apply_edges` 的 `self:sub()` 查不到 ⇒ 静默跳过 ✗
+  --      ⇒ 补发 3 帧后认输 ⇒ ★ **第一关的墙/门永远不亮** ✗（之后的关卡复用已就绪的实例 ✓）
+  --
+  --   ⇒ 所以判据是**两种完全不同的失败**：
+  --     ① ★ **控件本身不存在**（本关不建的 ~105 个 ✗）⇒ 必然永远失败 ⇒ **3 次就认输** ✓
+  --        ★ 这个数字**不能动** ✗ —— v066 真机实测过 10 ⇒ **加载慢十倍 + 切屏卡顿** ✓
+  --     ② ★ **控件在、只是它的模板子控件还没就绪** ✗ ⇒ ★ **它一定会就绪** ✓ ⇒ **值得多等一会儿** ✓
+  --        ★ 额度用**时间**（`self.now` ✓ 秒）而不是帧数 ✗ —— 帧率在不同机器上含义不同 ✓
+  --        ★ 而且**只在"控件存在"时才放宽** ✗ ⇒ 那 ~105 个不存在的控件仍走 3 次上限 ✓✓
+  --
+  --   ⚠️ 上限依然存在（`SUB_READY_SECONDS`）✗ ⇒ **不会变成每帧死循环** ✓
+  local SUB_READY_SECONDS = 2.5   -- ★ 等子控件就绪：约 2.5 秒（足够覆盖模板实例化 ✓ 且有限 ✓）
+  local function retry_more(id, key, why, exists)
     local rk = tostring(id) .. "\1" .. tostring(key)
     self._prop_retry = self._prop_retry or {}
+    -- ★★ 账本**形状不变** ✗ —— `self._prop_retry[rk]` 仍然是**数字**（次数）✓
+    --   ★ 首次失败的时刻**另存一张表** ✓（`self._prop_retry_t0`）
+    --   ⚠️ 为什么不把数字换成表 ✗：`tests/prop_ledger.lua` 断言的就是这个数字 ✓
+    --      第一版我改成了表 ⇒ 它立刻 13/0 → 11/2 ✗（**这就是退化的来源** ✓ 已改回 ✓）
     local n_try = (self._prop_retry[rk] or 0) + 1
     self._prop_retry[rk] = n_try
-    if n_try < PROP_RETRY then return true end
+    if n_try == 1 then
+      self._prop_retry_t0 = self._prop_retry_t0 or {}
+      self._prop_retry_t0[rk] = self.now or 0
+    end
+    -- ★ ① 控件不存在 ⇒ 老规矩：3 次认输 ✓（性能红线，不许放宽 ✗）
+    -- ★ ② **只有 `walls`/`doors`** 才配得上"等子控件" ✓✓ —— 见下
+    --   ⚠️ 第一版我写成"只要控件在就放宽" ✗ ⇒ `prop_ledger` 立刻 13/0 → 11/2 ✗✓
+    --     （`action.back` 也"存在 + 写失败" ✗ 但它的失败**不是**子控件没就绪 ✗
+    --       —— 它是**两个规划节点抢同一个控件** ✓ ⇒ 被放宽后每帧重发 2.5 秒 ✗）
+    --   ⇒ ★ **测试抓对了** ✓ ⇒ 收窄到**真正会"子控件晚一步就绪"的那两个键** ✓✓
+    --     ★ 依据：`Adapter:_apply_edges` 的 `missing_sub` 只出现在 `wall.*` / `door.*` ✓
+    --       （`engine_adapter_qianxing.lua:3670-3681`：取不到 `cell.<R>.<C>` 的
+    --        `wall.<side>` / `door.<side>` 子控件 ⇒ 返回 false ✓）
+    --     ★ 而 `label`/`bg` 之类走的是别的分支 ✓ 不在此列 ✓
+    if exists == true and (key == "walls" or key == "doors") then
+      local t0 = (self._prop_retry_t0 or {})[rk] or (self.now or 0)
+      if (self.now or 0) - t0 < SUB_READY_SECONDS then return true end
+    else
+      if n_try < PROP_RETRY then return true end
+    end
     -- ★ 认输也要留一句话：否则"这条属性到底补上没有"在日志里查不到 ——
     --   而这正是这一轮要回答的问题（第一次进关 vs 第二次进关的差别）。
     --   ⚠️ **不能每条都打**：那 ~105 个没建的控件的属性会一起走到这里 ⇒
@@ -4017,7 +4059,9 @@ function Controller:render(adapter, force)
     if self._prop_giveup_n <= 5 then
       self:_grid_log("prop_giveup:" .. rk,
         "属性补发 " .. n_try .. " 次仍未送达，已停止补发：`"
-        .. tostring(id) .. "." .. tostring(key) .. "`（" .. tostring(why) .. "）")
+        .. tostring(id) .. "." .. tostring(key) .. "`（" .. tostring(why) .. "）"
+        .. (exists == true and "　★ 注意：**控件是存在的** ✗ —— 这条属于「子控件一直没就绪」"
+            or "　（控件本身不存在，属正常）"))
     elseif self._prop_giveup_n == 6 then
       self:_grid_log("prop_giveup_more",
         "属性补发失败：已经列了前 5 条，后面的不再逐条打印"
@@ -4172,7 +4216,11 @@ function Controller:render(adapter, force)
             --     （按钮的 label 子控件没就绪 / 墙门的 wall.* 子控件取不到）。
             local why = (not exists) and "控件一直没找到（find 返回 nil）"
               or "控件在、但适配层说这次没写进去（子控件没就绪？）"
-            if retry_more(n.id, k, why) == false then
+            -- ★ 2026-10-05：**把 `exists` 传下去** ✗✓ —— `retry_more` 据此选额度：
+            --   · `exists == false` ⇒ 控件不在 ⇒ 老规矩 3 次认输 ✓（性能红线 ✗ 不放宽）
+            --   · `exists == true`  ⇒ 控件在、只是子控件没就绪 ✗ ⇒ **给它 2.5 秒等** ✓
+            --     ★ 这正是"第一次进关（格子本次新建）画得少、之后再进正常"的治法 ✓
+            if retry_more(n.id, k, why, exists) == false then
               last[k] = v          -- 认输：记账，免得每帧再看见它
             end
           end
@@ -4224,7 +4272,7 @@ function Controller:render(adapter, force)
         retry_clear(n.id, "__rect")
       elseif not rect_exists then
         last.__rect = { x = n.rect.x, y = n.rect.y, w = n.rect.w, h = n.rect.h }
-      elseif retry_more(n.id, "__rect", "位置没写进去（控件在，但句柄失效 / 位置被拒）") == false then
+      elseif retry_more(n.id, "__rect", "位置没写进去（控件在，但句柄失效 / 位置被拒）", true) == false then
         last.__rect = { x = n.rect.x, y = n.rect.y, w = n.rect.w, h = n.rect.h }
       end
     end
