@@ -1297,21 +1297,30 @@ local function apply_screen_hide(nodes, screen)
     --   ⇒ 三样都补进隐藏名单：`selbar`（容器本身）、`selbtn.`（它的子按钮）、`tpl-`（模板引用控件）。
     HIDE["selbar"] = true
     HIDE["tpl-container"] = true
-    -- ★★★★★ 2026-10-05 **`"cell."` 回来了 —— 但这次是【双向】的** ✗✓
+    -- ★★★★★ 2026-10-05 **`"cell."` 从这里删掉** ✗✓ —— 它就是「第一次进关墙/门不画」的根因 ✓
     --
-    --   上一版我把它整条删掉 ✗（以为规划会管 ✓）⇒ 真机结果：
-    --     ★ 墙/门【好了】✓✓（这是对的 ✓）
-    --     ★ 但**主页/选关时棋盘还挂着** ✗（用户实测 ✓）
-    --   为什么：★ 规划只在 `build_layout` 那一次算 `cell.*` 的 `visible` ✗
-    --     ⇒ ★ **切屏时不重算** ✗ ⇒ 格子停在**关卡内那个 `true`** ✓
-    --     （真机开局诊断：`cell.1.1 visible=true` ✗ —— 那时是主页 ✓）
+    --   机制（本函数是**单向**的 ✗：只会 `visible = false` ✓ 从不写回 true ✓）：
+    --     · 开局 `screen = "home"` ✓ 于是 `PREFIX` 命中 `"cell."` ✗
+    --       ⇒ ★ 25 个 `cell.*` 全部 `visible = false` ✗✓
+    --     · 而 `cell.*` 是格子的**根控件** ✗ ⇒ 它的 false 会**连坐全部子控件** ✓
+    --       ⇒ ★★ `wall.*` / `door.*` / `face` **一律看不见** ✓✓
+    --     · 之后进关卡 `screen = nil` ✓ ⇒ 本函数**不再藏** ✓
+    --       但**已经设成 false 的 `cell.*` 它【不会写回 true】** ✗（单向的代价 ✓）
+    --       ⇒ ★ 父级一直是 false ⇒ ★★ **墙/门永远不出现** ✓✓
     --
-    --   ★ 所以 `cell.*` **必须由屏幕层管** ✓ —— 而且必须**双向** ✗：
-    --     · `screen ~= nil`（主页/选关）⇒ 藏 ✗  · `screen == nil`（关卡内）⇒ **显式显示** ✓
-    --   ★ 为什么这里双向【是安全的】✗（而 `hit.*` 那次双向闯了祸 ✗）：
-    --     · `hit.*` / `hex.*` 有【状态层】也在写 ✓ ⇒ 每帧写 true 会覆盖状态 ✗
-    --     · ★ `cell.*` **没有任何状态层** ✗ —— 它是纯屏幕层控件 ✓
-    --       ⇒ ★ 这里就是它唯一的权威 ✓✓
+    --   ★★★ 用户的三条实测现象**全部对上** ✓✓：
+    --     · 「破坏开局流程（`screen` 全程 `nil`）⇒ 直接正常」✓
+    --       ⇒ 那时 PREFIX 只有 `{"home","select"}` ✓ **从不碰 `cell.*`** ✓
+    --     · 「正常走流程 ⇒ 不画」✗
+    --       ⇒ 开局必经 `home` → `select` ✓ 两趟都把 `cell.*` 设 false ✓
+    --     · 「进别的关再回来就正常」✓
+    --       ⇒ 那一趟 `screen` 是 `nil` ✓ 不再藏 ✓ 而规划把 `cell.*` 重发 true ✓
+    --
+    --   ★ 为什么删它是**安全**的：★ `cell.*` 的可见性**规划里已经按屏幕算好了** ✓
+    --     · 主页/选关：规划给 `false` ✓（真机开局日志：`cell.1.1 visible=false` ✓）
+    --     · 关卡内：规划给 `true` ✓（真机进关日志：`cell.1.1 visible=true` ✓）
+    --     ⇒ ★★ 这一条**本来就是重复的** ✗ —— 重复的那份还会用"单向藏"覆盖规划 ✗✓
+    --   ⚠️ 教训：★ 可见性【只能有一个权威】✗ —— 规划给了，屏幕层就不该再管 ✓
     PREFIX = { "clue.", "hud.", "room.label.", "ruler", "tray.", "action.", "hex.", "hit.",
                "selbtn.", "tpl.",
                (screen == "home") and "select." or "home." }
@@ -1364,21 +1373,7 @@ local function apply_screen_hide(nodes, screen)
     --     · `forget_visible`（差集藏完清账本 ✓ ⇒ 下次该显示时会【重发 true】✓）
     --     · `screen` 判对（构造时 `nil` ✓ + `start_other` 后置 `nil` ✓）
     --     ⇒ ★ 三处里这两处才是根治 ✓，本函数【不需要】也【不应该】双向 ✓✓
-    -- ★★★★★ 2026-10-05 **`cell.*` 单独走【双向】** ✗✓ —— 它是屏幕层的唯一权威 ✓
-    --
-    --   为什么不能和别的控件一起走"单向藏"✗：
-    --     · 单向 ⇒ 主页把它藏了 ✗ ⇒ 进关卡后【没人写回 true】✗ ⇒ 父级永久 false ✗
-    --       ⇒ ★★ 墙/门/底图全灭 ✓✓（就是用户报的那个 ✓）
-    --     · 而删掉不管 ⇒ 主页/选关时棋盘还挂着 ✗（用户刚报的 ✓）
-    --   ⇒ ★★ 只有"按屏幕显式写两边"才对 ✓✓：
-    --     ★ `screen ~= nil`（主页/选关）⇒ false ✓  ·  `screen == nil`（关卡内）⇒ true ✓
-    --   ★ 安全性：★ `cell.*` 【没有状态层】✗（不像 `hit.*` ✗）
-    --     ⇒ 这里写它就是唯一权威 ✓ 不会覆盖谁 ✓
-    if id:sub(1, 5) == "cell." then
-      nodes[i].visible = (screen == nil)
-    elseif hide then
-      nodes[i].visible = false
-    end
+    if hide then nodes[i].visible = false end
   end
 end
 -- ★★★★★ 2026-10-05 **`split_by_name` 从 `build_layout` 里提出来，升成模块级函数**。
