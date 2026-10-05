@@ -1699,7 +1699,12 @@ function Murdoku.on_update(dt)
       current._vis_forcing = forcing
       current._vis_frames = fnow
       current._vis_until = murdoku_vis_force_to
-      current._vis_keynow = _vis_key
+      -- ★ 2026-10-05 Round 70 修：这里原来写的是 `_vis_key` ✗ —— **少写了前缀** ⇒
+      --   `_vis_key` 从未声明 ⇒ 它是**全局 nil** ✗ ⇒ 这个诊断字段永远镜像成 nil ✗。
+      --   正确变量是上面 L1627 声明的局部 `murdoku_vis_key` ✓
+      --   （作用域已核对：它在**本函数顶层**声明 ✓，这里在更深的 `do` 块里 ⇒ 可见 ✓）
+      --   判据来源：selene 的 `error[undefined_variable]: _vis_key is not defined @1702` ✓
+      current._vis_keynow = murdoku_vis_key
     end
   end
     if scr_now == "level" and ((current.frames or 0) % 30) == 0 then
