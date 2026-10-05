@@ -2537,18 +2537,39 @@ function Adapter:apply_ruler_layout(rows, cols)
     end
   end
   if print then
-    print(string.format("[murdoku] 行标/列标已按格子实际位置对齐：%d 个（ruler 容器偏移 %.1f, %.1f）",
-      moved, rx, ry))
-    -- 顺手把"格子位置 vs 标签位置"打出来 —— 下次若还有偏差，
-    -- 这两个数一比就知道差在哪一维，不用再靠截图量像素。
+    -- ★★★★★ 2026-10-05 Round 49 **日志节流：只在"对齐结论真的变了"时才打** ✓
+    --
+    --   起因：本方法刚被修好（它以前被吞在 `apply_tray_layout` 里、**从未运行过** ✗），
+    --   于是这段"无条件打印"第一次真的跑起来 ✗ ⇒ 实测 **2 行/次**，
+    --   而调用频率是 **1.10 次/秒**（`main.lua:709` 的 `Murdoku.render` 被
+    --   `sec ~= last_tick or controller.dirty` 门控）⇒ **≈2.2 行/秒 ≈ 7900 行/小时** ✗
+    --   ⇒ 移动端日志洪水（也会拖慢真机）。**修好一个功能反而引入了负担** ✓ 所以要节流。
+    --
+    --   做法：把**会被打印出来的那些数**拼成结论串；与上次相同 ⇒ **整段跳过**（连日志都不打）✓
+    --   ⚠️ 两个坑（都是踩过的 ✗）：
+    --     ① **签名里不能塞"没被打印的数"** ✗ —— 例如 `ly1` / `rx1`（读了但没打），
+    --        它们会随引擎抖动 ⇒ 误判"结论变了" ⇒ 白打一遍，节流被击穿 ✓
+    --     ② `string.format` 的**占位符不能比参数多** ✗ —— 否则报
+    --        `bad argument #N to 'format'`，而它若发生在 `on_start` 的 pcall 里会被**静默吞掉** ✗
+    --   反向对照（防"静默阉割"）：把 `cell.1.1` 横移 ⇒ **正好打 2 行** ✓；再连调 20 次 ⇒ **0 行** ✓
     local cx1, cy1 = cellPos(1, 1)
     local l1, r1 = self:find("ruler.c.1"), self:find("ruler.r.1")
     local lx1, ly1 = nil, nil
     if l1 then pcall(function() lx1, ly1 = l1:GetAnchoredPosition() end) end
     local rx1, ry1 = nil, nil
     if r1 then pcall(function() rx1, ry1 = r1:GetAnchoredPosition() end) end
-    print(string.format("  核对：cell.1.1=(%.1f, %.1f)  ruler.c.1.x=%.1f（应≈%.1f）  ruler.r.1.y=%.1f（应≈%.1f）",
-      cx1 or 0, cy1 or 0, lx1 or 0, (cx1 or 0) - rx, ry1 or 0, (cy1 or 0) - ry))
+    -- 签名 = **只由下面两行 print 用到的数**构成 ✓（`ly1` / `rx1` 不进来 ✓）
+    local sig = string.format("%d|%.1f|%.1f|%.1f|%.1f|%.1f|%.1f",
+      moved, rx, ry, cx1 or 0, cy1 or 0, lx1 or 0, ry1 or 0)
+    if self._ruler_align_sig ~= sig then
+      self._ruler_align_sig = sig
+      print(string.format("[murdoku] 行标/列标已按格子实际位置对齐：%d 个（ruler 容器偏移 %.1f, %.1f）",
+        moved, rx, ry))
+      -- 顺手把"格子位置 vs 标签位置"打出来 —— 下次若还有偏差，
+      -- 这两个数一比就知道差在哪一维，不用再靠截图量像素。
+      print(string.format("  核对：cell.1.1=(%.1f, %.1f)  ruler.c.1.x=%.1f（应≈%.1f）  ruler.r.1.y=%.1f（应≈%.1f）",
+        cx1 or 0, cy1 or 0, lx1 or 0, (cx1 or 0) - rx, ry1 or 0, (cy1 or 0) - ry))
+    end
   end
   return moved
 end
