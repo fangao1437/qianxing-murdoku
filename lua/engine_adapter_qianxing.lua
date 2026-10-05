@@ -1373,72 +1373,7 @@ function Adapter:diagnose_grid(rows, cols)
     end
   end
 
-  -- ★★★★★ 2026-10-05 **线索区体检：引擎侧读回 `visible` + `active`** ✗✓
-  --
-  --   为什么必须加这一条（用户真机日志把脚本侧的证据全排除了 ✓）：
-  --     · 可见性判定【判对了】✓（`clues.bg` 被算成"该显示" ✓ 切屏对比名单里有它 ✓）
-  --     · 写入【送达了】✓（日志里没有 `prop_giveup:clues.bg.visible` 那句 ✓）
-  --     · `SetActive(true)` 也【已经补了】✓（`set_property` 的 `value == true` 分支 ✓）
-  --   ⇒ ★★ 脚本侧四条全绿 ✗ 而用户截图里【线索区底板就是没画出来】✗
-  --     ⇒ ★ 所以缺的正是【引擎侧到底读到什么】✗ ——
-  --       而日志里从来没打过关卡内 `clues.bg` 的读数 ✗（排行榜那节是 `screen=select` 时 ✓
-  --       `visible=false` 是对的 ✓ 证明不了关卡内 ✓）
-  --
-  --   ★ 判据（下一条真机日志就能定性 ✓）：
-  --     · `clues.bg vis=false` ✗ ⇒ 脚本侧还有【第三条藏它的路】✓（继续查 ✓）
-  --     · `vis=true active=true` ✓ 而屏幕没有 ✗ ⇒ 是【渲染/素材】层 ✓（换方向 ✓）
-  --     · `vis=true active=false` ✗ ⇒ 就是社区那句「手写树漏写 active」✓
-  --   ⚠️ 只读不改 ✗（纯诊断 ✓ 一行布局都不动 ✓ 符合用户「脚本只管可见性和交互」的约束 ✓）
-  do
-    local function rd(nm)
-      local c = self:find(nm)
-      if c == nil then return nm .. "=**找不到**" end
-      local v, a = "?", "?"
-      pcall(function() v = tostring(c.visible) end)
-      pcall(function() a = tostring(c.active) end)
-      return nm .. "(vis=" .. v .. " active=" .. a .. ")"
-    end
-    print_("[murdoku] 线索区体检（引擎侧读回）："
-      .. rd("clues") .. "  " .. rd("clues.bg") .. "  " .. rd("clues.grid") .. "  " .. rd("stage"))
-    print_("[murdoku]   ★ 判读：bg 的 vis=false ⇒ 还有第三条藏它的路；vis=true+active=false ⇒ 漏补 SetActive；"
-      .. "两个都 true 而屏幕上没有 ⇒ 是渲染/素材层")
-  end
 
-  -- ★★★★★ 2026-10-05 **墙/门体检：读回每个 `wall.*` / `door.*` 的真实状态** ✗✓
-  --
-  --   为什么必须加这一条（**推理已经绕了两圈 ✗ 只能让机器回答** ✓）：
-  --     · `exists` 已确认是 `find(id) ~= nil` ✓ ⇒ `cell.*` 存在 ⇒ ★ 2.5 秒补发窗口生效 ✓
-  --     · `_apply_edges` 会 `pcall(sub:SetVisible(want))` ✓ 且失败会返回 false ⇒ 走补发 ✓
-  --     · "置底"是 `SetAsFirstSibling()` ✗ ⇒ 实测 `face`=0 ✓ `wall.up`=1 ✓
-  --       ⇒ ★ 按"索引大的画在上面"，墙【该】在脸上面 ⇒ **解释不了"墙看不见"** ✗
-  --   ⇒ ★ 所以缺的是【引擎侧到底读到什么】✗ —— 和线索区那次一样 ✓
-  --
-  --   ★ 判据（下一条真机日志直接定案 ✓）：
-  --     · `vis=false` ✗ ⇒ `SetVisible` 没生效 ⇒ 句柄/引擎问题 ✓
-  --     · `vis=true` 而屏幕上没有 ✗ ⇒ ★ 层序（`face` 压住）或素材/尺寸 ✓
-  --       ⇒ 那时就看同一行里的 `sib`（兄弟索引）与 `scale`（缩放）✓
-  --     · `scale≈0` ✗ ⇒ ★ 边缘适配把它缩没了 ✓（`localScaleX/Y` 那条路 ✓）
-  do
-    local function rd_sub(cellid, nm)
-      local c = self:find(cellid)
-      if c == nil then return nm .. "=**无此格**" end
-      local s = self:sub(cellid, nm)
-      if s == nil then return nm .. "=**找不到**" end
-      local v, sib, sx = "?", "?", "?"
-      pcall(function() v = tostring(s.visible) end)
-      pcall(function() sib = tostring(s:GetSiblingIndex()) end)
-      pcall(function() sx = string.format("%.2f", tonumber(s.localScaleX) or 0) end)
-      return nm .. "(vis=" .. v .. " sib=" .. sib .. " sx=" .. sx .. ")"
-    end
-    local line = {}
-    for _, nm in ipairs({ "face", "wall.up", "wall.down", "wall.left", "wall.right",
-                          "door.up", "door.down", "door.left", "door.right" }) do
-      line[#line + 1] = rd_sub("cell.2.2", nm)
-    end
-    print_("[murdoku] 墙/门体检（引擎侧读回 · cell.2.2）：" .. table.concat(line, "  "))
-    print_("[murdoku]   ★ 判读：vis=false ⇒ SetVisible 没生效；vis=true 但没有 ⇒ 层序(face 压住)或素材；"
-      .. "scale≈0 ⇒ 边缘适配缩没了")
-  end
 
   print_("[murdoku] ===== 逐格自检结束 =====")
 end
@@ -1683,29 +1618,6 @@ function Adapter:_cells_paint(ctrl, size, cell_id, img)
   if face == nil then return false end
   if face.SetVisible then pcall(function() face:SetVisible(true) end) end
 
-  -- ★★★★★ 2026-10-06 **每帧重放墙/门的可见性** ✗✓ —— 这是本轮真正的修法 ✓
-  --
-  --   为什么必须有（★ 用户那句"是不是接管了两次"直接指到了这里 ✓）：
-  --     · 屏幕层现在**不碰** `cell.*` ✓（`"cell."` 已从 PREFIX 里去掉 ✓）
-  --     · 但适配层还有**第二处** ✗：`set_property` 的 `visible` 分支里
-  --         `if vis == false and id:sub(1,5) == "cell." then hide_kids(ctrl, 0) end`
-  --       ⇒ ★ 主页时 `cell.*` 被设 false ✗ ⇒ **递归把子控件全设 false** ✗
-  --     · 而它**只在隐藏时递归** ✗ ⇒ 进关卡后 `cell.*` 变 true ✓
-  --       ★★ 但 `wall.*` / `door.*` 还是 false ✗ ⇒ 不画 ✓✓
-  --     · ★ 它每帧都会跑（`_cells_paint` 是 face 的"每帧保持"那条路 ✓）
-  --       ⇒ ★★ 这里重放一次 ⇒ **被递归藏了也会被救回来** ✓✓
-  --   ⚠️ 只重放**已经记录过**的格子 ✗ —— 没下发过就什么都不做（不越权 ✓）
-  if cell_id ~= nil and self._edge_want ~= nil then
-    local w = self._edge_want[cell_id]
-    if w ~= nil then
-      for name, want in pairs(w) do
-        local s2 = self:sub(cell_id, name)
-        if s2 ~= nil and s2.SetVisible ~= nil then
-          pcall(function() s2:SetVisible(want) end)
-        end
-      end
-    end
-  end
 
   -- ★★★★★ 2026-10-05 **每帧重放墙/门的可见性** ✗✓ —— 这是本轮的定案修法 ✓
   --
@@ -2292,9 +2204,6 @@ function Adapter:ensure_cells(rows, cols)
         self.subs[k] = nil
         cleared = cleared + 1
       end
-    end
-    if cleared > 0 and print then
-      print("[murdoku] 格子重建 ⇒ 清掉子控件缓存 " .. cleared .. " 条（否则拿到的是上一批的死句柄）")
     end
   end
 
@@ -3895,31 +3804,7 @@ function Adapter:_apply_edges(id, prefix, flags)
     end
   end
 
-  do
-    self._edge_readback = self._edge_readback or {}
-    local rk = tostring(id) .. "\1" .. tostring(prefix)
-    if not self._edge_readback[rk] then
-      self._edge_readback[rk] = true
-      local parts = {}
-      for i = 1, #sides do
-        local s = sides[i]
-        local nm = prefix .. "." .. s
-        local sub2 = self:sub(id, nm)
-        local v = "?"
-        if sub2 == nil then v = "**找不到**"
-        else pcall(function() v = tostring(sub2.visible) end) end
-        local want = (flags[s] and not skip[s]) and true or false
-        parts[#parts + 1] = nm .. "(want=" .. tostring(want) .. " vis=" .. v .. ")"
-      end
-      -- ⚠️ 用 `print` 而【不是 `print_`】✗✓ —— 我第一版写成 `print_`，
-      --   而 `_apply_edges` 的作用域里**根本没有 `print_`** ✗
-      --   ⇒ 真机日志：`属性下发失败… cell.1.1.walls ← attempt to call a nil value (global 'print_')` ✗✗
-      --   ⇒ ★ 每一次 `walls` 下发都抛错 ⇒ `set_property` 整条失败 ⇒
-      --     ★★ **下面那些 `SetVisible` 全都没执行** ⇒ **墙/门一律不显示** ✓✓
-      --     —— ★ 也就是说：这一行日志把"墙/门为什么不显示"直接答了 ✓
-      print("[murdoku] 关卡内墙/门读回 · " .. tostring(id) .. "：" .. table.concat(parts, "  "))
-    end
-  end
+
 
   -- ★★ 「图片类型 = 基础」的图**按原尺寸画，不会填充控件** ——
   --    真机 2026-09-27 05:13 实测：同一面墙，素材选「拉伸」时是**满宽蓝条**，
