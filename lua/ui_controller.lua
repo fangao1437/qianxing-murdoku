@@ -1866,6 +1866,7 @@ function Controller:build_layout()
     --   现在：432 × 5/6 = **360** ✓、115.2 × 5/6 = **96** ✓ —— 与编辑器里的一致。
     local h = L.clue_row_h - 12
     local CLUE_W = 432
+    local CLUE_PAD = 16.8   -- 左内边距：设计 16.8 = 画布 14 ✓（用户在编辑器里就是这么留的）
     local style = (self.focused_clue == i) and "clue.focus"
                   or (cl.satisfied and "clue.ok" or "clue")
     -- 整行保留（作为卡片底板 + 点击热区）；文字子控件浮在它上面
@@ -1897,10 +1898,10 @@ function Controller:build_layout()
     --
     --   尺寸：backrop2 比 backrop1 四边各小 3.6 设计（= 3 画布）⇒ 露出 3px 描边 ✓
     push({ id = "clue." .. i .. ".backrop1", kind = "container", parent = "clue." .. i,
-           rect = { x = L.clues.x, y = y, w = CLUE_W, h = h },
+           rect = { x = 0, y = 0, w = CLUE_W, h = h },
            visible = inWin, pos_runtime = true })
     push({ id = "clue." .. i .. ".backrop2", kind = "container", parent = "clue." .. i,
-           rect = { x = L.clues.x + 3.6, y = y + 3.6, w = CLUE_W - 7.2, h = h - 7.2 },
+           rect = { x = 3.6, y = 3.6, w = CLUE_W - 7.2, h = h - 7.2 },
            visible = inWin, pos_runtime = true })
 
     local who, pre, post, wid, wportrait = split_by_name(tostring(cl.text or ""))    local tx = L.clues.x + PAD + FACE + PAD      -- 文字起点：让开左边的头像
