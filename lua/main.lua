@@ -26,6 +26,19 @@ local current = nil            -- 当前会话
 local prepared_adapter = nil   -- OnInit 里建好的适配器
 local signals_registered = false
 
+-- ★★★★★ 2026-10-05 **网格视窗（官方「网格视窗」列表控件）—— 线索卡列表的正路**
+--
+--   用户已经在编辑器里把这块摆好了（核对存档 `193.1.gil`，事实如下，不再重复推导）：
+--     · 网格视窗   id **1073742420**、名字 `clues.grid`、父 `clues`、400×544、局部 (20,20)
+--     · 列表项模板 id **1073742421**（名 `clue`）、360×96，
+--       子控件名 `clue.1.who` / `clue.1.what` / `clue.1.letter` / `clue.1.face` / `clue.1.backrop1/2`
+--
+--   ⇒ 界面层（ui_controller）负责"找控件 + 填内容 + 收点击 + 显隐"，
+--     这里只提供**两个开关/索引**（数字与策略的唯一来源写在 main.lua，
+--     界面层从 `adapter.cfg` 读 —— 两处各写一份必然漂移，本项目为此踩过多次）。
+Murdoku.USE_GRID = true                  -- 默认开；false = 完全回到手写滚动（老路径）
+Murdoku.GRID_ITEM_PREFAB = 1073742421    -- 列表项模板索引（存档核对：名 `clue`、360×96）
+
 -- ★★★★★ 2026-10-04 **棋盘容器（`stage`）的几何 —— 全工程只此一处定义。**
 --
 --   依据：逐像素量 `docs/布局图-关卡内-v3.png`（1600×900，已经是画布空间）——
@@ -87,6 +100,24 @@ function Murdoku.start(level_id, opts)
 
   local adapter = opts.adapter or prepared_adapter or Qianxing.new()
   prepared_adapter = adapter
+
+  -- ★★★★★ 2026-10-05 **把网格视窗的配置写进适配器的 `cfg`**（界面层只读它）。
+  --
+  --   为什么不写进 `entry_client_script.lua` 的 `build_adapter()`：那一份是**打包入口**的
+  --   静态配置表，而这两个值属于"本轮的界面策略"；写在这里还有个好处 ——
+  --   测试/离线脚本只要走 `Murdoku.start` 就自动带上，不用各自复制一遍。
+  --
+  --   · `cfg.use_grid`         —— 开关（默认 true）。false ⇒ 界面层完全不碰网格视窗，
+  --                               继续用现在这套手写滚动（▲▼ + 滚动条 + clue.N 卡片）。
+  --   · `cfg.clues_grid_prefab` —— 列表项模板索引。界面层**不写死这个数字**，
+  --                               取不到就当作"没配置"、悄悄走老路径。
+  do
+    local c = adapter.cfg
+    if c ~= nil then
+      if c.use_grid == nil then c.use_grid = Murdoku.USE_GRID end
+      if c.clues_grid_prefab == nil then c.clues_grid_prefab = Murdoku.GRID_ITEM_PREFAB end
+    end
+  end
 
   -- 关卡清单交给界面层（界面层不认识 Levels 模块，只认这份数据）
   --

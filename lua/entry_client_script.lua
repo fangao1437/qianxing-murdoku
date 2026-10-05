@@ -171,7 +171,7 @@ local function check_canvas()
       --   里面既没有新打印、`cell` 尺寸也还是旧值 ⇒ 我误以为"改动没生效"，
       --   实际是**贴了旧日志**。加这一行后，一看首行就能确认跑的是哪一版。
       if print then
-        print("[murdoku] ===== 构建标记 v060 / 2026-10-05 13:0x / 线索区整块退出脚本几何(pos_runtime=false)——只管显隐与交互 =====")
+        print("[murdoku] ===== 构建标记 v061 / 2026-10-05 14:3x / 线索卡改用网格视窗(官方滚动+列表项复用);老路径保留兜底 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

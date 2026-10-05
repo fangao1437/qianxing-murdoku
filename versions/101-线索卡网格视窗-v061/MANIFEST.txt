@@ -1,0 +1,23 @@
+版本：101-线索卡网格视窗-v061
+时间：2026/10/5 14:35:22
+配套 .gil：194-线索卡网格视窗.gil
+说明：线索卡列表改用官方网格视窗(clues.grid, itemPrefabIndex=1073742421)：RefreshItems 无状态填 who/what/letter + GetItemIndex 反查点击聚焦；老的手写滚动路径保留在 cfg.use_grid 开关后面做兜底。全单测绿(ui_math 72/0 等)。待真机验证：①能否滚动 ②滚动时是否自动重进回调 ③列表项能否收点击。
+
+文件清单：
+  engine_adapter.lua              5397 字节
+  engine_adapter_qianxing.lua     232449 字节
+  entry_client_script.lua         50148 字节
+  main.lua                        102818 字节
+  murdoku_core.lua                102564 字节
+  room_map.lua                    5227 字节
+  ui_controller.lua               203441 字节
+  client_script.lua               732914 字节（真机跑的就是这份）
+  194-线索卡网格视窗.gil                 828543 字节（配套存档）
+
+用途：**这一版是"当时能跑的那一份"**。要回退：
+  1) 把本目录的 *.lua 拷回 qianxing-murdoku\lua\
+  2) 跑 node tools/bundle_client_script.lua，再 powershell -File tools/install_script_to_sandbox.ps1
+     （或直接用本目录的 client_script.lua 覆盖沙箱里的那份，省掉打包）
+  3) 导入本目录里的 .gil
+
+规则（重要）：**每轮一个新编号，不删旧的、不覆盖**。

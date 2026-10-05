@@ -1194,6 +1194,31 @@ local function apply_screen_hide(nodes, screen)
     if hide then nodes[i].visible = false end
   end
 end
+-- ★★★★★ 2026-10-05 **`split_by_name` 从 `build_layout` 里提出来，升成模块级函数**。
+--
+--   原来它是 `build_layout` 内部的局部函数，闭包里攥着那一帧的 `vm` ——
+--   于是**只有那条路**能用它。而本轮新增的"网格视窗列表项填充"在 `render` 那条路上
+--   （见 `Controller:_fill_grid_item`），同样需要"从线索文案里切出人名"。
+--   ⇒ 一提就够：`vm` 由调用方传进来，两条路共用**同一份**切分逻辑。
+--     （"同一件事两处实现必然漂移"是本项目反复踩到的病，能共用就绝不复制。）
+--
+--   返回：名字 / 前缀 / 后缀 / 该角色的 id / 头像名
+local function split_by_name(vm, txt)
+  if type(vm) ~= "table" or type(vm.tray) ~= "table" then return nil, txt, nil, nil, nil end
+  local best, bestIt = nil, nil
+  for _, it in ipairs(vm.tray) do
+    local nm = tostring(it.name or it.short or it.id or "")
+    if nm ~= "" and txt:find(nm, 1, true) then
+      -- 取**最长匹配**，避免"保"抢先于"保安"
+      if best == nil or #nm > #best then best, bestIt = nm, it end
+    end
+  end
+  if best == nil then return nil, txt, nil, nil, nil end
+  local at = txt:find(best, 1, true)
+  local pre, post = txt:sub(1, at - 1), txt:sub(at + #best)
+  return best, pre, post, bestIt and tostring(bestIt.id) or nil, bestIt and bestIt.portrait or nil
+end
+
 function Controller:build_layout()
   local vm = self.core:view()
   local L = M.LAYOUT
@@ -1789,6 +1814,40 @@ function Controller:build_layout()
   --   尺寸与容器同尺寸（画布 400×544）、挂在 `clues` 下、坐标相对父级 ⇒ (0,0) ✓
   push({ id = "clues.bg", kind = "container", parent = "clues",
          rect = { x = L.clues.x, y = L.clues.y, w = L.clues.w, h = L.clues.h } })
+  -- ★★★★★ 2026-10-05 **网格视窗 `clues.grid`（官方列表控件）—— 用户在编辑器里摆好的线索列表。**
+  --
+  --   为什么要有这条规划节点：**不在规划里的控件，脚本不认它**（不会点亮、不会按屏幕开关）
+  --   —— `clues.bg` 就是因为漏了这条，真机上一直 `可见=false`（11:31 的日志）。
+  --   网格视窗是同一类问题：它得**关卡里可见 / 主页·选关时不出现**。
+  --
+  --   显隐怎么来的（**与 `clues.bg` 完全同一套**，没有第二套机制）：
+  --     · 关卡里：`clues` 与它自己都是 `visible=true` ⇒ 看得见；
+  --     · 主页/选关：父级 `clues` 被判成 `visible=false`（`apply_screen_hide` 的 HIDE 名单里
+  --       有 `clues`），子控件跟着父级一起不显示 —— 实测规划里 `clues.bg` 就是这个状态
+  --       （主页那一屏 `clues(vis=false)` / `clues.bg(vis=true)`，屏幕上并没有露出底板）。
+  --
+  --   ⚠️ **故意不给它加"按屏幕翻自己的 visible"**：本项目已经验证过一次——
+  --      「容器被 `SetVisible(false)` 之后，再 `SetVisible(true)` **射线不一定恢复**」
+  --      （见 `home`/`select` 那段"容器恒为可见"的注释）。网格视窗的**点击**本来就是
+  --      本轮最不确定的一环，不该再去承担这个额外风险 ⇒ 它自己的 visible **只在
+  --      "这条路走不通"时翻一次 false**（见下面的表达式），其余时候恒为 true ✓
+  --
+  --   ★★ `pos_runtime = false` —— **一个坐标都不碰**（用户原话："位置大小都是原本摆好的，
+  --      脚本只需要管可见性和交互，其它的干涉都是只会增加错误的操作"）。
+  --      机制：`pos_runtime` 只沿子树"向下继承 true"（见 `inherit_pos_runtime`），
+  --      显式写 `false` ⇒ 不继承 ⇒ 适配器 `set_property("rect")` 走
+  --      `respect_editor_rect` 那条分支直接 `return`（连锚点都不设）⇒ 几何完全归编辑器 ✓
+  --
+  --   ⚠️ 下面这个 `rect` **只是规划表要的字段**（`layout_plan`/`dump_layout` 会读它，
+  --      缺了 `M.to_canvas(nil)` 会当场报错），**运行时永远不会下发**（见上一条）。
+  --      取值按编辑器里量到的真实尺寸写：网格视窗 **400×544 画布** = 480×652.8 设计
+  --      （与 `L.clues` 同一块区域，所以直接沿用 —— 存档核对：id 1073742420、父 `clues`）。
+  push({ id = "clues.grid", kind = "container", parent = "clues",
+         rect = { x = L.clues.x, y = L.clues.y, w = L.clues.w, h = L.clues.h },
+         -- 走不了网格视窗时（cfg.use_grid=false / 找不到控件 / 填内容失败）把它藏起来，
+         -- 免得"老卡片回来了、但网格还盖在上面" —— 见 `Controller:sync_clue_grid`
+         visible = (self._grid_state ~= "off"),
+         pos_runtime = false })
   -- ★ 2026-10-05 **滚动条点击区 `clues.bar`** —— 用户新做的隐形热区（画布 24×520），
   --   规划里原来没有它 ⇒ 脚本不认它（"还没建"名单里反过来没有它才怪 ✗）。
   --   位置：条心 x = 464 画布、纵向与卡片区同高 ⇒ 设计 x = (464−16)×6/5 ≈ 537.6、
@@ -1878,21 +1937,14 @@ function Controller:build_layout()
   local PAD = 16.8       -- 卡片内边距（设计）= 画布 14 ★ 2026-10-05 由 8 改
 
   -- 返回 名字 / 前缀 / 后缀 / 该角色的 id / 头像名
-  local function split_by_name(txt)
-    if type(vm.tray) ~= "table" then return nil, txt, nil, nil, nil end
-    local best, bestIt = nil, nil
-    for _, it in ipairs(vm.tray) do
-      local nm = tostring(it.name or it.short or it.id or "")
-      if nm ~= "" and txt:find(nm, 1, true) then
-        -- 取**最长匹配**，避免"保"抢先于"保安"
-        if best == nil or #nm > #best then best, bestIt = nm, it end
-      end
-    end
-    if best == nil then return nil, txt, nil, nil, nil end
-    local at = txt:find(best, 1, true)
-    local pre, post = txt:sub(1, at - 1), txt:sub(at + #best)
-    return best, pre, post, bestIt and tostring(bestIt.id) or nil, bestIt and bestIt.portrait or nil
-  end
+  --
+  -- ★ 2026-10-05：**实现已提到模块级**（见 `split_by_name` 上面那段注释）——
+  --   网格视窗的列表项填充要用**同一份**切分逻辑，所以这里不再各写一份：
+  --   直接调模块级那份，`vm` 显式传进去。
+  --
+  --   ⚠️ 不能在这里写 `local function split_by_name(txt) return split_by_name(vm, txt) end`
+  --      —— 同名 local 在它自己的函数体里就已经生效 ⇒ 变成**无限递归**
+  --      （Lua 里 `local function f() ... f() ... end` 指的就是新的那个 f）。
 
   for i = 1, shown do
     local cl = vm.clues[i]
@@ -1948,7 +2000,8 @@ function Controller:build_layout()
            rect = { x = L.clues.x + CLUE_PAD + 3.6, y = y + 3.6, w = CLUE_W - 7.2, h = h - 7.2 },
            visible = inWin })
 
-    local who, pre, post, wid, wportrait = split_by_name(tostring(cl.text or ""))    local tx = L.clues.x + PAD + FACE + PAD      -- 文字起点：让开左边的头像
+    local who, pre, post, wid, wportrait = split_by_name(vm, tostring(cl.text or ""))
+    local tx = L.clues.x + PAD + FACE + PAD      -- 文字起点：让开左边的头像
     local tw = L.clues.w - 16 - (FACE + PAD * 2) - BADGE_W - PAD
     if who ~= nil then
       -- 头像（左边）：复用 `portrait.*` 调色板，**不引入新素材**
@@ -1990,6 +2043,39 @@ function Controller:build_layout()
          rect = { x = L.clues.x, y = L.clues.y + rows * L.clue_row_h, w = L.clues.w, h = 30 },
          text = string.format("还有 %d 条线索", math.max(0, #vm.clues - shown)),
          style = "muted", visible = (#vm.clues > shown) })
+
+  -- ★★★★★ 2026-10-05 **网格视窗接管时，"老的一套"整体让位**（只改 visible，坐标一个不碰）。
+  --
+  --   为什么必须让位：网格视窗和手写滚动画的是**同一块区域、同一条线索**——
+  --   两套同时可见就是"每条线索叠两遍"（而且老卡片会被按在编辑器几何上，什么都不对）。
+  --   用户的说法是"用网格视窗替换手写滚动"，失败时才回退 ⇒ 成功时老的必须收起来。
+  --
+  --   为什么写成**一次收口**而不是逐个去改上面的 `visible = ...`：
+  --     老路径的控件散在十几处 push 里（卡片本体 + 两张底图 + 头像/名字/正文/徽章 × N、
+  --     ▲▼ / 轨道 / 滑块 / 计数 / "还有 N 条" / 滚动热区）——
+  --     **逐个改必然漏一处**，而漏一处就是"两套 UI 叠在一起"这种最难看出来的错。
+  --     这里按 id 收口，以后再加老控件只要名字还叫 `clue.*` / `clues.*` 就漏不掉。
+  --
+  --   ⚠️ 前缀判断用 **`clue.`（带点）**：`clues.grid` / `clues.bg` 是"线索区"自己的东西，
+  --      不能被误伤（`clues` ≠ `clue.`）。
+  if self._grid_state == "on" then
+    local gave_way = 0
+    for i = 1, #nodes do
+      local id = nodes[i].id
+      if id:sub(1, 5) == "clue."
+         or id == "clues.up" or id == "clues.down"
+         or id == "clues.track" or id == "clues.knob" or id == "clues.count"
+         or id == "clues.more" or id == "clues.bar" then
+        if nodes[i].visible ~= false then
+          nodes[i].visible = false
+          gave_way = gave_way + 1
+        end
+      end
+    end
+    self._grid_gave_way = gave_way
+    self:_grid_log("giveway", "网格视窗：老的一套让位（隐藏 " .. tostring(gave_way)
+      .. " 个控件：clue.N 卡片 + ▲▼/滚动条/计数/热区）；cfg.use_grid=false 可整体回退")
+  end
 
   -- 操作提示**按设备换文案** —— 同一套界面同时给 PC 键鼠和移动端触碰用，
   -- 但两边的"怎么操作"不一样，写在图例里免得玩家自己试。
@@ -2924,10 +3010,351 @@ function Controller.portrait_of(vm, id)
 end
 
 ----------------------------------------------------------------------------
+-- ★★★★★ 2026-10-05 网格视窗（官方列表控件 `clues.grid`）—— 线索卡列表的正路
+--
+-- 用户的硬原则（原话）：
+--   「位置大小都是原本摆好的，脚本只需要管可见性和交互，其它的干涉都是只会增加错误的操作」
+-- ⇒ 本段代码**一个坐标都不碰**，只做四件事：**找控件 / 填内容 / 收点击 / 显隐**。
+--   规划节点那条 `pos_runtime = false` 就是这条原则的落地（见 `build_layout` 里的注释）。
+--
+-- 已核对的事实（来自用户存档 `193.1.gil`，不再重复推导）：
+--   · 网格视窗：id **1073742420**、名字 `clues.grid`、父 `clues`、400×544、局部 (20,20)
+--   · 列表项模板：id **1073742421**（名 `clue`）、360×96，
+--     子控件名 `clue.1.backrop1` / `clue.1.backrop2` / `clue.1.letter` /
+--              `clue.1.what` / `clue.1.face` / `clue.1.who`
+--   · 官方 API（`docs/api-cache/mhtakr07vej4.txt` 第 20 节 `ClientUIGridScrollerControl`）：
+--       itemCount(只读) / itemPrefabIndex(读写) / scrollProgress(读写, Tweenable)
+--       RefreshItems(itemCount, fun(control, index)) / GetItemIndex(control)
+--       GetItemSize() / GetItemSpacing() / GetPadding() / ScrollToItemAt(index, align)
+--     基础控件那边有：GetChild(name) / FindChild(path) / SetVisible / AddCursorEventListener
+--   · 它是**客户端控件**（`ClientUI*`），和 `cell.*` 同一族 ⇒ 客户端脚本够得着。
+--
+-- ★ 三条官方语义决定了写法（都能在 API 缓存里查到）：
+--   ① 「列表发生滚动时：对列表项内容进行刷新(触发回调)」
+--      ⇒ 回调**会被反复进入**，而且是在我们那次 RefreshItems 之后很久（滚动时）。
+--      ⇒ 回调里**只允许"按 index 现算"**：不许累加、不许假设只跑一次、
+--        不许把"上一次填了什么"当输入（那是"复用列表项"最容易出的错）。
+--   ② 「列表项索引以运行时传入和返回的 index 为准」
+--      ⇒ 点到了哪一条，只能问 `grid:GetItemIndex(item)` 反查；
+--        **不能**按兄弟序号（items 会被复用，顺序不稳定）。
+--   ③ 回调的参数是 `(control, index)`，返回空 —— 内容全靠我们往子控件里写。
+--
+-- ⚠️ 已知**未验证**的能力（真机上要盯的两件事，见日志里的两行结论）：
+--   · 列表项**能不能收到光标事件**（`AddCursorEventListener`）—— 官方没写死，
+--     所以每一次调用都包 `pcall`，收不到就只失去"点列表项聚焦"这一个附加功能；
+--   · **滚动由谁驱动**（引擎自身手势 / 还是脚本写 `scrollProgress`）—— 本轮不猜，
+--     失败/不适用时把 `cfg.use_grid` 改回 false 就整体回到手写滚动。
+----------------------------------------------------------------------------
+
+-- 官方枚举的安全取值（与适配器里的 `E()` 同一个写法：缺失时返回 nil，调用点降级不崩）。
+-- ⚠️ 离线测试里 `Enum` 是**全局 nil**（tests/board_bg.lua 故意不给），所以这里必须 nil-safe。
+local function enum_at(path)
+  local cur = Enum
+  if cur == nil then return nil end
+  for name in tostring(path):gmatch("[^%.]+") do
+    cur = cur[name]
+    if cur == nil then return nil end
+  end
+  return cur
+end
+
+-- 往一个控件写文字：文字控件才有 `text` 字段，写不进去不算错（返回 false 让调用方记账）。
+--
+-- ★ 空字符串**照写**（用户明确要求）：不写的话，"上一条残留的文字"会留在复用出来的
+--   列表项上 —— 那是"滚动之后内容错位"的经典成因。空文字无害，残留有害。
+local function write_control_text(ctrl, txt)
+  if ctrl == nil or ctrl.text == nil then return false end
+  local ok = pcall(function() ctrl.text = tostring(txt or "") end)
+  return ok
+end
+
+-- 「这条结论只打一次」的小工具：能不能用、点了有没有反应，打一次就够，别每帧刷屏。
+function Controller:_grid_log(key, msg)
+  self._grid_logged = self._grid_logged or {}
+  if self._grid_logged[key] then return end
+  self._grid_logged[key] = true
+  if print then print("[murdoku] " .. tostring(msg)) end
+end
+
+-- 网格视窗这条路上的**任何一步失败**都走这里：退回老路径（手写滚动），并且只报一次。
+function Controller:_grid_fail(why)
+  if self._grid_broken then return end
+  self._grid_broken = true          -- 记住失败 ⇒ 以后不再重试（免得每帧刷同一句话）
+  self._grid_state = "off"          -- `build_layout` 据此把 `clues.grid` 藏起来、老卡片放出来
+  self.dirty = true                 -- 让下一帧重画
+  self:_grid_log("fail", "网格视窗：失败（" .. tostring(why)
+    .. "）⇒ 退回老路径（手写滚动：▲▼ + 滚动条 + clue.N 卡片）")
+end
+
+-- ── 每帧渲染前调一次 ─────────────────────────────────────────────────────
+-- 顺序：开关 → 找控件 → 取模板索引 → 设 itemPrefabIndex → RefreshItems 填内容。
+-- 只有"这一步真的成了"才会把 `_grid_state` 置成 "on"，`build_layout` 据此让老的一套让位。
+function Controller:sync_clue_grid(adapter)
+  if adapter == nil or adapter.find == nil then return end
+
+  -- ① 开关：默认**开**；只有显式 `false` 才完全不碰网格视窗
+  local cfg = adapter.cfg
+  if cfg ~= nil and cfg.use_grid == false then
+    if self._grid_state == nil then
+      self._grid_state = "off"
+      self:_grid_log("off_cfg", "网格视窗：cfg.use_grid=false ⇒ 按配置走老路径（手写滚动）")
+    end
+    return
+  end
+
+  -- ② 只在**关卡里**碰它：主页/选关时这块区域整个是藏起来的（父级 `clues` 不可见），
+  --    那时去 RefreshItems 既没意义、又可能因为"控件不可见 ⇒ 引擎不建列表项"而误判失败。
+  if self.screen ~= nil then return end
+
+  -- ③ 已经失败过就不再重试（老路径接管；`_grid_state` 已经是 "off"）
+  if self._grid_broken then return end
+
+  -- ④ 找控件：先 `clues.grid`（存档里核对过的名字），找不到再用中文名兜一次
+  local grid = self._grid
+  if grid == nil then
+    -- 前 120 次渲染每次都试（约 2 秒）：控件是存档里就有的，正常情况下第一次就能拿到；
+    -- 万一 UI 树还没就绪，也给足重试机会。之后不再试，免得每帧白扫一遍控件树。
+    if (self._grid_tries or 0) >= 120 then return end
+    self._grid_tries = (self._grid_tries or 0) + 1
+    pcall(function() grid = adapter:find("clues.grid") end)
+    if grid == nil then
+      -- 防御（一行）：万一编辑器里用了中文名「网格视窗」
+      pcall(function() grid = adapter:find("网格视窗") end)
+    end
+    if grid == nil then
+      self:_grid_log("missing", "网格视窗：找不到 `clues.grid`（也试过中文名「网格视窗」，"
+        .. "已经试了 " .. tostring(self._grid_tries) .. " 次）⇒ 继续走老路径（手写滚动）")
+      if self._grid_tries >= 120 then
+        -- 试满就**判定"这一关没有网格视窗"**：把它按不可用处理（`clues.grid` 保持隐藏），
+        -- 老路径独占这块区域 —— 免得"找不到 ⇒ 一直重试 + 网格和老卡片同时亮着"。
+        self._grid_state = "off"
+        self:_grid_log("missing_final", "网格视窗：试满 120 次仍拿不到控件 ⇒ 判定不可用，"
+          .. "`clues.grid` 由脚本按不可见处理，老路径（手写滚动）接管")
+      end
+      return
+    end
+    self._grid = grid
+  end
+
+  -- ⑤ 列表项模板索引：**只从 cfg 取**，这里不写死数字
+  --    （数字的唯一来源在 main.lua 的 `Murdoku.GRID_ITEM_PREFAB` —— 两处写死必然漂移）
+  local prefab = cfg and cfg.clues_grid_prefab
+  if type(prefab) ~= "number" or prefab <= 0 then
+    if not self._grid_no_prefab then
+      self._grid_no_prefab = true
+      self._grid_state = "off"
+      self:_grid_log("noprefab", "网格视窗：cfg.clues_grid_prefab 没有配置 ⇒ 不启用"
+        .. "（继续走老路径；模板索引请填在 main.lua）")
+    end
+    return
+  end
+
+  -- ⑥ 填内容：只在**条数变了**时重发 RefreshItems。
+  --    官方写明滚动时引擎自己会再进回调 ⇒ 这里不必每帧重发
+  --    （每帧重发会把滚动位置顶回去，而且纯属浪费）。
+  local n = #((self.core:view() or {}).clues or {})
+  local sig = tostring(n)
+  if self._grid_state == "on" and self._grid_sig == sig then return end
+
+  local ok_set, set_err = pcall(function() grid.itemPrefabIndex = prefab end)
+  if not ok_set then
+    self:_grid_fail("设 itemPrefabIndex 失败：" .. tostring(set_err))
+    return
+  end
+  -- 回读一份当证据（只读字段在某些实现上会滞后，所以**不作为失败依据**，只打进日志）
+  local back = nil
+  pcall(function() back = grid.itemPrefabIndex end)
+
+  self._grid_calls = 0          -- 这一次 RefreshItems 里回调被进入了几次
+  -- ⚠️ **不要重置 `_grid_base`**：它只在"这辈子第一次回调"时判定（那一次一定是列表顶端，
+  --    因为列表刚建、还没滚动过）。重置的话，"条数变了但滚动位置还在中间"时会把
+  --    中间那一项的 index 当成起点 ⇒ 0 起的那种实现会被误判成 1 起 ⇒ 整列错位一条。
+  --
+  -- ★ `_grid_in_refresh` 用来区分"回调是被**我们这次调用**带进来的"还是"引擎在滚动时
+  --   自己重进的" —— 后者是**本项目一个关键的未验证点**，见到就报一行（见 `_fill_grid_item`）。
+  self._grid_in_refresh = true
+  local ok_ref, ref_err = pcall(function()
+    grid:RefreshItems(n, function(item, index)
+      -- ★ 官方：滚动时**引擎会再进这个回调** ⇒ 这里再包一层 pcall：
+      --   万一某一行出错，只该"这一次没填上"，**不该把引擎的滚动一起打断**。
+      local ok_cb, cb_err = pcall(function() self:_fill_grid_item(adapter, grid, item, index) end)
+      if not ok_cb then self._grid_cb_err = tostring(cb_err) end
+    end)
+  end)
+  self._grid_in_refresh = false
+
+  local calls = self._grid_calls or 0
+  if (not ok_ref) or (calls == 0 and n > 0) then
+    self:_grid_fail("RefreshItems " .. ((not ok_ref) and ("抛错：" .. tostring(ref_err))
+      or ("一次回调都没进来（n=" .. tostring(n) .. "）")))
+    return
+  end
+
+  self._grid_sig = sig
+  self._grid_state = "on"
+
+  -- 回调里抛过错 ⇒ 只报一次（不整体回退：那一条没填上而已；反复出现才值得关掉这条路）
+  if self._grid_cb_err ~= nil then
+    self:_grid_log("cberr", "网格视窗：列表项填充回调抛过异常（" .. tostring(self._grid_cb_err)
+      .. "）—— 已按「这一次没填上」处理；反复出现就把 cfg.use_grid 改回 false")
+  end
+
+  -- ⑦ 一行**带证据**的结论（用户要的就是这一行，能据此判断链条走到哪一步）
+  self:_grid_log("summary", string.format(
+    "网格视窗：找到 clues.grid ✓ itemPrefabIndex=%s（回读 %s） n=%d RefreshItems 回调 %d 次；"
+    .. "索引基准=%s；列表项点击=%s",
+    tostring(prefab), tostring(back), n, calls,
+    (self._grid_base == nil) and "?" or tostring(self._grid_base),
+    (self._grid_click_ok == true) and "支持（用 GetItemIndex 反查索引）"
+      or "不支持（列表项收不到光标事件 ⇒ 只能用老卡片的点击，聚焦仍可用）"))
+end
+
+-- 列表项的子控件：模板里叫 `clue.1.<后缀>`（用户是**照着第 1 张卡**另存的模板）。
+--   ⚠️ 引擎若按实例序号改名（`clue.<序号>.<后缀>`）也必须命中 ⇒ 四种名字依次试：
+--      引擎给的 index → 换算后的位置 pos → 模板原样 `clue.1.*` → 裸名 `<后缀>`
+--      （顺序 = 从最具体到最宽松；第一种命中就返回，不会串到别的子控件上）
+function Controller:_grid_item_child(item, index, pos, suffix)
+  if item == nil or item.GetChild == nil then return nil end
+  local names = {
+    "clue." .. tostring(index) .. "." .. suffix,
+    "clue." .. tostring(pos) .. "." .. suffix,
+    "clue.1." .. suffix,
+    tostring(suffix),
+  }
+  for i = 1, #names do
+    local hit = nil
+    pcall(function() hit = item:GetChild(names[i]) end)
+    if hit ~= nil then return hit end
+  end
+  return nil
+end
+
+-- 填**一条**列表项。★ 无状态：内容全部由 `index` 现算（官方：滚动会重复进入回调）。
+function Controller:_fill_grid_item(adapter, grid, item, index)
+  self._grid_calls = (self._grid_calls or 0) + 1
+  if item == nil then return end
+
+  -- ★★ 官方那句"列表发生滚动时：对列表项内容进行刷新(触发回调)"有**两种读法**
+  --    （引擎自己重进 / 得靠脚本再调一次 RefreshItems）—— 这是本项目一个**未验证点**：
+  --      · 引擎**会**重进 ⇒ 这里会打出一行（就靠它确认；此时列表项内容永远是对的）
+  --       · 引擎**不会**重进 ⇒ 日志里没有这行 ⇒ 滚动后列表项会留着上一条的内容，
+  --         下一轮就得改成"跟着 scrollProgress 变化再调一次 RefreshItems"
+  --   区分办法：我们那次 `RefreshItems` 调用期间 `_grid_in_refresh = true`；
+  --   回调从引擎那边进来时它是 false。
+  if not self._grid_in_refresh then
+    self._grid_scroll_cbs = (self._grid_scroll_cbs or 0) + 1
+    self:_grid_log("scroll_cb", "网格视窗：滚动时引擎**会**重进 RefreshItems 回调 ✓（第 "
+      .. tostring(self._grid_scroll_cbs) .. " 次）⇒ 列表项内容按 index 现算，滚动不会串内容")
+  end
+
+  -- 索引基准：**第一次回调 = 列表最上面那一项** ⇒ 它的 index 就是基准（0 或 1）。
+  --   为什么要判：官方只说"索引以运行时传入/返回的为准"，**没说从 0 还是从 1 起**
+  --   （`clue.1` 这些控件名是 1 起，而 Unity 那套列表通常是 0 起）。
+  --   判一次就够，之后滚动回调沿用它 —— 这样两种实现都能对上 `vm.clues`（1 起）。
+  if self._grid_base == nil then
+    self._grid_base = (tonumber(index) == 0) and 0 or 1
+  end
+  local pos = (tonumber(index) or self._grid_base) - self._grid_base + 1
+
+  local vm = self.core:view() or {}
+  local cl = (type(vm.clues) == "table") and vm.clues[pos] or nil
+  if cl == nil then return end        -- 超出本关线索数（理论上不会来）⇒ 什么都不写
+
+  -- 与 `clue.N` 三个文字控件**完全同一份取值**（切分逻辑共用 `split_by_name`，不复制）
+  local who, pre, post, wid = split_by_name(vm, tostring(cl.text or ""))
+  --   ⚠️ 文案里没有人名时（例如 `selftest_theft_5x5` 的线索）：`who == nil`、`pre` 是整条文案
+  --      ⇒ 名字列留空、正文放**整条**（老路径在那种关卡上是整块不发、什么都看不到；
+  --         新路这里按"名字为空、正文 = 全文"来填，线索本身必须看得见）。
+  local t_who    = (who ~= nil) and (tostring(pre or "") .. tostring(who)) or ""
+  local t_what   = (who ~= nil) and tostring(post or "") or tostring(pre or "")
+  local t_letter = tostring(wid or "")
+
+  local c_who    = self:_grid_item_child(item, index, pos, "who")
+  local c_what   = self:_grid_item_child(item, index, pos, "what")
+  local c_letter = self:_grid_item_child(item, index, pos, "letter")
+
+  write_control_text(c_who, t_who)            -- 空字符串照写（防"复用列表项"残留上一条）
+  write_control_text(c_what, t_what)
+  write_control_text(c_letter, t_letter)
+
+  -- 子控件找不到时**只报一次**（这条日志直接告诉你要在模板里补哪个名字）
+  if c_who == nil or c_what == nil or c_letter == nil then
+    self:_grid_log("childmiss", "网格视窗：列表项子控件 who/what/letter = "
+      .. ((c_who ~= nil) and "有" or "**缺**") .. "/"
+      .. ((c_what ~= nil) and "有" or "**缺**") .. "/"
+      .. ((c_letter ~= nil) and "有" or "**缺**")
+      .. "（模板 1073742421 里应叫 `clue.1.who` / `clue.1.what` / `clue.1.letter`）")
+  end
+
+  -- 点击 → 聚焦（未验证能力，全程 pcall + 只报一次结论）
+  self:_grid_bind_item_click(adapter, grid, item)
+end
+
+-- 给列表项挂点击。★ 列表项是**复用**的：同一个控件会先后代表不同线索 ⇒
+--   回调里**不能**捕获 index，必须用 `GetItemIndex` 现查（见 `_on_grid_item_click`）。
+--   重复挂监听会一次点击触发多遍 ⇒ 用一个**弱键表**按控件身份去重（控件回收后自动释放）。
+function Controller:_grid_bind_item_click(adapter, grid, item)
+  if item == nil or item.AddCursorEventListener == nil then return end
+  self._grid_bound = self._grid_bound
+    or setmetatable({}, { __mode = "k" })          -- 弱键：列表项被引擎回收后不会攒着
+  if self._grid_bound[item] then
+    self._grid_click_ok = true
+    return
+  end
+  local click = enum_at("CursorEventType.CursorClick")
+  if click == nil then return end                  -- 枚举缺失 ⇒ 静默降级（离线环境就是这条路）
+  local ok = pcall(function()
+    item:AddCursorEventListener(click, function()
+      -- 引擎回调里再包一层：这里出错会打断引擎自己的点击/滚动派发
+      pcall(function() self:_on_grid_item_click(adapter, grid, item) end)
+    end)
+  end)
+  if ok then
+    self._grid_bound[item] = true
+    self._grid_click_ok = true
+  end
+end
+
+-- 点了某一条列表项 → 聚焦这条线索。
+function Controller:_on_grid_item_click(adapter, grid, item)
+  -- ★ 官方：「列表项索引以运行时传入和返回的 index 为准」⇒ **只能反查**。
+  --   按兄弟序号取是错的：列表项会被复用，兄弟顺序不稳定（用户也专门点了这一条）。
+  local idx = nil
+  pcall(function() idx = grid:GetItemIndex(item) end)
+  if type(idx) ~= "number" then
+    -- 反查失败 ⇒ 这一次点击**宁可丢掉**，也不要聚焦到错误的一条（聚焦错了会误导推理）
+    self:_grid_log("noindex", "网格视窗：GetItemIndex 读不到索引 ⇒ 这一次点击忽略（不改焦点）")
+    return
+  end
+  local pos = idx - (self._grid_base or 1) + 1
+  local n = #((self.core:view() or {}).clues or {})
+  if pos < 1 or pos > n then return end
+
+  -- ★ 走**和老卡片完全同一条**输入通路：`adapter.on_input` 是 main.lua 接的
+  --   （`controller:on_input(event)` + 立刻渲染）⇒ 点列表项和点 `clue.N` 的后续行为
+  --   （焦点切换、CLUE_IN 特效、重绘）一模一样，不会出现"两套焦点逻辑"。
+  local ev = { action = "focus_clue", index = pos, phase = "click" }
+  if adapter ~= nil and type(adapter.on_input) == "function" then
+    adapter.on_input(ev)
+  else
+    self:on_input(ev)
+  end
+end
+
+----------------------------------------------------------------------------
 -- 增量渲染
 ----------------------------------------------------------------------------
 
 function Controller:render(adapter, force)
+  -- ★★★★★ 2026-10-05 **网格视窗先探一步**（必须在 `build_layout` 之前）。
+  --
+  --   为什么必须在前面：`build_layout` 要按"这一关到底走哪条路"决定
+  --   `clues.grid` 藏不藏、老卡片让不让位（见 `sync_clue_grid` 与那段收口的注释）。
+  --   顺序反过来的话，会让位晚一帧 —— 表现成"进关第一帧两套线索叠在一起"。
+  --
+  --   它自己保证：任何一步失败都只报一次、并且退回老路径（`_grid_state = "off"`）。
+  self:sync_clue_grid(adapter)
+
   local nodes = self:build_layout()
 
   -- 设备档位（pc / touch / gamepad）只在第一次渲染时探一次，用来决定提示文案。
