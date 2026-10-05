@@ -187,32 +187,28 @@ function Murdoku.start(level_id, opts)
   --     我为此改了三轮（`and/or` 陷阱、默认值、优先级）全是白费功夫。
   --   ⇒ **不要把力气花在"绕过主页"上，而是让测试真的走一遍主页流程**
   --     （`tools/sim/kit.mjs` 的 `enterLevel()`）。
-  -- ★★★★★ 2026-10-05 **构造时【不再】从 `opts.screen` 拿屏幕状态** ✗✓ —— 这是「直接进关卡
-  --   时线索区整片消失」的**最后一个病根** ✓
+  -- ★★★★★ 2026-10-05 **这一处已【回滚】** ✗✓ —— 我上一版把构造时的 `screen` 强制成 `nil`，
+  --   结果★【打断了开局流程】✗：游戏一进来【直接就在第一关】✓（用户实测 ✓），
+  --   而不是「主页 → 选关 → 关卡」✗ —— 所以回滚 ✓。
   --
-  --   症状（用户实测 + 引擎侧体检读数 ✓）：
-  --     · ★ **第一次直接进第一关** ⇒ `controller.screen = "home"` ✗
-  --       ⇒ `apply_screen_hide(nodes, "home")` ⇒ HIDE 名单生效 ⇒ `clues(vis=false)` ✗
-  --       ⇒ 线索区（`clues` 400×544 整片 + 它的 `clues.bg` / `clues.grid`）**不显示** ✗
-  --     · ★ 而"点过一次别的关卡再回来" ⇒ `screen = nil` ✓ ⇒ `clues(vis=true)` ✓ 正常 ✓
-  --       （那一半已由 `on_pick_level` 里的 `start_other` 之后置 nil 修好 ✓ 日志已证实 ✓）
-  --
-  --   为什么是这里：入口（`entry_client_script.lua`）传的 `opts.screen` 是 `"home"` ✗
-  --     ⇒ 上面那段 `for k, v in pairs(opts)`（L163-164 的注释）与这两行会把它一路带进
-  --       `UIC.new` ⇒ **新控制器一出生就以为自己在主页** ✗
-  --     ⇒ 而"开局就在主页"这件事**本来就不该由构造参数决定** ✗：
-  --       真正进主页是运行中 `a == "home"` 那条分支干的（见下面 `self.screen = "home"` ✓）。
-  --   ⇒ ★ 所以构造时**固定 `nil`**（= 关卡内）✓ —— 与 `entry_client_script.lua` 里
-  --     `o.screen = nil` 那句（L168 ✓，用来防 `opts` 复制）是**同一个意图** ✓
-  --     ★ 两处都在做"别让 opts 里的 home 漏进来" ✗ ⇒ 这里补上就闭环了 ✓✓
-  --
-  --   ⚠️ 若将来确实要"开局停在主页"✗ ⇒ 用**显式开关**（例如 `cfg.start_screen`）✓，
-  --     不要再让入口的 `opts.screen` 隐式带进来 ✗ —— 那正是这一轮的坑 ✓
+  --   为什么当时那么改（以及它治错了什么）：
+  --     · 症状：第一次进关时 `clues(vis=false)` ✗ ⇒ 线索区整片不显示 ✓
+  --     · 原因：`screen` 判错成 `"home"` ✗ ⇒ `apply_screen_hide` 的 HIDE 名单生效 ✓
+  --     · 我当时的改法：构造时不给 `screen` ✗ ⇒ `nil` = 【在关卡里】✗
+  --       ⇒ ★ 治好了线索区 ✓ 但把"开局该在主页"这件事【一起跳过了】✗✗
+  --   ⇒ ★ 教训：★ `screen` 只有【一个权威来源】✗ —— 谁真的切屏，谁才改它 ✓
+  --     ★ 构造参数【不该】替玩家决定"现在在哪一屏"✗（那是流程的事 ✓）
+  --     ★ 而"真的进了关卡 ⇒ screen = nil"这个兜底，**已经在下面两处**✓：
+  --        · `on_pick_level` 里 `id ~= level.id` 那支（`start_other` 之后 ✓）
+  --        · 同函数 `else` 那支（点的是当前这一关 ✓）
+  --       ⇒ ★ 两条进关路径都置了 `nil` ✓ ⇒ 线索区不会再被藏 ✓✓
+  local want_screen = nil
+  if opts.screen ~= nil then want_screen = opts.screen end
   controller = UIC.new(core, {
     debug = opts.debug,
     skip_intro = opts.skip_intro,
     levels = level_list,
-    screen = nil,
+    screen = want_screen,
     -- ★★★★★ 2026-10-05 **"格子要不要推 text"这一个开关**（每帧成本第 (4) 条）。
     --
     --   默认 **false = 不推**：真机日志原话「没有配的：**text** obj」——
