@@ -1,4 +1,4 @@
-﻿--[[----------------------------------------------------------------------------
+--[[----------------------------------------------------------------------------
   ui_controller.lua —— 操作框架层（页面布局 + 交互状态机 + 特效指令）v0.3.0
 
   交互模型照 murdoku 实证规格：
@@ -3197,7 +3197,19 @@ function Controller:sync_clue_grid(adapter)
   -- ⑥ 填内容：只在**条数变了**时重发 RefreshItems。
   --    官方写明滚动时引擎自己会再进回调 ⇒ 这里不必每帧重发
   --    （每帧重发会把滚动位置顶回去，而且纯属浪费）。
-  local n = #((self.core:view() or {}).clues or {})
+  --
+  -- ★★★★★ 2026-10-05 **条数别再用 `core:view()` 去数** —— 那个守卫挡不住它。
+  --
+  --   实测（`tests/grid_cost.lua`）：`_grid_sig` 这道守卫**确实**挡住了重复的
+  --   `itemPrefabIndex` 写入与 `RefreshItems`（300 帧里 grid_refresh=0），
+  --   但它**挡不住**守卫之前那句 `self.core:view()`：整视图重建 **0.235 ms/次**，
+  --   而 `render` 在真机上是**每帧**都跑的（`Controller:tick` 每帧 `self.dirty = true`，
+  --   `Murdoku.on_update` 见 dirty 就重绘 —— 离线实测 300 帧 = 300 次 render）。
+  --   ⇒ 白白每帧多花 0.235 ms（还要多制造一批垃圾表给 GC）。
+  --   条数与 `#vm.clues` **恒等**（`Core:clue_results()` 对 `level.clues` 一对一映射），
+  --   所以直接数关卡数据即可，一个字节的语义都没变。
+  local lv = self.core and self.core.level
+  local n = #((lv and lv.clues) or {})
   local sig = tostring(n)
   if self._grid_state == "on" and self._grid_sig == sig then return end
 
@@ -3258,8 +3270,13 @@ end
 --   ⚠️ 引擎若按实例序号改名（`clue.<序号>.<后缀>`）也必须命中 ⇒ 四种名字依次试：
 --      引擎给的 index → 换算后的位置 pos → 模板原样 `clue.1.*` → 裸名 `<后缀>`
 --      （顺序 = 从最具体到最宽松；第一种命中就返回，不会串到别的子控件上）
+--   返回值：命中的子控件 + **命中的是第几种名字**（1..4；0 = 都没命中）。
+--   为什么要回传"第几种"：第 1/2 种的**名字里带 index** —— 万一引擎真的按序号改名，
+--   同一个列表项被回收给别的 index 之后，旧句柄就指向错的子控件了。
+--   第 3/4 种（`clue.1.*` / 裸名）与 index 无关 ⇒ 换 index 也还是同一个子控件。
+--   缓存层（`_grid_item_child_cached`）就靠这个数决定"能不能跨 index 复用"。
 function Controller:_grid_item_child(item, index, pos, suffix)
-  if item == nil or item.GetChild == nil then return nil end
+  if item == nil or item.GetChild == nil then return nil, 0 end
   local names = {
     "clue." .. tostring(index) .. "." .. suffix,
     "clue." .. tostring(pos) .. "." .. suffix,
@@ -3269,10 +3286,100 @@ function Controller:_grid_item_child(item, index, pos, suffix)
   for i = 1, #names do
     local hit = nil
     pcall(function() hit = item:GetChild(names[i]) end)
-    if hit ~= nil then return hit end
+    if hit ~= nil then return hit, i end
   end
-  return nil
+  return nil, 0
 end
+
+-- ★★★★★ 2026-10-05 **列表项「子控件句柄」的记忆表**（这一轮卡顿的直接病根之一）。
+--
+--   用户硬证据（同一台设备对比两个包）：
+--     · `191-位置交给编辑器.gil`（v058，**网格视窗之前**）：流畅 ✓
+--     · 当前（v069，**带网格视窗**）：明显流畅，但"对比之前还是略有卡顿" ✗
+--   ⇒ 回退是网格视窗那一轮引进来的（v067/v068 修的两条补发热路 + v069 收紧上限都没治好）。
+--
+--   离线实测（`tests/grid_cost.lua`，7 个可见列表项，与真机同形状的模板命名）：
+--     **一次 RefreshItems 回调 = 54 次 `item:GetChild` + 7 次整视图重建 + 21 次文字写入**
+--     （54 = 每个角色依次试名字，命中前平均要试 2.6 次 × 3 个角色 × 7 项）。
+--   而官方写明「**列表发生滚动时：对列表项内容进行刷新(触发回调)**」
+--   ⇒ 滚动期间这三个数就是**每帧**的开销：54 次引擎调用 + 7×0.235ms 的 Lua 重建
+--     + 21 次文本重排 —— 真机表现正是"明显流畅，但对比之前还是略有卡顿"。
+--
+--   ⇒ 这里把"这个列表项的这个角色是哪个子控件"记下来，键 = **列表项控件身份**：
+--     · 弱键（`__mode = "k"`）：引擎回收列表项之后条目自动释放，不会越攒越多；
+--     · 控制器是**每关新建**的（`Murdoku.start` → `UIC.new`）⇒ 天然不会跨关缓存。
+--
+--   ⚠️ 两条复用规矩（都不是拍脑袋，各有一条理由）：
+--     ① **同一个 index** ⇒ 引擎这一轮没回收过它 ⇒ 句柄一定还有效，直接用；
+--     ② **命中第 3/4 种名字**（`clue.1.*` / 裸名，名字与 index 无关）⇒ 换 index 也还是它；
+--     其余情况（index 变了、而当初是靠 `clue.<index>.*` 命中的）**必须重查** ——
+--     那正是"引擎按序号改名"的实现下唯一会串到别处的组合。
+--   ⚠️ **查不到不缓存**（照 `Adapter:sub` 那条"查不了 = 不存在"踩过一整天的教训）：
+--     模板里少一个子控件时，下次回调还会再试，而不是永远当成"没有"。
+function Controller:_grid_item_rec(item, index)
+  if item == nil then return nil end
+  local cache = self._grid_kids
+  if cache == nil then
+    cache = setmetatable({}, { __mode = "k" })      -- 弱键：列表项被回收后不攒着
+    self._grid_kids = cache
+  end
+  local rec = cache[item]
+  if rec == nil then
+    rec = { idx = index, hit = {}, variant = {} }
+    cache[item] = rec
+  end
+  return rec
+end
+
+function Controller:_grid_item_child_cached(item, index, pos, suffix)
+  local rec = self:_grid_item_rec(item, index)
+  if rec == nil then return nil end
+  local c = rec.hit[suffix]
+  if c ~= nil and (rec.idx == index or (rec.variant[suffix] or 0) >= 3) then
+    return c                                       -- 规矩①/②：可以直接复用
+  end
+  local hit, variant = self:_grid_item_child(item, index, pos, suffix)
+  rec.idx = index
+  rec.hit[suffix] = hit                            -- nil = 没找到 ⇒ 不缓存，下次再试
+  rec.variant[suffix] = variant
+  return hit
+end
+
+-- ★★★★★ 2026-10-05 **列表项的文字：按「关卡」算一次，回调里只查表**。
+--
+--   为什么可以缓存：`vm.clues[i].text` 由 `Core:clue_results()` 从**关卡数据**里算出来
+--   （`def.text(ctx, cl)` 只读 ctx.name / cl.*，全都是关卡里写死的东西，与棋盘状态无关）
+--   ⇒ 同一个关卡里这 7（或 N）条文案**一个字都不会变**。
+--   实测代价：`Core:view()` 单次 **0.235 ms**（要造上百个表：每个格子 walls/doors/notes
+--   + tray + 线索 + structure_report）—— 原来**每条线索调一次** ⇒ 一次回调白花 1.6 ms。
+--   缓存键 = **关卡表身份 + 条数**（不拼字符串：`level` 是同一个 Lua 表对象，直接比引用）。
+function Controller:_grid_text_payload()
+  local core = self.core
+  local lv = core and core.level
+  local list = lv and lv.clues
+  local n = #(list or {})
+  local p = self._grid_text
+  if p ~= nil and p.level == lv and p.n == n then return p end
+  local vm = core:view() or {}
+  local items = {}
+  for i = 1, #(vm.clues or {}) do
+    local cl = vm.clues[i]
+    -- 与 `clue.N` 三个文字控件**完全同一份取值**（切分逻辑共用 `split_by_name`，不复制）
+    local who, pre, post, wid = split_by_name(vm, tostring(cl.text or ""))
+    --   ⚠️ 文案里没有人名时（例如 `selftest_theft_5x5` 的线索）：`who == nil`、`pre` 是整条文案
+    --      ⇒ 名字列留空、正文放**整条**（老路径在那种关卡上是整块不发、什么都看不到；
+    --         新路这里按"名字为空、正文 = 全文"来填，线索本身必须看得见）。
+    items[i] = {
+      who    = (who ~= nil) and (tostring(pre or "") .. tostring(who)) or "",
+      what   = (who ~= nil) and tostring(post or "") or tostring(pre or ""),
+      letter = tostring(wid or ""),
+    }
+  end
+  p = { level = lv, n = n, items = items }
+  self._grid_text = p
+  return p
+end
+
 
 -- 填**一条**列表项。★ 无状态：内容全部由 `index` 现算（官方：滚动会重复进入回调）。
 function Controller:_fill_grid_item(adapter, grid, item, index)
@@ -3290,6 +3397,20 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
     self._grid_scroll_cbs = (self._grid_scroll_cbs or 0) + 1
     self:_grid_log("scroll_cb", "网格视窗：滚动时引擎**会**重进 RefreshItems 回调 ✓（第 "
       .. tostring(self._grid_scroll_cbs) .. " 次）⇒ 列表项内容按 index 现算，滚动不会串内容")
+    -- ★★★★★ 2026-10-05 **节流计数：这条路上的每帧开销现在已经是 0，但"引擎多久重进一次"
+    --   只有真机能回答**（离线假环境是我们自己调的，测不出引擎的节奏）。
+    --   重进满 60 / 600 / 3600 次时各报一行 —— 60 fps 下分别约等于 1 秒 / 10 秒 / 1 分钟。
+    --   读法：
+    --     · 只是滚动几秒就看到 `60` ⇒ 重进频率 ≈ 每秒几十次（滚动时才重进，符合官方描述）
+    --     · 挂着不动也走到 `3600` ⇒ 引擎**每帧**都重进；此时每帧成本仍然是 0
+    --       （`_grid_item_rec` / `_grid_text_payload` 把查找、视图重建、文字写入全免掉了）
+    --     · 一行都不出现 ⇒ 引擎根本不重进 ⇒ 滚动后列表项会留着上一条的内容，
+    --       下一轮得改成"跟着 scrollProgress 变化再调一次 RefreshItems"
+    local hits = self._grid_scroll_cbs
+    if (hits == 60 or hits == 600 or hits == 3600) and print then
+      print("[murdoku] 网格视窗：引擎重进回调累计 " .. tostring(hits)
+        .. " 次（60 ≈ 每帧重进时的一秒）—— 仅用于确认重进频率，每帧成本已为 0")
+    end
   end
 
   -- 索引基准：**第一次回调 = 列表最上面那一项** ⇒ 它的 index 就是基准（0 或 1）。
@@ -3301,26 +3422,45 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   end
   local pos = (tonumber(index) or self._grid_base) - self._grid_base + 1
 
-  local vm = self.core:view() or {}
-  local cl = (type(vm.clues) == "table") and vm.clues[pos] or nil
+  -- ★★★★★ 2026-10-05 **文案查缓存表，不再"每条线索重建一次整视图"**。
+  --
+  --   改之前：这里每进一次回调就 `self.core:view()` 一次 ⇒ 一次回调 **7 次**整视图重建
+  --   （实测单次 0.235 ms ⇒ 白花 1.6 ms），而回调在滚动时是**每帧**进来的。
+  --   文案只跟关卡数据有关（见 `_grid_text_payload` 的注释）⇒ 算一次就够。
+  local pay = self:_grid_text_payload()
+  local cl = pay.items[pos]
   if cl == nil then return end        -- 超出本关线索数（理论上不会来）⇒ 什么都不写
+  local t_who, t_what, t_letter = cl.who, cl.what, cl.letter
 
-  -- 与 `clue.N` 三个文字控件**完全同一份取值**（切分逻辑共用 `split_by_name`，不复制）
-  local who, pre, post, wid = split_by_name(vm, tostring(cl.text or ""))
-  --   ⚠️ 文案里没有人名时（例如 `selftest_theft_5x5` 的线索）：`who == nil`、`pre` 是整条文案
-  --      ⇒ 名字列留空、正文放**整条**（老路径在那种关卡上是整块不发、什么都看不到；
-  --         新路这里按"名字为空、正文 = 全文"来填，线索本身必须看得见）。
-  local t_who    = (who ~= nil) and (tostring(pre or "") .. tostring(who)) or ""
-  local t_what   = (who ~= nil) and tostring(post or "") or tostring(pre or "")
-  local t_letter = tostring(wid or "")
+  -- ★ 子控件句柄走记忆表（改之前：一次回调 54 次 `item:GetChild`，滚动时每帧 54 次）
+  local c_who    = self:_grid_item_child_cached(item, index, pos, "who")
+  local c_what   = self:_grid_item_child_cached(item, index, pos, "what")
+  local c_letter = self:_grid_item_child_cached(item, index, pos, "letter")
 
-  local c_who    = self:_grid_item_child(item, index, pos, "who")
-  local c_what   = self:_grid_item_child(item, index, pos, "what")
-  local c_letter = self:_grid_item_child(item, index, pos, "letter")
-
-  write_control_text(c_who, t_who)            -- 空字符串照写（防"复用列表项"残留上一条）
-  write_control_text(c_what, t_what)
-  write_control_text(c_letter, t_letter)
+  -- ★★★★★ 2026-10-05 **文字只在"真的不一样"时才写**（写一次 = 引擎重排一次文本）。
+  --
+  --   改之前：一次回调无脑写 21 次（7 项 × 3 个角色），**内容一个字都没变也照写**
+  --   ⇒ 滚动时每帧 21 次文本重排，纯浪费（"每帧重排文字"是 UI 卡顿最常见的来源）。
+  --   ⚠️ 但「**空字符串照写**」这条规矩**必须保住**（用户明确要求）：复用出来的列表项上
+  --      留着上一条的残留文字是"滚动之后内容错位"的经典成因 ⇒ 这里用 `tv.idx ~= index`
+  --      来判断"这一项**换了代表哪条线索**"：换了就把三个角色**全部重写一遍**
+  --      （哪怕新文字与旧文字相同），没换才逐字比较。既省掉稳态的 21 次，也不放过复用。
+  local rec = self:_grid_item_rec(item, index)
+  local tv = rec and rec.text
+  if tv == nil or tv.idx ~= index then
+    tv = { idx = index }
+    if rec ~= nil then rec.text = tv end
+  end
+  if tv ~= nil then
+    if tv.who    ~= t_who    then if write_control_text(c_who, t_who)       then tv.who    = t_who    end end
+    if tv.what   ~= t_what   then if write_control_text(c_what, t_what)     then tv.what   = t_what   end end
+    if tv.letter ~= t_letter then if write_control_text(c_letter, t_letter) then tv.letter = t_letter end end
+  else
+    -- 理论上到不了（`_grid_item_rec` 对非 nil 的 item 一定给得出记录）；兜底照旧写。
+    write_control_text(c_who, t_who)
+    write_control_text(c_what, t_what)
+    write_control_text(c_letter, t_letter)
+  end
 
   -- 子控件找不到时**只报一次**（这条日志直接告诉你要在模板里补哪个名字）
   if c_who == nil or c_what == nil or c_letter == nil then
@@ -3601,7 +3741,15 @@ function Controller:render(adapter, force)
             local e2, r2 = pcall(function() return adapter:find(n.id) end)
             if e2 then exists = (r2 ~= nil) end
           end
-          local ok = self:_set_prop(adapter, n.id, k, v)
+          -- ★★★★★ 2026-10-05 **"控件不在"时连 `set_property` 都不用发**。
+          --
+          --   理由（可证）：适配层 `set_property` 的第一步也是 `self:find(id)`，
+          --   拿到 nil 就直接 `return false`（既不写、也不抛）—— 和上面这次探测
+          --   **是同一个调用、同一个结果**（中间没有任何东西改控件树）。
+          --   少发一次 = 少一遍**深度优先搜控件树**（真机上每个节点一次 pcall + 读 name）。
+          --   实测（`tests/grid_cost.lua`，两个同名 `action.back` 规划节点 + 深树）：
+          --   一次 render 从 20 次搜空（9360 次 `GetChildren`）降到 10 次（约 4700 次）。
+          local ok = exists and self:_set_prop(adapter, n.id, k, v)
           if ok and exists then
             last[k] = v
             retry_clear(n.id, k)
@@ -3670,7 +3818,10 @@ function Controller:render(adapter, force)
         local e3, r3 = pcall(function() return adapter:find(n.id) end)
         if e3 then rect_exists = (r3 ~= nil) end
       end
-      if self:_set_prop(adapter, n.id, "rect", n.rect) then
+      -- ★ 与逐属性那条同一个道理（见上面那段注释）：控件不在 ⇒ 连 `set_property`
+      --   都不发（它第一步也是 `find`，结果必然一样是 nil）。
+      local rok = rect_exists and self:_set_prop(adapter, n.id, "rect", n.rect)
+      if rok then
         last.__rect = { x = n.rect.x, y = n.rect.y, w = n.rect.w, h = n.rect.h }
         retry_clear(n.id, "__rect")
       elseif not rect_exists then
