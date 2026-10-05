@@ -1761,7 +1761,16 @@ function Controller:build_layout()
     })
   end
 
-  push({ id = "clues", kind = "container", parent = "left", rect = rect_of(L.clues), style = "panel" })
+  -- ★★★★★ 2026-10-05 **父级必须是 `root`，不能写 `left`** —— 修"线索区跑到棋盘下面"。
+  --
+  --   真机日志（11:52）铁证：
+  --       left = **找不到**                     ← 运行时根本没有 `left` 容器
+  --       clues 位置=(47,-29)  尺寸=400x544     ← 位置整个跑偏（画面在棋盘下方）
+  --       客户端 UI 根清单：root 子控件=22  └ clues  visible=true 400x544   ← **真实父级是 root**
+  --   而规划里写的是 `parent = "left"` ✗ ⇒ 偏移按"真实父级(root)"解释、
+  --   却拿一个**不存在的父级中心**去算 ⇒ 整块位置错掉 ✓
+  --   （与之前 `hex.*` 那个 bug 完全同一个形状：**规划父级必须等于真实父级**。）
+  push({ id = "clues", kind = "container", parent = "root", rect = rect_of(L.clues), style = "panel" })
   -- ★★★★★ 2026-10-05 **线索区大底板（`clues.bg`）** —— 用户在编辑器里摆的那张图，
   --   但它的名字不在规划里 ⇒ 脚本从没点亮它 ⇒ 真机日志（11:31）里它一直 `可见=false` ✗
   --   ⇒ 补一条规划节点（`kind = "container"`：只摆位置/显隐，**不设图不设色**，图与色归编辑器）。
