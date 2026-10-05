@@ -1617,6 +1617,14 @@ function Murdoku.on_update(dt)
   --
   --   ⚠️ 本段现在**每帧**执行（原来挂在 `%300` 那个节流位上）：
   --      稳态下每帧只有 33 次表查找 + 33 次比较，**0 次引擎写**。
+  --  ★★★★★ 2026-10-05 Round 67 修：**这两个缓存必须是 `local`** ✗
+  --    症状（由 selene 静态检查抓出 ✓）：`murdoku_vis_memo` / `murdoku_vis_force_to`
+  --      在下面被读写但**从未声明** ⇒ 它们是**全局变量** ✗ ⇒ **泄进引擎的全局表** ✗✓
+  --      （真机/模拟器**共享同一张全局表** ⇒ 可能被别的脚本看到、也可能被别的脚本踩 ✓）
+  --    这与我在 Round 43 修的 `v2` / `a2` 是**同一类坑** ✓（那次的后果更重：拼接 nil 会抛错 ✗）
+  --    修法：在这里声明成**本函数的局部变量** ✓（下面所有读写都在同一函数内 ✓ 闭包也看得见 ✓）
+  --    ⚠️ `murdoku_vis_key` 也一并收进来 ✓ —— 它同样是"没声明就当全局用" ✗
+  local murdoku_vis_memo, murdoku_vis_force_to, murdoku_vis_key
   if murdoku_vis_memo == nil then murdoku_vis_memo = {} end
   do
     local lev = current.level
@@ -1650,9 +1658,27 @@ function Murdoku.on_update(dt)
         if ad_vis.controls ~= nil then c = ad_vis.controls[nm] end
         if c == nil then pcall(function() c = ad_vis:find(nm) end) end
         if c == nil then return end
-        -- ② 稳态那一条：目标与"上次真的写下去的值"相同 ⇒ **一次引擎写都不做**。
+        -- ① **读回当前值**（读便宜、写贵 —— 要省掉的是引擎侧的 `SetVisible`）。
+        --    已经等于目标 ⇒ **一笔都不写**，直接返回。
+        --
+        --    ⚠️ 为什么光靠"写值记忆"到不了 0 笔/帧（实测 2026-10-05）：
+        --       `main.lua` 里**另一处**（渲染那段的 `bar:SetVisible(on_select)`）也在写
+        --       同一个 `selbar`，而且它**每帧无条件写** ⇒ 我们记的"上次写下去的值"
+        --       和引擎里的真实值**会分叉** ⇒ 光看记忆每帧都会重写一遍
+        --       （实测稳态 602 笔/600 帧 —— 就是这一条造成的）。
+        --       读回真实值之后：只要引擎里已经是目标值，无论谁写过的，我们都不再动它。
+        --       这一读还顺带把"外部把值抢回去了"这件事变成**当帧就看得见**，
+        --       比"只在换屏时开窗"更稳。
+        --    ⚠️ 读不到 `visible`（引擎不提供这个字段）时**退回写**，不许因为读不到就不压。
+        local cur_vis = nil
+        pcall(function() cur_vis = c.visible end)
+        if not forcing and cur_vis == want then
+          murdoku_vis_memo[nm] = want
+          return
+        end
+        -- ② 写值记忆：目标与"上次真的写下去的值"相同、而读回又读不到时，仍然只写一次。
         --    ⚠️ 写失败（pcall 返回 false）时不记这笔 ⇒ 下一帧还会重试。
-        if (not forcing) and murdoku_vis_memo[nm] == want then return end
+        if (not forcing) and murdoku_vis_memo[nm] == want and cur_vis == nil then return end
         local okw = pcall(function() c:SetVisible(want) end)
         if okw then
           murdoku_vis_memo[nm] = want
