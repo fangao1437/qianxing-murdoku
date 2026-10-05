@@ -296,7 +296,152 @@ MBS 技能里有一条**明确的布局禁令**：
 
 ## 3. 控件模板与实例化
 
-（本节编写中）
+> 本节**首次取得了官方原文**（非社区转述）：来源为知识库 API
+> `https://ugc.070077.xyz/api/v1/skills/miliastra-knowledge/tools/get_client_document`
+> 返回的官方文档快照（`crawledAt: 2026-09-25T17:54:09.605Z`，
+> 原文页 `https://act.mihoyo.com/ys/ugc/tutorial/detail/mhbgxf0nynww` 与
+> `.../detail/mhtakr07vej4`）。**这是本项目第一次拿到这两段的逐字原文。**
+
+### 3.1 【官方】哪些父节点能实例化 —— **有明文限制**
+
+官方《客户端控件和客户端脚本》原文（`mhbgxf0nynww`，第八节「客户端脚本的使用规则」）：
+
+> 「_注意：_**仅存为模板的客户端控件的_父节点_，支持通过接口 `ClientUIBaseControl` 被动态创建**
+> _注意：_**挂载在主屏中的客户端控件，以及存为模板的客户端控件的_子节点_，
+> 均不支持通过脚本接口动态创建**」
+
+- 来源：`https://act.mihoyo.com/ys/ugc/tutorial/detail/mhbgxf0nynww`（`客户端控件和客户端脚本`，第八节 1.(1)）
+- **可执行解读（【推断】）**：
+  - 能被实例化的是**「模板的根节点」**，也就是「存为模板」的那个控件本身；
+  - **模板内部的子节点不能单独被实例化** —— 想要「格子里的头像」，
+    必须给头像**单独存一个模板**，再从格子的脚本/父级去实例化它；
+  - **主屏里已经摆着的控件不能再造一份**。
+- **对本项目的直接含义**：`cell.<r>.<c>` 如果是主屏直接摆的控件，
+  就**不可能**用 `InstantiateClientUIControl` 复制 —— 这解释了「点不动 / 找不到」类问题
+  的一部分成因。必须走「存为模板 → 按模板索引实例化」。
+
+### 3.2 【官方】模板索引 vs 运行时 ID —— 两个 ID 不能混用
+
+- `game.InstantiateClientUIControl(controlPrefabIndex: integer, parent: ClientUIBaseControl)`
+  —— **首参是「控件模板索引」**。
+- `game.GetClientUIControl(controlId: integer)` —— **参数是「客户端控件运行时ID」**。
+- 字段：`ClientUIBaseControl.id`（只读，运行时ID）、
+  `.prefabIndex`（只读，控件模板索引）；
+  `Script.scriptMappingId`（只读，脚本映射ID）。
+- 来源：`.../detail/mhtakr07vej4`
+  （`客户端控件API文档`，§6.(1)、§13.(1)、§5.(1)）。
+- **【社区经验】MBS 把「混用」列为明确的 must-not**：
+  「不能把模板索引和运行时 `Id` 混用」、「按数字全局替换」
+  （`agent/wonderland-lua-builder/evals/agent-behavior.md:139`）。
+- ⚠️ **这是 GIA 导入后最容易炸的地方**：真实编辑器导入 GIA 会**重新分配客户端控件索引**
+  （MBS `skill/SKILL.md:80-96`）。索引变了，Lua 里写死的模板索引就指向别的东西，
+  而且**报错往往不是「找不到」而是「静默拿到另一个控件」**。
+
+### 3.3 【官方】列表项（网格视窗）复用 —— 索引 0 起始，且有排序不保证
+
+官方明文提醒（`mhtakr07vej4` §13.(2)「层级与可见性」标题下第一句）：
+
+> 「**复用列表生成的列表项不保证同级排序结果稳定。**」
+
+- `RefreshItems(itemCount, refreshCallback)` —— 回调 `fun(control, index)`；
+  官方注：「列表项索引**以运行时传入和返回的 `index` 为准**」。
+- `GetItemIndex(control)` —— 取列表项索引。
+- 其它：`GetItemSize()` / `GetItemSpacing()` / `GetPadding()`（返回
+  `top, bottom, left, right`）/ `ScrollToItemAt(index, scrollAlignType)` / `GetContentLength()`。
+- `scrollProgress` 读写、Tweenable。
+- 来源：`.../detail/mhtakr07vej4` §20。
+- **【社区经验】MBS 的补充与策略**（`studio/docs/control-support.md:39,41`）：
+  - 网格项索引 **0 起始**；非本列表项返回 **`-1`**；`scrollProgress` 限制在 `[0,1]`
+    （0=顶部/左侧，1=底部/右侧）。
+  - `RefreshItems` **同步**为全部项调用回调；同模板项**按索引复用**，
+    减少数量时**销毁尾项**，更换模板后**重建**；新项**激活**。
+  - **没有可见区虚拟化，单次最多 2000 项**。
+  - 「**递归刷新同一网格、无效数量/模板明确报错**」——
+    即**不要在 `RefreshItems` 的回调里再调 `RefreshItems`**。
+  - 只有 `RefreshItems` 管理的模板项随列表移动和裁切；**静态子控件保持原位**（`:28`）。
+  - 滚动过程中**不额外触发列表项 Click**；拖动由内建滚动消费，
+    **不同时派发列表项 Drag**（`:42`）。
+  - ⚠️ 上述「0 起始 / `-1` / `[0,1]`」是 **MBS 采用的模拟器策略**，
+    `device_status=not_required`，**未真机核验**。
+
+### 3.4 【官方】`active` 默认为 `false` —— 一个高频陷阱
+
+官方字段表原文：
+
+> `active` | `boolean` | **只读** | 激活状态；`true` 时控件可见且挂载脚本逻辑运行，
+> `false` 时控件不可见且**脚本逻辑停止运行**。**默认为 false**。
+
+- 关键点：**`active` 是只读字段**（只能通过 `SetActive(active)` 方法改）。
+- 同样**只读**的还有：`alive`、`id`、`prefabIndex`、`activeInHierarchy`、`visible`。
+  → **`control.visible = true` 这种写法是不存在的**；要用 `SetVisible(visible)`。
+- `visible` 只读且「仅控制可见性，**不改变激活状态或脚本逻辑运行状态**」；
+  `SetActive(false)` 会**停止挂载脚本逻辑**。
+- 来源：`.../detail/mhtakr07vej4` §13.(1)、§13.(2)。
+- **【社区经验】真机与文档不一致**（MBS `observed-contract.md:7`，真机）：
+  - 官方加工稿写默认 `false`；
+  - 但**真机未改过的客户端模板实例为 `true`**；明确设 `false` 的模板实例为 `false`；
+  - 编辑器 Authoring 新建节点默认 `true`。
+  → **【推断】这条差异是「首帧控件看不见 / 脚本不跑」的重要嫌疑点**：
+    同一个控件在编辑器里是激活的、运行时按文档应该是 `false`、真机实测又是 `true`，
+    三方不一致意味着**不能依赖默认值**，应在 `OnStart` 里**显式** `SetActive(true)`。
+
+### 3.5 【官方】`SetSiblingIndex` 的方向已确认
+
+> `SetSiblingIndex(index)` | `boolean` | index 范围为 0 到父控件的子控件数量减一；
+> **数值越大通常越靠后、显示越靠上**
+
+- 来源：`.../detail/mhtakr07vej4` §13.(2)。
+- 注意官方用词是「**通常**」—— 保留了例外余地。
+- 【社区经验】MBS 的对应结论：编辑器同级列表**先出现的在上**；
+  Lua `sibling` **大索引置顶**；`First` 置底、`Last` 置顶（`observed-contract.md:18`）。
+  **两者一致**（官方「数值大→显示靠上」≈ MBS「编辑器先出现→在上」是不同坐标系，
+  但 API 方向一致）。
+- 【社区经验】`SetAsLastSibling` 被 MBS 用作**动态实例化的默认行为**：
+  新实例根默认置于已有同父兄弟上方（`observed-contract.md:19`、
+  `studio/README.md:9`）。
+
+### 3.6 【官方】实例化的生命周期时机限制（官方未记载，社区实测）
+
+- 官方 API 文档**没有**写 `InstantiateClientUIControl` 的生命周期限制。
+- 【社区经验·真机】探针结果（`observed-contract.md:6`）：
+  - `OnInit` / `OnDestroy` → **返回 `nil`**；
+  - `OnStart` 及 running → 成功返回控件；
+  - **未观察到父 `OnStart` 重入**。
+- 【社区经验】实例的 `active`/`visible` **继承模板定义，运行时不再强制打开**（同上）。
+  → 与 3.4 呼应：**模板是关的，实例就是关的**。
+
+### 3.7 【推断】「子控件同名冲突」——**未能确认**
+
+**未能确认**：本轮**没有**查到任何来源明确讨论「同一父节点下子控件**同名**会怎样」。
+已查到的最接近的三条，都**不是**同名冲突：
+
+1. **MBS 的内部字段设计**：`AGENTS.md:31` ——「以 `controlAsset` 区分**两棵树同名 ID**」。
+   这是**服务端树与客户端树之间**的同名，不是同一父下同名。
+2. **MBS 服务端变量**：`server/README.md:14` ——「变量按名索引，
+   同一实体槽上**不可重名**」。这是**变量**，不是控件。
+3. **官方文档**：`GetChild(name)` 返回「当前控件中名称为 `name` 的**直接子控件**」
+   （单数）—— 暗示按名查找，但**未说明同名时的取哪一个**。
+
+- 结论：**「子控件同名冲突」未能确认**。可做的只有**保守约定**：
+  同一父下控件名唯一；需要按名查找时不要依赖「同名取第一个/最后一个」。
+- 检索关键词见[第 8 节](#8-未能确认的问题与检索关键词)。
+
+### 3.8 【官方】`FindChild` 只有一行，语义靠社区补
+
+- 官方只有一行：`FindChild(path)` | `ClientUIBaseControl` | **按路径查找子控件**。
+- 【社区经验·真机】`FindChild` **支持 `A/B` 路径**；无斜杠也可找直接子节点；
+  `GetChild` **仅一层**（`observed-contract.md:14`、`architecture.md:35,39`）。
+- → **【推断】深树按名查找的推荐替代**：用 `FindChild("A/B/C")` 一次拿到底，
+  **不要**在每帧里做「逐层 `GetChild`」——那正是第 1 节说的昂贵模式。
+
+### 3.9 【官方】模板引用控件**不会**自动实例化
+
+- `ClientUIReferenceControl` 只有 `referencedPrefabIndex`（只读）一个字段。
+- 【社区经验】MBS 明说：模板引用控件「**不会**根据引用索引自动实例化/展开目标模板；
+  显式 `game.InstantiateClientUIControl` 是另一条已支持能力」
+  （`studio/docs/control-support.md:16`）。
+- **【推断】**：「模板引用控件」是**编辑期**的复用手段，
+  「`InstantiateClientUIControl`」才是**运行期**的动态创建手段，不要混淆。
 
 ---
 

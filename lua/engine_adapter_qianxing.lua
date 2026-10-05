@@ -3857,6 +3857,28 @@ function Adapter:set_property(id, key, value)
     end
 
   elseif key == "visible" then
+    -- ★★★★★ 2026-10-05 **要显示时，显式补一次 `SetActive(true)`** —— 社区知识给的强候选根因。
+    --
+    --   来源：作者仓库 `client/lua-runtime/docs/observed-contract.md:7`（**真机**）。
+    --   原文要点：`ClientUIBaseControl.active` 的**默认值三方不一致** ——
+    --     · 官方加工稿写「默认为 `false`」；
+    --     · 真机**未改过**的客户端模板实例为 `true`；明确设 `false` 的实例为 `false`；
+    --     · 编辑器新建节点默认 `true`。
+    --   ⇒ **手写控件树漏写 `active`，会比编辑器里新建的节点「少一层可见性」**，
+    --     看起来就像「我改了 visible 又被改回去」。
+    --
+    --   我们这一侧的实测（可复现）：
+    --     · `lua/ui_controller.lua` 里 `push({` 共 **80 处**，其中写 `active` 的 **0 处** ✗；
+    --     · 本文件里 `SetActive` **只有一处**（销毁时的 `SetActive(false)`）⇒ **从不 `SetActive(true)`** ✗。
+    --   ⇒ 规划节点是**手写**的（不是编辑器摆的），若被引擎按 `active=false` 处理，
+    --     那么 `SetVisible(true)` 也**不显示** —— 这正是「门墙 / 网格列表项渲染不出来」的候选根因。
+    --
+    --   为什么只补 `value == true`：隐藏方向不需要补，而且 `SetActive(false)` 会**停掉子树脚本**
+    --     （另一套语义，本项目已记录）⇒ 只在"要显示"时补，幂等、低风险 ✓
+    --   ⚠️ 验收只能靠**真机截图（L3 层）**：离线模拟器不还原 active 的默认值差异 ✗
+    if value == true and ctrl.SetActive ~= nil then
+      pcall(function() ctrl:SetActive(true) end)
+    end
     -- ★★★★ 2026-10-01 **隐藏要连子控件一起藏**（真机"点不动"的根因）。
     --
     --   真机排行榜（从 root 用 GetChildren 递归）显示选关页上还有：
