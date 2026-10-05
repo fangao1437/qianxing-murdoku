@@ -51,7 +51,27 @@ ri = await get();
 check('「跳过教程」按钮生效（证明点击通道是通的）', visibleOf(ri, 'intro') === false,
   'intro.visible=' + visibleOf(ri, 'intro'));
 
-await click('tray.A'); await tick(0.03);
+// ★★ 2026-10-05 原来点的是 `tray.A` —— 那是**已经死掉的旧入口** ✗
+//
+//   2026-10-02 头像并进线索卡之后，`build_layout` 里 `local n_tray = 0`
+//   （见 lua/ui_controller.lua 里 `tray` 那段注释）⇒ `for i = 1, n_tray` **一次都不跑**
+//   ⇒ 规划里**一个 `tray.*` 控件都没有**（实测 `tray.*` = 0 个 ✓）
+//   ⇒ `click('tray.A')` 点了等于没点 ⇒ 后面那个"双击放置"必然红 ✗（`13/13` 里唯一那条 ✓）。
+//
+//   现在点**线索卡上的头像** —— 它是全屏唯一的头像，也是 `suspect` 事件唯一的来源 ✓
+//   （`clue.<i>.face` 带 `event = { action = "suspect", id = <角色id> }` ✓）。
+//
+//   ⚠️ 为什么是 `clue.1.face`：本探针 `loadPlan()` 读的是**全关卡并集**
+//      `tools/sim/out/layout-plan.json`，而计划里只保留 `action`、**不保留 `event.id`**
+//      （见 `layout_plan()` 那段注释）⇒ 计划文本里查不到"第 1 张卡是谁" ✗。
+//      在**默认关卡** `selftest_theft_5x5`（`levels.init` 的 LIST 第一项 = 开局那一关 ✓）里，
+//      `clue.1` 是「医生 在 第3行第2列」⇒ 头像 id = **B** ✓（实测 `clue.1.face → event.id=B` ✓）。
+//   ⚠️ 改关卡顺序 / 改第一关线索顺序都会让这个 id 变 —— 那时这里要跟着改 ✓
+//      （找不到控件时 `click` 不会静默成功，下面那条"双击放置"会当场红 ✓ 不会骗人 ✓）
+//   ⚠️ 前置：`tools/sim/out/layout-plan.json` 必须是**重新生成过**的
+//      （`lua tools/dump_layout.lua` ✓）—— 旧计划里 `clue.1.face` 没有 `action`，
+//      点下去不会派发 `suspect` ⇒ 又是"点了没反应" ✗
+await click('clue.1.face'); await tick(0.03);
 await click('cell.1.3'); await tick(0.03);
 await click('cell.1.3'); await tick(0.05);
 ri = await get();
