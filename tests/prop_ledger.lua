@@ -276,16 +276,23 @@ do
     return map
   end
   -- 真正会**派发**的那一份（B2：= **认领**这颗控件的那个规划节点 = 第一个写的）
+  -- ⚠️ **故意不退回 `event_latest`**：退回会让"派发被改回'最后写的赢'"这一类回归
+  --    **恰好在旧值 `back` 上通过**（假绿 ✗ —— 而 `back` 正是 B2 要修掉的那个值）。
+  --    拿"改前"的旧产物跑本文件 ⇒ 读到 `nil`（那时还没有 `event_claim`）⇒ **红 ✓**，方向正确。
   local function live_action(id)
     local k = adapter.event_claim and adapter.event_claim[id]
     local ev = (k ~= nil) and (adapter.events or {})[k] or nil
-    return ev and ev.action or nil
+    return ev and ev.action or nil, k
   end
 
-  ok(live_action("action.back") == "back_confirm",
+  local la, lk = live_action("action.back")
+  local last_k = (adapter.event_latest or {})["action.back"]
+  local last_a = (last_k ~= nil) and (adapter.events or {})[last_k] or nil
+  ok(la == "back_confirm",
     "★ ② **B2：派发 = 认领这颗控件的节点（`topbar` 先写 ⇒ back_confirm，先弹 ✓/✗）**"
     .. "（B2 之前 = 最后写的 `right` = back，鼠标点它直接跳列表）",
-    "实际 action=" .. tostring(live_action("action.back")))
+    "实际 action=" .. tostring(la) .. "（认领键=" .. tostring(lk) .. "）"
+      .. "；诊断 event_latest=" .. tostring(last_a and last_a.action))
   -- 稳定性 + 「两份都在」（**比原来那条更强**：老写法只比对同一张表的引用，恒真）：
   --   稳态再跑一段，两个规划节点的事件都得原样在位，谁也不许被隔壁改写。
   local before_rows = event_map_of("action.back")
