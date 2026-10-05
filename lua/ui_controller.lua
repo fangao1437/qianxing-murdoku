@@ -2024,7 +2024,21 @@ function Controller:build_layout()
   --   ⇒ 补一条规划节点（`kind = "container"`：只摆位置/显隐，**不设图不设色**，图与色归编辑器）。
   --   尺寸与容器同尺寸（画布 400×544）、挂在 `clues` 下、坐标相对父级 ⇒ (0,0) ✓
   push({ id = "clues.bg", kind = "container", parent = "clues",
-         rect = { x = L.clues.x, y = L.clues.y, w = L.clues.w, h = L.clues.h } })
+         rect = { x = L.clues.x, y = L.clues.y, w = L.clues.w, h = L.clues.h },
+         -- ★★★★★ 2026-10-05 **补上 `visible`** ✗✓ —— 这是"线索区没出来"的**两个原因之一** ✓
+         --
+         --   症状（真机日志 `23:13:32` 的排行榜 ✓）：
+         --     · `clues`      400x544  可见=**true**  ✓（父级亮着 ✓）
+         --     · `clues.bg`   400x544  可见=**false** ✗  ← ★ 子控件黑着 ⇒ 屏幕上什么都没有 ✓
+         --     · `clues.grid` 400x544  可见=**false** ✗（那一条见下面 `_grid_state` 处 ✓）
+         --
+         --   为什么：★ 上面 L2023 那句注释【自己就写着】「它的名字不在规划里 ⇒
+         --     脚本从没点亮它」✗ —— 后来补了这条规划节点 ✓，★ **但没给 `visible`** ✗✓
+         --     ⇒ 属性循环里 `visible = nil` ⇒ **不发这一条** ✗ ⇒ 它保持引擎初值（false ✗）
+         --   ★ 而 `clues`（父容器 ✓）之所以亮：★ 它由 `apply_screen_hide` **显式写** ✓
+         --     （HIDE 名单里有 `clues` ✓ 关卡内写 true ✓）—— ★ **而子控件不在那份名单里** ✗✓
+         --     ⇒ ★★ 所以判据必须【与 `clues` 完全一致】✗：关卡内显示 ✓ 主页/选关藏 ✓
+         visible = (self.screen == nil) })
   -- ★★★★★ 2026-10-05 **网格视窗 `clues.grid`（官方列表控件）—— 用户在编辑器里摆好的线索列表。**
   --
   --   为什么要有这条规划节点：**不在规划里的控件，脚本不认它**（不会点亮、不会按屏幕开关）
@@ -3416,7 +3430,23 @@ end
 function Controller:_grid_fail(why)
   if self._grid_broken then return end
   self._grid_broken = true          -- 记住失败 ⇒ 以后不再重试（免得每帧刷同一句话）
-  self._grid_state = "off"          -- `build_layout` 据此把 `clues.grid` 藏起来、老卡片放出来
+  -- ★★★★★ 2026-10-05 **初值从 `"off"` 改成 `nil`** ✗✓ —— "线索区没出来"的**第二个原因** ✓
+  --
+  --   症状（真机日志 `23:13:32` 的排行榜 ✓）：
+  --     · `clues.grid` 400x544 可见=**false** ✗ —— 而日志【同时】说
+  --       「网格视窗：找到 clues.grid ✓ … RefreshItems 回调 7 次」✓ ⇒ ★ 它明明启用成功了 ✓
+  --
+  --   为什么：★ 规划里 `clues.grid` 的可见性是 `visible = (self._grid_state ~= "off")` ✓
+  --     ⇒ ★ 只要 `_grid_state` 还是 `"off"` ✗ ⇒ **规划就把它写成 false** ✗✓
+  --     ⇒ 而 `sync_clue_grid` 是**后面**才跑并把状态改掉的 ✓
+  --     ⇒ ★★ 于是"启用成功之前的那些帧"它一直是 false ✗
+  --        —— 而渲染的账本一旦记下 `visible=false`，之后没再变过就不会重发 ✗✓
+  --
+  --   ⇒ ★ 初值用 `nil`（= **还没判定** ✓）：`nil ~= "off"` 为真 ✓ ⇒ **规划先按"显示"给** ✓
+  --     ★ 只有 `sync_clue_grid` **真的判定失败**时才会变成 `"off"` ✗ ⇒ 那时才藏 ✓✓
+  --     ★ 这正是注释里那句"走不了网格视窗时把它藏起来"的原意 ✓ —— 原来那个 `"off"`
+  --       把"还没判定"和"判定失败"**混成了同一个值** ✗（本项目反复踩的"两个状态一个值"✓）
+  self._grid_state = nil
   self.dirty = true                 -- 让下一帧重画
   self:_grid_log("fail", "网格视窗：失败（" .. tostring(why)
     .. "）⇒ 退回老路径（手写滚动：▲▼ + 滚动条 + clue.N 卡片）")
