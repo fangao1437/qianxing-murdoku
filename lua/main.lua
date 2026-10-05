@@ -1214,7 +1214,17 @@ function Murdoku.on_update(dt)
       local s = nil
       pcall(function() s = current.adapter:find("stage") end)
       if s ~= nil then
-        pcall(function() s:SetVisible(true) end)
+        -- ★★★★★ 2026-10-05 Round 77 **读回再决定写不写** ✓（原来是无条件每帧写 ✗）
+        --
+        --   实测（`tests/_wip/probe_throttle_cost.lua` 第 [7] 节，稳态 30 帧）：
+        --     `stage` 被写 **30 笔 = 1.00 笔/帧** ✗ —— 就是这一行造成的。
+        --   而 `stage` 本来就该**一直可见** ✓ ⇒ 一旦读到 `visible == true` 就**永不重写** ✓✓
+        --   本项目自己在 L1278 附近就写着「显隐只在关卡内为真，且**只在状态变化时**调
+        --   `SetVisible`（不再每帧写）」✗ —— 这次是**把它做完** ✓
+        --   ⚠️ 读不到 `visible`（引擎没这字段）时**仍然写** ✓ —— 不许因为读不到就不摆 ✓
+        local sv = nil
+        pcall(function() sv = s.visible end)
+        if sv ~= true then pcall(function() s:SetVisible(true) end) end
         -- ★★★★★ 2026-10-02 **`stage` 要按"棋盘容器"的尺寸摆**，不能让它保持全屏。
         --
         --   为什么：格子的几何是**按父容器尺寸算**的（`cell_geometry` 读父级 sizeDelta）。
