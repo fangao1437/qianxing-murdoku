@@ -560,21 +560,18 @@ end
 
 -- 棋盘格被单击：单击=笔记 / 双击=放置；已放置格、X 模式、橡皮擦模式、只写笔记模式都立即生效
 function Controller:on_cell_click(r, c)
+  -- ★ 2026-10-05 **没带坐标的点击：安静地不做任何事**（原来会崩）。
+  --
+  --   两处独立实测都发现 `on_cell_click(nil, nil)` 会抛异常 ——
+  --   就是下面那句 `core.grid[r][c]`（`ui_controller.lua:578` 那一行）直接炸。
+  --
+  --   什么时候会进来 nil：适配层的 `_fire` 走兜底事件 `{ action = "click" }` 时
+  --   （`live_event()` 拿不到节点事件），`r` / `c` 就都是 nil。
+  --   ⇒ 这不是"错"，只是**这次点击本来就没落在任何格子上** —— 什么都不做才是对的。
+  --   ⚠️ 必须放在**读 `core.grid` 之前**：放在后面就等于没放。
+  if r == nil or c == nil then return end
   local core = self.core
   self.now = self.now or 0
-  -- ★★★ 临时计数（2026-10-05 · 一次性定位「第三层」，跑完必删）
-  self._t3_cell = (self._t3_cell or 0) + 1
-  local _t3n = self._t3_cell
-  -- Q6/Q7：进来时 r/c 是什么；self.now 与上一次进来的差值（双击窗口 0.35）
-  local _t3dt = self._t3_prev_t and (self.now - self._t3_prev_t) or -1
-  if _t3n <= 30 and print then
-    print("[T3Q] on_cell_click#" .. _t3n .. " r=" .. tostring(r) .. " (" .. type(r)
-      .. ") c=" .. tostring(c) .. " (" .. type(c) .. ") now=" .. tostring(self.now)
-      .. " dt上一次=" .. tostring(_t3dt) .. " mode=" .. tostring(core.mode)
-      .. " suppress=" .. tostring(self._suppress_click ~= nil))
-  end
-  self._t3_prev_t = self.now
-  self._t3_r, self._t3_c = r, c
   local occupied = core.grid[r][c] ~= nil
   local mode = core.mode
 
@@ -604,10 +601,6 @@ function Controller:on_cell_click(r, c)
         self.dirty = true
       end
       self:do_pre_place(r, c)
-      -- ★★★ 临时计数（2026-10-05 · 跑完必删）：双击分支命中
-      if _t3n <= 30 and print then
-        print("[T3Q] on_cell_click#" .. _t3n .. " → 双击分支命中 ✓（撤销第一击后 do_pre_place）")
-      end
       return
     end
   end
@@ -641,13 +634,6 @@ function Controller:on_cell_click(r, c)
     self.dirty = true
   else
     self:_refuse(r, c, why)
-  end
-  -- ★★★ 临时计数（2026-10-05 · 跑完必删）：Q6 返回值 ok/why
-  if _t3n <= 30 and print then
-    print("[T3Q] on_cell_click#" .. _t3n .. " → 单击分支完毕 ok=" .. tostring(ok)
-      .. " why=" .. tostring(why) .. " mode=" .. tostring(mode)
-      .. " had=" .. tostring(had ~= nil) .. " had_selected=" .. tostring(had_selected ~= nil)
-      .. " last_click=" .. tostring(self.last_click ~= nil))
   end
 end
 
@@ -2142,9 +2128,22 @@ function Controller:build_layout()
     if who ~= nil then
       -- 头像（左边）：复用 `portrait.*` 调色板，**不引入新素材**
       -- （子控件的 y 也跟着卡片走 ⇒ 同样要 `pos_runtime`，理由见上面那段的注释）
+      -- ★★★★★ 2026-10-05 **加 `event` —— 这是"点格子没反应"的真修** ✓✗
+      --
+      --   为什么必须加（实测三段切开 ✓ 见 `docs/点格子没反应-三段切开结论.md` ✓）：
+      --     ★ **鼠标侧【没有任何控件发 `suspect` 事件】** ✗ —— 计划里 `"action":"suspect"` 实测 **0 次** ✓
+      --     ⇒ `core.selected` 恒为 `nil` ✗ ⇒ `Core:pre_place` 直接返回「**先点一个头像**」✗
+      --     ⇒ ★ **单击不落笔记、双击不放置、步数不动** ✗ ⇒ 观感就是"点格子没反应" = `0 / 5` ✓
+      --   为什么是这里 ✓：唯一的生产者（原来那个 `for i = 1, n_tray` 里的 `{action="suspect"}` ✓）
+      --     **已经死了** ✗ —— `:1870` 那句 `local n_tray = 0`（2026-10-02 头像并进线索卡 ✓）
+      --     ⇒ 那个循环**一次都不跑** ✗；而本控件（`clue.<i>.face` = **卡片上的头像** ✓）
+      --     **正好就是现在唯一的头像** ✓ ⇒ ★ 让它承担"点一下选这个人" ✓✓
+      --   ★ 与 `:1889` 同一个口径 ✓：**`wid` 有值才给** ✓ 没值就不给（不制造无主事件 ✓）
+      --   ⚠️ **只加 `event`，不动 rect/尺寸/样式** ✗ —— 布局一个字没变 ✓
       push({ id = "clue." .. i .. ".face", kind = "button", parent = "clue." .. i,
              rect = { x = L.clues.x + CLUE_PAD + 16.8, y = y + 36, w = FACE, h = FACE },
-             image = wportrait, style = "portrait", visible = inWin })
+             image = wportrait, style = "portrait", visible = inWin,
+             event = (wid ~= nil and wid ~= "") and { action = "suspect", id = wid } or nil })
       -- 名字（红）：正文第一列
       push({ id = "clue." .. i .. ".who", kind = "text", parent = "clue." .. i,
              rect = { x = L.clues.x + CLUE_PAD + 16.8, y = y + 2.4, w = 99.6, h = 31.2 },
