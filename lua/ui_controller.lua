@@ -1311,7 +1311,20 @@ local function apply_screen_hide(nodes, screen)
     --      "关卡内的还可见 0 个" ⇒ 子控件层面是干净的。
     if id == "home" then hide = (screen ~= "home") end
     if id == "select" then hide = (screen ~= "select") end
-    if hide then nodes[i].visible = false end
+    -- ★★★★★ 2026-10-05 **改成【双向】** ✗✓ —— 原来只写 `false`，从不写 `true` ✗
+    --
+    --   症状（用户实测 + 两张截图 ✓）：
+    --     · 直接进【第一关】：一切正常 ✓（墙/门 + `clues.bg` 都在 ✓）
+    --     · 去过别的关卡再回来：★【只渲染了棋盘本身】✗ —— `clues.bg` / 线索区全丢 ✓
+    --     · ★ 退出重进第一关【没用】✗；必须去一次别的关卡才行 ✓
+    --
+    --   为什么是这一行：`apply_screen_hide` 只把 `nodes[i].visible` 写成 `false`，
+    --   ★ **"不藏"的那一帧它什么都不做** ✗ —— 而 `nodes` 是 `build_layout()` 每帧新建的，
+    --   初值本该是 `true` ✓ ⇒ 单看这里"每帧都会自己恢复" ✓ ⇒ ★ 所以它【不是唯一原因】✗
+    --   （另一半在渲染层的差集：见下面「差集发 false 之后必须清账本」那段 ✓）
+    --   ★ 但让它**双向**是必要的 ✗：否则"这一帧该显示"这个事实压根没进 `nodes` ✓
+    --     ⇒ 渲染层就算想发 `true` 也无从知道 ✓✓
+    nodes[i].visible = not hide
   end
 end
 -- ★★★★★ 2026-10-05 **`split_by_name` 从 `build_layout` 里提出来，升成模块级函数**。
@@ -3957,9 +3970,32 @@ function Controller:render(adapter, force)
   -- 之后每次只藏"上一次显示过、这一次不在布局里"的。
   if self._shown == nil then
     local all = self:layout_plan()
+    -- ★★★★★ 2026-10-05 **藏完必须【清账本】** ✗✓ —— 这才是"永久丢失"的根治 ✓
+    --
+    --   为什么（与 `apply_screen_hide` 那处是一件事的两半 ✓）：
+    --     · 差集在这里**主动发** `visible=false` ✗（走 `_set_prop` ✓ 会**记账** ✓）
+    --     · 而"要显示"是靠属性循环发 `visible` ✓ —— 但它有账本：`last[k] == v` ⇒ **判"没变"就不发** ✗
+    --     · ⇒ ★★ 账本里还留着"上次发过 `true`"✗ 而控件**已被差集藏掉** ✗
+    --          ⇒ **再也不会发 `true`** ✗ ⇒ ★【永久丢失】✗✓
+    --   ⇒ ★ 所以：**凡是主动藏掉的 id，就把它名下所有规划节点的 `last.visible` 置 nil** ✓
+    --     ⇒ 下一帧"该显示"时账本认为"没发过"⇒ **重发 `true`** ✓✓
+    --   ★ 症状对应（用户实测 ✓）：退出重进第一关没用 ✗（同一条路）·
+    --     去一次别的关卡才行 ✓（切屏时 `clues` 重进 `seen` ⇒ 走"显示"那条路重发 ✓）
+    --   ⚠️ 键格式 = `id \1 父容器 \1 出现序号`（见 `node_key` ✓）⇒ 用前缀匹配 ✓
+    --     （与 `drop_props_of` 同一套写法 ✓ 不另造格式 ✓）
+    local function forget_visible(id)
+      if self._props == nil then return end
+      local pre = tostring(id) .. "\1"
+      for k, rec in pairs(self._props) do
+        if type(k) == "string" and k:sub(1, #pre) == pre and type(rec) == "table" then
+          rec.visible = nil
+        end
+      end
+    end
     for i = 1, #all do
       if not seen[all[i].id] and not stale_legacy(all[i].id) then
         self:_set_prop(adapter, all[i].id, "visible", false)
+        forget_visible(all[i].id)          -- ★ 藏了就忘掉"发过没有"⇒ 下次该显示时会重发 ✓
       end
     end
     -- ★ 上面只能藏住"当前这一关自己的布局里没有的"控件。
