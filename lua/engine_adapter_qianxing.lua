@@ -2241,6 +2241,62 @@ function Adapter:color_of_style(value)
   end
   return nil                          -- 其它样式不管颜色（保住各自现状）
 end
+-- 「按钮底图上色（运行时）」—— **顶层 helper**，由 `apply_tray_layout` 在末尾调用。
+--
+-- ⚠️ 2026-10-05 Round 45：它原来是 `apply_tray_layout` 函数体末尾的一整段循环。
+--   为什么非搬出来不可：那段用 `names` / `done, miss`（`apply_tray_layout` 的局部变量），
+--   而**两个本该顶层的方法**（`apply_ruler_layout` / `diagnose_overlap`）又必须在
+--   `apply_tray_layout` **外面** ⇒ 只有把这段移出去，才可能让 `apply_tray_layout`
+--   在方法**之前** `end` 掉 ⇒ 那两个方法才会在**加载时**就存在 ✓
+--   （不搬的后果就是本 bug：方法被吞成子闭包 ⇒ `main.lua` 的 `~= nil` 守卫恒假
+--     ⇒ 行标/列标对齐、相交诊断**从来没跑过**、零报错 ✗）
+--
+-- 等价性（与搬移前逐条对齐）：
+--   · 同一段代码、同样顺序、同样计数、同样 `pcall` 兜底；
+--   · 仍然只在 `cfg.btn_art == true` 时执行（由调用点判断，与搬移前的 `if` 一致 ✓）；
+--   · 返回值与原来一致：`moved`（搬移前 `apply_tray_layout` 返回的就是搬移后的 `moved` ✓）；
+--   · `names` / `done, miss` 改成**参数传入** —— 它们原来就在同一作用域，
+--     直接传进来即可，**不读全局**（不传会 `#nil` 抛错 ✗）。
+function Adapter:_tray_btn_art(moved, names, done, miss)
+  names = names or {}
+  done, miss = done or 0, miss or 0
+  print("[murdoku] --- 按钮底图上色（运行时）---")
+  for i = 1, #names do
+    local cid = names[i]
+    local c = self:find(cid)
+    local bg = nil
+    if c ~= nil then pcall(function() bg = self:sub(cid, "bg") end) end
+    if bg ~= nil then
+      if bg.SetAsLastSibling then pcall(function() bg:SetAsLastSibling() end) end
+      local src = nil
+      pcall(function() src = bg.imageSource end)
+      -- ⚠️ 这个色号必须和**写进 .gil 的那个**一致！
+      --   踩过的坑：我在 .gil 里把底图改成了浅蓝 100108，
+      --   却忘了改这里硬编码的 100001 —— 于是**运行时又把它覆盖回深紫**。
+      --   模拟器验证（tools/sim/verify_art.mjs）一眼看出来：`bg imageId=100001`。
+      --   ⇒ 同一件事有两处实现，就必须同时改；这次靠"交付前验证外观"兜住了。
+      local ok, err = pcall(function() bg:SetImage(src, self.cfg.bg_image_id or 100108) end)
+      if ok then done = done + 1 else
+        miss = miss + 1
+        self:warn_once("bgset:" .. cid, "底图 SetImage 失败：" .. tostring(err))
+      end
+      if bg.SetVisible then pcall(function() bg:SetVisible(true) end) end
+      if i <= 3 then
+        local it, iid = "?", "?"
+        pcall(function() it = tostring(bg.imageType) end)
+        pcall(function() iid = tostring(bg.imageId) end)
+        print(string.format("  %-16s bg：imageType=%s imageId=%s", cid, it, iid))
+      end
+      moved = moved + 1
+    else
+      miss = miss + 1
+    end
+  end
+  print(string.format("  SetImage 成功 %d 个，缺失/失败 %d 个", done, miss))
+  print("[murdoku] --- 按钮底图上色结束 ---")
+  return moved
+end
+
 function Adapter:apply_tray_layout(layout)
   if layout == nil or layout.items == nil then return 0 end
   local parent = self:find(self.cfg.tray_parent or "tray")
@@ -2397,10 +2453,26 @@ function Adapter:apply_tray_layout(layout)
     --   上色循环留在本函数内（默认关闭）⇒ 本行的 `end` 关掉 `btn_art` 块 ✓
     --   ⇒ `node tools/audit/check_nesting.mjs` 的 `[嵌套]` 必须降到 **0 处** ✓
   end
-  -- ⚠️ 上面那个 `end` 关的是 **`btn_art` 块**。
-  --   `apply_tray_layout` **还没有结束** —— 它在函数末尾「按钮底图上色」之后才 `end`，
-  --   且中间那个 `return moved` 在 `btn_art` 块**外面**（`cfg.btn_art` 关着也照样返回）✓
-  --   （`tray_diag` 体检块早在"体检结束"那里就配平关掉了 ✓）
+  -- ★★★ 2026-10-05 Round 45：**上色循环已抽成顶层 helper** `Adapter:_tray_btn_art`
+  --   （就定义在下面，`apply_tray_layout` **之前**）。
+  --   为什么非抽不可：那段循环用 `names` / `done, miss`（本函数局部），
+  --   而它**上面**那两个方法又必须在本函数**外面** ⇒ 只能把那段整段移出去 ✓
+  --   等价性：同一段代码、同样顺序、同样计数、同样默认关闭（`cfg.btn_art`）✓
+  -- ★★★★★ 2026-10-05 Round 48 修：下面这行调用用到了 `names` / `done` / `miss`，
+  --   但抽 helper 时它们**没有跟着过来** ✗ ⇒ selene 报三条 `error[undefined_variable]` ✗
+  --   （`names` / `done` / `miss` @L2461）⇒ 一旦 `cfg.btn_art = true` 就会**当场崩**（`#nil` 抛错 ✗）。
+  --   该路径**默认关闭** ⇒ 离线测试测不到 ✗ ⇒ 只有静态检查能抓 ✓（这正是 selene 的价值 ✓）
+  --   ⇒ 修法：在调用前就地声明（与 helper 内部那份等价 ✓ 传参用 ✓）
+  local names = self.cfg.btn_list or {}
+  local done, miss = 0, 0
+  local moved_final = self:_tray_btn_art(moved, names, done, miss)
+  -- ⚠️⚠️ 这个 `end` 关的就是 `apply_tray_layout`（`function` 在 2244 行）。
+  --   它**必须**在下面两个方法之前 —— 否则那两个方法又会被吞成它的**子闭包**
+  --   ⇒ 加载时不存在 ⇒ `main.lua` 的 `~= nil` 守卫恒假
+  --   ⇒ 行标/列标对齐、相交诊断**静默失效**（零报错）✗ —— 就是本 bug 的原形。
+  --   判据：`node tools/audit/check_nesting.mjs` ⇒ 这两个方法的 `深度` 必须是 **0** ✓
+  return moved_final
+end
 
 -- 行标 / 列标按**格子的实际位置**对齐（顶层方法，加载时即存在）。
 --
@@ -2542,60 +2614,12 @@ function Adapter:diagnose_overlap()
   return hits
 end
 
-    -- ★★★★★ 2026-10-05 **重新打开 `btn_art` 块**（Round 35 的结构性修复）。
-    --   上面在 `apply_ruler_layout` 之前补了一个 `end` 关掉了原来的 `if`，
-    --   这里必须用**同一个条件**再打开一次 ⇒ 底下的"按钮底图上色（运行时）"才仍然受 `cfg.btn_art` 控制 ✓
-    --   而上面那两个方法**回到了顶层** ⇒ `main.lua` 的 `~= nil` 守卫终于会成立 ✓
-    if self.cfg.btn_art == true and print then
-    -- ★ 2026-10-05 Round 44 修：这三个变量**必须在使用它们的块里声明** ✗
-    --   症状（由 selene 静态检查抓出，`tools/lua-tooling/selene.toml`）：
-    --     · 上面 L2383-2384 那对 `local names` / `local done, miss` 被报
-    --       `unused_variable: assigned a value, but never used` ✗ ⇒ 它们在**别的块**里，够不到这里；
-    --     · 而**这里**（上色循环 L2551 的 `#names`、L2581 的 `done, miss`）被报
-    --       `error[undefined_variable]: names / done / miss is not defined` ✗✗
-    --   ⇒ 后果：一旦 `cfg.btn_art = true`，这一段会**当场崩**（读全局 nil ⇒ `#nil` 抛错）✗。
-    --     该路径默认关闭 ⇒ 离线测试测不到 ✗ —— 所以这属于"埋伏着的坑" ✓
-    --   ⇒ 修法：在使用处声明 ✓（上面那对留着无害，只是冗余 ✓；等嵌套搬移时一并清理 ✓）
-    local names = self.cfg.btn_list or {}
-    local done, miss = 0, 0
-    print("[murdoku] --- 按钮底图上色（运行时）---")
-    for i = 1, #names do
-      local cid = names[i]
-      local c = self:find(cid)
-      local bg = nil
-      if c ~= nil then pcall(function() bg = self:sub(cid, "bg") end) end
-      if bg ~= nil then
-        if bg.SetAsLastSibling then pcall(function() bg:SetAsLastSibling() end) end
-        local src = nil
-        pcall(function() src = bg.imageSource end)
-        -- ⚠️ 这个色号必须和**写进 .gil 的那个**一致！
-        --   踩过的坑：我在 .gil 里把底图改成了浅蓝 100108，
-        --   却忘了改这里硬编码的 100001 —— 于是**运行时又把它覆盖回深紫**。
-        --   模拟器验证（tools/sim/verify_art.mjs）一眼看出来：`bg imageId=100001`。
-        --   ⇒ 同一件事有两处实现，就必须同时改；这次靠"交付前验证外观"兜住了。
-        local ok, err = pcall(function() bg:SetImage(src, self.cfg.bg_image_id or 100108) end)
-        if ok then done = done + 1 else
-          miss = miss + 1
-          self:warn_once("bgset:" .. cid, "底图 SetImage 失败：" .. tostring(err))
-        end
-        if bg.SetVisible then pcall(function() bg:SetVisible(true) end) end
-        if i <= 3 then
-          local it, iid = "?", "?"
-          pcall(function() it = tostring(bg.imageType) end)
-          pcall(function() iid = tostring(bg.imageId) end)
-          print(string.format("  %-16s bg：imageType=%s imageId=%s", cid, it, iid))
-        end
-      else
-        miss = miss + 1
-      end
-    end
-    print(string.format("  SetImage 成功 %d 个，缺失/失败 %d 个", done, miss))
-    print("[murdoku] --- 按钮底图上色结束 ---")
-  end
-  return moved
-end
--- ⚠️ 这个 `end` 关的就是 `apply_tray_layout`（`function` 在 2244 行）。
---   上面那个 `end` 关 `btn_art` 块 ⇒ **两个都要在**：少任一个，全文末深度就不是 0 ✗
+-- ⚠️ 2026-10-05 Round 45：这里原来是「按钮底图上色（运行时）」那一整段循环。
+--   它已经**整段搬进**上面的顶层 helper `Adapter:_tray_btn_art`（同一个文件，函数体原样）✓
+--   搬走的理由：它用 `names` / `done, miss`（`apply_tray_layout` 的局部变量），
+--   而那两个方法必须在 `apply_tray_layout` **外面** ⇒ 只有把这段移出去，
+--   才可能让 `apply_tray_layout` 在方法**之前** `end` 掉 ✓
+--   ⚠️ 别把它搬回来：搬回来 ⇒ `apply_tray_layout` 又要把方法吞进去（本 bug 复发 ✗）。
 
 -- 尝试由**脚本自己**打开容器的「显示常驻光标」(`showCursor`)。
 --
