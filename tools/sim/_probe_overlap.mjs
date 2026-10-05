@@ -1,4 +1,4 @@
-﻿import path from 'node:path';
+import path from 'node:path';
 import { makeController, loadPlan, buildProject, indexTree, textOf, WORKSPACE } from './kit.mjs';
 const c = await makeController();
 const plan = loadPlan();

@@ -1,4 +1,4 @@
-# tools/install_script_to_sandbox.ps1
+﻿# tools/install_script_to_sandbox.ps1
 # Copy the bundled client script into the sandbox "script root" folder(s).
 #
 # IMPORTANT (this is the bug that cost hours):

@@ -1,4 +1,4 @@
-# tools/normalize_encoding.ps1 -- fix UTF-8 BOM state for all source files.
+﻿# tools/normalize_encoding.ps1 -- fix UTF-8 BOM state for all source files.
 #
 # WHY THIS EXISTS
 #   Two opposite rules, both easy to violate by accident:

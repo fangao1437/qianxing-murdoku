@@ -1,4 +1,4 @@
-# tools/build_diag.ps1
+﻿# tools/build_diag.ps1
 # Build a DIAGNOSTIC variant of the client script:
 #     dist/client_script.lua  +  tools/hello_probe.lua   ->  dist/client_script_diag.lua
 # and copy it over the mapped file name (client_script.lua) in every script root.

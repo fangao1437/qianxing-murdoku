@@ -1,4 +1,4 @@
-# preview.ps1 — render labelled previews of candidate sprites and tile them into one contact sheet.
+﻿# preview.ps1 — render labelled previews of candidate sprites and tile them into one contact sheet.
 # Magenta padding makes transparent regions obvious; 3x upscale makes small sprites legible.
 $FF = "C:\Users\18182\AppData\Local\Temp\ffs\node_modules\ffmpeg-static\ffmpeg.exe"
 $ids = @(107001,107003,107007,107062,107231,107236,107239,107241,107249,107303,107304,107402)
