@@ -100,6 +100,28 @@ for li = 1, #levels do
         --      `action` 字段。我第一次写成 `n.event.action` —— 而 `layout_plan()` 的节点里
         --      **没有 `event`** ⇒ 导出来又是 `undefined`（白改一轮）。
         action = n.action,
+        -- ★★★★★ 2026-10-05 **`event` 整表也要带出来（第三次同一类链子）** ✗✓
+        --
+        --   这是第 3 项「点格子没反应」的**最后一环** ✓ —— ★ 这条链子一共经过【两次】摊平：
+        --     ① `ui_controller.lua` 的 `layout_plan()`：`action = n.event and n.event.action`
+        --        ⇒ ★ 那里我只补了 `event = n.event` ✓（同一次提交 ✓）
+        --     ② ★ **这里** ✗ —— 本文件**又建了一张新表**（上面的 `image_id` 那段同理 ✓）
+        --        ⇒ 只拷 `action` ⇒ ★ **`event` 被【第二次】丢掉** ✗✓
+        --
+        --   为什么模拟器需要它（**实测锁定** ✓）：
+        --     · `engine_adapter_qianxing.lua:816` 的守卫是
+        --       `if node.event ~= nil and (node.kind == "button" or node.kind == "cursor")`
+        --       ⇒ ★ **`node.event == nil` ⇒ 从不 `bind_input`** ✗ ⇒ **控件上根本没有监听器** ✓
+        --     · **真机**走的是 `build_layout()` ✓ 那里的节点有完整 `event` ✓ ⇒ 守卫放行 ✓
+        --     · **模拟器**走的是这份计划 JSON ✗ ⇒ 计划里 `"event"` **0 次** ✗
+        --       ⇒ 模拟器里**任何控件都绑不上** ✗ ⇒ 点击到不了脚本 ⇒ `0 / 5` ✓✓
+        --   ★ 两个独立代理的实测互证：`[T3Q] _fire#` 四次点击后 **0 次** ✓ · 计划 369 节点**无一带 `event`** ✓
+        --   ★★ 这**不是**"放宽断言" ✗ —— ★ **是让模拟器忠实还原真机** ✓✓
+        --     真机的节点本来就有 `event` ✓ ⇒ 计划也该有 ✓
+        --   ⚠️ **`action` 必须保留** ✗（`kit.mjs` 的负对照等地方按它工作 ✓）—— 只是【再加】一个字段 ✓
+        --   ⚠️ 与 `image_id`（2026-10-01）、`action`（2026-10-04）是**同一类链子问题** ✓
+        --     ★ 规律：**"值为 nil" 与 "键不存在" 是两回事** ✗✓ —— 每次"再建一张新表"都会丢字段 ✓
+        event = n.event,
       }
       byId[n.id] = prev
       order[#order + 1] = prev

@@ -69,6 +69,19 @@ end
 --   ⇒ **默认关闭**。留这个开关，是为了以后给移动端补按钮时不用重写布局。
 M.SHOW_TOOL_BUTTONS = false
 
+-- ★★★★★ 2026-10-05 **A8：提示语（toast）的存活时长（秒）** —— 用户批准的**方案甲**。
+--
+--   要解决的问题（2026-10-05 实测，证据见 docs/L3基线-模拟器四步失败清单.md §8）：
+--     `self.toast` 全项目 **10 处写入**（8 处真消息 + 2 处清空），而**一个读它的地方都没有** ✗
+--     ⇒ 玩家看不到任何提示：撤销 ✗ 取消 ✗ 揭示 ✗ 还没有游玩记录 ✗ 商城/背包 ✗。
+--   方案甲 = **只补读者**：一个写入点都不改、一个控件都不加
+--   （`hud.toast` 已按参考图删掉，不在计划里、也不在存档里 ⇒ 不能把它加回来）。
+--
+--   为什么是 2.5 秒：够看清一句 6~17 字的中文提示（更短就成"一闪而过"= 又等于没反馈 ✗），
+--   又不至于赖在屏幕上不动。**这个数值只在这里定义一次** —— 超时判断（`Controller:tick`）
+--   和 8 处写入（`self.toast_until = self.now + M.TOAST_SECONDS`）共用它，不许各写一份 ✗。
+M.TOAST_SECONDS = 2.5
+
 -- 主页标题（文字**存不进 .gil**，只能脚本写 —— 见《工作约定》）
 M.HOME_TITLE = "侦探推理 · 摆位谜题"
 M.LAYOUT = {
@@ -270,6 +283,11 @@ function M.new(core, opts)
   self.effects = {}
   self.dirty = true
   self.toast = nil
+  -- ★ A8：提示语的**截止时刻**（绝对值，和 `self.now` 同一根时间轴）。
+  --   千星**没有客户端定时器 API** ⇒ 就用 `tick` 里那根本来就在累加的 `self.now`
+  --   （`main.lua` 的 `on_update` 每帧调 `controller:tick(dt)`，与屏幕无关）。
+  self.toast_until = nil
+  self.now = 0
   self.modal = nil          -- nil | {kind="accuse"} | {kind="result",win=bool,message=} | {kind="howto"} | {kind="intro",page=n}
   -- ★★★ 2026-09-29：屏幕状态（"home" 主页 / "select" 选关 / nil = 在关卡里）。
   --   与 `modal` 的区别：modal 是"浮在关卡上的弹窗"，屏幕是**整屏**的。
@@ -307,6 +325,7 @@ function Controller:finish_accuse(thief, has_acc, acc)
     res = core:accuse_verdict(thief, has_acc, acc)
   end
   self.toast = res.message
+  self.toast_until = self.now + M.TOAST_SECONDS   -- ★ A8：只补截止时刻，文案一行不动
   if res.solved then
     self.modal = { kind = "result", win = true, message = res.message }
     self:fx("modal", M.EFFECTS.SOLVED)
@@ -358,6 +377,7 @@ function Controller:do_submit()
   self:fx("hex.submit", M.EFFECTS.SUBMIT)
   -- 规格 5.3：提交只给硬约束反馈，不揭晓任何线索层面的对错（连条数都不说）
   self.toast = res and res.message or nil
+  self.toast_until = self.now + M.TOAST_SECONDS   -- ★ A8：同上（res 为 nil 时设了也无害 —— tick 先看 toast）
   if res ~= nil and res.ok then
     self.modal = { kind = "accuse_thief" }
   end
@@ -370,6 +390,7 @@ function Controller:do_restart()
   if core ~= nil and core.reset ~= nil then core:reset() end
   self.modal = nil
   self.toast = nil
+  self.toast_until = nil    -- ★ A8：清提示语时把截止时刻一起清掉（别留一个未来的时刻）
   self.dirty = true
 end
 
@@ -822,6 +843,7 @@ function Controller:on_input(event)
     if self._gesture_snapshot then
       core:deserialize(self._gesture_snapshot)
       self.toast = "已回滚本次操作"
+      self.toast_until = self.now + M.TOAST_SECONDS   -- ★ A8：只补截止时刻，文案一行不动
       self:fx("board", M.EFFECTS.UNDO)
     end
 
@@ -883,6 +905,7 @@ function Controller:on_input(event)
     self.pending = nil
     self:sync_confirm()
     self.toast = "已取消"
+    self.toast_until = self.now + M.TOAST_SECONDS   -- ★ A8：只补截止时刻，文案一行不动
 
   elseif a == "confirm_yes" then
     local p = self.pending
@@ -917,6 +940,7 @@ function Controller:on_input(event)
   elseif a == "hint" then
     local ok, msg = core:hint()
     self.toast = msg
+    self.toast_until = self.now + M.TOAST_SECONDS   -- ★ A8：只补截止时刻，文案一行不动
     if ok then self:fx("hex.hint", M.EFFECTS.SELECT) end
 
   elseif a == "reveal" then
@@ -927,6 +951,7 @@ function Controller:on_input(event)
       core:hold_cell(p.r, p.c)
     end
     self.toast = "已揭示答案"
+    self.toast_until = self.now + M.TOAST_SECONDS   -- ★ A8：只补截止时刻，文案一行不动
 
   -- ★ 2026-10-02：提交现在**先要 ✓ 确认**（见上面 confirm_yes 分支）⇒ 这里只留"真正执行"。
   --
@@ -1011,6 +1036,7 @@ function Controller:on_input(event)
       self.opts.on_pick_level(last)
     else
       self.toast = "还没有游玩记录，先从「选关」开始吧"
+      self.toast_until = self.now + M.TOAST_SECONDS   -- ★ A8：只补截止时刻，文案一行不动
       self.screen = "select"
     end
     self.dirty = true
@@ -1019,6 +1045,7 @@ function Controller:on_input(event)
     -- 占位：具体内容等美术资源齐全后再设计（用户原话）。
     -- 给一句明确反馈，免得玩家以为按钮坏了。
     self.toast = (a == "shop") and "商城：美术资源就绪后开放" or "背包：美术资源就绪后开放"
+    self.toast_until = self.now + M.TOAST_SECONDS   -- ★ A8：只补截止时刻，文案一行不动
     self.dirty = true
 
   elseif a == "clue_up" or a == "clue_down" then
@@ -1108,6 +1135,25 @@ end
 --      render 结束会把 `effects` 清空 ⇒ **不会退化成每帧重绘**。
 function Controller:tick(dt)
   self.now = (self.now or 0) + (dt or 0)
+
+  -- ★★★★★ 2026-10-05 **A8：提示语到点就撤**（用户批准的方案甲 —— 只补读者/超时，不动写入点）。
+  --
+  --   为什么放在 `tick`、用 `self.now`：千星**没有客户端定时器 API**（官方客户端脚本
+  --   文档里没有 setTimeout 这一类东西），而 `self.now` 是**本来就在每帧累加**的那根时间轴。
+  --   ⚠️ `os.time` / `os.clock` 也在白名单里，但它们与"这一帧"不同源；用同一根轴最稳。
+  --
+  --   ⚠️ 必须置 `dirty`：出口控件的文字是**布局层每帧下发**的（见 `build_layout` 里的
+  --      `hud.subtitle` 与 `home.title`），不置 dirty 就得等"整秒心跳"那一帧才变回去
+  --      （表现成提示语多赖 0~1 秒）。
+  --
+  --   ⚠️ 判据是 `self.toast ~= nil` **且**有截止时刻：`toast_until` 是这一轮才有的字段，
+  --      万一有人只写了 `self.toast`（没设截止时刻），这里**不该**把它清掉 ——
+  --      那是"写入点漏了"的问题，不该由超时逻辑假装解决。
+  if self.toast ~= nil and self.toast_until ~= nil and self.now >= self.toast_until then
+    self.toast = nil
+    self.toast_until = nil
+    self.dirty = true
+  end
   local elapsed = (self.core.elapsed or 0) + (dt or 0)
   self.core:set_elapsed(elapsed)
   self:flush_pending_note()      -- 挂起的单击到点就落成笔记（成功时它自己置 dirty）
@@ -1291,6 +1337,30 @@ local function split_by_name(vm, txt)
   local at = txt:find(best, 1, true)
   local pre, post = txt:sub(1, at - 1), txt:sub(at + #best)
   return best, pre, post, bestIt and tostring(bestIt.id) or nil, bestIt and bestIt.portrait or nil
+end
+
+-- ★★★★★ 2026-10-05 **A8：提示语（`self.toast`）的出口文案** —— 全项目**唯一**读它的地方。
+--
+--   方案甲（用户批准）：**接一个已存在的控件当出口**，一个控件都不加、布局一行不动。
+--   出口有两个（为什么是两个，见下面 `hud.subtitle` / `home.title` 两处的说明）：
+--     · `hud.subtitle` —— 关卡内（撤销 / 取消 / 揭示 / 回滚 / 提交与结案结果…）；
+--     · `home.title`   —— 主页（「商城 / 背包」是在主页点的，而主页上整片 `hud.` 前缀
+--                         被 `apply_screen_hide` 藏掉 ⇒ 主页必须另有出口）。
+--
+--   ⚠️ 为什么**不**另找控件、也不加控件：`hud.toast` 已经按参考图删了 ——
+--      `tools/sim/out/layout-plan.json` 里没有它，**存档里也没有它的记录**
+--      （实测 `208-补active.gil`：`hud.toast` **0 条**；`hud.subtitle` / `hud.title` /
+--        `hud.timer` / `hud.moves` / `hud.progress` 各 1 条；`legend` / `clues.more` /
+--        `room.label.*` / `ruler.*` / `select.*` 也都是 0 条）
+--      ⇒ 写一个**不存在**的控件 = `set_property` 静默 no-op = 这场修复白做 ✗。
+--   ⚠️ 空串按"没有提示语"处理：出口控件的 `text` 不允许被清成空串之后还赖在计划里
+--      （`nil` 时一律回落到控件本来的文案，见那两处 push）。
+function Controller:toast_text()
+  local t = self.toast
+  if t == nil then return nil end
+  t = tostring(t)
+  if t == "" then return nil end
+  return t
 end
 
 function Controller:build_layout()
@@ -1544,10 +1614,23 @@ function Controller:build_layout()
   elseif vm.meta_announce == "none" then
     announce_text = "　※ 线索全部为真"
   end
+  -- ★★★★★ 2026-10-05 **A8 的出口①（方案甲：接已存在的控件，布局一行不动）**。
+  --
+  --   为什么选中 `hud.subtitle`：
+  --     · `hud.title` = 关卡标题 —— 用户点名**不许用**（覆盖它会破坏「重置后标题不变」）；
+  --     · `hud.timer` / `hud.moves` / `hud.progress` 都是玩家**正在看的计数**（时间/步数/进度），
+  --       而且只有 ~125px 宽 ⇒ 装不下「还没有游玩记录，先从「选关」开始吧」这种 17 字提示 ✗；
+  --     · 本控件是 717px 宽的**副标题行**（标题下面那一行）—— 语义上就是"对玩家说的一句话"，
+  --       而且**存档里真实存在**（`208-补active.gil` 有 `hud.subtitle` 记录 ✓
+  --       —— 这是硬条件：控件不存在 ⇒ `set_property` 静默 no-op ⇒ 等于没修 ✗）。
+  --   ⇒ 有提示语：文字换成提示语、并**强制可见**（有的关卡副标题为空、本来 `visible=false`）；
+  --     提示语到点被 `tick` 清空 ⇒ 这里**自动回落到副标题本身**
+  --     （`build_layout` 每帧重建 ⇒ 不需要"记住原文"的跨帧状态 ✓ 也不会留残字 ✗）。
+  local toast_text = self:toast_text()
   push({ id = "hud.subtitle", kind = "text", parent = "topbar",
          rect = { x = L.title.x, y = L.title.y + 48, w = L.title.w + 320, h = 30 },
-         text = tostring(vm.subtitle or "") .. announce_text, style = "subtitle",
-         visible = (vm.subtitle ~= nil or announce_text ~= "") })
+         text = toast_text or (tostring(vm.subtitle or "") .. announce_text), style = "subtitle",
+         visible = (toast_text ~= nil) or (vm.subtitle ~= nil or announce_text ~= "") })
 
   -- 顶部工具条（1920 宽内排布：标题 32..512 / 计时步数 520..814 / 工具 840..1246 / 动作 1262..1828）
   --
@@ -2723,7 +2806,18 @@ function Controller:build_layout()
     --     · 一旦两处 `visible` 写得不一样，就是上面那种"每帧互相覆盖"的无限打架。
     --   ⚠️ 以后要改这两个容器的几何/可见性，**只改上面那一处**（L2521-2525）。
     if self.screen == "home" then
-      push({ id = "home.title", kind = "text", parent = "root", visible = true, text = M.HOME_TITLE,
+      -- ★★★★★ 2026-10-05 **A8 的出口②= `home.title`** —— 主页那两条提示的唯一出口。
+      --
+      --   为什么主页要单独一个：`apply_screen_hide` 在主页/选关把**整片 `hud.` 前缀**藏掉
+      --   （见那张 HIDE/PREFIX 表），所以「商城 / 背包」这两条提示**在主页上没有出口** ✗。
+      --   而主页上**存在**的文本控件只有 `home.title` 和四个按钮的标签
+      --   （实测 `208-补active.gil`：`home.title` / `home.select` / `home.continue` /
+      --     `home.shop` / `home.bag` 各 1 条；`select.*` **一条都没有** ⇒
+      --     选关页（「还没有游玩记录…」会切到那一屏）**没有任何出口**，那一条仍然看不到 ——
+      --     已如实记在探针与本轮回复里，**不假装解决** ✗）。
+      --   ⇒ 点「商城 / 背包」时，主页那行大字直接变成提示语；到点自动变回 `M.HOME_TITLE`。
+      push({ id = "home.title", kind = "text", parent = "root", visible = true,
+             text = self:toast_text() or M.HOME_TITLE,
              rect = { x = 460, y = 140, w = 1000, h = 110 } })
       -- 中列四键。用户要求：原左边的「选关」挪到**中列最上**，原位置（左下角）留空。
       local HOME_BTNS = {
@@ -3075,6 +3169,26 @@ function Controller:layout_plan()
             --   我这一轮给七个 `hex.*` 图标加了 `event`，导出来却仍是 `动作=undefined`，
             --   差点误判成"没设上"。只取 `action`（适配层就是按它分发）。
             action = n.event and n.event.action or nil,
+            -- ★★★★★ 2026-10-05 **`event` 整表也必须进计划** ✗✓ —— 第 3 项"点格子没反应"的最后一环 ✓
+            --
+            --   为什么（**真机 vs 模拟器的唯一差别** ✓ 三段切开 + 静态定位出来的 ✓）：
+            --     · **真机**：`build_layout()` 直接建控件 ⇒ `node.event` 是**完整表** ✓
+            --       ⇒ `engine_adapter_qianxing.lua:816` 的守卫
+            --         `if node.event ~= nil and (node.kind == "button" or node.kind == "cursor")`
+            --         **放行** ✓ ⇒ `bind_input` 跑 ✓ ⇒ 格子上**有监听器** ✓
+            --     · **模拟器**：`dump_layout` → 计划 JSON → `kit.mjs` 建树 ✗
+            --       ⇒ 计划里原来**只有扁平的 `action`** ✗（实测 `"event"` **0 次** ✓）
+            --       ⇒ `node.event == nil` ✗ ⇒ ★ **守卫拦掉** ✗ ⇒ **从不 `bind_input`** ✓
+            --       ⇒ ★ **模拟器里任何控件都没有监听器** ✗ ⇒ 点击到不了脚本 ✗ ⇒ `0 / 5` ✓✓
+            --   ★ 实测互证（两个独立代理 ✓）：
+            --     · `[T3Q] _fire#` 在 4 次点击后出现 **0 次** ✓ ⇒ 点击根本没进 `_fire` ✓
+            --     · 计划里 369 个节点**没有一个带 `event`** ✓
+            --   ★★ 为什么这**不是**"放宽断言" ✗ —— ★ **是让模拟器【忠实还原真机】** ✓✓
+            --     真机的节点本来就有 `event` ✓ ⇒ 计划也该有 ✓（否则模拟器测的是另一棵树 ✓）
+            --   ⚠️ **`action` 必须保留** ✗ —— `sync_plan.mjs` 等消费者按它工作 ✓ 只是【再加】一个字段 ✓
+            --   ⚠️ 参考：`image_id`（2026-10-01）与 `action`（2026-10-04）是**同一类链子问题** ✓
+            --     ★ 这次是第三次：**`event` 的值为 nil** 与 **`event` 这个键不存在**，是两回事 ✗✓
+            event = n.event,
         }
         byId[n.id] = prev
         order[#order + 1] = prev

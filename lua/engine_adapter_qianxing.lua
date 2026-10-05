@@ -4342,16 +4342,6 @@ function Adapter:_fire(event, phase, data, src_id)
   --   ⚠️ 这是"每帧扫"被去掉之后，**唯一**能兜住"引擎自己改显隐"的触发点，
   --      所以宁可多置一次位（一次 enforce ≈ 几百个节点），也不能漏。
   self._subtree_dirty = true
-  -- T3PROBE-C
-  self._t3f = (self._t3f or 0) + 1
-  local _t3n = self._t3f
-  if _t3n <= 30 and print then
-    print("[T3Q] _fire#" .. _t3n .. " phase=" .. tostring(phase)
-      .. " src_id=" .. tostring(src_id)
-      .. " act=" .. tostring(event and event.action)
-      .. " on_input=" .. tostring(self.on_input ~= nil))
-  end
-  -- T3PROBE-C-END
   if self.on_input == nil then return end
   local evt = {}
   for k, v in pairs(event) do evt[k] = v end
@@ -4435,18 +4425,6 @@ function Adapter:input_profile()
 end
 
 function Adapter:bind_input(id, node)
-  -- T3PROBE-D
-  self._t3b = (self._t3b or 0) + 1
-  self._t3bcell = self._t3bcell or 0
-  if tostring(id):match("^cell%.") then self._t3bcell = self._t3bcell + 1 end
-  if print then
-    if self._t3b <= 12 or tostring(id):match("^cell%.1%.[13]$") then
-      print("[T3Q] bind_input#" .. self._t3b .. " id=" .. tostring(id)
-        .. " 其中格子累计=" .. self._t3bcell
-        .. " event=" .. tostring(node.event ~= nil))
-    end
-  end
-  -- T3PROBE-D-END
   local ctrl = self:find(id)
   if ctrl == nil then return end
   if ctrl.AddCursorEventListener == nil then
