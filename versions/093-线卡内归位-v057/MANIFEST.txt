@@ -1,0 +1,23 @@
+版本：093-线卡内归位-v057
+时间：2026/10/5 12:11:01
+配套 .gil：190-线索卡内全部归位.gil
+说明：子控件 rect 全部绝对化：规划按绝对解释(真机日志 clues 位置=-570,-52 与规划偏移 -570,-51 完全吻合，证实运行时把规划偏移当相对父级的局部坐标)。face/who/what/letter(含badge) 现在全部落在卡片内正确位置。
+
+文件清单：
+  engine_adapter.lua              5397 字节
+  engine_adapter_qianxing.lua     232449 字节
+  entry_client_script.lua         50140 字节
+  main.lua                        100665 字节
+  murdoku_core.lua                102564 字节
+  room_map.lua                    5227 字节
+  ui_controller.lua               175570 字节
+  client_script.lua               702879 字节（真机跑的就是这份）
+  190-线索卡内全部归位.gil                826850 字节（配套存档）
+
+用途：**这一版是"当时能跑的那一份"**。要回退：
+  1) 把本目录的 *.lua 拷回 qianxing-murdoku\lua\
+  2) 跑 node tools/bundle_client_script.lua，再 powershell -File tools/install_script_to_sandbox.ps1
+     （或直接用本目录的 client_script.lua 覆盖沙箱里的那份，省掉打包）
+  3) 导入本目录里的 .gil
+
+规则（重要）：**每轮一个新编号，不删旧的、不覆盖**。

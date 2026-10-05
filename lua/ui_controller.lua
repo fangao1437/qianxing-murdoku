@@ -1,4 +1,4 @@
---[[----------------------------------------------------------------------------
+﻿--[[----------------------------------------------------------------------------
   ui_controller.lua —— 操作框架层（页面布局 + 交互状态机 + 特效指令）v0.3.0
 
   交互模型照 murdoku 实证规格：
@@ -1940,28 +1940,28 @@ function Controller:build_layout()
       -- 头像（左边）：复用 `portrait.*` 调色板，**不引入新素材**
       -- （子控件的 y 也跟着卡片走 ⇒ 同样要 `pos_runtime`，理由见上面那段的注释）
       push({ id = "clue." .. i .. ".face", kind = "button", parent = "clue." .. i,
-             rect = { x = PAD, y = math.floor((h - FACE) / 2), w = FACE, h = FACE },
+             rect = { x = L.clues.x + CLUE_PAD + 16.8, y = y + 36, w = FACE, h = FACE },
              image = wportrait, style = "portrait", visible = inWin, pos_runtime = true })
       -- 名字（红）：正文第一列
       push({ id = "clue." .. i .. ".who", kind = "text", parent = "clue." .. i,
-             rect = { x = 16.8, y = 2.4, w = 99.6, h = 31.2 },
+             rect = { x = L.clues.x + CLUE_PAD + 16.8, y = y + 2.4, w = 99.6, h = 31.2 },
              text = tostring(pre or "") .. who, style = "clue.who", visible = inWin,
              pos_runtime = true })
       -- 内容：从固定 x 起（不测量宽度也能对齐）
       push({ id = "clue." .. i .. ".what", kind = "text", parent = "clue." .. i,
-             rect = { x = 124.8, y = 19.2, w = 242.4, h = 67.2 },
+             rect = { x = L.clues.x + CLUE_PAD + 124.8, y = y + 19.2, w = 242.4, h = 67.2 },
              text = tostring(post or ""), style = "clue.what", visible = inWin,
              pos_runtime = true })
       -- 字母徽章（右边）：就是嫌疑人的字母 id（A/B/C/D/V），参考图那样
       if wid ~= nil and wid ~= "" then
         push({ id = "clue." .. i .. ".badge", kind = "text", parent = "clue." .. i,
-               rect = { x = 400.8, y = 64.8, w = 40.8, h = 33.6 },
+               rect = { x = L.clues.x + CLUE_PAD + 400.8, y = y + 64.8, w = 40.8, h = 33.6 },
                text = wid, style = "clue.who", visible = inWin, pos_runtime = true })
         -- ★ 2026-10-05 **同一徽章再发一份，名字用 `letter`** —— 用户在编辑器里把它命名成
         --   `clue.N.letter`，而规划里叫 `badge` ⇒ 名字对不上就写不进去、**字母不显示** ✗
         --   两份都发（同 rect 同文字）：谁存在谁被点亮，另一个只是"还没建"的无害条目 ✓
         push({ id = "clue." .. i .. ".letter", kind = "text", parent = "clue." .. i,
-               rect = { x = 400.8, y = 64.8, w = 40.8, h = 33.6 },
+               rect = { x = L.clues.x + CLUE_PAD + 400.8, y = y + 64.8, w = 40.8, h = 33.6 },
                text = wid, style = "clue.who", visible = inWin, pos_runtime = true })
       end
     end
