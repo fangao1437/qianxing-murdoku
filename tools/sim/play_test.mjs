@@ -251,33 +251,77 @@ check('撤销一次 → 退回 1/5', /1 \/ 5/.test(textOf(ri, 'hud.progress') ||
 // ★★★ 2026-09-30：**这个按钮的语义变了**（按用户给的映射：重做 → 重置关卡）。
 //   参考图左上角是「返回菜单 ↰ + 重置关卡 ↻」，所以 `action.redo` 这个**按钮**
 //   改成 `restart`（`core:reset()`，早就实现了）。
-//   **重做没有消失** —— 键盘快捷键里仍然有 `redo`，只是这个按钮让给了"重置关卡"。
-//   ⇒ 断言从"重做回到 2/5"改成"重置关卡把进度清零"。
+//   **重做没有消失** —— 键盘快捷键里仍然有 `redo`，只是这个按钮让给了「重置关卡」。
+//   ⇒ 断言从「重做回到 2/5」改成「重置关卡把进度清零」。
 await clickConfirm('action.redo'); await tick(0.1);
 ri = await get();
 check('「重置关卡」把棋盘清空（0/5）', /0 \/ 5/.test(textOf(ri, 'hud.progress') || ''),
   textOf(ri, 'hud.progress'));
-check('该按钮的文案就是"重置关卡"', textOf(ri, 'action.redo') === '重置关卡',
-  JSON.stringify(textOf(ri, 'action.redo')));
+// ★★★ 2026-10-05 改判（依据，不是放宽）：原来断言「`action.redo` 的文案就是重置关卡」——
+//   而 `action.redo` 这个**旧文字按钮已被按设计删除** ✗，断言永远红。
+//   依据（lua/ui_controller.lua，行号为实际文件行号）：
+//     · `ui_controller.lua:1718-1729`「**右上三键（提交 / 重置关卡 / 撤销）的旧文字按钮 —— 已删。**」
+//       —— 实测两套键**重叠且动作重复**，留图上那套 `hex.*`（位置逐项吻合、且已有素材图）。
+//     · `ui_controller.lua:1698-1700`：连底图也只留给 `action.back` ——
+//       `action.redo` / `action.hint` **已从存档里删掉**（与 `hex.redo` / `hex.hint` 重叠且动作重复）。
+//     · `ui_controller.lua:1734-1735`：入口 = `hex.submit` / `hex.redo` / `hex.undo` / `hex.hint`。
+//   实测：`layout-plan.json` 里 `action.redo` = 0。
+//   ⇒ 反转成哨兵（**不是删断言**）：旧文字键**重新出现就是红** ✓，并顺带确认替代品在。
+//   判据来源：用户 2026-10-05 授权「以建议为准」✓（见 `docs/L3基线-模拟器四步失败清单.md` §6）。
+//
+//   ⚠️ 「重置关卡」的功能并没有消失 —— 它现在是 `hex.redo`（`ui_controller.lua:1407` 的 `restart`）。
+//     纯图片图标键在模拟器里**读不到文案**，所以这里锁「**控件在 + 素材图对**」这个可验证的等价事实 ✓
+//     （`action.hint`（放大镜）同理 ⇒ `hex.hint`，`ui_controller.lua:1409` 的 `hint`）。
+const OLD_TEXT_KEYS = [
+  ['action.redo', 'hex.redo', 100126],   // 重置关卡
+  ['action.hint', 'hex.hint', 100120],   // 放大镜（提示）
+  ['action.undo', 'hex.undo', 100127],   // 撤销
+  ['action.submit', 'hex.submit', 100110],  // 提交
+  ['action.reveal', null, null],         // 揭示 —— 按参考图**没有接替者**
+];
+for (const [oldId, newId, imgId] of OLD_TEXT_KEYS) {
+  check('旧文字按钮 ' + oldId + ' 按设计不存在（若出现 ⇒ 已删控件被加回来了）',
+    !plan.nodes.some((n) => n.id === oldId),
+    plan.nodes.some((n) => n.id === oldId) ? '★ 它又出现了' : '计划里没有 ✓');
+  if (newId) {
+    const nn = plan.nodes.find((n) => n.id === newId);
+    check('接替它的 ' + newId + ' 在（素材图 ' + imgId + '）',
+      !!nn && Number(nn.image_id) === imgId, nn ? 'image_id=' + nn.image_id : '（没有）');
+  }
+}
 // 「返回列表」应该挪到了左上角（参考图的位置）——这里只验它在、文案对
-check('左上角有"返回菜单"按钮', textOf(ri, 'action.back') === '返回菜单',
+check('左上角有「返回菜单」按钮', textOf(ri, 'action.back') === '返回菜单',
   JSON.stringify(textOf(ri, 'action.back')));
 // 右下角：计数 + 放大镜（参考图的 0/6 + 🔍）
-check('右下角有"放大镜"按钮', textOf(ri, 'action.hint') === '放大镜',
-  JSON.stringify(textOf(ri, 'action.hint')));
+// ★ 2026-10-05 改判（依据，不是放宽）：原来断言「`action.hint` 的文案就是放大镜」——
+//   而旧的 `action.hint` **文字按钮已按设计删除** ✗（`ui_controller.lua:1796-1797`：
+//   「放大镜的入口 = `hex.hint`（图上那枚，已接 `hint` 动作）—— 旧的 `action.hint` 文字按钮已删
+//   （与本轮右上三键同样的理由：与 `hex.hint` 重叠且动作重复）」）。
+//   实测：`layout-plan.json` 里 `action.hint` = 0。
+//   ⇒ 反转成哨兵：`action.hint` **重新出现就是红** ✓；它的接替者 `hex.hint` 已在上面的
+//     `OLD_TEXT_KEYS` 循环里锁过（控件在 + 素材图 100120 对）✓
+check('右下角旧文字「放大镜」按钮 action.hint 按设计不存在（入口已改成 hex.hint）',
+  !plan.nodes.some((n) => n.id === 'action.hint'),
+  plan.nodes.some((n) => n.id === 'action.hint') ? '★ 它又出现了' : '计划里没有 ✓');
 await shot(c, 't05-reset.png');
 
 // ── 6. X 标记（单击空格直接切 ✗）────────────────────────────────────────────
 // 切回放置模式
 await click('action.q.place'); await tick(0.05);
 
-// ── 7. 未摆满时提交按钮应当是禁用的 ───────────────────────────────────────
+// ── 7. 未摆满时「提交」应当是禁用的 ───────────────────────────────────────
 console.log('\n=== 7. 未摆满时「提交」应禁用');
 ri = await get();
-const submitNode = indexTree(ri).get('action.submit');
-check('提交按钮不可交互（框架不给"点一下看报错"的机会）',
-  !!submitNode && submitNode.interactable === false, 'interactable=' + (submitNode && submitNode.interactable));
-check('提交文案提示要先摆满', /先摆满/.test(textOf(ri, 'action.submit') || ''), textOf(ri, 'action.submit'));
+// ★ 2026-10-05 改判（依据，不是放宽）：原来断言 `action.submit`「不可交互 + 文案提示要先摆满」——
+//   而 `action.submit` **已按设计删除** ✗（`ui_controller.lua:1718-1729`：旧文字键与 `hex.submit`
+//   重叠且动作重复，已删；`ui_controller.lua:1734-1735`：提交入口 = `hex.submit`）。
+//   实测：`layout-plan.json` 里 `action.submit` = 0；运行树里 `interactable=undefined`（读不到，
+//   因为**控件不存在**，不是「没有禁用」）。
+//   ⇒ 反转成哨兵：`action.submit` **重新出现就是红** ✓；接替者 `hex.submit`
+//     已在上面的 `OLD_TEXT_KEYS` 循环里锁过（控件在 + 素材图 100110 对）✓
+check('旧文字「提交」按钮 action.submit 按设计不存在（提交入口已改成 hex.submit）',
+  !plan.nodes.some((n) => n.id === 'action.submit'),
+  plan.nodes.some((n) => n.id === 'action.submit') ? '★ 它又出现了' : '计划里没有 ✓');
 check('此时没有指认面板', visibleOf(ri, 'modal') === false);
 
 // ── 8. 揭示答案 → 提交 → 指认 ─────────────────────────────────────────────
@@ -321,8 +365,8 @@ console.log('\n=== 6. X 标记（单击空格直接切 ✗，不再需要工具�
 // ★★ 2026-09-29：`action.q.x` 已随底部操作条一起删除（用户要求）。
 //   新的操作逻辑：**未选人物时单击空格 = 直接切 ✗**，不需要先选工具。
 //
-//   ⚠️ 前置状态问题：第 4 步"双击预放置"按设计**不会取消选中**，所以此刻仍有角色被选中；
-//   而"选中人物时单击空格"是**预放置**、不是 ✗。
+//   ⚠️ 前置状态问题：第 4 步「双击预放置」按设计**不会取消选中**，所以此刻仍有角色被选中；
+//   而「选中人物时单击空格」是**预放置**、不是 ✗。
 //   ⇒ 不再去猜当前选中态（试过按缩放找选中卡片，不可靠），
 //     直接**重启本关**拿到干净状态再验证 —— 断言不该依赖上文残留的隐式状态。
 await c.play('start', {}); await enterLevel(c, tick); await tick(0.2);
@@ -411,7 +455,16 @@ for (const l of errsLog.slice(0, 10)) console.log('  [error] ' + l.text);
 //   已改成反向逻辑（只留 home/select 子树 + root）。这条断言锁的是
 //   **用户一眼能看到的东西**：每个页面只出现该页面的控件。
 {
-  const LEVEL_ONLY = ['board', 'clues', 'topbar', 'right', 'cell.1.1', 'action.undo', 'hud.title'];
+  // ★ 2026-10-05 改判（依据，不是放宽）：名单里原来写的是 `action.undo` ——
+  //   而这个**旧文字按钮已按设计删除** ✗ ⇒ 这条断言原来锁的是一个**不存在的控件**
+  //   `vis(r,'action.undo')` 恒为 false ⇒ 恒过 ⇒ 等于**什么也没测** ✗，是最坏的那种「假绿」）。
+  //   依据：`ui_controller.lua:1718-1729`（旧文字键与 `hex.*` 重叠且动作重复，已删）+
+  //         `ui_controller.lua:1734-1735`（入口 = `hex.submit` / `hex.redo` / `hex.undo` / `hex.hint`）。
+  //   实测：`layout-plan.json` 里 `action.undo` = 0，`hex.undo` 在（visible=true, w=h=70, 素材 100127）。
+  //   ⇒ 换成它**真正的接替者 `hex.undo`** ✓ —— 这不是放宽，是把一条恒真断言**变回真断言**：
+  //     主页/选关时 `hex.*` 必须藏起来（`ui_controller.lua:1213-1216`「图标（hex.*）只在关卡内显示」），
+  //     一旦脚本漏藏 ⇒ **这条会红** ✓（原来那条永远红不了）。
+  const LEVEL_ONLY = ['board', 'clues', 'topbar', 'right', 'cell.1.1', 'hex.undo', 'hud.title'];
   const vis = (ri2, id) => visibleOf(ri2, id) === true;
   await c.play('start', {}); await tick(0.35);
   let r = await get();
@@ -426,9 +479,10 @@ for (const l of errsLog.slice(0, 10)) console.log('  [error] ' + l.text);
   await click('select.card.2'); await tick(0.3);
   await click('intro.skip'); await tick(0.3);
   r = await get();
+  // ★ 2026-10-05：明细里原来报的是 `action.undo=` —— 同一个已删控件的残留，一并换成 `hex.undo` ✓
   check('关卡内：关卡的 UI 都在，主页/选关都藏了',
-    !vis(r, 'home') && !vis(r, 'select') && vis(r, 'board') && vis(r, 'clues') && vis(r, 'action.undo'),
-    'board=' + vis(r, 'board') + ' clues=' + vis(r, 'clues') + ' action.undo=' + vis(r, 'action.undo'));
+    !vis(r, 'home') && !vis(r, 'select') && vis(r, 'board') && vis(r, 'clues') && vis(r, 'hex.undo'),
+    'board=' + vis(r, 'board') + ' clues=' + vis(r, 'clues') + ' hex.undo=' + vis(r, 'hex.undo'));
 }
 
 console.log('\n════════ 结果：' + pass + ' 通过 / ' + fail + ' 失败 ════════');

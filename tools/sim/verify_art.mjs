@@ -40,37 +40,53 @@ let ri = await get();   // ri.tree = 运行树
 //    8 条断言全报"没有子控件"，看着像代码坏了，其实是我查错了地方。
 const nodeOf = (ri, name) => indexTree(ri).get(name) || null;
 
-// ── ③ 按钮底图有没有换色（imageId 是不是浅蓝那张 100108）──────────────
-console.log('\n=== ③ 按钮底图配色 ===');
+// ── ③ 「撤销」这批旧文字按钮的底图 —— ★ 已按设计删除，改判「不该存在」──
+console.log('\n=== ③ 旧文字按钮的底图（★ 已删控件 · 哨兵）===');
 {
-  const btn = nodeOf(ri, 'action.undo');
-  const bg = btn && (btn.children || []).find((x) => x.name === 'bg');
-  check('action.undo 有 bg 子控件', !!bg, bg ? 'imageId=' + bg.imageId : '无');
-  if (bg) {
-    check('bg 是显示状态', bg.visible !== false, 'visible=' + bg.visible);
-    check('bg 的图是浅蓝素材 100108', Number(bg.imageId) === 100108, 'imageId=' + bg.imageId);
-    check('bg 尺寸铺满按钮（=按钮尺寸）',
-      !btn.width || !bg.width || Math.abs(bg.width - btn.width) < 2,
-      'btn=' + btn.width + ' bg=' + bg.width);
+  // ★ 2026-10-05 改判（依据，不是放宽）：
+  //   原来这里断言「`action.undo` 有 bg 子控件 / bg 是浅蓝 100108 / bg 铺满按钮」——
+  //   而 `action.undo` 这个控件**已被按设计删除** ✗，断言要求的东西根本不存在，
+  //   所以它永远红 ✓（这属于「测试落后于设计」，不是设计坏了）。
+  //
+  //   删的依据（都在 lua/ui_controller.lua 里，行号为实际文件行号）：
+  //     · `ui_controller.lua:1718-1729`「**右上三键（提交 / 重置关卡 / 撤销）的旧文字按钮 —— 已删。**」
+  //       —— 实测两套键**重叠且动作重复**（`action.submit (1541,833) 92x92`
+  //       vs `hex.submit (1483,817) 70x70` …），留图上那套 `hex.*`，删掉这四个旧节点。
+  //       （所以 `action.undo` / `action.submit` / `action.redo` / `action.hint` 都不再进计划）
+  //     · `ui_controller.lua:213-216`「**删掉的**（参考图里没提到的）：`action.reveal` 揭示、…」⇒
+  //       揭示键**从来没有**第 2 个位置可去。
+  //     · `ui_controller.lua:1734-1735`：四个入口已改成 `hex.submit` / `hex.redo` / `hex.undo` / `hex.hint`。
+  //
+  //   实测复核（本次运行前刚重跑 `lua tools/dump_layout.lua`）：
+  //     `tools/sim/out/layout-plan.json`（381 项）里
+  //     `action.undo` = 0 · `action.submit` = 0 · `action.reveal` = 0。
+  //
+  //   ★ 判据来源：用户 2026-10-05 授权「以建议为准」✓（见 `docs/L3基线-模拟器四步失败清单.md` §6：
+  //     要改本文档的期望必须**明说依据** ✓）。这条**不是**把断言放宽 ——
+  //     是把方向**反转成哨兵**：一旦这三个名字重新出现在计划里 ⇒ 说明有人把已删控件加回来了 ⇒ **红** ✓
+  for (const id of ['action.undo', 'action.submit', 'action.reveal']) {
+    check('旧文字按钮 ' + id + ' 按设计不存在（若出现 ⇒ 已删控件被加回来了）',
+      !plan.nodes.some((n) => n.id === id),
+      plan.nodes.some((n) => n.id === id) ? '★ 它又出现了' : '计划里没有 ✓');
   }
 }
 
-// ── ⑤ 按钮文字有没有填上 ────────────────────────────────────────────────
-console.log('\n=== ⑤ 按钮文字 ===');
+// ── ⑤ 按钮文字有没有填上 —— ★ 两个键都已按设计删除，改判「不该存在」────
+console.log('\n=== ⑤ 按钮文字（★ 已删控件 · 哨兵）===');
 {
-  // ★★ 2026-09-29：`tool.place` 已随底部操作条删除，原来那条 ['action.undo','放置']
-  //   是替换时的残留（撤销按钮当然没有「放置」二字）。改成它真正的文字。
-  const cases = [['action.undo', '撤销'], ['action.submit', '提交']];
-  for (const [id, want] of cases) {
-    const btn = nodeOf(ri, id);
-    const lb = btn && (btn.children || []).find((x) => x.name === 'label');
-    if (!lb) { check(id + ' 有 label 子控件', false, '无'); continue; }
-    const txt = lb.text || lb.textContent || '';
-    check(id + ' 的文字非空', String(txt).length > 0, JSON.stringify(txt));
-    if (String(txt).length > 0 && want) {
-      // 不强求完全等于（文案可能带状态后缀），只要包含关键词
-      check(id + ' 的文字里有「' + want + '」', String(txt).includes(want), JSON.stringify(txt));
-    }
+  // ★ 2026-10-05 改判（依据同上一条 ③，不重复抄全部注释）：
+  //   原来这里跑 `[['action.undo','撤销'],['action.submit','提交']]`，断言「有 label 子控件 + 文字非空 + 含关键词」。
+  //   但这两个控件**都已按设计删除**：
+  //     · `action.undo` / `action.submit` —— `ui_controller.lua:1718-1729`（旧文字键与 `hex.*` 重叠且动作重复，已删）
+  //   实测：`layout-plan.json` 里 `action.undo` = 0 · `action.submit` = 0。
+  //   ⇒ 反转成哨兵：**它们重新出现就是红** ✓
+  //
+  //   ⚠️ 别再把它改回「有 label」：那条断言锁的是一个**已经不存在的控件**，
+  //     留着只会长期假红（本项目最大的坑就是「假绿/假红」两种都有 ✓）。
+  for (const id of ['action.undo', 'action.submit']) {
+    check('旧文字按钮 ' + id + ' 按设计不存在（若出现 ⇒ 已删控件被加回来了）',
+      !plan.nodes.some((n) => n.id === id),
+      plan.nodes.some((n) => n.id === id) ? '★ 它又出现了' : '计划里没有 ✓');
   }
 }
 
@@ -127,16 +143,29 @@ console.log('\n=== ④ 行标/列标对齐 ===');
   }
 }
 
-// ── ⑥ 头像卡底图 = 关卡头像（而不是白图 106053）────────────────────────
-console.log('\n=== ⑥ 头像卡底图 ===');
+// ── ⑥ 头像卡（tray.*）—— ★ 已按设计并入滚动线索卡，改判「不该存在」──────
+console.log('\n=== ⑥ 头像卡底图（★ 已删控件 · 哨兵）===');
 {
-  const ta = nodeOf(ri, 'tray.A');
-  const fa = ta && (ta.children || []).find((x) => x.name === 'face');
-  check('tray.A 有 face 子控件', !!fa, fa ? 'imageId=' + fa.imageId : '无');
-  if (fa) {
-    check('tray.A.face 已换成头像（不再是 106053 白图）',
-      Number(fa.imageId) !== 106053, 'imageId=' + fa.imageId);
-  }
+  // ★ 2026-10-05 改判（依据，不是放宽）：
+  //   原来断言「`tray.A` 有 face 子控件 + face 不是白图 106053」——
+  //   而独立的头像卡**已按设计删除**，`tray.A` 根本不存在 ✗。
+  //
+  //   依据（lua/ui_controller.lua，行号为实际文件行号）：
+  //     · `ui_controller.lua:215-216`「**删掉的**（参考图里没提到的）：… 以及**独立的头像卡 `tray`**
+  //       （用户：头像卡已并进滚动线索卡）。」
+  //     · `ui_controller.lua:1817-1822`：容器 `tray` 留着但 `visible = false`
+  //       （老存档里还有这个控件名，留个空壳比直接删更稳）。
+  //     · `ui_controller.lua:1829-1831`：`local n_tray = 0` ⇒ 下面那个
+  //       `for i = 1, n_tray do` 循环**一次都不跑** ⇒ `tray.<id>` 子卡**永远不 push**。
+  //
+  //   实测复核：
+  //     · `layout-plan.json` 里 `tray.A` / `tray.B` = 0（只有容器 `tray` 自己，`visible=false`）
+  //     · 运行期 `tools/sim/out/l3-baseline/probe_cursor.log`：
+  //       `tray.A **找不到这个控件**` … `tray.V **找不到这个控件**`（7 张全找不到）
+  //   ⇒ 反转成哨兵：**只要计划里再出现任何 `tray.<字母>` 子卡就是红** ✓
+  const trayCards = plan.nodes.filter((n) => /^tray\.[A-Z]$/.test(n.id)).map((n) => n.id);
+  check('头像卡 tray.<A-Z> 按设计不存在（已并进滚动线索卡；若出现 ⇒ 已删控件被加回来了）',
+    trayCards.length === 0, trayCards.length ? '★ 又出现了：' + trayCards.join(' ') : '计划里没有 ✓');
 }
 
 // ── 棋盘格子：落子后 face 是否变成头像 ──────────────────────────────────
@@ -183,7 +212,7 @@ console.log('\n=== obj 子控件（物件图标占位）不该盖住头像 ===')
     shown + '/' + total + ' 个显示中：' + names.join(','));
 }
 // ── 相交诊断：有没有控件压在棋盘上 ─────────────────────────────────────
-console.log('\n=== 棋盘区域的控件（"压在棋盘上"的候选）===');
+console.log('\n=== 棋盘区域的控件（「压在棋盘上」的候选）===');
 {
   const board = nodeOf(ri, 'board');
   if (!board || !board.box) { check('拿到 board 的 box', false, JSON.stringify(board && board.box)); }
@@ -233,20 +262,42 @@ console.log('\n=== 棋盘区域的控件（"压在棋盘上"的候选）===');
 //     读回来的 imageSource 和存档里的不是同一个值，会配错图集（变紫）。
 {
   //   ⚠️ 2026-10-01 **约束变了**（不是为了让测试变绿）：
-  //     参考图右侧那三个**六边形**，现在改用**转存进来的真素材**
+  //     参考图右侧那三个**六边形**，当时改用**转存进来的真素材**
   //     （`murdoku-btn-hex`，模板索引 1073742321）——比用基础图元拼像得多。
   //     素材的接入方式是"按模板索引实例化"：`cfg.prefab_of[节点id] = 索引`
   //     + `cfg.parent_of[节点id] = 父节点`（登记在 lua/entry_client_script.lua），
   //     适配器用 `game.InstantiateClientUIControl` 把它造出来。
   //
   //     所以断言从"6 个图元 + id 分布"改成"**每个按钮有一个够大的底图节点**" ——
-  //     这才是现在真正要保证的用户可感知行为。
+  //     这才是当时真正要保证的用户可感知行为。
+  //
+  // ★ 2026-10-05 改判（依据，不是放宽）：
+  //   上面那条「按模板索引实例化」的路，**已被实测判死、并且代码明确关掉了**；
+  //   而这里的三个键（`action.undo` / `action.submit` / `action.reveal`）**也都被按设计删除** ✗
+  //   ⇒ 原来那 6 条断言要求的是「**三个不存在的按钮**各有一个 `.hexbg` 子节点」= 双重不存在，
+  //     永远不可能绿 ✓（属于「测试落后于设计」，不是设计坏了）。
+  //
+  //   依据（lua/ui_controller.lua，行号为实际文件行号）：
+  //     · `ui_controller.lua:1643-1655`：`local HEX_PREFAB = false` ——
+  //       真机探针实测 `InstantiateClientUIControl(1073742333, root)` **pcall 成功、但返回 nil**
+  //       ⇒ 「按模板索引实例化素材」这条路**走不通**（与当初 1073742321 完全一样）。
+  //       而 `.hexbg` 这个节点**只在 HEX_PREFAB 为 true 时才 push** ⇒ 现在一个都没有。
+  //     · `ui_controller.lua:1693-1715`：走 `hex_bg(...)` 那条路时的实参只有
+  //       `action.back` / `action.redo` / `action.hint` 三个名字 ——
+  //       **从来没有** `action.submit` / `action.undo` / `action.reveal`。
+  //     · `ui_controller.lua:1718-1729`：旧文字键已删（与 `hex.*` 重叠且动作重复）；
+  //       `ui_controller.lua:1734-1735`：四个入口改成 `hex.submit` / `hex.redo` / `hex.undo` / `hex.hint`。
+  //
+  //   实测复核：`layout-plan.json` 里以 `.hexbg` 结尾的节点 = **0**
+  //     （`node -e` 直读计划实测，与本次运行前刚重跑 `lua tools/dump_layout.lua` 的计划同源）。
+  //
+  //   ★ 这不是把断言放宽 —— 是把它**反转成哨兵**：
+  //     这些已删按钮（以及它们的 `.hexbg`）**一旦重新出现就是红** ✓
+  //     判据来源：用户 2026-10-05 授权「以建议为准」✓（见 `docs/L3基线-模拟器四步失败清单.md` §6）。
   for (const b of ['action.undo', 'action.submit', 'action.reveal']) {
-    const k = plan.nodes.find((x) => x.id === b + '.hexbg');
-    check('「' + b + '」有六边形底图节点（转存素材）', !!k,
-      k ? '位置 ' + k.cx + ',' + k.cy + ' 尺寸 ' + k.w + '×' + k.h : '（没有）');
-    check('「' + b + '」的底图铺满按钮（≥ 90×90）', !!k && k.w >= 90 && k.h >= 90,
-      k ? k.w + '×' + k.h : '-');
+    const back = plan.nodes.some((n) => n.id === b || n.id === b + '.hexbg');
+    check('旧文字按钮「' + b + '」按设计不存在（含它的 .hexbg；若出现 ⇒ 已删控件被加回来了）',
+      !back, back ? '★ 它又出现了' : '计划里没有 ✓');
   }
 }
 

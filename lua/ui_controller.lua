@@ -562,6 +562,19 @@ end
 function Controller:on_cell_click(r, c)
   local core = self.core
   self.now = self.now or 0
+  -- ★★★ 临时计数（2026-10-05 · 一次性定位「第三层」，跑完必删）
+  self._t3_cell = (self._t3_cell or 0) + 1
+  local _t3n = self._t3_cell
+  -- Q6/Q7：进来时 r/c 是什么；self.now 与上一次进来的差值（双击窗口 0.35）
+  local _t3dt = self._t3_prev_t and (self.now - self._t3_prev_t) or -1
+  if _t3n <= 30 and print then
+    print("[T3Q] on_cell_click#" .. _t3n .. " r=" .. tostring(r) .. " (" .. type(r)
+      .. ") c=" .. tostring(c) .. " (" .. type(c) .. ") now=" .. tostring(self.now)
+      .. " dt上一次=" .. tostring(_t3dt) .. " mode=" .. tostring(core.mode)
+      .. " suppress=" .. tostring(self._suppress_click ~= nil))
+  end
+  self._t3_prev_t = self.now
+  self._t3_r, self._t3_c = r, c
   local occupied = core.grid[r][c] ~= nil
   local mode = core.mode
 
@@ -591,6 +604,10 @@ function Controller:on_cell_click(r, c)
         self.dirty = true
       end
       self:do_pre_place(r, c)
+      -- ★★★ 临时计数（2026-10-05 · 跑完必删）：双击分支命中
+      if _t3n <= 30 and print then
+        print("[T3Q] on_cell_click#" .. _t3n .. " → 双击分支命中 ✓（撤销第一击后 do_pre_place）")
+      end
       return
     end
   end
@@ -624,6 +641,13 @@ function Controller:on_cell_click(r, c)
     self.dirty = true
   else
     self:_refuse(r, c, why)
+  end
+  -- ★★★ 临时计数（2026-10-05 · 跑完必删）：Q6 返回值 ok/why
+  if _t3n <= 30 and print then
+    print("[T3Q] on_cell_click#" .. _t3n .. " → 单击分支完毕 ok=" .. tostring(ok)
+      .. " why=" .. tostring(why) .. " mode=" .. tostring(mode)
+      .. " had=" .. tostring(had ~= nil) .. " had_selected=" .. tostring(had_selected ~= nil)
+      .. " last_click=" .. tostring(self.last_click ~= nil))
   end
 end
 

@@ -4342,6 +4342,16 @@ function Adapter:_fire(event, phase, data, src_id)
   --   ⚠️ 这是"每帧扫"被去掉之后，**唯一**能兜住"引擎自己改显隐"的触发点，
   --      所以宁可多置一次位（一次 enforce ≈ 几百个节点），也不能漏。
   self._subtree_dirty = true
+  -- ★★★ 临时计数（2026-10-05 · 一次性定位「第三层」，跑完必删）
+  self._t3_fire = (self._t3_fire or 0) + 1
+  local _t3n = self._t3_fire
+  -- Q4：on_input 是不是 nil
+  if _t3n <= 24 and print then
+    print("[T3Q] _fire#" .. _t3n .. " phase=" .. tostring(phase)
+      .. " src_id=" .. tostring(src_id)
+      .. " action=" .. tostring(event and event.action)
+      .. " on_input=" .. tostring(self.on_input ~= nil))
+  end
   if self.on_input == nil then return end
   local evt = {}
   for k, v in pairs(event) do evt[k] = v end
@@ -4372,6 +4382,13 @@ function Adapter:_fire(event, phase, data, src_id)
       evt.r = tonumber(R)
       evt.c = tonumber(C)
     end
+  end
+  -- ★★★ 临时计数（2026-10-05 · 一次性定位「第三层」，跑完必删）
+  if _t3n <= 24 and print then
+    print("[T3Q] _fire#" .. _t3n .. " 补后 evt.r=" .. tostring(evt.r)
+      .. " (" .. type(evt.r) .. ") evt.c=" .. tostring(evt.c)
+      .. " (" .. type(evt.c) .. ") action=" .. tostring(evt.action)
+      .. " phase=" .. tostring(evt.phase))
   end
   self.on_input(evt)
 end
