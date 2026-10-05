@@ -696,13 +696,414 @@ MBS 技能里有一条**明确的布局禁令**：
 
 ## 6. 最佳实践
 
-（本节编写中）
+### 6.1 【社区经验】控件优先「少量基础模板 + Lua 实例化」
+
+> 「控件优先采用"**少量基础模板 + Lua 实例化/修改属性**"：
+> 用 `game.InstantiateClientUIControl` 等当前 API 创建，再由 Lua 设置布局、文本、
+> 图片与可见性。目前对 GIA 格式的认识不完整，**在 UI 侧（存档/模板）直接定义
+> 复杂控件树或属性，导出或真机导入时可能不兼容**；确需在 UI 侧定义的字段，
+> 记录为待真机核验项。」
+> —— `agent/.../references/05-lua-implementation.md:18`
+
+- **【推断】对本项目的直接含义**：`ui_controller.lua`（246KB）如果在编辑器侧
+  摆了一棵很深的控件树，**导出/真机导入的风险高于**在 Lua 里按模板实例化。
+- ⚠️ 但要注意第 3.1 节的官方限制：**只有存为模板的控件父节点能被动态创建**，
+  所以「模板化」是**必须**的，不是可选的。
+
+### 6.2 【官方】GIA 导出不保留脚本挂载关系
+
+- 【社区经验】「**GIA 不保存脚本挂载关系**；交付时单列需要在千星沙箱建立或复核的
+  脚本映射和挂载」（`references/07-device-validation.md:13`；
+  `references/05-lua-implementation.md:19`）。
+- → **每次导 GIA 后都要重新核对挂载**，不要以为导出=完整交付。
+
+### 6.3 【官方】`require` 路径必须带导入根前缀
+
+- 【社区经验】原文：
+  > 「脚本 `require` 使用导入根：脚本映射路径去掉 `.lua` 后，
+  > 前面加 `default_import_file/`。例如映射路径为 `workspace/flappy-fish/draws.lua` 时写：
+  > `local ok, mod = pcall(require, "default_import_file/workspace/flappy-fish/draws")`。
+  > **裸路径只为旧存档兼容，新脚本一律使用该前缀**。」
+  > —— `skill/SKILL.md:176`
+- **【社区经验·真机】** `script.path` **保留目录**：
+  真机故障日志明确返回 `default_import_file/levelScript`，**不是** `levelScript`
+  （`observed-contract.md:27`，真机 2026-09-27，原故障 `device_status=failed`）。
+- → **不要按文件名平铺**，要保留目录层级。
+
+### 6.4 【社区经验】`require` 的模块语义
+
+- 【社区经验·真机】（`architecture.md:59`、`observed-contract.md:9`）：
+  - `require` 用**独立 `_ENV`**；模块有 `script` 独立身份；
+  - **不跑模块的 `OnInit`/`OnStart`**；
+  - **有缓存**；
+  - 失败报 `failed to load script '…'`。
+- ⚠️ **跨脚本 `Invoke` 的身份问题**：
+  > 「真机**各脚本共享同一 Lua state**，控件/Tween/table 往返 `rawequal=true`；
+  > 模拟器每脚本一个 Lua state，**只能复制值，table 也会被复制**」
+  > —— `observed-contract.md:41`（**未对齐项**）
+- **【推断】含义**：真机上 `script:Invoke` 传 table **保留身份**（改一处两处都变），
+  但**模拟器测不出来**。→ **不要依赖「传过去的 table 是拷贝」这个假设**。
+
+### 6.5 【推断】状态与渲染分离（社区通用做法 + 本项目方向一致）
+
+- MBS 的写法是「**纯规则与 UI 副作用分离**」：
+  > 「纯规则与 UI 副作用分离；计时**显式使用 `dt`**，随机 seed/序列可复现。」
+  > —— `references/05-lua-implementation.md:35`
+- 本项目 `docs/移动端性能优化清单.md:70-79` 的「③ 事件驱动（最优）」
+  —— 「在所有会改 `face` 可见性的地方后面主动调一次 `light_faces()`，
+  **彻底不靠每帧兜底**」—— 是同一思路。
+- **【推断】推荐结构**：
+  1. **状态层**（纯表/纯函数）：算格子状态，不碰控件；
+  2. **渲染层**：`render(state)` 只读状态写控件；
+  3. **事件层**：状态变化时**主动调一次 `render`**，而不是每帧无条件 `render`。
+- ⚠️ 本项目历史注释（`lua/engine_adapter_qianxing.lua:4769-4778`）说明
+  「事件驱动」已经落地了一部分（`_subtree_dirty` 的**五处触发点**），
+  **这五处就是"状态变化"的完整枚举** —— 漏一处就会出现
+  「该显示的不显示」。
+
+### 6.6 【社区经验】布局与坐标
+
+- **原点左下、Y 向上**；HTML/CSS 是**左上、Y 向下** —— **不能直接搬坐标**。
+  - 来源：`agent/.../SKILL.md:31`、`references/05-lua-implementation.md:39`。
+  - MBS 的评测项 E10 专门考这个：「盘点不可移植项与**坐标域（左上 vs 左下）**」、
+    「**把 CSS 像素抄进 Lua**」是 must-not（`evals/agent-behavior.md:115-117`）。
+- **锚点相对父矩形，取值 0–1**（`skill/SKILL.md:181`）。
+- **手机 16:9（1280×720）完整可见是基准**，PC 等比放大/留边
+  （`skill/SKILL.md:182`；`references/06-simulator-testing.md:31`）。
+- **缩放容器不要再加全屏不透明兄弟节点**（`skill/SKILL.md:182`）。
+- 建议文本框开 `adaptiveFontSize = true` 并设最小字号
+  （`references/05-lua-implementation.md:41`）。
+  ⚠️ **但 `fontSize`/`minimumFontSize` 仍须为整数**（同文）。
+
+### 6.7 【社区经验】文本样式：换行与颜色用标记
+
+- 官方 FAQ §8：
+  > 「可以使用在文本框设置中通过 **`\n`** 命令进行换行；
+  > 可以使用 `<color=颜色英文>正文</color>` 命令制作出不同颜色的文本」
+- → **不需要用多个文本框拼一行彩色文字。**
+
+### 6.8 【社区经验】调试与验证纪律（MBS 的做法值得抄）
+
+| 纪律 | 来源 |
+|---|---|
+| **五层证据** L0 静态 → L1 纯状态 → L2 输入/日志/变量/信号 → L3 布局/层级/裁切/动画 → L4 易懂/公平/触控/真机 | `references/06-simulator-testing.md:19-25` |
+| **Red → Green → Regress**：先有有效 Red 再实现；一次只实现一条规则 | `references/05-lua-implementation.md:22-35` |
+| 每个真机缺陷**建最小复现**，区分 Lua / 素材 / 布局 / 模拟器差异 / 平台未知 | `references/07-device-validation.md:76` |
+| **模拟器绿灯 ≠ 真机通过**（MBS 全程反复强调） | `references/07-device-validation.md:80` |
+| 边界用例集：`edge-contact`、`input-spam`、`pause-resume`、`restart-twice`、`large-dt`、触控 | `references/06-simulator-testing.md:33` |
+| **切画布会重建生命周期，用例不能串联状态** | `references/06-simulator-testing.md:33` |
+| **记录 `dt`**，随机用可复现 seed | `references/05-lua-implementation.md:35` |
+
+- 【推断】**「一次只改一个变量」** 这条对本项目尤其重要：
+  `docs/移动端性能优化清单.md` 里的三档方案（节流 / 缓存 / 事件驱动）
+  **必须逐档真机验证**，不能一次全上。
+
+### 6.9 【推断】本项目已验证有效的三条优化（可复用的模式）
+
+从 `lua/engine_adapter_qianxing.lua` 的实测注释里提炼：
+
+| 模式 | 做法 | 实测效果 | 出处 |
+|---|---|---|---|
+| **命中缓存 + 负缓存（带 TTL）** | 控件名 → 控件 的映射缓存；未命中也要缓存，但**必须带过期**与**「树还没见过活控件就不记」**两道保险 | `GetChildren` 从 **5217/帧** 降下来（原 **1,565,043 次/300 帧**） | `engine_adapter_qianxing.lua:322` |
+| **把每帧幂等扫描改成脏标记** | `_subtree_dirty` 只在**树真的可能变了**的**五处**触发 | 选关页 `SetVisible` 从 **261 次/帧** 降到近 0 | `engine_adapter_qianxing.lua:4764-4778` |
+| **删掉每帧诊断/探针** | 曾有「六边形素材实例化探针」**每 300 帧真的 `InstantiateClientUIControl` 建两个控件再销毁**，是「棋盘出现慢」的主因 | 删掉即恢复 | `main.lua:1459` |
+
+- ⚠️ **负缓存的坑（本项目真实踩过，写在注释里）**：
+  > 「`find` 未命中会**永久缓存 false** ⇒ 万一此刻树还没就绪，
+  > 就把后面那条路也一起弄死」
+  > —— `engine_adapter_qianxing.lua:331`
+  **这就是「首次进关卡控件找不到」的直接机制**，与第 2.3 节的
+  `InstantiateClientUIControl` 时机限制是同一类问题的两面。
+- **【推断】通用规则**：**任何"找不到就记住"的缓存都必须有失效条件**。
+  MBS 的做法是不加缓存、每次重查（`observed-contract.md` 通篇按 API 语义实时求值）；
+  本项目用 TTL + 命中即失效。两种都行，**但"永久缓存未命中"不行**。
 
 ---
 
 ## 7. 对照本项目的检查清单
 
-（本节编写中）
+> 一行一条，**查什么 + 预期 + 违反了会怎样**。
+> `【官】`= 有官方依据；`【社】`= 社区/真机依据；`【推】`= 推断，需自行验证。
+> 带 **★** 的是**高优先级**（有明确来源或本项目已见症状）。
+
+### A. 生命周期与初始化
+
+- [ ] **A1 ★** 所有 `InstantiateClientUIControl` 调用是否都在 `OnStart` 或之后？
+      预期：`OnInit`/`OnDestroy` 里**没有任何**实例化调用。
+      违反：**静默返回 `nil`**（`pcall` 成功但拿不到控件），后续所有写操作失效。
+      【社】`observed-contract.md:6`、`architecture.md:18`；本项目已见
+      `ui_controller.lua:1628`、`engine_adapter_qianxing.lua:1428`
+- [ ] **A2 ★** `script:EnableUpdate(true)` 是否在 `OnStart` 里显式调用并检查了返回值？
+      预期：调用成功；失败时有 `printerr` 提示。
+      违反：**`OnUpdate` 一次都不执行**（整个游戏不动）。
+      【社】`bench-play-perf.mjs:41`；本项目 `entry_client_script.lua:119-135` 已做
+- [ ] **A3** `SetActive(true)` 是否被**显式**调用，而不是依赖默认值？
+      预期：不依赖 `active` 默认值（文档说 `false`，真机实测模板实例为 `true`，三方不一致）。
+      违反：**同一份代码在编辑器/模拟器/真机表现不同**。
+      【官】`mhtakr07vej4` §13.(1)；【社】`observed-contract.md:7`
+- [ ] **A4** 是否有「只做一次」的初始化被放在了 `OnEnable` 里？
+      预期：一次性初始化在 `OnInit`/`OnStart`；`OnEnable` 里只做可重复的事。
+      违反：`SetActive` 往返时**重复初始化**（重复发奖励、重复建控件）。
+      【社】`observed-contract.md:5`
+- [ ] **A5** 是否有依赖「`SetActive` 往返会重跑 `OnStart`」的逻辑？
+      预期：不依赖。
+      违反：重新激活后**缓存为空、界面空白**。
+      【社】`observed-contract.md:5`（真机：不重跑 `OnStart`）
+
+### B. 控件查找与缓存
+
+- [ ] **B1 ★** 控件名缓存是否给「**未命中**」设了失效条件（TTL / 命中即失效 / 树未就绪不记）？
+      预期：不存在「永久缓存 `false`」的路径。
+      违反：**首次进关卡时树还没就绪 → 名字永久记为不存在 → 界面永远缺块**。
+      【推】本项目真实踩过：`engine_adapter_qianxing.lua:331`；
+      对照 `docs/真机问题-选关点不动-定位与修法.md`
+- [ ] **B2** 「树是否已就绪」的判据是否用了**多个**锚点（而不是单一控件）？
+      预期：至少有 `board` / `cell.1.1` / `stage` / `home` 多个候选。
+      违反：某一个控件改名就导致**永远等不到就绪**（卡在加载）。
+      【推】本项目 `entry_client_script.lua:666` 已用多锚点
+- [ ] **B3 ★** 每帧路径上是否还有按名深树查找（`find` / `GetChild` / `FindChild`）？
+      预期：每帧路径上**零**次深树查找；查找结果已缓存。
+      违反：一次搜空的代价 = **走完整棵树**（真机约 150 个控件），
+      结果永远是 `nil`，下一帧再走一遍。实测 **5217 次 `GetChildren`/帧**。
+      【社】本项目实测 `engine_adapter_qianxing.lua:322-328`
+- [ ] **B4** 深树查找是否优先用 `FindChild("A/B/C")` 一次到底，而非逐层 `GetChild`？
+      预期：一次路径查找。
+      违反：每层一次调用 + 每层一次 `pcall`，成本线性放大。
+      【官】`mhtakr07vej4` §13.(2) `FindChild(path)`「按路径查找子控件」；
+      【社】`observed-contract.md:14`
+- [ ] **B5** `GetChildren()` 的结果是否被缓存，而不是每帧重新取？
+      预期：只在结构变化时重取。
+      违反：每帧新建表 → **GC 压力**。
+      【推】本项目 `docs/移动端性能优化清单.md:89`
+
+### C. 每帧成本（移动端）
+
+- [ ] **C1 ★** 是否存在「每帧无条件跑一遍幂等逻辑」（点亮 / 隐藏 / 重排）？
+      预期：改成脏标记或事件驱动，只在状态真的变化时跑。
+      违反：**每帧数百次控件写**。本项目实测：选关页
+      `SetVisible` **261 次/帧**；另有「点亮 25 个 face」≈ **375 次 `pcall`/帧**。
+      【社】`engine_adapter_qianxing.lua:4766`、`docs/移动端性能优化清单.md:17`
+- [ ] **C2** 每帧路径上是否还有 `print` / `string.format`？
+      预期：零。诊断输出只在**一次性或切屏**时打。
+      违反：移动端**日志 IO 远贵于 PC**，且字符串分配进 GC。
+      【推】`docs/移动端性能优化清单.md:87`
+- [ ] **C3** 每帧路径上的 `pcall` 数量是否已压到最低？
+      预期：热路径上不包 `pcall`；边界处（真机可能缺 API）才包。
+      违反：**`pcall` 比普通调用贵数倍**，每帧几十上百次是移动端大忌。
+      【推】`docs/移动端性能优化清单.md:88`
+      ⚠️ 权衡：真机上 `GetChildren` 等 API 可能不存在，**边界处该包还得包**
+      （`engine_adapter_qianxing.lua:247`），但**不要包在每帧内循环里**。
+- [ ] **C4** 每帧是否有字符串拼接生成控件名（`"cell." .. r .. "." .. c`）？
+      预期：**预计算成常量表**。
+      违反：每帧 25 次拼接 → GC 压力。
+      【推】`docs/移动端性能优化清单.md:90`
+- [ ] **C5 ★** 是否还有「每帧真的 `InstantiateClientUIControl`」的诊断/探针代码？
+      预期：全部删除（不是 `if false` 关掉）。
+      违反：本项目实测这是**「棋盘出现慢」的主因**。
+      【社】`main.lua:1459`
+- [ ] **C6** 实时帧成本是否用**真机动态负载计算**量过？
+      预期：在千星沙箱【窗口】→【负载检测】开启负载测试，试玩后看报告。
+      违反：只看 PC 手感 → 手机上掉帧/发热。
+      【官】`mho2hirgodxi` 五.「动态负载计算」；注意官方提示
+      「**开启动态负载测试，也会带来负载的影响**」
+
+### D. 层级、可见性与排序
+
+- [ ] **D1 ★** 是否存在「隐藏客户端控件容器」来做页面切换？
+      预期：**绝不隐藏容器**；页面切换用逐控件 `SetVisible` 或改 sibling/位置。
+      违反：官方明文「**客户端容器控件隐藏或销毁时，客户端控件销毁**」→
+      子控件与其脚本**整个被销毁**，重建后回到初始状态。
+      【官】`mhbgxf0nynww` §5.2、§三.3
+- [ ] **D2 ★** 「改了 `visible` 又变回去」的排查是否已排除：容器被隐藏 / 模板 `active=false` /
+      隐藏期 Tween 继续写 / 双 Tween 写同一字段？
+      预期：四条逐一排除，**不假设"引擎复位"**。
+      违反：误判成因 → 加更多兜底 → 更卡。
+      【社】`observed-contract.md:6,7,36`（**无任何来源记载引擎复位 `visible`**）
+- [ ] **D3** 对同时运行的 Tween 是否有互斥保证（不写同一字段）？
+      预期：同一字段同一时刻只有一个 Tween。
+      违反：「**按 `Play` 顺序后者覆盖，先完成者停止写入**」→ 值表现成「跳回去」。
+      【社】`observed-contract.md:36`（真机）
+- [ ] **D4** 隐藏期间是否需要停止 Tween？
+      预期：明确知道**隐藏不会停 Tween**，需要停就显式 `Kill`。
+      违反：重新显示时看到「已经不是我上次设的值了」。
+      【社】`observed-contract.md:36`（真机：`SetVisible(false)`/`SetActive(false)` 不停补间）
+- [ ] **D5 ★** 缩放容器是否加了**全屏不透明兄弟节点**，且它在兄弟顺序里**先于**舞台？
+      预期：没有；或它排在舞台**之后**。
+      违反：**整屏被盖住 / 试玩页空白**。
+      【社】`skill/SKILL.md:182`
+- [ ] **D6** 层级排序是否只用了**一套**坐标系（编辑器列表序 / 显式层级值 / Lua sibling）？
+      预期：代码注释里写明本项目用哪一套；Lua 侧只用 `SetSiblingIndex` / `SetAsFirstSibling` /
+      `SetAsLastSibling`。
+      违反：三套方向不同（编辑器先出现=在上；数值大=在上），**混用必然串层**。
+      【官】`mhtakr07vej4` §13.(2)；【社】`observed-contract.md:18`、`AGENTS.md:27`
+- [ ] **D7** 动态实例化的新控件是否**显式**设置了 sibling？
+      预期：显式 `SetSiblingIndex` / `SetAsLastSibling`，且**检查布尔返回值**。
+      违反：默认为「置于已有同父兄弟上方」，可能盖住不该盖的东西。
+      【社】`observed-contract.md:19`（真机图层独立复核仍 `pending`）；
+      【官】三个方法返回值都是 `boolean`
+- [ ] **D8** 是否依赖「重叠热区由引擎仲裁」？
+      预期：**热区互不重叠**；或明确知道「渲染顺序靠前的先收到，标记已处理则不再下传」。
+      违反：点击落到底下那个控件上。
+      【官】`mhbgxf0nynww` §5.4、`mhtakr07vej4` §13.(5)
+- [ ] **D9** 是否有旋转控件同时当热区用？
+      预期：旋转控件不做精确热区，或热区单独用一个不旋转的控件。
+      违反：**点击命中按旋转前轴对齐矩形**算 → 热区与实际位置错位。
+      【官】`mhtakr07vej4`（旋转字段）+【社】`skill/SKILL.md:185`
+- [ ] **D10** 绝对旋转 Tween 的起点是否用了**负数角度**？
+      预期：用读回值（`[0,360)` 浮点）；避免负数起点。
+      违反：写入 `-116` 读回 `296` → 补间走 **244 → -136**（绕远路）。
+      【社】`observed-contract.md:47`（真机）
+
+### E. 模板与实例化
+
+- [ ] **E1 ★** 需要被实例化的控件，是否**都存成了模板**（而不是主屏直接摆的控件）？
+      预期：所有动态创建的对象都有模板索引。
+      违反：官方明文「**挂载在主屏中的客户端控件……
+      不支持通过脚本接口动态创建**」→ 拿不到控件。
+      【官】`mhbgxf0nynww` §八.1.(1)
+- [ ] **E2 ★** 是否有对「模板**内部子节点**」的单独实例化？
+      预期：没有；子件要复用就**单独存模板**。
+      违反：官方明文「**存为模板的客户端控件的子节点**……不支持动态创建」。
+      【官】`mhbgxf0nynww` §八.1.(1)
+- [ ] **E3 ★** 模板索引与运行时 `Id` 是否严格区分（不互相替换、不做数字全局替换）？
+      预期：`InstantiateClientUIControl(prefabIndex, parent)` 用**模板索引**；
+      `GetClientUIControl(controlId)` 用**运行时 ID**。
+      违反：**静默指向另一个控件**，且 GIA 导入后索引会变。
+      【官】`mhtakr07vej4` §5/§6/§13；【社】`skill/SKILL.md:93`、
+      `evals/agent-behavior.md:139`
+- [ ] **E4** 是否对**新建的图片实例**写 `imageType`？
+      预期：不写（或在真机验证后再写）。
+      违反：真机报 `cannot set imageType, no such field`。
+      【社】`observed-contract.md:20`（真机）
+- [ ] **E5** 是否依赖「模板引用控件会自动展开目标模板」？
+      预期：不依赖；动态创建走 `InstantiateClientUIControl`。
+      违反：什么都没发生。
+      【社】`studio/docs/control-support.md:16`
+- [ ] **E6** 网格列表项是否依赖「同级排序稳定」？
+      预期：不依赖；用 `GetItemIndex` / 回调的 `index` 定位。
+      违反：官方明文「**复用列表生成的列表项不保证同级排序结果稳定**」。
+      【官】`mhtakr07vej4` §13.(2)
+- [ ] **E7** 是否在 `RefreshItems` 的**回调里**再调 `RefreshItems`？
+      预期：没有（不递归刷新同一网格）。
+      违反：明确报错。
+      【社】`studio/docs/control-support.md:41`
+- [ ] **E8** 网格列表项数量是否可能超过 **2000**？是否有可见区虚拟化？
+      预期：≤2000，或已做分页/虚拟化。
+      违反：**无虚拟化，上限 2000**（MBS 策略，未真机核验）。
+      【社】`studio/docs/control-support.md:41`
+- [ ] **E9** 「列表内容不跟着滚动」的问题，是否确认了该项由 `RefreshItems` 管理？
+      预期：随列表滚动的项走 `RefreshItems`；静态子控件本就不动。
+      违反：视觉错位。
+      【社】`studio/docs/control-support.md:28`
+
+### F. API 用法正确性
+
+- [ ] **F1 ★** 所有 `game.XXX` 是否都用**点号**调用（无 `game:XXX()`）？
+      预期：全项目搜 `game:` 结果为 0。
+      违反：真机报 `bad argument count ... (0 expected, got 1)`（已实测）。
+      【官】`mhtakr07vej4` §6；【社】`observed-contract.md:25`
+- [ ] **F2 ★** 所有 `fontSize` / `minimumFontSize` 赋值是否保证**整数**？
+      预期：任何算术结果都过 `math.floor`。
+      违反：真机报 `bad argument #2 to 'fontSize' (integer expected, got number)`。
+      【官】API 文档标 `integer`；【社】`observed-contract.md:71`
+- [ ] **F3** 是否把**只读**字段当成可写字段用（`visible` / `active` / `id` / `prefabIndex` /
+      `imageId` / `imageSource` / `itemCount` / `scrollDirection` / `layoutConstraint` /
+      `referencedPrefabIndex`）？
+      预期：只读字段只读；改用 `SetVisible()` / `SetActive()`。
+      违反：`cannot set <field>, no such field`，或**静默无效**。
+      【官】`mhtakr07vej4` §13.(1)/§14/§20/§25；【社】`observed-contract.md:17`
+- [ ] **F4** `require` 路径是否都带 `default_import_file/` 前缀并保留目录层级？
+      预期：`require("default_import_file/<目录>/<文件名>")`（无 `.lua`）。
+      违反：`failed to load script '…'`。
+      【社】`skill/SKILL.md:176`、`observed-contract.md:27`（真机）
+- [ ] **F5** 模块里是否误用了 `coroutine` / `io` / `package` / `string.dump` /
+      `loadfile` / `os.execute`？
+      预期：零使用。
+      违反：**运行时直接被裁剪**，`nil` 调用报错。
+      【官】`mhtakr07vej4` §三；【社】`architecture.md:25`
+- [ ] **F6** 是否依赖 `string` 的 metatable（`getmetatable("")`）？
+      预期：不依赖（真机对字符串隐藏全局 `getmetatable`）。
+      【社】`observed-contract.md:24`
+- [ ] **F7** `script:Invoke` 跨脚本传 table 时，是否假设了「传的是拷贝」？
+      预期：**按真机语义**（同一 Lua state，保留身份 `rawequal=true`）设计。
+      违反：真机上一处修改意外影响另一处；模拟器测不出来。
+      【社】`observed-contract.md:41`（**未对齐项**）
+
+### G. 存档与数据
+
+- [ ] **G1 ★** 局内存档里是否存了**结构体 / 字典 / 嵌套表**？
+      预期：只存 `GUID / 整数 / 布尔 / 浮点 / 字符串 / 阵营 / 三维向量 / 元件ID / 配置ID`
+      及其**列表**。
+      违反：**写不进去**（本项目已把 `serialize()` 改存分享码字符串）。
+      【官】`mhzcw29qjjma`；本工程 `research/官方文档索引.md:117-131`
+- [ ] **G2** 局内存档的列表是否**预设了最大长度**？
+      预期：设了，且够用。
+      违反：存档时**超长截断**，玩家数据丢失。
+      【官】同上
+- [ ] **G3 ★** 是否做过**非纯增量**的局内存档升级（删/换/缩长度/改类型）？
+      预期：只做纯增量。
+      违反：**读档失败、玩家数据重置**。
+      【官】同上
+- [ ] **G4** 关卡总存档大小是否用【静态负载计算 → 存档大小】查过？
+      预期：不超上限。
+      违反：官方明文「若超出上限，会**禁止创作者上传**」。
+      【官】`mho2hirgodxi` 四.1
+- [ ] **G5** 断线重连 / 传送后的界面恢复逻辑是否写了？
+      预期：有显式的恢复逻辑。
+      违反：官方明文「玩家传送、断线重连时，**所有的客户端控件都会被销毁然后回到初始状态**，
+      若需保留需**奇匠自行处理界面恢复逻辑**」。
+      【官】`mhbgxf0nynww` §5.3
+
+### H. 调试与交付
+
+- [ ] **H1 ★** 出现「改了没生效」时，第一步是否检查了**内联 `source` 是否覆盖了磁盘文件**？
+      预期：存档 `scripts[].source` 与磁盘 `.lua` 一致（或明确以哪个为准）。
+      违反：**跑的是旧代码**（社区与 MBS 的头号成因）。
+      【社】`references/05-lua-implementation.md:20`、`skill/SKILL.md:94`
+- [ ] **H2 ★** 是否在**试玩过程中**修改了脚本/节点图？
+      预期：改之前先**结束试玩**。
+      违反：官方明文「**试玩过程中编写的节点图不会被保存**，
+      结束试玩后会发现**回退到未编辑前的状态**」。
+      【官】`mhjtk90iodts` §10
+- [ ] **H3** 日志是否勾了「客户端脚本」**并点了【确认选择】**？
+      预期：两项都做了。
+      违反：**日志一条都不显示**。
+      【官】`mhbgxf0nynww` §8.(1)、`mhjtk90iodts` §10
+- [ ] **H4 ★** 出现「进关卡加载很久 / 卡死但日志干净」时，是否查了本地
+      `ErrorLog.txt`（与客户端脚本储存路径同目录）？
+      预期：查了。
+      违反：**循环调用类问题正常日志根本不报告**。
+      【官】`mhbgxf0nynww` §8.(2)
+- [ ] **H5** 是否有 `game.PrintClientUITree()` 的可用诊断入口（带开关）？
+      预期：有一个**显式触发**（非每帧）的树打印。
+      违反：控件找不到时只能靠猜。
+      【官】`mhtakr07vej4` §3.(2)（官方提供该 API）；
+      本项目 `entry_client_script.lua:671` 已用
+- [ ] **H6** 发布前是否跑了：负载计算 + 风险检查 + 编辑项范围限制 + 多人试玩？
+      预期：四项全过。
+      违反：可能无法发布，或真机被踢出。
+      【官】`mho2hirgodxi` / `mh0xm3ryh9hq` / `mh74ae9fsg8i` / `mh9fj3rudd9q`
+- [ ] **H7** 是否至少在 `mobile-16-9`(1280×720) 与 `pc-16-9`(1600×900) 两档画布上验过？
+      预期：两档整屏可见，无裁切。
+      违反：手机上构图被切。
+      【社】`skill/SKILL.md:182`
+- [ ] **H8** GIA 导出后是否**重新核对了脚本挂载关系**？
+      预期：挂了（GIA 不保存挂载）。
+      违反：真机导入后**脚本根本没挂上**。
+      【社】`references/07-device-validation.md:13`
+- [ ] **H9** GIA 导入后客户端控件索引是否变了？变了的索引是否**同步到了所有 Lua 引用**
+      （含常量、配置表、别名、`prefabIndex` 身份校验）？
+      预期：全部同步，且**不动**无关的图片 ID。
+      违反：**静默指向错控件**。
+      【社】`skill/SKILL.md:80-96`、`evals/agent-behavior.md:137-139`
+- [ ] **H10** 每次改动是否**逐项真机验证**（而不是一次改多项）？
+      预期：一次一个变量；性能改动尤其如此。
+      违反：无法归因，只能整体回退。
+      【社】`references/05-lua-implementation.md:26`、`evals/agent-behavior.md:77`
+- [ ] **H11** 是否有「模拟器/PC 通过就当已完成」的表述？
+      预期：真机未验证项**明确标注**。
+      违反：MBS 的评测里这是 `FAIL` 级问题。
+      【社】`evals/agent-behavior.md:8,97`
 
 ---
 
