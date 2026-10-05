@@ -919,6 +919,22 @@ function Controller:on_input(event)
     self.toast = "已揭示答案"
 
   -- ★ 2026-10-02：提交现在**先要 ✓ 确认**（见上面 confirm_yes 分支）⇒ 这里只留"真正执行"。
+  --
+  -- ★★★★★ 2026-10-05 **补回 `accuse_thief` 的分发分支**（用户指令：「补 accuse_thief」）。
+  --
+  --   这里是**第一阶段**的入口：点弹窗「摆位成立。谁是盗窃者？」里的嫌疑人卡，发的就是
+  --   `accuse_thief`（见 `build_layout` 里 `modal.suspect.*` 那段 `is_acc and ... or ...`）。
+  --   形状**与第二阶段的 `accuse_pick_accomplice` 完全对称**，不多做任何事：
+  --     记下 `pending_thief`（第二阶段要用它去结案）+ 把弹窗推进到"问同伙"那一屏
+  --     （`kind = "accuse_accomplice"` ⇒ 标题变「那同伙是谁？」、且把这人从名单里排除）。
+  --
+  --   ⚠️ 原来这两行**光有函数体、没有 `elseif` 头**，于是被并进了上面 `reveal` 分支的函数体。
+  --      Lua 语法完全合法 ⇒ `luac -p` 看不出来，但后果有两个：
+  --        ① 点嫌疑人**点了没反应** —— `accuse_thief` 没有任何分支接住它，两段式指认断在第一阶段；
+  --        ② 「揭示答案」会**顺手弹出"那同伙是谁？"**（reveal 的副作用），而且那次弹窗的
+  --           `thief` 是 `event.id = nil` ⇒ 第二阶段一个嫌疑人都排除不掉。
+  --      `tools/audit/check_actions.mjs` 正是靠"发了却没有 `a == "..."` 分支"把它抓出来的。
+  elseif a == "accuse_thief" then
     self.pending_thief = event.id
     self.modal = { kind = "accuse_accomplice", thief = event.id }
 
@@ -2490,12 +2506,27 @@ function Controller:build_layout()
              style = "muted" })
       btn("modal.again", "modal", { x = mx + 40, y = my + mh - 88, w = 180, h = 60 }, "重玩本关",
           { action = "restart" }, "stamp")
-      btn("modal.share", "modal", { x = mx + 240, y = my + mh - 88, w = 180, h = 60 }, "分享棋局",
-          { action = "share" }, "stamp")
+      -- ★ 2026-10-05 **「分享棋局」按钮已删掉**（用户指令：「去掉分享」）。
+      --   这里原来是一个 `modal.share` 按钮（文字「分享棋局」，事件名就是 `share`），
+      --   但 `share` **从来没有分发分支** ⇒ 按下去没反应（`check_actions` 改前报的 2 个死 action 之一）。
+      --   ⚠️ 这段注释里**故意不写出那条事件的完整字面量**：`check_actions.mjs` 是**逐行正则扫源码**，
+      --      连注释一起扫（`action\s*=\s*"..."`）⇒ 注释里写出旧代码的字面量会被当成"又发了一次"，
+      --      于是它又会红。要复现旧行为，看 `versions/` 里的历史版本即可。
+      --   渲染分支 `modal.kind == "share"` **保留**，理由写在下面那一段注释里。
+      --   ⚠️ `modal.again` / `modal.next` 的坐标与文字**一个字都没动**。
       btn("modal.next", "modal", { x = mx + 440, y = my + mh - 88, w = 200, h = 60 }, "下一关",
           { action = "next_level" }, "stamp.primary")
 
     elseif modal.kind == "share" then
+      -- ★ 2026-10-05 **这一支目前没有入口按钮**（用户当天决定去掉「分享棋局」按钮，
+      --   见上面 `modal.kind == "result"` 里那段删除说明）。
+      --
+      --   **故意留着**，不是忘了删：
+      --     · 链路还在 —— `a == "accuse"` 分支仍会 `core:encode_state()` 并构造
+      --       `{ kind = "share", code = ... }`，`opts.on_share` 也仍在回调；
+      --     · 将来要接**真实分享**（真正的分享面板/复制码）时，只要再加回一个按钮即可，
+      --       不必把这一屏重写一遍；
+      --     · 代价是零 —— 它只在"别处主动构造 share 弹窗"时才可能出现，平时不进任何计划。
       push({ id = "modal.title", kind = "text", parent = "modal",
              rect = { x = mx + 30, y = my + 30, w = mw - 60, h = 56 }, text = "分享棋局", style = "modal.title" })
       push({ id = "modal.body", kind = "text", parent = "modal",
