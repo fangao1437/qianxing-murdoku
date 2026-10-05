@@ -9,6 +9,7 @@
 #   2.  界面坐标自洽性回归      tests/ui_math.lua           （47 断言）
 #   2b. 动效接线一致性          tests/effects_wiring.lua    （41 断言）
 #   2c. 文件编码归一（BOM）     tools/normalize_encoding.ps1 -Check
+#   2j. Lua 静态检查 + 格式体检 tools/lua_lint.ps1         （selene/stylua，只报告不判失败）
 #   3.  关卡批量校验（唯一解）  tools/validate_levels.lua
 #   4.  打包客户端脚本          tools/bundle_client_script.lua
 #   5.  Lua 5.3 编译 + 顶层执行 tools/lua53check/check.cjs
@@ -123,6 +124,24 @@ Run-Step '2h/13 生成「本次搭建要求」' 'node' @('tools\gen_setup_requir
 # 2i：界面发出的 action vs 分发器分支 —— 抓"点了没反应"的死按钮。
 #     首跑就抓到 `focus_clue` 发了却没分支（2026-09-27 已修），固化成步骤防回归。
 $okAct = Run-Step '2i/13 交互 action 对账' 'node' @('tools\audit\check_actions.mjs')
+# 2j：Lua 静态检查 + 格式体检（**只报告**）。
+#
+#   ★ 2026-10-05 新增。工具与装法见 docs/插件与工具-调研与安装记录.md。
+#     量的是"读代码就能发现"的那一类问题 —— 漏写 local（会把变量泄进引擎全局表）、
+#     空 if/elseif 分支（条件写了、分支忘了写）、未用变量。这三类都是**人眼会漏**的。
+#
+#   为什么这一步**不判失败**（而不是像别的步骤那样失败就红）：
+#     · 本工程 lua/** 现存 1 处 BOM parse_error + 2 处漏写 local，
+#       它们**先于这一步存在**，修不修是代码作者的决定，不是自检能替的；
+#     · 本工程反复吃过"断言锁死现状"的亏（见 14/14 素材自检那段注释）：
+#       历史遗留导致的红，会把**新出现的**红淹掉。
+#     ⇒ 默认只把清单打出来。等清单清干净了，把下面这行换成
+#       `tools\lua_lint.ps1 -Strict` 就能升级成守门（-Strict 有 error 时 exit 1）。
+#   ⚠️ 它还有个**副作用是好事**：selene 的解析器比 lua53check 严格，
+#      能抓到"文件开头多了 BOM"这种 Lua 语法之外的问题（BOM 会让打包后的
+#      Lua 5.3 报 unexpected symbol，且行号指向文件末尾 —— 见 2c 的注释）。
+Run-Step '2j/13 Lua 静态检查（selene/stylua，只报告）' 'powershell' @('-ExecutionPolicy', 'Bypass',
+  '-File', 'tools\lua_lint.ps1') | Out-Null
 $ok3 = Run-Step '3/13 关卡批量校验（唯一解）'   $lua @('tools\validate_levels.lua', "$SolveLimit")
 $ok4 = Run-Step '4/13 打包客户端脚本'           $lua @('tools\bundle_client_script.lua')
 

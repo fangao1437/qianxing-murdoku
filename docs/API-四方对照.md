@@ -131,7 +131,9 @@
 | `GetChildren` | 控件方法 | ✅ | 一致 |
 | `GetClientUIRoots` | game 函数 | ✅ | 一致 |
 | `GetDevice` | game 函数 | ✅ | 一致 |
+| `GetItemIndex` | 控件方法 | ✅ | 一致 |
 | `GetParam` | 控件方法 | ✅ | 一致 |
+| `GetSiblingIndex` | 控件方法 | ✅ | 一致 |
 | `GetSizeDelta` | 控件方法 | ✅ | 一致 |
 | `GetText` | game 函数 | ✅ | 一致 |
 | `GetUICanvasSize` | game 函数 | ✅ | 一致 |
@@ -144,6 +146,7 @@
 | `Pause` | 控件方法 | ✅ | 一致 |
 | `Play` | 控件方法 | ✅ | 一致 |
 | `PlayAudio2D` | game 函数 | ✅ | 一致 |
+| `RefreshItems` | 控件方法 | ✅ | 一致 |
 | `RegisterServerSignalHandler` | 控件方法 | ✅ | 一致 |
 | `Restart` | 控件方法 | ✅ | 一致 |
 | `Resume` | 控件方法 | ✅ | 一致 |
@@ -163,6 +166,7 @@
 | `SetOnStepComplete` | 控件方法 | ✅ | 一致 |
 | `SetPivot` | 控件方法 | ✅ | 一致 |
 | `SetRelative` | 控件方法 | ✅ | 一致 |
+| `SetSiblingIndex` | 控件方法 | ✅ | 一致 |
 | `SetSizeDelta` | 控件方法 | ✅ | 一致 |
 | `SetVisible` | 控件方法 | ✅ | 一致 |
 | `Tween` | game 函数 | ✅ | 一致 |
