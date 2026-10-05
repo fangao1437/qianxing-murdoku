@@ -1953,7 +1953,11 @@ function Controller:build_layout()
              rect = { x = L.clues.x + CLUE_PAD + 124.8, y = y + 19.2, w = 242.4, h = 67.2 },
              text = tostring(post or ""), style = "clue.what", visible = inWin })
       -- 字母徽章（右边）：就是嫌疑人的字母 id（A/B/C/D/V），参考图那样
-      if wid ~= nil and wid ~= "" then
+      -- ★★★★★ 2026-10-05 **无条件发勋章节点**（原来写成 `if wid ~= nil and wid ~= "" then`）。
+      --   后果：像 `selftest_theft_5x5` 这种**线索文本里没有人名**的关卡，`wid` 为空
+      --   ⇒ 整个勋章节点都不发 ⇒ 真机上**所有勋章都不出现** ✗（用户实测：所有勋章都没出现）
+      --   现在：永远发，文字为空也发（空文字无害，控件本身还在、背景/描边照常显示）。
+      if true then
         push({ id = "clue." .. i .. ".badge", kind = "text", parent = "clue." .. i,
                rect = { x = L.clues.x + CLUE_PAD + 400.8, y = y + 64.8, w = 40.8, h = 33.6 },
                text = wid, style = "clue.who", visible = inWin })
