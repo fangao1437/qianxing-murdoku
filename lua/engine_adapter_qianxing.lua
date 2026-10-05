@@ -130,7 +130,28 @@ function M.new(cfg)
   --   见 `Adapter:enable_raycast` 上面那段注释：它原来每 20 帧无条件整树 walk 一遍，
   --   实测 300 帧 = 15 趟 = 7020 次 `GetChildren`（23.4/帧），而这件事是**幂等**的。
   self._ray = { scans = 0, idle = 0, done = false, seen = 0, set = 0, announced = false }
-  self.handlers = {}       -- 控件 id -> 事件表
+  self.handlers = {}       -- 控件 id -> **规划节点**（只做 parent/rect 反查；一个 id = 一个引擎控件）
+  -- ★★★★★ 2026-10-05 **事件表按「规划节点」记，不按控件 id。**
+  --
+  --   为什么（可复现，`tests/_wip/probe_event_table.lua`）：
+  --     `build_layout` 里**同一个 id 会出现在两个节点上**（最典型：`action.back` ——
+  --     一个挂 `topbar`（「返回菜单」/ `back_confirm`）、一个挂 `right`（「返回列表」/ `back`），
+  --     见 ui_controller 的 L1759 与 L2411）。
+  --     而事件表原来是 `self.handlers[id]`、`set_property` 的 event 分支直接
+  --     `h.event = value` ⇒ **一份表、两个节点轮流写** ⇒ 后写的把先写的吃掉：
+  --     实测两个节点都发过（`back_confirm` → `back`），表里最后只剩 `back`，
+  --     `topbar` 那一份**静默丢失**（不报错、看不出来）✗
+  --   ⇒ 键改用**规划节点**（`id \1 父容器 \1 同(id,父容器)的第几次出现`）——
+  --     这就是 `ui_controller` 属性账本**已经在用的同一把 `node_key`**（见那里的
+  --     `local function node_key(n)`），由渲染循环算好后传进来，**不在这里另造一套**。
+  --     「一条规则两个权威」是本项目刚在 BOM 上栽过的坑。
+  --   ⚠️ `self.handlers`（按 id 的节点登记表）**保持不变**：`rect` 分支要用
+  --      `handlers[pid]` 反查**父控件**（`pid` 是控件 id，不是规划节点键），
+  --      那里本来就该按 id —— 一个 id 只有一个引擎控件。
+  self.events = {}         -- 规划节点键 -> 事件表
+  -- 控件 id -> **最近一次**写 event 的那个规划节点键。派发（`bind_input` 的 live_event）用它，
+  -- 语义与旧版**逐字一致**（后写的赢）—— 这一轮**没有换人**，只是"表里两份都在"了。
+  self.event_latest = {}
   self.subs = {}           -- "id.child" -> 子控件（或 false）
   self.timers = {}
   self.clock = 0
@@ -502,6 +523,15 @@ end
 ----------------------------------------------------------------------------
 
 function Adapter:create_control(node)
+  -- ★★★★★ 2026-10-05 **这里登记的是「这个引擎控件是谁建的」，不是「事件表」。**
+  --
+  --   为什么仍然按 `node.id`：一个 id 只对应**一个**引擎控件（`_created[id]` 保证
+  --   `create_control` 只跑一次），而后面 `rect` 分支要用 `handlers[pid]` 反查
+  --   **父控件**的 `rect` —— `pid` 是**控件 id**，那里只能按 id 查。
+  --   ⚠️ 事件**不在这里**：它已经搬到 `self.events[规划节点键]`（见 `set_property` 的
+  --      `key == "event"` 分支）。旧写法把"节点登记"和"事件表"挤在同一张表上，
+  --      于是第二个同 id 节点一写就把第一个的事件吃掉了 ✗
+  --      （这就是 `handlers[node.id] = node` 那一行曾经的病根；登记本身没错，兼任才有错）。
   self.handlers[node.id] = node
   local ctrl = self:find(node.id)
 
@@ -3109,6 +3139,30 @@ function Adapter:diagnose_cell(id)
   return bad == 0
 end
 
+-- ★★★★★ 2026-10-05 **销毁/回收一个控件时，把它名下「所有规划节点」的事件一起扔掉。**
+--
+--   为什么不能只按 id 清一笔：事件表现在按**规划节点**记（`id \1 父容器 \1 序号`），
+--   一个 id 可能挂着好几个节点（`action.back` 就挂着 2 个）。
+--   控件真的没了 ⇒ 这几个节点的事件**全都作废**：只清掉其中一个会留下**孤儿条目**
+--   （那个键再也不会被写、也再也不会被读，纯泄漏）。
+--   ⚠️ 前缀匹配是安全的：分隔符 `\1` 不可能出现在控件 id 里（同一条约定见
+--      ui_controller 的 `drop_props_of`），所以 `id .. "\1"` 只会命中**这个 id** 的节点键。
+function Adapter:forget_events_of(id)
+  local pre = tostring(id) .. "\1"
+  local stale = nil
+  for k in pairs(self.events) do
+    if type(k) == "string" and k:sub(1, #pre) == pre then
+      stale = stale or {}
+      stale[#stale + 1] = k
+    end
+  end
+  if stale ~= nil then
+    for i = 1, #stale do self.events[stale[i]] = nil end
+  end
+  self.event_latest[id] = nil
+  self.handlers[id] = nil
+end
+
 function Adapter:destroy_control(id)
   local ctrl = self.controls[id]
 
@@ -3124,7 +3178,7 @@ function Adapter:destroy_control(id)
     self.instantiated[id] = nil
     self.bound[id] = nil
     self.controls[id] = nil
-    self.handlers[id] = nil
+    self:forget_events_of(id)
     -- ★ 控件真的没了 ⇒ 名字缓存整代作废（"不在"的判定和"在"的句柄都可能已经过期）
     self:invalidate_lookups("destroy:" .. tostring(id))
     return
@@ -3139,7 +3193,7 @@ function Adapter:destroy_control(id)
   end
   -- 只清缓存，让下次 create_control 重新 find；控件本身留着（监听也留着）
   self:drop_lookup(id)
-  self.handlers[id] = nil
+  self:forget_events_of(id)
 end
 
 ----------------------------------------------------------------------------
@@ -3718,7 +3772,7 @@ function Adapter:_apply_edges(id, prefix, flags)
   return #missing_sub == 0
 end
 
-function Adapter:set_property(id, key, value)
+function Adapter:set_property(id, key, value, nkey)
   -- ★★★★★ 2026-10-05 **返回值 = "这次真的送达了吗"**（true/false），界面层据此决定记账 or 重发。
   --
   --   为什么要有返回值：这里在 `find(id) == nil` 时是**静默 no-op**（既不报错也不写），
@@ -4043,9 +4097,25 @@ function Adapter:set_property(id, key, value)
 
   elseif key == "event" then
     -- 让增量渲染能把「同一条按钮换了事件」同步下来（配合 bind_input 的现查）
-    local h = self.handlers[id]
-    if h == nil then h = {}; self.handlers[id] = h end
-    h.event = value
+    --
+    -- ★★★★★ 2026-10-05 **按「规划节点」记，不按控件 id**（这一条是"同 id 两个节点
+    --   互相覆盖"的第二半，见 `Adapter.new` 里 `self.events` 那段）。
+    --
+    --   旧写法：
+    --       local h = self.handlers[id]
+    --       if h == nil then h = {}; self.handlers[id] = h end
+    --       h.event = value
+    --   ⇒ 一份表、两个节点轮流写：`action.back` 的 `topbar` 节点先写 `back_confirm`、
+    --     `right` 节点紧接着写 `back` ⇒ **前者静默消失**（不报错）。
+    --   ⇒ 现在每个规划节点各占一格；`nkey` 由渲染循环算好传进来（**复用**属性账本那把
+    --     `node_key`，不在这里另造）。
+    --   ⚠️ `nkey == nil` 时退回按 id —— 兼容旧调用方（例如 `main.lua` 里
+    --      `bind_input("selbtn.N", {...})` 那条路，以及离线假适配器/老测试）。
+    local k = nkey or id
+    self.events[k] = value
+    -- 派发用：记住"这个控件最近一次被哪个规划节点写了事件"。
+    -- 语义 = 旧版的"后写的赢"（**没有换人**），只是现在先写的**不会被丢掉**了。
+    self.event_latest[id] = k
 
   elseif key == "rect" then
     -- ★★★ 2026-09-29：**编辑器优先 —— 不再覆盖你已经调好的控件几何**。
@@ -4326,8 +4396,17 @@ function Adapter:bind_input(id, node)
   --   同一条预设按钮在不同弹窗状态下要发不同事件（指认盗窃者 → 同伙是谁），
   --   而控件只创建/绑定一次；捕获写法会让第二次点谁都还在发旧事件。
   local function live_event()
-    local cur = self.handlers[id]
-    return (cur and cur.event) or node.event or { action = "click" }
+    -- ★★★★★ 2026-10-05 **事件表搬到 `self.events[规划节点键]` 之后，现查要跟着改。**
+    --
+    --   旧写法读 `self.handlers[id].event`（那张表兼任事件表，已于本轮拆开）。
+    --   照旧写会读到一个**再也不会被更新的**创建期快照 ⇒ 点了不对（静默）。
+    --   取谁：`self.event_latest[id]` = 这个控件**最近一次**被哪个规划节点写过事件。
+    --   ⚠️ 这一条的**语义与旧版逐字一致（后写的赢）** —— 本轮**没有换人**：
+    --      改的只是"先写的那一份不再被吃掉"（表里两份都在），派发仍是最后写的那份。
+    local k = self.event_latest[id]
+    local cur = nil
+    if k ~= nil then cur = self.events[k] end
+    return cur or node.event or { action = "click" }
   end
 
   ctrl:AddCursorEventListener(click, function(data)

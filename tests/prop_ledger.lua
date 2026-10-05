@@ -233,23 +233,55 @@ do
   ok(seen_menu and seen_list,
     "★ ② 两个同名节点**都生效**了（`topbar` 的「返回菜单」与 `right` 的「返回列表」都下发过）",
     "返回菜单=" .. tostring(seen_menu) .. " 返回列表=" .. tostring(seen_list))
-  -- ★ 点击动作由**最后一个下发 `event` 的节点**决定（适配层 `set_property` 的 event 分支
-  --   直接覆盖 `handlers[id].event`，见 engine_adapter_qianxing 的 `key == "event"`）。
-  --   规划里 `action.back` 的两个节点：`topbar`（返回菜单 / back_confirm）在前、
-  --   `right`（返回列表 / back）在后 ⇒ **稳态下始终是后者**。
-  --   ⚠️ 这条**在改之前也是 `back`**（老代码每帧两个节点各写一遍，最后写的还是 `right`），
-  --      所以这一轮**没有换人**；改的是"它不再每帧翻面两次"。
-  --      实测手段：同一份断言跑 `versions/112-每帧成本大降-v071/client_script.lua`，两边都是 `back`。
-  local hb = adapter.handlers["action.back"]
-  ok(hb ~= nil and hb.event ~= nil and hb.event.action == "back",
-    "★ ② 点击动作**没有换人**：稳态下仍是最后那个节点（`right` = back）绑定"
+  -- ★★★★★ 2026-10-05 **事件表也按「规划节点」记了**（`Adapter:set_property` 的
+  --   `key == "event"` 分支）—— 键就是上面那把 `node_key`（`id \1 父容器 \1 序号`）。
+  --
+  --   ⚠️⚠️ **这一段的读法变了（期望值一个字没变）** —— 必须在这里说清楚，否则下一个人
+  --      会以为是我把断言改松了：
+  --     · 原来读 `adapter.handlers["action.back"].event`。本轮 `self.handlers` **退回成
+  --       纯节点登记表**（`rect` 分支要用 `handlers[pid]` 反查父控件，那里只能按控件 id），
+  --       `event` 分支**不再写它** ⇒ 照旧读会读到一个**创建期的旧快照**。
+  --       实测：那样读到的是 `back_confirm` —— 那是 `topbar` 节点的**原始事件**，
+  --       **不是派发值** ✗（一个"看着过了/看着红了"都可能是假象的读法）。
+  --     · 派发值现在走 `adapter.event_latest[id]` → `adapter.events[那个键]`。
+  --   ⇒ 断言**要守的东西完全没变**：① 派发的那一份仍是 `right` 的 `back`（没换人）；
+  --     ② 稳态里每个规划节点各自的事件都在位、不被隔壁节点改写。
+  --     第 ② 条比原来**更强**：老写法只比对 `handlers[id]` 同一张表的引用（恒真），
+  --     现在要求**两份**都在、且逐帧稳定。
+  local SEP = "\1"
+  -- 读出这个 id 名下**所有规划节点**的事件：parent → action
+  local function event_map_of(id)
+    local pre, map = id .. SEP, {}
+    for k, v in pairs(adapter.events or {}) do
+      if type(k) == "string" and k:sub(1, #pre) == pre then
+        local _, _, parent = k:find("^[^" .. SEP .. "]*" .. SEP .. "([^" .. SEP .. "]*)")
+        map[tostring(parent)] = v and v.action or nil
+      end
+    end
+    return map
+  end
+  -- 真正会**派发**的那一份（= 最近一次写 event 的规划节点）
+  local function live_action(id)
+    local k = adapter.event_latest and adapter.event_latest[id]
+    local ev = (k ~= nil) and (adapter.events or {})[k] or nil
+    return ev and ev.action or nil
+  end
+
+  ok(live_action("action.back") == "back",
+    "★ ② 点击动作**没有换人**：稳态下派发的仍是最后那个节点（`right` = back）"
     .. "（改之前每帧翻面两次、稳态值同样是 back）",
-    "实际 action=" .. tostring(hb and hb.event and hb.event.action))
-  -- 稳定性：稳态再跑一段之后，绑定不许再变（老代码每帧都在改它）
-  local hb_again = adapter.handlers["action.back"]
-  ok(hb_again == hb,
-    "★ ② 稳态里绑定**不再每帧被改写**（老代码：两个节点每帧各写一遍 `event`）",
-    "同一张表 = " .. tostring(hb_again == hb))
+    "实际 action=" .. tostring(live_action("action.back")))
+  -- 稳定性 + 「两份都在」（**比原来那条更强**：老写法只比对同一张表的引用，恒真）：
+  --   稳态再跑一段，两个规划节点的事件都得原样在位，谁也不许被隔壁改写。
+  local before_rows = event_map_of("action.back")
+  pcall(function() for _ = 1, 10 do OnUpdate(1 / 60) end end)
+  local after_rows = event_map_of("action.back")
+  local same = (before_rows["topbar"] == after_rows["topbar"])
+    and (before_rows["right"] == after_rows["right"])
+  ok(same and after_rows["topbar"] == "back_confirm" and after_rows["right"] == "back",
+    "★ ② 稳态里**两个规划节点各自的事件都在位、且不再被每帧改写**"
+    .. "（老代码：同一个 id 上两个节点互相覆盖 ⇒ 表里只剩最后一份）",
+    "topbar=" .. tostring(after_rows["topbar"]) .. " / right=" .. tostring(after_rows["right"]))
 end
 
 -- ── 2. 稳态 300 帧：账本收敛（②）＋ 不再每帧重绘（③）──────────────────────

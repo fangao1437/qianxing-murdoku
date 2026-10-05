@@ -3636,7 +3636,18 @@ end
 --
 --   ⚠️ 报错**按 id + 键各报一次**，而且**最多只列 8 条**（第 9 条换成一句总结）：
 --      一个坏句柄会每帧抛，不去重/不限量就是拿日志刷屏 —— 那正是用户这一轮最烦的事。
-function Controller:_set_prop(adapter, id, key, value)
+function Controller:_set_prop(adapter, id, key, value, nkey)
+  -- ★★★★★ 2026-10-05 **多带一个 `nkey`：这把键就是属性账本那把 `node_key`。**
+  --
+  --   为什么要有它：`build_layout` 里**同一个 id 会出现在两个节点上**
+  --   （`action.back`：一个挂 `topbar`、一个挂 `right`），而适配层的**事件表**
+  --   原来是按控件 id 记的 ⇒ 两个节点轮流写同一格 ⇒ **后写的把先写的吃掉**
+  --   （静默、不报错）。
+  --   ⇒ 把账本**已经算好的**那把键原样传下去，适配层用它给每个规划节点各记一份。
+  --   ⚠️ **不要**在适配层另造一套键（"一条规则两个权威"本项目刚在 BOM 上栽过）——
+  --      这里传的就是 `render` 里 `local nkey = node_key(n)` 那一个值。
+  --   ⚠️ 其它键（text/visible/...）用不到它，传了也只是忽略；留成可选参数，
+  --      旧调用方（离线假适配器）少传一个参数照样跑。
   -- ★★★★★ 2026-10-05 **返回值从"没抛错"升级成"真的送到了"**。
   --
   --   为什么：适配层 `set_property` 在 `find(id) == nil` 时是**静默 no-op**（不抛错、也不写），
@@ -3648,7 +3659,7 @@ function Controller:_set_prop(adapter, id, key, value)
   --   ⚠️ 兼容老适配器 / 离线假适配器：它们**不返回值**（`res == nil`）——
   --      这里只有**明确的 `false`** 才算失败。把"没返回值"当成失败，会让每个属性每帧重发
   --      （离线测试立刻炸：那是"查不了 = 不存在"的老坑）。
-  local ok, res = pcall(function() return adapter:set_property(id, key, value) end)
+  local ok, res = pcall(function() return adapter:set_property(id, key, value, nkey) end)
   if not ok then
     local k = tostring(id) .. "." .. tostring(key)
     self._prop_err_seen = self._prop_err_seen or {}
@@ -3849,9 +3860,15 @@ function Controller:render(adapter, force)
   --     · 带上**出现序号**：万一将来同一个 id 在同一父容器下也出现两次，仍然分得开；
   --     · 用 `\1` 作分隔符（本文件里 `_prop_retry` 已经用这个约定，且 id 里不可能有它）。
   --   ⚠️ `self._created` **仍然按 id** —— 一个 id 只对应**一个**引擎控件，
-  --      `create_control`（含事件绑定 `handlers[id]`）只能跑一次。
-  --      这一条是行为承诺：`action.back` 的点击动作仍然由**第一个**节点
-  --      （`topbar` 那个 = `back_confirm`，即"点了先弹 ✓/✗"）决定，没有换人。
+  --      `create_control` 只能跑一次；而**事件表**已经跟着账本一起改成按规划节点
+  --      （`Adapter:set_property` 的 `key == "event"` 分支）——
+  --      **本文件把这个 `nkey` 原样传下去**（见 `_set_prop` 的第 5 个参数），
+  --      适配层不另造键。
+  --   ⚠️ **点击派发没有换人**：一个 id 只有一个引擎控件、只有一次绑定，所以只能派发
+  --      **一份**事件 —— 适配层按"最近一次写 event 的那个节点"取（`event_latest`），
+  --      语义 = 旧版的"后写的赢"。对 `action.back` 而言仍是 `right`（`back`）。
+  --      这一轮**改的不是派发规则**，而是"先写的那一份不再被静默吃掉"：
+  --      原先 `topbar` 的 `back_confirm` 会被覆盖到查无此物（探针改前实测：表里只剩 1 条）。
   local node_seq = {}
   local function node_key(n)
     local base = tostring(n.id) .. "\1" .. tostring(n.parent)
@@ -3940,7 +3957,7 @@ function Controller:render(adapter, force)
           --   少发一次 = 少一遍**深度优先搜控件树**（真机上每个节点一次 pcall + 读 name）。
           --   实测（`tests/grid_cost.lua`，两个同名 `action.back` 规划节点 + 深树）：
           --   一次 render 从 20 次搜空（9360 次 `GetChildren`）降到 10 次（约 4700 次）。
-          local ok = exists and self:_set_prop(adapter, n.id, k, v)
+          local ok = exists and self:_set_prop(adapter, n.id, k, v, nkey)
           if ok and exists then
             last[k] = v
             retry_clear(n.id, k)
@@ -4011,7 +4028,7 @@ function Controller:render(adapter, force)
       end
       -- ★ 与逐属性那条同一个道理（见上面那段注释）：控件不在 ⇒ 连 `set_property`
       --   都不发（它第一步也是 `find`，结果必然一样是 nil）。
-      local rok = rect_exists and self:_set_prop(adapter, n.id, "rect", n.rect)
+      local rok = rect_exists and self:_set_prop(adapter, n.id, "rect", n.rect, nkey)
       if rok then
         last.__rect = { x = n.rect.x, y = n.rect.y, w = n.rect.w, h = n.rect.h }
         retry_clear(n.id, "__rect")
