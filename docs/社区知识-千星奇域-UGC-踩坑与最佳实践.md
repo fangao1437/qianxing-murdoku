@@ -1211,6 +1211,25 @@ elseif key == "event" then             -- lua/engine_adapter_qianxing.lua:3950
       预期：真机未验证项**明确标注**。
       违反：MBS 的评测里这是 `FAIL` 级问题。
       【社】`evals/agent-behavior.md:8,97`
+- [ ] **H12 ★** 计划节点表（`build_layout()` 的输出）里，**同一个 `id` 是否只出现在一个节点上**？
+      预期：`build_layout()` 的输出中 **`id` 唯一**（除故意保留的少数，且各自有注释说明）。
+      违反：适配器按 `id` 索引（`engine_adapter_qianxing.lua:505,3952`）⇒
+      **后下发的静默覆盖先下发的**：属性看起来"都生效"，
+      但**事件绑定只有最后一个赢**；改布局会让**不相干的按钮行为跟着变**。
+      实测代价：改之前 `action.back` **每帧下发两遍**、300 帧 **3000 次**空查找
+      （`tests/prop_ledger.lua:243-264`）。
+      查法：`lua tests/prop_ledger.lua` 看「== 3. 计划里的重复 id ==」那一段的
+      `重复 id：…` 输出。
+      【推】本项目实测（官方的同名语义仍未确认，见 §3.7）
+- [ ] **H13 ★** 自检结论是不是**假绿**？具体三问：
+      ① 有没有用 `--warn-only` 跑的步骤被当成"通过"？
+      ② 有没有跑 `check_all.ps1 -SkipSim` 后声称"全绿/全过"？
+      ③ 红的时候，那个红是不是**坏 JSON / 路径错 / 事件到不了控件 / 工具故障**之一？
+      预期：① 明确标注"只报告不判失败"；② 如实说"模拟器那几步没跑"；
+      ③ 先归因到「装配问题」还是「目标行为缺失」，**只有后者才算有效 Red**。
+      违反：拿假红去驱动实现 ⇒ **改错地方**；或拿假绿交付 ⇒ 真机炸。
+      【社】`references/02-test-cases.md:48`（有效 Red 定义，见 §5.11）；
+      本项目 `tools/check_all.ps1:222-232,257-258,271`（防假绿已写进注释）
 
 ---
 
@@ -1284,6 +1303,56 @@ elseif key == "event" then             -- lua/engine_adapter_qianxing.lua:3950
 11. **`Enum.TextVerticalAlignment` 的居中值** —— MBS 记录「居中值 **1** 是
     **待实机验证的推断**」（`studio/README.md:44`）。
 
+> **以下 12～17 条为本次补写新增**（2026-10-05，第二路补写；
+> 来源均为 `docs/research-raw/bs-observed-contract.md` 与
+> `docs/research-raw/bs-control-support.md` 中**作者自己标为未对齐/未验证**的条目）。
+
+12. **跨脚本 `script:Invoke` 传 `table` / 控件的「身份」** —— **未对齐**。
+    真机**各脚本共享同一 Lua state**（控件/Tween/table 往返 `rawequal=true`）；
+    MBS 模拟器**每脚本一个 Lua state**，只能复制值，**table 也会被复制**
+    （`bs-observed-contract.md:41`，作者原文就写「**需把运行时改为单 VM + 每脚本 `_ENV`，另行处理**」）。
+    ⇒ **【推断】这是"模拟器里过、真机炸"的一条高危缝**：
+    依赖"传过去的 table 是引用"的写法，真机成立而模拟器测不出；
+    依赖"是拷贝"的写法，模拟器绿而真机可能改一处两处都变。
+    **两条路都必须人工确认，不能只靠 `tools/sim`。**
+
+13. **`RefreshItems` 在「引擎自己滚动时」会不会重进回调** —— **本项目自标未验证**。
+    `lua/ui_controller.lua:3471-3489` 的注释逐字写着这是「**本项目一个未验证点**」，
+    并给出两种可能的真机行为：引擎不重进（要自己再调一次 `RefreshItems`）
+    或引擎重进。代码目前**同时**打了日志区分两者（`_grid_in_refresh` 标志）。
+    ⇒ **【推断】下次真机务必看这条日志**：它直接决定"滚动时列表项内容对不对"。
+
+14. **同一 `.gil` 在「离线模拟器」与「真机」的结果是否一致** —— **未验证，且已知会有差**。
+    已知的**具体差异点**（`bs-observed-contract.md`）：
+    - **整数宽度**：MBS 用 Fengari，**整数是 32 位**，作者明写「这是已知的底层限制，
+      **不能作为客户端整数结论**」（`:24`）；
+    - **`-0.0` 格式化**：真机 `X=0` 读回显示 `-0.000`，Fengari 的
+      `string.format`/`tostring` **不输出负号**（`:51`）；
+    - **变步长 vs 固定 1/60**：真机 dt 变步长，模拟器固定步长基线
+      「**仍会有同量级差异**」（`:58`）。本项目 `tools/sim` 的 27 断言也属这一类。
+    ⇒ **【推断】不要把 `tools/sim` 的绿当成真机绿**（同 §6.8、§7-H11）。
+
+15. **旋转读回是「四元数往返后的欧拉角」** —— **真机已观察，但渲染未覆盖**。
+    `localRotationX/Y/Z` 与 `GetLocalRotation` 返回**按 Z-X-Y 四元数往返后**的欧拉角，
+    落在 `[0,360)` 且恒为浮点（`X=-116` 读回 `296`、`90.5` 读回 `89.5`）。
+    **补间起点取读回值**，所以「绝对 `-116`→`-136`」实际走的是 `244`→`-136`
+    （`bs-observed-contract.md:47`）。
+    ⇒ **【推断】写"旋转到某个角度"的补间时，起始值必须先读回来算**，不能按写入值推。
+    ⚠️ **X/Y 旋转的渲染本身未覆盖**（`:52`）。
+
+16. **`Enum.KeyEventType` / `KeyboardKeyCode` 的全表** —— 官方**有**全表
+    （`_client-all.txt:1633-1908`，约 275 行），但**本项目尚未逐条对照**。
+    ⇒ 这是**可以查清**的一条（不是"查不到"），列为待办而非未知。
+
+17. **`print` 的日志速率限制 / 单帧日志上限** —— **未确认**。
+    官方只说 `print` 写普通日志、**不阻断运行**（`_client-all.txt:796`），
+    没说有没有限流。本项目历史上出现过**同一行日志重复上百次**的真机事故
+    （`tests/board_bg.lua:1-14` 记录「棋盘底板：board.bg 建=true 设图=false imageId=0」
+    **重复了上百次**）。
+    ⇒ **【推断】即使没有官方限流，这种日志本身也会拖慢**；
+    本项目因此把诊断块**物理删除**而不是 `if false` 关掉
+    （`docs/安全瘦身规程.md:24-35`、`lua/main.lua:1459`）。
+
 ### 8.3 检索过的关键词（供下一轮继续）
 
 **中文**：千星奇域、千星沙箱、奇匠、客户端控件、客户端脚本、Lua 客户端 UI、
@@ -1323,6 +1392,26 @@ imageId、prefabIndex、controlId、scriptMappingId
 | `https://ugc.070077.xyz` | **知识库 API**，官方全文检索 | `POST /api/v1/skills/miliastra-knowledge/tools/<tool>`；`list_documents` 给 308 篇；`list_client_documents` 给 10 篇客户端专属 |
 | `https://github.com/1475505/Miliastra-knowledge` | 官方文档 + **米游社问答楼全文导出**（`bbs/bbs-faq.md` 307KB） | 无需抓 SPA |
 | `https://github.com/1475505/Miliastra-toolbox` | 知识库服务端 + **两个 Skill 定义**（`skills/miliastra-knowledge-lua/SKILL.md`） | 含 `knowledge/config/urls-client.json` 等抓取配置 |
+
+---
+
+## ⚠️ 第 2 轮勘误：见 [社区知识-勘误与补充-第2轮.md](社区知识-勘误与补充-第2轮.md)
+
+主文件在编写期间**有多个代理并发写入**，第 2 轮用
+`miliastra-knowledge-lua` 技能工具直接取到官方原文后，
+发现本文件有 **1 处需要更正**、**3 条「未能确认」现在已有官方答案**。
+为避免并发覆盖，第 2 轮内容独立成文，**请以那份为准合并**：
+
+| 本文件处 | 第 2 轮结论 |
+|---|---|
+| **§4.6** 表格「网格视窗列表项 = **2000**（无虚拟化）」 | ❌ **需更正**。官方《网格视窗控件》明文：「列表采用复用列表结构，**出于性能考虑，仅会加载处于可见范围内的列表项**」——**官方本来就有虚拟化**。2000 项是 **MBS 模拟器自身的保真缺口**，不是官方上限。另：官方另有明文「**仅配置在列表项来源中的模板可应用网格视窗的列表滚动效果，配置在网格视窗层级下的控件不会应用此效果**」，把 §2.9 引 MBS 的那条从【社】升为【官】 |
+| **§4.7 / §8.2 第 3 条** 客户端 Lua 有没有定时器 API | ✅ **已确认：没有专用定时器 API**（官方 §6 `game` 表通篇无 timer/schedule）。**但 `os.time`/`os.date`/`os.clock`/`os.difftime` 四个 `os.*` 是可用的**（官方裁剪是「除这四个外的 `os.*` 不可用」） |
+| **§4.7 / §8.2 第 4 条** 有没有滚轮事件 | ✅ **已确认：没有滚轮事件**（`get_node_info("滚轮")` 零命中；`Enum.KeyEventType` 全是按键 Down/Up）。自绘滚动**只能**用光标拖动：`CursorBeginDrag`/`CursorDrag`/`CursorEndDrag`，且祖先容器节点必须 `showCursor = true`（官方明文「`CursorEvent` 相关方法都需设置该参数为真后才可正常使用」） |
+| **§8.2 第 11 条** `TextVerticalAlignment` 居中值「1」 | ✅ **已确认：是具名枚举 `Middle`**。数字 `1` 是模拟器内部序号，**不要写进 Lua** |
+
+第 2 轮另附 **13 条官方细节**（容器节点四大开关、预设按钮四态=引用子控件、
+网格视窗边距语义、`Enum.Device` 实为 4 值、`script.alive` 检查要求、
+按键监听移除须用同一回调引用……），以及 **§7 检查清单 E8/E9 的改写建议**。
 | `https://github.com/1475505/miliastra-beyond-simulator` | **真机探针契约** + 模拟器 | `client/lua-runtime/docs/observed-contract.md` 是精华 |
 | `https://ppt.070077.xyz/beyond-ai/index.html` | 七步工作流课程（**约 15MB 自包含单页**） | 内容与 MBS 的 `qxqy-game-studio` Skill 基本同源；用 `Invoke-WebRequest` + 剥标签可读，`web_fetch` 会截断 |
 

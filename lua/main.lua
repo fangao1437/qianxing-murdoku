@@ -989,7 +989,13 @@ function Murdoku.on_update(dt)
     print("[murdoku] ===== 对照组：能点 vs 不能点 =====")
     do
       local rootC = nil
-      pcall(function() rootC = ad:find("root") end)
+      -- ★★★★★ 2026-10-05 **第一遍代码体检修**：这里原来写 `ad:find("root")`，
+      --   而 `local ad = current.adapter` 在 **734 行**、它所在的 if 块 **892 行就结束了**
+      --   ⇒ 这一句在块外读的是一个**不存在的全局 `ad`**（= nil）
+      --   ⇒ `attempt to index a nil value (global 'ad')` 被 pcall **静默吞掉**，
+      --     一个错误都不报（症状与这一轮修掉的 `screen` 恒真 bug 同一类）。
+      --   本块内的适配器变量叫 **`ad3`**（见 903 行）。
+      pcall(function() rootC = ad3:find("root") end)
       -- 兜底：从 GetClientUIRoots 拿
       if rootC == nil then
         local rs = nil
@@ -1064,7 +1070,14 @@ function Murdoku.on_update(dt)
   local function snap_visible()
     local out = {}
     local rt = nil
-    pcall(function() rt = ad:find("root") end)
+    -- ★★★★★ 2026-10-05 **第一遍代码体检修**：原来写 `ad:find("root")` ——
+    --   但 `ad` 是**上一个 if 块里的局部变量**（734 行声明、892 行出作用域），
+    --   在这里读到的是全局 nil ⇒ 抛错被 pcall 吞掉 ⇒ `rt == nil`
+    --   ⇒ 下面 `if rt == nil then return out end` **每次都直接返回空表**
+    --   ⇒ 这段"切屏对比"永远打印「没有多出来的 / 没有消失的 / 没有共同项」——
+    --     **一段专门用来抓"隐形拦截层"的诊断，一直是空转 + 报平安**。
+    --   这里用**当前适配器**（与同文件其它处一致，如 1158/1165 行的 `current.adapter`）。
+    pcall(function() rt = current.adapter:find("root") end)
     if rt == nil then return out end
     local function walk(c, ox, oy, depth)
       if c == nil or depth > 6 then return end

@@ -270,7 +270,37 @@ ok(frames_now() == 300, "（先把帧号推到刚好 300）", "frames=" .. tostr
 -- ⚠️ 计数必须在"这一帧"之前取：`current.frames` 是在 on_update **末尾**自增的，
 --    所以帧号 == 300 的那一次 OnUpdate，判据 `frames % 300 == 0` 命中的正是它。
 local before = vis_of("cell.1.1")
+local bar_before = vis_of("selbar")
+out(string.format("  [诊断] 调 OnUpdate 前：frames=%s screen=%s 同一会话=%s",
+  tostring(cur.frames), tostring(cur.controller and cur.controller.screen),
+  tostring(cur == dbg.Murdoku.current())))
+out(string.format("  [诊断] setv 能不能拿到控件：controls['cell.1.1']=%s  find('cell.1.1')=%s  controls['selbar']=%s",
+  tostring(adapter.controls and adapter.controls["cell.1.1"] ~= nil),
+  tostring(adapter:find("cell.1.1") ~= nil),
+  tostring(adapter.controls and adapter.controls["selbar"] ~= nil)))
+do
+  local probe_names = { "root", "stage", "board", "ruler", "home", "clues", "cell.1.1", "cell.1.2", "selbar" }
+  local parts = {}
+  for i = 1, #probe_names do
+    parts[#parts + 1] = probe_names[i] .. "=" .. tostring(adapter:find(probe_names[i]) ~= nil)
+  end
+  out("  [诊断] find 逐个： " .. table.concat(parts, "  "))
+  local rt = tree[1]
+  local function count_kids(c, d)
+    if c == nil or d > 4 then return 0 end
+    local n = 0
+    for _, k in ipairs(c.__kids or {}) do n = n + 1 + count_kids(k, d + 1) end
+    return n
+  end
+  out(string.format("  [诊断] 假树：根数=%d，root 名字=%s，root 子树节点数=%d",
+    #tree, tostring(rt and rt.name), count_kids(rt, 0)))
+end
 step(1)
+out(string.format("  [诊断] 调 OnUpdate 后：frames=%s  cell.1.1 Δ=%d  selbar Δ=%d",
+  tostring(cur.frames), vis_of("cell.1.1") - before, vis_of("selbar") - bar_before))
+out(string.format("  [诊断] 调 OnUpdate 后：frames=%s screen=%s 同一会话=%s",
+  tostring(cur.frames), tostring(cur.controller and cur.controller.screen),
+  tostring(cur == dbg.Murdoku.current())))
 local fired = vis_of("cell.1.1") - before
 ok(fired > 0,
   "★ 帧号 == 300 那一帧，`cell.*` 的按屏同步**确实会跑**（证明代码在，只是节流位错）",
