@@ -97,7 +97,10 @@ for (const f of files) {
   //      （本项目已因此栽过 4 次 ✓ ⇒ 必须让它**在每次 check_all 里可见** ✓）
   if (ext === '.ps1' && !hasBom) {
     ps1NoBom++;
-    console.log(`  ℹ ${rel} —— .ps1 无 BOM ⚠️ 若它会被 PowerShell 5.1（`powershell`）执行，可能按 GBK 解码而解析失败 ✗`);
+    // ⚠️ 这里**不能用反引号**包 `powershell` ✗ —— 外层已经是模板字符串，
+    //    内层再来一对反引号会把字符串提前结束 ⇒ `SyntaxError: missing ) after argument list`
+    //    （Round 66 我当场踩过 ✓ 记在这里防复发 ✓）
+    console.log(`  ℹ ${rel} —— .ps1 无 BOM ⚠️ 若它会被 PowerShell 5.1（powershell）执行，可能按 GBK 解码而解析失败 ✗`);
     console.log(`      权威归步骤 2c 的 normalize_encoding.ps1 ✓ 这里只报告、不判红 ✓（两侧规则曾互相抵消 ✗）`);
   }
 
