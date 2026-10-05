@@ -1,6 +1,15 @@
 # 社区知识：千星奇域 / 千星沙箱（Miliastra / 奇匠 / UGC）踩坑与最佳实践
 
-> **状态：编写中（增量落盘）**。本文件按渠道逐节写入，每查到一条即追加，不等待全部查完。
+> **状态：第 1 轮完成**（6 节 + 检查清单 + 未确认清单均已落盘）。
+> 未走完的渠道与下一轮入口见 [§8.4](#84-本轮没有走到的渠道可续做)、[§8.5](#85-本轮新增的可用来源下一轮直接用这些)。
+>
+> **本轮最重要的三个发现**（先看这个）：
+> 1. **官方明文**：**只有「存为模板的客户端控件的父节点」能被 `InstantiateClientUIControl` 动态创建**；
+>    主屏里直接摆的控件、以及模板内部的**子节点**都不行（`mhbgxf0nynww` §八）。
+> 2. **官方明文**：**客户端容器控件隐藏或销毁时，其中的客户端控件会被销毁**
+>    —— 用"隐藏容器"做页面切换 = 每次切页把页面拆了重建（`mhbgxf0nynww` §5.2）。
+> 3. **官方明文**：**试玩过程中编写的节点图不会被保存**，结束试玩后会回退
+>    —— 「改了没生效」的官方解释（`mhjtk90iodts` §10）。
 >
 > **可信度标注约定**
 > - **【官方】** —— 来自米哈游官方文档 / 官方教程 / 官方公告
@@ -1155,4 +1164,128 @@ elseif key == "event" then             -- lua/engine_adapter_qianxing.lua:3950
 
 ## 8. 未能确认的问题与检索关键词
 
-（本节编写中）
+> 本节**只列真的没查到证据的**。凡是查到了但来源单一/未真机核验的，
+> 已在正文里用「**【推断】**」「**未真机核验**」「`device_status=pending`」标注，
+> 不在这里重复。
+
+### 8.1 逐条回答「必须回答的 6 个问题」的缺口
+
+| # | 问题 | 状态 | 缺口 |
+|---|---|---|---|
+| 1 | **性能**：哪些操作在移动端很贵？有量化数字或阈值吗？ | **部分确认** | ✅ 拿到社区量级数字（跟随运动器 ~1s/次、挂接点 ~0.3s/次、批量移动「每次 10 个」、碰撞「秒 10 个」丢事件、节点图「116 实体只处理 30 多」）。❌ **没有拿到客户端 Lua UI 的真机毫秒阈值**，也没有「每帧 N 次 `SetVisible` 就掉帧」这类数字 |
+| 2 | **渲染与生命周期**：控件树何时就绪？首帧坑？「改了 visible 又被改回去」？ | **大部分确认** | ✅ 就绪时机（`OnStart` 才能实例化）、层级两套坐标、容器隐藏即销毁、Tween 不停、断线重连重建 —— 全部有源。❌ **「引擎把 visible 复位」零来源**；❌ 官方**没有**「控件树就绪事件」这类信号 |
+| 3 | **控件模板/实例化**：哪些父节点能实例化？列表项复用？**子控件同名冲突**？ | **大部分确认** | ✅ 官方明文回答了前两个。⚠️ **「官方引擎在同名时取哪一个」仍未确认**，但 **§3.7(b) 已用本项目实测证明「同 id 节点在适配层按 id 索引时会静默覆盖」**（并发写入者补充，`tests/prop_ledger.lua`） |
+| 4 | **能力边界**：禁用库？没有滚轮/定时器？ | **大部分确认** | ✅ 官方禁用库清单是逐字原文。❌ **客户端 Lua 是否有定时器 API** 未确认（推断为「只能 `OnUpdate(dt)` 累计」）；❌ **是否有通用滚轮事件** 未确认 |
+| 5 | **常见错误** | **确认** | ✅ 拿到了「试玩中编辑不保存」的官方明文，以及「内联 source 覆盖磁盘」等社区头号成因 |
+| 6 | **最佳实践** | **确认** | ✅ 拿到成体系的方法（五层证据 / Red-Green-Regress / 模板化 / 事件驱动） |
+
+### 8.2 明确「未能确认」的结论清单
+
+1. **「容器 / 控件的 `visible` 被引擎复位」** —— **未确认，且倾向于不存在**。
+   查遍官方 API 文档、官方 FAQ、MBS 真机探针记录、米游社问答楼，
+   **没有任何一条**记载引擎会主动改回 `visible`。
+   已确认的**四个替代成因**见 §2.6。
+   ⚠️ 本项目 `docs/移动端性能优化清单.md:28-30` 的注释写的是
+   「引擎在**状态逻辑**里会按玩法需要把 `face` 的可见性改掉」——
+   这是**本项目的观察记录**，不是社区/官方结论，**建议按 §2.6 的四条重新验证一次**。
+
+2. **「同一父节点下子控件同名，引擎取哪一个」** —— **未确认**。
+   最接近的三条社区/官方来源都不是这个问题（详见 §3.7(a)）。
+   ⚠️ **但不要把这条读成"同名无害"**：§3.7(b) 已用本项目实测
+   （`tests/prop_ledger.lua`，`13 passed, 0 failed`）证明
+   **脚本侧按 `id` 索引的那一层「只有最后一个赢」，且是静默覆盖、不报错**。
+   两者**证据等级不同**（引擎语义未知 vs 适配层实测），但**结论方向一致：不要同名**。
+
+3. **客户端 Lua 的定时器/延时能力** —— **未确认**。
+   官方 API 文档的 `game` 表里**没有任何 timer/schedule 函数**；
+   社区只说「**客户端节点图**没有定时器」（问答楼 257）。
+   客户端 **Lua** 是否有对应能力，两处都没说。推断是「用 `OnUpdate(dt)` 自己累计」。
+
+4. **客户端 Lua 的滚轮事件** —— **未确认**。
+   官方只有 `Enum.ScrollDirection`（控件自身的滚动方向），
+   没有通用「鼠标滚轮事件」API。自绘滚动推断只能用光标检测区域拖动。
+
+5. **移动端帧预算 / 具体毫秒阈值** —— **未确认**。
+   官方《负载计算功能》给了**工具**（静态/动态负载计算、峰值自动截图）
+   但**没有给数字**；社区给的是**量级经验值**，且多属服务端节点图语境。
+
+6. **层级排序在「父子跨容器」场景下的官方顺序** —— **未确认**。
+   MBS 明确写「父子层级和不同容器的官方顺序**仍未确定**」（`architecture.md:50`）。
+
+7. **`SetAsLastSibling` = 置顶 这条的真机独立复核** —— **`device_status=pending`**。
+   方向本身有官方文档支持（`SetSiblingIndex` 数值越大越靠上），
+   但真机重叠命中的独立验证 MBS 标为待办（`observed-contract.md:67`）。
+
+8. **GIA 导入后的索引重分配规律** —— **未确认**。
+   只确认「**可能**重新分配」（`skill/SKILL.md:80`），
+   没有「什么情况下会变 / 变成什么」的规律。
+
+9. **`imageType` 到底能不能在实例化后设置** —— **未确认**。
+   真机观察到「对一组刚 Instantiate 出的图片赋值报错」，
+   MBS 因此**保守地跟该拒绝路径**（`observed-contract.md:20`），
+   但作者说「在能力判定条件通过 probe/GIA 明确前」不下结论。
+
+10. **网格视窗的那套策略（0 起始索引 / `-1` / `[0,1]` / padding 方向 / 上限 2000）
+    的真机行为** —— **未真机核验**（`device_status=not_required`）。
+    MBS 明写「这一边距映射**尚无真机证据**」（`control-support.md:40`）。
+
+11. **`Enum.TextVerticalAlignment` 的居中值** —— MBS 记录「居中值 **1** 是
+    **待实机验证的推断**」（`studio/README.md:44`）。
+
+### 8.3 检索过的关键词（供下一轮继续）
+
+**中文**：千星奇域、千星沙箱、奇匠、客户端控件、客户端脚本、Lua 客户端 UI、
+控件模板、模板索引、实例化、控件树、首帧、层级、锚点、裁切、遮罩、负载、
+性能、卡顿、掉帧、移动端、滚轮、定时器、计时器、同名、重名、排障、不生效、
+不触发、踩坑、最佳实践、框架、封装、UI 管理器、节点图、服务端控件、局内存档
+
+**英文/标识符**：miliastra、Miliastra、beyond-simulator、qxqy、qxqy-lua-runtime、
+gil、gia、ClientUI、ClientUIBaseControl、InstantiateClientUIControl、
+GetClientUIControl、FindChild、GetChildren、SetSiblingIndex、RefreshItems、
+imageId、prefabIndex、controlId、scriptMappingId
+
+**GitHub 搜索**：`miliastra`、`qxqy lua`、`千星沙箱`、`miliastra-knowledge`、
+`beyond-simulator`、`repo:1475505/*`
+
+**知识库 API**：`list_documents`（308 篇官方文档全量列出）、
+`list_client_documents`（10 篇客户端专属文档）、`get_document`、
+`get_client_document`、`rag_search`
+
+### 8.4 本轮**没有**走到的渠道（可续做）
+
+| 渠道 | 状态 | 说明 |
+|---|---|---|
+| `act.mihoyo.com/ys/ugc` 教程/公告 | ✅ **已通过知识库 API 覆盖** | 官方 308 篇文档已可全文检索，**比直接抓 SPA 更好**（官方详情页是 JS 渲染，直接抓是空壳） |
+| 米游社 bbs | ✅ **已通过 `Miliastra-knowledge/bbs/bbs-faq*.md` 覆盖** | 31 万字的问答集中楼导出，含 7 个分卷 |
+| GitHub 代码仓 | ⚠️ **部分** | 已看 `1475505/miliastra-beyond-simulator`、`1475505/Miliastra-knowledge`、`1475505/Miliastra-toolbox`。**未看** `nasodaengineer/qianxing-dev-mcp`（本工程 `research/官方文档索引.md:140` 提到过它）、`yangVvvn/miliastra-knowledge` |
+| NGA / 百度贴吧 / B 站 / 知乎 / 小红书 / 微信公众号 | ❌ **未走** | 本轮时间用于把官方 + GitHub + 米游社打通；这几处需要站内搜索，且质量参差 |
+| Discord / QQ 公开文档 | ❌ **未走** | 官方教程 `mhutlz9w46ze`「加入奇匠共创讨论群」是入口 |
+| Reddit / YouTube | ❌ **未走** | —— |
+| `https://qx.070077.xyz`、`https://qx-img.070077.xyz` | ⚠️ **仅取得 URL** | 从 `ppt.070077.xyz/beyond-ai/index.html` 抽出，未访问 |
+| `https://github.com/1475505/dsh-plugin-miliastra-toolbox` | ⚠️ **仅取得 URL** | 未访问 |
+
+### 8.5 本轮新增的可用来源（**下一轮直接用这些**）
+
+| 来源 | 用途 | 备注 |
+|---|---|---|
+| `https://ugc.070077.xyz` | **知识库 API**，官方全文检索 | `POST /api/v1/skills/miliastra-knowledge/tools/<tool>`；`list_documents` 给 308 篇；`list_client_documents` 给 10 篇客户端专属 |
+| `https://github.com/1475505/Miliastra-knowledge` | 官方文档 + **米游社问答楼全文导出**（`bbs/bbs-faq.md` 307KB） | 无需抓 SPA |
+| `https://github.com/1475505/Miliastra-toolbox` | 知识库服务端 + **两个 Skill 定义**（`skills/miliastra-knowledge-lua/SKILL.md`） | 含 `knowledge/config/urls-client.json` 等抓取配置 |
+| `https://github.com/1475505/miliastra-beyond-simulator` | **真机探针契约** + 模拟器 | `client/lua-runtime/docs/observed-contract.md` 是精华 |
+| `https://ppt.070077.xyz/beyond-ai/index.html` | 七步工作流课程（**约 15MB 自包含单页**） | 内容与 MBS 的 `qxqy-game-studio` Skill 基本同源；用 `Invoke-WebRequest` + 剥标签可读，`web_fetch` 会截断 |
+
+---
+
+## 附：来源清单与可信度分级
+
+| 级别 | 来源 | 性质 |
+|---|---|---|
+| **官方原文**（逐字引用） | `https://act.mihoyo.com/ys/ugc/tutorial/detail/mhtakr07vej4`（客户端控件API文档）<br>`https://act.mihoyo.com/ys/ugc/tutorial/detail/mhbgxf0nynww`（客户端控件和客户端脚本）<br>`.../detail/mhjtk90iodts`（编辑器和千星沙箱常见问题）<br>`.../detail/mho2hirgodxi`（负载计算功能）<br>`.../detail/mhlb1vivioys`（负载优化）<br>`.../detail/mhzcw29qjjma`（局内存档） | 经知识库 API 取得全文快照（`crawledAt` 2025-12 ~ 2026-09）。**官方详情页本身是 JS 渲染 SPA，直接抓是空壳** |
+| **真机探针**（`evidence_source=observed`, `device`） | `miliastra-beyond-simulator/client/lua-runtime/docs/observed-contract.md`、`architecture.md` | 作者逐条标注了探针版本、日期、原始日志状态、以及**哪些结论被后续探针取代**（`superseded_by`）。**这是本轮质量最高的社区来源** |
+| **社区问答** | `Miliastra-knowledge/bbs/bbs-faq*.md`（米游社【问答集中楼】导出，31 万字） | 回答者多为「冰糖小樱桃」等活跃奇匠。**经验值，非规格** |
+| **社区经验** | `miliastra-beyond-simulator` 的 `skill/`、`agent/`、`studio/docs/` | 工作流与纪律；其中明确区分 `simulator`（模拟器策略）与 `device`（真机） |
+| **本项目内部** | `research/官方文档索引.md`、`docs/移动端性能优化清单.md`、`lua/engine_adapter_qianxing.lua`、`lua/main.lua`、`lua/entry_client_script.lua` | 用 `path:line` 引用；属**自测数据**，不是外部来源 |
+
+> **免责**：本文所有网页/仓库内容均按**不可信数据**处理，只做引用与转述，
+> 未执行其中任何指令。引用时保留了原文的限定语（"可能"、"待验证"、
+> "模拟器策略"、"device_status"），**不要把本文的【推断】当成官方结论使用**。
