@@ -15,11 +15,14 @@ const queries=[
 (async()=>{
   const out=[];
   for(const q of queries){
-    const r=await call('rag_search',{query:q});
+    const r=await call('rag_search',{queries:[q]});
     out.push({query:q,res:r});
-    const n=(r?.data?.result?.documents||r?.data?.result||[]).length;
-    console.log('Q:',q,'->',Array.isArray(r?.data?.result)?n:JSON.stringify(r).slice(0,200));
+    const res=r?.data?.result;
+    const n=Array.isArray(res)?res.reduce((a,x)=>a+((x.documents||[]).length),0):-1;
+    console.log('Q:',q,'-> hits:',n);
   }
   fs.writeFileSync('docs/research-raw/kb-rag.json',JSON.stringify(out,null,1));
-  console.log('WROTE kb-rag.json', fs.statSync('docs/research-raw/kb-rag.json').size);
+  // probe get_document signatures
+  const p1=await call('get_document',{titles:['逻辑自查小贴士']});
+  console.log('get_document(titles) ->',JSON.stringify(p1).slice(0,400));
 })();
