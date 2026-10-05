@@ -1754,6 +1754,12 @@ function Controller:build_layout()
   end
 
   push({ id = "clues", kind = "container", parent = "left", rect = rect_of(L.clues), style = "panel" })
+  -- ★★★★★ 2026-10-05 **线索区大底板（`clues.bg`）** —— 用户在编辑器里摆的那张图，
+  --   但它的名字不在规划里 ⇒ 脚本从没点亮它 ⇒ 真机日志（11:31）里它一直 `可见=false` ✗
+  --   ⇒ 补一条规划节点（`kind = "container"`：只摆位置/显隐，**不设图不设色**，图与色归编辑器）。
+  --   尺寸与容器同尺寸（画布 400×544）、挂在 `clues` 下、坐标相对父级 ⇒ (0,0) ✓
+  push({ id = "clues.bg", kind = "container", parent = "clues",
+         rect = { x = 0, y = 0, w = L.clues.w, h = L.clues.h } })
   local shown = math.min(#vm.clues, L.clue_max_visible)
   local rows = L.clue_rows or 9
   -- ★ 滚动位置：0 表示从第 1 条开始。**所有 `shown` 条控件都照旧建出来**
