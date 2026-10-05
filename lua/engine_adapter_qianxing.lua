@@ -4332,7 +4332,7 @@ end
 -- 输入：只绑 CursorClick（双击由上层判定）
 ----------------------------------------------------------------------------
 
-function Adapter:_fire(event, phase, data)
+function Adapter:_fire(event, phase, data, src_id)
   -- ★★★★★ 2026-10-05 **收到光标事件 ⇒ 兜底隐藏重跑一次。**
   --
   --   为什么把"点击"也算成"树可能变了"：预设按钮的**状态节点**会引用子控件当外显样式
@@ -4349,6 +4349,29 @@ function Adapter:_fire(event, phase, data)
   if data and data.GetUIPos then
     local ok, x, y = pcall(function() return data:GetUIPos() end)
     if ok then evt.x, evt.y = x, y end
+  end
+  -- ★★★★★ 2026-10-05 **补格子坐标 `r` / `c`** —— 修「点了格子没反应」✗
+  --
+  --   根因（实测锁定 ✓）：界面层收事件的入口是
+  --     · `ui_controller.lua:818-823`  `elseif a == "click" then self:on_cell_click(event.r, event.c)`
+  --     · `ui_controller.lua:562-565`  `function Controller:on_cell_click(r, c) … core.grid[r][c]`
+  --   ⇒ **界面层认格子靠的是 `event.r` / `event.c`，不是 x/y** ✗
+  --   而 `_fire` 原来只做三件事：复制 `event` ✓ · 补 `phase` ✓ · 补 `x`/`y` ✓
+  --   ⇒ ★ **从不补 `r`/`c`** ✗ ✓ 计划里也没有（`layout-plan.json` 实测 `"r"` / `"c"` 各 **0** 次 ✓）
+  --   ⇒ 于是 `on_cell_click(nil, nil)` ⇒ `core.grid[nil]` ⇒
+  --     **既不记笔记、也不放置、步数不动** ✗（模拟器实测：`8/13` 的 #2–#8 #13 + `13/13` 唯一红 ✓）
+  --
+  --   ★ 为什么在这里补：**`bind_input(id, node)` 本来就知道 `id`** ✓（L4405 ✓）
+  --     而格子控件的命名就是 `cell.<行>.<列>` ✓ ⇒ 从 `id` 里解析出来 ✓
+  --   ⚠️ **必须是数字** ✗ —— `core.grid[r][c]` 用字符串下标会拿到 nil ✗ ⇒ 用 `tonumber` ✓
+  --   ⚠️ **不覆盖已有的 `r`/`c`** ✗ —— 若 `event` 自己带了（或将来引擎直接给 ✓）就以它为准 ✓
+  --   ⚠️ **只认 `cell.<数字>.<数字>`** ✓ —— 其它控件（按钮/热区/线索卡 ✓）一律不碰 ✓
+  if src_id ~= nil and evt.r == nil then
+    local R, C = tostring(src_id):match("^cell%.(%d+)%.(%d+)$")
+    if R ~= nil then
+      evt.r = tonumber(R)
+      evt.c = tonumber(C)
+    end
   end
   self.on_input(evt)
 end
@@ -4504,7 +4527,9 @@ function Adapter:bind_input(id, node)
         print("[murdoku] （点击日志到此为止，后面不再刷；cfg.debug_click = false 可关）")
       end
     end
-    self:_fire(live_event(), "click", data)
+    -- ★ 2026-10-05 **把控件 id 传下去** ✓ —— 格子点击要靠它解析出 `r`/`c`（见 `_fire` 里那段）✓
+    --   `id` 是 `bind_input(id, node)` 的形参 ✓ 就在本闭包作用域里 ✓ 不需要额外查表 ✓
+    self:_fire(live_event(), "click", data, id)
   end)
 
   -- 按下 / 抬起：界面层据此自己合成"长按"
