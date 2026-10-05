@@ -1770,7 +1770,19 @@ function Controller:build_layout()
   --   而规划里写的是 `parent = "left"` ✗ ⇒ 偏移按"真实父级(root)"解释、
   --   却拿一个**不存在的父级中心**去算 ⇒ 整块位置错掉 ✓
   --   （与之前 `hex.*` 那个 bug 完全同一个形状：**规划父级必须等于真实父级**。）
-  push({ id = "clues", kind = "container", parent = "root", rect = rect_of(L.clues), style = "panel" })
+  -- ★★★★★ 2026-10-05 **`pos_runtime = false` = 整块线索区退出"脚本接管几何"** ——
+  --   用户原话："这个区域的位置大小都是原本摆好的，也不需要每关放缩，
+  --   脚本只需要管可见性和交互就行了，其它的干涉都是只会增加错误的操作。"
+  --
+  --   机制（看 `inherit_pos_runtime`）：`pos_runtime` 会**沿子树向下继承**
+  --     `if nodes[i].pos_runtime then pr[id]=true end`
+  --     `if (not n.pos_runtime) and pr[n.parent] then n.pos_runtime = true end`
+  --   ⇒ 显式写 `false` 时 `not n.pos_runtime` 为假 ⇒ **该节点不继承** ⇒
+  --     它自己 + 它下面所有没显式标 `true` 的子控件（clues.bg / bar / track / knob /
+  --     clue.N 及全部子控件）**统统退出脚本接管** ✓
+  --   ⇒ 于是脚本对这块**只做两件事：显隐 + 交互**（正是用户要的），一个坐标都不碰 ✓
+  push({ id = "clues", kind = "container", parent = "root", rect = rect_of(L.clues),
+         style = "panel", pos_runtime = false })
   -- ★★★★★ 2026-10-05 **线索区大底板（`clues.bg`）** —— 用户在编辑器里摆的那张图，
   --   但它的名字不在规划里 ⇒ 脚本从没点亮它 ⇒ 真机日志（11:31）里它一直 `可见=false` ✗
   --   ⇒ 补一条规划节点（`kind = "container"`：只摆位置/显隐，**不设图不设色**，图与色归编辑器）。
