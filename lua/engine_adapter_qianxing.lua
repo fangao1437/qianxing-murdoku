@@ -1373,6 +1373,37 @@ function Adapter:diagnose_grid(rows, cols)
     end
   end
 
+  -- ★★★★★ 2026-10-05 **线索区体检：引擎侧读回 `visible` + `active`** ✗✓
+  --
+  --   为什么必须加这一条（用户真机日志把脚本侧的证据全排除了 ✓）：
+  --     · 可见性判定【判对了】✓（`clues.bg` 被算成"该显示" ✓ 切屏对比名单里有它 ✓）
+  --     · 写入【送达了】✓（日志里没有 `prop_giveup:clues.bg.visible` 那句 ✓）
+  --     · `SetActive(true)` 也【已经补了】✓（`set_property` 的 `value == true` 分支 ✓）
+  --   ⇒ ★★ 脚本侧四条全绿 ✗ 而用户截图里【线索区底板就是没画出来】✗
+  --     ⇒ ★ 所以缺的正是【引擎侧到底读到什么】✗ ——
+  --       而日志里从来没打过关卡内 `clues.bg` 的读数 ✗（排行榜那节是 `screen=select` 时 ✓
+  --       `visible=false` 是对的 ✓ 证明不了关卡内 ✓）
+  --
+  --   ★ 判据（下一条真机日志就能定性 ✓）：
+  --     · `clues.bg vis=false` ✗ ⇒ 脚本侧还有【第三条藏它的路】✓（继续查 ✓）
+  --     · `vis=true active=true` ✓ 而屏幕没有 ✗ ⇒ 是【渲染/素材】层 ✓（换方向 ✓）
+  --     · `vis=true active=false` ✗ ⇒ 就是社区那句「手写树漏写 active」✓
+  --   ⚠️ 只读不改 ✗（纯诊断 ✓ 一行布局都不动 ✓ 符合用户「脚本只管可见性和交互」的约束 ✓）
+  do
+    local function rd(nm)
+      local c = self:find(nm)
+      if c == nil then return nm .. "=**找不到**" end
+      local v, a = "?", "?"
+      pcall(function() v = tostring(c.visible) end)
+      pcall(function() a = tostring(c.active) end)
+      return nm .. "(vis=" .. v .. " active=" .. a .. ")"
+    end
+    print_("[murdoku] 线索区体检（引擎侧读回）："
+      .. rd("clues") .. "  " .. rd("clues.bg") .. "  " .. rd("clues.grid") .. "  " .. rd("stage"))
+    print_("[murdoku]   ★ 判读：bg 的 vis=false ⇒ 还有第三条藏它的路；vis=true+active=false ⇒ 漏补 SetActive；"
+      .. "两个都 true 而屏幕上没有 ⇒ 是渲染/素材层")
+  end
+
   print_("[murdoku] ===== 逐格自检结束 =====")
 end
 
