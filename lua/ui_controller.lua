@@ -1909,23 +1909,23 @@ function Controller:build_layout()
     if who ~= nil then
       -- 头像（左边）：复用 `portrait.*` 调色板，**不引入新素材**
       -- （子控件的 y 也跟着卡片走 ⇒ 同样要 `pos_runtime`，理由见上面那段的注释）
-      push({ id = "clue." .. i .. ".face", kind = "button", parent = "clues",
-             rect = { x = L.clues.x + PAD, y = y + math.floor((h - FACE) / 2), w = FACE, h = FACE },
+      push({ id = "clue." .. i .. ".face", kind = "button", parent = "clue." .. i,
+             rect = { x = PAD, y = math.floor((h - FACE) / 2), w = FACE, h = FACE },
              image = wportrait, style = "portrait", visible = inWin, pos_runtime = true })
       -- 名字（红）：正文第一列
-      push({ id = "clue." .. i .. ".who", kind = "text", parent = "clues",
-             rect = { x = tx, y = y + 4, w = WHO_W, h = h - 8 },
+      push({ id = "clue." .. i .. ".who", kind = "text", parent = "clue." .. i,
+             rect = { x = tx - (L.clues.x + CLUE_PAD), y = 4, w = WHO_W, h = h - 8 },
              text = tostring(pre or "") .. who, style = "clue.who", visible = inWin,
              pos_runtime = true })
       -- 内容：从固定 x 起（不测量宽度也能对齐）
-      push({ id = "clue." .. i .. ".what", kind = "text", parent = "clues",
-             rect = { x = tx + WHO_W, y = y + 4, w = math.max(40, tw - WHO_W), h = h - 8 },
+      push({ id = "clue." .. i .. ".what", kind = "text", parent = "clue." .. i,
+             rect = { x = tx + WHO_W - (L.clues.x + CLUE_PAD), y = 4, w = math.max(40, tw - WHO_W), h = h - 8 },
              text = tostring(post or ""), style = "clue.what", visible = inWin,
              pos_runtime = true })
       -- 字母徽章（右边）：就是嫌疑人的字母 id（A/B/C/D/V），参考图那样
       if wid ~= nil and wid ~= "" then
-        push({ id = "clue." .. i .. ".badge", kind = "text", parent = "clues",
-               rect = { x = L.clues.x + L.clues.w - 16 - BADGE_W - PAD, y = y + 4, w = BADGE_W, h = h - 8 },
+        push({ id = "clue." .. i .. ".badge", kind = "text", parent = "clue." .. i,
+               rect = { x = L.clues.w - 16 - BADGE_W - PAD, y = 4, w = BADGE_W, h = h - 8 },
                text = wid, style = "clue.who", visible = inWin, pos_runtime = true })
       end
     end
