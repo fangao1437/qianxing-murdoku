@@ -2547,6 +2547,17 @@ end
     --   这里必须用**同一个条件**再打开一次 ⇒ 底下的"按钮底图上色（运行时）"才仍然受 `cfg.btn_art` 控制 ✓
     --   而上面那两个方法**回到了顶层** ⇒ `main.lua` 的 `~= nil` 守卫终于会成立 ✓
     if self.cfg.btn_art == true and print then
+    -- ★ 2026-10-05 Round 44 修：这三个变量**必须在使用它们的块里声明** ✗
+    --   症状（由 selene 静态检查抓出，`tools/lua-tooling/selene.toml`）：
+    --     · 上面 L2383-2384 那对 `local names` / `local done, miss` 被报
+    --       `unused_variable: assigned a value, but never used` ✗ ⇒ 它们在**别的块**里，够不到这里；
+    --     · 而**这里**（上色循环 L2551 的 `#names`、L2581 的 `done, miss`）被报
+    --       `error[undefined_variable]: names / done / miss is not defined` ✗✗
+    --   ⇒ 后果：一旦 `cfg.btn_art = true`，这一段会**当场崩**（读全局 nil ⇒ `#nil` 抛错）✗。
+    --     该路径默认关闭 ⇒ 离线测试测不到 ✗ —— 所以这属于"埋伏着的坑" ✓
+    --   ⇒ 修法：在使用处声明 ✓（上面那对留着无害，只是冗余 ✓；等嵌套搬移时一并清理 ✓）
+    local names = self.cfg.btn_list or {}
+    local done, miss = 0, 0
     print("[murdoku] --- 按钮底图上色（运行时）---")
     for i = 1, #names do
       local cid = names[i]
