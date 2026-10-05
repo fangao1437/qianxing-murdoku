@@ -1404,6 +1404,42 @@ function Adapter:diagnose_grid(rows, cols)
       .. "两个都 true 而屏幕上没有 ⇒ 是渲染/素材层")
   end
 
+  -- ★★★★★ 2026-10-05 **墙/门体检：读回每个 `wall.*` / `door.*` 的真实状态** ✗✓
+  --
+  --   为什么必须加这一条（**推理已经绕了两圈 ✗ 只能让机器回答** ✓）：
+  --     · `exists` 已确认是 `find(id) ~= nil` ✓ ⇒ `cell.*` 存在 ⇒ ★ 2.5 秒补发窗口生效 ✓
+  --     · `_apply_edges` 会 `pcall(sub:SetVisible(want))` ✓ 且失败会返回 false ⇒ 走补发 ✓
+  --     · "置底"是 `SetAsFirstSibling()` ✗ ⇒ 实测 `face`=0 ✓ `wall.up`=1 ✓
+  --       ⇒ ★ 按"索引大的画在上面"，墙【该】在脸上面 ⇒ **解释不了"墙看不见"** ✗
+  --   ⇒ ★ 所以缺的是【引擎侧到底读到什么】✗ —— 和线索区那次一样 ✓
+  --
+  --   ★ 判据（下一条真机日志直接定案 ✓）：
+  --     · `vis=false` ✗ ⇒ `SetVisible` 没生效 ⇒ 句柄/引擎问题 ✓
+  --     · `vis=true` 而屏幕上没有 ✗ ⇒ ★ 层序（`face` 压住）或素材/尺寸 ✓
+  --       ⇒ 那时就看同一行里的 `sib`（兄弟索引）与 `scale`（缩放）✓
+  --     · `scale≈0` ✗ ⇒ ★ 边缘适配把它缩没了 ✓（`localScaleX/Y` 那条路 ✓）
+  do
+    local function rd_sub(cellid, nm)
+      local c = self:find(cellid)
+      if c == nil then return nm .. "=**无此格**" end
+      local s = self:sub(cellid, nm)
+      if s == nil then return nm .. "=**找不到**" end
+      local v, sib, sx = "?", "?", "?"
+      pcall(function() v = tostring(s.visible) end)
+      pcall(function() sib = tostring(s:GetSiblingIndex()) end)
+      pcall(function() sx = string.format("%.2f", tonumber(s.localScaleX) or 0) end)
+      return nm .. "(vis=" .. v .. " sib=" .. sib .. " sx=" .. sx .. ")"
+    end
+    local line = {}
+    for _, nm in ipairs({ "face", "wall.up", "wall.down", "wall.left", "wall.right",
+                          "door.up", "door.down", "door.left", "door.right" }) do
+      line[#line + 1] = rd_sub("cell.2.2", nm)
+    end
+    print_("[murdoku] 墙/门体检（引擎侧读回 · cell.2.2）：" .. table.concat(line, "  "))
+    print_("[murdoku]   ★ 判读：vis=false ⇒ SetVisible 没生效；vis=true 但没有 ⇒ 层序(face 压住)或素材；"
+      .. "scale≈0 ⇒ 边缘适配缩没了")
+  end
+
   print_("[murdoku] ===== 逐格自检结束 =====")
 end
 
