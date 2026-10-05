@@ -178,6 +178,19 @@ function Murdoku.start(level_id, opts)
     skip_intro = opts.skip_intro,
     levels = level_list,
     screen = want_screen,
+    -- ★★★★★ 2026-10-05 **"格子要不要推 text"这一个开关**（每帧成本第 (4) 条）。
+    --
+    --   默认 **false = 不推**：真机日志原话「没有配的：**text** obj」——
+    --   格子上根本没有文字子控件 ⇒ 每次写都必然失败 ⇒ 每关白跑 25 次 `find` +
+    --   75 次 `set_property`，还把「属性补发…已停止补发」的前 5 条日志占满。
+    --   （证据与取舍写在 `ui_controller.layout_plan` 里那条 `text = …` 上面。）
+    --
+    --   ⚠️ 留这个口的唯一目的：**将来给格子配了文字子控件时不用改代码** ——
+    --      在 `entry_client_script.lua` 的 `cfg.cells` 里加一行 `push_text = true` 即可。
+    --      取配置的规矩和别处一样：`cfg.cells.<名字>`（引擎适配层会把 `cfg.cells`
+    --      里的调试开关上提到顶层，这里也照 `cfg.cells` 优先读）。
+    push_cell_text = (adapter.cfg and adapter.cfg.cells
+      and adapter.cfg.cells.push_text == true) or false,
     -- ★★★ 2026-09-30：**选关卡片要看的两样东西**（之前漏了，卡片永远显示"未开始"）
     --   · progress(id) —— 这一关打过没有 / 破了没有
     --   · last_level() —— 「从存档点开始」要接续的那一关
@@ -663,7 +676,19 @@ function Murdoku.on_update(dt)
   --   项目自己的清单写着：「关掉就点不动」「**界面看得见，但点哪儿都没反应**」。
   --   而 `clickAudioId` 就是点击音效 ⇒ "处处有音效但什么也没发生" = 点到了按钮、但它 `raycastTarget=false`。
   --   我之前只对容器试过这个字段（容器没有它）⇒ 误判成"引擎里不存在"⇒ 从没对按钮读过写过。
-  if current.adapter.enable_raycast and ((current.frames or 0) % 20 == 0) then
+  -- ★★★★★ 2026-10-05 **收敛/放弃之后连调用都不再发**（这一轮每帧成本第 (3) 条的最后一步）。
+  --
+  --   适配层 `enable_raycast` 自己也会在 `_ray.done` 时立刻返回（**一次树都不走**）；
+  --   这里再挡一道，是为了连"函数调用 + 三次返回值"都不产生。
+  --   每 20 帧一次本身不算什么，但这一轮的规矩是"没必要就不做"
+  --   （用户原话：「没必要留着不必要的负载浪费，我们后面本来也还需要整体优化」）。
+  --
+  --   ⚠️ 判据只在适配层一处定义（`Adapter:enable_raycast` 上面那段大注释：
+  --      ① 收敛即停 ② 每代硬上限 25 趟 ③ 换屏/换关由 `Adapter:rearm_raycast` 重新武装）
+  --      —— 这里只读它的结论，**不复制规则**，免得两处各改一半。
+  local ray_st = current.adapter._ray
+  if current.adapter.enable_raycast and ((current.frames or 0) % 20 == 0)
+     and not (ray_st ~= nil and ray_st.done) then
     local seen, set, samples = current.adapter:enable_raycast()
     local key = tostring(seen) .. "/" .. tostring(set)
     if key ~= Murdoku._ray_key and print then

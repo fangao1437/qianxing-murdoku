@@ -2303,7 +2303,34 @@ function Controller:build_layout()
         parent = "board",
         rect = { x = gx + (c - 1) * (cell + gap), y = gy + (r - 1) * (cell + gap), w = cell, h = cell },
         style = style,
-        text = cd.name or "",
+        -- ★★★★★ 2026-10-05 **格子不再推 `text`**（这一轮每帧成本第 (4) 条）。
+        --
+        --   真机证据（用户日志里「格子里的子控件清单」那句，**原话**）：
+        --       cell.1.1 … 没有配的：**text** obj
+        --   —— 格子上**根本没有文字子控件**（`obj` 也没有；`obj` 那一条已经由适配层
+        --      按"没有物件就藏起来"处理掉了，是另一件事）。
+        --
+        --   而适配层 `set_property(id, "text", …)` 的三条路
+        --   （① `label` 子控件 ② 控件自己就是文字控件 ③ 老的 `text` 子控件）
+        --   **在格子上一条都走不通** ⇒ 必然 `return false`
+        --   ⇒ `render` 把它当"这次没送到" ⇒ 按补发额度 `PROP_RETRY`(=3) 重试
+        --   ⇒ **每关开头白跑 25 次 `find` + 75 次 `set_property`**
+        --      （`tests/grid_cost.lua` 口径 [I] 实测：75 次失败写入 / 25 个格子 × 3 次），
+        --      并且把「属性补发…已停止补发」的**前 5 条日志位置全部占掉** ——
+        --      真正需要看的那几条（哪些控件本关没建）就此被挤出去。
+        --
+        --   ⇒ 不再推。格子上要显示的东西本来就靠 `image`（头像）/ `face` / `note` / `x`
+        --     四样；**人名走的是线索卡**，从来没有靠过格子文字。
+        --
+        --   ⚠️ **将来若真的给格子配了文字子控件**：在 `entry_client_script.lua` 的
+        --      `cfg.cells` 里加一行 `push_text = true` 即可恢复（`main.lua` 会把它转成
+        --      `opts.push_cell_text`）—— **不用改代码**。
+        --   ⚠️ **不要**改成"让适配层把这种情况判成 definitive miss、不再重发"：
+        --      「`label` 子控件晚一步才进树」是真实存在的（见 `main.lua` 门控②那段
+        --      以及适配层 `set_property` 的 text 分支注释），首帧"三条路都不通"与
+        --      "这个控件永远没有文字"在**适配层看来长得一模一样** ⇒ 在那边一刀切
+        --      会把已经修好的"第一次进关按钮没字"又放回来。
+        text = (self.opts.push_cell_text == true and (cd.name or "")) or nil,
         -- ⚠️ 这里**只能传图片 ID（整数）**，不能传名字。
         --
         -- 真机 16:07 日志报过：`SetImage 失败：bad argument #3 to 'SetImage'
@@ -3651,6 +3678,22 @@ function Controller:render(adapter, force)
       if adapter ~= nil and adapter.invalidate_lookups ~= nil then
         pcall(function()
           adapter:invalidate_lookups("screen=" .. tostring(self.screen)
+            .. " level=" .. tostring(lv_id))
+        end)
+      end
+      -- ★★★★★ 2026-10-05 **换屏 / 换关也要"重新武装"射线开关那一趟**（每帧成本第 (3) 条）。
+      --
+      --   为什么必须在这里、而且**只在这里**：
+      --     · 换屏/换关是**长出新控件**的权威事件（`home` / `select` 是第一次渲染时才
+      --       `create_control` 的）——早停之后不重新武装，新屏幕的控件就**永远开不上
+      --       `raycastTarget`** ⇒ 又回到"界面看得见、点哪儿都没反应"。
+      --     · ⚠️ **不能**挂进 `invalidate_lookups`：那个函数还被 `create_control` /
+      --       `destroy_control` **每个控件各调一次**（进关时几十次）⇒ 挂那儿等于
+      --       "每建一个控件就重扫一趟整树"，白跑比改之前还多。
+      --       所以复用的是**同一个判据块**（screen/level 换代），不是同一个函数。
+      if adapter ~= nil and adapter.rearm_raycast ~= nil then
+        pcall(function()
+          adapter:rearm_raycast("screen=" .. tostring(self.screen)
             .. " level=" .. tostring(lv_id))
         end)
       end

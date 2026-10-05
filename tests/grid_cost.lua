@@ -98,9 +98,18 @@ local C = {
   setprop_names = {}, -- set_property 的**按 id**直方图（同上，看它到底重发了几笔）
   fail_keys = {},   -- 失败直方图：`<id>.<键>` → 次数
 }
+
+-- ★ 2026-10-05 追加：`enable_raycast` 那一趟的**独立账**。
+--   为什么必须单独记：它和 `find` / `enforce_hidden_subtrees` 混在同一个总数里，
+--   就分不出"这 61 次 GetChildren/帧"到底是谁花的 —— 而这一轮要修的第 (3) 条正是它。
+--   它在 `Murdoku.on_update` 里**每 20 帧**无条件跑一次（`main.lua` L666），
+--   每次从 `root` 起整棵树 `walk`（深度上限 6、每层最多 200 个子控件）。
+local RAY = { active = false, calls = 0, children = 0, find = 0, seen = 0, set = 0 }
 local function reset() for k, v in pairs(C) do
   if type(v) == "number" then C[k] = 0 elseif type(v) == "table" then C[k] = {} end
-end end
+end
+  RAY.calls, RAY.children, RAY.find, RAY.seen, RAY.set = 0, 0, 0, 0, 0
+end
 
 -- ── 假控件 ────────────────────────────────────────────────────────────────
 local GRID_SUBTREE = nil          -- 建好树之后指向 clues.grid（用来分辨"谁被 SetVisible"）
@@ -123,7 +132,11 @@ end
 
 local function make_ctrl(name)
   local c = { name = name, kind = "container", visible = true, active = true, __kids = {} }
-  c.GetChildren = function() C.getchildren = C.getchildren + 1 return c.__kids end
+  c.GetChildren = function()
+    C.getchildren = C.getchildren + 1
+    if RAY.active then RAY.children = RAY.children + 1 end
+    return c.__kids
+  end
   c.GetChild = function(_, key)
     if type(key) == "number" then return c.__kids[key + 1] end
     for _, k in ipairs(c.__kids) do if k.name == key then return k end end
@@ -183,6 +196,7 @@ end
 local function make_item()
   local it = make_ctrl("clue")
   it.kind = "button"
+  it.raycastTarget = false        -- ★ 列表项是从按钮模板克隆的 ⇒ 真机上也有这个字段
   for _, sfx in ipairs({ "who", "what", "letter", "backrop1", "backrop2", "face" }) do
     attach(it, make_text("clue.1." .. sfx))
   end
@@ -279,6 +293,28 @@ do
   GRID_SUBTREE = grid_ctrl
 end
 
+-- ★★★★★ 2026-10-05 追加：**让假树在 `raycastTarget` 这件事上像真机**。
+--
+--   为什么必须补这一步（否则第 (3) 条根本量不出来）：
+--     适配层 `enable_raycast` 的收敛判据是「`seen > 0` 且 `set == 0`」——
+--     `seen` = **树里带 `raycastTarget` 字段的控件个数**。
+--     而真机上**只有预设按钮**有这个字段（读容器拿到 nil，适配层那段注释里写着），
+--     原来的假树**一个都没有** ⇒ `seen` 恒为 0 ⇒ 收敛条件永远不成立
+--     ⇒ 只能靠硬上限兜底 ⇒ 改完之后那 300 帧**看起来一点没省**（实测就是 15 趟 / 7020 节点，
+--       和改之前一模一样）—— 那是**假树的形状**造成的假阴性，不是代码没生效。
+--   ⇒ 照真机补上：`kind == "button"` 的控件给一个 `raycastTarget = false`
+--     （容器仍然没有这个字段 —— 这一点也要和真机一致，不然 `enable_raycast` 的
+--       "只对支持这个字段的控件生效"就测不出来）。
+local function give_raycast(c, depth)
+  if c == nil or depth > 8 then return end
+  if c.raycastTarget == nil and c.kind == "button" then c.raycastTarget = false end
+  local kids = rawget(c, "__kids")
+  if type(kids) == "table" then
+    for i = 1, #kids do give_raycast(kids[i], depth + 1) end
+  end
+end
+give_raycast(tree[1], 0)
+
 _G.game = {
   GetUICanvasSize = function() return canvas.w, canvas.h end,
   GetClientUIRoots = function() return tree end,
@@ -286,6 +322,7 @@ _G.game = {
     local c = make_ctrl("(未命名)")
     c.kind = "button"
     c.prefabIndex = prefab
+    c.raycastTarget = false        -- ★ 运行时建的按钮也带这个字段（同 give_raycast 的理由）
     local content = make_ctrl("content")
     attach(content, make_ctrl("face"))
     attach(c, content)
@@ -346,6 +383,7 @@ do
   adapter.find = function(self, name)
     C.find = C.find + 1
     C.find_names[name] = (C.find_names[name] or 0) + 1
+    if RAY.active then RAY.find = RAY.find + 1 end
     local cached = self.controls[name]
     local r = of(self, name)
     if r == nil then
@@ -354,9 +392,24 @@ do
     elseif cached == nil then C.find_deep = C.find_deep + 1 end
     return r
   end
+  -- ★ 2026-10-05 追加：`enable_raycast` 的调用次数 / 它自己 walk 掉的节点数
+  --   （`RAY.active` 一开，假树里每一次 `GetChildren` / `find` 都记到它的账上）
+  if type(adapter.enable_raycast) == "function" then
+    local oray = adapter.enable_raycast
+    adapter.enable_raycast = function(self, ...)
+      RAY.active = true
+      RAY.calls = RAY.calls + 1
+      local a, b, c2 = oray(self, ...)
+      RAY.active = false
+      RAY.seen = RAY.seen + (tonumber(a) or 0)
+      RAY.set = RAY.set + (tonumber(b) or 0)
+      return a, b, c2
+    end
+  end
   local osp = adapter.set_property
   adapter.set_property = function(self, id, k, v)
     C.set_prop = C.set_prop + 1
+    C.setprop_names[id] = (C.setprop_names[id] or 0) + 1
     local r = osp(self, id, k, v)
     -- ★ 只认**明确的 false**（适配层的契约：false = 这次没送到）；老适配器不返回值 ⇒ 不算失败
     --   （同一个约定见 ui_controller 的 `_set_prop`）。
@@ -432,19 +485,16 @@ out(string.format("  [A1] 一次 render：find=%d（真搜树 %d / 搜空 %d）s
   C.find, C.find_deep, C.find_miss, C.set_prop, C.sub, C.view, C.getchildren,
   C.grid_refresh, C.cb))
 -- ★ 2026-10-05：把 `action.back` **单独拎出来报**（同一个 id 有两个规划节点的那个控件）。
---   `uic` 那两行是 `uic_controller.lua` 里 `action.back` 的**两个**节点：
+--   `ui_controller.lua` 里 `action.back` 有**两个**规划节点：
 --     一个挂 `topbar`（L1759）、一个挂 `right`（L2384）。
---   账本按节点记账**修好之前**：两个节点每帧互相覆盖 ⇒ 每个键都"变了" ⇒ 每帧重发
---     ⇒ 稳态**一次 render** 就要为它白跑 `find` 若干次 + `set_property` 若干次。
+--   账本按"计划节点"记账**修好之前**：两个节点共用一份"上一帧发过什么" ⇒ 互相覆盖
+--     ⇒ 每个键都"变了" ⇒ 每帧重发 ⇒ 稳态**一次 render** 就要为它白跑 `find` + `set_property`。
 out(string.format("      ★ action.back 单独账（稳态一次 render）：find=%d 次  set_property=%d 次",
-  finds_of("action.back"), (function()
-    local n = 0
-    for k, v in pairs(C.fail_keys) do if k:sub(1, 11) == "action.back" then n = n + v end end
-    return n
-  end)()))
+  finds_of("action.back"), C.setprop_names["action.back"] or 0))
 local A = { find = C.find, deep = C.find_deep, miss = C.find_miss, sp = C.set_prop,
             view = C.view, gc = C.getchildren, gr = C.grid_refresh, cb = C.cb,
-            back_find = finds_of("action.back"), fail = C.setprop_fail }
+            back_find = finds_of("action.back"), back_sp = C.setprop_names["action.back"] or 0,
+            fail = C.setprop_fail }
 
 -- ── 口径 B：一次**冷**RefreshItems（进关那一下，7 个可见列表项）────────────
 out("\n== B. 一次冷 RefreshItems（进关那一下：句柄/文案都还没缓存）==")
@@ -513,6 +563,13 @@ _G.Enum = nil
 
 -- ── 口径 E：真机帧循环的**平均账**（300 帧 dt=1/60）─────────────────────
 out("\n== E. 真机帧循环的平均账：300 帧 dt=1/60（网格视窗在跑）==")
+-- ★ 2026-10-05：先把射线开关那一趟**重置成"新一代"**，让这 300 帧从"刚进游戏/刚换完屏"
+--   开始量 —— 那正是真机上"每帧都在烧钱"的那一段，也是第 (3) 条要回答的问题。
+--   （不重置的话，前面 A/B/C/D 段早就把它扫收敛了 ⇒ 这 300 帧量到 0 趟，
+--     看着更漂亮，但**掩盖了收敛之前到底扫了几趟**，等于没量。）
+if cur ~= nil and cur.adapter ~= nil and cur.adapter.rearm_raycast ~= nil then
+  pcall(function() cur.adapter:rearm_raycast("grid_cost：口径 E 起点") end)
+end
 reset()
 local t0 = os.clock()
 pcall(function() for _ = 1, 300 do OnUpdate(1 / 60) end end)
@@ -526,9 +583,28 @@ do
   out("      ★ 每帧白跑的「搜空」名字（前 12 名，共 " .. tostring(kinds) .. " 种）：")
   out("        " .. line)
 end
+-- ★ 2026-10-05 追加：`action.back` 的 300 帧总账 + **失败写入**总账。
+--   为什么要单独报 action.back：它是"同一个 id 两个规划节点"的唯一实例，
+--     账本按节点记账这一条修没修，看这两个数最直接（改之前 ≈ 每帧 10 次搜空）。
+out(string.format("      ★ action.back 300 帧总账：find=%d 次（= %.1f/帧）  set_property=%d 次（= %.1f/帧）",
+  finds_of("action.back"), finds_of("action.back") / 300,
+  C.setprop_names["action.back"] or 0, (C.setprop_names["action.back"] or 0) / 300))
+out(string.format("      ★ 失败写入（set_property 返回 false）：%d 次 / 300 帧", C.setprop_fail))
+if C.setprop_fail > 0 then
+  local fl, fk = top_hist(C.fail_keys, 8)
+  out("        失败明细（前 8 名，共 " .. tostring(fk) .. " 种）：" .. fl)
+end
+-- ★ 2026-10-05 追加：`enable_raycast` 每 20 帧那趟整树 walk 的账（第 (3) 条要修的就是它）
+out(string.format("      ★ enable_raycast（每 20 帧一趟）：调用 %d 次  walk 掉 GetChildren %d 个节点"
+  .. "（= %.1f/帧）  顺带 find %d 次  回读 seen=%d set=%d",
+  RAY.calls, RAY.children, RAY.children / 300, RAY.find, RAY.seen, RAY.set))
 local E = { find = C.find, sp = C.set_prop, view = C.view, gc = C.getchildren,
             miss = C.find_miss, render = C.render,
-            text = C.text_write, cb = C.cb, cpu = (t1 - t0) * 1000 }
+            text = C.text_write, cb = C.cb, cpu = (t1 - t0) * 1000,
+            back_find = finds_of("action.back"), back_sp = C.setprop_names["action.back"] or 0,
+            fail = C.setprop_fail, fail_keys = C.fail_keys,
+            ray_calls = RAY.calls, ray_children = RAY.children, ray_find = RAY.find,
+            ray_seen = RAY.seen }
 
 -- ── 口径 F：`Core:view()` 本身多贵（它是**整视图重建**：所有格子 + 线索 + 结构报告）──
 out("\n== F. `core:view()` 单次成本（它每重建一次都要造上百个表）==")
@@ -627,6 +703,60 @@ do
   pcall(function() for _ = 1, 3 do OnUpdate(1 / 60) end end)
 end
 
+-- ── 口径 I：**冷进关那一下**（账本全空 + 关卡内）───────────────────────────
+--
+-- ★ 2026-10-05 新增。为什么单开一段（而不是拿 [E] 的数字说话）：
+--   [E] 那 300 帧是在"**这一关已经渲染过好几帧**"之后跑的 —— 该失败的属性早就
+--   走完了补发额度、认输并记了账（`last[k] = v`）⇒ 后面的帧**看不见它们**。
+--   也就是说：拿 [E] 去量"每关开头那 25 格 text 白跑"，量到的会是 **0**，
+--   而真机上它**每关都发生一次**（控制器按关重建 ⇒ `_props` / `_prop_retry` 全空）。
+--   ⇒ 这一段就是**忠实复现"新的一关第一帧"**：清空账本 + 补发额度 + 认输计数，
+--     然后走满补发窗口（`PROP_RETRY` = 3 次 render）。
+--   ⚠️ 只清"属性侧"的账（`_props` / `_prop_retry` / `_prop_giveup_n`），**不动 `_created`**：
+--      `create_control` 那一侧是另一件事（会真的实例化控件、污染假树），不在这条口径里。
+local I = { fail = 0, keys = {}, find = 0, sp = 0, renders = 3 }
+do
+  ctrl._props = {}
+  ctrl._prop_retry = {}
+  ctrl._prop_giveup_n = 0
+  ctrl._prop_err_seen = nil
+  ctrl.screen = nil
+  reset()
+  -- ⚠️ 每一帧都要显式置 dirty：`tick` 现在**不再无条件重绘**（第 (2) 条改造），
+  --    不置的话这 3 帧一次 render 都不会跑，量到的恒为 0 —— 那就成了"假绿"。
+  --    置 dirty 也正是真机开局那几帧的真实形状（切屏/建控件/数据到位都会置）。
+  pcall(function() for _ = 1, I.renders do ctrl.dirty = true; OnUpdate(1 / 60) end end)
+  I.fail, I.find, I.sp = C.setprop_fail, C.find, C.set_prop
+  I.keys = C.fail_keys
+  -- ★ 分类：`cell.<r>.<c>.text` 这一类是**真机的真问题**（模板没有 text 子控件，
+  --   设备日志原话「没有配的：text obj」）；其余（例如 `.walls`）是**假树的形状造成的** ——
+  --   这个假树只在 cell 下面放了 `content{face,note,x}`，**根本没有 wall.* 子控件**，
+  --   而真机的格子是有四道墙的。⇒ 断言只钉 `text` 这一类，别把假树的人工产物也写成承诺。
+  I.text_fail, I.other_fail = 0, 0
+  I.minor = {}
+  for k, v in pairs(I.keys) do
+    if k:match("^cell%.%d+%.%d+%.text$") ~= nil then
+      I.text_fail = I.text_fail + v
+      I.text_keys = (I.text_keys or 0) + 1
+    else
+      I.other_fail = I.other_fail + v
+      local fam = k:gsub("^cell%.%d+%.%d+%.", "cell.*.")
+      I.minor[fam] = (I.minor[fam] or 0) + v
+    end
+  end
+  local line, kinds = top_hist(I.keys, 6)
+  local mline = top_hist(I.minor, 6)
+  out("\n== I. 冷进关：账本全空时的 " .. tostring(I.renders) .. " 次 render（= 补发窗口）==")
+  out(string.format("  [I] 失败写入（set_property=false）共 %d 次，涉及 %d 个 (控件.键)；"
+    .. "这 %d 次 render 里 find=%d、set_property=%d",
+    I.fail, kinds, I.renders, I.find, I.sp))
+  out(string.format("      · `cell.*.text`（**真机真问题**，模板没有 text 子控件）：%d 次 / %d 个格子",
+    I.text_fail, I.text_keys or 0))
+  out(string.format("      · 其它（**假树形状造成**：这个假树的 cell 下没有 wall.* 子控件）：%d 次  %s",
+    I.other_fail, mline))
+  if kinds > 0 then out("      失败明细（前 6）：" .. line) end
+end
+
 -- ── 汇总 ──────────────────────────────────────────────────────────────────
 out("\n================ 汇总（真机上是这些调用被引擎执行）================")
 out(string.format("  稳态一次 render      ：find %d（真搜树 %d / 搜空 %d）、set_property %d、"
@@ -645,6 +775,11 @@ out(string.format("  300 帧（dt=1/60）    ：render %d 次、find %d、set_pr
 out(string.format("  选关页每帧兜底隐藏   ：SetVisible %.0f 次（其中网格子树 %.0f 次）、"
   .. "GetChildren %.0f 次 —— **v057 同款代码**，不是网格那一轮引进的（见 H 段）",
   H.setvis / H.frames, H.setvis_grid / H.frames, H.gc / H.frames))
+out(string.format("  action.back（同名两节点）：稳态一次 render  find %d 次 / set_property %d 次；"
+  .. "300 帧  find %d 次（%.1f/帧）/ set_property %d 次（%.1f/帧）—— 改之前 300 帧 ≈ 3000 次搜空",
+  A.back_find, A.back_sp, E.back_find, E.back_find / 300, E.back_sp, E.back_sp / 300))
+out(string.format("  失败写入（set_property=false）：300 帧 %d 次 —— 改之前 25 格 × `cell.N.text` 必然失败",
+  E.fail))
 out("")
 out(state_line)
 out(string.format("  结论行（能直接和真机日志对上）：一次回调 = %d 次列表项查找 + %d 次整视图重建 + "
@@ -690,6 +825,25 @@ ck(c3_listeners == VISIBLE_ITEMS,
 ck(E.render > 0 and E.render == E.render,
   "对照记录：这 300 帧里 render 实际跑了多少次（真机每帧都重绘）",
   tostring(E.render) .. " 次 / 300 帧")
+-- ★★★★★ 2026-10-05 新增（**只管这一条，不动上面任何一条**）：
+--   `cell.*` 的 `text` —— 真机日志原话：格子的子控件清单里「没有配的：**text** obj」，
+--   也就是**格子上根本没有文字子控件**。而规划里每格都推了 `text = cd.name or ""`（25 格）
+--   ⇒ 每次写入都必然走到适配层"三条路都不通"那支 ⇒ 返回 false ⇒ 界面层按补发额度重试 3 次
+--     ⇒ **每关开头**白白多出 25 次 `find` + 75 次 `set_property`（口径 I 实测 75 次失败写入），
+--       外加把「属性补发…已停止补发」的前 5 条日志位置全占掉（真正要看的那几条被挤出去）。
+--   ⇒ 现在**不再给格子推 text**，这一条钉住"这一类失败写入必须为 0"。
+--   ⚠️ 这是**新加的断言**（9 条 → 10 条），不是把老断言改松：老 9 条一字未动。
+--   ⚠️ 为什么钉的是口径 I（冷进关）而不是口径 E（300 帧）：E 那 300 帧是在**这一关已经
+--      渲染过好几帧**之后跑的，该认输的早就认输记账了 ⇒ 拿 E 去量，改之前也恒为 0，
+--      那条断言等于没测东西（第一版就是这么写的，量出来 0/0 才发现）。
+--   ⚠️ 只钉 `cell.*.text` 这一类，**不**钉"全部失败写入 == 0"：
+--      假树里 cell 底下没有 wall.* 子控件（真机有），`.walls`/`.doors` 的失败是
+--      假树形状的人工产物，不该被写成行为承诺。
+ck(I.text_fail == 0,
+  "★ 冷进关那 3 帧里，`cell.*.text` 的失败写入 = 0 —— 格子没有 text 子控件，就不该再推 text",
+  string.format("实测 %d 次 / %d 个格子（改之前：25 格 × 3 次补发 = 75 次）；"
+    .. "本次口径 I 全部失败写入 %d 次（其余 %d 次是假树没有 wall.* 造成，见输出）",
+    I.text_fail, I.text_keys or 0, I.fail, I.other_fail))
 
 out(string.format("\n%d passed, %d failed", pass, fail))
 os.exit(fail == 0 and 0 or 1)

@@ -126,6 +126,10 @@ function M.new(cfg)
   -- ★★★ `enforce_hidden_subtrees` 的开关：**事件驱动**，不再每帧跑。
   --   第一帧必须跑一次（那时树刚就绪，模板子控件可能还没实例化出来）。
   self._subtree_dirty = true
+  -- ★★★★★ 2026-10-05 `enable_raycast` 的**收敛/放弃**账（第 (3) 条每帧成本）。
+  --   见 `Adapter:enable_raycast` 上面那段注释：它原来每 20 帧无条件整树 walk 一遍，
+  --   实测 300 帧 = 15 趟 = 7020 次 `GetChildren`（23.4/帧），而这件事是**幂等**的。
+  self._ray = { scans = 0, idle = 0, done = false, seen = 0, set = 0, announced = false }
   self.handlers = {}       -- 控件 id -> 事件表
   self.subs = {}           -- "id.child" -> 子控件（或 false）
   self.timers = {}
@@ -571,6 +575,18 @@ function Adapter:create_control(node)
           --       （模板带的），必须靠 enforce_hidden_subtrees 压下去 ——
           --       原来靠每帧扫一遍才发现，现在靠这个事件。
           self:invalidate_lookups("create:" .. tostring(node.id))
+          -- ★★★★★ 2026-10-05 **新控件 = 重新武装射线开关那一趟**（每帧成本第 (3) 条）。
+          --
+          --   为什么必须补这一条：`enable_raycast` 收敛/放弃之后**不再整树重扫**了，
+          --   而"新控件"完全可能是**按钮**（有 `raycastTarget` 字段）—— 漏掉它
+          --   ⇒ 新按钮**点不动**（这个项目里"点不动"是反复发作的头号病）。
+          --   ⚠️ "重新武装"**不等于"立刻扫"**：扫描本身仍被 `main.lua` 的
+          --      "每 20 帧最多一趟"限着（见 `Adapter:enable_raycast` 那段注释）。
+          --   ⚠️ 而且**只在这里**重新武装，**不挂进 `invalidate_lookups`** ——
+          --      那个函数还被"网格滚动重进回调"调用（`tests/grid_cost.lua` 专门有一段
+          --      `reenter()` 模拟"引擎每帧重进"）⇒ 挂那儿等于每帧重扫，白跑比改之前还多。
+          --   ⚠️ 建控件的次数是**有界**的（`_created` 记过就不再建）⇒ 不会退化成每帧负载。
+          self:rearm_raycast("create:" .. tostring(node.id))
 
           -- ★★★★★ 2026-10-03 **把规划里的 `image_id` 真正设到控件上**。
           --
@@ -3159,7 +3175,65 @@ end
 --
 --   ⇒ 这里**遍历整棵控件树**，对每个控件尝试写 `raycastTarget = true`，并统计/回读。
 --     （只对"支持这个字段的控件"生效，别的控件 pcall 静默失败，无害。）
+--
+-- ════════════════════════════════════════════════════════════════════════
+-- ★★★★★ 2026-10-05 **这一趟不能再"每 20 帧永远重扫"**（这一轮每帧成本第 (3) 条）。
+--
+--   真机形状：`Murdoku.on_update`（`main.lua` L666）原来每 20 帧**无条件**调一次
+--   `enable_raycast()`，而它每次都**从 root 起整棵树 walk**（深度 ≤ 6、每层 ≤ 200 个子控件）。
+--   实测（`tests/grid_cost.lua` 口径 [E]，300 帧）：调用 **15 次**、walk 掉
+--   **7020 次 `GetChildren`** = **23.4 个节点/帧** —— 而它要做的事
+--   （把 `raycastTarget` 打开）**是幂等的**：第一趟扫完就已经全打开了，
+--   后面 14 趟是纯白跑。用户那句"没必要留着不必要的负载浪费"说的就是这一笔。
+--
+--   ⚠️ 但**不能"成功一次就永远不扫"**：本项目有明确的「**控件晚一步才进树**」案例 ——
+--      `home` / `select` 这两个屏幕容器是**第一次渲染时**才 `create_control` 的
+--      （见 `main.lua` 门控②那段注释：`find("home")` 开局返回 nil ⇒ 永远开不上）。
+--      早停会让**后出现的屏幕控件永远开不上 `raycastTarget`**
+--      ⇒ 那正是"界面看得见、点哪儿都没反应"的老病。所以三条一起用，各管一件事：
+--
+--     ① **收敛即停**（省掉绝大多数趟数）：
+--        `seen > 0 且 set == 0` = "树里有带这个字段的控件，**而且它们全都已经是 true**"
+--        ⇒ 连续 `RAY_IDLE_STOP` 趟都是这样 ⇒ 收工，之后**一次树都不走**。
+--        ⚠️ `seen == 0`（树里一个带该字段的控件都没有）**不算收敛** ——
+--           那更可能是"树还没就绪"，要继续试（这正是"控件晚一步才进树"要救的情形）。
+--     ② **硬上限**（防止"永远试不成功"变成新的每帧负载）：
+--        每一代最多 `RAY_MAX_SCANS` 趟（25 趟 × 20 帧 ≈ 8.3 秒），到顶就停，
+--        **并且只报一次**（真机上 `seen == 0` 是真问题：按钮没这个字段就点不动）。
+--     ③ **换屏 / 换关重新武装**（`Adapter:rearm_raycast`）：那一代会长出新控件
+--        （`home` / `select` 以及各屏自己的子控件），必须给它一次机会。
+--
+--   ⚠️ **不把"重新武装"挂进 `invalidate_lookups`**：那个函数还被 `create_control` /
+--      `destroy_control` **每个控件各调一次**（进关时几十次）⇒ 挂在那里等于
+--      "每建一个控件就重扫一趟"，白跑比改之前还多。只有 **screen / level 换代**
+--      （`ui_controller.render` 里那个块）才重新武装。
+--
+--   ⇒ 实测收益见 `tests/grid_cost.lua` 口径 [E]：300 帧里 `enable_raycast` 走掉的
+--     `GetChildren` 从 **7020** 降到**个位数×一趟**，且**不再随帧数增长**。
+-- ════════════════════════════════════════════════════════════════════════
+local RAY_IDLE_STOP = 3      -- 连续几趟"树里全都开好了"就收工
+local RAY_MAX_SCANS = 25     -- 每一代最多扫几趟（25 × 20 帧 ≈ 8.3 秒）
+
+-- ②/③ 的那一半：换屏 / 换关时**重新武装**（不重置累计值，只重置本代的额度）。
+--   为什么需要它：新屏幕的控件是**后来才建**的，早停会让它们开不上 raycastTarget。
+function Adapter:rearm_raycast(why)
+  local st = self._ray
+  if st == nil then return end
+  if st.scans == 0 and not st.done then return end    -- 本来就没扫过 ⇒ 没什么可武装的
+  st.scans, st.idle, st.done = 0, 0, false
+  if self.cfg and self.cfg.debug_raycast and print then
+    print(PREFIX .. "射线开关：重新开始扫描（" .. tostring(why) .. "）")
+  end
+end
+
 function Adapter:enable_raycast()
+  local st = self._ray
+  if st == nil then
+    st = { scans = 0, idle = 0, done = false, seen = 0, set = 0, announced = false }
+    self._ray = st
+  end
+  -- ★① 已经收敛 / 已经放弃 ⇒ **一次树都不走**。这一行就是第 (3) 条的全部收益。
+  if st.done then return st.seen, st.set, {} end
   local root = self:find("root")
   if root == nil then return 0, 0, {} end
   local set, seen, samples = 0, 0, {}
@@ -3187,6 +3261,29 @@ function Adapter:enable_raycast()
     end
   end
   walk(root, 0)
+  -- ── 这一趟之后：更新收敛账（见上面 ①② 两条）────────────────────────────
+  st.scans = st.scans + 1
+  st.seen, st.set = seen, set
+  if seen > 0 and set == 0 then st.idle = st.idle + 1 else st.idle = 0 end
+  if seen > 0 and st.idle >= RAY_IDLE_STOP then
+    -- ① 收敛：树里有带该字段的控件，而且它们**全都已经是 true** ⇒ 幂等的事做完了。
+    st.done = true
+    -- 只报一次（每次换屏都报会变成新的日志噪音，而用户这一轮明确嫌日志多）。
+    if print and not st.announced then
+      st.announced = true
+      self:log("射线开关（raycastTarget）：已收敛，停止重扫（共扫 " .. tostring(st.scans)
+        .. " 趟；本趟 " .. tostring(seen) .. " 个控件带该字段、需要打开 " .. tostring(set) .. " 个）")
+    end
+  elseif st.scans >= RAY_MAX_SCANS then
+    -- ② 到顶：**放弃**，只报一次。
+    st.done = true
+    self:warn_once("raycast_giveup",
+      "射线开关（raycastTarget）：扫了 " .. tostring(st.scans) .. " 趟，"
+      .. "一个「带该字段的控件」都没找到（seen=0）—— 停止重扫。"
+      .. "⚠️ 这一条是真问题：按钮没有 raycastTarget 就**点不动**"
+      .. "（「界面看得见、点哪儿都没反应」）。请核对控件树是否就绪、"
+      .. "控件是不是预设按钮；换屏/换关会自动重扫一次，不必重进游戏。")
+  end
   return seen, set, samples
 end
 function Adapter:enforce_screen_layers(screen)
