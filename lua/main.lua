@@ -1804,7 +1804,19 @@ function Murdoku.on_update(dt)
               --        · `face`    —— 格子底图，应该常亮
               --     其余（x / note / wall.* / door.* / obj / text）一律**不碰**。
               if kn == "content" or kn == "middle" or kn == "body" or kn == "root" then
-                pcall(function() k:SetVisible(true) end)
+                -- ★★★★★ 2026-10-05 Round 81 **读回再决定写不写** ✓（原来是无条件写 ✗）
+                --
+                --   实测（`tests/_wip/probe_throttle_cost.lua` 第 [7] 节，稳态 30 帧）：
+                --     `content` 被写 **25 笔 = 0.83 笔/帧** ✗ —— 就是这一行造成的
+                --     （本段每 30 帧跑一轮 × 25 个格子 ✓）。
+                --   而 `content` 本来就该**一直可见** ✓ ⇒ 读到 `true` 就**永不重写** ✓✓
+                --   ★ 这与本文件 L1707 那段自己写的道理一致：「**读便宜、写贵** ——
+                --     要省掉的是引擎侧的 `SetVisible`」✓
+                --   ⚠️ 读不到 `visible`（引擎没这字段 / 控件特殊）时**仍然写** ✓
+                --     —— 不许因为读不到就不点亮 ✓（否则格子会黑 ✓）
+                local cv = nil
+                pcall(function() cv = k.visible end)
+                if cv ~= true then pcall(function() k:SetVisible(true) end) end
                 -- ★★★★★ 2026-10-02 **中间容器要跟格子同尺寸**。
                 --   真机截图（19:19）：棋盘成了一整块白 —— **格子之间没有空隙**。
                 --   原因：模板里 `content` 是 **135×135**，而格子只有 **124×124**
