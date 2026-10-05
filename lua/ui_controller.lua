@@ -1,4 +1,4 @@
---[[----------------------------------------------------------------------------
+﻿--[[----------------------------------------------------------------------------
   ui_controller.lua —— 操作框架层（页面布局 + 交互状态机 + 特效指令）v0.3.0
 
   交互模型照 murdoku 实证规格：
@@ -3518,7 +3518,7 @@ function Controller:render(adapter, force)
   --   额度为什么是 10：`render` 由 main.lua 的 tick 驱动（**每秒至少一次**，另加"有变化时"），
   --   所以 10 次 ≈ 十几秒内 —— 足够覆盖"控件晚一步才进树"这种可恢复情形，
   --   而真不存在的控件最多也就白跑这 10 次。**它是常数，不会随时间增长。**
-  local PROP_RETRY = 10
+  local PROP_RETRY = 3
   -- 成功 ⇒ 清掉这个键的计数（额度不跨"属性变化"累积：这一关失败过几次，不该影响下一次）。
   local function retry_clear(id, key)
     if self._prop_retry ~= nil then
@@ -3605,6 +3605,20 @@ function Controller:render(adapter, force)
           if ok and exists then
             last[k] = v
             retry_clear(n.id, k)
+          elseif not exists then
+            -- ★★★★★ 2026-10-05 **控件根本不在本关 ⇒ 立即记账、绝不补发**。
+            --
+            --   真机实测（v066，用户报"进试玩加载慢了 10 倍不止、后续选关明显卡顿"）：
+            --     属性补发 10 次仍未送达，已停止补发：`select.pos_runtime` / `select.visible` /
+            --       `select.parent` / `select.kind` / `select.__rect`（控件一直没找到（find 返回 nil））
+            --   ⇒ 规划里那 ~105 个"本关还没建"的控件，**每个属性都白补发了 10 次** ✗
+            --     每次还要在深树里按名字搜一遍（adapter:find）⇒ 5000+ 次无效调用
+            --     ⇒ 加载慢十倍 + 切屏卡顿。这是**我们的补发逻辑自己造成的**，必须掐掉。
+            --   ⇒ 两种失败必须分开：
+            --       · `exists == false`（控件不在）⇒ **记账、不补发** ✓（本行）
+            --       · `exists == true` 但 `ok == false`（控件在，子控件没就绪/句柄失效）
+            --         ⇒ 才补发 ✓（下面那支）—— 这才是"第一次进关画得少"要治的
+            last[k] = v
           else
             -- 两种失败要**分开报**（下一份真机日志就靠这句区分假设）：
             --   · `exists == false` ⇒ 控件这次根本不在树上（首帧没就绪 / 本关没建）；
@@ -3643,10 +3657,25 @@ function Controller:render(adapter, force)
       -- ★ 位置也一样：**写成功才记账**（和上面那段属性同一个道理）。
       --   ⚠️ `respect_editor_rect` 打开时适配层会**故意跳过**位置 —— 那属于"故意的空操作"，
       --      它返回 true ⇒ 不会变成每帧重发。
+      --
+      -- ★★★★★ 2026-10-05 **这里是 v067 漏掉的第二半**（真机实测：v067 之后仍然"没回归原速"）。
+      --   日志只剩这一种补发：
+      --     属性补发 10 次仍未送达，已停止补发：`select.__rect` /
+      --       `obj.carpet.__rect` / `obj.shelf.__rect` / `obj.desk.__rect` / `obj.case.__rect`
+      --   ⇒ 那 ~105 个"本关还没建"的控件，**每帧**都要重跑一次 `find`（深树按名搜）+ 写入 ✗
+      --     ⇒ 持续卡顿、选关卡顿 —— 和逐属性那条是同一个病，只是走的是另一个分支。
+      --   ⇒ 同样按 `exists` 分开：控件不在本关 ⇒ **立即记账、不补发** ✓
+      local rect_exists = true
+      if type(adapter.find) == "function" then
+        local e3, r3 = pcall(function() return adapter:find(n.id) end)
+        if e3 then rect_exists = (r3 ~= nil) end
+      end
       if self:_set_prop(adapter, n.id, "rect", n.rect) then
         last.__rect = { x = n.rect.x, y = n.rect.y, w = n.rect.w, h = n.rect.h }
         retry_clear(n.id, "__rect")
-      elseif retry_more(n.id, "__rect", "位置没写进去（控件没找到 / 句柄失效）") == false then
+      elseif not rect_exists then
+        last.__rect = { x = n.rect.x, y = n.rect.y, w = n.rect.w, h = n.rect.h }
+      elseif retry_more(n.id, "__rect", "位置没写进去（控件在，但句柄失效 / 位置被拒）") == false then
         last.__rect = { x = n.rect.x, y = n.rect.y, w = n.rect.w, h = n.rect.h }
       end
     end

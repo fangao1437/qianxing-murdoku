@@ -1,0 +1,23 @@
+版本：108-性能回退修复-v067
+时间：2026/10/5 15:29:59
+配套 .gil：200-性能回退修复.gil
+说明：修 v066 自己引入的性能回退：属性补发逻辑对'控件根本不在本关'的情况也补发10次(~105个未建控件×每属性10次≈5000+次无效调用+每次深树按名搜)⇒真机加载慢10倍、选屏卡顿。改为:exists==false⇒立即记账不补发; exists==true且ok==false(子控件没就绪)⇒才补发(这才是'第一次进关画得少'要治的那种)。
+
+文件清单：
+  engine_adapter.lua              5397 字节
+  engine_adapter_qianxing.lua     248879 字节
+  entry_client_script.lua         50211 字节
+  main.lua                        102818 字节
+  murdoku_core.lua                102564 字节
+  room_map.lua                    5227 字节
+  ui_controller.lua               220889 字节
+  client_script.lua               766855 字节（真机跑的就是这份）
+  200-性能回退修复.gil                  862484 字节（配套存档）
+
+用途：**这一版是"当时能跑的那一份"**。要回退：
+  1) 把本目录的 *.lua 拷回 qianxing-murdoku\lua\
+  2) 跑 node tools/bundle_client_script.lua，再 powershell -File tools/install_script_to_sandbox.ps1
+     （或直接用本目录的 client_script.lua 覆盖沙箱里的那份，省掉打包）
+  3) 导入本目录里的 .gil
+
+规则（重要）：**每轮一个新编号，不删旧的、不覆盖**。
