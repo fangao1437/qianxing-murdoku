@@ -114,7 +114,18 @@ function M.new(cfg)
   if cfg.signals then
     for k, v in pairs(cfg.signals) do self.signals[k] = v end
   end
-  self.controls = {}       -- 节点 id -> 引擎控件
+  self.controls = {}       -- 节点 id -> 引擎控件（**只记命中**，见 find）
+  -- ★★★★★ 2026-10-05 **未命中也要记**（负缓存）—— 见 `Adapter:find` 上面那段大注释。
+  --   实测（`tests/grid_cost.lua`）：不记未命中时，**本关根本没有的名字**每帧都要重走一遍
+  --   深树 ⇒ 300 帧里 `action.back` 白跑 3000 次（每次约 470 个 `GetChildren`）。
+  --   这里只放"这一代确实不在树上"的名字；任何"树变了"的事件都会整代作废
+  --   （`Adapter:invalidate_lookups`）。
+  self._misses = nil       -- name -> 过期时间戳（self.clock）｜ false = 本代内不再重搜
+  self._lookup_hits = 0    -- 累计"真的搜到过东西"的次数（= 树已经有控件了；见 find 里的启动期规则）
+  self._lookup_gen = 0     -- 第几代（只用于日志/诊断）
+  -- ★★★ `enforce_hidden_subtrees` 的开关：**事件驱动**，不再每帧跑。
+  --   第一帧必须跑一次（那时树刚就绪，模板子控件可能还没实例化出来）。
+  self._subtree_dirty = true
   self.handlers = {}       -- 控件 id -> 事件表
   self.subs = {}           -- "id.child" -> 子控件（或 false）
   self.timers = {}
@@ -299,8 +310,72 @@ local function control_by_path(roots, path)
   return cur
 end
 
+-- ════════════════════════════════════════════════════════════════════════
+-- ★★★★★ 2026-10-05 **控件名缓存的两半**：命中缓存（`self.controls`）+ **未命中缓存**（`self._misses`）
+--
+--   为什么要加"未命中"这一半（不是猜的，是量出来的）：
+--     `tests/grid_cost.lua` 在**关卡里 300 帧**（dt=1/60，网格视窗在跑）测到：
+--       · `GetChildren` 被访问 **1,565,043** 次 ≈ **5217/帧**
+--       · 其中 `action.back` 一个名字就占 **280,800** 次 = **936/帧**（搜空×10/帧）
+--       · 另外 9 个"本关根本没建"的容器名（board/left/right/topbar/tray/actions/
+--         intro/modal/select）各 468 次/帧 —— 全是**每帧重走一遍深树**换来的同一个 nil
+--     ⇒ 一次搜空的代价 = 把整棵控件树（真机约 150 个控件）走完，而结果**永远是 nil**，
+--       下一帧还会一模一样地再走一遍。这正是用户说的"对比之前还是略有卡顿"里
+--       占比最大的那一项（`tests/grid_cost.lua` 的 [E] 口径）。
+--
+--   为什么以前不敢缓存未命中：`main.lua` / `entry_client_script.lua` 里写着
+--     「`find` 未命中会**永久缓存 false** ⇒ 万一此刻树还没就绪，就把后面那条路也一起弄死」
+--     —— 那是**真的**（旧实现把 false 写进 `self.controls`）。所以这里三条规矩缺一不可：
+--       ① **命中缓存优先**：任何 `self.controls[name] = ctrl`（新建/改名/找回）都天然
+--          让这个名字的负缓存失效 —— 不需要调用方记得去清。
+--       ② **树还没"见过活控件"就一律不记负缓存**：`self._lookup_hits == 0` 时
+--          （OnInit/OnStart 阶段树是空的，这是真机日志里写明的正常现象）
+--          未命中**照旧每帧重搜** —— 启动期那条"等控件就绪再开局"的重试一个字都不变。
+--          代价为零：树是空的时候，搜空本来就几乎不花时间。
+--       ③ **未命中会自己过期一次**：第一次记下 `clock + ttl`，过了这一刻若还没出现，
+--          再真搜一次；还是不在 ⇒ 记成 `false`（本代内不再重搜，直到事件作废）。
+--          ⇒ 即使"树是分两批加载的"这种没被我们观测到的情况发生了，
+--            最多晚 `ttl`（默认 1 秒）也能自己恢复，**不可能永久卡死**。
+--   ③ 的账：每个缺失名字每代最多多走 **1** 遍树（≈470 个节点），
+--          对比现在**每帧** 5217 个节点 —— 三个数量级的差别。
+--
+--   什么时候整代作废：`Adapter:invalidate_lookups(why)` —— 切屏 / 换关 / 新建或销毁控件 /
+--     网格视窗 RefreshItems（引擎那时才实例化列表项）。和第 2 项改造
+--     （`enforce_hidden_subtrees`）共用**同一批事件**，一处定义、处处触发。
+-- ════════════════════════════════════════════════════════════════════════
+
+-- 把"这一代的名字缓存"整代扔掉（含负缓存），并让兜底隐藏重跑一次。
+-- 触发时机全都是**控件树真的变了**的事件，不是每帧。
+function Adapter:invalidate_lookups(why)
+  self._misses = nil
+  self._subtree_dirty = true
+  self._lookup_gen = (self._lookup_gen or 0) + 1
+  if self.cfg and self.cfg.debug_lookup and print then
+    print(PREFIX .. "控件名缓存作废（第 " .. tostring(self._lookup_gen) .. " 代）："
+      .. tostring(why))
+  end
+end
+
+-- 只扔一个名字的两半缓存（改名/换绑这种"一个控件换了身份"的场合）
+function Adapter:drop_lookup(name)
+  if name == nil then return end
+  self.controls[name] = nil
+  if self._misses ~= nil then self._misses[name] = nil end
+end
+
 function Adapter:find(name)
-  if self.controls[name] ~= nil then return self.controls[name] end
+  local hit0 = self.controls[name]
+  if hit0 ~= nil then return hit0 end
+  -- ★ 负缓存命中：这一代里已经确认"不在树上" ⇒ 直接返回 nil，**不再走深树**。
+  local miss = self._misses
+  if miss ~= nil then
+    local stamp = miss[name]
+    if stamp ~= nil then
+      -- `false` = 已经重搜过一次还是不在（本代内不再重搜）；
+      -- 数字 = 过期时刻，没到点就认账。
+      if stamp == false or self.clock < stamp then return nil end
+    end
+  end
   if game == nil or game.GetClientUIRoots == nil then return nil end
   local roots = game.GetClientUIRoots()
   if roots then
@@ -309,6 +384,7 @@ function Adapter:find(name)
       local hit = find_in(roots[i], name, 0)
       if hit then
         self.controls[name] = hit
+        self:_note_lookup_hit(name)
         return hit
       end
     end
@@ -319,11 +395,34 @@ function Adapter:find(name)
       local hit = control_by_path(roots, path)
       if hit then
         self.controls[name] = hit
+        self:_note_lookup_hit(name)
         return hit
       end
     end
   end
+  -- ★ 搜空 ⇒ 记进负缓存（规矩 ②：树还没"见过活控件"时一律不记 —— 启动期的重试不能被打断）
+  if self._lookup_hits > 0 then
+    if self._misses == nil then self._misses = {} end
+    local ttl = (self.cfg and self.cfg.lookup_miss_ttl) or 1.0
+    local old = self._misses[name]
+    if old == nil then
+      self._misses[name] = self.clock + ttl     -- 第一次：给一次"过一会儿再看"的机会
+    elseif old ~= false and self.clock >= old then
+      self._misses[name] = false                -- 已经重搜过还是不在 ⇒ 本代内不再重搜
+    end
+  end
   return nil
+end
+
+-- 搜到东西之后的两件小事（都很便宜，别省）：
+--   ① 记下"树里已经有控件了" ⇒ 从这一刻起未命中才允许进负缓存（见 find 的规矩 ②）。
+--   ② **安全网**：如果这个名字在"应当被隐藏"的名单里 ⇒ 它刚刚才进树
+--      ⇒ 兜底隐藏必须重跑一次（原来靠每帧扫一遍才发现，现在靠这一下）。
+function Adapter:_note_lookup_hit(name)
+  self._lookup_hits = self._lookup_hits + 1
+  if self._hidden_ids ~= nil and self._hidden_ids[name] then
+    self._subtree_dirty = true
+  end
 end
 
 -- 子控件（cell.1.1 下的 face / note / x / door.up ...）
@@ -465,6 +564,13 @@ function Adapter:create_control(node)
           ctrl = obj
           self.controls[node.id] = ctrl
           self.instantiated = self.instantiated or {}
+          -- ★★★★★ 2026-10-05 **新控件进树 = 控件名缓存作废 + 兜底隐藏重跑一次。**
+          --   两件事必须同时做（见 `Adapter:invalidate_lookups` 与 `find` 的两段注释）：
+          --     · 名字缓存：这一代里"没搜到"的判定不再成立（树多了一个节点）；
+          --     · 兜底隐藏：新控件挂在**被隐藏的容器**下面时，它自己是 visible=true 的
+          --       （模板带的），必须靠 enforce_hidden_subtrees 压下去 ——
+          --       原来靠每帧扫一遍才发现，现在靠这个事件。
+          self:invalidate_lookups("create:" .. tostring(node.id))
 
           -- ★★★★★ 2026-10-03 **把规划里的 `image_id` 真正设到控件上**。
           --
@@ -1654,7 +1760,7 @@ function Adapter:ensure_cells(rows, cols)
             local newname = "__tpl_ref_" .. id
             local ok = pcall(function() ctrl.name = newname end)
             if ok then
-              self.controls[id] = nil          -- 清掉旧名字的缓存，find 会重新走树
+              self:drop_lookup(id)             -- 清掉旧名字的两半缓存，find 会重新走树
               self.controls[newname] = ctrl
               self:_park_control(ctrl)         -- ★ 挪出画布（不依赖 visible/active 语义）
               self:_note_parked(newname, ctrl) -- ★ 记账（按控件身份去重，进 N 次关也只记一次）
@@ -2909,6 +3015,8 @@ function Adapter:destroy_control(id)
     self.bound[id] = nil
     self.controls[id] = nil
     self.handlers[id] = nil
+    -- ★ 控件真的没了 ⇒ 名字缓存整代作废（"不在"的判定和"在"的句柄都可能已经过期）
+    self:invalidate_lookups("destroy:" .. tostring(id))
     return
   end
 
@@ -2920,7 +3028,7 @@ function Adapter:destroy_control(id)
     end
   end
   -- 只清缓存，让下次 create_control 重新 find；控件本身留着（监听也留着）
-  self.controls[id] = nil
+  self:drop_lookup(id)
   self.handlers[id] = nil
 end
 
@@ -3652,6 +3760,14 @@ function Adapter:set_property(id, key, value)
     --   ⇒ 那一次递归隐藏根本没赶上它们（真机排行榜里 face/content 依然可见）。
     self._hidden_ids = self._hidden_ids or {}
     if vis then self._hidden_ids[id] = nil else self._hidden_ids[id] = true end
+    -- ★★★★★ 2026-10-05 **可见性真的被脚本改了 ⇒ 兜底隐藏这一帧必须重跑一次。**
+    --
+    --   这是 `enforce_hidden_subtrees` 从"每帧扫"改成"事件驱动"之后的**主要触发源**
+    --   （另外几个：切屏/换关、新建或销毁控件、收到光标事件 —— 见 `invalidate_lookups`
+    --   和 `_fire`）。之所以在这里无条件置位而不去读 `ctrl.visible` 比较：
+    --   界面层只在**属性值变了**才会走到这里（`same_value` 缓存），所以"进到这个分支"
+    --   本身就已经是"可见性变了"的证据；置一个布尔比回读一次引擎属性便宜得多。
+    self._subtree_dirty = true
     -- ⚠️ **只在"隐藏"时递归** —— 我第一版连"显示"也递归，结果把各控件
     --   自己藏起来的子控件又显示出来了（play_test 立刻报：
     --   棋盘的弹窗是隐藏的 / 此时没有指认面板 / 从存档点开始进关时 board=true home=true）。
@@ -3865,6 +3981,15 @@ end
 ----------------------------------------------------------------------------
 
 function Adapter:_fire(event, phase, data)
+  -- ★★★★★ 2026-10-05 **收到光标事件 ⇒ 兜底隐藏重跑一次。**
+  --
+  --   为什么把"点击"也算成"树可能变了"：预设按钮的**状态节点**会引用子控件当外显样式
+  --   （见 `Adapter:sub` 里那段官方文档引用）—— 按下/抬起会让引擎自己把某个子控件
+  --   显示出来，而这件事**不经过脚本的 `set_property`**。
+  --   原来靠每帧扫一遍兜住它；现在挂在输入事件上（人的手速，一帧最多几次，布尔赋值）。
+  --   ⚠️ 这是"每帧扫"被去掉之后，**唯一**能兜住"引擎自己改显隐"的触发点，
+  --      所以宁可多置一次位（一次 enforce ≈ 几百个节点），也不能漏。
+  self._subtree_dirty = true
   if self.on_input == nil then return end
   local evt = {}
   for k, v in pairs(event) do evt[k] = v end
@@ -4435,7 +4560,7 @@ function Adapter:cancel(handle)
 end
 
 -- 由客户端 OnUpdate(dt) 驱动
--- ★★★★ 2026-10-02 **每帧兜底：把"被隐藏的格子"的整棵子树也压下去。**
+-- ★★★★ 2026-10-02 **兜底：把"被隐藏的控件"的整棵子树也压下去。**
 --
 --   真机排行榜证明：`face` / `content`（格子模板自带的子控件）在主页和选关页上
 --   **依然可见** —— 它们铺在棋盘位置上，而 `cell.*` 自己绑了点击
@@ -4444,8 +4569,14 @@ end
 --   为什么不能只靠 visible 分支里的递归：渲染**只在属性值变化时**下发
 --   （`same_value` 缓存），`cell.1.1` 的 visible=false 只在第一帧下发过一次，
 --   而格子的子控件是模板**之后**才实例化出来的 —— 那一脚没赶上。
---   ⇒ 每帧扫一遍"被标记为隐藏的 cell.*"，幂等地把子树压下去（只对 cell. 生效）。
+--   ⇒ 扫一遍"被标记为隐藏的控件"，幂等地把子树压下去。
+--
+-- ★★★★★ 2026-10-05 **它不再由 `on_tick` 每帧调用** —— 改成"树可能变了"才跑一次
+--   （`self._subtree_dirty`，触发点见 `on_tick` 里那段注释）。
+--   本函数自己负责把欠账标记清掉：**不管谁调它**（`on_tick` / 诊断 / 测试），
+--   跑完这一趟账就算还了，不会再被下一帧重复触发。
 function Adapter:enforce_hidden_subtrees()
+  self._subtree_dirty = false
   local hid = self._hidden_ids
   if hid == nil then return end
   for id in pairs(hid) do
@@ -4486,8 +4617,26 @@ function Adapter:on_tick(dt)
     end
   end
   for i = #due, 1, -1 do due[i].fn() end
-  -- ★ 每帧兜底：把被隐藏的格子整棵子树压下去（见 enforce_hidden_subtrees 的注释）
-  pcall(function() self:enforce_hidden_subtrees() end)
+  -- ★★★★★ 2026-10-05 **兜底隐藏改成"事件驱动"，不再每帧扫一遍。**
+  --
+  --   改之前（每帧无条件跑）：`tests/grid_cost.lua` 量到每一帧都要
+  --     · 关卡内：`enforce_hidden_subtrees` 本身 39 次 `find` + 78 个 `GetChildren`；
+  --     · 选关页 60 帧：`SetVisible` 15,660 次（**261 次/帧**）、`GetChildren` 6186 次/帧。
+  --   而这一趟在所查的状态**没有任何变化**时是纯白跑 —— 它做的事是幂等的
+  --   （把"已知该隐藏的容器"的子控件再压一次 false）。
+  --   ⇒ 只在**树真的可能变了**的时候跑一次；触发点见 `_subtree_dirty` 的**五处**写法：
+  --       · 脚本改了某个控件的 visible（`set_property` 的 visible 分支）
+  --       · 切屏 / 换关 / 网格视窗 RefreshItems（`ui_controller` 调 `invalidate_lookups`）
+  --       · 新建 / 销毁控件（`create_control` / `destroy_control`）
+  --       · 收到光标事件（`_fire`：预设按钮的状态切换可能让引擎自己把子控件显示出来）
+  --       · 「本该隐藏的名字」刚刚才被搜到（`_note_lookup_hit`，原来靠每帧扫才发现）
+  --   安全性：它防的是"隐藏容器后来才实例化出来的子控件仍然可见"——这些子控件
+  --   要么来自我们自己的实例化（create_control 触发），要么来自引擎在 RefreshItems
+  --   里实例化列表项（sync_clue_grid 触发），要么来自引擎的状态切换（_fire 触发）。
+  --   另外 `find` 一搜到"该隐藏的名字"就置位（`_note_lookup_hit`）—— 兜底不会漏。
+  if self._subtree_dirty then
+    pcall(function() self:enforce_hidden_subtrees() end)
+  end
   return self.clock
 end
 

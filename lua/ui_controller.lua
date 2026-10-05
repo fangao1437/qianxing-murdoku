@@ -3250,6 +3250,18 @@ function Controller:sync_clue_grid(adapter)
   self._grid_sig = sig
   self._grid_state = "on"
 
+  -- ★★★★★ 2026-10-05 **`RefreshItems` 成功 = 引擎刚往树里塞了列表项 ⇒ 控件名缓存作废。**
+  --
+  --   为什么要在这里触发：列表项（`clue.1.who` …）是**引擎**在 `RefreshItems` 里实例化的，
+  --   不经过脚本的 `create_control` —— 也就是说，"新建控件"那条事件**看不见它们**。
+  --   而这些列表项挂在 `clues.grid` 下面，`clues` 在主页/选关页是**藏起来的**
+  --   （`apply_screen_hide`）：新实例化出来的列表项自己是 visible=true，
+  --   必须靠兜底隐藏压下去（实测：选关页那一趟有 8 次 `SetVisible` 打在网格子树上）。
+  --   ⇒ 一次刷新触发一次；`_grid_sig` 那道守卫保证**不是每帧**（300 帧里这里只进 0~1 次）。
+  if adapter ~= nil and adapter.invalidate_lookups ~= nil then
+    pcall(function() adapter:invalidate_lookups("grid_refresh:n=" .. tostring(n)) end)
+  end
+
   -- 回调里抛过错 ⇒ 只报一次（不整体回退：那一条没填上而已；反复出现才值得关掉这条路）
   if self._grid_cb_err ~= nil then
     self:_grid_log("cberr", "网格视窗：列表项填充回调抛过异常（" .. tostring(self._grid_cb_err)
@@ -3574,6 +3586,35 @@ function Controller:_set_prop(adapter, id, key, value)
 end
 
 function Controller:render(adapter, force)
+  -- ★★★★★ 2026-10-05 **切屏 / 换关 = "控件树这一代作废"的权威事件**（性能修复第 2 半）。
+  --
+  --   为什么要有这个事件：适配层现在有两处**按代缓存**的东西 ——
+  --     · 控件名缓存（含**未命中**缓存，见 `Adapter:find` 上面那段注释）；
+  --     · 兜底隐藏（`enforce_hidden_subtrees`，从"每帧扫"改成"事件驱动"）。
+  --   两者的作废时机**完全一样**，所以只在这里判定一次、只调一个函数
+  --   （`Adapter:invalidate_lookups`）—— 免得以后有人只改一处、另一处留成陈年老 bug。
+  --
+  --   判据用 (screen, level_id) 这一对：
+  --     · `screen`：主页 / 选关 / 关卡内（nil）—— 切屏会整套换显示哪棵子树；
+  --     · `level_id`：换关时 `cell.*` / `clue.*` 的**名字集合**整个换一代，
+  --       而适配器**是跨关复用的**（`main.lua` 的 `prepared_adapter`），
+  --       不做这一步的话，"上一关没有、这一关有"的控件会被负缓存判成不存在。
+  --   ⚠️ 放在 `sync_clue_grid` **之前**：切屏那一帧的 `find` 本来就该重新搜树
+  --      （这正是"缓存可能过期"的那一帧），顺序反了等于拿旧缓存去建新一帧。
+  do
+    local lv_id = self.core and self.core.level and self.core.level.id
+    if self._tree_screen ~= self.screen or self._tree_level ~= lv_id then
+      self._tree_screen = self.screen
+      self._tree_level = lv_id
+      if adapter ~= nil and adapter.invalidate_lookups ~= nil then
+        pcall(function()
+          adapter:invalidate_lookups("screen=" .. tostring(self.screen)
+            .. " level=" .. tostring(lv_id))
+        end)
+      end
+    end
+  end
+
   -- ★★★★★ 2026-10-05 **网格视窗先探一步**（必须在 `build_layout` 之前）。
   --
   --   为什么必须在前面：`build_layout` 要按"这一关到底走哪条路"决定
