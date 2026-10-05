@@ -2215,6 +2215,45 @@ function Adapter:ensure_cells(rows, cols)
     self.cells_total = rows * cols
   end
 
+  -- ★★★★★ 2026-10-05 **格子重建之后，必须清掉 `subs` 里的死句柄** ✗✓
+  --
+  --   这是"第一次进关墙/门不画、进别的关再回来就正常"的**真凶** ✓
+  --   （★ 与素材无关 ✗ —— 素材是静态的，不会因为切一次关而变 ✓
+  --     这条判据用户提过，我一度绕回素材，是错的 ✓）
+  --
+  --   机制（`Adapter:sub` 在 L502-504 ✓）：
+  --     · 缓存键是 `parent_id .. "." .. child_name` ✓ —— ★ 键里有格子 id ✓
+  --       ⇒ ★ 不跨格串号 ✓（这条先排除掉 ✓）
+  --     · 但 `if cached ~= nil and cached ~= false then return cached end` ✗
+  --       ⇒ ★★ **命中就永远返回旧句柄，从不失效、从不重查** ✗✓
+  --     · 而 `ensure_widgets` 每次进关都会**把 25 个格子重新建一遍** ✗
+  --       （真机日志：「本次新建 25 个」✓）
+  --       ⇒ ★★ 旧格子对象已被销毁 ✗ 而 `self.subs` 里【还存着它们的子控件句柄】✓✓
+  --       ⇒ ★★★ `SetVisible(true)` 调在死句柄上 ⇒ **静默 no-op** ⇒ 屏幕上不画 ✓
+  --
+  --   ★★ 这也解释了那个一直对不上的矛盾 ✓：
+  --     · 我读回的 `sub.visible` = **true** ✗
+  --       ⇒ ★ 因为我读的是**缓存里那个旧对象**的属性 ✓✓
+  --       ⇒ ★★ "读回 true 但屏幕没有" 到此闭环 ✓
+  --     · 而「进别的关再回来就正常」✓
+  --       ⇒ ★ 因为那一趟 `find` 把键重新命中到**新建后的**子控件上 ✓
+  --
+  --   ★ 为什么在"重建完"这里清、而不是在 `sub` 里验活句柄 ✗：
+  --     验活要每帧多一次探测 ✗ —— 移动端不划算 ✓
+  --     建格是【每关一次】✓ 这里清 = 零常态开销 ✓
+  do
+    local cleared = 0
+    for k in pairs(self.subs) do
+      if type(k) == "string" and k:sub(1, 5) == "cell." then
+        self.subs[k] = nil
+        cleared = cleared + 1
+      end
+    end
+    if cleared > 0 and print then
+      print("[murdoku] 格子重建 ⇒ 清掉子控件缓存 " .. cleared .. " 条（否则拿到的是上一批的死句柄）")
+    end
+  end
+
   -- ★★★★★ 2026-10-05 **图层顺序这一趟的实测结果 —— 每关一行**。
   --
   --   为什么必须打：`enforce_layers` 的返回值（= 真的排上了几个子控件）以前**被直接丢掉**，
