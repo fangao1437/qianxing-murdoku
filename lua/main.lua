@@ -26,6 +26,22 @@ local current = nil            -- 当前会话
 local prepared_adapter = nil   -- OnInit 里建好的适配器
 local signals_registered = false
 
+-- ★★★★★ 2026-10-05 **「按屏同步运行时控件可见性」的三个记忆变量** —— 必须是
+--   **文件级 local**（既不是全局 ✗，也不能声明在 `on_update` 里 ✗）。
+--
+--   为什么不能是全局（Round 67 那条 selene 告警是对的 ✓）：
+--     真机/模拟器**共享同一张全局表** ⇒ 全局变量可能被别的脚本看到、也可能被踩。
+--
+--   为什么不能声明在 `on_update` **里面**（⚠️ 这里踩过一次）：
+--     `on_update` 每帧被调用一次，函数内的 `local` **每次都重新初始化** ⇒
+--     `murdoku_vis_key` 每帧都是 `nil` ⇒ `key ~= nil` **恒真**
+--     ⇒ **强压窗口每帧重新开一次** ⇒ `forcing` 恒为 `true` ⇒
+--     **稳态退化成"每帧无条件写 33 笔"**（实测 41.8 笔/帧，比改之前还差 ✗）。
+--     ⇒ 「记忆」必须活在**两次调用之间**，所以只能放在文件级。
+local murdoku_vis_memo = {}      -- 控件名 → 上次真的写下去的值
+local murdoku_vis_force_to = 0   -- 强压窗口的截止帧号（> 当前帧 = 窗口内）
+local murdoku_vis_key = nil      -- 上次的 "(屏, 关卡)" 键（一变就重新开窗）
+
 -- ★★★★★ 2026-10-05 **网格视窗（官方「网格视窗」列表控件）—— 线索卡列表的正路**
 --
 --   用户已经在编辑器里把这块摆好了（核对存档 `193.1.gil`，事实如下，不再重复推导）：
@@ -1622,9 +1638,13 @@ function Murdoku.on_update(dt)
   --      在下面被读写但**从未声明** ⇒ 它们是**全局变量** ✗ ⇒ **泄进引擎的全局表** ✗✓
   --      （真机/模拟器**共享同一张全局表** ⇒ 可能被别的脚本看到、也可能被别的脚本踩 ✓）
   --    这与我在 Round 43 修的 `v2` / `a2` 是**同一类坑** ✓（那次的后果更重：拼接 nil 会抛错 ✗）
-  --    修法：在这里声明成**本函数的局部变量** ✓（下面所有读写都在同一函数内 ✓ 闭包也看得见 ✓）
-  --    ⚠️ `murdoku_vis_key` 也一并收进来 ✓ —— 它同样是"没声明就当全局用" ✗
-  local murdoku_vis_memo, murdoku_vis_force_to, murdoku_vis_key
+  --    ⚠️⚠️ **但声明不能放在这里！**（2026-10-05 实测踩到 ✓）
+  --       `on_update` **每帧被调用一次**，函数内的 `local` 每次都重新初始化 ⇒
+  --       `murdoku_vis_key` 每帧都是 `nil` ⇒ `key ~= murdoku_vis_key` **恒真**
+  --       ⇒ **强压窗口每帧重新开一次** ⇒ `forcing` 恒为 `true`
+  --       ⇒ 稳态退化成"每帧无条件写 33 笔"（实测 **41.8 笔/帧**，比改之前还差 ✗）。
+  --    ⇒ 正确位置：**文件级 local**（见文件顶部 `local murdoku_vis_memo = {}` 那三行）——
+  --      既能被本函数与闭包看见 ✓，又**活在两次调用之间** ✓，且不污染全局表 ✓。
   if murdoku_vis_memo == nil then murdoku_vis_memo = {} end
   do
     local lev = current.level
