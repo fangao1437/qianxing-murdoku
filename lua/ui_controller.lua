@@ -1297,7 +1297,31 @@ local function apply_screen_hide(nodes, screen)
     --   ⇒ 三样都补进隐藏名单：`selbar`（容器本身）、`selbtn.`（它的子按钮）、`tpl-`（模板引用控件）。
     HIDE["selbar"] = true
     HIDE["tpl-container"] = true
-    PREFIX = { "cell.", "clue.", "hud.", "room.label.", "ruler", "tray.", "action.", "hex.", "hit.",
+    -- ★★★★★ 2026-10-05 **`"cell."` 从这里删掉** ✗✓ —— 它就是「第一次进关墙/门不画」的根因 ✓
+    --
+    --   机制（本函数是**单向**的 ✗：只会 `visible = false` ✓ 从不写回 true ✓）：
+    --     · 开局 `screen = "home"` ✓ 于是 `PREFIX` 命中 `"cell."` ✗
+    --       ⇒ ★ 25 个 `cell.*` 全部 `visible = false` ✗✓
+    --     · 而 `cell.*` 是格子的**根控件** ✗ ⇒ 它的 false 会**连坐全部子控件** ✓
+    --       ⇒ ★★ `wall.*` / `door.*` / `face` **一律看不见** ✓✓
+    --     · 之后进关卡 `screen = nil` ✓ ⇒ 本函数**不再藏** ✓
+    --       但**已经设成 false 的 `cell.*` 它【不会写回 true】** ✗（单向的代价 ✓）
+    --       ⇒ ★ 父级一直是 false ⇒ ★★ **墙/门永远不出现** ✓✓
+    --
+    --   ★★★ 用户的三条实测现象**全部对上** ✓✓：
+    --     · 「破坏开局流程（`screen` 全程 `nil`）⇒ 直接正常」✓
+    --       ⇒ 那时 PREFIX 只有 `{"home","select"}` ✓ **从不碰 `cell.*`** ✓
+    --     · 「正常走流程 ⇒ 不画」✗
+    --       ⇒ 开局必经 `home` → `select` ✓ 两趟都把 `cell.*` 设 false ✓
+    --     · 「进别的关再回来就正常」✓
+    --       ⇒ 那一趟 `screen` 是 `nil` ✓ 不再藏 ✓ 而规划把 `cell.*` 重发 true ✓
+    --
+    --   ★ 为什么删它是**安全**的：★ `cell.*` 的可见性**规划里已经按屏幕算好了** ✓
+    --     · 主页/选关：规划给 `false` ✓（真机开局日志：`cell.1.1 visible=false` ✓）
+    --     · 关卡内：规划给 `true` ✓（真机进关日志：`cell.1.1 visible=true` ✓）
+    --     ⇒ ★★ 这一条**本来就是重复的** ✗ —— 重复的那份还会用"单向藏"覆盖规划 ✗✓
+    --   ⚠️ 教训：★ 可见性【只能有一个权威】✗ —— 规划给了，屏幕层就不该再管 ✓
+    PREFIX = { "clue.", "hud.", "room.label.", "ruler", "tray.", "action.", "hex.", "hit.",
                "selbtn.", "tpl.",
                (screen == "home") and "select." or "home." }
   end
