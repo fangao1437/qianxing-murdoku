@@ -112,8 +112,20 @@ M.LAYOUT = {
   --   ⇒ 设计空间：x 72、y 314、宽 456、卡高 105.6、行距 ≈115、5 张 = 575
   --   之所以必须往下挪：标题/计时器现在在**左边栏上方**（图里就在卡片上面），
   --   原来的 `y = 148` 会和它们重叠。
-  clues  = { x = 72, y = 314, w = 456, h = 575 },   -- 5 行 × 115 = 575
-  clue_row_h = 115,         -- ★ 2026-10-04：52 → 115（图上的卡是"头像 + 两行"，比原来高得多）
+  clues  = { x = 36, y = 151.8, w = 480, h = 652.8 },  -- ★ 2026-10-05：{72,314,456,575} → 本行
+  --   ★★★★★ 为什么改：真机日志（11:31）显示运行时 `clues = 380×479`，而用户在编辑器里摆的是
+  --   **400×544 @ 中心 (230, 398.5)** ⇒ **脚本按旧规划把用户的版面冲掉了** ✗
+  --   （380×479 = 456×5/6 × 575×5/6 —— 正是旧值 ✓）
+  --   ⇒ 换算：画布 400×544、中心 (230,398.5) → 设计 ×6/5 = **480×652.8**、中心 (276,478.2)
+  --     ⇒ 左下角 x = 276−240 = **36**、y = 478.2−326.4 = **151.8** ✓
+  --   校验：h 652.8 ÷ clue_row_h 127.2 = **5 行** ✓（与 clue_rows 一致）
+  clue_row_h = 127.2,       -- ★★★★★ 2026-10-05：115 → **127.2**（= 画布 106 ⇒ 设计 106×6/5）。
+                            --   用户 2026-10-05 把卡片改成**画布 360×96**、卡距 **10**（行距 106），
+                            --   而规划是**设计空间**、渲染时 ×5/6 缩到画布 ⇒ 设计行距必须是 **127.2**。
+                            --   真机日志铁证（11:31）：`clue.N 367x91` —— 367 = 440×5/6（旧设计宽 440）、
+                            --   91 = 109×5/6（旧行高 109）⇒ **脚本的旧规划把用户在编辑器里摆的 360×96 冲掉了**。
+                            --   ⚠️ 行内矩形的高度是 `clue_row_h − 12`（卡距 12 设计 = 10 画布），不是 −6；
+                            --   若这里改了而那里没改，卡片会变成 101 高（详见 build_layout 的线索区那段）。
   clue_max_visible = 18,    -- 硬上限：仍要够 case_003 的 18 条线索（只是屏上同时只显示 5 行，其余靠滚动）
   -- ★★★ 2026-09-30：**线索区改成"可滚动窗口"**（参考《派蒙的执律庭实习》左侧那个带滚轮的列表）。
   --
@@ -1846,7 +1858,14 @@ function Controller:build_layout()
     local slot = i - self.clue_scroll
     local inWin = (slot >= 1 and slot <= rows)
     local y = L.clues.y + (slot - 1) * L.clue_row_h
-    local h = L.clue_row_h - 6
+    -- ★★★★★ 2026-10-05：行高由 `clue_row_h − 6` 改成 **`− 12`**，宽度由 `L.clues.w − 16` 改成
+    --   **`CLUE_W`（= 432 设计 = 360 画布）** —— 为了跟用户在编辑器里摆的卡片对齐。
+    --   真机日志（11:31）证明旧值把用户的版面冲掉了：`clue.N 367x91`
+    --     · 367 = (L.clues.w − 16) × 5/6 = 440 × 5/6
+    --     ·  91 = (clue_row_h − 6) × 5/6 = 109 × 5/6
+    --   现在：432 × 5/6 = **360** ✓、115.2 × 5/6 = **96** ✓ —— 与编辑器里的一致。
+    local h = L.clue_row_h - 12
+    local CLUE_W = 432
     local style = (self.focused_clue == i) and "clue.focus"
                   or (cl.satisfied and "clue.ok" or "clue")
     -- 整行保留（作为卡片底板 + 点击热区）；文字子控件浮在它上面
@@ -1860,15 +1879,31 @@ function Controller:build_layout()
       id = "clue." .. i,
       kind = "text",
       parent = "clues",
-      rect = { x = L.clues.x, y = y, w = L.clues.w - 16, h = h },
+      rect = { x = L.clues.x, y = y, w = CLUE_W, h = h },
       text = cl.text,
       style = style,
       visible = inWin,
       event = { action = "focus_clue", index = i },
       pos_runtime = true,
     })
-    local who, pre, post, wid, wportrait = split_by_name(tostring(cl.text or ""))
-    local tx = L.clues.x + PAD + FACE + PAD      -- 文字起点：让开左边的头像
+    -- ★★★★★ 2026-10-05 **两张卡片底图（backrop1 在下 / backrop2 在上）**
+    --
+    --   用户在编辑器里给每张卡加了两张图，靠"描边色 + 填充色"叠出边框效果。
+    --   真机日志（11:31）显示它们**在关卡里也是 visible=false** ✗：
+    --       clue.1..5           可见=true      ← 卡片本体在规划里，被点亮
+    --       clue.N.backrop1/2   可见=false     ← 不在规划里 ⇒ 脚本从没把它们点亮
+    --   ⇒ 在规划里补上这两条（`kind = "container"`：只摆位置/显隐，**不设图、不设文字**，
+    --      图片和颜色完全由你在编辑器里配好、脚本不碰）✓
+    --
+    --   尺寸：backrop2 比 backrop1 四边各小 3.6 设计（= 3 画布）⇒ 露出 3px 描边 ✓
+    push({ id = "clue." .. i .. ".backrop1", kind = "container", parent = "clue." .. i,
+           rect = { x = L.clues.x, y = y, w = CLUE_W, h = h },
+           visible = inWin, pos_runtime = true })
+    push({ id = "clue." .. i .. ".backrop2", kind = "container", parent = "clue." .. i,
+           rect = { x = L.clues.x + 3.6, y = y + 3.6, w = CLUE_W - 7.2, h = h - 7.2 },
+           visible = inWin, pos_runtime = true })
+
+    local who, pre, post, wid, wportrait = split_by_name(tostring(cl.text or ""))    local tx = L.clues.x + PAD + FACE + PAD      -- 文字起点：让开左边的头像
     local tw = L.clues.w - 16 - (FACE + PAD * 2) - BADGE_W - PAD
     if who ~= nil then
       -- 头像（左边）：复用 `portrait.*` 调色板，**不引入新素材**
