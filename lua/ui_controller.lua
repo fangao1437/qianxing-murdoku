@@ -2808,6 +2808,24 @@ function Controller:build_layout()
           "存档并结算", { action = "exit_menu_settle" }, "stamp.primary")
       btn("modal.cancel", "modal", { x = mx + 92, y = my + 52, w = 576, h = 68 },
           "取消", { action = "close_modal" }, "tab")
+
+      -- ★★★★★ 2026-10-07 **给四个键设【官方胶囊底图】** ✗✓（用户要求配图 ✓）
+      --   ★ 为什么走脚本而不是改 `.gil`：`docs/官方素材方案-脚本一体化.md` 已论证
+      --     「**官方素材 + 脚本 = 图 / 色 / 尺寸 / 位置全可运行时改**」⇒ 配图本来就该脚本做 ✓
+      --     （团队连改 4 轮 `.gil` 记录数组都卡在手工下标上 ✗ 这条路整个绕开 ✓）
+      --   ★ 素材：★ **`107179`**（760×152，两端全圆角、米白）—— 与用户截图里的胶囊按钮同形 ✓
+      --     `set_image_deep` 会自己往下找带 `SetImage` 的子控件（= 按钮的 `bg` ✓），
+      --     并沿用控件自己编辑器里配的图集（`bg` 的 imageSource = 官方图集 ✓）✓
+      --   ★ 只做一次（每帧设图会白烧成本 ✓ 本项目对每帧成本敏感 ✓）。
+      if (not self._exit_menu_art) and self.adapter ~= nil and self.adapter.set_image_deep ~= nil then
+        self._exit_menu_art = true
+        for _, bid in ipairs({ "modal.exit", "modal.save", "modal.settle", "modal.cancel" }) do
+          local c = self.adapter:find(bid)
+          if c ~= nil then
+            pcall(function() self.adapter:set_image_deep(c, 107179, nil, nil, "弹窗胶囊") end)
+          end
+        end
+      end
     elseif modal.kind == "share" then
       -- ★ 2026-10-05 **这一支目前没有入口按钮**（用户当天决定去掉「分享棋局」按钮，
       --   见上面 `modal.kind == "result"` 里那段删除说明）。
