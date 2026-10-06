@@ -1046,14 +1046,14 @@ function Murdoku.on_update(dt)
     --   ⇒ 结论：**它在另一个客户端 UI 根上**。
     --   适配器注释里写着查找用的是 `game.GetClientUIRoots()`（**复数**），
     --   而脚本从头到尾只用了一个 `root`。把这些根全部列出来，那个全屏按钮就会现形。
-    print("[murdoku] ===== 客户端 UI 根清单 =====")
+    dprint("[murdoku] ===== 客户端 UI 根清单 =====")
     do
       local roots = nil
       pcall(function() roots = game.GetClientUIRoots() end)
       if type(roots) ~= "table" then
-        print("[murdoku]   读不到 game.GetClientUIRoots()（或返回非表）")
+        dprint("[murdoku]   读不到 game.GetClientUIRoots()（或返回非表）")
       else
-        print("[murdoku]   共 " .. tostring(#roots) .. " 个根")
+        dprint("[murdoku]   共 " .. tostring(#roots) .. " 个根")
         for i = 1, math.min(#roots, 12) do
           local r = roots[i]
           local nm, v, w, h = "?", "?", 0, 0
@@ -1066,7 +1066,7 @@ function Murdoku.on_update(dt)
           local kids = nil
           pcall(function() kids = r:GetChildren() end)
           local nk = (type(kids) == "table") and #kids or -1
-          print(string.format("[murdoku]     %d. %-18s visible=%-5s %6.0fx%-6.0f 子控件=%d",
+          dprint(string.format("[murdoku]     %d. %-18s visible=%-5s %6.0fx%-6.0f 子控件=%d",
             i, nm, v, w or 0, h or 0, nk))
           -- 根下面直接可见的大控件 —— 那个全屏按钮多半就在这一层
           if type(kids) == "table" then
@@ -1082,7 +1082,7 @@ function Murdoku.on_update(dt)
                 end)
                 pcall(function() hasCur = (c.AddCursorEventListener ~= nil) end)
                 if (cw or 0) * (ch or 0) > 20000 then
-                  print(string.format("[murdoku]        └ %-20s visible=%-5s %6.0fx%-6.0f 可接收光标=%s",
+                  dprint(string.format("[murdoku]        └ %-20s visible=%-5s %6.0fx%-6.0f 可接收光标=%s",
                     cn, cv, cw or 0, ch or 0, tostring(hasCur)))
                 end
               end
@@ -1091,14 +1091,14 @@ function Murdoku.on_update(dt)
         end
       end
     end
-    print("[murdoku] ===== 根清单结束 =====")
+    dprint("[murdoku] ===== 根清单结束 =====")
     -- ★★★★★ 2026-10-02 **对照组诊断**：把"能点的样本"和"不能点的样本"逐一对比。
     --
     --   ⚠️ 第一版这里全部报「找不到」—— 因为直接用了 `ad:find(id)`，
     --   而同一份日志里「诊断二」用**同一个调用**却能拿到 `home.select`。
     --   ⇒ 不再依赖 `find`：**自己从 `root` 遍历整棵树建一张 name→控件 的表**，
     --     然后从表里取。这样"取不到"只可能是名字真不在树里。
-    print("[murdoku] ===== 对照组：能点 vs 不能点 =====")
+    dprint("[murdoku] ===== 对照组：能点 vs 不能点 =====")
     do
       local rootC = nil
       -- ★★★★★ 2026-10-05 **第一遍代码体检修**：这里原来写 `ad:find("root")`，
@@ -1129,7 +1129,7 @@ function Murdoku.on_update(dt)
         end
         walk(rootC, 0)
       end
-      print("[murdoku]   树里共收集 " .. tostring(count) .. " 个具名控件（root=" .. tostring(rootC ~= nil) .. "）")
+      dprint("[murdoku]   树里共收集 " .. tostring(count) .. " 个具名控件（root=" .. tostring(rootC ~= nil) .. "）")
       local fields = { "visible", "active", "showCursor", "interactable", "raycastTarget",
                        "clickAudioId", "disableCursorEventPassthrough", "disableKeyEventPassthrough",
                        "isolateNavigation", "alpha", "index", "zIndex", "sortingOrder",
@@ -1144,7 +1144,7 @@ function Murdoku.on_update(dt)
         local id = samples[s]
         local c = map[id]
         if c == nil then
-          print("[murdoku]   " .. id .. "  —— **树里没有这个名字**")
+          dprint("[murdoku]   " .. id .. "  —— **树里没有这个名字**")
         else
           local parts = {}
           for f = 1, #fields do
@@ -1165,12 +1165,12 @@ function Murdoku.on_update(dt)
             cur = up
             guard = guard + 1
           end
-          print("[murdoku]   " .. id .. "  " .. table.concat(parts, "  "))
-          print("[murdoku]       祖先链：" .. table.concat(chain, " ← "))
+          dprint("[murdoku]   " .. id .. "  " .. table.concat(parts, "  "))
+          dprint("[murdoku]       祖先链：" .. table.concat(chain, " ← "))
         end
       end
     end
-    print("[murdoku] ===== 对照组结束 =====")
+    dprint("[murdoku] ===== 对照组结束 =====")
     print("[murdoku] 射线探针装好了 —— 之后点任何地方，只要射线落在这些容器上就会打日志")
   end
   -- ★★★★ 2026-10-02 **按用户建议做的对比：主页 ⇄ 选关，"切换后到底改了什么"**。
