@@ -2800,13 +2800,13 @@ function Controller:build_layout()
 
     elseif modal.kind == "exit_menu" then
       -- ★ 2026-10-07 「退出菜单」四键（几何由编辑器/gil 说了算 ✓ `pos_runtime` 缺省 = 不下发几何 ✓）
-      btn("modal.exit", "modal", { x = mx + 92, y = my + 340, w = 576, h = 68 },
+      btn("modal.exit", "modal", { x = mx + 68, y = my + 338, w = 624, h = 72, pos_runtime = true },   -- ★ 520×60 画布 · 居中
           "退出至菜单", { action = "exit_menu_go" }, "stamp")
-      btn("modal.save", "modal", { x = mx + 92, y = my + 244, w = 576, h = 68 },
+      btn("modal.save", "modal", { x = mx + 68, y = my + 242, w = 624, h = 72, pos_runtime = true },   -- ★ 520×60 画布 · 居中
           "仅存档", { action = "exit_menu_save" }, "stamp")
-      btn("modal.settle", "modal", { x = mx + 92, y = my + 148, w = 576, h = 68 },
+      btn("modal.settle", "modal", { x = mx + 68, y = my + 146, w = 624, h = 72, pos_runtime = true },   -- ★ 520×60 画布 · 居中
           "存档并结算", { action = "exit_menu_settle" }, "stamp.primary")
-      btn("modal.cancel", "modal", { x = mx + 92, y = my + 52, w = 576, h = 68 },
+      btn("modal.cancel", "modal", { x = mx + 68, y = my + 50, w = 624, h = 72, pos_runtime = true },   -- ★ 520×60 画布 · 居中
           "取消", { action = "close_modal" }, "tab")
 
       -- ★★★★★ 2026-10-07 **给四个键设【官方胶囊底图】** ✗✓（用户要求配图 ✓）
