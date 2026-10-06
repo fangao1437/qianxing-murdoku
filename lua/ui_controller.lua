@@ -885,6 +885,13 @@ function Controller:on_input(event)
   --   参考图里也是"点一下先问、再执行"的两段式。
   elseif a == "back_confirm" then
     -- ★ 2026-10-07 改成弹「退出菜单」四键（四句缺一不可 ✓ 漏 dirty ⇒ 规划不重跑 ⇒ 弹窗不出现 ✓）
+    if not self._diag_exit then self._diag_exit = 0 end
+    if self._diag_exit < 3 then
+      self._diag_exit = self._diag_exit + 1
+      print("[murdoku] ★ 诊断BACK：back_confirm 触发  screen=" .. tostring(self.screen)
+        .. "  intro_active=" .. tostring(self:is_intro_active()) .. "  intro_page=" .. tostring(self.intro_page)
+        .. "  #INTRO=" .. tostring(#M.INTRO))
+    end
     self.modal = { kind = "exit_menu" }
     self.pending = nil
     self.dirty = true
@@ -2799,6 +2806,12 @@ function Controller:build_layout()
           { action = "next_level" }, "stamp.primary")
 
     elseif modal.kind == "exit_menu" then
+      if not self._diag_render then self._diag_render = 0 end
+      if self._diag_render < 3 then
+        self._diag_render = self._diag_render + 1
+        print("[murdoku] ★ 诊断RENDER：exit_menu 分支已构建  mx=" .. tostring(mx) .. " my=" .. tostring(my)
+          .. " mw=" .. tostring(mw) .. " mh=" .. tostring(mh) .. "  pos_runtime(modal)=" .. tostring((self._pr and self._pr["modal"])))
+      end
       -- ★ 2026-10-07 「退出菜单」四键（几何由编辑器/gil 说了算 ✓ `pos_runtime` 缺省 = 不下发几何 ✓）
       push({ id = "modal.title", kind = "text", parent = "modal",
              rect = { x = mx + 30, y = my + 30, w = mw - 60, h = 56 },
