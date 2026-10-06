@@ -1,0 +1,10157 @@
+{
+  "canvas": {
+    "height": 900,
+    "width": 1600
+  },
+  "count": 369,
+  "design": {
+    "height": 1080,
+    "width": 1920
+  },
+  "levels": [
+    {
+      "cols": 5,
+      "count": 246,
+      "id": "selftest_theft_5x5",
+      "pieces": 5,
+      "rows": 5
+    },
+    {
+      "cols": 5,
+      "count": 254,
+      "id": "case_001",
+      "pieces": 5,
+      "rows": 5
+    },
+    {
+      "cols": 6,
+      "count": 314,
+      "id": "case_002",
+      "pieces": 6,
+      "rows": 6
+    },
+    {
+      "cols": 7,
+      "count": 354,
+      "id": "case_003",
+      "pieces": 7,
+      "rows": 7
+    }
+  ],
+  "max_cols": 7,
+  "max_rows": 7,
+  "nodes": [
+    {
+      "cx": 800,
+      "cy": 450,
+      "h": 900,
+      "id": "root",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 1600
+    },
+    {
+      "cx": 20,
+      "cy": 880,
+      "h": 40,
+      "id": "obj.shelf",
+      "image_id": 111051,
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "assets",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 40
+    },
+    {
+      "cx": 20,
+      "cy": 880,
+      "h": 40,
+      "id": "obj.carpet",
+      "image_id": 106053,
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "assets",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 40
+    },
+    {
+      "cx": 20,
+      "cy": 880,
+      "h": 40,
+      "id": "obj.desk",
+      "image_id": 111050,
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "assets",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 40
+    },
+    {
+      "cx": 20,
+      "cy": 880,
+      "h": 40,
+      "id": "obj.case",
+      "image_id": 111064,
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "assets",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 40
+    },
+    {
+      "cx": 91,
+      "cy": 821,
+      "h": 62,
+      "id": "hex.back",
+      "image_id": 100109,
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 62
+    },
+    {
+      "action": "back_confirm",
+      "cx": 91,
+      "cy": 821,
+      "event": {
+        "action": "back_confirm"
+      },
+      "h": 62,
+      "id": "hit.back",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 62
+    },
+    {
+      "cx": 1483,
+      "cy": 817,
+      "h": 70,
+      "id": "hex.submit",
+      "image_id": 100110,
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 70
+    },
+    {
+      "action": "submit",
+      "cx": 1483,
+      "cy": 817,
+      "event": {
+        "action": "submit"
+      },
+      "h": 70,
+      "id": "hit.submit",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 70
+    },
+    {
+      "cx": 1483,
+      "cy": 721,
+      "h": 70,
+      "id": "hex.redo",
+      "image_id": 100126,
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 70
+    },
+    {
+      "action": "restart",
+      "cx": 1483,
+      "cy": 721,
+      "event": {
+        "action": "restart"
+      },
+      "h": 70,
+      "id": "hit.redo",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 70
+    },
+    {
+      "cx": 1483,
+      "cy": 625,
+      "h": 70,
+      "id": "hex.undo",
+      "image_id": 100127,
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 70
+    },
+    {
+      "action": "undo",
+      "cx": 1483,
+      "cy": 625,
+      "event": {
+        "action": "undo"
+      },
+      "h": 70,
+      "id": "hit.undo",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 70
+    },
+    {
+      "cx": 1483,
+      "cy": 171,
+      "h": 70,
+      "id": "hex.hint",
+      "image_id": 100120,
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 70
+    },
+    {
+      "action": "hint",
+      "cx": 1483,
+      "cy": 171,
+      "event": {
+        "action": "hint"
+      },
+      "h": 70,
+      "id": "hit.hint",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 70
+    },
+    {
+      "cx": 382,
+      "cy": 825,
+      "h": 54,
+      "id": "hex.ok",
+      "image_id": 100102,
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 54
+    },
+    {
+      "action": "confirm_yes",
+      "cx": 382,
+      "cy": 825,
+      "event": {
+        "action": "confirm_yes"
+      },
+      "h": 54,
+      "id": "hit.ok",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 54
+    },
+    {
+      "cx": 444,
+      "cy": 825,
+      "h": 54,
+      "id": "hex.no",
+      "image_id": 100101,
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 54
+    },
+    {
+      "action": "confirm_no",
+      "cx": 444,
+      "cy": 825,
+      "event": {
+        "action": "confirm_no"
+      },
+      "h": 54,
+      "id": "hit.no",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 54
+    },
+    {
+      "cx": 900,
+      "cy": 470,
+      "h": 584,
+      "id": "stage",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "stage",
+      "visible": true,
+      "w": 584
+    },
+    {
+      "cx": 800,
+      "cy": 857,
+      "h": 87,
+      "id": "topbar",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "topbar",
+      "visible": true,
+      "w": 1600
+    },
+    {
+      "cx": 800,
+      "cy": 857,
+      "h": 87,
+      "id": "toolbar",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "toolbar",
+      "visible": true,
+      "w": 1600
+    },
+    {
+      "cx": 283,
+      "cy": 747,
+      "h": 47,
+      "id": "hud.title",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "topbar",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "title",
+      "text": "框架自检样例（偷窃版）",
+      "visible": true,
+      "w": 450
+    },
+    {
+      "cx": 417,
+      "cy": 718,
+      "h": 25,
+      "id": "hud.subtitle",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "topbar",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "subtitle",
+      "text": "内室里留下了两个人的痕迹 —— 这一次，他身边还有别人。　※ 线索中有一句假话",
+      "visible": true,
+      "w": 717
+    },
+    {
+      "cx": 1541,
+      "cy": 833,
+      "h": 37,
+      "id": "action.back.hex1",
+      "imageColor": 4279967792,
+      "image_id": 100001,
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "action.back",
+      "rot": 0,
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 63
+    },
+    {
+      "cx": 1541,
+      "cy": 805,
+      "h": 18,
+      "id": "action.back.hex2",
+      "imageColor": 4279967792,
+      "image_id": 100003,
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "action.back",
+      "rot": 0,
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 63
+    },
+    {
+      "cx": 1541,
+      "cy": 860,
+      "h": 18,
+      "id": "action.back.hex3",
+      "imageColor": 4279967792,
+      "image_id": 100003,
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "action.back",
+      "rot": 180,
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 63
+    },
+    {
+      "cx": 1541,
+      "cy": 832,
+      "h": 33,
+      "id": "action.back.hex4",
+      "imageColor": 4281021256,
+      "image_id": 100001,
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "action.back",
+      "rot": 0,
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 56
+    },
+    {
+      "cx": 1541,
+      "cy": 808,
+      "h": 17,
+      "id": "action.back.hex5",
+      "imageColor": 4281021256,
+      "image_id": 100003,
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "action.back",
+      "rot": 0,
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 56
+    },
+    {
+      "cx": 1541,
+      "cy": 857,
+      "h": 17,
+      "id": "action.back.hex6",
+      "imageColor": 4281021256,
+      "image_id": 100003,
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "action.back",
+      "rot": 180,
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 56
+    },
+    {
+      "action": "back_confirm",
+      "cx": 240,
+      "cy": 824,
+      "event": {
+        "action": "back_confirm"
+      },
+      "h": 23,
+      "id": "action.back",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "topbar",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "stamp.sm",
+      "text": "返回菜单",
+      "visible": true,
+      "w": 213
+    },
+    {
+      "cx": 1413,
+      "cy": 125,
+      "h": 50,
+      "id": "hud.progress",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "right",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "stat",
+      "text": "0 / 5",
+      "visible": true,
+      "w": 125
+    },
+    {
+      "cx": 202,
+      "cy": 697,
+      "h": 47,
+      "id": "hud.timer",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "topbar",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "stat",
+      "text": "00:00",
+      "visible": true,
+      "w": 283
+    },
+    {
+      "cx": 1221,
+      "cy": 856,
+      "h": 38,
+      "id": "hud.moves",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "topbar",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "stat",
+      "text": "0 步",
+      "visible": true,
+      "w": 125
+    },
+    {
+      "cx": 183,
+      "cy": 427,
+      "h": 733,
+      "id": "left",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "panel.left",
+      "visible": true,
+      "w": 327
+    },
+    {
+      "cx": 183,
+      "cy": 686,
+      "h": 182,
+      "id": "tray",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "left",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "tray",
+      "visible": false,
+      "w": 300
+    },
+    {
+      "cx": 230,
+      "cy": 399,
+      "h": 544,
+      "id": "clues",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "panel",
+      "visible": true,
+      "w": 400
+    },
+    {
+      "cx": 230,
+      "cy": 399,
+      "h": 544,
+      "id": "clues.bg",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clues",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 400
+    },
+    {
+      "cx": 230,
+      "cy": 399,
+      "h": 544,
+      "id": "clues.grid",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clues",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 400
+    },
+    {
+      "cx": 442,
+      "cy": 411,
+      "h": 520,
+      "id": "clues.bar",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clues",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 24
+    },
+    {
+      "action": "clue_up",
+      "cx": 411,
+      "cy": 655,
+      "event": {
+        "action": "clue_up"
+      },
+      "h": 28,
+      "id": "clues.up",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clues",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "tab",
+      "text": "▲",
+      "visible": true,
+      "w": 28
+    },
+    {
+      "action": "clue_down",
+      "cx": 411,
+      "cy": 156,
+      "event": {
+        "action": "clue_down"
+      },
+      "h": 28,
+      "id": "clues.down",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clues",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "tab",
+      "text": "▼",
+      "visible": true,
+      "w": 28
+    },
+    {
+      "cx": 425,
+      "cy": 406,
+      "h": 463,
+      "id": "clues.track",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clues",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "panel",
+      "visible": true,
+      "w": 3
+    },
+    {
+      "cx": 425,
+      "cy": 472,
+      "h": 331,
+      "id": "clues.knob",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clues",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "tab.active",
+      "visible": true,
+      "w": 3
+    },
+    {
+      "cx": 363,
+      "cy": 655,
+      "h": 28,
+      "id": "clues.count",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clues",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "muted",
+      "text": "1-5 / 15",
+      "visible": true,
+      "w": 65
+    },
+    {
+      "action": "focus_clue",
+      "cx": 224,
+      "cy": 610,
+      "event": {
+        "action": "focus_clue",
+        "index": 1
+      },
+      "h": 96,
+      "id": "clue.1",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clues",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue",
+      "text": "老馆员 与 跟拍记者 同处一室",
+      "visible": true,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": 610,
+      "h": 96,
+      "id": "clue.1.backrop1",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.1",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": 610,
+      "h": 90,
+      "id": "clue.1.backrop2",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.1",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 354
+    },
+    {
+      "action": "suspect",
+      "cx": 86,
+      "cy": 601,
+      "event": {
+        "action": "suspect",
+        "id": "B"
+      },
+      "h": 55,
+      "id": "clue.1.face",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.1",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "portrait",
+      "visible": true,
+      "w": 55
+    },
+    {
+      "cx": 100,
+      "cy": 643,
+      "h": 26,
+      "id": "clue.1.who",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.1",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "老馆员 与 跟拍记者",
+      "visible": true,
+      "w": 83
+    },
+    {
+      "cx": 249,
+      "cy": 614,
+      "h": 56,
+      "id": "clue.1.what",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.1",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.what",
+      "text": " 在 第3行第2列",
+      "visible": true,
+      "w": 202
+    },
+    {
+      "cx": 395,
+      "cy": 590,
+      "h": 28,
+      "id": "clue.1.badge",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.1",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "B",
+      "visible": true,
+      "w": 34
+    },
+    {
+      "cx": 395,
+      "cy": 590,
+      "h": 28,
+      "id": "clue.1.letter",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.1",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "B",
+      "visible": true,
+      "w": 34
+    },
+    {
+      "action": "focus_clue",
+      "cx": 224,
+      "cy": 504,
+      "event": {
+        "action": "focus_clue",
+        "index": 2
+      },
+      "h": 96,
+      "id": "clue.2",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clues",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue",
+      "text": "老馆员 与 赞助人 同处一室",
+      "visible": true,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": 504,
+      "h": 96,
+      "id": "clue.2.backrop1",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.2",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": 504,
+      "h": 90,
+      "id": "clue.2.backrop2",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.2",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 354
+    },
+    {
+      "action": "suspect",
+      "cx": 86,
+      "cy": 495,
+      "event": {
+        "action": "suspect",
+        "id": "A"
+      },
+      "h": 55,
+      "id": "clue.2.face",
+      "kind": "button",
+      "levels": [
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.2",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "portrait",
+      "visible": true,
+      "w": 55
+    },
+    {
+      "cx": 100,
+      "cy": 537,
+      "h": 26,
+      "id": "clue.2.who",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.2",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "老馆员 与 赞助人",
+      "visible": true,
+      "w": 83
+    },
+    {
+      "cx": 249,
+      "cy": 508,
+      "h": 56,
+      "id": "clue.2.what",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.2",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.what",
+      "text": " 在 第5行第3列",
+      "visible": true,
+      "w": 202
+    },
+    {
+      "cx": 395,
+      "cy": 484,
+      "h": 28,
+      "id": "clue.2.badge",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.2",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "A",
+      "visible": true,
+      "w": 34
+    },
+    {
+      "cx": 395,
+      "cy": 484,
+      "h": 28,
+      "id": "clue.2.letter",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.2",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "A",
+      "visible": true,
+      "w": 34
+    },
+    {
+      "action": "focus_clue",
+      "cx": 224,
+      "cy": 398,
+      "event": {
+        "action": "focus_clue",
+        "index": 3
+      },
+      "h": 96,
+      "id": "clue.3",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clues",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue",
+      "text": "馆长 与 随行记者 单独共处一室",
+      "visible": true,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": 398,
+      "h": 96,
+      "id": "clue.3.backrop1",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.3",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": 398,
+      "h": 90,
+      "id": "clue.3.backrop2",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.3",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 354
+    },
+    {
+      "action": "suspect",
+      "cx": 86,
+      "cy": 389,
+      "event": {
+        "action": "suspect",
+        "id": "V"
+      },
+      "h": 55,
+      "id": "clue.3.face",
+      "kind": "button",
+      "levels": [
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.3",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "portrait",
+      "visible": true,
+      "w": 55
+    },
+    {
+      "cx": 100,
+      "cy": 431,
+      "h": 26,
+      "id": "clue.3.who",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.3",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "馆长 与 随行记者",
+      "visible": true,
+      "w": 83
+    },
+    {
+      "cx": 249,
+      "cy": 402,
+      "h": 56,
+      "id": "clue.3.what",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.3",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.what",
+      "text": " 在 第4行第1列",
+      "visible": true,
+      "w": 202
+    },
+    {
+      "cx": 395,
+      "cy": 378,
+      "h": 28,
+      "id": "clue.3.badge",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.3",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "V",
+      "visible": true,
+      "w": 34
+    },
+    {
+      "cx": 395,
+      "cy": 378,
+      "h": 28,
+      "id": "clue.3.letter",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.3",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "V",
+      "visible": true,
+      "w": 34
+    },
+    {
+      "action": "focus_clue",
+      "cx": 224,
+      "cy": 292,
+      "event": {
+        "action": "focus_clue",
+        "index": 4
+      },
+      "h": 96,
+      "id": "clue.4",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clues",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue",
+      "text": "随行记者 正好在 馆长西边 1 列",
+      "visible": true,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": 292,
+      "h": 96,
+      "id": "clue.4.backrop1",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.4",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": 292,
+      "h": 90,
+      "id": "clue.4.backrop2",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.4",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 354
+    },
+    {
+      "action": "suspect",
+      "cx": 86,
+      "cy": 283,
+      "event": {
+        "action": "suspect",
+        "id": "D"
+      },
+      "h": 55,
+      "id": "clue.4.face",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.4",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "portrait",
+      "visible": true,
+      "w": 55
+    },
+    {
+      "cx": 100,
+      "cy": 325,
+      "h": 26,
+      "id": "clue.4.who",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.4",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "夜班清洁工",
+      "visible": true,
+      "w": 83
+    },
+    {
+      "cx": 249,
+      "cy": 296,
+      "h": 56,
+      "id": "clue.4.what",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.4",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.what",
+      "text": " 正好在 馆长西边 1 列",
+      "visible": true,
+      "w": 202
+    },
+    {
+      "cx": 395,
+      "cy": 272,
+      "h": 28,
+      "id": "clue.4.badge",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.4",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "D",
+      "visible": true,
+      "w": 34
+    },
+    {
+      "cx": 395,
+      "cy": 272,
+      "h": 28,
+      "id": "clue.4.letter",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.4",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "D",
+      "visible": true,
+      "w": 34
+    },
+    {
+      "action": "focus_clue",
+      "cx": 224,
+      "cy": 186,
+      "event": {
+        "action": "focus_clue",
+        "index": 5
+      },
+      "h": 96,
+      "id": "clue.5",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clues",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue",
+      "text": "跟拍记者 正好在 老馆员西边 1 列",
+      "visible": true,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": 186,
+      "h": 96,
+      "id": "clue.5.backrop1",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.5",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": 186,
+      "h": 90,
+      "id": "clue.5.backrop2",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.5",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 354
+    },
+    {
+      "action": "focus_clue",
+      "cx": 224,
+      "cy": 80,
+      "event": {
+        "action": "focus_clue",
+        "index": 6
+      },
+      "h": 96,
+      "id": "clue.6",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clues",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue",
+      "text": "跟拍记者 正好在 老馆员南边 1 行",
+      "visible": false,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": 80,
+      "h": 96,
+      "id": "clue.6.backrop1",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.6",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": 80,
+      "h": 90,
+      "id": "clue.6.backrop2",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.6",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 354
+    },
+    {
+      "action": "focus_clue",
+      "cx": 224,
+      "cy": -26,
+      "event": {
+        "action": "focus_clue",
+        "index": 7
+      },
+      "h": 96,
+      "id": "clue.7",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clues",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue",
+      "text": "赞助人 正好在 老馆员东边 1 列",
+      "visible": false,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": -26,
+      "h": 96,
+      "id": "clue.7.backrop1",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.7",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": -26,
+      "h": 90,
+      "id": "clue.7.backrop2",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.7",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 354
+    },
+    {
+      "action": "suspect",
+      "cx": 86,
+      "cy": -35,
+      "event": {
+        "action": "suspect",
+        "id": "B"
+      },
+      "h": 55,
+      "id": "clue.7.face",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.7",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "portrait",
+      "visible": false,
+      "w": 55
+    },
+    {
+      "cx": 100,
+      "cy": 7,
+      "h": 26,
+      "id": "clue.7.who",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.7",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "值班保安",
+      "visible": false,
+      "w": 83
+    },
+    {
+      "cx": 249,
+      "cy": -22,
+      "h": 56,
+      "id": "clue.7.what",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.7",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.what",
+      "text": " 正好在 老馆员东边 1 列",
+      "visible": false,
+      "w": 202
+    },
+    {
+      "cx": 395,
+      "cy": -46,
+      "h": 28,
+      "id": "clue.7.badge",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.7",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "B",
+      "visible": false,
+      "w": 34
+    },
+    {
+      "cx": 395,
+      "cy": -46,
+      "h": 28,
+      "id": "clue.7.letter",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clue.7",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "B",
+      "visible": false,
+      "w": 34
+    },
+    {
+      "cx": 230,
+      "cy": 128,
+      "h": 25,
+      "id": "clues.more",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "clues",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "muted",
+      "text": "还有 0 条线索",
+      "visible": false,
+      "w": 400
+    },
+    {
+      "cx": 183,
+      "cy": 105,
+      "h": 63,
+      "id": "legend",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "left",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "muted",
+      "text": "单击空格=划掉这格（再点取消）\n选中头像后单击=假设他在这里\n双击/长按=正式放置　单击已放的格=拿起",
+      "visible": true,
+      "w": 300
+    },
+    {
+      "cx": 900,
+      "cy": 470,
+      "h": 584,
+      "id": "board",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "board",
+      "visible": true,
+      "w": 584
+    },
+    {
+      "cx": 900,
+      "cy": 470,
+      "h": 584,
+      "id": "ruler",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "ruler",
+      "visible": true,
+      "w": 584
+    },
+    {
+      "cx": 660,
+      "cy": 758,
+      "h": 7,
+      "id": "ruler.c.1",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "ruler",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "ruler",
+      "text": "C1",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "cx": 740,
+      "cy": 758,
+      "h": 7,
+      "id": "ruler.c.2",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "ruler",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "ruler",
+      "text": "C2",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "cx": 820,
+      "cy": 758,
+      "h": 7,
+      "id": "ruler.c.3",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "ruler",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "ruler",
+      "text": "C3",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "cx": 900,
+      "cy": 758,
+      "h": 7,
+      "id": "ruler.c.4",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "ruler",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "ruler",
+      "text": "C4",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "cx": 980,
+      "cy": 758,
+      "h": 7,
+      "id": "ruler.c.5",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "ruler",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "ruler",
+      "text": "C5",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "cx": 653,
+      "cy": 733,
+      "h": 33,
+      "id": "room.label.1",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 64
+    },
+    {
+      "cx": 653,
+      "cy": 733,
+      "h": 33,
+      "id": "room.label.2",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 64
+    },
+    {
+      "cx": 653,
+      "cy": 733,
+      "h": 33,
+      "id": "room.label.3",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 64
+    },
+    {
+      "cx": 653,
+      "cy": 733,
+      "h": 33,
+      "id": "room.label.4",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 64
+    },
+    {
+      "cx": 653,
+      "cy": 733,
+      "h": 33,
+      "id": "room.label.5",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 64
+    },
+    {
+      "cx": 653,
+      "cy": 733,
+      "h": 33,
+      "id": "room.label.6",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 64
+    },
+    {
+      "cx": 653,
+      "cy": 733,
+      "h": 33,
+      "id": "room.label.7",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 64
+    },
+    {
+      "cx": 653,
+      "cy": 733,
+      "h": 33,
+      "id": "room.label.8",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 64
+    },
+    {
+      "cx": 612,
+      "cy": 710,
+      "h": 78,
+      "id": "ruler.r.1",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "ruler",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "ruler",
+      "text": "R1",
+      "visible": true,
+      "w": 7
+    },
+    {
+      "cx": 612,
+      "cy": 630,
+      "h": 78,
+      "id": "ruler.r.2",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "ruler",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "ruler",
+      "text": "R2",
+      "visible": true,
+      "w": 7
+    },
+    {
+      "cx": 612,
+      "cy": 550,
+      "h": 78,
+      "id": "ruler.r.3",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "ruler",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "ruler",
+      "text": "R3",
+      "visible": true,
+      "w": 7
+    },
+    {
+      "cx": 612,
+      "cy": 470,
+      "h": 78,
+      "id": "ruler.r.4",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "ruler",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "ruler",
+      "text": "R4",
+      "visible": true,
+      "w": 7
+    },
+    {
+      "cx": 612,
+      "cy": 390,
+      "h": 78,
+      "id": "ruler.r.5",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "ruler",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "ruler",
+      "text": "R5",
+      "visible": true,
+      "w": 7
+    },
+    {
+      "action": "click",
+      "cx": 660,
+      "cy": 710,
+      "event": {
+        "action": "click",
+        "c": 1,
+        "r": 1
+      },
+      "h": 78,
+      "id": "cell.1.1",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 740,
+      "cy": 710,
+      "event": {
+        "action": "click",
+        "c": 2,
+        "r": 1
+      },
+      "h": 78,
+      "id": "cell.1.2",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 820,
+      "cy": 710,
+      "event": {
+        "action": "click",
+        "c": 3,
+        "r": 1
+      },
+      "h": 78,
+      "id": "cell.1.3",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 900,
+      "cy": 710,
+      "event": {
+        "action": "click",
+        "c": 4,
+        "r": 1
+      },
+      "h": 78,
+      "id": "cell.1.4",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 980,
+      "cy": 710,
+      "event": {
+        "action": "click",
+        "c": 5,
+        "r": 1
+      },
+      "h": 78,
+      "id": "cell.1.5",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell.blocked",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 660,
+      "cy": 630,
+      "event": {
+        "action": "click",
+        "c": 1,
+        "r": 2
+      },
+      "h": 78,
+      "id": "cell.2.1",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 740,
+      "cy": 630,
+      "event": {
+        "action": "click",
+        "c": 2,
+        "r": 2
+      },
+      "h": 78,
+      "id": "cell.2.2",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 820,
+      "cy": 630,
+      "event": {
+        "action": "click",
+        "c": 3,
+        "r": 2
+      },
+      "h": 78,
+      "id": "cell.2.3",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 900,
+      "cy": 630,
+      "event": {
+        "action": "click",
+        "c": 4,
+        "r": 2
+      },
+      "h": 78,
+      "id": "cell.2.4",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 980,
+      "cy": 630,
+      "event": {
+        "action": "click",
+        "c": 5,
+        "r": 2
+      },
+      "h": 78,
+      "id": "cell.2.5",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 660,
+      "cy": 550,
+      "event": {
+        "action": "click",
+        "c": 1,
+        "r": 3
+      },
+      "h": 78,
+      "id": "cell.3.1",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 740,
+      "cy": 550,
+      "event": {
+        "action": "click",
+        "c": 2,
+        "r": 3
+      },
+      "h": 78,
+      "id": "cell.3.2",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 820,
+      "cy": 550,
+      "event": {
+        "action": "click",
+        "c": 3,
+        "r": 3
+      },
+      "h": 78,
+      "id": "cell.3.3",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 900,
+      "cy": 550,
+      "event": {
+        "action": "click",
+        "c": 4,
+        "r": 3
+      },
+      "h": 78,
+      "id": "cell.3.4",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 980,
+      "cy": 550,
+      "event": {
+        "action": "click",
+        "c": 5,
+        "r": 3
+      },
+      "h": 78,
+      "id": "cell.3.5",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 660,
+      "cy": 470,
+      "event": {
+        "action": "click",
+        "c": 1,
+        "r": 4
+      },
+      "h": 78,
+      "id": "cell.4.1",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 740,
+      "cy": 470,
+      "event": {
+        "action": "click",
+        "c": 2,
+        "r": 4
+      },
+      "h": 78,
+      "id": "cell.4.2",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 820,
+      "cy": 470,
+      "event": {
+        "action": "click",
+        "c": 3,
+        "r": 4
+      },
+      "h": 78,
+      "id": "cell.4.3",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 900,
+      "cy": 470,
+      "event": {
+        "action": "click",
+        "c": 4,
+        "r": 4
+      },
+      "h": 78,
+      "id": "cell.4.4",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 980,
+      "cy": 470,
+      "event": {
+        "action": "click",
+        "c": 5,
+        "r": 4
+      },
+      "h": 78,
+      "id": "cell.4.5",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 660,
+      "cy": 390,
+      "event": {
+        "action": "click",
+        "c": 1,
+        "r": 5
+      },
+      "h": 78,
+      "id": "cell.5.1",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 740,
+      "cy": 390,
+      "event": {
+        "action": "click",
+        "c": 2,
+        "r": 5
+      },
+      "h": 78,
+      "id": "cell.5.2",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 820,
+      "cy": 390,
+      "event": {
+        "action": "click",
+        "c": 3,
+        "r": 5
+      },
+      "h": 78,
+      "id": "cell.5.3",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 900,
+      "cy": 390,
+      "event": {
+        "action": "click",
+        "c": 4,
+        "r": 5
+      },
+      "h": 78,
+      "id": "cell.5.4",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 980,
+      "cy": 390,
+      "event": {
+        "action": "click",
+        "c": 5,
+        "r": 5
+      },
+      "h": 78,
+      "id": "cell.5.5",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "cx": 1375,
+      "cy": 427,
+      "h": 733,
+      "id": "right",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "panel.right",
+      "visible": true,
+      "w": 383
+    },
+    {
+      "cx": 800,
+      "cy": 450,
+      "h": 900,
+      "id": "home",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 1600
+    },
+    {
+      "cx": 800,
+      "cy": 450,
+      "h": 900,
+      "id": "select",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": true,
+      "w": 1600
+    },
+    {
+      "cx": 800,
+      "cy": 738,
+      "h": 92,
+      "id": "home.title",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "home"
+      ],
+      "text": "侦探推理 · 摆位谜题",
+      "visible": false,
+      "w": 833
+    },
+    {
+      "action": "levelselect",
+      "cx": 800,
+      "cy": 563,
+      "event": {
+        "action": "levelselect"
+      },
+      "h": 73,
+      "id": "home.select",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "home"
+      ],
+      "text": "选关",
+      "visible": false,
+      "w": 383
+    },
+    {
+      "action": "continue",
+      "cx": 800,
+      "cy": 463,
+      "event": {
+        "action": "continue"
+      },
+      "h": 73,
+      "id": "home.continue",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "home"
+      ],
+      "text": "从存档点开始",
+      "visible": false,
+      "w": 383
+    },
+    {
+      "action": "shop",
+      "cx": 800,
+      "cy": 363,
+      "event": {
+        "action": "shop"
+      },
+      "h": 73,
+      "id": "home.shop",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "home"
+      ],
+      "text": "商城",
+      "visible": false,
+      "w": 383
+    },
+    {
+      "action": "bag",
+      "cx": 800,
+      "cy": 263,
+      "event": {
+        "action": "bag"
+      },
+      "h": 73,
+      "id": "home.bag",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "home"
+      ],
+      "text": "背包",
+      "visible": false,
+      "w": 383
+    },
+    {
+      "cx": 800,
+      "cy": 796,
+      "h": 75,
+      "id": "select.title",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "text": "选择关卡",
+      "visible": false,
+      "w": 833
+    },
+    {
+      "action": "home",
+      "cx": 208,
+      "cy": 75,
+      "event": {
+        "action": "home"
+      },
+      "h": 67,
+      "id": "select.back",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "text": "返回主页",
+      "visible": false,
+      "w": 217
+    },
+    {
+      "cx": 675,
+      "cy": 75,
+      "h": 67,
+      "id": "select.prev",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 183
+    },
+    {
+      "cx": 925,
+      "cy": 75,
+      "h": 67,
+      "id": "select.next",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 183
+    },
+    {
+      "cx": 800,
+      "cy": 75,
+      "h": 58,
+      "id": "select.page",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 50
+    },
+    {
+      "action": "pick_level",
+      "cx": 292,
+      "cy": 617,
+      "event": {
+        "action": "pick_level",
+        "id": "selftest_theft_5x5"
+      },
+      "h": 167,
+      "id": "select.card.1",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 317
+    },
+    {
+      "cx": 292,
+      "cy": 678,
+      "h": 28,
+      "id": "select.card.1.title",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "style": "card.title",
+      "text": "框架自检样例（偷窃版）",
+      "visible": false,
+      "w": 290
+    },
+    {
+      "cx": 292,
+      "cy": 555,
+      "h": 27,
+      "id": "select.card.1.info",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "style": "muted",
+      "text": "5x5　4名嫌疑人+1名受害人",
+      "visible": false,
+      "w": 290
+    },
+    {
+      "cx": 292,
+      "cy": 633,
+      "h": 51,
+      "id": "select.card.1.room.1",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 277
+    },
+    {
+      "cx": 236,
+      "cy": 591,
+      "h": 33,
+      "id": "select.card.1.room.2",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 166
+    },
+    {
+      "cx": 374,
+      "cy": 591,
+      "h": 33,
+      "id": "select.card.1.room.3",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 110
+    },
+    {
+      "cx": 188,
+      "cy": 648,
+      "h": 21,
+      "id": "select.card.1.room.4",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 188,
+      "cy": 648,
+      "h": 21,
+      "id": "select.card.1.room.5",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 188,
+      "cy": 648,
+      "h": 21,
+      "id": "select.card.1.room.6",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "action": "pick_level",
+      "cx": 642,
+      "cy": 617,
+      "event": {
+        "action": "pick_level",
+        "id": "case_001"
+      },
+      "h": 167,
+      "id": "select.card.2",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 317
+    },
+    {
+      "cx": 642,
+      "cy": 678,
+      "h": 28,
+      "id": "select.card.2.title",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "style": "card.title",
+      "text": "案件 001 · 夜盗独行",
+      "visible": false,
+      "w": 290
+    },
+    {
+      "cx": 642,
+      "cy": 555,
+      "h": 27,
+      "id": "select.card.2.info",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "style": "muted",
+      "text": "5x5　4名嫌疑人+1名受害人",
+      "visible": false,
+      "w": 290
+    },
+    {
+      "cx": 586,
+      "cy": 633,
+      "h": 51,
+      "id": "select.card.2.room.1",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 166
+    },
+    {
+      "cx": 724,
+      "cy": 616,
+      "h": 85,
+      "id": "select.card.2.room.2",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 110
+    },
+    {
+      "cx": 614,
+      "cy": 591,
+      "h": 33,
+      "id": "select.card.2.room.3",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 221
+    },
+    {
+      "cx": 538,
+      "cy": 648,
+      "h": 21,
+      "id": "select.card.2.room.4",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 538,
+      "cy": 648,
+      "h": 21,
+      "id": "select.card.2.room.5",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 538,
+      "cy": 648,
+      "h": 21,
+      "id": "select.card.2.room.6",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "action": "pick_level",
+      "cx": 992,
+      "cy": 617,
+      "event": {
+        "action": "pick_level",
+        "id": "case_002"
+      },
+      "h": 167,
+      "id": "select.card.3",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 317
+    },
+    {
+      "cx": 992,
+      "cy": 678,
+      "h": 28,
+      "id": "select.card.3.title",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "style": "card.title",
+      "text": "案件 002 · 双影",
+      "visible": false,
+      "w": 290
+    },
+    {
+      "cx": 992,
+      "cy": 555,
+      "h": 27,
+      "id": "select.card.3.info",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "style": "muted",
+      "text": "6x6　5名嫌疑人+1名受害人",
+      "visible": false,
+      "w": 290
+    },
+    {
+      "cx": 945,
+      "cy": 630,
+      "h": 57,
+      "id": "select.card.3.room.1",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 184
+    },
+    {
+      "cx": 1083,
+      "cy": 616,
+      "h": 85,
+      "id": "select.card.3.room.2",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 92
+    },
+    {
+      "cx": 945,
+      "cy": 588,
+      "h": 28,
+      "id": "select.card.3.room.3",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 184
+    },
+    {
+      "cx": 888,
+      "cy": 648,
+      "h": 21,
+      "id": "select.card.3.room.4",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 888,
+      "cy": 648,
+      "h": 21,
+      "id": "select.card.3.room.5",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 888,
+      "cy": 648,
+      "h": 21,
+      "id": "select.card.3.room.6",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "action": "pick_level",
+      "cx": 1342,
+      "cy": 617,
+      "event": {
+        "action": "pick_level",
+        "id": "case_003"
+      },
+      "h": 167,
+      "id": "select.card.4",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 317
+    },
+    {
+      "cx": 1342,
+      "cy": 678,
+      "h": 28,
+      "id": "select.card.4.title",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "style": "card.title",
+      "text": "案件 003 · 第三方",
+      "visible": false,
+      "w": 290
+    },
+    {
+      "cx": 1342,
+      "cy": 555,
+      "h": 27,
+      "id": "select.card.4.info",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "style": "muted",
+      "text": "7x7　6名嫌疑人+1名受害人",
+      "visible": false,
+      "w": 290
+    },
+    {
+      "cx": 1282,
+      "cy": 634,
+      "h": 48,
+      "id": "select.card.4.room.1",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 158
+    },
+    {
+      "cx": 1420,
+      "cy": 616,
+      "h": 85,
+      "id": "select.card.4.room.2",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 118
+    },
+    {
+      "cx": 1282,
+      "cy": 592,
+      "h": 36,
+      "id": "select.card.4.room.3",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 158
+    },
+    {
+      "cx": 1238,
+      "cy": 648,
+      "h": 21,
+      "id": "select.card.4.room.4",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 1238,
+      "cy": 648,
+      "h": 21,
+      "id": "select.card.4.room.5",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 1238,
+      "cy": 648,
+      "h": 21,
+      "id": "select.card.4.room.6",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 292,
+      "cy": 417,
+      "h": 167,
+      "id": "select.card.5",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 317
+    },
+    {
+      "cx": 134,
+      "cy": 500,
+      "h": 1,
+      "id": "select.card.5.title",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 1
+    },
+    {
+      "cx": 134,
+      "cy": 500,
+      "h": 1,
+      "id": "select.card.5.info",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 1
+    },
+    {
+      "cx": 188,
+      "cy": 448,
+      "h": 21,
+      "id": "select.card.5.room.1",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 188,
+      "cy": 448,
+      "h": 21,
+      "id": "select.card.5.room.2",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 188,
+      "cy": 448,
+      "h": 21,
+      "id": "select.card.5.room.3",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 188,
+      "cy": 448,
+      "h": 21,
+      "id": "select.card.5.room.4",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 188,
+      "cy": 448,
+      "h": 21,
+      "id": "select.card.5.room.5",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 188,
+      "cy": 448,
+      "h": 21,
+      "id": "select.card.5.room.6",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 642,
+      "cy": 417,
+      "h": 167,
+      "id": "select.card.6",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 317
+    },
+    {
+      "cx": 484,
+      "cy": 500,
+      "h": 1,
+      "id": "select.card.6.title",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 1
+    },
+    {
+      "cx": 484,
+      "cy": 500,
+      "h": 1,
+      "id": "select.card.6.info",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 1
+    },
+    {
+      "cx": 538,
+      "cy": 448,
+      "h": 21,
+      "id": "select.card.6.room.1",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 538,
+      "cy": 448,
+      "h": 21,
+      "id": "select.card.6.room.2",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 538,
+      "cy": 448,
+      "h": 21,
+      "id": "select.card.6.room.3",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 538,
+      "cy": 448,
+      "h": 21,
+      "id": "select.card.6.room.4",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 538,
+      "cy": 448,
+      "h": 21,
+      "id": "select.card.6.room.5",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 538,
+      "cy": 448,
+      "h": 21,
+      "id": "select.card.6.room.6",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 992,
+      "cy": 417,
+      "h": 167,
+      "id": "select.card.7",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 317
+    },
+    {
+      "cx": 834,
+      "cy": 500,
+      "h": 1,
+      "id": "select.card.7.title",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 1
+    },
+    {
+      "cx": 834,
+      "cy": 500,
+      "h": 1,
+      "id": "select.card.7.info",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 1
+    },
+    {
+      "cx": 888,
+      "cy": 448,
+      "h": 21,
+      "id": "select.card.7.room.1",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 888,
+      "cy": 448,
+      "h": 21,
+      "id": "select.card.7.room.2",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 888,
+      "cy": 448,
+      "h": 21,
+      "id": "select.card.7.room.3",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 888,
+      "cy": 448,
+      "h": 21,
+      "id": "select.card.7.room.4",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 888,
+      "cy": 448,
+      "h": 21,
+      "id": "select.card.7.room.5",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 888,
+      "cy": 448,
+      "h": 21,
+      "id": "select.card.7.room.6",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 1342,
+      "cy": 417,
+      "h": 167,
+      "id": "select.card.8",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 317
+    },
+    {
+      "cx": 1184,
+      "cy": 500,
+      "h": 1,
+      "id": "select.card.8.title",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 1
+    },
+    {
+      "cx": 1184,
+      "cy": 500,
+      "h": 1,
+      "id": "select.card.8.info",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 1
+    },
+    {
+      "cx": 1238,
+      "cy": 448,
+      "h": 21,
+      "id": "select.card.8.room.1",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 1238,
+      "cy": 448,
+      "h": 21,
+      "id": "select.card.8.room.2",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 1238,
+      "cy": 448,
+      "h": 21,
+      "id": "select.card.8.room.3",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 1238,
+      "cy": 448,
+      "h": 21,
+      "id": "select.card.8.room.4",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 1238,
+      "cy": 448,
+      "h": 21,
+      "id": "select.card.8.room.5",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 1238,
+      "cy": 448,
+      "h": 21,
+      "id": "select.card.8.room.6",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "select",
+      "states": [
+        "select"
+      ],
+      "visible": false,
+      "w": 69
+    },
+    {
+      "cx": 800,
+      "cy": 450,
+      "h": 383,
+      "id": "intro",
+      "kind": "panel",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "intro"
+      ],
+      "style": "modal",
+      "visible": true,
+      "w": 633
+    },
+    {
+      "cx": 800,
+      "cy": 602,
+      "h": 30,
+      "id": "intro.dots",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "intro",
+      "states": [
+        "intro"
+      ],
+      "style": "muted",
+      "text": "第 1 / 5 页",
+      "visible": true,
+      "w": 567
+    },
+    {
+      "cx": 800,
+      "cy": 550,
+      "h": 50,
+      "id": "intro.title",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "intro",
+      "states": [
+        "intro"
+      ],
+      "style": "modal.title",
+      "text": "怎么破案",
+      "visible": true,
+      "w": 567
+    },
+    {
+      "cx": 800,
+      "cy": 433,
+      "h": 150,
+      "id": "intro.body",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "intro",
+      "states": [
+        "intro"
+      ],
+      "style": "modal.body",
+      "text": "读线索，把每个角色放到正确的位置上。\n摆满之后，与受害者单独共处一室的人就是凶手。",
+      "visible": true,
+      "w": 567
+    },
+    {
+      "action": "intro_skip",
+      "cx": 592,
+      "cy": 308,
+      "event": {
+        "action": "intro_skip"
+      },
+      "h": 50,
+      "id": "intro.skip",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "intro",
+      "states": [
+        "intro"
+      ],
+      "style": "tab",
+      "text": "跳过",
+      "visible": true,
+      "w": 150
+    },
+    {
+      "action": "intro_next",
+      "cx": 1000,
+      "cy": 308,
+      "event": {
+        "action": "intro_next"
+      },
+      "h": 50,
+      "id": "intro.next",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "intro",
+      "states": [
+        "intro"
+      ],
+      "style": "stamp.primary",
+      "text": "下一页",
+      "visible": true,
+      "w": 167
+    },
+    {
+      "cx": 800,
+      "cy": 450,
+      "h": 383,
+      "id": "modal",
+      "kind": "panel",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "root",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "howto",
+        "levelselect",
+        "result",
+        "share"
+      ],
+      "style": "modal",
+      "visible": true,
+      "w": 633
+    },
+    {
+      "cx": 800,
+      "cy": 597,
+      "h": 47,
+      "id": "modal.title",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "modal",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "howto",
+        "levelselect",
+        "result",
+        "share"
+      ],
+      "style": "modal.title",
+      "text": "摆位成立。谁是盗窃者？",
+      "visible": true,
+      "w": 583
+    },
+    {
+      "action": "accuse_thief",
+      "cx": 605,
+      "cy": 504,
+      "event": {
+        "action": "accuse_thief",
+        "id": "A"
+      },
+      "h": 92,
+      "id": "modal.suspect.A",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "modal",
+      "states": [
+        "accuse_thief"
+      ],
+      "style": "portrait",
+      "text": "值班保安",
+      "visible": true,
+      "w": 177
+    },
+    {
+      "action": "accuse_thief",
+      "cx": 798,
+      "cy": 504,
+      "event": {
+        "action": "accuse_thief",
+        "id": "B"
+      },
+      "h": 92,
+      "id": "modal.suspect.B",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "modal",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief"
+      ],
+      "style": "portrait",
+      "text": "前台姑娘",
+      "visible": true,
+      "w": 177
+    },
+    {
+      "action": "accuse_thief",
+      "cx": 992,
+      "cy": 504,
+      "event": {
+        "action": "accuse_thief",
+        "id": "C"
+      },
+      "h": 92,
+      "id": "modal.suspect.C",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "modal",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief"
+      ],
+      "style": "portrait",
+      "text": "夜班清洁工",
+      "visible": true,
+      "w": 177
+    },
+    {
+      "action": "accuse_thief",
+      "cx": 605,
+      "cy": 398,
+      "event": {
+        "action": "accuse_thief",
+        "id": "D"
+      },
+      "h": 92,
+      "id": "modal.suspect.D",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "modal",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief"
+      ],
+      "style": "portrait",
+      "text": "旧识古董商",
+      "visible": true,
+      "w": 177
+    },
+    {
+      "action": "accuse_thief",
+      "cx": 798,
+      "cy": 398,
+      "event": {
+        "action": "accuse_thief",
+        "id": "V"
+      },
+      "h": 92,
+      "id": "modal.suspect.V",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "modal",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief"
+      ],
+      "style": "portrait",
+      "text": "老宅主",
+      "visible": true,
+      "w": 177
+    },
+    {
+      "action": "close_modal",
+      "cx": 1017,
+      "cy": 307,
+      "event": {
+        "action": "close_modal"
+      },
+      "h": 50,
+      "id": "modal.cancel",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "modal",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "howto",
+        "levelselect",
+        "share"
+      ],
+      "style": "tab",
+      "text": "再看看",
+      "visible": true,
+      "w": 133
+    },
+    {
+      "action": "accuse_no_accomplice",
+      "cx": 633,
+      "cy": 307,
+      "event": {
+        "action": "accuse_no_accomplice"
+      },
+      "h": 50,
+      "id": "modal.no_accomplice",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "modal",
+      "states": [
+        "accuse_accomplice"
+      ],
+      "style": "stamp",
+      "text": "他独自作案（没有同伙）",
+      "visible": true,
+      "w": 233
+    },
+    {
+      "cx": 800,
+      "cy": 492,
+      "h": 100,
+      "id": "modal.body",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "modal",
+      "states": [
+        "howto",
+        "levelselect",
+        "result",
+        "share"
+      ],
+      "style": "modal.body",
+      "text": "（结果文案）",
+      "visible": true,
+      "w": 583
+    },
+    {
+      "cx": 800,
+      "cy": 417,
+      "h": 33,
+      "id": "modal.stats",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "modal",
+      "states": [
+        "result"
+      ],
+      "style": "muted",
+      "text": "用时 00:00 · 0 步 · 误指认 0 次 · 位置 0/5",
+      "visible": true,
+      "w": 583
+    },
+    {
+      "action": "restart",
+      "cx": 592,
+      "cy": 307,
+      "event": {
+        "action": "restart"
+      },
+      "h": 50,
+      "id": "modal.again",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "modal",
+      "states": [
+        "result"
+      ],
+      "style": "stamp",
+      "text": "重玩本关",
+      "visible": true,
+      "w": 150
+    },
+    {
+      "action": "next_level",
+      "cx": 933,
+      "cy": 307,
+      "event": {
+        "action": "next_level"
+      },
+      "h": 50,
+      "id": "modal.next",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "modal",
+      "states": [
+        "result"
+      ],
+      "style": "stamp.primary",
+      "text": "下一关",
+      "visible": true,
+      "w": 167
+    },
+    {
+      "action": "pick_level",
+      "cx": 654,
+      "cy": 508,
+      "event": {
+        "action": "pick_level",
+        "id": "selftest_theft_5x5"
+      },
+      "h": 57,
+      "id": "modal.level.selftest_theft_5x5",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "modal",
+      "states": [
+        "levelselect"
+      ],
+      "style": "stamp.primary",
+      "text": "▶ 框架自检样例（偷窃版）",
+      "visible": false,
+      "w": 275
+    },
+    {
+      "action": "pick_level",
+      "cx": 946,
+      "cy": 508,
+      "event": {
+        "action": "pick_level",
+        "id": "case_001"
+      },
+      "h": 57,
+      "id": "modal.level.case_001",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "modal",
+      "states": [
+        "levelselect"
+      ],
+      "style": "stamp",
+      "text": "▶ 案件 001 · 夜盗独行",
+      "visible": false,
+      "w": 275
+    },
+    {
+      "action": "pick_level",
+      "cx": 654,
+      "cy": 440,
+      "event": {
+        "action": "pick_level",
+        "id": "case_002"
+      },
+      "h": 57,
+      "id": "modal.level.case_002",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "modal",
+      "states": [
+        "levelselect"
+      ],
+      "style": "stamp",
+      "text": "▶ 案件 002 · 双影",
+      "visible": false,
+      "w": 275
+    },
+    {
+      "action": "pick_level",
+      "cx": 946,
+      "cy": 440,
+      "event": {
+        "action": "pick_level",
+        "id": "case_003"
+      },
+      "h": 57,
+      "id": "modal.level.case_003",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003",
+        "selftest_theft_5x5"
+      ],
+      "parent": "modal",
+      "states": [
+        "levelselect"
+      ],
+      "style": "stamp",
+      "text": "▶ 案件 003 · 第三方",
+      "visible": false,
+      "w": 275
+    },
+    {
+      "action": "suspect",
+      "cx": 86,
+      "cy": 176,
+      "event": {
+        "action": "suspect",
+        "id": "B"
+      },
+      "h": 55,
+      "id": "clue.5.face",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.5",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "portrait",
+      "visible": true,
+      "w": 55
+    },
+    {
+      "cx": 100,
+      "cy": 219,
+      "h": 26,
+      "id": "clue.5.who",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.5",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "前台姑娘",
+      "visible": true,
+      "w": 83
+    },
+    {
+      "cx": 249,
+      "cy": 190,
+      "h": 56,
+      "id": "clue.5.what",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.5",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.what",
+      "text": " 正好在 老馆员西边 1 列",
+      "visible": true,
+      "w": 202
+    },
+    {
+      "cx": 395,
+      "cy": 166,
+      "h": 28,
+      "id": "clue.5.badge",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.5",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "B",
+      "visible": true,
+      "w": 34
+    },
+    {
+      "cx": 395,
+      "cy": 166,
+      "h": 28,
+      "id": "clue.5.letter",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.5",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "B",
+      "visible": true,
+      "w": 34
+    },
+    {
+      "action": "suspect",
+      "cx": 86,
+      "cy": 71,
+      "event": {
+        "action": "suspect",
+        "id": "A"
+      },
+      "h": 55,
+      "id": "clue.6.face",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_003"
+      ],
+      "parent": "clue.6",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "portrait",
+      "visible": false,
+      "w": 55
+    },
+    {
+      "cx": 100,
+      "cy": 113,
+      "h": 26,
+      "id": "clue.6.who",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_003"
+      ],
+      "parent": "clue.6",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "值班保安",
+      "visible": false,
+      "w": 83
+    },
+    {
+      "cx": 249,
+      "cy": 84,
+      "h": 56,
+      "id": "clue.6.what",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_003"
+      ],
+      "parent": "clue.6",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.what",
+      "text": " 正好在 老馆员南边 1 行",
+      "visible": false,
+      "w": 202
+    },
+    {
+      "cx": 395,
+      "cy": 60,
+      "h": 28,
+      "id": "clue.6.badge",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_003"
+      ],
+      "parent": "clue.6",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "A",
+      "visible": false,
+      "w": 34
+    },
+    {
+      "cx": 395,
+      "cy": 60,
+      "h": 28,
+      "id": "clue.6.letter",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_003"
+      ],
+      "parent": "clue.6",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "A",
+      "visible": false,
+      "w": 34
+    },
+    {
+      "action": "focus_clue",
+      "cx": 224,
+      "cy": -132,
+      "event": {
+        "action": "focus_clue",
+        "index": 8
+      },
+      "h": 96,
+      "id": "clue.8",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clues",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue",
+      "text": "赞助人 正好在 老馆员南边 2 行",
+      "visible": false,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": -132,
+      "h": 96,
+      "id": "clue.8.backrop1",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.8",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": -132,
+      "h": 90,
+      "id": "clue.8.backrop2",
+      "kind": "container",
+      "levels": [
+        "case_001",
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.8",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 354
+    },
+    {
+      "action": "suspect",
+      "cx": 86,
+      "cy": -141,
+      "event": {
+        "action": "suspect",
+        "id": "A"
+      },
+      "h": 55,
+      "id": "clue.8.face",
+      "kind": "button",
+      "levels": [
+        "case_001",
+        "case_003"
+      ],
+      "parent": "clue.8",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "portrait",
+      "visible": false,
+      "w": 55
+    },
+    {
+      "cx": 100,
+      "cy": -99,
+      "h": 26,
+      "id": "clue.8.who",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_003"
+      ],
+      "parent": "clue.8",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "值班保安",
+      "visible": false,
+      "w": 83
+    },
+    {
+      "cx": 249,
+      "cy": -128,
+      "h": 56,
+      "id": "clue.8.what",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_003"
+      ],
+      "parent": "clue.8",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.what",
+      "text": " 正好在 老馆员南边 2 行",
+      "visible": false,
+      "w": 202
+    },
+    {
+      "cx": 395,
+      "cy": -152,
+      "h": 28,
+      "id": "clue.8.badge",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_003"
+      ],
+      "parent": "clue.8",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "A",
+      "visible": false,
+      "w": 34
+    },
+    {
+      "cx": 395,
+      "cy": -152,
+      "h": 28,
+      "id": "clue.8.letter",
+      "kind": "text",
+      "levels": [
+        "case_001",
+        "case_003"
+      ],
+      "parent": "clue.8",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "A",
+      "visible": false,
+      "w": 34
+    },
+    {
+      "action": "focus_clue",
+      "cx": 224,
+      "cy": -238,
+      "event": {
+        "action": "focus_clue",
+        "index": 9
+      },
+      "h": 96,
+      "id": "clue.9",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clues",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue",
+      "text": "同伙 正好在 盗窃者南边 1 行",
+      "visible": false,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": -238,
+      "h": 96,
+      "id": "clue.9.backrop1",
+      "kind": "container",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.9",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": -238,
+      "h": 90,
+      "id": "clue.9.backrop2",
+      "kind": "container",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.9",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 354
+    },
+    {
+      "action": "focus_clue",
+      "cx": 224,
+      "cy": -344,
+      "event": {
+        "action": "focus_clue",
+        "index": 10
+      },
+      "h": 96,
+      "id": "clue.10",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clues",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue",
+      "text": "夜班门卫 正好在 馆长西边 3 列",
+      "visible": false,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": -344,
+      "h": 96,
+      "id": "clue.10.backrop1",
+      "kind": "container",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.10",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": -344,
+      "h": 90,
+      "id": "clue.10.backrop2",
+      "kind": "container",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.10",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 354
+    },
+    {
+      "action": "suspect",
+      "cx": 86,
+      "cy": -353,
+      "event": {
+        "action": "suspect",
+        "id": "A"
+      },
+      "h": 55,
+      "id": "clue.10.face",
+      "kind": "button",
+      "levels": [
+        "case_002"
+      ],
+      "parent": "clue.10",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "portrait",
+      "visible": false,
+      "w": 55
+    },
+    {
+      "cx": 100,
+      "cy": -311,
+      "h": 26,
+      "id": "clue.10.who",
+      "kind": "text",
+      "levels": [
+        "case_002"
+      ],
+      "parent": "clue.10",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "夜班门卫",
+      "visible": false,
+      "w": 83
+    },
+    {
+      "cx": 249,
+      "cy": -340,
+      "h": 56,
+      "id": "clue.10.what",
+      "kind": "text",
+      "levels": [
+        "case_002"
+      ],
+      "parent": "clue.10",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.what",
+      "text": " 正好在 馆长西边 3 列",
+      "visible": false,
+      "w": 202
+    },
+    {
+      "cx": 395,
+      "cy": -364,
+      "h": 28,
+      "id": "clue.10.badge",
+      "kind": "text",
+      "levels": [
+        "case_002"
+      ],
+      "parent": "clue.10",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "A",
+      "visible": false,
+      "w": 34
+    },
+    {
+      "cx": 395,
+      "cy": -364,
+      "h": 28,
+      "id": "clue.10.letter",
+      "kind": "text",
+      "levels": [
+        "case_002"
+      ],
+      "parent": "clue.10",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "A",
+      "visible": false,
+      "w": 34
+    },
+    {
+      "action": "focus_clue",
+      "cx": 224,
+      "cy": -450,
+      "event": {
+        "action": "focus_clue",
+        "index": 11
+      },
+      "h": 96,
+      "id": "clue.11",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clues",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue",
+      "text": "夜班门卫 正好在 馆长北边 2 行",
+      "visible": false,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": -450,
+      "h": 96,
+      "id": "clue.11.backrop1",
+      "kind": "container",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.11",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": -450,
+      "h": 90,
+      "id": "clue.11.backrop2",
+      "kind": "container",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.11",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 354
+    },
+    {
+      "action": "suspect",
+      "cx": 86,
+      "cy": -460,
+      "event": {
+        "action": "suspect",
+        "id": "A"
+      },
+      "h": 55,
+      "id": "clue.11.face",
+      "kind": "button",
+      "levels": [
+        "case_002"
+      ],
+      "parent": "clue.11",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "portrait",
+      "visible": false,
+      "w": 55
+    },
+    {
+      "cx": 100,
+      "cy": -417,
+      "h": 26,
+      "id": "clue.11.who",
+      "kind": "text",
+      "levels": [
+        "case_002"
+      ],
+      "parent": "clue.11",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "夜班门卫",
+      "visible": false,
+      "w": 83
+    },
+    {
+      "cx": 249,
+      "cy": -446,
+      "h": 56,
+      "id": "clue.11.what",
+      "kind": "text",
+      "levels": [
+        "case_002"
+      ],
+      "parent": "clue.11",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.what",
+      "text": " 正好在 馆长北边 2 行",
+      "visible": false,
+      "w": 202
+    },
+    {
+      "cx": 395,
+      "cy": -470,
+      "h": 28,
+      "id": "clue.11.badge",
+      "kind": "text",
+      "levels": [
+        "case_002"
+      ],
+      "parent": "clue.11",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "A",
+      "visible": false,
+      "w": 34
+    },
+    {
+      "cx": 395,
+      "cy": -470,
+      "h": 28,
+      "id": "clue.11.letter",
+      "kind": "text",
+      "levels": [
+        "case_002"
+      ],
+      "parent": "clue.11",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "A",
+      "visible": false,
+      "w": 34
+    },
+    {
+      "action": "focus_clue",
+      "cx": 224,
+      "cy": -556,
+      "event": {
+        "action": "focus_clue",
+        "index": 12
+      },
+      "h": 96,
+      "id": "clue.12",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clues",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue",
+      "text": "画廊助理 正好在 夜班门卫西边 1 列",
+      "visible": false,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": -556,
+      "h": 96,
+      "id": "clue.12.backrop1",
+      "kind": "container",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.12",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": -556,
+      "h": 90,
+      "id": "clue.12.backrop2",
+      "kind": "container",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.12",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 354
+    },
+    {
+      "action": "suspect",
+      "cx": 86,
+      "cy": -565,
+      "event": {
+        "action": "suspect",
+        "id": "A"
+      },
+      "h": 55,
+      "id": "clue.12.face",
+      "kind": "button",
+      "levels": [
+        "case_002"
+      ],
+      "parent": "clue.12",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "portrait",
+      "visible": false,
+      "w": 55
+    },
+    {
+      "cx": 100,
+      "cy": -523,
+      "h": 26,
+      "id": "clue.12.who",
+      "kind": "text",
+      "levels": [
+        "case_002"
+      ],
+      "parent": "clue.12",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "画廊助理 正好在 夜班门卫",
+      "visible": false,
+      "w": 83
+    },
+    {
+      "cx": 249,
+      "cy": -552,
+      "h": 56,
+      "id": "clue.12.what",
+      "kind": "text",
+      "levels": [
+        "case_002"
+      ],
+      "parent": "clue.12",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.what",
+      "text": "西边 1 列",
+      "visible": false,
+      "w": 202
+    },
+    {
+      "cx": 395,
+      "cy": -576,
+      "h": 28,
+      "id": "clue.12.badge",
+      "kind": "text",
+      "levels": [
+        "case_002"
+      ],
+      "parent": "clue.12",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "A",
+      "visible": false,
+      "w": 34
+    },
+    {
+      "cx": 395,
+      "cy": -576,
+      "h": 28,
+      "id": "clue.12.letter",
+      "kind": "text",
+      "levels": [
+        "case_002"
+      ],
+      "parent": "clue.12",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "A",
+      "visible": false,
+      "w": 34
+    },
+    {
+      "action": "focus_clue",
+      "cx": 224,
+      "cy": -662,
+      "event": {
+        "action": "focus_clue",
+        "index": 13
+      },
+      "h": 96,
+      "id": "clue.13",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clues",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue",
+      "text": "画廊助理 正好在 夜班门卫南边 1 行",
+      "visible": false,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": -662,
+      "h": 96,
+      "id": "clue.13.backrop1",
+      "kind": "container",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.13",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": -662,
+      "h": 90,
+      "id": "clue.13.backrop2",
+      "kind": "container",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.13",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 354
+    },
+    {
+      "action": "suspect",
+      "cx": 86,
+      "cy": -672,
+      "event": {
+        "action": "suspect",
+        "id": "A"
+      },
+      "h": 55,
+      "id": "clue.13.face",
+      "kind": "button",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.13",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "portrait",
+      "visible": false,
+      "w": 55
+    },
+    {
+      "cx": 100,
+      "cy": -629,
+      "h": 26,
+      "id": "clue.13.who",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.13",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "画廊助理 正好在 夜班门卫",
+      "visible": false,
+      "w": 83
+    },
+    {
+      "cx": 249,
+      "cy": -658,
+      "h": 56,
+      "id": "clue.13.what",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.13",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.what",
+      "text": " 正好在 老馆员西边 4 列",
+      "visible": false,
+      "w": 202
+    },
+    {
+      "cx": 395,
+      "cy": -682,
+      "h": 28,
+      "id": "clue.13.badge",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.13",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "A",
+      "visible": false,
+      "w": 34
+    },
+    {
+      "cx": 395,
+      "cy": -682,
+      "h": 28,
+      "id": "clue.13.letter",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.13",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "A",
+      "visible": false,
+      "w": 34
+    },
+    {
+      "action": "focus_clue",
+      "cx": 224,
+      "cy": -768,
+      "event": {
+        "action": "focus_clue",
+        "index": 14
+      },
+      "h": 96,
+      "id": "clue.14",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clues",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.ok",
+      "text": "值夜保安 正好在 老馆员北边 2 行",
+      "visible": false,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": -768,
+      "h": 96,
+      "id": "clue.14.backrop1",
+      "kind": "container",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.14",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": -768,
+      "h": 90,
+      "id": "clue.14.backrop2",
+      "kind": "container",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.14",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 354
+    },
+    {
+      "action": "suspect",
+      "cx": 86,
+      "cy": -777,
+      "event": {
+        "action": "suspect",
+        "id": "D"
+      },
+      "h": 55,
+      "id": "clue.14.face",
+      "kind": "button",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.14",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "portrait",
+      "visible": false,
+      "w": 55
+    },
+    {
+      "cx": 100,
+      "cy": -735,
+      "h": 26,
+      "id": "clue.14.who",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.14",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "值夜保安",
+      "visible": false,
+      "w": 83
+    },
+    {
+      "cx": 249,
+      "cy": -764,
+      "h": 56,
+      "id": "clue.14.what",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.14",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.what",
+      "text": " 正好在 老馆员北边 2 行",
+      "visible": false,
+      "w": 202
+    },
+    {
+      "cx": 395,
+      "cy": -788,
+      "h": 28,
+      "id": "clue.14.badge",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.14",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "D",
+      "visible": false,
+      "w": 34
+    },
+    {
+      "cx": 395,
+      "cy": -788,
+      "h": 28,
+      "id": "clue.14.letter",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.14",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "D",
+      "visible": false,
+      "w": 34
+    },
+    {
+      "action": "focus_clue",
+      "cx": 224,
+      "cy": -874,
+      "event": {
+        "action": "focus_clue",
+        "index": 15
+      },
+      "h": 96,
+      "id": "clue.15",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clues",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue",
+      "text": "布展助理 正好在 值夜保安东边 1 列",
+      "visible": false,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": -874,
+      "h": 96,
+      "id": "clue.15.backrop1",
+      "kind": "container",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.15",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": -874,
+      "h": 90,
+      "id": "clue.15.backrop2",
+      "kind": "container",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.15",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 354
+    },
+    {
+      "action": "suspect",
+      "cx": 86,
+      "cy": -883,
+      "event": {
+        "action": "suspect",
+        "id": "C"
+      },
+      "h": 55,
+      "id": "clue.15.face",
+      "kind": "button",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.15",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "portrait",
+      "visible": false,
+      "w": 55
+    },
+    {
+      "cx": 100,
+      "cy": -841,
+      "h": 26,
+      "id": "clue.15.who",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.15",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "布展助理 正好在 值夜保安",
+      "visible": false,
+      "w": 83
+    },
+    {
+      "cx": 249,
+      "cy": -870,
+      "h": 56,
+      "id": "clue.15.what",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.15",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.what",
+      "text": " 在倒数第 1 列",
+      "visible": false,
+      "w": 202
+    },
+    {
+      "cx": 395,
+      "cy": -894,
+      "h": 28,
+      "id": "clue.15.badge",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.15",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "C",
+      "visible": false,
+      "w": 34
+    },
+    {
+      "cx": 395,
+      "cy": -894,
+      "h": 28,
+      "id": "clue.15.letter",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "clue.15",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "C",
+      "visible": false,
+      "w": 34
+    },
+    {
+      "cx": 1060,
+      "cy": 758,
+      "h": 7,
+      "id": "ruler.c.6",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "ruler",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "ruler",
+      "text": "C6",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "cx": 612,
+      "cy": 310,
+      "h": 78,
+      "id": "ruler.r.6",
+      "kind": "text",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "ruler",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "ruler",
+      "text": "R6",
+      "visible": true,
+      "w": 7
+    },
+    {
+      "action": "click",
+      "cx": 1060,
+      "cy": 710,
+      "event": {
+        "action": "click",
+        "c": 6,
+        "r": 1
+      },
+      "h": 78,
+      "id": "cell.1.6",
+      "kind": "button",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 1060,
+      "cy": 630,
+      "event": {
+        "action": "click",
+        "c": 6,
+        "r": 2
+      },
+      "h": 78,
+      "id": "cell.2.6",
+      "kind": "button",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 1060,
+      "cy": 550,
+      "event": {
+        "action": "click",
+        "c": 6,
+        "r": 3
+      },
+      "h": 78,
+      "id": "cell.3.6",
+      "kind": "button",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 1060,
+      "cy": 470,
+      "event": {
+        "action": "click",
+        "c": 6,
+        "r": 4
+      },
+      "h": 78,
+      "id": "cell.4.6",
+      "kind": "button",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 1060,
+      "cy": 390,
+      "event": {
+        "action": "click",
+        "c": 6,
+        "r": 5
+      },
+      "h": 78,
+      "id": "cell.5.6",
+      "kind": "button",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 660,
+      "cy": 310,
+      "event": {
+        "action": "click",
+        "c": 1,
+        "r": 6
+      },
+      "h": 78,
+      "id": "cell.6.1",
+      "kind": "button",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell.blocked",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 740,
+      "cy": 310,
+      "event": {
+        "action": "click",
+        "c": 2,
+        "r": 6
+      },
+      "h": 78,
+      "id": "cell.6.2",
+      "kind": "button",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 820,
+      "cy": 310,
+      "event": {
+        "action": "click",
+        "c": 3,
+        "r": 6
+      },
+      "h": 78,
+      "id": "cell.6.3",
+      "kind": "button",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 900,
+      "cy": 310,
+      "event": {
+        "action": "click",
+        "c": 4,
+        "r": 6
+      },
+      "h": 78,
+      "id": "cell.6.4",
+      "kind": "button",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 980,
+      "cy": 310,
+      "event": {
+        "action": "click",
+        "c": 5,
+        "r": 6
+      },
+      "h": 78,
+      "id": "cell.6.5",
+      "kind": "button",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 1060,
+      "cy": 310,
+      "event": {
+        "action": "click",
+        "c": 6,
+        "r": 6
+      },
+      "h": 78,
+      "id": "cell.6.6",
+      "kind": "button",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "accuse_thief",
+      "cx": 798,
+      "cy": 398,
+      "event": {
+        "action": "accuse_thief",
+        "id": "E"
+      },
+      "h": 92,
+      "id": "modal.suspect.E",
+      "kind": "button",
+      "levels": [
+        "case_002",
+        "case_003"
+      ],
+      "parent": "modal",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief"
+      ],
+      "style": "portrait",
+      "text": "随行记者",
+      "visible": true,
+      "w": 177
+    },
+    {
+      "action": "focus_clue",
+      "cx": 224,
+      "cy": -980,
+      "event": {
+        "action": "focus_clue",
+        "index": 16
+      },
+      "h": 96,
+      "id": "clue.16",
+      "kind": "text",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "clues",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue",
+      "text": "布展助理 正好在 值夜保安南边 1 行",
+      "visible": false,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": -980,
+      "h": 96,
+      "id": "clue.16.backrop1",
+      "kind": "container",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "clue.16",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": -980,
+      "h": 90,
+      "id": "clue.16.backrop2",
+      "kind": "container",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "clue.16",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 354
+    },
+    {
+      "action": "suspect",
+      "cx": 86,
+      "cy": -990,
+      "event": {
+        "action": "suspect",
+        "id": "A"
+      },
+      "h": 55,
+      "id": "clue.16.face",
+      "kind": "button",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "clue.16",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "portrait",
+      "visible": false,
+      "w": 55
+    },
+    {
+      "cx": 100,
+      "cy": -947,
+      "h": 26,
+      "id": "clue.16.who",
+      "kind": "text",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "clue.16",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "布展助理 正好在 值夜保安",
+      "visible": false,
+      "w": 83
+    },
+    {
+      "cx": 249,
+      "cy": -976,
+      "h": 56,
+      "id": "clue.16.what",
+      "kind": "text",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "clue.16",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.what",
+      "text": "南边 1 行",
+      "visible": false,
+      "w": 202
+    },
+    {
+      "cx": 395,
+      "cy": -1000,
+      "h": 28,
+      "id": "clue.16.badge",
+      "kind": "text",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "clue.16",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "A",
+      "visible": false,
+      "w": 34
+    },
+    {
+      "cx": 395,
+      "cy": -1000,
+      "h": 28,
+      "id": "clue.16.letter",
+      "kind": "text",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "clue.16",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "A",
+      "visible": false,
+      "w": 34
+    },
+    {
+      "action": "focus_clue",
+      "cx": 224,
+      "cy": -1086,
+      "event": {
+        "action": "focus_clue",
+        "index": 17
+      },
+      "h": 96,
+      "id": "clue.17",
+      "kind": "text",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "clues",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.ok",
+      "text": "首席鉴定师 不是同伙",
+      "visible": false,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": -1086,
+      "h": 96,
+      "id": "clue.17.backrop1",
+      "kind": "container",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "clue.17",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": -1086,
+      "h": 90,
+      "id": "clue.17.backrop2",
+      "kind": "container",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "clue.17",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 354
+    },
+    {
+      "action": "suspect",
+      "cx": 86,
+      "cy": -1095,
+      "event": {
+        "action": "suspect",
+        "id": "D"
+      },
+      "h": 55,
+      "id": "clue.17.face",
+      "kind": "button",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "clue.17",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "portrait",
+      "visible": false,
+      "w": 55
+    },
+    {
+      "cx": 100,
+      "cy": -1053,
+      "h": 26,
+      "id": "clue.17.who",
+      "kind": "text",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "clue.17",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "首席鉴定师",
+      "visible": false,
+      "w": 83
+    },
+    {
+      "cx": 249,
+      "cy": -1082,
+      "h": 56,
+      "id": "clue.17.what",
+      "kind": "text",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "clue.17",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.what",
+      "text": " 不是同伙",
+      "visible": false,
+      "w": 202
+    },
+    {
+      "cx": 395,
+      "cy": -1106,
+      "h": 28,
+      "id": "clue.17.badge",
+      "kind": "text",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "clue.17",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "D",
+      "visible": false,
+      "w": 34
+    },
+    {
+      "cx": 395,
+      "cy": -1106,
+      "h": 28,
+      "id": "clue.17.letter",
+      "kind": "text",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "clue.17",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "D",
+      "visible": false,
+      "w": 34
+    },
+    {
+      "action": "focus_clue",
+      "cx": 224,
+      "cy": -1192,
+      "event": {
+        "action": "focus_clue",
+        "index": 18
+      },
+      "h": 96,
+      "id": "clue.18",
+      "kind": "text",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "clues",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue",
+      "text": "外聘搬运工 在倒数第 1 行",
+      "visible": false,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": -1192,
+      "h": 96,
+      "id": "clue.18.backrop1",
+      "kind": "container",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "clue.18",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 360
+    },
+    {
+      "cx": 224,
+      "cy": -1192,
+      "h": 90,
+      "id": "clue.18.backrop2",
+      "kind": "container",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "clue.18",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "visible": false,
+      "w": 354
+    },
+    {
+      "action": "suspect",
+      "cx": 86,
+      "cy": -1202,
+      "event": {
+        "action": "suspect",
+        "id": "C"
+      },
+      "h": 55,
+      "id": "clue.18.face",
+      "kind": "button",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "clue.18",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "portrait",
+      "visible": false,
+      "w": 55
+    },
+    {
+      "cx": 100,
+      "cy": -1159,
+      "h": 26,
+      "id": "clue.18.who",
+      "kind": "text",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "clue.18",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "外聘搬运工",
+      "visible": false,
+      "w": 83
+    },
+    {
+      "cx": 249,
+      "cy": -1188,
+      "h": 56,
+      "id": "clue.18.what",
+      "kind": "text",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "clue.18",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.what",
+      "text": " 在倒数第 1 行",
+      "visible": false,
+      "w": 202
+    },
+    {
+      "cx": 395,
+      "cy": -1212,
+      "h": 28,
+      "id": "clue.18.badge",
+      "kind": "text",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "clue.18",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "C",
+      "visible": false,
+      "w": 34
+    },
+    {
+      "cx": 395,
+      "cy": -1212,
+      "h": 28,
+      "id": "clue.18.letter",
+      "kind": "text",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "clue.18",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "clue.who",
+      "text": "C",
+      "visible": false,
+      "w": 34
+    },
+    {
+      "cx": 1140,
+      "cy": 758,
+      "h": 7,
+      "id": "ruler.c.7",
+      "kind": "text",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "ruler",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "ruler",
+      "text": "C7",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "cx": 612,
+      "cy": 230,
+      "h": 78,
+      "id": "ruler.r.7",
+      "kind": "text",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "ruler",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "ruler",
+      "text": "R7",
+      "visible": true,
+      "w": 7
+    },
+    {
+      "action": "click",
+      "cx": 1140,
+      "cy": 710,
+      "event": {
+        "action": "click",
+        "c": 7,
+        "r": 1
+      },
+      "h": 78,
+      "id": "cell.1.7",
+      "kind": "button",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 1140,
+      "cy": 630,
+      "event": {
+        "action": "click",
+        "c": 7,
+        "r": 2
+      },
+      "h": 78,
+      "id": "cell.2.7",
+      "kind": "button",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 1140,
+      "cy": 550,
+      "event": {
+        "action": "click",
+        "c": 7,
+        "r": 3
+      },
+      "h": 78,
+      "id": "cell.3.7",
+      "kind": "button",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 1140,
+      "cy": 470,
+      "event": {
+        "action": "click",
+        "c": 7,
+        "r": 4
+      },
+      "h": 78,
+      "id": "cell.4.7",
+      "kind": "button",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 1140,
+      "cy": 390,
+      "event": {
+        "action": "click",
+        "c": 7,
+        "r": 5
+      },
+      "h": 78,
+      "id": "cell.5.7",
+      "kind": "button",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 1140,
+      "cy": 310,
+      "event": {
+        "action": "click",
+        "c": 7,
+        "r": 6
+      },
+      "h": 78,
+      "id": "cell.6.7",
+      "kind": "button",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 660,
+      "cy": 230,
+      "event": {
+        "action": "click",
+        "c": 1,
+        "r": 7
+      },
+      "h": 78,
+      "id": "cell.7.1",
+      "kind": "button",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell.blocked",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 740,
+      "cy": 230,
+      "event": {
+        "action": "click",
+        "c": 2,
+        "r": 7
+      },
+      "h": 78,
+      "id": "cell.7.2",
+      "kind": "button",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 820,
+      "cy": 230,
+      "event": {
+        "action": "click",
+        "c": 3,
+        "r": 7
+      },
+      "h": 78,
+      "id": "cell.7.3",
+      "kind": "button",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 900,
+      "cy": 230,
+      "event": {
+        "action": "click",
+        "c": 4,
+        "r": 7
+      },
+      "h": 78,
+      "id": "cell.7.4",
+      "kind": "button",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 980,
+      "cy": 230,
+      "event": {
+        "action": "click",
+        "c": 5,
+        "r": 7
+      },
+      "h": 78,
+      "id": "cell.7.5",
+      "kind": "button",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 1060,
+      "cy": 230,
+      "event": {
+        "action": "click",
+        "c": 6,
+        "r": 7
+      },
+      "h": 78,
+      "id": "cell.7.6",
+      "kind": "button",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "click",
+      "cx": 1140,
+      "cy": 230,
+      "event": {
+        "action": "click",
+        "c": 7,
+        "r": 7
+      },
+      "h": 78,
+      "id": "cell.7.7",
+      "kind": "button",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "board",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief",
+        "board",
+        "home",
+        "howto",
+        "intro",
+        "levelselect",
+        "result",
+        "select",
+        "share"
+      ],
+      "style": "cell",
+      "visible": true,
+      "w": 78
+    },
+    {
+      "action": "accuse_thief",
+      "cx": 992,
+      "cy": 398,
+      "event": {
+        "action": "accuse_thief",
+        "id": "F"
+      },
+      "h": 92,
+      "id": "modal.suspect.F",
+      "kind": "button",
+      "levels": [
+        "case_003"
+      ],
+      "parent": "modal",
+      "states": [
+        "accuse_accomplice",
+        "accuse_thief"
+      ],
+      "style": "portrait",
+      "text": "赞助人",
+      "visible": true,
+      "w": 177
+    }
+  ],
+  "scale": 0.83333333333333,
+  "scope": "all"
+}

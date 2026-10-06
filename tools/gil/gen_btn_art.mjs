@@ -20,7 +20,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   readGil, encodeMsg, cloneField, setPair, pairOf, stateBlocks, textsOf,
-  findChildListTop, setChildList, asIdList, writeVarint,
+  findChildListTop, ensureChildListTop, setChildList, asIdList, writeVarint,
 } from './gilread.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -29,7 +29,16 @@ const argOf = (k) => { const a = argv.find((s) => s.startsWith('--' + k + '='));
 const DRY = argv.includes('--probe');
 const BASE = argOf('in') || path.join(ROOT, '完整界面5.gil');
 const OUT = argOf('out') || path.join(ROOT, '完整界面6.gil');
-const CHILD_NAME = argOf('child') || 'face';   // 子控件名（脚本按这个名字找底图）
+// ★ 2026-10-07 新增 `--parts=`：要挂哪些子控件，逗号分隔，**默认 `bg,label`**。
+//   · `label` = 按钮**文案**子控件 —— `engine_adapter_qianxing.lua:3987` 走 `self:sub(id,"label")`；
+//     没有它 ⇒ 属性 `text` 永远送不到 ⇒ 日志「属性补发 3 次仍未送达：`xxx.text`」且按钮上一个字没有。
+//   · `bg`    = 底图子控件（克隆 content/face 并把图片 ID 改成非白素材）。
+//   ⇒ `--parts=label` 只补 label、完全不碰图片（"只补文案"那轮交付用的就是它）。
+const PARTS = new Set((argOf('parts') || 'bg,label').split(',').map((s) => s.trim()).filter(Boolean));
+// ★ 新增 `--skip-existing=<基准.gil>`：**基准里已有的同名控件一律不碰** ——
+//   用于"只给本次净新增的按钮补 label，原有记录保持原样"。
+const SKIP_GIL = argOf('skip-existing') || null;
+const CHILD_NAME = argOf('child') || 'face';   // 旧参数，仅用于打印/兼容
 
 const g = readGil(BASE);
 console.log('基准：' + path.basename(BASE) + '（' + g.src.length + ' 字节）控件记录 ' + g.recs.length + ' 条');
@@ -60,13 +69,27 @@ const REF_SRC = Number(argOf('refsrc') || 4281536672);   // wall.left(绿) 的 s
 
 const content = g.recs.find((r) => r.name === 'content' && g.recs.some((k) => k.parentId === r.id && k.name === 'face'));
 // 原型：**已知可见**的 face（`visible=true`，真机日志确认）
-const protoBg = argOf('proto')
-  ? (g.byName.get(argOf('proto')) || null)
-  : (content ? g.recs.find((r) => r.parentId === content.id && r.name === 'face') : null);
-const protoTxt = g.byName.get('proto.text');
-if (!protoBg) { console.error('找不到底图原型（默认找 content 下的 face）'); process.exit(1); }
-if (!protoTxt) { console.error('找不到 proto.text（做按钮名字用）'); process.exit(1); }
-console.log('底图原型：' + (protoBg.name || '?') + ' #' + protoBg.id + '（**已知可见**，随后改写它的图片 ID）');
+const protoBg = PARTS.has('bg')
+  ? (argOf('proto') ? (g.byName.get(argOf('proto')) || null)
+                    : (content ? g.recs.find((r) => r.parentId === content.id && r.name === 'face') : null))
+  : null;
+// 文字原型：`proto.text` 优先，**缺了用同类文本控件兜底** —— 208 这一版存档里没有 `proto.text`
+const LP = argOf('label-proto');
+const protoTxt = PARTS.has('label')
+  ? (LP ? (g.byName.get(LP) || null)
+        : (['proto.text', 'home.title', 'hud.title', 'label', 'home.subtitle']
+            .map((n) => g.byName.get(n)).find(Boolean) || null))
+  : null;
+if (PARTS.has('bg') && !protoBg) { console.error('找不到底图原型（默认找 content 下的 face）'); process.exit(1); }
+if (PARTS.has('label') && !protoTxt) { console.error('找不到文字原型（用 --label-proto= 指定，或存档里要有 proto.text / home.title）'); process.exit(1); }
+if (protoBg) console.log('底图原型：' + (protoBg.name || '?') + ' #' + protoBg.id + '（**已知可见**，随后改写它的图片 ID）');
+// ★ `--skip-existing=<基准.gil>`：基准里**已有的同名控件一律不碰**
+const skipNames = new Set();
+if (SKIP_GIL) {
+  const sg = readGil(SKIP_GIL);
+  for (const r of sg.recs) if (r.name) skipNames.add(r.name);
+  console.log('--skip-existing：' + path.basename(SKIP_GIL) + ' 已有 ' + skipNames.size + ' 个名字 ⇒ 一律不碰');
+}
 
 /** 顺着字段路径找到那个字段（相对控件记录）。
  *
@@ -89,34 +112,17 @@ function fieldsAtPath(fields, path) {
   }
   return [];
 }
-console.log('改名用的图片 ID → ' + BG_IMAGE_ID + '（路径 ' + IMG_PATH.map((x) => '#' + x).join('/') + '）');
-console.log('文字原型：proto.text #' + protoTxt.id);
+if (protoBg) console.log('改名用的图片 ID → ' + BG_IMAGE_ID + '（路径 ' + IMG_PATH.map((x) => '#' + x).join('/') + '）');
+if (protoTxt) console.log('文字原型：' + protoTxt.name + ' #' + protoTxt.id);
 
 
-// ── 子列表字段号 / 位置（空列表 = 字段不存在，要新建）────────────────────
-function childListPath(fields, prefix) {
-  for (const f of fields) {
-    const here = prefix + '/#' + f.field;
-    if (f.wt === 2 && f.sub === null && !f.isText && f.payload && asIdList(f.payload, false) !== null) return here;
-    if (f.sub) { const r = childListPath(f.sub, here); if (r) return r; }
-  }
-  return null;
-}
-const trayRec = g.byName.get('tray');
-const CLP = trayRec ? childListPath(trayRec.field.sub, '') : null;
-if (!CLP) { console.error('定位不到子列表字段'); process.exit(2); }
-const CL_FIELD_NO = Number(CLP.split('/').filter(Boolean).pop().replace('#', ''));
-const CL_INDEX = trayRec.field.sub.findIndex((f) => f.field === CL_FIELD_NO);
-console.log('子列表字段 #' + CL_FIELD_NO + '（在记录里第 ' + (CL_INDEX + 1) + ' 个字段处新建）');
-
-function ensureChildList(rec) {
-  let f = rec.field.sub.find((x) => x.field === CL_FIELD_NO) || null;
-  if (f === null) {
-    f = { field: CL_FIELD_NO, wt: 2, len: 0, payload: Buffer.alloc(0), isText: false, sub: null, s0: 0, s1: 0 };
-    rec.field.sub.splice(Math.min(Math.max(CL_INDEX, 0), rec.field.sub.length), 0, f);
-  }
-  return f;
-}
+// ── 子列表：一律用 gilread 的**顶层**版 ───────────────────────────────────
+// ★★★ 2026-10-07 修：原来这里用**递归** `childListPath(tray.field.sub,'')`（allowEmpty=false）
+//   去"学习"字段号与插入位置。`tray` 的顶层子列表**是空的** ⇒ 递归会跳过它、钻进 `#505`
+//   块里，拿到一个**嵌套字段号**当 CL_FIELD_NO，并把 CL_INDEX 算成 -1
+//   ⇒ 新建的列表字段被插到**位置 0**，字段号还可能是 `#501`（控件 ID 那个字段！）。
+//   ⇒ 直接用 `ensureChildListTop`：新建的 `#503` 固定插在 `#502` 之后（位置 2，与 board 同构）。
+function ensureChildList(rec) { return ensureChildListTop(rec, null); }
 
 // ── 目标：**只给「预设按钮」**加底图 ──────────────────────────────────────
 // ⚠️ 第一版按"4 个状态块 + 尺寸合理"筛，结果把**格子模板的子控件**（face/x/wall.*/door.*/note）
@@ -134,7 +140,11 @@ const LABEL = new Map(plan.nodes.map((n) => [n.id, n.text]));
 const targets = g.recs.filter((r) => {
   if (!r.name || r.states.length !== 4) return false;
   if (!BUTTONS.has(r.name)) return false;                          // ← 只认规划里的按钮
-  if (g.recs.some((k) => k.parentId === r.id && k.name === CHILD_NAME)) return false;   // 幂等
+  if (skipNames.has(r.name)) return false;                         // ★ 基准里已有 → 一条都不碰
+  // ★ 幂等：按**实际要建的名字**判断。原来错用 `CHILD_NAME`（默认 'face'），而实际建的是
+  //   `bg`/`label` ⇒ 那个判断永远不成立 ⇒ 重跑一次就重复挂一份。
+  if (g.recs.some((k) => k.parentId === r.id
+      && ((PARTS.has('bg') && k.name === 'bg') || (PARTS.has('label') && k.name === 'label')))) return false;
   const b = r.states[0];
   const p = pairOf(b, 505);
   if (!p || !p.sub) return false;
@@ -145,7 +155,7 @@ const targets = g.recs.filter((r) => {
   return true;
 });
 
-console.log('\n要加底图的按钮：' + targets.length + ' 个');
+console.log('\n要处理的按钮：' + targets.length + ' 个（挂 ' + [...PARTS].join('+') + '）');
 for (const t of targets) console.log('  ' + t.name.padEnd(22) + String(t._w).padStart(6) + '×' + String(t._h).padEnd(5));
 
 if (DRY) { console.log('\n--probe：不写文件'); process.exit(0); }
@@ -254,9 +264,9 @@ function makeChild(rec, srcProto, childName, w, h, posY, label) {
 for (const rec of targets) {
   const label = LABEL.get(rec.name) || rec.name;
   // ① 底图（非白）
-  built.push({ who: rec.name, what: 'bg', ...makeChild(rec, protoBg, 'bg', rec._w, rec._h, 0, null) });
+  if (PARTS.has('bg')) built.push({ who: rec.name, what: 'bg', ...makeChild(rec, protoBg, 'bg', rec._w, rec._h, 0, null) });
   // ② 名字：贴在按钮中部偏下一点，宽度略窄于按钮
-  built.push({ who: rec.name, what: 'label', ...makeChild(rec, protoTxt, 'label', rec._w - 8, Math.min(20, rec._h - 8), 0, label) });
+  if (PARTS.has('label')) built.push({ who: rec.name, what: 'label', ...makeChild(rec, protoTxt, 'label', rec._w - 8, Math.min(20, rec._h - 8), 0, label) });
 }
 
 // 插入（按 holder 分组、从后往前，索引不失效）
@@ -290,6 +300,6 @@ for (const it of built) {
 }
 console.log('  改写图片 ID 的底图：' + patched + ' 个');
 console.log('\n' + (bad === 0
-  ? '★ ' + built.length + ' 个按钮都挂上底图了（`' + CHILD_NAME + '`）'
+  ? '★ ' + targets.length + ' 个按钮都挂上了 [' + [...PARTS].join('+') + ']，共新建子控件 ' + built.length + ' 个'
   : '❌ 有 ' + bad + ' 个不完整'));
 process.exit(bad === 0 ? 0 : 4);

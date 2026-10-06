@@ -47,6 +47,7 @@ M.SIGNALS = {
   SAVE       = "murdoku/save",
   RESTORE    = "murdoku/restore",
   SYNC_STATE = "murdoku/sync",
+  SETTLE     = "murdoku/settle",   -- ★ 2026-10-07 存档并结算
 }
 
 -- 信号参数按顺序添加；这里给出"信号名 → 字段顺序"，收信号时按它还原成字典
@@ -60,6 +61,7 @@ M.SIGNAL_SCHEMA = {
   [M.SIGNALS.SAVE]       = { "level_id", "state_code", "moves", "elapsed", "solved" },
   [M.SIGNALS.RESTORE]    = { "state_code", "moves", "elapsed", "solved" },
   [M.SIGNALS.SYNC_STATE] = { "who", "r", "c" },
+  [M.SIGNALS.SETTLE] = { "level_id" },
 }
 
 ----------------------------------------------------------------------------
@@ -1373,6 +1375,8 @@ function Adapter:diagnose_grid(rows, cols)
     end
   end
 
+
+
   print_("[murdoku] ===== 逐格自检结束 =====")
 end
 
@@ -1615,6 +1619,49 @@ function Adapter:_cells_paint(ctrl, size, cell_id, img)
   end
   if face == nil then return false end
   if face.SetVisible then pcall(function() face:SetVisible(true) end) end
+
+
+  -- ★★★★★ 2026-10-05 **每帧重放墙/门的可见性** ✗✓ —— 这是本轮的定案修法 ✓
+  --
+  --   真机日志给出的对照（同一份日志里 ✓）：
+  --     · 「格子底图已点亮：25 个 face（**每帧保持**）」✓ —— ★ `face` 走的就是这条路 ✓
+  --     · 而墙/门只在属性下发那趟设一次 ✗ ⇒ ★★ 被覆盖后**没人救**✗ ⇒ 看不见 ✓
+  --     · 而那一刻读回 `wall.up(vis=true)` ✓ ⇒ ★★ 读回 true 与屏幕空白**同时成立** ✓✓
+  --   ⇒ 在这里（每帧都会跑 ✓）把 `_apply_edges` 记下的意图重放一遍 ✓
+  --   ⚠️ 只重放**已经记录过**的格子 ✗ —— 没下发过就什么都不做（不越权 ✓）
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  -- ★★ 性能待办 ★ 标签 **PERF-1**（★ 2026-10-06 标记 ✓ **先不动** ✗ 等框架稳定再回来 ✓）
+  --
+  --   ★ 用户 2026-10-06 指示：★「3 标记好字段位置，先不动，★ 等框架稳定了再回来弄」✓
+  --
+  --   ★ **三处字段（★ 改这里要一起看 ✓）**：
+  --     · **记录**：`_apply_edges` 写 `self._edge_want[id][prefix.."."..side] = want`
+  --       ⇒ ★ 本文件 **L3798~3800**（★ 另有一份同类写在 **L3775~3777** ✓）
+  --     · **重放**：★ 就是下面 `for name, want in pairs(w)` 那段 ✓
+  --       ⇒ ★ 每帧约 **200 次**「缓存查表 `self:sub` + `SetVisible`」✗
+  --     · **触发**：`_cells_paint` 由 ★ **L2071** 每帧调用 ✓（★ 同一条路还负责点亮 `face` ✓）
+  --     · **事件驱动那份**：★ 对称恢复分支 —— 本文件 **L4267** 读 `_edge_want` ✓
+  --
+  --   ★ 为什么当初要每帧重放 ✗：★ `hide_kids`（★ **L4230** ✓）会**递归藏子树** ✗
+  --     且**只藏不显** ✗ ⇒ ★ 必须有东西**每帧把"该亮的"重新点亮** ✓
+  --     ★ 否则真机症状：★「第一关的墙/门永远不画」✓（★ 那个 bug 的根因 ✓）
+  --   ⇒ ★★ **要省成本，正确顺序** ✓：
+  --     ★ ① 先确认 `L4267` 那条**对称恢复覆盖了所有 hide 路径** ✓
+  --     ★ ② 再把这里从"每帧"改成"**脏标记驱动**" ✗
+  --     ★ ③ ★ **不能直接删** ✗ —— ★ 删了会退回那个 bug ✓
+  --   ★ 测量入口 ✓：`tests/grid_cost.lua`（13 项 ✓）· `tests/_wip/probe_*` 里那几条计数 ✓
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  if cell_id ~= nil and self._edge_want ~= nil then
+    local w = self._edge_want[cell_id]
+    if w ~= nil then
+      for name, want in pairs(w) do
+        local s2 = self:sub(cell_id, name)
+        if s2 ~= nil and s2.SetVisible ~= nil then
+          pcall(function() s2:SetVisible(want) end)
+        end
+      end
+    end
+  end
   -- 铺满格子（子控件默认可能比格子小，**甚至尺寸是 0** —— 两种都会让它"看不见"）
   --
   -- ★★★★★ 2026-10-04 **`size` 允许省略：不给就按控件自己的实际尺寸算。**
@@ -2146,6 +2193,42 @@ function Adapter:ensure_cells(rows, cols)
     self.cells_index = prefab
     self.cells_made = made
     self.cells_total = rows * cols
+  end
+
+  -- ★★★★★ 2026-10-05 **格子重建之后，必须清掉 `subs` 里的死句柄** ✗✓
+  --
+  --   这是"第一次进关墙/门不画、进别的关再回来就正常"的**真凶** ✓
+  --   （★ 与素材无关 ✗ —— 素材是静态的，不会因为切一次关而变 ✓
+  --     这条判据用户提过，我一度绕回素材，是错的 ✓）
+  --
+  --   机制（`Adapter:sub` 在 L502-504 ✓）：
+  --     · 缓存键是 `parent_id .. "." .. child_name` ✓ —— ★ 键里有格子 id ✓
+  --       ⇒ ★ 不跨格串号 ✓（这条先排除掉 ✓）
+  --     · 但 `if cached ~= nil and cached ~= false then return cached end` ✗
+  --       ⇒ ★★ **命中就永远返回旧句柄，从不失效、从不重查** ✗✓
+  --     · 而 `ensure_widgets` 每次进关都会**把 25 个格子重新建一遍** ✗
+  --       （真机日志：「本次新建 25 个」✓）
+  --       ⇒ ★★ 旧格子对象已被销毁 ✗ 而 `self.subs` 里【还存着它们的子控件句柄】✓✓
+  --       ⇒ ★★★ `SetVisible(true)` 调在死句柄上 ⇒ **静默 no-op** ⇒ 屏幕上不画 ✓
+  --
+  --   ★★ 这也解释了那个一直对不上的矛盾 ✓：
+  --     · 我读回的 `sub.visible` = **true** ✗
+  --       ⇒ ★ 因为我读的是**缓存里那个旧对象**的属性 ✓✓
+  --       ⇒ ★★ "读回 true 但屏幕没有" 到此闭环 ✓
+  --     · 而「进别的关再回来就正常」✓
+  --       ⇒ ★ 因为那一趟 `find` 把键重新命中到**新建后的**子控件上 ✓
+  --
+  --   ★ 为什么在"重建完"这里清、而不是在 `sub` 里验活句柄 ✗：
+  --     验活要每帧多一次探测 ✗ —— 移动端不划算 ✓
+  --     建格是【每关一次】✓ 这里清 = 零常态开销 ✓
+  do
+    local cleared = 0
+    for k in pairs(self.subs) do
+      if type(k) == "string" and k:sub(1, 5) == "cell." then
+        self.subs[k] = nil
+        cleared = cleared + 1
+      end
+    end
   end
 
   -- ★★★★★ 2026-10-05 **图层顺序这一趟的实测结果 —— 每关一行**。
@@ -3680,6 +3763,73 @@ function Adapter:_apply_edges(id, prefix, flags)
     end
   end
 
+  -- ★★★★★ 2026-10-05 **关卡内读回：每个格子只打一次** ✗✓ —— 时机对了才有意义 ✓
+  --
+  --   为什么要在【这里】打（而不是"逐格自检"那里 ✓）：
+  --     · 上一版打在 `逐格自检` 里 ✗ ⇒ 而那一刻 `controller.screen` 还是 `"home"` ✗
+  --       （真机日志紧接着就打了 `controller.screen = home` ✓）
+  --       ⇒ ★ 读数全是 `vis=false` ✗ —— 而【同一行】的 `clues` 也是 false ✗
+  --         可用户实测【线索区是好的】✓ ⇒ ★★ 证明那行读数【不在关卡内】✗✓
+  --     · 而 `_apply_edges` 是**每帧渲染**都会走的 ✓ ⇒ ★ 这里才是"关卡内真实状态" ✓
+  --
+  --   ★ 判据（这次时机是对的 ✓）：
+  --     · `vis=true` ✓ 而屏幕上没有 ✗ ⇒ ★ 层序/素材（但 sib/sx 已排除 ✓）
+  --     · `vis=false` ✗ ⇒ ★ `SetVisible(want)` 当帧没生效 ⇒ 句柄/引擎 ✓
+  --     · `vis` 与 `want` 不一致 ✗ ⇒ ★ 有人在别处覆盖它 ✓
+  --   ⚠️ 只读 ✓ 每格只打一次（`self._edge_readback`）✗ 不刷屏 ✓
+  -- ★★★★★ 2026-10-05 **去重键必须带 `prefix`** ✗✓ —— 否则读回是假象 ✓
+  --
+  --   我第一版用 `self._edge_readback[id]` ✗ ⇒ 而 `_apply_edges` 对**同一个格子**
+  --   会被调用**两次**（`prefix="wall"` 一次 ✓ `prefix="door"` 一次 ✓）
+  --   ⇒ ★★ 只记了第一次 ⇒ 真机日志里**只有 `door.*`** ✗ ⇒ 看起来"只有门没有墙" ✓✓
+  --   ⇒ ★ 那是我探针的假象 ✗ —— ★ 离线探针已证明 `wall_set` 有 **7 条** ✓
+  --     `view()` 有 **34 条墙边** ✓ ⇒ ★ 数据是对的 ✓
+  --   ⚠️ 结论：★ **诊断代码的假象比被测 bug 更能骗人** ✓ —— 这次连吃了两次
+  --     （上次是 `print_` ✗ 这次是去重键 ✗）
+  -- ★★★★★ 2026-10-05 **把这一刻的"该亮哪些边"记下来** ✗✓ —— 供每帧重放 ✓
+  --
+  --   为什么必须记：★ `face` 是【每帧】被点亮的 ✓（真机日志：
+  --   「格子底图已点亮：25 个 face（每帧保持）」✓ 走的是 `_cells_paint` ✓）
+  --   而 `wall.*` / `door.*` 只在**属性下发那一趟**设一次 ✗
+  --   ⇒ ★★ 只要之后任何一帧有人把它们覆盖回 false ✗ ⇒ **`face` 会被救回来 ✓ 而墙/门不会** ✗✓
+  --     ⇒ ★ 屏幕上看不见 ✓ —— ★ 而我的读回是在**这一刻**读的 ✓ ⇒ 当然读到 true ✓✓
+  --       ⇒ ★★ "读回 true 而屏幕没有"的最后一层就在这里 ✓
+  --   ⇒ 记下来，在 `_cells_paint`（每帧那条路 ✓）里重放 ✓ —— 与 `face` 同等待遇 ✓
+  do
+    self._edge_want = self._edge_want or {}
+    local w = self._edge_want[id]
+    if w == nil then w = {}; self._edge_want[id] = w end
+    for i = 1, #sides do
+      local s = sides[i]
+      w[prefix .. "." .. s] = (flags[s] and not skip[s]) and true or false
+    end
+  end
+
+  -- ★★★★★ 2026-10-06 **记下"该亮哪些边"，供每帧重放** ✗✓ —— 对抗 `hide_kids` 的递归藏 ✓
+  --
+  --   ★★ 这是"墙/门第一次进关不画"的**第二半**（也是真正的凶手 ✓）：
+  --     · 适配层 `set_property(…, "visible", false)` 里有一段 ✗：
+  --         `if vis == false and id:sub(1,5) == "cell." then hide_kids(ctrl, 0) end`
+  --       ⇒ ★ 它把格子的**全部子控件递归设成 false** ✗（`face` / `wall.*` / `door.*` ✓）
+  --     · ★ 而它**只在 `vis == false` 时递归** ✗（那段的注释自己说"显示时不递归" ✓）
+  --       ⇒ ★★ **单向** ✗ ⇒ `cell.*` 一旦被藏过 ⇒ 子控件永不恢复 ✓✓
+  --     · ★ 为什么"第二关正常"✗：★ 第二关【不重建格子】✗
+  --       ⇒ `cell.*` 没有 `false → true` 的过程 ✗ ⇒ **从不触发那个分支** ✓
+  --       ⇒ 子控件从没被递归藏过 ✓ —— ★★ 这解释了"只有第一关坏" ✓✓
+  --   ⇒ ★ 修法：★ **把"该亮"记下来，在每帧都会跑的 `_cells_paint` 里重放** ✓
+  --     这与 `face` 的"每帧保持"是**同一个套路** ✓（那段注释也是这么写的 ✓）
+  do
+    self._edge_want = self._edge_want or {}
+    local w = self._edge_want[id]
+    if w == nil then w = {}; self._edge_want[id] = w end
+    for i = 1, #sides do
+      local s = sides[i]
+      w[prefix .. "." .. s] = (flags[s] and not skip[s]) and true or false
+    end
+  end
+
+
+
   -- ★★ 「图片类型 = 基础」的图**按原尺寸画，不会填充控件** ——
   --    真机 2026-09-27 05:13 实测：同一面墙，素材选「拉伸」时是**满宽蓝条**，
   --    换成「基础」后只剩**左上角一小段**（"显示不完全"）。
@@ -4116,6 +4266,37 @@ function Adapter:set_property(id, key, value, nkey)
         end
       end
       hide_kids(ctrl, 0)
+    end
+    -- ★★★★★ 2026-10-06 **对称：格子重新可见时，把该亮的子控件放回来** ✗✓
+    --
+    --   ★ 这是用户复盘出来的那条 ✓（原话：「要么 PREFIX 里的 cell. 没重新删掉，
+    --     要么合并的有问题」✓ —— **是合并引入了触发器** ✓）：
+    --     · 上面那段递归【一直在】✗ —— ★ 但删掉 PREFIX 的 `"cell."` 之后
+    --       **没人再写 `cell.* = false`** ✗ ⇒ ★ 它**从不触发** ✓（墙门正常 ✓）
+    --     · 而把 `visible = (self.screen == nil)` 加进规划 ✗
+    --       ⇒ ★ 主页时规划写 `cell.* = false` ✗ ⇒ **递归被重新触发** ✗
+    --       ⇒ ★★ 子控件（`face` / `wall.*` / `door.*`）全灭 ⇒ **墙门又不见了** ✓✓
+    --   ⇒ ★ 上面那段**只在隐藏时递归** ✗（它自己的注释也写着"显示时不递归"✓）
+    --     ⇒ ★★ **单向** ✗ ⇒ 藏过的子控件**永远回不来** ✓✓
+    --   ⇒ ★ 这里补上**对称的那一半** ✓：★ 格子变可见 ⇒
+    --     · `face` 点亮 ✓（底图 ✓）
+    --     · `wall.*` / `door.*` 按 `_edge_want` 恢复 ✓（★ 就是"该亮哪些边" ✓）
+    --   ⚠️ 只在 `vis == true` **且**这一刻确实是格子的根时做 ✗（过渡时一次 ✓ 不是每帧 ✓）
+    if vis == true and id:sub(1, 5) == "cell." then
+      local face = nil
+      pcall(function() face = self:sub(id, "face") end)
+      if face ~= nil and face.SetVisible ~= nil then
+        pcall(function() face:SetVisible(true) end)
+      end
+      local w = (self._edge_want ~= nil) and self._edge_want[id] or nil
+      if w ~= nil then
+        for name, want in pairs(w) do
+          local s2 = self:sub(id, name)
+          if s2 ~= nil and s2.SetVisible ~= nil then
+            pcall(function() s2:SetVisible(want) end)
+          end
+        end
+      end
     end
   elseif key == "enabled" then
     if ctrl.interactable ~= nil then ctrl.interactable = value and true or false end

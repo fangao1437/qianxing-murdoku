@@ -18,6 +18,14 @@ import { readGil } from './gilread.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const GIL = process.argv[2] || path.join(ROOT, '完整界面.gil');
 const PLAN = path.join(ROOT, 'tools', 'sim', 'out', 'layout-plan.json');
+// ★ 2026-10-07 新增 `--only=`：把"要对账的规划名字"限定在前缀范围内（`名字*` = 前缀）。
+//   为什么需要它：规划是**全关卡并集**（369 个节点），而"只加弹窗"这类交付**故意**只建 19 个
+//   ⇒ 全局口径必然报 ~300 个缺失，那个数字没有意义、也没法当闸门。
+//   范围口径才是真闸门：`--only=modal` ⇒ "本批该有的 modal 家族一个都不缺"。
+//   用法：node tools/gil/check_names.mjs 209-弹窗.gil --only=modal
+const onlyArg = (process.argv.find((s) => s.startsWith('--only=')) || '').slice(7);
+const ONLY = onlyArg.split(',').map((s) => s.trim()).filter(Boolean);
+const onlyBy = (id) => ONLY.length === 0 || ONLY.some((pat) => pat.endsWith('*') ? id.startsWith(pat.slice(0, -1)) : id === pat);
 
 if (!fs.existsSync(GIL)) { console.error('缺存档：' + GIL); process.exit(1); }
 if (!fs.existsSync(PLAN)) { console.error('缺规划：' + PLAN); process.exit(1); }
@@ -28,12 +36,13 @@ const gilNames = readGil(GIL).names;
 const plan = JSON.parse(fs.readFileSync(PLAN, 'utf8'));
 const planAll = plan.nodes.map((n) => n.id);
 const planCell = planAll.filter((s) => /^cell\./.test(s));
-const planKeep = planAll.filter((s) => !/^cell\./.test(s));
+const planKeep = planAll.filter((s) => !/^cell\./.test(s) && onlyBy(s));
 
 console.log('存档：' + path.basename(GIL));
 console.log('  存档里的控件名 ' + gilNames.size + ' 个');
 console.log('规划 ' + planAll.length + ' 个（其中 cell.* ' + planCell.length + ' 个由脚本运行时生成）');
-console.log('  要对账的非 cell 名字 ' + planKeep.length + ' 个\n');
+console.log('  要对账的非 cell 名字 ' + planKeep.length + ' 个'
+  + (ONLY.length ? '（★ --only=' + ONLY.join(',') + ' 范围内）' : '') + '\n');
 
 // ① 规划需要但存档缺失
 const missing = planKeep.filter((s) => !gilNames.has(s));
@@ -67,8 +76,14 @@ const tplOk = tplRootIds.size > 0;
 console.log('\n④ 运行时格子名不该出现在存档里：' + (runtimeCellsInSave.length ? runtimeCellsInSave.join(', ') + ' ⚠️' : '无 ✅'));
 console.log('   模板根 `cell.1.1`（作者手搭、`tpl.cell` 引用的那套）：' + (tplOk ? '存在 ✅ #' + [...tplRootIds].join(', #') : '不存在 ⚠️'));
 
-const fatal = missing.length + bad3.length;
+// ⚠️ ③ 是"cfg 点名"的**全局**清单（board/tray/proto.*/模板子控件…）。
+//    在 `--only=` 范围模式下它**必然**报缺（本批故意不建那些）⇒ 只报告，不计入致命项。
+const fatal = missing.length + (ONLY.length ? 0 : bad3.length);
+if (ONLY.length && bad3.length) {
+  console.log('\n   ⓘ 范围模式（--only=' + ONLY.join(',') + '）：③ 里缺的 ' + bad3.length
+    + ' 个不在本批范围，不计入闸门');
+}
 console.log('\n' + (fatal === 0
-  ? '★ 对账通过：脚本需要的名字全部存在'
+  ? '★ 对账通过：脚本需要的名字全部存在' + (ONLY.length ? '（范围 ' + ONLY.join(',') + '）' : '')
   : '❌ 对账失败：' + fatal + ' 个名字缺失 —— 导入后脚本会报"找不到控件"，先修这个'));
 process.exit(fatal === 0 ? 0 : 2);

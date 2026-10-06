@@ -42,6 +42,19 @@ const DRY = argv.includes('--probe');
 const BASE = argOf('in') || path.join(ROOT, '存档.gil');
 const OUT = argOf('out') || path.join(ROOT, '完整界面.gil');
 const PLAN = argOf('plan') || path.join(ROOT, 'tools', 'sim', 'out', 'layout-plan.json');
+// ★ 2026-10-07 新增 `--exclude=`：逗号分隔的**排除名单**，`名字*` 表示前缀匹配。
+//   用途：`hex.*` / `hit.*` 这 14 个在 `entry_client_script.lua` 的 `auto_create_only`
+//   白名单里，是**脚本唯一的自动创建通道** —— 脚本建它们时会自己挂底图子控件；
+//   我们若也建一份，就变成"编辑器静态控件、没有子控件结构"⇒ SetImage 大量失败 + 按键消失。
+//   例：--exclude="hex.*,hit.*"
+const EXCLUDE = (argOf('exclude') || '').split(',').map((s) => s.trim()).filter(Boolean);
+const excludedBy = (id) => EXCLUDE.some((pat) => pat.endsWith('*') ? id.startsWith(pat.slice(0, -1)) : id === pat);
+// ★ 2026-10-07 新增 `--only=`：逗号分隔的**白名单**（`名字*` 前缀匹配）。
+//   为什么必须有它：规划是**全关卡的并集**（369 个节点），直接跑 gen_bulk 会一次建 300 个控件 ——
+//   而本轮只允许建 `modal` 那一套（19 个）。`--only=modal` 就只建 `modal` + `modal.*`。
+//   （`--exclude` 用来挡"脚本会自动创建"的那 14 个；两者可同时给。）
+const ONLY = (argOf('only') || '').split(',').map((s) => s.trim()).filter(Boolean);
+const onlyBy = (id) => ONLY.length === 0 || ONLY.some((pat) => pat.endsWith('*') ? id.startsWith(pat.slice(0, -1)) : id === pat);
 for (const [k, p] of Object.entries({ 基准存档: BASE, 布局计划: PLAN })) {
   if (!fs.existsSync(p)) { console.error('缺' + k + '：' + p); process.exit(1); }
 }
@@ -233,10 +246,22 @@ console.log('原型：容器/面板→board#' + proto.container.id
 
 const skipCell = (n) => /^cell\./.test(n.id);
 const reuse = (n) => byName.has(n.id);                      // 存档里已有同名控件 → 复用
-const todo = plan.nodes.filter((n) => !skipCell(n) && !reuse(n));
+const todo = plan.nodes.filter((n) => !skipCell(n) && !reuse(n) && !excludedBy(n.id) && onlyBy(n.id));
 const reused = plan.nodes.filter((n) => !skipCell(n) && reuse(n));
+const skipped = plan.nodes.filter((n) => !skipCell(n) && !reuse(n) && excludedBy(n.id));
+const offScope = plan.nodes.filter((n) => !skipCell(n) && !reuse(n) && !excludedBy(n.id) && !onlyBy(n.id));
 console.log('规划 ' + plan.nodes.length + ' 节点：跳过 cell.* ' + plan.nodes.filter(skipCell).length
   + '，复用已有 ' + reused.length + '（' + reused.map((n) => n.id).join(', ') + '），**新建 ' + todo.length + '**');
+if (ONLY.length) {
+  console.log('  ★ --only=' + ONLY.join(',') + ' 限定范围：范围内待建 ' + todo.length
+    + ' 个；被挡在范围外 ' + offScope.length + ' 个（本轮不碰）');
+}
+if (skipped.length) {
+  console.log('  ★ --exclude 排除 ' + skipped.length + ' 个（脚本运行时会自动创建，不进 gil）：'
+    + skipped.map((n) => n.id).join(', '));
+  const dead = EXCLUDE.filter((p) => !skipped.some((n) => excludedBy(n.id) && (p.endsWith('*') ? n.id.startsWith(p.slice(0, -1)) : n.id === p)));
+  if (dead.length) console.log('  ⚠️ 排除名单里没匹配到任何规划节点的项：' + dead.join(', '));
+}
 
 // 父先于子：按"父链深度"排序
 const depthOf = (n) => { let d = 0, cur = n, guard = 0; while (cur && cur.parent && planById.has(cur.parent) && guard++ < 50) { d++; cur = planById.get(cur.parent); } return d; };

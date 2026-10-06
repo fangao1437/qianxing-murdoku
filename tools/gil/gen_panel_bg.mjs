@@ -22,7 +22,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   readGil, encodeMsg, cloneField, setPair, pairOf, stateBlocks, textsOf,
-  findChildListTop, setChildList, asIdList, writeVarint,
+  findChildListTop, ensureChildListTop, setChildList, asIdList, writeVarint,
 } from './gilread.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -65,29 +65,13 @@ function fieldsAtPath(fields, p) {
   return [];
 }
 
-// 子控件列表字段号 + 在记录里的位置（空列表 = 字段不存在，得新建）
-function childListPath(fields, prefix) {
-  for (const f of fields) {
-    const here = prefix + '/#' + f.field;
-    if (f.wt === 2 && f.sub === null && !f.isText && f.payload && asIdList(f.payload, false) !== null) return here;
-    if (f.sub) { const r = childListPath(f.sub, here); if (r) return r; }
-  }
-  return null;
-}
-const trayRec = g.byName.get('tray');
-const CLP = trayRec ? childListPath(trayRec.field.sub, '') : null;
-if (!CLP) { console.error('定位不到子控件列表字段'); process.exit(2); }
-const CL_FIELD_NO = Number(CLP.split('/').filter(Boolean).pop().replace('#', ''));
-const CL_INDEX = trayRec.field.sub.findIndex((f) => f.field === CL_FIELD_NO);
-
-function ensureChildList(rec) {
-  let f = rec.field.sub.find((x) => x.field === CL_FIELD_NO) || null;
-  if (f === null) {
-    f = { field: CL_FIELD_NO, wt: 2, len: 0, payload: Buffer.alloc(0), isText: false, sub: null, s0: 0, s1: 0 };
-    rec.field.sub.splice(Math.min(Math.max(CL_INDEX, 0), rec.field.sub.length), 0, f);
-  }
-  return f;
-}
+// 子控件列表：一律用 gilread 的**顶层**版
+//   ★★★ 2026-10-07 修：原来用递归 `childListPath(tray.field.sub,'')`（allowEmpty=false）
+//   去"学习"字段号与插入位置 —— 而 208 这一版存档里**根本没有 `tray`** ⇒ CLP=null ⇒ 直接 exit 2；
+//   就算有 `tray`，它的顶层列表若是空的，递归也会钻进 `#505` 拿到**嵌套字段号**、CL_INDEX=-1
+//   ⇒ 新字段插到**位置 0**、字段号还可能是 `#501`。
+//   ⇒ 换成 `ensureChildListTop`：新建的 `#503` 固定插在 `#502` 之后（位置 2，与 board 同构）。
+function ensureChildList(rec) { return ensureChildListTop(rec, null); }
 
 let nextId = g.maxId + 1;
 const built = [];
