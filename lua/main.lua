@@ -639,7 +639,13 @@ function Murdoku.start(level_id, opts)
   --      如果连自己也收不到，就缩小范围（只用 `disableCursorEventPassthrough`）。
   --      这条日志打出"设了几个"，方便对照。
   if adapter.seal_containers ~= nil then
-    local sealed = adapter:seal_containers({ "home", "select" })
+    -- ★★★★★ 2026-10-07 **`modal` 也要在这份名单里** ✗✓ —— 修"弹窗看得见但点不动"。
+    --   机制：这个调用把容器的 `disableCursorEventPassthrough` 写成 `false`（= 允许点击穿透/下落）。
+    --   `home` 能点，正是因为它在名单里；★ 而 `modal` 不在 ⇒ **弹窗四个键的点击被它吞掉** ✓。
+    --   真机症状完全吻合：★ 弹窗显示正常、文字可见、**点击无任何反应** ✓。
+    --   （并存证据：团队比对 `home` vs `modal` 时，唯一像开关的字段差异正好是
+    --     `#505/#503/#14/#17` —— 疑似 `disableCursorEventPassthrough`，但离线判不定 ✓）
+    local sealed = adapter:seal_containers({ "home", "select", "modal" })
     if print then
       print(string.format("[murdoku] 2D/3D 输入隔离：主页/选关容器已屏蔽穿透 %d 个", sealed))
       -- ★★★ 2026-09-30：**把验收方法直接写进日志**（目标⑦）。
