@@ -2301,7 +2301,6 @@ end
 local DECOR = { label = true, bg = true, pic = true, icon = true }
 
 local MANAGED = {
-local MANAGED = {
   "root", "topbar", "left", "tray", "clues", "board",
   "right", "actions", "modal", "intro",
 }
