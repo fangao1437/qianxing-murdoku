@@ -645,7 +645,7 @@ function Murdoku.start(level_id, opts)
      and adapter.cfg and adapter.cfg.diagnose_grid ~= false then
     local rows = adapter.cells_rows or (adapter.cfg.cells and adapter.cfg.cells.rows) or 5
     local cols = adapter.cells_cols or (adapter.cfg.cells and adapter.cfg.cells.cols) or 5
-    pcall(function() adapter:diagnose_grid(rows, cols) end)
+  if Murdoku.DIAG then pcall(function() adapter:diagnose_grid(rows, cols) end) end   -- ★ 闸 ✓
   end
 
   adapter:signal_emit(Qianxing.SIGNALS.READY, {
@@ -801,6 +801,15 @@ function Murdoku.on_update(dt)
   --     判据 ✓：★ 关掉之后开局**不该再卡** ✓ 而★ 界面功能**一模一样** ✓
   -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
   Murdoku.DIAG = Murdoku.DIAG or false      -- ★ 默认关：★ 要排查时改 true ✓
+
+  -- ★★★★★ 2026-10-06 **带闸的打印（全局）** ✗✓ —— 给"在正常重绘 if 里"的诊断用 ✓
+  --   ★ 为什么需要 ✓：★「客户端 UI 根清单」和「对照组」都在
+  --     `if sec ~= current.last_tick or current.controller.dirty then` 里 ✗
+  --     ⇒ ★ 挡住那个 `if` 会连【正常重绘】一起挡掉 ✗ ⇒ 只能逐条 `print` 上闸 ✓
+  --   ★ 全局（无 local）✓ ⇒ 它下面两千行都能用 ✓ ★ 闸关着时【一个字符都不拼】✓
+  function dprint(...)
+    if Murdoku.DIAG then print(...) end
+  end
 
   local scr_now = current.controller and current.controller.screen or "level"
   if Murdoku.DIAG
@@ -1258,24 +1267,24 @@ function Murdoku.on_update(dt)
   if Murdoku.DIAG and (Murdoku._snap == nil or scr_now ~= Murdoku._snap_screen) then
     local now = snap_visible()
     if Murdoku._snap ~= nil then
-      print("[murdoku] ===== 切屏对比：" .. tostring(Murdoku._snap_screen) .. " → " .. tostring(scr_now) .. " =====")
-      print("[murdoku]   【切过去之后**多出来**的可见控件】（嫌疑最大）")
+      dprint("[murdoku] ===== 切屏对比：" .. tostring(Murdoku._snap_screen) .. " → " .. tostring(scr_now) .. " =====")
+      dprint("[murdoku]   【切过去之后**多出来**的可见控件】（嫌疑最大）")
       local n_add = 0
       for k, v in pairs(now) do
         if Murdoku._snap[k] == nil then print("[murdoku]     + " .. k .. "  " .. v); n_add = n_add + 1 end
       end
       if n_add == 0 then print("[murdoku]     （没有多出来的）") end
-      print("[murdoku]   【切过去之后**消失**的可见控件】")
+      dprint("[murdoku]   【切过去之后**消失**的可见控件】")
       local n_del = 0
       for k, v in pairs(Murdoku._snap) do
         if now[k] == nil then print("[murdoku]     - " .. k .. "  " .. v); n_del = n_del + 1 end
       end
       if n_del == 0 then print("[murdoku]     （没有消失的）") end
-      print("[murdoku]   【**两个页面都在**的可见控件】—— 这些不随切屏变化，最可能是「挡在中间」的")
+      dprint("[murdoku]   【**两个页面都在**的可见控件】—— 这些不随切屏变化，最可能是「挡在中间」的")
       for k, v in pairs(now) do
         if Murdoku._snap[k] ~= nil then print("[murdoku]     = " .. k .. "  " .. v .. "   （切屏前 " .. Murdoku._snap[k] .. "）") end
       end
-      print("[murdoku] ===== 对比结束 =====")
+      dprint("[murdoku] ===== 对比结束 =====")
     end
     Murdoku._snap = now
     Murdoku._snap_screen = scr_now
