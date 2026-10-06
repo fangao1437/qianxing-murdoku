@@ -2800,13 +2800,13 @@ function Controller:build_layout()
 
     elseif modal.kind == "exit_menu" then
       -- ★ 2026-10-07 「退出菜单」四键（几何由编辑器/gil 说了算 ✓ `pos_runtime` 缺省 = 不下发几何 ✓）
-      btn("exit", "modal", { x =  },
+      btn("modal.exit", "modal", { x = mx + 40, y = my + 170, w = mw - 80, h = 64 },
           "退出至菜单", { action = "exit_menu_go" }, "stamp")
-      btn("save", "modal", { x =  },
+      btn("modal.save", "modal", { x = mx + 40, y = my + 246, w = mw - 80, h = 64 },
           "仅存档", { action = "exit_menu_save" }, "stamp")
-      btn("settle", "modal", { x =  },
+      btn("modal.settle", "modal", { x = mx + 40, y = my + 322, w = mw - 80, h = 64 },
           "存档并结算", { action = "exit_menu_settle" }, "stamp.primary")
-      btn("cancel", "modal", { x =  },
+      btn("modal.cancel", "modal", { x = mx + 40, y = my + mh - 88, w = mw - 80, h = 64 },
           "取消", { action = "close_modal" }, "tab")
 
       -- ★★★★★ 2026-10-07 **给四个键设【官方胶囊底图】** ✗✓（用户要求配图 ✓）
