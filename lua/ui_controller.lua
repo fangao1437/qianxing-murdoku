@@ -4164,7 +4164,6 @@ function Controller:render(adapter, force)
   --    于是"上一帧显示过的全部"每帧都被藏一遍；而增量渲染又因为
   --    `last["visible"] == n.visible` 判定"没变"不再显示回来 ——
   --    结果是**第一次渲染之后整个界面就再也不可见**（而且一个报错都没有）。
-  local prev_shown = self._shown      -- ★ 诊断2 要用（★ 下一行就会把它覆盖掉 ✓）
   local seen = {}
   for i = 1, #nodes do seen[nodes[i].id] = true end
 
@@ -4243,37 +4242,6 @@ function Controller:render(adapter, force)
         --   ★★ 同一件事两处实现、只修了一处 ✗ ⇒ ★ 这正是本项目反复踩的那条形状 ✓
         -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
         forget_visible(id)               -- ★ 藏了就忘 ⇒ 下次该显示时会重发 ✓✓
-      end
-    end
-  end
-  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-  -- ★★ 2026-10-06 **诊断2：一次分清"算错 / 被跳过 / 被差集藏"** ✗✓
-  --
-  --   ★ 真机实测（用户 ✓）：★ 同一帧里 `clues` ✓ `clues.bg` 都被点亮 ✓
-  --     而★ **`clues.grid` 仍 `visible=false`** ✗ —— 而诊断①打出 `_grid_state = on` ✓
-  --   ⇒ ★★ 三个值一到手，三种可能立刻分开 ✓：
-  --     ★ `want` = `false`      ⇒ ★ **规划算错了**（★ 去看 push 那行 ✓）
-  --     ★ `want` = `true` 而 `在seen=false` ⇒ ★ **它不在 nodes 里**（★ 被跳过了 ✓）
-  --     ★ `want` = `true` 而 `在seen=true` ⇒ ★ **是差集/别处把它藏了** ✓
-  --   ⚠️ 只打一次（键含三个值 ✓ 变化才打 ✓ 不刷屏 ✓）
-  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-  do
-    local gid = "clues.grid"
-    local want, found = nil, false
-    for i = 1, #nodes do
-      if nodes[i].id == gid then want = nodes[i].visible; found = true end
-    end
-    local in_seen = (seen[gid] ~= nil)
-    local in_prev = (prev_shown ~= nil) and (prev_shown[gid] ~= nil)
-    local key = tostring(want) .. "/" .. tostring(found) .. "/" .. tostring(in_seen) .. "/" .. tostring(in_prev)
-    if self._grid_diag2 ~= key then
-      self._grid_diag2 = key
-      if print ~= nil then
-        print("[murdoku] ★ 诊断2：clues.grid 规划 visible=" .. tostring(want)
-          .. "（在nodes=" .. tostring(found) .. "）"
-          .. " 在seen=" .. tostring(in_seen)
-          .. " 上帧在shown=" .. tostring(in_prev)
-          .. "　⇒ vis=false 且 seen=true ⇒ 是差集/别处藏了；seen=false ⇒ 它不在 nodes 里")
       end
     end
   end
