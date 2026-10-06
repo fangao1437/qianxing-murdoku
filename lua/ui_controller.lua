@@ -884,21 +884,17 @@ function Controller:on_input(event)
   --   为什么这么做：这三个都是**不可逆**的（回菜单、交卷、清空整局），
   --   参考图里也是"点一下先问、再执行"的两段式。
   elseif a == "back_confirm" then
-    -- ★★★★★ 2026-10-07 **必须自己设 `dirty`** ✗✓（实测：不设 ⇒ 弹窗永远不出现 ✓）
-    --   ★ 原因：原来是靠 `sync_confirm()` 设的 ✓ 而它只在 `_confirm_shown` **变化**时设 ✗
-    --     ⇒ ★ `pending` 从 nil 到 nil **没变化** ⇒ 不设 `dirty` ⇒ 规划不重跑 ⇒ 弹窗不出现 ✓
-    self.dirty = true
     -- ★★★★★ 2026-10-06 **改成弹「退出菜单」四键界面** ✗✓（用户要求：取消 Y/X 确认卡 ✓）
     --   ★ 三个动作 ✓：退出至菜单 / 仅存档 / 存档并结算 ✓ + 取消 ✓
     --   ★ 其余两处（`submit` / `restart`）**照旧走 Y/X 确认卡** ✗ —— 只动 back 这一条 ✓
     self.modal = { kind = "exit_menu" }
+    -- ★ 2026-10-07 **这两句必须齐全** ✗✓（实测：漏了弹窗永不出现 ✓）：
+    --   · `pending = nil` ✓ 否则旧分支残留会把 Y/X 确认卡又拉起来 ✗
+    --   · `dirty = true`  ✓ 否则规划不重跑 ⇒ 新弹窗不会被摆出来 ✗
+    --     （★ `sync_confirm()` 只在确认卡显隐【变化】时设 dirty ✗ 这里靠不住 ✓）
     self.pending = nil
+    self.dirty = true
     self:sync_confirm()
-    self.pending = { action = "back" }
-    self:sync_confirm()
-    -- ★ 2026-10-04 **按下就给反馈**（用户反馈"点击动画只有提示有"）：
-    --   这三个键原来只设 `pending`、不播动画 ⇒ 点了像没反应，要等 ✓ 才有动静。
-    --   真正的执行动画仍在 `confirm_yes` → `do_submit()` 那条路上播。
     self:fx("hex.back", M.EFFECTS.SELECT)
 
   elseif a == "submit" then
