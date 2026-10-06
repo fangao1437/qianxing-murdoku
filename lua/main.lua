@@ -970,7 +970,13 @@ function Murdoku.on_update(dt)
   if not Murdoku._ray_probe_done and (current.frames or 0) >= 100 then
     Murdoku._ray_probe_done = true
     local ad3 = current.adapter
-    local probe_ids = { "root", "home", "select", "intro", "toast", "modal", "board" }
+    -- ★★★★★ 2026-10-06 **名单按真机实测修正** ✗✓
+    --   旧的 7 个里 `select` / `intro` / `toast` / `modal` / `board` **都不存在** ✗
+    --   ⇒ ★ 每次刷 7 行「射线探针：X 找不到或不支持光标事件」✗
+    --     ★ 而 `root` / `home` **其实存在** ✓ 只是不支持光标事件 ✓
+    --     ⇒ ★★ 那句话把两种完全不同的情况混成一句 ✗ ⇒ 读起来像"控件没了" ✓
+    --   ⇒ 只探**真机确认存在**的容器 ✓（★ 依 2026-10-05/06 真机日志 ✓）
+    local probe_ids = { "root", "home", "stage", "clues", "topbar", "toolbar", "right", "board.bg" }
     for i = 1, #probe_ids do
       local pid = probe_ids[i]
       local c = nil
@@ -1091,7 +1097,12 @@ function Murdoku.on_update(dt)
                        "clickAudioId", "disableCursorEventPassthrough", "disableKeyEventPassthrough",
                        "isolateNavigation", "alpha", "index", "zIndex", "sortingOrder",
                        "enable", "enabled", "blockRaycast", "grayed", "isEnabled" }
-      local samples = { "home.select", "select.card.1", "select.back", "cell.1.1", "selbtn.1", "selbtn.2", "board", "select", "home" }
+      -- ★★★★★ 2026-10-06 **名单按真机实测修正** ✗✓（旧名单里 3 个名字不存在 ✗：
+      --   `select.card.1` `select.back` `board` ⇒ ★ 每次都刷 3 行"树里没有这个名字" ✓
+      --   ⇒ ★ 这一段是「能点 vs 不能点」的对照组 ✗ ⇒ ★ 拿不存在的名字对照毫无意义 ✓）
+      local samples = { "home.select", "cell.1.1", "selbtn.1", "selbtn.2",
+                        "action.back", "hex.submit", "hit.submit",
+                        "clues.bg", "clues.grid", "tpl-container", "board.bg", "home" }
       for s = 1, #samples do
         local id = samples[s]
         local c = map[id]
