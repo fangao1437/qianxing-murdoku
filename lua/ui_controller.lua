@@ -2107,11 +2107,14 @@ function Controller:build_layout()
   --     ★ 打出 `off`/`nil` ⇒ ★ 那问题在 **`sync_clue_grid` 判定失败** ✓
   --   ⚠️ `push` 是**每帧**跑的 ✗ ⇒ 必须**只打一次** ✓（用 `_grid_log` 的去重 ✓）
   -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-  if self._grid_log ~= nil then
-    self:_grid_log("state_value", "★ 诊断：规划下发 `clues.grid` 时 `_grid_state` = "
-      .. tostring(self._grid_state)
-      .. "（★ 由它决定 `visible` ⇒ 期望 true；实测 false 就是这里 ✗）")
-  end
+  -- ★★ 2026-10-06 **这里原来有一处【死代码】诊断，已删** ✗✓（第 246 号提交留下的 ✓）
+  --   ★ 原文是 `if self._grid_log ~= nil then self:_grid_log("state_value", …) end` ✗
+  --   ★★ 而★ `_grid_log` **定义在 L3512** ✓ ★ 而这里在 **L2110** ✗
+  --     ⇒ ★ **那一刻它是 `nil`** ✗ ⇒ ★ **守卫直接跳过** ✓ ⇒ ★ **从来没执行过** ✗
+  --   ★★★ 第 247 号提交只把"能打出来的那版"改成了 `print` ✗ ★ **没删这一处** ✗
+  --     ⇒ ★ 于是它一直躺在规划里 ✗ ★ **看起来像在工作 ✓ 其实是死的** ✓✓
+  --   ⚠️ 教训 ✓：★ **改诊断的时候，要把旧的那份删掉** ✗
+  --     ★ 本项目已经踩过同一形状两次 ✓（`erases` / 缩放表 都是"两处负责"✓）
   push({ id = "clues.grid", kind = "container", parent = "clues",
          rect = { x = L.clues.x, y = L.clues.y, w = L.clues.w, h = L.clues.h },
          -- 走不了网格视窗时（cfg.use_grid=false / 找不到控件 / 填内容失败）把它藏起来，
