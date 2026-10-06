@@ -4170,6 +4170,31 @@ function Controller:render(adapter, force)
   -- 弹窗/教程/多余格子这些控件**在编辑器里是一直存在的**，只是不该显示时
   -- 不出现在布局里。第一次渲染先把"除了当前布局以外"的全部藏起来；
   -- 之后每次只藏"上一次显示过、这一次不在布局里"的。
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  -- ★★ 2026-10-06 **`forget_visible` 提到两个分支之外** ✗✓ —— 修 `clues.grid` 永远 false ✓
+  --
+  --   ★ 根因（★ 真机实测 ✓）：★ 同一件事**两处实现，只修了一处** ✗✓
+  --     · **首帧**分支（下面 `if self._shown == nil then`）★ **有** `forget_visible` ✓
+  --     · **"之后每次"**分支（`else` 里那个 `for pairs(self._shown)`）★ **没有** ✗✗
+  --   ⇒ ★★ 后果（★ 与用户实测完全吻合 ✓）：
+  --     ★ ① 主页/选关那一帧 ⇒ `clues.grid` 不在 `seen` ⇒ **差集主动发 `false`** ✗
+  --        ★ **并记进账本**（`last["clues.grid….visible"] = false` ✓）
+  --     ★ ② 进关卡 ⇒ 规划算出 `visible = **true**` ✓（★ 诊断实测 `_grid_state = on` ✓）
+  --        ★★ 而属性循环有账本：★ `same_value(last[k], true)` ⇒ **判"没变"⇒ 不发** ✗✗
+  --        ⇒ ★★★ **它永远停在 false** ✓✓ ⇒ ★ **父不可见 ⇒ 列表项再可见也不渲染** ✓
+  --   ★ 真机铁证 ✓：★ 五个列表项 `visible=true` ✓ 而父 `clues.grid = false` ✗
+  --   ★★ 这就是本项目第 N 次「**同一件事两处负责 ⇒ 必然漂移**」✓
+  --     ★（`erases` / 上色 / 缩放表 / 关卡清单 / 显隐 …都是同一个形状 ✓）
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  local function forget_visible(id)
+    if self._props == nil then return end
+    local pre = tostring(id) .. "\1"
+    for k, rec in pairs(self._props) do
+      if type(k) == "string" and k:sub(1, #pre) == pre and type(rec) == "table" then
+        rec.visible = nil
+      end
+    end
+  end
   if self._shown == nil then
     local all = self:layout_plan()
     -- ★★★★★ 2026-10-05 **藏完必须【清账本】** ✗✓ —— 这才是"永久丢失"的根治 ✓
@@ -4185,15 +4210,8 @@ function Controller:render(adapter, force)
     --     去一次别的关卡才行 ✓（切屏时 `clues` 重进 `seen` ⇒ 走"显示"那条路重发 ✓）
     --   ⚠️ 键格式 = `id \1 父容器 \1 出现序号`（见 `node_key` ✓）⇒ 用前缀匹配 ✓
     --     （与 `drop_props_of` 同一套写法 ✓ 不另造格式 ✓）
-    local function forget_visible(id)
-      if self._props == nil then return end
-      local pre = tostring(id) .. "\1"
-      for k, rec in pairs(self._props) do
-        if type(k) == "string" and k:sub(1, #pre) == pre and type(rec) == "table" then
-          rec.visible = nil
-        end
-      end
-    end
+    -- ★ 旧位置那个同名 `forget_visible` 已提到上面（两分支共用）✓
+
     for i = 1, #all do
       if not seen[all[i].id] and not stale_legacy(all[i].id) then
         self:_set_prop(adapter, all[i].id, "visible", false)
@@ -4215,6 +4233,15 @@ function Controller:render(adapter, force)
       -- ⚠️ 切换帧：上一帧的老线索 id **不藏也不销毁**（名字现在归网格视窗的列表项所有）
       if not seen[id] and not stale_legacy(id) then
         self:_set_prop(adapter, id, "visible", false)
+        -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+        -- ★★ 2026-10-06 **这里原来【没有】`forget_visible`** ✗✓ —— ★ 就是 `clues.grid` 的病根 ✓
+        --   ★ 首帧分支有 ✓ ★ 这条"每次"的道路没有 ✗ ⇒ ★ 藏了却把"发过 false"记在账本里 ✓
+        --   ⇒ ★★ 下一帧规划要发 `true` 时 ⇒ ★ `same_value` 判"没变" ⇒ **不发** ✗✗
+        --     ⇒ ★★★ **永久停在 false** ✓ ⇒ ★ 父不可见 ⇒ **列表项再可见也不渲染** ✓✓
+        --   ★ 真机铁证 ✓：★ 五个列表项 `visible=true` ✓ 而 `clues.grid = false` ✗
+        --   ★★ 同一件事两处实现、只修了一处 ✗ ⇒ ★ 这正是本项目反复踩的那条形状 ✓
+        -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+        forget_visible(id)               -- ★ 藏了就忘 ⇒ 下次该显示时会重发 ✓✓
       end
     end
   end
