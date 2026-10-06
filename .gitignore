@@ -14,3 +14,6 @@ tools/bin/
 tools/_dl/
 docs/research-raw/_*.cjs
 tests/_wip/
+
+sim-save/
+
