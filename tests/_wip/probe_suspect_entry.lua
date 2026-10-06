@@ -53,18 +53,28 @@ if f == nil then
   print("  [SKIP] 没找到 " .. plan_path .. "（先跑 `lua tools/dump_layout.lua`）")
 else
   local raw = f:read("*a"); f:close()
-  -- ★ 只数可疑事件，不引 JSON 库：找 action 后紧跟 suspect 的片段
+  -- ★★★★★ 2026-10-06 **计数修正：不能数两遍** ✗✓
+  --   旧写法 `gmatch('"action"%s*:%s*"suspect"')` ✗ 会**同时命中两处** ✓：
+  --     · 规划节点自己的 `"action": "suspect"` ✗（★ 节点级别的 action ✓）
+  --     · 以及它里面 `"event": { "action": "suspect" }` ✗（★ 控件真正派发的那个 ✓）
+  --   ⇒ ★ 17 个头像被数成 **34** ✗ ⇒ 断言 `n_suspect == n_face` **恒红** ✓
+  --     （★ 真机/探针日志原话：`34 vs 17` ✓ —— 这已经是**老问题**了 ✓）
+  --   ⇒ ★★ 修法：★ **只数 `event` 里那一份** ✓ —— 它才是"按钮点了会发什么" ✓
+  --     ★ 另把总数也打出来便于对照 ✓ 但**不**参与相等断言 ✓
   local n_suspect = 0
-  for _ in raw:gmatch('"action"%s*:%s*"suspect"') do n_suspect = n_suspect + 1 end
+  for _ in raw:gmatch('"event"%s*:%s*{%s*"action"%s*:%s*"suspect"') do n_suspect = n_suspect + 1 end
+  local n_action_all = 0
+  for _ in raw:gmatch('"action"%s*:%s*"suspect"') do n_action_all = n_action_all + 1 end
   local n_face = 0
   for _ in raw:gmatch('"id"%s*:%s*"clue%.[0-9]+%.face"') do n_face = n_face + 1 end
-  print(string.format("  计划：suspect 事件 %d 个 · clue.*.face 节点 %d 个", n_suspect, n_face))
+  print(string.format("  计划：suspect 事件 %d 个（节点级共 %d 个）· clue.*.face 节点 %d 个",
+    n_suspect, n_action_all, n_face))
   ok(n_suspect > 0, "★★ 计划里有 suspect 事件（改前是 0 ✗ ⇒ 这是红→绿的关键判据）", "实测 " .. n_suspect)
   ok(n_suspect == n_face, "★ suspect 事件数与 clue.*.face 节点数一致（每个头像一个 ✓）",
      string.format("%d vs %d", n_suspect, n_face))
   -- ★ id 不能是空串
   local empty_id = 0
-  for _ in raw:gmatch('"action"%s*:%s*"suspect"%s*,%s*"id"%s*:%s*""') do empty_id = empty_id + 1 end
+  for _ in raw:gmatch('"event"%s*:%s*{%s*"action"%s*:%s*"suspect"%s*,%s*"id"%s*:%s*""') do empty_id = empty_id + 1 end
   ok(empty_id == 0, "★ suspect 事件的 id 没有空串（`:1889` 同口径：有值才给 ✓）", "空串 " .. empty_id .. " 个")
 end
 
