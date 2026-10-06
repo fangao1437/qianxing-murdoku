@@ -2107,19 +2107,10 @@ function Controller:build_layout()
   --     ★ 打出 `off`/`nil` ⇒ ★ 那问题在 **`sync_clue_grid` 判定失败** ✓
   --   ⚠️ `push` 是**每帧**跑的 ✗ ⇒ 必须**只打一次** ✓（用 `_grid_log` 的去重 ✓）
   -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-  -- ⚠️ ★★ **不能用 `self:_grid_log`** ✗✗ —— ★ 它**定义在 L3512** ✓
-  --   ★ 而这里在 **L2094** ✓ ⇒ ★ **那一刻它还是 `nil`** ✗ ⇒ ★ 守卫会**直接跳过** ✓
-  --   ★★ 我第一版就是那么写的 ✗ ⇒ ★ **诊断永远打不出来** ✓（★ 自己抓到了 ✓）
-  -- ⇒ ★ 改用**状态变化去重** ✓：★ `_grid_state` 变一次就打一行 ✓ ★ 稳态零成本 ✓
-  do
-    local st = tostring(self._grid_state)
-    if self._grid_diag ~= st then
-      self._grid_diag = st
-      if print ~= nil then
-        print("[murdoku] ★ 诊断：规划下发 clues.grid 时 _grid_state = " .. st
-          .. "（★ 期望 on；打出 off/nil ⇒ 是 sync_clue_grid 判失败 ✗）")
-      end
-    end
+  if self._grid_log ~= nil then
+    self:_grid_log("state_value", "★ 诊断：规划下发 `clues.grid` 时 `_grid_state` = "
+      .. tostring(self._grid_state)
+      .. "（★ 由它决定 `visible` ⇒ 期望 true；实测 false 就是这里 ✗）")
   end
   push({ id = "clues.grid", kind = "container", parent = "clues",
          rect = { x = L.clues.x, y = L.clues.y, w = L.clues.w, h = L.clues.h },
