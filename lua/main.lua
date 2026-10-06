@@ -1243,7 +1243,19 @@ function Murdoku.on_update(dt)
     walk(rt, 0, 0, 0)
     return out
   end
-  if Murdoku._snap == nil or scr_now ~= Murdoku._snap_screen then
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  -- ★★ 2026-10-06 **给「切屏对比」加闸** ✗✓ —— ★ 它是剩下的诊断里【最贵】的一块 ✓
+  --
+  --   ★ 起因（★ 真机日志实证 ✓）：★ 254 只关住了「开局诊断」那【一块】✗
+  --     ★★ 而★ 日志里这几块**照旧打印** ✗：
+  --       ★「===== 切屏对比：home → select」✓ ·「===== 切屏对比：select → level」✓
+  --       ★「客户端 UI 根清单」✓ ·「对照组：能点 vs 不能点」✓ ·「逐格自检」✓
+  --     ★★★ ⇒ ★ **"关了诊断但卡顿还在"就是这么来的** ✓✓
+  --   ★ 为什么这块最贵 ✓：★ **两份全树快照（★ 80+ 控件 ✓）+ 逐项比较 + 格式化上百行** ✗
+  --     ★★ 而★ 开局必经 **主页 → 选关 → 进关** ✗ ⇒ ★ **它一次开局跑两趟** ✓✓
+  --   ★★ 判据（★ 干净可验 ✓）：★ **日志里【不该再出现】「===== 切屏对比」** ✓✓
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  if Murdoku.DIAG and (Murdoku._snap == nil or scr_now ~= Murdoku._snap_screen) then
     local now = snap_visible()
     if Murdoku._snap ~= nil then
       print("[murdoku] ===== 切屏对比：" .. tostring(Murdoku._snap_screen) .. " → " .. tostring(scr_now) .. " =====")

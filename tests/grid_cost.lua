@@ -135,6 +135,34 @@ local function make_ctrl(name)
   c.GetChildren = function()
     C.getchildren = C.getchildren + 1
     if RAY.active then RAY.children = RAY.children + 1 end
+    -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+    -- ★★ 2026-10-06 **让 `GetChildren` 自己报出调用者** ✗✓ —— 别再逐个 wrap 猜 ✓
+    --
+    --   ★ 起因 ✓：★ `[E]` 300 帧 `GetChildren` = **16023** ✗ ★ 而★ 分段只认领了 1950 ✓
+    --     ★★ ⇒ ★ **归属不明 **14073**（★ 46.9/帧 ✓ = 每次 render ~2815 ✓）** ✗
+    --   ★★ 我试过两个怀疑对象 ✗：★ 兜底隐藏（**0** ✓）· `hide_unlisted`（★ 布景没走到 ✓）
+    --     ★★★ ⇒ ★ **"逐个猜 + wrap" 这个方法【效率太低】** ✗✓
+    --   ★ 正解 ✓：★ **在计数点抓一次调用栈** ✓ —— ★ `debug.traceback` 是文档里
+    --     ★ **唯一保证可用的 `debug` 接口** ✓✓（★ 「除 `debug.traceback` 外的 `debug.*`」不可用 ✓）
+    --   ★★ 做法 ✓：★ **前 5 次【未归账】的调用各抓一次栈** ✓ ★ 打印出来 ✓
+    --     ★ 读法 ✓：★ **栈里第一行非本文件的函数名 ⇒ 就是它** ✓✓
+    --   ⚠️ 只抓 5 次 ✓ ★ **不影响成本测量** ✓（★ 抓完就停 ✓）
+    -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+    if RAY.active == nil and C.gc_probe ~= nil and C.gc_probe.n < 5 then
+      C.gc_probe.n = C.gc_probe.n + 1
+      local tb = nil
+      pcall(function() tb = debug.traceback("", 2) end)
+      if tb ~= nil then
+        local first = nil
+        for ln in tostring(tb):gmatch("[^\n]+") do
+          if not ln:find("grid_cost", 1, true) and not ln:find("GetChildren", 1, true) then
+            first = ln
+            break
+          end
+        end
+        C.gc_probe.hits[#C.gc_probe.hits + 1] = tostring(first)
+      end
+    end
     return c.__kids
   end
   c.GetChild = function(_, key)
@@ -571,9 +599,61 @@ if cur ~= nil and cur.adapter ~= nil and cur.adapter.rearm_raycast ~= nil then
   pcall(function() cur.adapter:rearm_raycast("grid_cost：口径 E 起点") end)
 end
 reset()
+-- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+-- ★★ 2026-10-06 **分段切账：`enforce_hidden_subtrees` 到底花了多少 `GetChildren`** ✗✓
+--
+--   ★ 为什么要这一段 ✓：★ `[E]` 量到 300 帧 `GetChildren` = **16023** ✗
+--     ★★ 而★ 已知 `enable_raycast` 只花了 **1872** ✓（L604 那段自己报了 ✓）
+--       ⇒ ★★★ **剩下 **14151** 归属不明** ✗✓ —— ★ 而★ 这正是"开局每帧烧"的大头 ✓
+--   ★★ 我的怀疑对象 ✓：★ `enforce_hidden_subtrees`（★ 兜底隐藏 ✓）
+--     ★ 而★ 我**已经推错过一次** ✗（★ 以为是 `set_property` 触发 ✓ 而实测 `set_property = 0` ✓）
+--       ⇒ ★★★ **所以这次【直接量】** ✓ —— ★ 用现成的 `RAY.active` 机制 ✓✓
+--   ★ 读法 ✓：★ 这一段报了数 ⇒ **就是它** ✓ ★ 报 0 ⇒ **排除它** ✓ 再看下一个 ✓
+-- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+local AD = cur and cur.adapter
+local SEG_HIDE = { calls = 0, children = 0, find = 0 }
+if AD ~= nil and AD.enforce_hidden_subtrees ~= nil then
+  local orig_hide = AD.enforce_hidden_subtrees
+  AD.enforce_hidden_subtrees = function(self2, ...)
+    SEG_HIDE.calls = SEG_HIDE.calls + 1
+    local prev_active = RAY.active
+    RAY.active = SEG_HIDE
+    local ok, e = pcall(orig_hide, self2, ...)
+    RAY.active = prev_active
+    if not ok then error(e) end
+  end
+end
+local SEG_UNLIST = { calls = 0, children = 0, find = 0 }
+if AD ~= nil and AD.hide_unlisted ~= nil then
+  local orig_unlist = AD.hide_unlisted
+  AD.hide_unlisted = function(self2, ...)
+    SEG_UNLIST.calls = SEG_UNLIST.calls + 1
+    local prev_active = RAY.active
+    RAY.active = SEG_UNLIST
+    local ok, e = pcall(orig_unlist, self2, ...)
+    RAY.active = prev_active
+    if not ok then error(e) end
+  end
+end
 local t0 = os.clock()
+C.gc_probe = { n = 0, hits = {} }      -- ★ 抓 5 次"未归账"的 GetChildren 调用栈 ✓
 pcall(function() for _ = 1, 300 do OnUpdate(1 / 60) end end)
 local t1 = os.clock()
+C.gc_probe_done = true
+out("  ★ [E·抓栈] 未归账的 `GetChildren` 前 5 次调用者（★ 谁花的 14073 就看这里 ✓）：")
+for i = 1, #C.gc_probe.hits do
+  out("      " .. tostring(i) .. ". " .. tostring(C.gc_probe.hits[i]))
+end
+out(string.format("  ★ [E·分段] `enforce_hidden_subtrees`：调用 %d 次  GetChildren %d 个（= %.1f/帧）  find %d 次",
+  SEG_HIDE.calls, SEG_HIDE.children, SEG_HIDE.children / 300, SEG_HIDE.find))
+out(string.format("  ★ [E·分段] `hide_unlisted`（托管容器扫子控件）：调用 %d 次  GetChildren %d 个  find %d 次",
+  SEG_UNLIST.calls, SEG_UNLIST.children, SEG_UNLIST.find))
+do
+  local rest = C.getchildren
+  local known = RAY.children + SEG_HIDE.children + SEG_UNLIST.children
+  out(string.format("  ★ [E·分段] 合计 %d；减掉射线 %d、兜底隐藏 %d、hide_unlisted %d ⇒ **归属不明 %d 个**（= %.1f/帧）",
+    rest, RAY.children, SEG_HIDE.children, SEG_UNLIST.children, rest - known, (rest - known) / 300))
+end
 out(string.format("  [E] 300 帧合计：render %d 次  find=%d（真搜树 %d / 搜空 %d）set_property=%d sub=%d "
   .. "view=%d  GetChildren=%d  文字写入=%d  回调=%d  CPU=%.1f ms",
   C.render, C.find, C.find_deep, C.find_miss, C.set_prop, C.sub, C.view, C.getchildren,
