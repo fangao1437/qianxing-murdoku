@@ -16,7 +16,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   readGil, encodeMsg, cloneField, setPair, stateBlocks, textsOf,
-  findChildList, setChildList, asIdList, writeVarint,
+  findChildListTop, ensureChildListTop, setChildList, asIdList, writeVarint,
 } from './gilread.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -76,10 +76,7 @@ function patch(rec, spec) {
     if (setPair(block.sub.find((x) => x.field === 504), spec.pos[0], spec.pos[1])) geo++;
     setPair(block.sub.find((x) => x.field === 505), spec.size[0], spec.size[1]);
   }
-  let myChild = null;
-  { let hit = null;
-    (function scan(fs2) { for (const f of fs2) { if (hit) return; if (f.wt === 2 && f.sub === null && !f.isText && f.payload && asIdList(f.payload, true) !== null) { hit = f; return; } if (f.sub) scan(f.sub); } })(clone.sub);
-    if (hit) { setChildList(hit, []); myChild = hit; } }
+  const myChild = ensureChildListTop({ field: clone }, null); setChildList(myChild, []);
   return { clone, parentOk, nameOk, geo, childList: myChild };
 }
 function readVarintDummy(buf) { let v = 0, sh = 0; for (let i = 0; i < buf.length; i++) { v += (buf[i] & 0x7f) * Math.pow(2, sh); if (!(buf[i] & 0x80)) return i === buf.length - 1 ? v : null; sh += 7; } return null; }
@@ -99,7 +96,7 @@ for (const w of missing) {
 }
 
 // 登记进 root 的子列表
-const rootList = root.childList || findChildList(root.field.sub, false);
+const rootList = ensureChildListTop(root, null);
 let regOk = 0;
 for (const it of inserts) {
   if (!rootList) break;

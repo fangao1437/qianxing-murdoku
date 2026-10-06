@@ -131,6 +131,35 @@ function findChildList(fields) {
   return hit;
 }
 function setChildList(f, ids) { f.payload = ids.length ? Buffer.concat(ids.map((i) => writeVarint(i))) : Buffer.alloc(0); f.len = f.payload.length; }
+// ★★★★★ 2026-10-07 **只认【顶层】的子列表** ✗✓ —— 修"导不进去"的关键 ✓
+//
+//   ★ 踩过的坑（★ 206 轮就记过 ✓ 2026-09-30 ✓ 我 2026-10-07 又踩了一次 ✓）：
+//     indChildList 是**递归**的 ✗ ⇒ 给一个"原本没有子控件"的容器挂子控件时，
+//     顶层没有 #503 ⇒ 它**递归到嵌套的 #505 块里** ✗ ⇒ 找到一个
+//     "碰巧能解析成 ID 列表"的字段 ⇒ **把子控件 ID 写进了那个无关的嵌套字段** ✓
+//   ★ 两个后果 ✓：
+//     · 容器顶层仍然没有 #503 ⇒ 编辑器眼里它是**空容器**（子控件全不见）
+//     · 那个无辜的嵌套字段被覆写成 ID 数据 ⇒ ★ **文件直接导不进去** ✓✓
+//   ★ 为什么只有新容器中招 ✓：oard/ction.undo 天生有顶层 #503 ✓
+//     ⇒ 递归"先撞上正确的那个" ⇒ 所以症状只出现在我新建的控件上 ✓
+//
+//   ⇒ 规则 ✓：**子列表只在记录顶层找**；找不到就**新建一个插在 #502 之后**
+//     （★ 与 oard 的字段顺序一致：#501 #502 #503 #504 #505… ✓）
+function findChildListTop(fields) {
+  for (const f of fields) {
+    if (f.wt === 2 && f.sub === null && !f.isText && f.payload && asIdList(f.payload, true) !== null) return f;
+  }
+  return null;
+}
+function ensureChildListTop(rec, proto) {
+  let l = findChildListTop(rec.field.sub);
+  if (l) return l;
+  l = { field: 503, wt: 2, sub: null, num: 0n, payload: Buffer.alloc(0), len: 0, isText: false };
+  const at = rec.field.sub.findIndex((f) => f.wt === 0 && f.field === 502);
+  if (at >= 0) rec.field.sub.splice(at + 1, 0, l);
+  else rec.field.sub.unshift(l);
+  return l;
+}
 
 const KNOWN_TYPES = new Set(['容器节点', '客户端控件容器', '预设按钮', '交互按钮', '文本框', '文本视窗',
   '图片', '光标检测区域', '网格视窗', '按键提示', '模板引用控件', '界面动效', '全屏动效']);
@@ -241,10 +270,15 @@ function patch(rec, spec) {
     setPair(block.sub.find((g) => g.field === 505), spec.size[0], spec.size[1]);
   }
   // 清空原型自己的子列表
-  let myChild = null;
-  { let hit = null;
-    (function scan(fs) { for (const f of fs) { if (hit) return; if (f.wt === 2 && f.sub === null && !f.isText && f.payload && asIdList(f.payload, true) !== null) { hit = f; return; } if (f.sub) scan(f.sub); } })(clone.sub);
-    if (hit) { setChildList(hit, []); myChild = hit; } }
+  // ★★★★★ 2026-10-07 **只清【顶层】的子列表** ✗✓
+  //   ★ 踩过的坑（★ 206 轮就记过 ✓ 我又踩了一次 ✓）：
+  //     indChildList 是**递归**的 ✗ ⇒ 给"原本没有子控件"的容器挂子控件时，
+  //     它会在**嵌套的 #505 块里**找一个"碰巧能解析成 ID 列表"的字段 ✗
+  //     ⇒ ID 被写进那个**无关的嵌套字段** ⇒ ★ **文件直接导不进去** ✓
+  //   ★ 所以这里一律用 indChildListTop（★ 只看记录顶层 ✓），
+  //     没有就由 ensureChildListTop **新建一个插在 #502 之后**（★ 与 board 同构 ✓）。
+  const myChild = ensureChildListTop({ field: clone }, null);
+  setChildList(myChild, []);
   return { clone, parentOk, nameOk, geo, blocks: sb.length, childList: myChild };
 }
 
@@ -280,7 +314,7 @@ console.log('已构造 ' + inserts.length + ' 条新控件记录；问题 ' + pr
 for (const q of problems.slice(0, 12)) console.log('  ⚠️ ' + q);
 
 // ── 登记进父控件的子控件列表 ──────────────────────────────────────────────
-const listOf = (pid) => newChildOf.get(pid) || (recs.find((r) => r.id === pid) || {}).childList || null;
+const listOf = (pid) => newChildOf.get(pid) || findChildListTop((recs.find((r) => r.id === pid) || { field: { sub: [] } }).field.sub);
 let regFail = 0;
 for (const it of inserts) {                        // 按父先子后的顺序登记即可
   const list = listOf(it.spec.parentId);
