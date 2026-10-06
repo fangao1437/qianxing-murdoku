@@ -1979,9 +1979,6 @@ function Controller:build_layout()
   push({ id = "hud.timer", kind = "text", parent = "topbar",
          rect = { x = 72, y = 216, w = 340, h = 56 },
          text = self:format_time(vm.hud.time), style = "stat" })
-  push({ id = "hud.moves", kind = "text", parent = "topbar",
-         rect = { x = 1390, y = 30, w = 150, h = 46 },  -- ★ 同上（原 664）
-         text = string.format("%d 步", vm.hud.moves), style = "stat" })
 
   -- ===== 左侧面板：头像卡 + 线索卡 + 图例 =====
   push({ id = "left", kind = "container", parent = "root", rect = rect_of(L.left), style = "panel.left" })
@@ -2768,8 +2765,8 @@ function Controller:build_layout()
              rect = { x = mx + 30, y = my + 120, w = mw - 60, h = 120 }, text = modal.message or "", style = "modal.body" })
       push({ id = "modal.stats", kind = "text", parent = "modal",
              rect = { x = mx + 30, y = my + 250, w = mw - 60, h = 40 },
-             text = string.format("用时 %s · %d 步 · 误指认 %d 次 · 位置 %d/%d",
-                                  self:format_time(vm.hud.time), vm.hud.moves, vm.hud.failed_accusations, got, total),
+             text = string.format("用时 %s · 误指认 %d 次 · 位置 %d/%d",
+                                  self:format_time(vm.hud.time), vm.hud.failed_accusations, got, total),
              style = "muted" })
       btn("modal.again", "modal", { x = mx + 40, y = my + mh - 88, w = 180, h = 60 }, "重玩本关",
           { action = "restart" }, "stamp")

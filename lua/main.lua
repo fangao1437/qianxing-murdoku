@@ -834,7 +834,7 @@ function Murdoku.on_update(dt)
       "stage", "board.bg", "cell.1.1",
       "topbar", "toolbar", "right",
       "clues", "clues.bg", "clues.grid",
-      "hud.title", "hud.subtitle", "hud.moves", "hud.timer", "hud.progress",
+      "hud.title", "hud.subtitle", "hud.timer", "hud.progress",
       "action.back",
     }
     for i = 1, #ids do
