@@ -173,28 +173,19 @@ print("")
 print("下一步：脚本映射要指向【编辑器实际读取的 external_lua_file 目录】（本脚本已自动同步过去）")
 
 -- ★★★★★ 2026-10-06 **打包后自动同步到编辑器真正读取的目录** ✗✓
---   ★ 踩过的坑（★ 花了整整一晚 ✓）：★ 编辑器读的不是项目里的 `dist/` ✗
---     而是 ★ `%USERPROFILE%\AppData\LocalLow\miHoYo\原神\BeyondLocal\<uid>\
---       Beyond_Local_Save_Level\<关卡id>\external_lua_file\client_script.lua` ✓
+--   ★ 踩过的坑（★ 花了一整晚 ✓）：★ 编辑器【不读项目里的 `dist/`】✗
+--     它读的是关卡目录下的 ★ `external_lua_file\client_script.lua` ✓
 --   ★★ ⇒ ★ 只写 `dist/` ⇒ **编辑器永远跑旧脚本** ✗（★ 日志里 `hud.moves` 一直在 ✓）
---   ★ 这里顺手复制一份过去 ✓；**目录不存在时静默跳过** ✓（★ 别的机器上没有 ✓）
+--   ★ ⚠️ **不能用 `os.getenv`** ✗ —— ★ 官方文档：`os.*` 只剩 time/date/clock/difftime ✓
+--     ⇒ ★ 路径**写死**在这里 ✓（★ 换机器时改这一行 ✓）
+local EDITOR_COPY = "C:\\Users\\18182\\AppData\\LocalLow\\miHoYo\\原神\\BeyondLocal\\153793556\\Beyond_Local_Save_Level\\1073742003\\external_lua_file\\client_script.lua"
 do
-  local home = os.getenv("USERPROFILE") or os.getenv("HOME")
-  if home then
-    local base = home .. "\\AppData\\LocalLow\\miHoYo\\原神\\BeyondLocal"
-    local f = io.popen and nil
-    -- 用目录列举不可靠（io.* 受限）⇒ 改成对已知关卡 id 逐个试探 ✓
-    local ids = { "1073742003" }
-    for _, uid in ipairs({ "153793556" }) do
-      for _, lid in ipairs(ids) do
-        local p = base .. "\\" .. uid .. "\\Beyond_Local_Save_Level\\" .. lid .. "\\external_lua_file\\client_script.lua"
-        local fh = io.open(p, "wb")
-        if fh then
-          fh:write(bundle)
-          fh:close()
-          print("已同步到编辑器目录：" .. p)
-        end
-      end
-    end
+  local fh = io.open(EDITOR_COPY, "wb")
+  if fh then
+    fh:write(bundle)
+    fh:close()
+    print("已同步到编辑器读取的目录：" .. EDITOR_COPY)
+  else
+    print("⚠️ 没能同步到编辑器目录（路径不存在？）：" .. EDITOR_COPY)
   end
 end

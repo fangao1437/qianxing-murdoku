@@ -47,6 +47,7 @@ M.SIGNALS = {
   SAVE       = "murdoku/save",
   RESTORE    = "murdoku/restore",
   SYNC_STATE = "murdoku/sync",
+  SETTLE     = "murdoku/settle",   -- ★ 2026-10-06 「存档并结算」：请服务端节点图调【结算关卡】
 }
 
 -- 信号参数按顺序添加；这里给出"信号名 → 字段顺序"，收信号时按它还原成字典
@@ -60,6 +61,8 @@ M.SIGNAL_SCHEMA = {
   [M.SIGNALS.SAVE]       = { "level_id", "state_code", "moves", "elapsed", "solved" },
   [M.SIGNALS.RESTORE]    = { "state_code", "moves", "elapsed", "solved" },
   [M.SIGNALS.SYNC_STATE] = { "who", "r", "c" },
+  -- ★ 「存档并结算」只带关卡 id —— 存档本身走 SAVE 那条通道（`Murdoku.save_now()` 已发 ✓）
+  [M.SIGNALS.SETTLE] = { "level_id" },
 }
 
 ----------------------------------------------------------------------------

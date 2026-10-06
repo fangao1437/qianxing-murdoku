@@ -293,6 +293,23 @@ function Murdoku.start(level_id, opts)
       --   玩家看不出自己打过哪几关（这正是「参考原作卡片选关」要看的信息）。
       Murdoku.mark_cleared(level.id)
     end,
+
+    -- ★★★★★ 2026-10-06 **「退出菜单」四键界面要的两个回调** ✗✓
+    --   ★ 为什么放在这里：`adapter` 只在这一层拿得到（★ 控制器没有 ✓）
+    --   ★ 两个动作 ✓：
+    --     · 仅存档       = **留在本关** ✓ 只落盘 ✓
+    --     · 存档并结算   = 落盘 + ★ **发 `murdoku/settle`** ✓
+    --       ⇒ 服务端节点图收到后调【**结算关卡**】节点 ⇒ ★ **直接结束游戏** ✓
+    --   ★ 落盘走现成的 `Murdoku.save_now()` ✓（★ 它已经是 `adapter:save` ✓
+    --     payload 里的 `moves` 保持 0 ✓ —— ★ 协议位不能少 ✓）
+    on_save = function()
+      Murdoku.save_now()
+    end,
+
+    on_settle = function()
+      Murdoku.save_now()
+      adapter:signal_emit(Qianxing.SIGNALS.SETTLE, { tostring(level.id) })
+    end,
   })
 
   local self = setmetatable({}, Murdoku)
