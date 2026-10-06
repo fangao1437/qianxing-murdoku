@@ -4277,34 +4277,6 @@ function Controller:render(adapter, force)
       end
     end
   end
-  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-  -- ★★ 2026-10-06 **修 `clues.grid` 永远 false：定期清它的账本** ✗✓
-  --
-  --   ★ 诊断2 真机实测（用户 ✓）：
-  --     ★ `规划 visible=true` ✓ · `在nodes=true` ✓ · `在seen=true` ✓ · `上帧在shown=true` ✓
-  --     ★★ 而★ **读回 `visible=false`** ✗✗
-  --   ⇒ ★★★★ **脚本认为它可见 ✓ 而属性【没送达引擎】** ✓✓
-  --     ★ 因为★ 账本 `last["clues.grid…visible"] = true` ✓
-  --       ★ ⇒ `same_value` 判"没变" ⇒ **永远不发** ✗✗
-  --   ★★ 谁把它真的设成 false ✗：
-  --     ★ `hide_unlisted` 扫的是 `clues` 的**直接子控件** ✗
-  --       ★ 而★ **`clues.grid` 自己就是 `clues` 的直接子控件** ✗✓
-  --         ★（那段注释只想到了"列表项在 `clues.grid` 下面 ✓ 不会被误伤" ✗
-  --           ★ 而**漏了 `clues.grid` 自己** ✗）
-  --       ★ ⇒ 它被直接 `SetVisible(false)` ✗ ★ **而账本不知道** ✓
-  --     ★ 又因为它**在 `seen` 里** ⇒ ★ **永远不进差集** ⇒ ★ **`forget_visible` 永远不清它** ✗
-  --   ⇒ ★★ 修法 ✓：★ **每 30 帧主动清一次它的账本** ✗
-  --     ★ 成本 ✓：★ 30 帧一次 `pairs(self._props)` 的前缀清扫 ✓（★ 与差集那套同一份代码 ✓）
-  --     ★ 效果 ✓：★ 清完下一帧"该显示"⇒ 账本认为没发过 ⇒ **重发 `true`** ✓✓
-  --   ⚠️ 这是**对症的兜底** ✗ —— ★ 根治要等查清 `hide_unlisted` 为什么关它 ✓
-  --     ★（★ 那样就该在 `hide_unlisted` 里跳过 `seen` 里的 id ✓ 一行的事 ✓）
-  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-  do
-    self._grid_ledger_tick = (self._grid_ledger_tick or 0) + 1
-    if self._grid_ledger_tick % 30 == 0 then
-      forget_visible("clues.grid")
-    end
-  end
   self._shown = seen          -- 记住这一帧显示了什么，下一帧据此算差集
 
   -- ★★★★★ 2026-10-05 **"补发"这套规则只在这里实现一份**（属性循环和 rect 两条路共用）。
