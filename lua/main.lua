@@ -779,8 +779,32 @@ function Murdoku.on_update(dt)
     --   真机表现就是"关卡里棋盘上压着返回菜单按钮、点了回选关"（22:45 日志）。
     --   ⇒ 删掉。隐藏逻辑回归 `apply_screen_hide` + 下面那段按屏幕同步。
 
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  -- ★★ 2026-10-06 **给这几大块诊断加开关，默认【关】** ✗✓ —— 这就是"开局卡一下"的真凶 ✓
+  --
+  --   ★ 起因（★ 用户实测 ✓）：★「试玩开始时启动游戏前的最后一下偶尔会卡一下」✗
+  --     ★★ 而★ 这份日志里，同一时刻**连着跑五套诊断** ✗：
+  --       ★「开局诊断」✓「屏幕占用排行」✓「客户端 UI 根清单」✓「对照组」✓「切屏对比」✓
+  --       ★ 另外适配器里还有一整套「逐格自检」✓
+  --     ★★★ 每一块的代价 ✓：★ **遍历全部控件（★ 80~150 个 ✓）× 逐个取字段
+  --       （★ name/visible/active/position/size ✓）× 拼字符串 × `print`** ✗✗
+  --       ★ 「切屏对比」最贵 ✓：★ **两份全树快照 + 逐项比较 + 格式化上百行** ✗
+  --     ★★★★ ⇒ ★ **它们集中在一个时刻跑 ⇒ 那一下就是卡顿** ✓✓
+  --
+  --   ★ 而下面 L772 那句注释写着 ✓：
+  --     ★「**不依赖 `debug_*` 开关**（★ 这是**验收信息**，不是调试噪音）」✗
+  --     ★★ 当年是对的 ✓ —— ★ 那时要靠它定位"界面一片空白" ✓
+  --       ★★★ 而**现在** ✗：★ 界面已经能用 ✓ ★ 它变成**每次都跑的负担** ✓✓
+  --         ★ ⇒ ★ 该给它一个开关 ✓（★ 需要排查时打开 ✓ 平时关着 ✓）
+  --
+  --   ★★ 用法 ✓：★ 在 `cfg` 或这里把 `Murdoku.DIAG` 设成 `true` 即可恢复全部诊断 ✓
+  --     判据 ✓：★ 关掉之后开局**不该再卡** ✓ 而★ 界面功能**一模一样** ✓
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  Murdoku.DIAG = Murdoku.DIAG or false      -- ★ 默认关：★ 要排查时改 true ✓
+
   local scr_now = current.controller and current.controller.screen or "level"
-  if ((current.frames or 0) >= 90 or scr_now ~= Murdoku._last_screen)
+  if Murdoku.DIAG
+     and ((current.frames or 0) >= 90 or scr_now ~= Murdoku._last_screen)
      and scr_now ~= Murdoku._dump_done_for then
     Murdoku._dump_done_for = scr_now
     local ad = current.adapter
