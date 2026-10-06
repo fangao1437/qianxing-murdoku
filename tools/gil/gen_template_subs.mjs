@@ -21,8 +21,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  readGil, encodeMsg, cloneField, setPair, pairOf, stateBlocks, textsOf,
-  findChildList, setChildList, asIdList, writeVarint,
+  readGil, encodeMsg, cloneField, setPair, pairOf, pairValue, stateBlocks, textsOf,
+  findChildListTop, setChildList, asIdList, writeVarint,
 } from './gilread.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -115,7 +115,10 @@ for (const spec of SPECS) {
   }
 
   // ⑤ 清空原型自己的子控件列表（否则副本会认领原型的子控件）
-  const myChild = findChildList(clone.sub, true);
+  //   ★ 2026-10-07 修：原来用**递归** findChildList(clone.sub, true)。allowEmpty=true 时
+  //     连"任何空的 wt2 字段"都算命中（例如空的 #502）⇒ 它清空的是**无关字段**，
+  //     原型真正的子列表反而留着 ⇒ 副本认领原型子控件。必须只认顶层。
+  const myChild = findChildListTop(clone.sub);
   if (myChild) setChildList(myChild, []);
 
   console.log('  ' + spec.name.padEnd(6) + '← ' + spec.proto.padEnd(12) + '#' + newId
@@ -129,11 +132,13 @@ for (const spec of SPECS) {
 if (!built.length) { console.log('\n无需改动（两个子控件都已存在）'); process.exit(0); }
 
 // ── 登记进 content 的子控件列表 ──────────────────────────────────────────
-if (!content.childList) { console.error('content 的子控件列表没找到'); process.exit(5); }
+//   ★ 2026-10-07：显式用**顶层版**，不再依赖 readGil().recs[].childList
+const contentList = findChildListTop(content.field.sub);
+if (!contentList) { console.error('content 记录顶层没有子控件列表字段'); process.exit(5); }
 {
-  const cur = asIdList(content.childList.payload, true) || [];
+  const cur = asIdList(contentList.payload, true) || [];
   for (const b of built) if (!cur.includes(b.id)) cur.push(b.id);
-  setChildList(content.childList, cur);
+  setChildList(contentList, cur);
   console.log('\ncontent 子列表登记后 ' + cur.length + ' 个：' + cur.join(', '));
 }
 
@@ -158,23 +163,28 @@ let bad = 0;
 for (const b of built) {
   const hit = g2.recs.find((r) => r.name === b.name && r.parentId === contentId);
   if (!hit) { console.log('    ❌ ' + b.name + ' 没找到'); bad++; continue; }
+  // ★ 2026-10-07 修（假警报）：原来要求"恰好 2 个浮点分量"，但引擎和本工具都是**稀疏编码** ——
+  //   值为 0 的分量根本不写（位置 (0,0) 写出来是一个**空消息**，见 gilread.pairValue 的注释）。
+  //   于是位置含 0 的子控件（obj (0,0)、text (0,-52)）永远被判 ❌ ⇒ 退出码 6"先别导入"，
+  //   而写出的文件其实完全正确（与用户成功导入的那份**逐字节相同**）。
+  //   ⇒ 改用 pairValue：分量缺失 = 0。
   const posOk = hit.states.length === 4 && hit.states.every((s) => {
-    const fl = (pairOf(s, 504)?.sub || []).filter((x) => x.wt === 5);
     const sp = SPECS.find((x) => x.name === b.name);
-    return fl.length === 2 && Math.abs(fl[0].f - sp.pos[0]) < 0.6 && Math.abs(fl[1].f - sp.pos[1]) < 0.6;
+    const p = pairOf(s, 504);
+    return Math.abs(pairValue(p, 0) - sp.pos[0]) < 0.6 && Math.abs(pairValue(p, 1) - sp.pos[1]) < 0.6;
   });
   const szOk = hit.states.length === 4 && hit.states.every((s) => {
-    const fl = (pairOf(s, 505)?.sub || []).filter((x) => x.wt === 5);
     const sp = SPECS.find((x) => x.name === b.name);
-    return fl.length === 2 && Math.abs(fl[0].f - sp.size[0]) < 0.6 && Math.abs(fl[1].f - sp.size[1]) < 0.6;
+    const q = pairOf(s, 505);
+    return Math.abs(pairValue(q, 0) - sp.size[0]) < 0.6 && Math.abs(pairValue(q, 1) - sp.size[1]) < 0.6;
   });
-  const inList = (asIdList(hit.childList?.payload || Buffer.alloc(0), true) || []) && true;
   if (!posOk || !szOk) bad++;
   console.log('    ' + (posOk && szOk ? '✅' : '❌') + ' ' + b.name + '  #' + hit.id + '  状态块 ' + hit.states.length
     + '  位置' + (posOk ? '✅' : '❌') + ' 尺寸' + (szOk ? '✅' : '❌'));
 }
 const contentAfter = g2.recs.find((r) => r.id === contentId);
-const listAfter = asIdList(contentAfter?.childList?.payload || Buffer.alloc(0), true) || [];
+// ★ 2026-10-07：同样显式走顶层版
+const listAfter = asIdList(findChildListTop(contentAfter?.field.sub || [])?.payload || Buffer.alloc(0), true) || [];
 const listOk = built.every((b) => listAfter.includes(b.id));
 console.log('    ' + (listOk ? '✅' : '❌') + ' content 子控件列表含新 ID（共 ' + listAfter.length + ' 个）');
 console.log('\n' + (bad === 0 && listOk ? '★ 模板子控件补齐成功' : '❌ 自检不通过，先别导入'));

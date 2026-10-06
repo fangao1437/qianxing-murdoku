@@ -20,6 +20,13 @@
 // 用法：
 //   node tools/gil/gen_bulk.mjs --probe
 //   node tools/gil/gen_bulk.mjs --out=<路径>
+//
+// ★★★★ 2026-10-07：**本文件是自包含的** —— 它【不 import gilread.mjs】，自己抄了一套
+//   readVarint/writeVarint/parse/encode/geomPairs/stateBlocks/bigIds/texts/asIdList/
+//   findChildList/setChildList/findChildListTop/ensureChildListTop/cloneField/setPair。
+//   ⇒ **改 gilread.mjs 不会影响本文件**；两边的临界函数只能手动保持同步。
+//   ⇒ 每次改完公共库或本文件，跑 `node tools/gil/check_childlist_top.mjs`
+//     （它会比对 gen_bulk 的副本与公共库是否仍然同构，并扫出旧写法）。
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -154,10 +161,19 @@ function findChildListTop(fields) {
 function ensureChildListTop(rec, proto) {
   let l = findChildListTop(rec.field.sub);
   if (l) return l;
-  l = { field: 503, wt: 2, sub: null, num: 0n, payload: Buffer.alloc(0), len: 0, isText: false };
-  const at = rec.field.sub.findIndex((f) => f.wt === 0 && f.field === 502);
+  // 用现成的 #503 当模板（字段号照抄），没有就用最小结构 —— 与 gilread.ensureChildListTop 一致
+  const src = proto || { field: 503, wt: 2 };
+  l = { field: src.field || 503, wt: 2, sub: null, num: 0n, payload: Buffer.alloc(0), len: 0, isText: false };
+  // ★★★ 2026-10-07 修：**这里不能加 `wt === 0` 条件**！
+  //   记录顶层 `#502` 是**消息**（实测 223-批量.gil 全部 408 条都是 wt2）⇒ 加了条件就**永不命中**
+  //   ⇒ 退化成下面的 `unshift` ⇒ `#503` 跑到**位置 0**（要求是位置 2，与 board 同构）。
+  //   上一版正是这么写的，只因当时每个容器都已有顶层 #503 才没炸。
+  const at = rec.field.sub.findIndex((f) => f.field === 502);
   if (at >= 0) rec.field.sub.splice(at + 1, 0, l);
-  else rec.field.sub.unshift(l);
+  else {
+    const at501 = rec.field.sub.findIndex((f) => f.field === 501);
+    rec.field.sub.splice(at501 + 1, 0, l);
+  }
   return l;
 }
 

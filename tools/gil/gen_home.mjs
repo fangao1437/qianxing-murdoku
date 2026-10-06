@@ -122,7 +122,8 @@ function cloneSubtree(srcRec, parentRec, newName) {
 
   // ③ 递归克隆子控件（关键：否则副本和原型共用子控件）
   const kids = g.recs.filter((r) => r.parentId === srcRec.id);
-  const cl = findChildList(clone.sub, true);
+  //   ★ 2026-10-07 修：递归版 ⇒ 只认顶层（否则清空的是嵌套里的无关字段）
+  const cl = findChildListTop(clone.sub);
   if (cl) setChildList(cl, []);
 
   const newRec = {
@@ -290,7 +291,9 @@ const byIdAll = new Map([...g.recs.map((r) => [r.id, r]), ...allNew.map((r) => [
 (function mark(id) {
   const r = byIdAll.get(id);
   if (!r) return;
-  const cl = findChildList(r.field.sub, true);
+  //   ★ 2026-10-07 修：只认顶层（这里只是**读**子 ID 做可达性遍历，但递归版会拿嵌套字段的
+  //     payload 当 ID 列表 ⇒ 读出垃圾 ID）
+  const cl = findChildListTop(r.field.sub);
   const kids = cl ? (asIdList(cl.payload, true) || []) : [];
   for (const k of kids) { if (!reachable.has(k)) { reachable.add(k); mark(k); } }
 })(rootRec.id);

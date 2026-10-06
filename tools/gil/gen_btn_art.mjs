@@ -20,7 +20,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   readGil, encodeMsg, cloneField, setPair, pairOf, stateBlocks, textsOf,
-  findChildList, setChildList, asIdList, writeVarint,
+  findChildListTop, setChildList, asIdList, writeVarint,
 } from './gilread.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -236,7 +236,10 @@ function makeChild(rec, srcProto, childName, w, h, posY, label) {
     })(clone.sub);
   }
 
-  const myChild = findChildList(clone.sub, true);
+  // ★ 2026-10-07 修：原来用**递归** findChildList(clone.sub, true) —— allowEmpty=true 时
+  //   连"任何空的 wt2 字段"都算命中（含嵌套块里的）⇒ 清空的是**无关字段**，原型真正的
+  //   子列表反而留着 ⇒ 副本认领原型子控件。必须只认记录顶层。
+  const myChild = findChildListTop(clone.sub);
   if (myChild) setChildList(myChild, []);
 
   const list = ensureChildList(rec);

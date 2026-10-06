@@ -305,6 +305,12 @@ for (const id of delIds) {
   if (e.pid === null) continue;
   if (delIds.has(e.pid)) continue;               // 父自己也删 ⇒ 整条记录都会消失，不必改列表
   const p = M0.ents.get(e.pid);
+  // ★ 2026-10-07 复核（**无需修改，勿"顺手统一"**）：
+  //   `p.childList` 来自本文件 buildModel() 的 `rec.sub.filter((f) => f.field === 503)`
+  //   —— 它本来就**只认记录顶层**、且**锚定字段号 503**，比 gilread.findChildListTop 更严：
+  //     顶层出现 ≥2 个 #503 → 直接 die；#503 不是纯 ID 列表 → 直接 die。
+  //   本文件**从不使用** gilread 的递归 `findChildList`，也不读 `readGil().recs[].childList`。
+  //   另有闸 1.5（nestedIdLists）在动刀前就拒绝"存在嵌套 #503 ID 列表"的文件。
   if (!p.childList) die('父 #' + p.id + ' 没有顶层 #503，无法摘除子 #' + id);
   const at = p.childIds.indexOf(id);
   if (at < 0) die('父 #' + p.id + ' 的 #503 里没有子 #' + id + '（关系不自洽，停止）');

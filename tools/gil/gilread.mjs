@@ -4,6 +4,23 @@
 // protobuf 解析，既容易不一致，也让"生成清单"要靠 PowerShell 重定向中转
 // （实测被写成 UTF-16，JSON.parse 直接炸）。统一到这一个模块。
 //
+// ★★★★ 2026-10-07 血的教训（同类坑第三次发生）：**本文件不是唯一实现** ★★★★
+//
+//   `tools/gil/` 下共 40 个工具，**12 个不 import 本模块**，其中
+//   `gen_bulk.mjs` / `gen.mjs` 各自**完整抄了一套**：
+//     parse / encode / geomPairs / stateBlocks / bigIds / texts / asIdList /
+//     findChildList / setChildList / findChildListTop / ensureChildListTop /
+//     cloneField / setPair
+//   （`roundtrip.mjs` 的独立实现是**故意**的 —— 闸门不得复用被检对象，别去"统一"它。）
+//
+//   ⇒ **改本文件任何一个公共函数之后，必须 grep 一遍"谁有自己的副本"**：
+//        node tools/gil/check_childlist_top.mjs     # 自动比对 gen_bulk 的副本 + 扫旧写法
+//        Select-String -Path tools/gil/*.mjs -Pattern 'function <你改的函数名>'
+//
+//   实测代价：`gen_bulk.mjs` 自带的 `ensureChildListTop` 停在旧版（`#502` 的判定条件写成
+//   `wt === 0`，而记录顶层 `#502` 是**消息** ⇒ 永不命中 ⇒ 退化成 `unshift` ⇒ `#503` 落到
+//   位置 0）—— 同一类"文件导不进去"因此又发生了一次。
+//
 // 这里的所有判据都是真机验证过的（见 docs/千星存档-gil格式.md）：
 //   · 体是单个 protobuf 消息；外层头 5 个大端 u32；末尾 4 字节尾必须保留；
 //   · 控件记录 = 含"≥2 组两浮点对"且含"合法控件 ID"的最小节点；
@@ -138,6 +155,20 @@ export function asIdList(pay, allowEmpty) {
   }
   return ids;
 }
+/**
+ * ⚠️⚠️ **递归**版查找 —— 只给"读 / 诊断 / 统计"用。
+ *
+ *   **绝对不要**用它来决定"该往哪个字段写子控件 ID"，一律用 `findChildListTop`。
+ *   `allowEmpty=true` 时更危险：连**任何空的 wt2 字段**都算命中（例如空的 `#502`），
+ *   于是它会"清空"一个无关字段，而不是原型自己的子列表 ⇒ 副本认领原型子控件。
+ *
+ *   ★ 2026-10-07：`readGil()` 的 `rec.childList` 已经从本函数**切到 `findChildListTop`**。
+ *     之前那行是 `findChildList(f.sub, false)`：因为 `allowEmpty=false`，"顶层列表存在但为空"
+ *     的记录会被**跳过顶层**、继续往嵌套里钻，命中一个碰巧长得像 ID 列表的字段。
+ *     实测 `223-批量.gil` 408 条记录里 **329 条有顶层列表、其中 282 条 payload 为空**，
+ *     于是 `rec.childList` 有 **4 条**指向了错误字段（`cell.1.1` / `clue` 顶层存在但空，
+ *     `tpl-container` / `hex` 根本无顶层列表却被"假命中"）。切到顶层版后为 **0 条**。
+ */
 export function findChildList(fields, allowEmpty) {
   let hit = null;
   (function scan(fs2) {
@@ -282,7 +313,11 @@ export function readGil(file) {
             parentId, name,
             names: strs.map((t) => t.payload.toString('utf8')),
             states: stateBlocks(f.sub, []),
-            childList: findChildList(f.sub, false),
+            // ★ 2026-10-07 修正：**只认记录顶层**（原来是递归 findChildList(f.sub,false)，
+            //   会因为"顶层列表为空"而往嵌套里钻 ⇒ 4 条记录指向错误字段）。
+            //   注意 findChildListTop 不绑字段号，只看"顶层 + payload 能整段解析成 ID 列表"，
+            //   所以编辑器自己写的 pos3/4/5 的 #503（cell.1.1 / content / murdoku-* / clue）照样命中。
+            childList: findChildListTop(f.sub),
             nameField: strs.find((t) => t.payload.toString('utf8') === name) || null,
           });
           continue;

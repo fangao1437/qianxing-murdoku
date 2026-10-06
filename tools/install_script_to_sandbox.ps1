@@ -34,7 +34,12 @@ if (-not (Test-Path $src)) {
   exit 1
 }
 $srcLen = (Get-Item $src).Length
-Write-Output ("source : " + $src + "  (" + $srcLen + " bytes)")
+# ★ 2026-10-07 源哈希只算一次，后面每个 root 都拿它跟目标比。
+#   "字节数一致" != "内容一致"：改一字符换一字符、或编码差异，长度可以完全相同。
+#   这个项目已经因为「只看长度」绕过一次弯 ⇒ 判定一律「长度 + SHA256」双条件。
+$srcHash   = (Get-FileHash $src -Algorithm SHA256).Hash
+$srcHash16 = $srcHash.Substring(0, 16)
+Write-Output ("source : " + $src + "  (" + $srcLen + " bytes, sha " + $srcHash16 + ")")
 
 # Candidate miHoYo data roots, LocalLow first (that is the live one).
 $bases = @(
@@ -68,13 +73,17 @@ foreach ($prefer in @('LocalLow','Local')) {
 foreach ($d in $found) { if ($ordered -notcontains $d.FullName) { $ordered += $d.FullName } }
 
 $n = 0
+$bad = 0
 foreach ($dir in $ordered) {
   $tag = 'Local'
   if ($dir -like '*\LocalLow\*') { $tag = 'LocalLow' }
   $dst = Join-Path $dir 'client_script.lua'
-  Copy-Item -Path $src -Destination $dst -Force -ErrorAction SilentlyContinue
-  if (-not (Test-Path $dst)) {
-    Write-Output ("[" + $tag + "] FAILED  -> " + $dir)
+  $copyErr = $null
+  try { Copy-Item -LiteralPath $src -Destination $dst -Force -ErrorAction Stop }
+  catch { $copyErr = $_.Exception.Message }
+  if (-not (Test-Path -LiteralPath $dst)) {
+    $bad++
+    Write-Output ("[" + $tag + "] FAILED  -> " + $dir + "  (" + $copyErr + ")")
     continue
   }
   # ★★★★★ 2026-10-02 **BOM 必须剥掉**。
@@ -93,17 +102,30 @@ foreach ($dir in $ordered) {
     if ($stillBom) { $recheck = 'STILL-BOM' }
     Write-Output ("[" + $tag + "] BOM stripped -> " + $dst + "  (" + $bytes.Length + " -> " + $after.Length + " bytes, recheck=" + $recheck + ")")
   }
-  # 源文件自己也不能带 BOM（否则每次都得靠上面这段补救）
-  if ($srcLen -ne (Get-Item $dst).Length) {
-    Write-Output ("[" + $tag + "] size mismatch -> " + (Get-Item $dst).Length + " vs src " + $srcLen)
+  # ★ 2026-10-07 判定 = 字节数 + SHA256 双条件（原实现只比长度，是漏报盲区：
+  #   长度一致而内容不同完全可能）。任一不符 ⇒ MISMATCH + 非 0 退出。
+  #   ★ 每轮必须重置：否则上一轮的值会残留，读失败时拿旧哈希去比 ⇒ 假 ok。
+  $dstLen = $null; $dstHash = $null; $sha16 = '<unreadable>'
+  try { $dstLen = (Get-Item -LiteralPath $dst).Length } catch { $dstLen = $null }
+  try { $dstHash = (Get-FileHash -LiteralPath $dst -Algorithm SHA256 -ErrorAction Stop).Hash } catch { $dstHash = $null }
+  if ($dstHash) { $sha16 = $dstHash.Substring(0, 16) }
+  if (-not $dstHash -or $null -eq $dstLen) {
+    $bad++
+    Write-Output ("[" + $tag + "] UNREADABLE -> " + $dst + "  (dst size=" + $dstLen + ", sha unreadable | src " + $srcLen + " bytes, sha " + $srcHash16 + ")")
+  } elseif ($dstLen -eq $srcLen -and $dstHash -eq $srcHash) {
+    Write-Output ("[" + $tag + "] synced  -> " + $dst + "  (" + $dstLen + " bytes, sha " + $sha16 + ", ok)")
+    if ($copyErr) { Write-Output ("[" + $tag + "] WARN  copy failed but destination already == source: " + $copyErr) }
+  } else {
+    $bad++
+    Write-Output ("[" + $tag + "] MISMATCH -> " + $dst + "  (dst " + $dstLen + " bytes, sha " + $sha16 + " | src " + $srcLen + " bytes, sha " + $srcHash16 + ")")
   }
-  $h = (Get-FileHash $dst -Algorithm SHA256).Hash
-  $ok = 'HASH-MISMATCH'
-  if ((Get-Item $dst).Length -eq $srcLen) { $ok = 'ok' }
-  Write-Output ("[" + $tag + "] synced  -> " + $dst + "  (" + (Get-Item $dst).Length + " bytes, " + $ok + ")")
   $n++
 }
 
 Write-Output ("done: synced " + $n + " root(s).")
+if ($bad -gt 0) {
+  Write-Output ("FAILED: " + $bad + " root(s) MISMATCH/FAILED -- do NOT trust this sync.")
+  exit 1
+}
 Write-Output "back in the editor: Client Script Resource Manager -> the script record -> edit the file path -> pick client_script.lua"
 Write-Output "if the picker is already open, click the refresh (circular arrow) button."

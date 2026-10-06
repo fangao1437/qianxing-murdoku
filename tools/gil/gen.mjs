@@ -1,3 +1,24 @@
+// ############################################################################
+// ❌❌❌ 【遗留实现 · 请勿使用】pre-2026-09-30 的旧生成器 ❌❌❌
+//
+//   本文件**没有** 2026-09-30 那次"导不进去"的修复，具体两处：
+//     · 第 ~247 行用**递归** `findChildList` 取子列表 ⇒ 给"原本没有子控件"的容器挂子控件时，
+//       会把子控件 ID 写进**无关的嵌套字段** ⇒ 容器在编辑器眼里是空的 + **整个文件导不进去**；
+//     · 自带的 `setPair` **不做稀疏编码**（0 分量照样写），与引擎的写法不一致。
+//
+//   ⇒ **请改用现在这条链**：
+//        node tools/gil/gen_protos.mjs        # 建原型
+//        node tools/gil/gen_template_subs.mjs # 补模板子控件
+//        node tools/gil/gen_bulk.mjs          # 批量建界面控件
+//     需要"改 .gil"的其它场景看 tools/gil/ 下的专用工具（sync_plan / reparent / set_positions …）。
+//
+//   ⇒ 要复活本文件：必须把 `findChildList` 换成 `gilread.mjs` 的 `findChildListTop` /
+//     `ensureChildListTop`、把 `setPair` 换成公共库那份，然后跑 `check_childlist_top.mjs` 与
+//     `roundtrip.mjs` + `check_names.mjs` 两道闸。
+//
+//   运行时守卫在下面（必须显式加 `--i-know-this-is-legacy` 才会继续）。
+// ############################################################################
+//
 // tools/gil/gen.mjs —— 生成 .gil 存档：**克隆原型记录 + 打补丁**
 //
 // 依据（全部实测验证，见 docs/千星存档-gil格式.md）：
@@ -38,6 +59,21 @@ const pickBase = () => {
 const argv = process.argv.slice(2);
 const argOf = (k) => { const a = argv.find((s) => s.startsWith('--' + k + '=')); return a ? a.slice(k.length + 3) : null; };
 const DRY = argv.includes('--probe');
+
+// ── ★★★ 遗留实现守卫（2026-10-07 加）★★★ ───────────────────────────────────
+// 见文件头：本文件内置【递归 findChildList】+【非稀疏 setPair】，会产生"导不进去"的存档。
+// 故意不删实现（历史可追溯 / 万一要对照），但**默认不许跑**。
+if (!argv.includes('--i-know-this-is-legacy')) {
+  console.error('❌ gen.mjs 是 pre-2026-09-30 的【遗留实现】：递归 findChildList（子控件 ID 会写进\n'
+    + '   无关的嵌套字段 ⇒ 容器空 + 文件导不进去）+ 非稀疏 setPair。\n'
+    + '   请改用现在这条链：\n'
+    + '     node tools/gil/gen_protos.mjs --in=<基准.gil> --out=<a.gil>\n'
+    + '     node tools/gil/gen_template_subs.mjs --in=<a.gil> --out=<b.gil>\n'
+    + '     node tools/gil/gen_bulk.mjs --in=<b.gil> --out=<c.gil>\n'
+    + '   确实要用它：在命令后追加 --i-know-this-is-legacy');
+  process.exit(64);
+}
+
 const BASE = argOf('in') || pickBase();
 const OUT = argOf('out') || path.join(process.cwd(), 'tools', 'gil', 'out', 'gen-test.gil');
 if (!BASE) { console.error('找不到基准 .gil'); process.exit(1); }

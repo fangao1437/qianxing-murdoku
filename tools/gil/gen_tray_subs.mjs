@@ -24,7 +24,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   readGil, encodeMsg, cloneField, setPair, pairOf, stateBlocks, textsOf,
-  findChildList, setChildList, asIdList, writeVarint,
+  findChildListTop, setChildList, asIdList, writeVarint,
 } from './gilread.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -165,7 +165,8 @@ for (const card of CARDS) {
     }
 
     // ⑤ 清空原型自己的子列表
-    const myChild = findChildList(clone.sub, true);
+    //   ★ 2026-10-07 修：递归版 ⇒ 只认顶层（否则会去清空 #505 里的无关字段）
+    const myChild = findChildListTop(clone.sub);
     if (myChild) setChildList(myChild, []);
 
     // ⑥ 登记进卡片的子列表

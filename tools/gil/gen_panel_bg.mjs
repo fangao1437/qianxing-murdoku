@@ -22,7 +22,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   readGil, encodeMsg, cloneField, setPair, pairOf, stateBlocks, textsOf,
-  findChildList, setChildList, asIdList, writeVarint,
+  findChildListTop, setChildList, asIdList, writeVarint,
 } from './gilread.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -154,7 +154,8 @@ for (const nm of NAMES) {
   idF.num = BigInt(NEW_ID);
 
   // ⑥ 清空原型自己的子列表 + 登记进面板
-  const mine = findChildList(clone.sub, true);
+  //   ★ 2026-10-07 修：递归版 findChildList(clone.sub, true) ⇒ 只认顶层（见 gilread 注释）
+  const mine = findChildListTop(clone.sub);
   if (mine) setChildList(mine, []);
   // ⚠️ **插到子列表最前面**，不能 append！
   //    层级 = 同级子控件的**先后顺序**（`SetSiblingIndex`「数值越大越靠上」），
