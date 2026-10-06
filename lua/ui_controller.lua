@@ -3767,7 +3767,14 @@ function Controller:_grid_text_payload()
   for i = 1, #(vm.clues or {}) do
     local cl = vm.clues[i]
     -- 与 `clue.N` 三个文字控件**完全同一份取值**（切分逻辑共用 `split_by_name`，不复制）
-    local who, pre, post, wid = split_by_name(vm, tostring(cl.text or ""))
+    --
+    -- ★★★★★ 2026-10-06 **接上第 5 个返回值 `wportrait`** ✗✓ —— 网格视窗的头像要靠它 ✓
+    --   起因：★ 用户建好模板后发现「★ **五张卡的头像都一样**」✗
+    --   ★ 根因：★ `face` 是**图片控件** ✓ ★ 它**不会自己变** ✗ ⇒
+    --     ★ 必须**逐个实例**写 `imageId` ✓ —— 而这里**原来没接 `wportrait`** ✗✓
+    --   ★ 旧卡片（`clue.N.face`）一直在用第 5 个返回值 ✓（★ 见下面 `local who, pre, post, wid, wportrait = `
+    --     ★ 那份 ✓）⇒ ★ 这里漏了 ✓ ⇒ ★ 于是网格视窗走的是"头像永远等于模板默认图" ✓
+    local who, pre, post, wid, wportrait = split_by_name(vm, tostring(cl.text or ""))
     --   ⚠️ 文案里没有人名时（例如 `selftest_theft_5x5` 的线索）：`who == nil`、`pre` 是整条文案
     --      ⇒ 名字列留空、正文放**整条**（老路径在那种关卡上是整块不发、什么都看不到；
     --         新路这里按"名字为空、正文 = 全文"来填，线索本身必须看得见）。
@@ -3775,6 +3782,8 @@ function Controller:_grid_text_payload()
       who    = (who ~= nil) and (tostring(pre or "") .. tostring(who)) or "",
       what   = (who ~= nil) and tostring(post or "") or tostring(pre or ""),
       letter = tostring(wid or ""),
+      -- ★ 头像素材名（★ 如 `portrait.A` ✓）★ `nil` 表示这一条没有对应角色 ⇒ **不要写图** ✓
+      portrait = wportrait,
     }
   end
   p = { level = lv, n = n, items = items }
@@ -3833,11 +3842,50 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   local cl = pay.items[pos]
   if cl == nil then return end        -- 超出本关线索数（理论上不会来）⇒ 什么都不写
   local t_who, t_what, t_letter = cl.who, cl.what, cl.letter
+  local t_portrait = cl.portrait        -- ★ 头像素材名（★ 如 `portrait.A` ✓；★ nil ⇒ 不写图 ✓）
 
   -- ★ 子控件句柄走记忆表（改之前：一次回调 54 次 `item:GetChild`，滚动时每帧 54 次）
   local c_who    = self:_grid_item_child_cached(item, index, pos, "who")
   local c_what   = self:_grid_item_child_cached(item, index, pos, "what")
   local c_letter = self:_grid_item_child_cached(item, index, pos, "letter")
+  local c_face   = self:_grid_item_child_cached(item, index, pos, "face")
+
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  -- ★★ 2026-10-06 **头像：每个列表项实例要【各写各的 `imageId`】** ✗✓
+  --
+  --   ★ 起因（★ 用户实测 ✓）：★「★ **五张卡的头像都一样**」✗
+  --   ★ 根因 ✓：★ `face` 是**图片控件** ✓ ★ 模板只有一份 ✓
+  --     ⇒ ★★ **它不会自己变** ✗ —— ★ 必须**逐个实例**写 `imageId` ✓✓
+  --     ★（★ 文字那三个早就在写 ✓ ⇒ ★ 所以文字会不同、头像不会 ✓ —— 正是用户看到的现象 ✓）
+  --
+  --   ★ 写图的两条规矩（★ 与适配器里那条正路一致 ✓，见 `engine_adapter_qianxing.lua` L18/L705 ✓）：
+  --     ★ ① ★ **优先 `SetImage(img.imageSource, id)`** ✗ —— ★ 沿用**编辑器里配的来源** ✓
+  --        ★ 兜底才 `SetImage(id)` ✓（★ 真机上 `SetImage(nil, id)` 会失败 ✓ 那条注释写着 ✓）
+  --     ★ ② ★ **素材名要过 `adapter:resolve_asset`** ✓ —— ★ 它把 `portrait.A` 变成可用的 id ✓
+  --        ⚠️ ★ **`nil` 时【绝不能调】** ✗ —— ★ `resolve_asset` 查不到会 `warn_once` **打报错** ✓
+  --        （★ 那个警告注释在 `engine_adapter_qianxing.lua` L4019 ✓）
+  --     ★ ③ ★ **只在"这一项换了代表哪条线索"时写** ✓ —— ★ 与文字同一套去重 ✓
+  --        ★（`tv.idx ~= index` ✓）⇒ ★ 稳态零成本 ✓
+  --   ★ 失败一律 `pcall` ✓ ⇒ ★ 图没设上只失去"头像不同" ✗ ★ 不会把引擎的滚动打断 ✓
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  if c_face ~= nil and t_portrait ~= nil and t_portrait ~= "" then
+    -- ★ 自己取一次记录表 ✓ —— ★ 不依赖下面文字那段的 `rec` ✓（★ 那段在这之后才定义 ✓）
+    local rec_f = self:_grid_item_rec(item, index)
+    local fv = rec_f and rec_f.face
+    if fv == nil or fv.idx ~= index or fv.name ~= t_portrait then
+      local want = t_portrait
+      local id = nil
+      pcall(function()
+        if adapter ~= nil and adapter.resolve_asset ~= nil then id = adapter:resolve_asset(want) end
+      end)
+      if id ~= nil then
+        local ok_img = false
+        pcall(function() ok_img = c_face:SetImage(c_face.imageSource, id) end)
+        if not ok_img then pcall(function() ok_img = c_face:SetImage(id) end) end
+        if rec_f ~= nil then rec_f.face = { idx = index, name = want, ok = ok_img } end
+      end
+    end
+  end
 
   -- ★★★★★ 2026-10-05 **文字只在"真的不一样"时才写**（写一次 = 引擎重排一次文本）。
   --
