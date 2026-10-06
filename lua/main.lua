@@ -206,7 +206,17 @@ function Murdoku.start(level_id, opts)
   if opts.screen ~= nil then want_screen = opts.screen end
   controller = UIC.new(core, {
     debug = opts.debug,
-    skip_intro = opts.skip_intro,
+    -- ★★★★★ 2026-10-07 **开场页默认【跳过】** ✗✓
+    --   真机证据（02:21 日志）：★ `intro_active=true  intro_page=1  #INTRO=5`
+    --     ⇒ `is_intro_active()` **恒为真** ⇒ `build_layout` 的弹窗闸门
+    --       `if modal and not self:is_intro_active()` **永远不成立**
+    --     ⇒ **退出菜单/指认/结果/选关…所有弹窗一个都弹不出来**。
+    --   为什么卡在 1：★ `intro.*` 那 5 个控件**还没建**（在"还没建 93 个"名单里）
+    --     ⇒ 开场页画不出来 ⇒ 连"下一页"都点不到 ⇒ `intro_page` 永远停在 1 ✓
+    --   所以：★ **没有开场控件时，开场必须视为已结束**（否则它挡死整条弹窗链）。
+    --     `start_other` 早就这么做了（切关时 `o.skip_intro = true`）—— 这里把默认值对齐。
+    --     ⚠️ 显式传 `skip_intro = false` 仍可强制放开场（将来 intro.* 建好后用）。
+    skip_intro = (opts.skip_intro ~= false),
     levels = level_list,
     screen = want_screen,
     -- ★★★★★ 2026-10-05 **"格子要不要推 text"这一个开关**（每帧成本第 (4) 条）。
