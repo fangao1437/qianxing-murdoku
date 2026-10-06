@@ -172,20 +172,6 @@ end
 print("")
 print("下一步：脚本映射要指向【编辑器实际读取的 external_lua_file 目录】（本脚本已自动同步过去）")
 
--- ★★★★★ 2026-10-06 **打包后自动同步到编辑器真正读取的目录** ✗✓
---   ★ 踩过的坑（★ 花了一整晚 ✓）：★ 编辑器【不读项目里的 `dist/`】✗
---     它读的是关卡目录下的 ★ `external_lua_file\client_script.lua` ✓
---   ★★ ⇒ ★ 只写 `dist/` ⇒ **编辑器永远跑旧脚本** ✗（★ 日志里 `hud.moves` 一直在 ✓）
---   ★ ⚠️ **不能用 `os.getenv`** ✗ —— ★ 官方文档：`os.*` 只剩 time/date/clock/difftime ✓
---     ⇒ ★ 路径**写死**在这里 ✓（★ 换机器时改这一行 ✓）
-local EDITOR_COPY = "C:\\Users\\18182\\AppData\\LocalLow\\miHoYo\\原神\\BeyondLocal\\153793556\\Beyond_Local_Save_Level\\1073742003\\external_lua_file\\client_script.lua"
-do
-  local fh = io.open(EDITOR_COPY, "wb")
-  if fh then
-    fh:write(bundle)
-    fh:close()
-    print("已同步到编辑器读取的目录：" .. EDITOR_COPY)
-  else
-    print("⚠️ 没能同步到编辑器目录（路径不存在？）：" .. EDITOR_COPY)
-  end
-end
+-- ★ 同步到编辑器目录【不在这里做】✗
+--   ★ 原因：脚本沙箱没有 os.getenv ✗ 而 io.open 打不开含中文的绝对路径（已实测 ✗）
+--   ★ ⇒ 打包后用 ★ powershell -File tools/sync_to_editor.ps1 ✓
