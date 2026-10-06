@@ -187,6 +187,21 @@ function Murdoku.start(level_id, opts)
   --     我为此改了三轮（`and/or` 陷阱、默认值、优先级）全是白费功夫。
   --   ⇒ **不要把力气花在"绕过主页"上，而是让测试真的走一遍主页流程**
   --     （`tools/sim/kit.mjs` 的 `enterLevel()`）。
+  -- ★★★★★ 2026-10-05 **这一处已【回滚】** ✗✓ —— 我上一版把构造时的 `screen` 强制成 `nil`，
+  --   结果★【打断了开局流程】✗：游戏一进来【直接就在第一关】✓（用户实测 ✓），
+  --   而不是「主页 → 选关 → 关卡」✗ —— 所以回滚 ✓。
+  --
+  --   为什么当时那么改（以及它治错了什么）：
+  --     · 症状：第一次进关时 `clues(vis=false)` ✗ ⇒ 线索区整片不显示 ✓
+  --     · 原因：`screen` 判错成 `"home"` ✗ ⇒ `apply_screen_hide` 的 HIDE 名单生效 ✓
+  --     · 我当时的改法：构造时不给 `screen` ✗ ⇒ `nil` = 【在关卡里】✗
+  --       ⇒ ★ 治好了线索区 ✓ 但把"开局该在主页"这件事【一起跳过了】✗✗
+  --   ⇒ ★ 教训：★ `screen` 只有【一个权威来源】✗ —— 谁真的切屏，谁才改它 ✓
+  --     ★ 构造参数【不该】替玩家决定"现在在哪一屏"✗（那是流程的事 ✓）
+  --     ★ 而"真的进了关卡 ⇒ screen = nil"这个兜底，**已经在下面两处**✓：
+  --        · `on_pick_level` 里 `id ~= level.id` 那支（`start_other` 之后 ✓）
+  --        · 同函数 `else` 那支（点的是当前这一关 ✓）
+  --       ⇒ ★ 两条进关路径都置了 `nil` ✓ ⇒ 线索区不会再被藏 ✓✓
   local want_screen = nil
   if opts.screen ~= nil then want_screen = opts.screen end
   controller = UIC.new(core, {
@@ -223,6 +238,23 @@ function Murdoku.start(level_id, opts)
       Murdoku.remember_level(id)
       if id ~= level.id then
         start_other(id)
+        -- ★★★★★ 2026-10-05 **重建出来的控制器必须【纠正屏幕状态】** ✗✓
+        --
+        --   症状（用户实测 + 两张截图 + 引擎侧体检读数 ✓）：
+        --     · 在关卡里点【别的】关卡卡片 ⇒ ★ 回到棋盘时【只剩棋盘】✗
+        --       线索区整片不见（`clues(vis=false)` 而 `clues.bg/grid(vis=true)` ✗）
+        --     · 退出重进没用 ✗；点过一次别的关卡【之后】才正常 ✓
+        --
+        --   为什么：`start_other(id)` 会**重建控制器** ✗ ⇒ 新控制器从
+        --     `UIC.new(..., { screen = want_screen })`（见上面 L190-196）拿到
+        --     ★ `screen = opts.screen` = **入口传的 `"home"`** ✗✓
+        --     ⇒ `apply_screen_hide(nodes, "home")` ⇒ HIDE 名单生效 ⇒
+        --       ★ `clues` 被藏 ✗（`clues.bg` / `clues.grid` 自己是对的 ✓ 但父级藏了 ✗）
+        --     ⇒ 而"进关卡后该显示"的那条路【永远走不到】✗（screen 一直是 "home" ✓）
+        --
+        --   ★ 所以这里必须补一句 —— 与下面"点的是当前这一关"那支（L228）**同一套写法** ✓
+        --     （"同一件事两处实现必然漂移"是本项目反复踩到的病 ⇒ 两支都要写 ✓）
+        if controller ~= nil then controller.screen = nil end
       else
         -- 点的是当前这一关：只是退出选关界面，不用重开
         controller.screen = nil
@@ -253,7 +285,7 @@ function Murdoku.start(level_id, opts)
       adapter:signal_emit(Qianxing.SIGNALS.SOLVED, {
         tostring(level.id),
         math.floor(vm.hud.time or 0),
-        vm.hud.moves or 0,
+        0,
         vm.hud.failed_accusations or 0,
       })
       -- ★★★ 2026-09-30：**记下"这一关破了"** —— 选关卡片要显示「★ 已破案」。
@@ -262,10 +294,7 @@ function Murdoku.start(level_id, opts)
       Murdoku.mark_cleared(level.id)
     end,
 
-    -- ★★★★★ 2026-10-07 **「退出菜单」四键要的两个回调** ✗✓
-    --   ★ 放在这一层的原因：`adapter` 只在这里拿得到 ✓（★ 控制器没有 ✓）
-    --   ★ 仅存档 = 留本关只落盘 ✓ · 存档并结算 = 落盘 + **发 `murdoku/settle`** ✓
-    --     ⇒ 服务端节点图收到后调【**结算关卡**】⇒ ★ **直接结束游戏** ✓
+    -- ★ 2026-10-07 退出菜单要的两个回调（adapter 只在这一层拿得到 ✓）
     on_save = function()
       Murdoku.save_now()
     end,
@@ -626,7 +655,7 @@ function Murdoku.start(level_id, opts)
      and adapter.cfg and adapter.cfg.diagnose_grid ~= false then
     local rows = adapter.cells_rows or (adapter.cfg.cells and adapter.cfg.cells.rows) or 5
     local cols = adapter.cells_cols or (adapter.cfg.cells and adapter.cfg.cells.cols) or 5
-    pcall(function() adapter:diagnose_grid(rows, cols) end)
+  if Murdoku.DIAG then pcall(function() adapter:diagnose_grid(rows, cols) end) end   -- ★ 闸 ✓
   end
 
   adapter:signal_emit(Qianxing.SIGNALS.READY, {
@@ -655,7 +684,11 @@ function Murdoku.on_start(level_id, opts)
     --     ③ 兜底：root 存在且已有 >3 个子控件
     local ready = false
     pcall(function()
-      if adapter:find("board") ~= nil or adapter:find("cell.1.1") ~= nil then
+      -- ★ 2026-10-06 残留清理 ✗✓：★ 删掉 `"board"` 这个**死引用** ✓
+      --   ★ `board` 在真机与模拟器**都找不到** ✓（★ 两边日志原文：「`board` → **找不到控件**」✓）
+      --   ⇒ ★ 它在 OR 里**恒为假** ✗ ⇒ ★ 这一半是**纯噪音** ✓
+      --   ★ 真正起作用的是 `cell.1.1` ✓ ⇒ ★ 保留 ✓（★ 行为不变 ✓）
+      if adapter:find("cell.1.1") ~= nil then
         ready = true
       elseif adapter:find("stage") ~= nil or adapter:find("home") ~= nil then
         ready = true
@@ -756,18 +789,63 @@ function Murdoku.on_update(dt)
     --   真机表现就是"关卡里棋盘上压着返回菜单按钮、点了回选关"（22:45 日志）。
     --   ⇒ 删掉。隐藏逻辑回归 `apply_screen_hide` + 下面那段按屏幕同步。
 
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  -- ★★ 2026-10-06 **给这几大块诊断加开关，默认【关】** ✗✓ —— 这就是"开局卡一下"的真凶 ✓
+  --
+  --   ★ 起因（★ 用户实测 ✓）：★「试玩开始时启动游戏前的最后一下偶尔会卡一下」✗
+  --     ★★ 而★ 这份日志里，同一时刻**连着跑五套诊断** ✗：
+  --       ★「开局诊断」✓「屏幕占用排行」✓「客户端 UI 根清单」✓「对照组」✓「切屏对比」✓
+  --       ★ 另外适配器里还有一整套「逐格自检」✓
+  --     ★★★ 每一块的代价 ✓：★ **遍历全部控件（★ 80~150 个 ✓）× 逐个取字段
+  --       （★ name/visible/active/position/size ✓）× 拼字符串 × `print`** ✗✗
+  --       ★ 「切屏对比」最贵 ✓：★ **两份全树快照 + 逐项比较 + 格式化上百行** ✗
+  --     ★★★★ ⇒ ★ **它们集中在一个时刻跑 ⇒ 那一下就是卡顿** ✓✓
+  --
+  --   ★ 而下面 L772 那句注释写着 ✓：
+  --     ★「**不依赖 `debug_*` 开关**（★ 这是**验收信息**，不是调试噪音）」✗
+  --     ★★ 当年是对的 ✓ —— ★ 那时要靠它定位"界面一片空白" ✓
+  --       ★★★ 而**现在** ✗：★ 界面已经能用 ✓ ★ 它变成**每次都跑的负担** ✓✓
+  --         ★ ⇒ ★ 该给它一个开关 ✓（★ 需要排查时打开 ✓ 平时关着 ✓）
+  --
+  --   ★★ 用法 ✓：★ 在 `cfg` 或这里把 `Murdoku.DIAG` 设成 `true` 即可恢复全部诊断 ✓
+  --     判据 ✓：★ 关掉之后开局**不该再卡** ✓ 而★ 界面功能**一模一样** ✓
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  Murdoku.DIAG = Murdoku.DIAG or false      -- ★ 默认关：★ 要排查时改 true ✓
+
+  -- ★★★★★ 2026-10-06 **带闸的打印（全局）** ✗✓ —— 给"在正常重绘 if 里"的诊断用 ✓
+  --   ★ 为什么需要 ✓：★「客户端 UI 根清单」和「对照组」都在
+  --     `if sec ~= current.last_tick or current.controller.dirty then` 里 ✗
+  --     ⇒ ★ 挡住那个 `if` 会连【正常重绘】一起挡掉 ✗ ⇒ 只能逐条 `print` 上闸 ✓
+  --   ★ 全局（无 local）✓ ⇒ 它下面两千行都能用 ✓ ★ 闸关着时【一个字符都不拼】✓
+  function dprint(...)
+    if Murdoku.DIAG then print(...) end
+  end
+
   local scr_now = current.controller and current.controller.screen or "level"
-  if ((current.frames or 0) >= 90 or scr_now ~= Murdoku._last_screen)
+  if Murdoku.DIAG
+     and ((current.frames or 0) >= 90 or scr_now ~= Murdoku._last_screen)
      and scr_now ~= Murdoku._dump_done_for then
     Murdoku._dump_done_for = scr_now
     local ad = current.adapter
     print("[murdoku] ===== 开局诊断：屏幕上到底有什么（第 90 帧实测）=====")
     print("[murdoku]   controller.screen = " .. tostring(current.controller.screen))
+    -- ★★★★★ 2026-10-06 **名单已按真机实测修正** ✗✓
+    --
+    --   旧名单里有 7 个**根本不存在的名字** ✗（真机日志逐条报"找不到控件" ✓）：
+    --     `select.back` `select.title` `select.card.1` `select.card.2`
+    --     `select` `board` `action.undo`
+    --     ★ 而且 `select.card.2` 还**写了两遍** ✗
+    --   ⇒ ★ 诊断的意义是"发现名字对不上"✗ —— ★ 但它自己就带着一堆假名字 ✓
+    --     ⇒ ★★ 每帧刷 7 行"找不到"✗ ⇒ **真问题会被淹掉** ✓
+    --   ⇒ 改成真机确认存在的那些 ✓（★ 依 2026-10-05/06 的真机日志 ✓）：
     local ids = {
       "root", "home", "home.title", "home.select", "home.continue", "home.shop", "home.bag",
-      "select.back", "select.title", "select.card.1", "select.card.2",
-      "select", "select.card.2",
-      "board", "cell.1.1", "topbar", "clues", "action.undo", "hud.title",
+      "selbar", "selbtn.1", "tpl-container",
+      "stage", "board.bg", "cell.1.1",
+      "topbar", "toolbar", "right",
+      "clues", "clues.bg", "clues.grid",
+      "hud.title", "hud.subtitle", "hud.timer", "hud.progress",
+      "action.back",
     }
     for i = 1, #ids do
       local id = ids[i]
@@ -939,7 +1017,13 @@ function Murdoku.on_update(dt)
   if not Murdoku._ray_probe_done and (current.frames or 0) >= 100 then
     Murdoku._ray_probe_done = true
     local ad3 = current.adapter
-    local probe_ids = { "root", "home", "select", "intro", "toast", "modal", "board" }
+    -- ★★★★★ 2026-10-06 **名单按真机实测修正** ✗✓
+    --   旧的 7 个里 `select` / `intro` / `toast` / `modal` / `board` **都不存在** ✗
+    --   ⇒ ★ 每次刷 7 行「射线探针：X 找不到或不支持光标事件」✗
+    --     ★ 而 `root` / `home` **其实存在** ✓ 只是不支持光标事件 ✓
+    --     ⇒ ★★ 那句话把两种完全不同的情况混成一句 ✗ ⇒ 读起来像"控件没了" ✓
+    --   ⇒ 只探**真机确认存在**的容器 ✓（★ 依 2026-10-05/06 真机日志 ✓）
+    local probe_ids = { "root", "home", "stage", "clues", "topbar", "toolbar", "right", "board.bg" }
     for i = 1, #probe_ids do
       local pid = probe_ids[i]
       local c = nil
@@ -972,14 +1056,14 @@ function Murdoku.on_update(dt)
     --   ⇒ 结论：**它在另一个客户端 UI 根上**。
     --   适配器注释里写着查找用的是 `game.GetClientUIRoots()`（**复数**），
     --   而脚本从头到尾只用了一个 `root`。把这些根全部列出来，那个全屏按钮就会现形。
-    print("[murdoku] ===== 客户端 UI 根清单 =====")
+    dprint("[murdoku] ===== 客户端 UI 根清单 =====")
     do
       local roots = nil
       pcall(function() roots = game.GetClientUIRoots() end)
       if type(roots) ~= "table" then
-        print("[murdoku]   读不到 game.GetClientUIRoots()（或返回非表）")
+        dprint("[murdoku]   读不到 game.GetClientUIRoots()（或返回非表）")
       else
-        print("[murdoku]   共 " .. tostring(#roots) .. " 个根")
+        dprint("[murdoku]   共 " .. tostring(#roots) .. " 个根")
         for i = 1, math.min(#roots, 12) do
           local r = roots[i]
           local nm, v, w, h = "?", "?", 0, 0
@@ -992,7 +1076,7 @@ function Murdoku.on_update(dt)
           local kids = nil
           pcall(function() kids = r:GetChildren() end)
           local nk = (type(kids) == "table") and #kids or -1
-          print(string.format("[murdoku]     %d. %-18s visible=%-5s %6.0fx%-6.0f 子控件=%d",
+          dprint(string.format("[murdoku]     %d. %-18s visible=%-5s %6.0fx%-6.0f 子控件=%d",
             i, nm, v, w or 0, h or 0, nk))
           -- 根下面直接可见的大控件 —— 那个全屏按钮多半就在这一层
           if type(kids) == "table" then
@@ -1008,7 +1092,7 @@ function Murdoku.on_update(dt)
                 end)
                 pcall(function() hasCur = (c.AddCursorEventListener ~= nil) end)
                 if (cw or 0) * (ch or 0) > 20000 then
-                  print(string.format("[murdoku]        └ %-20s visible=%-5s %6.0fx%-6.0f 可接收光标=%s",
+                  dprint(string.format("[murdoku]        └ %-20s visible=%-5s %6.0fx%-6.0f 可接收光标=%s",
                     cn, cv, cw or 0, ch or 0, tostring(hasCur)))
                 end
               end
@@ -1017,14 +1101,14 @@ function Murdoku.on_update(dt)
         end
       end
     end
-    print("[murdoku] ===== 根清单结束 =====")
+    dprint("[murdoku] ===== 根清单结束 =====")
     -- ★★★★★ 2026-10-02 **对照组诊断**：把"能点的样本"和"不能点的样本"逐一对比。
     --
     --   ⚠️ 第一版这里全部报「找不到」—— 因为直接用了 `ad:find(id)`，
     --   而同一份日志里「诊断二」用**同一个调用**却能拿到 `home.select`。
     --   ⇒ 不再依赖 `find`：**自己从 `root` 遍历整棵树建一张 name→控件 的表**，
     --     然后从表里取。这样"取不到"只可能是名字真不在树里。
-    print("[murdoku] ===== 对照组：能点 vs 不能点 =====")
+    dprint("[murdoku] ===== 对照组：能点 vs 不能点 =====")
     do
       local rootC = nil
       -- ★★★★★ 2026-10-05 **第一遍代码体检修**：这里原来写 `ad:find("root")`，
@@ -1055,17 +1139,22 @@ function Murdoku.on_update(dt)
         end
         walk(rootC, 0)
       end
-      print("[murdoku]   树里共收集 " .. tostring(count) .. " 个具名控件（root=" .. tostring(rootC ~= nil) .. "）")
+      dprint("[murdoku]   树里共收集 " .. tostring(count) .. " 个具名控件（root=" .. tostring(rootC ~= nil) .. "）")
       local fields = { "visible", "active", "showCursor", "interactable", "raycastTarget",
                        "clickAudioId", "disableCursorEventPassthrough", "disableKeyEventPassthrough",
                        "isolateNavigation", "alpha", "index", "zIndex", "sortingOrder",
                        "enable", "enabled", "blockRaycast", "grayed", "isEnabled" }
-      local samples = { "home.select", "select.card.1", "select.back", "cell.1.1", "selbtn.1", "selbtn.2", "board", "select", "home" }
+      -- ★★★★★ 2026-10-06 **名单按真机实测修正** ✗✓（旧名单里 3 个名字不存在 ✗：
+      --   `select.card.1` `select.back` `board` ⇒ ★ 每次都刷 3 行"树里没有这个名字" ✓
+      --   ⇒ ★ 这一段是「能点 vs 不能点」的对照组 ✗ ⇒ ★ 拿不存在的名字对照毫无意义 ✓）
+      local samples = { "home.select", "cell.1.1", "selbtn.1", "selbtn.2",
+                        "action.back", "hex.submit", "hit.submit",
+                        "clues.bg", "clues.grid", "tpl-container", "board.bg", "home" }
       for s = 1, #samples do
         local id = samples[s]
         local c = map[id]
         if c == nil then
-          print("[murdoku]   " .. id .. "  —— **树里没有这个名字**")
+          dprint("[murdoku]   " .. id .. "  —— **树里没有这个名字**")
         else
           local parts = {}
           for f = 1, #fields do
@@ -1086,12 +1175,12 @@ function Murdoku.on_update(dt)
             cur = up
             guard = guard + 1
           end
-          print("[murdoku]   " .. id .. "  " .. table.concat(parts, "  "))
-          print("[murdoku]       祖先链：" .. table.concat(chain, " ← "))
+          dprint("[murdoku]   " .. id .. "  " .. table.concat(parts, "  "))
+          dprint("[murdoku]       祖先链：" .. table.concat(chain, " ← "))
         end
       end
     end
-    print("[murdoku] ===== 对照组结束 =====")
+    dprint("[murdoku] ===== 对照组结束 =====")
     print("[murdoku] 射线探针装好了 —— 之后点任何地方，只要射线落在这些容器上就会打日志")
   end
   -- ★★★★ 2026-10-02 **按用户建议做的对比：主页 ⇄ 选关，"切换后到底改了什么"**。
@@ -1173,27 +1262,39 @@ function Murdoku.on_update(dt)
     walk(rt, 0, 0, 0)
     return out
   end
-  if Murdoku._snap == nil or scr_now ~= Murdoku._snap_screen then
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  -- ★★ 2026-10-06 **给「切屏对比」加闸** ✗✓ —— ★ 它是剩下的诊断里【最贵】的一块 ✓
+  --
+  --   ★ 起因（★ 真机日志实证 ✓）：★ 254 只关住了「开局诊断」那【一块】✗
+  --     ★★ 而★ 日志里这几块**照旧打印** ✗：
+  --       ★「===== 切屏对比：home → select」✓ ·「===== 切屏对比：select → level」✓
+  --       ★「客户端 UI 根清单」✓ ·「对照组：能点 vs 不能点」✓ ·「逐格自检」✓
+  --     ★★★ ⇒ ★ **"关了诊断但卡顿还在"就是这么来的** ✓✓
+  --   ★ 为什么这块最贵 ✓：★ **两份全树快照（★ 80+ 控件 ✓）+ 逐项比较 + 格式化上百行** ✗
+  --     ★★ 而★ 开局必经 **主页 → 选关 → 进关** ✗ ⇒ ★ **它一次开局跑两趟** ✓✓
+  --   ★★ 判据（★ 干净可验 ✓）：★ **日志里【不该再出现】「===== 切屏对比」** ✓✓
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  if Murdoku.DIAG and (Murdoku._snap == nil or scr_now ~= Murdoku._snap_screen) then
     local now = snap_visible()
     if Murdoku._snap ~= nil then
-      print("[murdoku] ===== 切屏对比：" .. tostring(Murdoku._snap_screen) .. " → " .. tostring(scr_now) .. " =====")
-      print("[murdoku]   【切过去之后**多出来**的可见控件】（嫌疑最大）")
+      dprint("[murdoku] ===== 切屏对比：" .. tostring(Murdoku._snap_screen) .. " → " .. tostring(scr_now) .. " =====")
+      dprint("[murdoku]   【切过去之后**多出来**的可见控件】（嫌疑最大）")
       local n_add = 0
       for k, v in pairs(now) do
         if Murdoku._snap[k] == nil then print("[murdoku]     + " .. k .. "  " .. v); n_add = n_add + 1 end
       end
       if n_add == 0 then print("[murdoku]     （没有多出来的）") end
-      print("[murdoku]   【切过去之后**消失**的可见控件】")
+      dprint("[murdoku]   【切过去之后**消失**的可见控件】")
       local n_del = 0
       for k, v in pairs(Murdoku._snap) do
         if now[k] == nil then print("[murdoku]     - " .. k .. "  " .. v); n_del = n_del + 1 end
       end
       if n_del == 0 then print("[murdoku]     （没有消失的）") end
-      print("[murdoku]   【**两个页面都在**的可见控件】—— 这些不随切屏变化，最可能是「挡在中间」的")
+      dprint("[murdoku]   【**两个页面都在**的可见控件】—— 这些不随切屏变化，最可能是「挡在中间」的")
       for k, v in pairs(now) do
         if Murdoku._snap[k] ~= nil then print("[murdoku]     = " .. k .. "  " .. v .. "   （切屏前 " .. Murdoku._snap[k] .. "）") end
       end
-      print("[murdoku] ===== 对比结束 =====")
+      dprint("[murdoku] ===== 对比结束 =====")
     end
     Murdoku._snap = now
     Murdoku._snap_screen = scr_now
@@ -2042,7 +2143,7 @@ function Murdoku.save_now()
   local payload = {
     level_id   = tostring(current.level.id),
     state_code = core:encode_state(),
-    moves      = core.moves or 0,
+    moves      = 0,
     elapsed    = math.floor(core.elapsed or 0),
     solved     = (core.status == Core.STATUS_SOLVED),
   }
