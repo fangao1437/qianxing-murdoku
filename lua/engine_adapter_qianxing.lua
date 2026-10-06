@@ -2286,6 +2286,21 @@ end
 --
 --   ⚠️ 这是本项目反复吃亏的"**门控②**"（docs/环境问题-诊断记录.md）：
 --      加一个新容器就**必须**同步加进这份名单 —— 我加 `home`/`select` 时漏了。
+-- ★★★★★ 2026-10-07 **装饰性子控件不参与 `hide_unlisted`** ✗✓
+--
+--   真机症状（用户实测）：弹窗出来了、标题正文都在，但**四个按钮既没底图也没文字、点了没音效**。
+--   根因：`hide_unlisted` 是**按名字**判断的 —— 它遍历 `MANAGED` 容器（含 `modal`），
+--   把「不在当前计划里的直接子控件」逐个 `SetVisible(false)`。
+--   而按钮的子控件名字是 ★ **`label`**（文字）和 ★ **`bg`**（底图）——
+--   这两个名字**永远不可能出现在计划里**（计划里的 id 是 `modal.exit` 这种），
+--   ⇒ **它们每次都被当成"多余的旧控件"藏掉** ⇒ 按钮成了**看不见的空壳** ✓
+--   （用户"没有点击音效"也正是这个原因：看得见的只有标题/正文那两行文字。）
+--
+--   ⇒ 规则：**只看带点的托管 id**，这几个"装饰名"一律跳过。
+--     它们的主人是按钮自己，显隐该由按钮的状态节点决定，不该由这份名单管。
+local DECOR = { label = true, bg = true, pic = true, icon = true }
+
+local MANAGED = {
 local MANAGED = {
   "root", "topbar", "left", "tray", "clues", "board",
   "right", "actions", "modal", "intro",
@@ -2313,7 +2328,7 @@ function Adapter:hide_unlisted(keep)
           local child = kids[k]
           local name = nil
           pcall(function() name = child.name end)
-          if name ~= nil and name ~= "" and not keep[name] then
+          if name ~= nil and name ~= "" and not keep[name] and not DECOR[name] then
             if child.SetVisible ~= nil then
               local ok2 = pcall(function() child:SetVisible(false) end)
               if ok2 then hidden = hidden + 1 end
