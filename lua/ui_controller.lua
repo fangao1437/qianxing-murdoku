@@ -3670,6 +3670,39 @@ function Controller:sync_clue_grid(adapter)
   self._grid_sig = sig
   self._grid_state = "on"
 
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  -- ★★ 2026-10-06 **绕过规划/账本，直接点亮 `clues.grid`** ✗✓ —— 真凶在此 ✓
+  --
+  --   ★ 为什么规划那条路不行（★ 诊断2 真机实测 ✓）：
+  --     ★ 规划 `visible=**true**` ✓ · `在nodes=true` ✓ · `在seen=true` ✓ · `上帧在shown=true` ✓
+  --     ★★ 而★ **读回 `visible=false`** ✗✗ ⇒ ★ **属性【发了也无效】** ✓✓
+  --   ★★ 铁证（★ 同一份日志里 ✓）：★ 诊断二手动 `SetVisible(true)` ⇒ **回读仍 `false`** ✗✓
+  --     ★ 而★ 构建标记自己写着 ✓：
+  --       ★「要显示时**显式补 `SetActive(true)`**（★ 手写树漏写 `active` **会少一层可见性**）」✓✓
+  --   ⇒ ★★★ 修法 ✓：★ **拿到句柄的那一刻直接调** ✗
+  --     ★ 不走 `build_layout` / 不走账本 / 不等 30 帧 ✓ ⇒ ★ **没有可失效的中间层** ✓✓
+  --   ⚠️ 每次 `sync_clue_grid` 成功都补一遍 ✓（★ 它自己有 `_grid_sig` 守卫 ⇒ 不是每帧 ✓）
+  --   ★★ 顺带把 `pos_runtime = false` 那条也绕开 ✓（★ 那是几何 ✓ 这里只碰可见性 ✓）
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  do
+    local cg = grid
+    if cg == nil then
+      pcall(function() cg = adapter:find("clues.grid") end)
+    end
+    if cg ~= nil then
+      local ok_v, r_v = pcall(function() cg:SetVisible(true) end)
+      local ok_a, r_a = pcall(function() cg:SetActive(true) end)
+      local back = nil
+      pcall(function() back = cg.visible end)
+      if print ~= nil then
+        print("[murdoku] ★ 诊断3：直接点 `clues.grid` ⇒ SetVisible=" .. tostring(ok_v)
+          .. " SetActive=" .. tostring(ok_a)
+          .. "　**回读 visible=" .. tostring(back) .. "**"
+          .. "　⇒ 回读 true 就说明规划那条路是多余的；回读仍 false ⇒ 引擎不接受，要换招 ✗")
+      end
+    end
+  end
+
   -- ★★★★★ 2026-10-05 **`RefreshItems` 成功 = 引擎刚往树里塞了列表项 ⇒ 控件名缓存作废。**
   --
   --   为什么要在这里触发：列表项（`clue.1.who` …）是**引擎**在 `RefreshItems` 里实例化的，
