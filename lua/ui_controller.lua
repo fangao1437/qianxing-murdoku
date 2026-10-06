@@ -2817,13 +2817,23 @@ function Controller:build_layout()
       --     `set_image_deep` 会自己往下找带 `SetImage` 的子控件（= 按钮的 `bg` ✓），
       --     并沿用控件自己编辑器里配的图集（`bg` 的 imageSource = 官方图集 ✓）✓
       --   ★ 只做一次（每帧设图会白烧成本 ✓ 本项目对每帧成本敏感 ✓）。
-      if (not self._exit_menu_art) and self.adapter ~= nil and self.adapter.set_image_deep ~= nil then
+      -- ★★★★★ 2026-10-07 **只给【bg 子控件】设胶囊底图** ✗✓（用户要求配图 ✓）
+      --   上一版用的是 `set_image_deep(按钮, …)` —— 它的规则是"找【第一个】带 `SetImage` 的子控件"
+      --   ⇒ 真机上很可能命中 `label`（文字控件也有 `SetImage`）⇒ **把图设到了文字上、文字被盖掉**
+      --   （真机对照：加它之前是"有字无图" ✓ 加它之后变成"图文都没有" ✗ 变量只有这一个 ✓）
+      --   ⇒ 现在**显式指名 `bg`**，不再让它自己挑；`label` 一指不碰 ✓
+      --   素材：★ **`107179`**（760×152，两端全圆角米白）= 用户选定的胶囊 ✓ 沿用控件自己的官方图集 ✓
+      if (not self._exit_menu_art) and self.adapter ~= nil then
         self._exit_menu_art = true
         for _, bid in ipairs({ "modal.exit", "modal.save", "modal.settle", "modal.cancel" }) do
-          local c = self.adapter:find(bid)
-          if c ~= nil then
-            pcall(function() self.adapter:set_image_deep(c, 107179, nil, nil, "弹窗胶囊") end)
+          local bg = nil
+          pcall(function() bg = self.adapter:sub(bid, "bg") end)
+          if bg ~= nil and self.adapter.set_image_deep ~= nil then
+            pcall(function() self.adapter:set_image_deep(bg, 107179, nil, nil, "弹窗胶囊") end)
+            self:fx(bid, M.EFFECTS.SELECT)
           end
+        end
+      end
         end
       end
     elseif modal.kind == "share" then
