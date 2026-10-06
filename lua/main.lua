@@ -674,7 +674,11 @@ function Murdoku.on_start(level_id, opts)
     --     ③ 兜底：root 存在且已有 >3 个子控件
     local ready = false
     pcall(function()
-      if adapter:find("board") ~= nil or adapter:find("cell.1.1") ~= nil then
+      -- ★ 2026-10-06 残留清理 ✗✓：★ 删掉 `"board"` 这个**死引用** ✓
+      --   ★ `board` 在真机与模拟器**都找不到** ✓（★ 两边日志原文：「`board` → **找不到控件**」✓）
+      --   ⇒ ★ 它在 OR 里**恒为假** ✗ ⇒ ★ 这一半是**纯噪音** ✓
+      --   ★ 真正起作用的是 `cell.1.1` ✓ ⇒ ★ 保留 ✓（★ 行为不变 ✓）
+      if adapter:find("cell.1.1") ~= nil then
         ready = true
       elseif adapter:find("stage") ~= nil or adapter:find("home") ~= nil then
         ready = true
