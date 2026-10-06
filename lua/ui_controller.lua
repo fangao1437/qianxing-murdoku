@@ -3327,6 +3327,8 @@ function Controller:layout_plan()
     { name = "share",             intro = 99,
       modal = { kind = "share", code = "（分享码）" }, screen = nil },
     { name = "howto",             intro = 99, modal = { kind = "howto" }, screen = nil },
+    { name = "exit_menu",         intro = 99,
+      modal = { kind = "exit_menu" }, screen = nil },   -- ★ 2026-10-07 退出菜单四键（★ 只入计划 ⇒ 建进 gil ✓ 不常显 ✓）
     { name = "levelselect",       intro = 99,
       modal = { kind = "levelselect" }, screen = nil },
   }

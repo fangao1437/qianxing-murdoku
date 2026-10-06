@@ -164,13 +164,27 @@ const maxId = Math.max(...recs.map((r) => r.id));
 const plan = JSON.parse(fs.readFileSync(PLAN, 'utf8'));
 const planById = new Map(plan.nodes.map((n) => [n.id, n]));
 
-const proto = { container: byName.get('board'), button: byName.get('proto.btn'), text: byName.get('proto.text') };
+// ★★★★★ 2026-10-07 **原型解析带兜底** ✗✓
+//   ★ 原因：专用原型 oard/proto.btn/proto.text 在用户存档里【不一定存在】✗
+//     （实测 208.1.gil 里三个都没有 ⇒ 直接退 3 ✓）
+//   ★ 做法：优先用专用原型；缺则从【已有的同类控件】里挑一个 ✓
+//     · 容器/面板 → clues / root / home / stage
+//     · 按钮      → home.select / action.back / selbtn.1 / home.bag
+//     · 文本      → home.title / hud.title / label / home.subtitle
+//   ★ 只要状态块 ≥1 就能克隆 ✓（4 个是理想值，缺了也照抄副本 ✓ 由 REQUIRED_BLOCKS 控制）
+const REQUIRED_BLOCKS = Number(argOf('blocks') || 1);
+const pick = (cands) => cands.map((n) => byName.get(n)).find(Boolean) || null;
+const proto = {
+  container: pick(['proto.box', 'board', 'clues', 'root', 'home', 'stage']),
+  button: pick(['proto.btn', 'home.select', 'action.back', 'selbtn.1', 'home.bag', 'home.continue']),
+  text: pick(['proto.text', 'home.title', 'hud.title', 'label', 'home.subtitle']),
+};
 for (const [k, r] of Object.entries(proto)) {
   if (!r) { console.error('缺原型：' + k); process.exit(3); }
-  if (r.states.length !== 4) { console.error('原型 ' + k + ' 状态块 ' + r.states.length + ' ≠ 4'); process.exit(4); }
+  if (r.states.length < REQUIRED_BLOCKS) { console.error('原型 ' + k + ' 状态块 ' + r.states.length + ' < ' + REQUIRED_BLOCKS); process.exit(4); }
 }
 console.log('原型：容器/面板→board#' + proto.container.id
-  + '  按钮→proto.btn#' + proto.button.id + '  文本→proto.text#' + proto.text.id);
+  + '  按钮→proto.btn#' + proto.button.name + '#' + proto.button.id + '  文本→' + proto.text.name + '#' + proto.text.id);
 
 const skipCell = (n) => /^cell\./.test(n.id);
 const reuse = (n) => byName.has(n.id);                      // 存档里已有同名控件 → 复用
