@@ -29,7 +29,7 @@
     root / topbar / left / tray / clues / legend / board / actions / right / modal / intro
     cell.<行>.<列>   及可选子控件：face / note / x / wall.up|down|left|right / door.up|down|left|right
     tray.<角色id>    clue.<序号>    action.* / tool.* / action.q.*
-    hud.title / hud.subtitle / hud.timer / hud.moves / hud.violations / hud.toast / hud.share
+    hud.title / hud.subtitle / hud.timer / hud.violations / hud.toast / hud.share
 --]]--
 
 local M = {}

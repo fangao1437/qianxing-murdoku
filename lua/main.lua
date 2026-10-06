@@ -285,7 +285,7 @@ function Murdoku.start(level_id, opts)
       adapter:signal_emit(Qianxing.SIGNALS.SOLVED, {
         tostring(level.id),
         math.floor(vm.hud.time or 0),
-        vm.hud.moves or 0,
+        0,
         vm.hud.failed_accusations or 0,
       })
       -- ★★★ 2026-09-30：**记下"这一关破了"** —— 选关卡片要显示「★ 已破案」。
@@ -2133,7 +2133,7 @@ function Murdoku.save_now()
   local payload = {
     level_id   = tostring(current.level.id),
     state_code = core:encode_state(),
-    moves      = core.moves or 0,
+    moves      = 0,
     elapsed    = math.floor(core.elapsed or 0),
     solved     = (core.status == Core.STATUS_SOLVED),
   }

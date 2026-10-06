@@ -1412,7 +1412,7 @@ end
 --   ⚠️ 为什么**不**另找控件、也不加控件：`hud.toast` 已经按参考图删了 ——
 --      `tools/sim/out/layout-plan.json` 里没有它，**存档里也没有它的记录**
 --      （实测 `208-补active.gil`：`hud.toast` **0 条**；`hud.subtitle` / `hud.title` /
---        `hud.timer` / `hud.moves` / `hud.progress` 各 1 条；`legend` / `clues.more` /
+--        `hud.timer` / `hud.timer` / `hud.progress` 各 1 条；`legend` / `clues.more` /
 --        `room.label.*` / `ruler.*` / `select.*` 也都是 0 条）
 --      ⇒ 写一个**不存在**的控件 = `set_property` 静默 no-op = 这场修复白做 ✗。
 --   ⚠️ 空串按"没有提示语"处理：出口控件的 `text` 不允许被清成空串之后还赖在计划里
@@ -1680,7 +1680,7 @@ function Controller:build_layout()
   --
   --   为什么选中 `hud.subtitle`：
   --     · `hud.title` = 关卡标题 —— 用户点名**不许用**（覆盖它会破坏「重置后标题不变」）；
-  --     · `hud.timer` / `hud.moves` / `hud.progress` 都是玩家**正在看的计数**（时间/步数/进度），
+  --     · `hud.timer` / `hud.timer` / `hud.progress` 都是玩家**正在看的计数**（时间/步数/进度），
   --       而且只有 ~125px 宽 ⇒ 装不下「还没有游玩记录，先从「选关」开始吧」这种 17 字提示 ✗；
   --     · 本控件是 717px 宽的**副标题行**（标题下面那一行）—— 语义上就是"对玩家说的一句话"，
   --       而且**存档里真实存在**（`208-补active.gil` 有 `hud.subtitle` 记录 ✓

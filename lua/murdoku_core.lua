@@ -1427,7 +1427,6 @@ function Core:reset()
   for c = 1, self.cols do self.col_count[c] = 0 end
   self.history = {}
   self.future = {}
-  self.moves = 0
   self.elapsed = 0
   self.status = M.STATUS_PLAYING
   self.mode = M.MODE_PLACE
@@ -1687,7 +1686,6 @@ end
 local function push_history(self, action, counts)
   self.history[#self.history + 1] = action
   self.future = {}
-  if counts ~= false then self.moves = self.moves + 1 end
 end
 
 local function do_place(self, r, c, id, record, opts)
@@ -2161,7 +2159,6 @@ function Core:undo()
     self.notes[action.r][action.c] = restored
   end
   self.future[#self.future + 1] = action
-  self.moves = math.max(0, self.moves - 1)
   if self.status ~= M.STATUS_SOLVED then self.status = M.STATUS_PLAYING end
   return true
 end
@@ -2182,7 +2179,6 @@ function Core:redo()
     self.notes[action.r][action.c] = {}
   end
   self.history[#self.history + 1] = action
-  self.moves = self.moves + 1
   return true
 end
 
@@ -2465,7 +2461,6 @@ function Core:serialize()
   return {
     version = 2,
     level_id = self.level.id,
-    moves = self.moves,
     elapsed = self.elapsed or 0,
     accused = self.accused,
     failed_accusations = self.failed_accusations,
@@ -2488,7 +2483,6 @@ function Core:deserialize(save)
       if e.x then self.x_marks[e.r][e.c] = true end
     end
   end
-  self.moves = save.moves or 0
   self.elapsed = save.elapsed or 0
   self.accused = save.accused
   self.failed_accusations = save.failed_accusations or 0
@@ -2605,7 +2599,6 @@ function Core:view()
   local hud = {
     time = self.elapsed or 0,
     tie_policy = self:tie_policy(),
-    moves = self.moves,
     mode = self.mode,
     status = self.status,
     solved = (self.status == M.STATUS_SOLVED),
