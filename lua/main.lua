@@ -782,11 +782,23 @@ function Murdoku.on_update(dt)
     local ad = current.adapter
     print("[murdoku] ===== 开局诊断：屏幕上到底有什么（第 90 帧实测）=====")
     print("[murdoku]   controller.screen = " .. tostring(current.controller.screen))
+    -- ★★★★★ 2026-10-06 **名单已按真机实测修正** ✗✓
+    --
+    --   旧名单里有 7 个**根本不存在的名字** ✗（真机日志逐条报"找不到控件" ✓）：
+    --     `select.back` `select.title` `select.card.1` `select.card.2`
+    --     `select` `board` `action.undo`
+    --     ★ 而且 `select.card.2` 还**写了两遍** ✗
+    --   ⇒ ★ 诊断的意义是"发现名字对不上"✗ —— ★ 但它自己就带着一堆假名字 ✓
+    --     ⇒ ★★ 每帧刷 7 行"找不到"✗ ⇒ **真问题会被淹掉** ✓
+    --   ⇒ 改成真机确认存在的那些 ✓（★ 依 2026-10-05/06 的真机日志 ✓）：
     local ids = {
       "root", "home", "home.title", "home.select", "home.continue", "home.shop", "home.bag",
-      "select.back", "select.title", "select.card.1", "select.card.2",
-      "select", "select.card.2",
-      "board", "cell.1.1", "topbar", "clues", "action.undo", "hud.title",
+      "selbar", "selbtn.1", "tpl-container",
+      "stage", "board.bg", "cell.1.1",
+      "topbar", "toolbar", "right",
+      "clues", "clues.bg", "clues.grid",
+      "hud.title", "hud.subtitle", "hud.moves", "hud.timer", "hud.progress",
+      "action.back",
     }
     for i = 1, #ids do
       local id = ids[i]
