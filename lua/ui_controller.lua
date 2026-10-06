@@ -288,7 +288,7 @@ function M.new(core, opts)
   --   （`main.lua` 的 `on_update` 每帧调 `controller:tick(dt)`，与屏幕无关）。
   self.toast_until = nil
   self.now = 0
-  self.modal = nil          -- nil | {kind="accuse"} | {kind="result",win=bool,message=} | {kind="howto"} | {kind="intro",page=n}
+  self.modal = nil          -- nil | {kind="accuse"} | {kind="result",win=bool,message=} | {kind="exit_menu"} | {kind="howto"} | {kind="intro",page=n}
   -- ★★★ 2026-09-29：屏幕状态（"home" 主页 / "select" 选关 / nil = 在关卡里）。
   --   与 `modal` 的区别：modal 是"浮在关卡上的弹窗"，屏幕是**整屏**的。
   --   控件已在 .gil 里（tools/gil/gen_home.mjs），脚本只切 visible + 写文字。
@@ -884,6 +884,12 @@ function Controller:on_input(event)
   --   为什么这么做：这三个都是**不可逆**的（回菜单、交卷、清空整局），
   --   参考图里也是"点一下先问、再执行"的两段式。
   elseif a == "back_confirm" then
+    -- ★★★★★ 2026-10-06 **改成弹「退出菜单」四键界面** ✗✓（用户要求：取消 Y/X 确认卡 ✓）
+    --   ★ 三个动作 ✓：退出至菜单 / 仅存档 / 存档并结算 ✓ + 取消 ✓
+    --   ★ 其余两处（`submit` / `restart`）**照旧走 Y/X 确认卡** ✗ —— 只动 back 这一条 ✓
+    self.modal = { kind = "exit_menu" }
+    self.pending = nil
+    self:sync_confirm()
     self.pending = { action = "back" }
     self:sync_confirm()
     -- ★ 2026-10-04 **按下就给反馈**（用户反馈"点击动画只有提示有"）：
@@ -1003,6 +1009,32 @@ function Controller:on_input(event)
 
   elseif a == "close_modal" then
     self.modal = nil
+
+  -- ★★★★★ 2026-10-06 **「退出菜单」四键界面的三个动作** ✗✓
+  --   ★ 设计（用户定 ✓）：退出至菜单 = **不存档** ✓ · 仅存档 = 存档后**留在本关** ✓
+  --     · 存档并结算 = 存档 + **触发千星沙域的结算机制**（★ 直接结束游戏 ✓）· 取消 = 关弹窗 ✓
+  --   ★ 两个回调走 `opts` ✓ —— 回调里才有 `adapter`（★ 控制器拿不到 ✓）
+  --     为 nil 时**什么都不做** ✓（★ 不会崩 ✓ 便于分批接入 ✓）
+  elseif a == "exit_menu_go" then
+    -- ★ 退出至菜单：**不存档** ✓ ★ 走的是原来 `back` 那条路（回选关 ✓）
+    self.modal = nil
+    self.screen = "select"
+    self.dirty = true
+    if self.opts.on_back then self.opts.on_back() end
+
+  elseif a == "exit_menu_save" then
+    -- ★ 仅存档：存完**留在当前界面** ✓
+    if self.opts.on_save then self.opts.on_save() end
+    self.modal = nil
+    self.toast = "已存档"
+    self.toast_until = self.now + M.TOAST_SECONDS
+    self.dirty = true
+
+  elseif a == "exit_menu_settle" then
+    -- ★ 存档并结算：存档 → 交回 `main.lua` 去发结算信号（★ 服务端节点图收 ✓）
+    if self.opts.on_save then self.opts.on_save() end
+    if self.opts.on_settle then self.opts.on_settle() end
+    self.dirty = true
 
   elseif a == "level_list" then
     -- 打开选关面板（关卡清单由 main.lua 通过 opts.levels 给进来）
@@ -2781,6 +2813,23 @@ function Controller:build_layout()
       btn("modal.next", "modal", { x = mx + 440, y = my + mh - 88, w = 200, h = 60 }, "下一关",
           { action = "next_level" }, "stamp.primary")
 
+    elseif modal.kind == "exit_menu" then
+      -- ★★★★★ 2026-10-06 **退出菜单：四个键（★ 替换原 Y/X 确认卡 ✓）**
+      --   ★ 布局照参考图的两段式 ✓ ★ 复用 `L.modal` 的框 ⇒ **不新增编辑器控件** ✓
+      push({ id = "modal.title", kind = "text", parent = "modal",
+             rect = { x = mx + 30, y = my + 30, w = mw - 60, h = 56 },
+             text = "离开这一关？", style = "modal.title" })
+      push({ id = "modal.body", kind = "text", parent = "modal",
+             rect = { x = mx + 30, y = my + 100, w = mw - 60, h = 40 },
+             text = "可以直接退出，也可以先存下进度", style = "muted" })
+      btn("modal.exit", "modal", { x = mx + 40, y = my + 170, w = mw - 80, h = 64 },
+          "退出至菜单", { action = "exit_menu_go" }, "stamp")
+      btn("modal.save", "modal", { x = mx + 40, y = my + 246, w = mw - 80, h = 64 },
+          "仅存档", { action = "exit_menu_save" }, "stamp")
+      btn("modal.settle", "modal", { x = mx + 40, y = my + 322, w = mw - 80, h = 64 },
+          "存档并结算", { action = "exit_menu_settle" }, "stamp.primary")
+      btn("modal.cancel", "modal", { x = mx + 40, y = my + mh - 88, w = mw - 80, h = 60 },
+          "取消", { action = "close_modal" }, "tab")
     elseif modal.kind == "share" then
       -- ★ 2026-10-05 **这一支目前没有入口按钮**（用户当天决定去掉「分享棋局」按钮，
       --   见上面 `modal.kind == "result"` 里那段删除说明）。
