@@ -884,7 +884,12 @@ function Controller:on_input(event)
   --   为什么这么做：这三个都是**不可逆**的（回菜单、交卷、清空整局），
   --   参考图里也是"点一下先问、再执行"的两段式。
   elseif a == "back_confirm" then
-    -- ★ 2026-10-07 改成弹「退出菜单」四键（四句缺一不可 ✓ 漏 dirty ⇒ 规划不重跑 ⇒ 弹窗不出现 ✓）
+    -- ★★★★★ 2026-10-07 **改成弹「退出菜单」四键** ✗✓（用户要求：取消原 Y/X 确认卡 ✓）
+    --   ★ 四句缺一不可 ✓（上一轮踩过：漏 `dirty` ⇒ 规划不重跑 ⇒ 弹窗永不出现 ✓）：
+    --     · `modal`      = 让规划走 exit_menu 分支 ✓
+    --     · `pending=nil`= 清掉确认卡状态 ✓ 否则 Y/X 卡会把弹窗顶掉 ✗
+    --     · `dirty=true` = 让本帧重跑规划 ✓
+    --     · `sync_confirm()` + `fx` = 收尾与按下反馈 ✓
     self.modal = { kind = "exit_menu" }
     self.pending = nil
     self.dirty = true
@@ -1004,19 +1009,27 @@ function Controller:on_input(event)
   elseif a == "close_modal" then
     self.modal = nil
 
-  -- ★ 2026-10-07 「退出菜单」三个动作
+  -- ★★★★★ 2026-10-07 **「退出菜单」四键的三个动作** ✗✓
+  --   ★ 设计（用户定 ✓）：退出至菜单 = **不存档** ✓ · 仅存档 = 存档后**留在本关** ✓
+  --     · 存档并结算 = 存档 + **触发千星沙箱的结算机制**（★ 直接结束游戏 ✓）· 取消 = 关弹窗 ✓
+  --   ★ 两个副作用走 `opts` 回调 ✓（★ 只有入口层拿得到 `adapter` ✓）为 nil 时**什么都不做** ✓
   elseif a == "exit_menu_go" then
+    -- ★ 退出至菜单：**不存档** ✓ ★ 走原来 `back` 那条路（回选关 ✓）
     self.modal = nil
     self.screen = "select"
     self.dirty = true
     if self.opts.on_back then self.opts.on_back() end
 
   elseif a == "exit_menu_save" then
+    -- ★ 仅存档：存完**留在本关** ✓
     if self.opts.on_save then self.opts.on_save() end
     self.modal = nil
+    self.toast = "已存档"
+    self.toast_until = self.now + M.TOAST_SECONDS
     self.dirty = true
 
   elseif a == "exit_menu_settle" then
+    -- ★ 存档并结算：存档 → 交回 `main.lua` 发结算信号（★ 服务端节点图收 ✓）
     if self.opts.on_save then self.opts.on_save() end
     if self.opts.on_settle then self.opts.on_settle() end
     self.dirty = true
@@ -1034,25 +1047,8 @@ function Controller:on_input(event)
     elseif a == "pick_level" then
     if self.opts.on_pick_level then
       self.modal = nil
-      -- ★★★★★ 2026-10-05 **顺序修好了** ✗✓ —— 原来 `self.screen = nil` 写在回调**之前** ✗
-      --
-      --   症状（用户实测 + 两张截图 + 新加的引擎侧体检 ✓）：
-      --     · 直接进第一关 ✓ 正常；去过别的关卡再回来 ✗ ★【只剩棋盘，线索区整片没了】✗
-      --     · 退出重进第一关没用 ✗；必须去一次别的关卡才行 ✓
-      --     · ★ 引擎侧读数：`clues(vis=false)` 而 `clues.bg(vis=true)` `clues.grid(vis=true)` ✗✓
-      --       ⇒ ★ 父容器被藏 ⇒ 整片线索区不显示 ✓（这就是那张"只剩棋盘"的图 ✓）
-      --
-      --   为什么：真机日志里点完卡片后 ★ `controller.screen = **home**` ✗ ——
-      --     而这一行**本来置的是 `nil`** ✓ ⇒ ★ 说明是**紧接着的回调**把它改回去的 ✗✓
-      --     （`on_pick_level` 在 `main.lua` 那头会走开局/重试那条路 ✓ 中途会重设 screen ✓）
-      --   ⇒ ★ 于是 `apply_screen_hide(nodes, "home")` ⇒ HIDE 名单生效 ⇒ `clues` 被藏 ✗
-      --     ⇒ 而"进关卡后该显示"的那条路【从来没走到】✗（`self.screen` 一直是 "home" ✓）
-      --     ⇒ ★★ 永久丢失 ✓ —— 只有切屏（去别的关卡）才会把它改回 `nil` ✓✓
-      --
-      --   ★ 修法：**先回调，后置 nil**，并在回调之后再兜一次 ✗
-      --     这样无论回调中途把 `screen` 设成什么，回到这里都一定被纠正成"在关卡里" ✓
+      self.screen = nil              -- ★ 点卡片 = 离开选关、进入关卡
       self.opts.on_pick_level(event.id)
-      self.screen = nil              -- ★ 点卡片 = 离开选关、进入关卡（放在回调【之后】✓）
     end
 
   -- ★★★ 2026-09-29 新增：主页四键 + 整屏切换（用户要求的布局与流程）
@@ -1314,31 +1310,7 @@ local function apply_screen_hide(nodes, screen)
     --   ⇒ 三样都补进隐藏名单：`selbar`（容器本身）、`selbtn.`（它的子按钮）、`tpl-`（模板引用控件）。
     HIDE["selbar"] = true
     HIDE["tpl-container"] = true
-    -- ★★★★★ 2026-10-05 **`"cell."` 从这里删掉** ✗✓ —— 它就是「第一次进关墙/门不画」的根因 ✓
-    --
-    --   机制（本函数是**单向**的 ✗：只会 `visible = false` ✓ 从不写回 true ✓）：
-    --     · 开局 `screen = "home"` ✓ 于是 `PREFIX` 命中 `"cell."` ✗
-    --       ⇒ ★ 25 个 `cell.*` 全部 `visible = false` ✗✓
-    --     · 而 `cell.*` 是格子的**根控件** ✗ ⇒ 它的 false 会**连坐全部子控件** ✓
-    --       ⇒ ★★ `wall.*` / `door.*` / `face` **一律看不见** ✓✓
-    --     · 之后进关卡 `screen = nil` ✓ ⇒ 本函数**不再藏** ✓
-    --       但**已经设成 false 的 `cell.*` 它【不会写回 true】** ✗（单向的代价 ✓）
-    --       ⇒ ★ 父级一直是 false ⇒ ★★ **墙/门永远不出现** ✓✓
-    --
-    --   ★★★ 用户的三条实测现象**全部对上** ✓✓：
-    --     · 「破坏开局流程（`screen` 全程 `nil`）⇒ 直接正常」✓
-    --       ⇒ 那时 PREFIX 只有 `{"home","select"}` ✓ **从不碰 `cell.*`** ✓
-    --     · 「正常走流程 ⇒ 不画」✗
-    --       ⇒ 开局必经 `home` → `select` ✓ 两趟都把 `cell.*` 设 false ✓
-    --     · 「进别的关再回来就正常」✓
-    --       ⇒ 那一趟 `screen` 是 `nil` ✓ 不再藏 ✓ 而规划把 `cell.*` 重发 true ✓
-    --
-    --   ★ 为什么删它是**安全**的：★ `cell.*` 的可见性**规划里已经按屏幕算好了** ✓
-    --     · 主页/选关：规划给 `false` ✓（真机开局日志：`cell.1.1 visible=false` ✓）
-    --     · 关卡内：规划给 `true` ✓（真机进关日志：`cell.1.1 visible=true` ✓）
-    --     ⇒ ★★ 这一条**本来就是重复的** ✗ —— 重复的那份还会用"单向藏"覆盖规划 ✗✓
-    --   ⚠️ 教训：★ 可见性【只能有一个权威】✗ —— 规划给了，屏幕层就不该再管 ✓
-    PREFIX = { "clue.", "hud.", "room.label.", "ruler", "tray.", "action.", "hex.", "hit.",
+    PREFIX = { "cell.", "clue.", "hud.", "room.label.", "ruler", "tray.", "action.", "hex.", "hit.",
                "selbtn.", "tpl.",
                (screen == "home") and "select." or "home." }
   end
@@ -1369,27 +1341,6 @@ local function apply_screen_hide(nodes, screen)
     --      "关卡内的还可见 0 个" ⇒ 子控件层面是干净的。
     if id == "home" then hide = (screen ~= "home") end
     if id == "select" then hide = (screen ~= "select") end
-    -- ★★★★★ 2026-10-05 **改回【单向】：只藏，不负责显示** ✗✓ —— 双向那版【闯了祸】✓
-    --
-    --   我先前把它改成 `nodes[i].visible = not hide`（双向 ✗），以为"这一帧该显示"
-    --   这个事实必须进 `nodes` ✓ —— ★ 结果真机上出现了**一排白方块** ✗✓
-    --   （用户截图：顶部两处 + 右上两处 + 右侧一处 ✓ 位置正好是 `topbar` / `right`
-    --     的图标位 ✓ 日志里 `图标设图 hex.*` 七条【全部成功】✓ ⇒ 图是设上了的 ✓
-    --     ⇒ 白方块是它配对的 `hit.*`（透明点击区 ✓ 本身是白图块 ✓）✗）
-    --
-    --   为什么双向会闯祸：
-    --     · `hit.*` / `hex.*` 的可见性有【两套来源】✗ ——
-    --         ① 屏幕层（本函数 ✓：主页/选关藏 ✗ 关卡内不藏 ✓）
-    --         ② **状态层**（例如"提交键只在能提交时亮"✗ 由别处按状态开关 ✓）
-    --     · `hide == false` 时【什么都不做】⇒ 控件保持**状态层刚写过的值** ✓
-    --     · 我改成【写 true】⇒ ★ **每帧把状态层覆盖成"可见"** ✗ ⇒ 白方块 ✓✓
-    --
-    --   ⇒ ★ 正确的分工：★ 本函数【只负责"藏"】✓；"该显示"由**节点的初值**
-    --     （`build_layout` push 时给的 ✓）和**状态层**决定 ✓ —— 谁的状态谁负责 ✓
-    --   ★ 而"藏过的东西永远回不来"那个真问题 ✗ ⇒ **已经由另外两处修好了** ✓：
-    --     · `forget_visible`（差集藏完清账本 ✓ ⇒ 下次该显示时会【重发 true】✓）
-    --     · `screen` 判对（构造时 `nil` ✓ + `start_other` 后置 `nil` ✓）
-    --     ⇒ ★ 三处里这两处才是根治 ✓，本函数【不需要】也【不应该】双向 ✓✓
     if hide then nodes[i].visible = false end
   end
 end
@@ -2065,21 +2016,7 @@ function Controller:build_layout()
   --   ⇒ 补一条规划节点（`kind = "container"`：只摆位置/显隐，**不设图不设色**，图与色归编辑器）。
   --   尺寸与容器同尺寸（画布 400×544）、挂在 `clues` 下、坐标相对父级 ⇒ (0,0) ✓
   push({ id = "clues.bg", kind = "container", parent = "clues",
-         rect = { x = L.clues.x, y = L.clues.y, w = L.clues.w, h = L.clues.h },
-         -- ★★★★★ 2026-10-05 **补上 `visible`** ✗✓ —— 这是"线索区没出来"的**两个原因之一** ✓
-         --
-         --   症状（真机日志 `23:13:32` 的排行榜 ✓）：
-         --     · `clues`      400x544  可见=**true**  ✓（父级亮着 ✓）
-         --     · `clues.bg`   400x544  可见=**false** ✗  ← ★ 子控件黑着 ⇒ 屏幕上什么都没有 ✓
-         --     · `clues.grid` 400x544  可见=**false** ✗（那一条见下面 `_grid_state` 处 ✓）
-         --
-         --   为什么：★ 上面 L2023 那句注释【自己就写着】「它的名字不在规划里 ⇒
-         --     脚本从没点亮它」✗ —— 后来补了这条规划节点 ✓，★ **但没给 `visible`** ✗✓
-         --     ⇒ 属性循环里 `visible = nil` ⇒ **不发这一条** ✗ ⇒ 它保持引擎初值（false ✗）
-         --   ★ 而 `clues`（父容器 ✓）之所以亮：★ 它由 `apply_screen_hide` **显式写** ✓
-         --     （HIDE 名单里有 `clues` ✓ 关卡内写 true ✓）—— ★ **而子控件不在那份名单里** ✗✓
-         --     ⇒ ★★ 所以判据必须【与 `clues` 完全一致】✗：关卡内显示 ✓ 主页/选关藏 ✓
-         visible = (self.screen == nil) })
+         rect = { x = L.clues.x, y = L.clues.y, w = L.clues.w, h = L.clues.h } })
   -- ★★★★★ 2026-10-05 **网格视窗 `clues.grid`（官方列表控件）—— 用户在编辑器里摆好的线索列表。**
   --
   --   为什么要有这条规划节点：**不在规划里的控件，脚本不认它**（不会点亮、不会按屏幕开关）
@@ -2531,54 +2468,9 @@ function Controller:build_layout()
       push({
         id = self:cell_id(r, c),
         kind = "button",
-        -- ★★★★★ 2026-10-06 **格子的父级从 `board` 改成 `stage`** ✗✓ —— 与真机一致 ✓
-        --
-        --   为什么（★ 模拟器 play 日志给的铁证 ✓）：
-        --     · 模拟器：★「**stage 树上实际有 0 个子控件**」✗
-        --       ⇒ ★ 因为计划把格子挂在 **`board`** 下 ✗ ⇒ 脚本按 `stage` 找 ⇒ **找不到** ✓
-        --     · 真机：★「stage 树上实际有 **27** 个子控件」✓
-        --       ⇒ ★ **真机里格子就是挂在 `stage` 下的** ✓
-        --     · 且两边日志都说：★「`board` → **找不到控件**」✗
-        --       ⇒ ★★ 即：★ **`board` 在真机上根本不存在** ✗ —— ★ 它只是计划里的历史层 ✓
-        --   ⇒ ★★ 所以这一处**不是模拟器的毛病** ✗ —— ★ 是**计划的父子结构与真机不一致** ✓✓
-        --     ★ 审计要模拟真机 ✓ ⇒ ★ 必须对齐真机 ✓（★ 而不是迁就模拟器 ✓）
-        --   ⚠️ 同一个 `board` 还挂着 `ruler` / `room.label.*` ✗ ——
-        --      ★ 它们同样在真机上取不到父级 ✓ 但那是**另一件事** ✗ ⇒ 本轮不动 ✓
-        parent = "stage",
+        parent = "board",
         rect = { x = gx + (c - 1) * (cell + gap), y = gy + (r - 1) * (cell + gap), w = cell, h = cell },
         style = style,
-        -- ★★★★★ 2026-10-06 **格子的可见性由【规划】统一给** ✗✓ —— 用户说的"合并成一套" ✓
-        --
-        --   ★ "为什么只有第一关出问题"的答案 ✓（真机日志早就写着 ✓）：
-        --     · 第一关：★「本次新建 **25** 个」✗ ← ★ 格子是【开局那一刻】建的 ✓
-        --     · 第二关：★「本次新建 **0** 个」✓  ← ★ 复用已存在的 ✓
-        --     ⇒ ★ 开局 `screen = "home"` ✗ ⇒ 屏幕层把 `cell.*` 藏掉 ✗
-        --       ⇒ ★★ 第一关的格子【一出生就是 hidden】✗ 而屏幕层是**单向**的 ✗
-        --          ⇒ **永无恢复** ✓✓（墙/门/底图全灭 ✓）
-        --     ⇒ ★ 其它关的格子是【关卡内】建的 ✓ ⇒ 从没被藏过 ✓
-        --       ⇒ ★★ 看起来"只有第一关坏"✗ —— 其实是**建格时机不同** ✓
-        --     ★ 用户原话：「第一关的棋盘是项目最初的造物」✓
-        --       「把第一关的显隐设置与其它关卡合并成一套」✓ —— ★ 判断正确 ✓
-        --
-        --   ⇒ ★★ 在这里显式给 `visible`：★ 规划**每一次产出都带上它** ✓
-        --     · 关卡内（`screen == nil`）⇒ true ✓  ·  主页/选关 ⇒ false ✓
-        --     ⇒ ★★★ **所有关卡、所有时机走同一条** ✓✓ —— 这就是"一套" ✓
-        --   ⚠️ 不放在屏幕层 ✗（上次那样做过、失败了 ✗）—— 那是**单向**的 ✗
-        --     ★ 而规划每一帧都重算 ✓ ⇒ 它才是**双向**且**唯一**的权威 ✓✓
-        -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-        -- ★★ 性能待办 ★ 标签 **PERF-2**（★ 2026-10-06 标记 ✓ **先不动** ✗ 等框架稳定再回来 ✓）
-        --
-        --   ★ 这是**每帧下发**给 25 个格子的那个 `visible` ✓
-        --     （★ `layout_plan` 每帧重算 ✓ ⇒ 这一行每帧对 25 个格子各走一次属性下发 ✓）
-        --   ★ **字段位置**：★ 就是下面这行 `visible = (self.screen == nil),` ✓
-        --     ★ 同类还有 `clues.bg` 的 ★ **L2065** `visible = (self.screen == nil) })` ✓
-        --   ★ **为什么归规划管** ✗：★ 屏幕层是**单向**的 ✗（★ 只藏不显 ✓ 上次那样做过、失败了 ✓）
-        --     ★ 而规划每帧重算 ⇒ ★ 它是**双向且唯一**的权威 ✓ 见 L2547~2550 ✓
-        --   ⇒ ★★ **要省成本，正确顺序** ✓：★ 先确认屏幕层的**对称性** ✓
-        --     ★ 再把"每帧下发"改成"**状态变了才下发**"✗ —— ★ **不能直接删** ✓
-        --   ★ 配套的那个是 ★ **PERF-1**（`engine_adapter_qianxing.lua` 的每帧重放 ✓）
-        -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-        visible = (self.screen == nil),
         -- ★★★★★ 2026-10-05 **格子不再推 `text`**（这一轮每帧成本第 (4) 条）。
         --
         --   真机证据（用户日志里「格子里的子控件清单」那句，**原话**）：
@@ -2778,7 +2670,11 @@ function Controller:build_layout()
           { action = "next_level" }, "stamp.primary")
 
     elseif modal.kind == "exit_menu" then
-      -- ★ 2026-10-07 「退出菜单」四键（几何由编辑器/gil 说了算 ✓ `pos_runtime` 缺省 = 不下发几何 ✓）
+      -- ★★★★★ 2026-10-07 **「退出菜单」四键** ✗✓（用户要求：取消原 Y/X 确认卡 ✓）
+      --   ★ 三个动作 ✓：退出至菜单 / 仅存档 / 存档并结算 ✓ + 取消 ✓
+      --   ★★ **几何由编辑器（gil）说了算** ✗✓ —— 这四个控件已经建进存档了 ✓
+      --     `pos_runtime` 缺省 = 不下发几何 ✓ ⇒ 这里的 `rect` 只在"编辑器里没有"时当兜底 ✓
+      --     ★ 这正是工作约定：**能走控件实现的不走脚本** ✓
       push({ id = "modal.title", kind = "text", parent = "modal",
              rect = { x = mx + 30, y = my + 30, w = mw - 60, h = 56 },
              text = "离开这一关？", style = "modal.title" })
@@ -3291,7 +3187,7 @@ function Controller:layout_plan()
       modal = { kind = "share", code = "（分享码）" }, screen = nil },
     { name = "howto",             intro = 99, modal = { kind = "howto" }, screen = nil },
     { name = "exit_menu",         intro = 99,
-      modal = { kind = "exit_menu" }, screen = nil },   -- ★ 2026-10-07 退出菜单（★ 进计划 ⇒ 建进 gil ✓）
+      modal = { kind = "exit_menu" }, screen = nil },   -- ★ 2026-10-07 退出菜单四键（★ 只入计划 ⇒ 建进 gil ✓ 不常显 ✓）
     { name = "levelselect",       intro = 99,
       modal = { kind = "levelselect" }, screen = nil },
   }
@@ -3368,7 +3264,7 @@ function Controller:layout_plan()
     for k = 1, #it.states do
       if it.states[k] == "board" or it.states[k] == "intro" or it.states[k] == "accuse_thief"
          or it.states[k] == "accuse_accomplice" or it.states[k] == "result"
-         or it.states[k] == "share" or it.states[k] == "howto" or it.states[k] == "exit_menu" then in_board = true end   -- ★ 退出菜单也要能显形
+         or it.states[k] == "share" or it.states[k] == "howto" or it.states[k] == "exit_menu" then in_board = true end   -- ★ 2026-10-07 退出菜单也要能显形（漏了这行 ⇒ 控件在但全 false ✓）
     end
     it.visible = in_board and it.visible
   end
@@ -3534,23 +3430,7 @@ end
 function Controller:_grid_fail(why)
   if self._grid_broken then return end
   self._grid_broken = true          -- 记住失败 ⇒ 以后不再重试（免得每帧刷同一句话）
-  -- ★★★★★ 2026-10-05 **初值从 `"off"` 改成 `nil`** ✗✓ —— "线索区没出来"的**第二个原因** ✓
-  --
-  --   症状（真机日志 `23:13:32` 的排行榜 ✓）：
-  --     · `clues.grid` 400x544 可见=**false** ✗ —— 而日志【同时】说
-  --       「网格视窗：找到 clues.grid ✓ … RefreshItems 回调 7 次」✓ ⇒ ★ 它明明启用成功了 ✓
-  --
-  --   为什么：★ 规划里 `clues.grid` 的可见性是 `visible = (self._grid_state ~= "off")` ✓
-  --     ⇒ ★ 只要 `_grid_state` 还是 `"off"` ✗ ⇒ **规划就把它写成 false** ✗✓
-  --     ⇒ 而 `sync_clue_grid` 是**后面**才跑并把状态改掉的 ✓
-  --     ⇒ ★★ 于是"启用成功之前的那些帧"它一直是 false ✗
-  --        —— 而渲染的账本一旦记下 `visible=false`，之后没再变过就不会重发 ✗✓
-  --
-  --   ⇒ ★ 初值用 `nil`（= **还没判定** ✓）：`nil ~= "off"` 为真 ✓ ⇒ **规划先按"显示"给** ✓
-  --     ★ 只有 `sync_clue_grid` **真的判定失败**时才会变成 `"off"` ✗ ⇒ 那时才藏 ✓✓
-  --     ★ 这正是注释里那句"走不了网格视窗时把它藏起来"的原意 ✓ —— 原来那个 `"off"`
-  --       把"还没判定"和"判定失败"**混成了同一个值** ✗（本项目反复踩的"两个状态一个值"✓）
-  self._grid_state = nil
+  self._grid_state = "off"          -- `build_layout` 据此把 `clues.grid` 藏起来、老卡片放出来
   self.dirty = true                 -- 让下一帧重画
   self:_grid_log("fail", "网格视窗：失败（" .. tostring(why)
     .. "）⇒ 退回老路径（手写滚动：▲▼ + 滚动条 + clue.N 卡片）")
@@ -3802,14 +3682,7 @@ function Controller:_grid_text_payload()
   for i = 1, #(vm.clues or {}) do
     local cl = vm.clues[i]
     -- 与 `clue.N` 三个文字控件**完全同一份取值**（切分逻辑共用 `split_by_name`，不复制）
-    --
-    -- ★★★★★ 2026-10-06 **接上第 5 个返回值 `wportrait`** ✗✓ —— 网格视窗的头像要靠它 ✓
-    --   起因：★ 用户建好模板后发现「★ **五张卡的头像都一样**」✗
-    --   ★ 根因：★ `face` 是**图片控件** ✓ ★ 它**不会自己变** ✗ ⇒
-    --     ★ 必须**逐个实例**写 `imageId` ✓ —— 而这里**原来没接 `wportrait`** ✗✓
-    --   ★ 旧卡片（`clue.N.face`）一直在用第 5 个返回值 ✓（★ 见下面 `local who, pre, post, wid, wportrait = `
-    --     ★ 那份 ✓）⇒ ★ 这里漏了 ✓ ⇒ ★ 于是网格视窗走的是"头像永远等于模板默认图" ✓
-    local who, pre, post, wid, wportrait = split_by_name(vm, tostring(cl.text or ""))
+    local who, pre, post, wid = split_by_name(vm, tostring(cl.text or ""))
     --   ⚠️ 文案里没有人名时（例如 `selftest_theft_5x5` 的线索）：`who == nil`、`pre` 是整条文案
     --      ⇒ 名字列留空、正文放**整条**（老路径在那种关卡上是整块不发、什么都看不到；
     --         新路这里按"名字为空、正文 = 全文"来填，线索本身必须看得见）。
@@ -3817,8 +3690,6 @@ function Controller:_grid_text_payload()
       who    = (who ~= nil) and (tostring(pre or "") .. tostring(who)) or "",
       what   = (who ~= nil) and tostring(post or "") or tostring(pre or ""),
       letter = tostring(wid or ""),
-      -- ★ 头像素材名（★ 如 `portrait.A` ✓）★ `nil` 表示这一条没有对应角色 ⇒ **不要写图** ✓
-      portrait = wportrait,
     }
   end
   p = { level = lv, n = n, items = items }
@@ -3877,50 +3748,11 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   local cl = pay.items[pos]
   if cl == nil then return end        -- 超出本关线索数（理论上不会来）⇒ 什么都不写
   local t_who, t_what, t_letter = cl.who, cl.what, cl.letter
-  local t_portrait = cl.portrait        -- ★ 头像素材名（★ 如 `portrait.A` ✓；★ nil ⇒ 不写图 ✓）
 
   -- ★ 子控件句柄走记忆表（改之前：一次回调 54 次 `item:GetChild`，滚动时每帧 54 次）
   local c_who    = self:_grid_item_child_cached(item, index, pos, "who")
   local c_what   = self:_grid_item_child_cached(item, index, pos, "what")
   local c_letter = self:_grid_item_child_cached(item, index, pos, "letter")
-  local c_face   = self:_grid_item_child_cached(item, index, pos, "face")
-
-  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-  -- ★★ 2026-10-06 **头像：每个列表项实例要【各写各的 `imageId`】** ✗✓
-  --
-  --   ★ 起因（★ 用户实测 ✓）：★「★ **五张卡的头像都一样**」✗
-  --   ★ 根因 ✓：★ `face` 是**图片控件** ✓ ★ 模板只有一份 ✓
-  --     ⇒ ★★ **它不会自己变** ✗ —— ★ 必须**逐个实例**写 `imageId` ✓✓
-  --     ★（★ 文字那三个早就在写 ✓ ⇒ ★ 所以文字会不同、头像不会 ✓ —— 正是用户看到的现象 ✓）
-  --
-  --   ★ 写图的两条规矩（★ 与适配器里那条正路一致 ✓，见 `engine_adapter_qianxing.lua` L18/L705 ✓）：
-  --     ★ ① ★ **优先 `SetImage(img.imageSource, id)`** ✗ —— ★ 沿用**编辑器里配的来源** ✓
-  --        ★ 兜底才 `SetImage(id)` ✓（★ 真机上 `SetImage(nil, id)` 会失败 ✓ 那条注释写着 ✓）
-  --     ★ ② ★ **素材名要过 `adapter:resolve_asset`** ✓ —— ★ 它把 `portrait.A` 变成可用的 id ✓
-  --        ⚠️ ★ **`nil` 时【绝不能调】** ✗ —— ★ `resolve_asset` 查不到会 `warn_once` **打报错** ✓
-  --        （★ 那个警告注释在 `engine_adapter_qianxing.lua` L4019 ✓）
-  --     ★ ③ ★ **只在"这一项换了代表哪条线索"时写** ✓ —— ★ 与文字同一套去重 ✓
-  --        ★（`tv.idx ~= index` ✓）⇒ ★ 稳态零成本 ✓
-  --   ★ 失败一律 `pcall` ✓ ⇒ ★ 图没设上只失去"头像不同" ✗ ★ 不会把引擎的滚动打断 ✓
-  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-  if c_face ~= nil and t_portrait ~= nil and t_portrait ~= "" then
-    -- ★ 自己取一次记录表 ✓ —— ★ 不依赖下面文字那段的 `rec` ✓（★ 那段在这之后才定义 ✓）
-    local rec_f = self:_grid_item_rec(item, index)
-    local fv = rec_f and rec_f.face
-    if fv == nil or fv.idx ~= index or fv.name ~= t_portrait then
-      local want = t_portrait
-      local id = nil
-      pcall(function()
-        if adapter ~= nil and adapter.resolve_asset ~= nil then id = adapter:resolve_asset(want) end
-      end)
-      if id ~= nil then
-        local ok_img = false
-        pcall(function() ok_img = c_face:SetImage(c_face.imageSource, id) end)
-        if not ok_img then pcall(function() ok_img = c_face:SetImage(id) end) end
-        if rec_f ~= nil then rec_f.face = { idx = index, name = want, ok = ok_img } end
-      end
-    end
-  end
 
   -- ★★★★★ 2026-10-05 **文字只在"真的不一样"时才写**（写一次 = 引擎重排一次文本）。
   --
@@ -4177,32 +4009,9 @@ function Controller:render(adapter, force)
   -- 之后每次只藏"上一次显示过、这一次不在布局里"的。
   if self._shown == nil then
     local all = self:layout_plan()
-    -- ★★★★★ 2026-10-05 **藏完必须【清账本】** ✗✓ —— 这才是"永久丢失"的根治 ✓
-    --
-    --   为什么（与 `apply_screen_hide` 那处是一件事的两半 ✓）：
-    --     · 差集在这里**主动发** `visible=false` ✗（走 `_set_prop` ✓ 会**记账** ✓）
-    --     · 而"要显示"是靠属性循环发 `visible` ✓ —— 但它有账本：`last[k] == v` ⇒ **判"没变"就不发** ✗
-    --     · ⇒ ★★ 账本里还留着"上次发过 `true`"✗ 而控件**已被差集藏掉** ✗
-    --          ⇒ **再也不会发 `true`** ✗ ⇒ ★【永久丢失】✗✓
-    --   ⇒ ★ 所以：**凡是主动藏掉的 id，就把它名下所有规划节点的 `last.visible` 置 nil** ✓
-    --     ⇒ 下一帧"该显示"时账本认为"没发过"⇒ **重发 `true`** ✓✓
-    --   ★ 症状对应（用户实测 ✓）：退出重进第一关没用 ✗（同一条路）·
-    --     去一次别的关卡才行 ✓（切屏时 `clues` 重进 `seen` ⇒ 走"显示"那条路重发 ✓）
-    --   ⚠️ 键格式 = `id \1 父容器 \1 出现序号`（见 `node_key` ✓）⇒ 用前缀匹配 ✓
-    --     （与 `drop_props_of` 同一套写法 ✓ 不另造格式 ✓）
-    local function forget_visible(id)
-      if self._props == nil then return end
-      local pre = tostring(id) .. "\1"
-      for k, rec in pairs(self._props) do
-        if type(k) == "string" and k:sub(1, #pre) == pre and type(rec) == "table" then
-          rec.visible = nil
-        end
-      end
-    end
     for i = 1, #all do
       if not seen[all[i].id] and not stale_legacy(all[i].id) then
         self:_set_prop(adapter, all[i].id, "visible", false)
-        forget_visible(all[i].id)          -- ★ 藏了就忘掉"发过没有"⇒ 下次该显示时会重发 ✓
       end
     end
     -- ★ 上面只能藏住"当前这一关自己的布局里没有的"控件。
@@ -4246,54 +4055,12 @@ function Controller:render(adapter, force)
     end
   end
   -- 失败 ⇒ 记一次。返回 true = **还有额度，下一帧再试**；false = **认输，调用方该记账了**。
-  --
-  -- ★★★★★ 2026-10-05 **两种失败必须分开给额度** ✗✓（用户实测：**第一关渲染不齐、之后正常**）
-  --
-  --   为什么：真机日志（`日志_2026/10/05_22:18:35`）把区别指出来了 ——
-  --     · **第一遍进关**：`棋盘格子：25 / 25 存在（★ 本次新建 25 个，模板索引 1073741876）` ✗
-  --     · **之后任何一关**：`棋盘格子：25 / 25 存在（★ 本次新建 0 个，模板索引 nil）` ✓
-  --   ⇒ ★★ 只有"**本次新建**"的那一次，模板子控件（`wall.*` / `door.*` / `note` / `x`）
-  --      不是同一帧就绪 ✗ ⇒ `_apply_edges` 的 `self:sub()` 查不到 ⇒ 静默跳过 ✗
-  --      ⇒ 补发 3 帧后认输 ⇒ ★ **第一关的墙/门永远不亮** ✗（之后的关卡复用已就绪的实例 ✓）
-  --
-  --   ⇒ 所以判据是**两种完全不同的失败**：
-  --     ① ★ **控件本身不存在**（本关不建的 ~105 个 ✗）⇒ 必然永远失败 ⇒ **3 次就认输** ✓
-  --        ★ 这个数字**不能动** ✗ —— v066 真机实测过 10 ⇒ **加载慢十倍 + 切屏卡顿** ✓
-  --     ② ★ **控件在、只是它的模板子控件还没就绪** ✗ ⇒ ★ **它一定会就绪** ✓ ⇒ **值得多等一会儿** ✓
-  --        ★ 额度用**时间**（`self.now` ✓ 秒）而不是帧数 ✗ —— 帧率在不同机器上含义不同 ✓
-  --        ★ 而且**只在"控件存在"时才放宽** ✗ ⇒ 那 ~105 个不存在的控件仍走 3 次上限 ✓✓
-  --
-  --   ⚠️ 上限依然存在（`SUB_READY_SECONDS`）✗ ⇒ **不会变成每帧死循环** ✓
-  local SUB_READY_SECONDS = 2.5   -- ★ 等子控件就绪：约 2.5 秒（足够覆盖模板实例化 ✓ 且有限 ✓）
-  local function retry_more(id, key, why, exists)
+  local function retry_more(id, key, why)
     local rk = tostring(id) .. "\1" .. tostring(key)
     self._prop_retry = self._prop_retry or {}
-    -- ★★ 账本**形状不变** ✗ —— `self._prop_retry[rk]` 仍然是**数字**（次数）✓
-    --   ★ 首次失败的时刻**另存一张表** ✓（`self._prop_retry_t0`）
-    --   ⚠️ 为什么不把数字换成表 ✗：`tests/prop_ledger.lua` 断言的就是这个数字 ✓
-    --      第一版我改成了表 ⇒ 它立刻 13/0 → 11/2 ✗（**这就是退化的来源** ✓ 已改回 ✓）
     local n_try = (self._prop_retry[rk] or 0) + 1
     self._prop_retry[rk] = n_try
-    if n_try == 1 then
-      self._prop_retry_t0 = self._prop_retry_t0 or {}
-      self._prop_retry_t0[rk] = self.now or 0
-    end
-    -- ★ ① 控件不存在 ⇒ 老规矩：3 次认输 ✓（性能红线，不许放宽 ✗）
-    -- ★ ② **只有 `walls`/`doors`** 才配得上"等子控件" ✓✓ —— 见下
-    --   ⚠️ 第一版我写成"只要控件在就放宽" ✗ ⇒ `prop_ledger` 立刻 13/0 → 11/2 ✗✓
-    --     （`action.back` 也"存在 + 写失败" ✗ 但它的失败**不是**子控件没就绪 ✗
-    --       —— 它是**两个规划节点抢同一个控件** ✓ ⇒ 被放宽后每帧重发 2.5 秒 ✗）
-    --   ⇒ ★ **测试抓对了** ✓ ⇒ 收窄到**真正会"子控件晚一步就绪"的那两个键** ✓✓
-    --     ★ 依据：`Adapter:_apply_edges` 的 `missing_sub` 只出现在 `wall.*` / `door.*` ✓
-    --       （`engine_adapter_qianxing.lua:3670-3681`：取不到 `cell.<R>.<C>` 的
-    --        `wall.<side>` / `door.<side>` 子控件 ⇒ 返回 false ✓）
-    --     ★ 而 `label`/`bg` 之类走的是别的分支 ✓ 不在此列 ✓
-    if exists == true and (key == "walls" or key == "doors") then
-      local t0 = (self._prop_retry_t0 or {})[rk] or (self.now or 0)
-      if (self.now or 0) - t0 < SUB_READY_SECONDS then return true end
-    else
-      if n_try < PROP_RETRY then return true end
-    end
+    if n_try < PROP_RETRY then return true end
     -- ★ 认输也要留一句话：否则"这条属性到底补上没有"在日志里查不到 ——
     --   而这正是这一轮要回答的问题（第一次进关 vs 第二次进关的差别）。
     --   ⚠️ **不能每条都打**：那 ~105 个没建的控件的属性会一起走到这里 ⇒
@@ -4302,9 +4069,7 @@ function Controller:render(adapter, force)
     if self._prop_giveup_n <= 5 then
       self:_grid_log("prop_giveup:" .. rk,
         "属性补发 " .. n_try .. " 次仍未送达，已停止补发：`"
-        .. tostring(id) .. "." .. tostring(key) .. "`（" .. tostring(why) .. "）"
-        .. (exists == true and "　★ 注意：**控件是存在的** ✗ —— 这条属于「子控件一直没就绪」"
-            or "　（控件本身不存在，属正常）"))
+        .. tostring(id) .. "." .. tostring(key) .. "`（" .. tostring(why) .. "）")
     elseif self._prop_giveup_n == 6 then
       self:_grid_log("prop_giveup_more",
         "属性补发失败：已经列了前 5 条，后面的不再逐条打印"
@@ -4459,11 +4224,7 @@ function Controller:render(adapter, force)
             --     （按钮的 label 子控件没就绪 / 墙门的 wall.* 子控件取不到）。
             local why = (not exists) and "控件一直没找到（find 返回 nil）"
               or "控件在、但适配层说这次没写进去（子控件没就绪？）"
-            -- ★ 2026-10-05：**把 `exists` 传下去** ✗✓ —— `retry_more` 据此选额度：
-            --   · `exists == false` ⇒ 控件不在 ⇒ 老规矩 3 次认输 ✓（性能红线 ✗ 不放宽）
-            --   · `exists == true`  ⇒ 控件在、只是子控件没就绪 ✗ ⇒ **给它 2.5 秒等** ✓
-            --     ★ 这正是"第一次进关（格子本次新建）画得少、之后再进正常"的治法 ✓
-            if retry_more(n.id, k, why, exists) == false then
+            if retry_more(n.id, k, why) == false then
               last[k] = v          -- 认输：记账，免得每帧再看见它
             end
           end
@@ -4515,7 +4276,7 @@ function Controller:render(adapter, force)
         retry_clear(n.id, "__rect")
       elseif not rect_exists then
         last.__rect = { x = n.rect.x, y = n.rect.y, w = n.rect.w, h = n.rect.h }
-      elseif retry_more(n.id, "__rect", "位置没写进去（控件在，但句柄失效 / 位置被拒）", true) == false then
+      elseif retry_more(n.id, "__rect", "位置没写进去（控件在，但句柄失效 / 位置被拒）") == false then
         last.__rect = { x = n.rect.x, y = n.rect.y, w = n.rect.w, h = n.rect.h }
       end
     end

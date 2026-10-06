@@ -187,21 +187,6 @@ function Murdoku.start(level_id, opts)
   --     我为此改了三轮（`and/or` 陷阱、默认值、优先级）全是白费功夫。
   --   ⇒ **不要把力气花在"绕过主页"上，而是让测试真的走一遍主页流程**
   --     （`tools/sim/kit.mjs` 的 `enterLevel()`）。
-  -- ★★★★★ 2026-10-05 **这一处已【回滚】** ✗✓ —— 我上一版把构造时的 `screen` 强制成 `nil`，
-  --   结果★【打断了开局流程】✗：游戏一进来【直接就在第一关】✓（用户实测 ✓），
-  --   而不是「主页 → 选关 → 关卡」✗ —— 所以回滚 ✓。
-  --
-  --   为什么当时那么改（以及它治错了什么）：
-  --     · 症状：第一次进关时 `clues(vis=false)` ✗ ⇒ 线索区整片不显示 ✓
-  --     · 原因：`screen` 判错成 `"home"` ✗ ⇒ `apply_screen_hide` 的 HIDE 名单生效 ✓
-  --     · 我当时的改法：构造时不给 `screen` ✗ ⇒ `nil` = 【在关卡里】✗
-  --       ⇒ ★ 治好了线索区 ✓ 但把"开局该在主页"这件事【一起跳过了】✗✗
-  --   ⇒ ★ 教训：★ `screen` 只有【一个权威来源】✗ —— 谁真的切屏，谁才改它 ✓
-  --     ★ 构造参数【不该】替玩家决定"现在在哪一屏"✗（那是流程的事 ✓）
-  --     ★ 而"真的进了关卡 ⇒ screen = nil"这个兜底，**已经在下面两处**✓：
-  --        · `on_pick_level` 里 `id ~= level.id` 那支（`start_other` 之后 ✓）
-  --        · 同函数 `else` 那支（点的是当前这一关 ✓）
-  --       ⇒ ★ 两条进关路径都置了 `nil` ✓ ⇒ 线索区不会再被藏 ✓✓
   local want_screen = nil
   if opts.screen ~= nil then want_screen = opts.screen end
   controller = UIC.new(core, {
@@ -238,23 +223,6 @@ function Murdoku.start(level_id, opts)
       Murdoku.remember_level(id)
       if id ~= level.id then
         start_other(id)
-        -- ★★★★★ 2026-10-05 **重建出来的控制器必须【纠正屏幕状态】** ✗✓
-        --
-        --   症状（用户实测 + 两张截图 + 引擎侧体检读数 ✓）：
-        --     · 在关卡里点【别的】关卡卡片 ⇒ ★ 回到棋盘时【只剩棋盘】✗
-        --       线索区整片不见（`clues(vis=false)` 而 `clues.bg/grid(vis=true)` ✗）
-        --     · 退出重进没用 ✗；点过一次别的关卡【之后】才正常 ✓
-        --
-        --   为什么：`start_other(id)` 会**重建控制器** ✗ ⇒ 新控制器从
-        --     `UIC.new(..., { screen = want_screen })`（见上面 L190-196）拿到
-        --     ★ `screen = opts.screen` = **入口传的 `"home"`** ✗✓
-        --     ⇒ `apply_screen_hide(nodes, "home")` ⇒ HIDE 名单生效 ⇒
-        --       ★ `clues` 被藏 ✗（`clues.bg` / `clues.grid` 自己是对的 ✓ 但父级藏了 ✗）
-        --     ⇒ 而"进关卡后该显示"的那条路【永远走不到】✗（screen 一直是 "home" ✓）
-        --
-        --   ★ 所以这里必须补一句 —— 与下面"点的是当前这一关"那支（L228）**同一套写法** ✓
-        --     （"同一件事两处实现必然漂移"是本项目反复踩到的病 ⇒ 两支都要写 ✓）
-        if controller ~= nil then controller.screen = nil end
       else
         -- 点的是当前这一关：只是退出选关界面，不用重开
         controller.screen = nil
@@ -294,7 +262,10 @@ function Murdoku.start(level_id, opts)
       Murdoku.mark_cleared(level.id)
     end,
 
-    -- ★ 2026-10-07 退出菜单要的两个回调（adapter 只在这一层拿得到 ✓）
+    -- ★★★★★ 2026-10-07 **「退出菜单」四键要的两个回调** ✗✓
+    --   ★ 放在这一层的原因：`adapter` 只在这里拿得到 ✓（★ 控制器没有 ✓）
+    --   ★ 仅存档 = 留本关只落盘 ✓ · 存档并结算 = 落盘 + **发 `murdoku/settle`** ✓
+    --     ⇒ 服务端节点图收到后调【**结算关卡**】⇒ ★ **直接结束游戏** ✓
     on_save = function()
       Murdoku.save_now()
     end,
@@ -684,11 +655,7 @@ function Murdoku.on_start(level_id, opts)
     --     ③ 兜底：root 存在且已有 >3 个子控件
     local ready = false
     pcall(function()
-      -- ★ 2026-10-06 残留清理 ✗✓：★ 删掉 `"board"` 这个**死引用** ✓
-      --   ★ `board` 在真机与模拟器**都找不到** ✓（★ 两边日志原文：「`board` → **找不到控件**」✓）
-      --   ⇒ ★ 它在 OR 里**恒为假** ✗ ⇒ ★ 这一半是**纯噪音** ✓
-      --   ★ 真正起作用的是 `cell.1.1` ✓ ⇒ ★ 保留 ✓（★ 行为不变 ✓）
-      if adapter:find("cell.1.1") ~= nil then
+      if adapter:find("board") ~= nil or adapter:find("cell.1.1") ~= nil then
         ready = true
       elseif adapter:find("stage") ~= nil or adapter:find("home") ~= nil then
         ready = true
@@ -796,23 +763,11 @@ function Murdoku.on_update(dt)
     local ad = current.adapter
     print("[murdoku] ===== 开局诊断：屏幕上到底有什么（第 90 帧实测）=====")
     print("[murdoku]   controller.screen = " .. tostring(current.controller.screen))
-    -- ★★★★★ 2026-10-06 **名单已按真机实测修正** ✗✓
-    --
-    --   旧名单里有 7 个**根本不存在的名字** ✗（真机日志逐条报"找不到控件" ✓）：
-    --     `select.back` `select.title` `select.card.1` `select.card.2`
-    --     `select` `board` `action.undo`
-    --     ★ 而且 `select.card.2` 还**写了两遍** ✗
-    --   ⇒ ★ 诊断的意义是"发现名字对不上"✗ —— ★ 但它自己就带着一堆假名字 ✓
-    --     ⇒ ★★ 每帧刷 7 行"找不到"✗ ⇒ **真问题会被淹掉** ✓
-    --   ⇒ 改成真机确认存在的那些 ✓（★ 依 2026-10-05/06 的真机日志 ✓）：
     local ids = {
       "root", "home", "home.title", "home.select", "home.continue", "home.shop", "home.bag",
-      "selbar", "selbtn.1", "tpl-container",
-      "stage", "board.bg", "cell.1.1",
-      "topbar", "toolbar", "right",
-      "clues", "clues.bg", "clues.grid",
-      "hud.title", "hud.subtitle", "hud.moves", "hud.timer", "hud.progress",
-      "action.back",
+      "select.back", "select.title", "select.card.1", "select.card.2",
+      "select", "select.card.2",
+      "board", "cell.1.1", "topbar", "clues", "action.undo", "hud.title",
     }
     for i = 1, #ids do
       local id = ids[i]
@@ -984,13 +939,7 @@ function Murdoku.on_update(dt)
   if not Murdoku._ray_probe_done and (current.frames or 0) >= 100 then
     Murdoku._ray_probe_done = true
     local ad3 = current.adapter
-    -- ★★★★★ 2026-10-06 **名单按真机实测修正** ✗✓
-    --   旧的 7 个里 `select` / `intro` / `toast` / `modal` / `board` **都不存在** ✗
-    --   ⇒ ★ 每次刷 7 行「射线探针：X 找不到或不支持光标事件」✗
-    --     ★ 而 `root` / `home` **其实存在** ✓ 只是不支持光标事件 ✓
-    --     ⇒ ★★ 那句话把两种完全不同的情况混成一句 ✗ ⇒ 读起来像"控件没了" ✓
-    --   ⇒ 只探**真机确认存在**的容器 ✓（★ 依 2026-10-05/06 真机日志 ✓）
-    local probe_ids = { "root", "home", "stage", "clues", "topbar", "toolbar", "right", "board.bg" }
+    local probe_ids = { "root", "home", "select", "intro", "toast", "modal", "board" }
     for i = 1, #probe_ids do
       local pid = probe_ids[i]
       local c = nil
@@ -1111,12 +1060,7 @@ function Murdoku.on_update(dt)
                        "clickAudioId", "disableCursorEventPassthrough", "disableKeyEventPassthrough",
                        "isolateNavigation", "alpha", "index", "zIndex", "sortingOrder",
                        "enable", "enabled", "blockRaycast", "grayed", "isEnabled" }
-      -- ★★★★★ 2026-10-06 **名单按真机实测修正** ✗✓（旧名单里 3 个名字不存在 ✗：
-      --   `select.card.1` `select.back` `board` ⇒ ★ 每次都刷 3 行"树里没有这个名字" ✓
-      --   ⇒ ★ 这一段是「能点 vs 不能点」的对照组 ✗ ⇒ ★ 拿不存在的名字对照毫无意义 ✓）
-      local samples = { "home.select", "cell.1.1", "selbtn.1", "selbtn.2",
-                        "action.back", "hex.submit", "hit.submit",
-                        "clues.bg", "clues.grid", "tpl-container", "board.bg", "home" }
+      local samples = { "home.select", "select.card.1", "select.back", "cell.1.1", "selbtn.1", "selbtn.2", "board", "select", "home" }
       for s = 1, #samples do
         local id = samples[s]
         local c = map[id]
