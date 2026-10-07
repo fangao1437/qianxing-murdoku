@@ -1664,7 +1664,12 @@ end
 
 function Core:select_suspect(id)
   if id ~= nil and not self.piece_by_id[id] then return false end
-  if self.selected == id then self.selected = nil else self.selected = id end
+  -- ★★★★★ 2026-10-07 **用户选「甲」：同一个人再点 ⇒ 保持选中（不再反选取消）** ✗✓
+    --   ★ 真机现象 ✓：★ 预放置之后此人**仍处于选中** ✓ ⇒ 点他的卡片 ⇒ ★ 旧逻辑判"同一个人"⇒ **取消选中** ✗
+    --     ⇒ ★ 第一下"看起来没反应" ✓ 第二下才重新选中 ✓（★ 正是用户报的那条 ✓）
+    --   ★ 新规则 ✓：★ **点卡片 = 选中**（★ 幂等 ✓ 再点还是选中 ✓）
+    --     ★ **取消选中改由**：★ **点棋盘空白格**（★ 切 ✗ / 写笔记 ✓）或 ★ **成功放置后自动清** ✓
+    if self.selected ~= id then self.selected = id end
   if (self.mode == M.MODE_ERASE or self.mode == M.MODE_X) and self.selected then
     self.mode = M.MODE_PLACE
   end
