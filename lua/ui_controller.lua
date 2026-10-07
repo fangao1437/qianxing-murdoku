@@ -545,12 +545,6 @@ function Controller:do_place(r, c)
       .. "  笔记 " .. tostring(_notes_before) .. " ⇒ " .. tostring(_notes_after)
       .. "  放后选中=" .. tostring(core.selected) .. "  placed=" .. tostring(_n2 == 1))
   end
-  -- ★★★★★ 2026-10-07 **正式放置后【保留选中】** ✗✓（用户新设计要求 ✓）
-  --   ★ 原设计：正式放置 ⇒ 取消选中 ✓ ⇒ ★ 结果"必须重新选人才能继续操作" ✗
-  --   ★ 用户新要求 ✓：★「★ **选中之后就能做所有操作**」✓ ⇒ ★ **不再取消选中** ✓✓
-  --   ★ 做法 ✓：★ 核心 `hold_cell` 仍按原语义清 `selected` ✓ —— ★ 这里**恢复**它 ✓
-  --     （★ 好处：★ **不动核心** ✓ 核心那套"放置后不能再打笔记"等规则照旧 ✓）
-  if who ~= nil and core.selected == nil then core.selected = who end
   -- ★★★★★ 2026-10-07 **正式放置后【撤掉线索卡的选中高亮】** ✗✓
   --   ★ 真机证据 ✓：数据层已经清了 ✓（`放后选中=nil` ✓）★ 但画面上的高亮还留着 ✗
   --     ⇒ ★ 看起来就是"没取消选中" ✓
@@ -558,7 +552,7 @@ function Controller:do_place(r, c)
   --     而 `selected` 被清时**没人撤那个色** ✗ ⇒ ★ 这里把两套状态一起清 ✓
   --   ⚠️ 只在**正式放置**里做 ✓（★ 预放置按设计**保留选中** ✓ 高亮该留着 ✓）
   local _pi, _pix, _ppx = self._grid_focus_item, self._grid_focus_idx, self._grid_focus_pos
-  if false and _pi ~= nil then   -- ★ 新设计保留选中 ⇒ 高亮不再撤 ✓
+  if _pi ~= nil then
     local _pc = nil
     pcall(function() _pc = self:_grid_item_child_cached(_pi, _pix or 0, _ppx or 0, "backrop1") end)
     if _pc ~= nil and self._grid_focus_orig ~= nil then
@@ -566,7 +560,7 @@ function Controller:do_place(r, c)
     end
     self._grid_focus_item, self._grid_focus_orig = nil, nil
   end
-  -- self.focused_clue = nil   -- ★ 同上：保留 ✓
+  self.focused_clue = nil
   self.dirty = true
   if ok then
     self:fx(self:cell_id(r, c), M.EFFECTS.PLACE)
