@@ -4570,9 +4570,16 @@ function Adapter:set_property(id, key, value, nkey)
         --     ⇒ ★ 字被顶到**格子顶部** ✓（★ 用户：★"note 正常填不到格子顶部，文本框在格子中间"✓）
         --   ⇒ ★ 现在：★ **先读 note 自己的尺寸** ✓ **非 0 就【一个字都不动】** ✓
         --     ★ 只有"运行时实例尺寸为 0"（模板子控件的经典坑 ✓ 见 L745~752 ✓）才兜个底 ✓
+        -- ★★★★★ 2026-10-07 **恒定用"格子中间一条"** ✗✓（真机对比得出的结论 ✓）
+        --   ★ 实测对比 ✓：
+        --     · 存档给的 `note` 框 = **100×30** ⇒ ★ **字不显示** ✗（同名日志 `诊断NOTESZ：100.0x30.0`✓）
+        --     · 我把框撑成**整格 108×108** ⇒ ★ **字出现了** ✓（上一轮截图 ✓）
+        --   ⇒ ★ 这个控件【框小/位置偏就不画】✓
+        --   ★ 现在：★ **无条件设成"格子宽 × 格子高÷3"，位置 (0,0)** ✓
+        --     ⇒ ★ 框 = 格子中间一条 ✓（★ 正合用户说的"文本框在格子中间"✓）★ 且尺寸够大使文字必现 ✓
         local nw, nh = nil, nil
         pcall(function() nw, nh = c:GetSizeDelta() end)
-        if nw == nil or nh == nil or nw <= 1 or nh <= 1 then
+        if true then
           local fw, fh = nil, nil
           pcall(function()
             local f = self:sub(id, "face")
@@ -4582,11 +4589,12 @@ function Adapter:set_property(id, key, value, nkey)
             -- ★ 2026-10-07 **改成"中间窄条"** ✗✓（用户：★ note 的文本框在格子中间 ✓ 填不到顶部 ✓）
             --   上一版撑成整个格子 ⇒ 字被顶到顶部 ✗ ⇒ 现在只在"运行时尺寸为 0"时给一条**中间的条** ✓
             --     ★ 宽度=格子宽 ✓ 高度=格子的 **1/3** ✓ 位置 (0,0) ✓（★ 模板本来就是中间一条 ✓）
-            if c.SetSizeDelta then pcall(function() c:SetSizeDelta(fw, math.max(8, fh / 3)) end) end
+            if c.SetSizeDelta then pcall(function() c:SetSizeDelta(fw, math.max(30, fh / 3)) end) end
             if c.SetAnchoredPosition then pcall(function() c:SetAnchoredPosition(0, 0) end) end
             if (self._diag_notesize or 0) < 3 then
               self._diag_notesize = (self._diag_notesize or 0) + 1
-              print("[murdoku] ★ 诊断NOTESZ：note 自身尺寸=0 ⇒ 兜底套用 face = " .. tostring(fw) .. "x" .. tostring(fh))
+              print("[murdoku] ★ 诊断NOTESZ：设成中间条 = " .. tostring(fw) .. "x" .. tostring(math.max(30, fh / 3))
+                .. "（原尺寸 " .. tostring(nw) .. "x" .. tostring(nh) .. "）")
             end
           end
         elseif (self._diag_notesize or 0) < 3 then
