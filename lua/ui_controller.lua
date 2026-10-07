@@ -621,6 +621,14 @@ function Controller:on_cell_click(r, c)
   end
   local core = self.core
   self.now = self.now or 0
+  -- ★★★★★ 2026-10-07 **吃掉"点线索卡"带出来的那一次格子点击** ✗✓（治穿透 ✓）
+  --   ★ 网格视窗不消费点击 ⇒ ★ 同一次指针事件**先给列表项、再给棋盘** ✓
+  --     ⇒ ★ 点卡片就会顺手点一下格子 ✓（真机日志两轮都可见 ✓）
+  --   ★ 这里用"刚点过卡片"的时间戳挡掉 ✓ 窗口 0.35 秒（= 双击窗口 ✓）
+  --     ⚠️ 只挡**单击**这一路 ✓ 双击/长按走 down-up 判定，不经过这里 ✓ ⇒ 不受影响 ✓
+  if self._grid_click_t ~= nil and (self.now or 0) - self._grid_click_t <= 0.35 then
+    return
+  end
   local occupied = core.grid[r][c] ~= nil
   local mode = core.mode
 
