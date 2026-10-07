@@ -4118,6 +4118,26 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
       .. "  placed=" .. tostring(_placed_now) .. "  找到gray=" .. tostring(_cgray ~= nil)
       .. "  ★ id=" .. tostring(_pid) .. "  portrait=" .. tostring(t_portrait))
   end
+  -- ★★★★★ 2026-10-07 **填充时补画"聚焦高亮"** ✗✓（★ 真因 ✓ 用户纠正 ✓）
+  --   ★ 现象 ✓：★ **双击预放置【不取消选中】却把高亮弄没了** ✗ ⇒ ★ "选中着但没有高亮" ✓
+  --   ★ 机制 ✓：★ 高亮是我在**点击时直接染**上去的（`backrop1.imageColor` ✓）
+  --     ★ 而放置后我加了"**强制重填**"（清 `_grid_sig` ✓ 提交 363 ✓）
+  --       ⇒ ★ **重填会把 `backrop1` 写回默认色 ⇒ 高亮被冲掉** ✗✗
+  --         ★（★ 正式放置看不出来 ⇒ 因为**选中被清了** ✓ 高亮没了也不违和 ✓）
+  --   ★ 修法 ✓：★ **填充时按 `focused_clue` 补画一次** ✓（★ 与灰白那套同一处 ✓ 值变了才写 ✓）
+  --     ⇒ ★ **重填后高亮仍在** ✓ ⇒ ★ "选中 = 有高亮" 恒成立 ✓✓
+  do
+    local _cbp2 = self:_grid_item_child_cached(item, index, pos, "backrop1")
+    if _cbp2 ~= nil then
+      local _want = 4294967295                                  -- 默认白（未聚焦 ✓）
+      if self.focused_clue == pos then _want = 4294956107 end    -- 聚焦 = 暖金 ✓
+      local _rg2 = self:_grid_item_rec(item, index)
+      if _rg2 ~= nil and _rg2.tint ~= _want then
+        _rg2.tint = _want
+        pcall(function() _cbp2.imageColor = _want end)
+      end
+    end
+  end
   if _cgray ~= nil then
     -- ★★★★★ 2026-10-07 **灰白图必须【不参与射线】** ✗✓（"预放置也像被取消选中"的真因 ✓）
     --   ★ 真机反馈 ✓：★ 灰白出来之后 ⇒ ★「★ **预放置也会取消选中，且要双击才能重新选中**」✗
