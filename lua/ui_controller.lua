@@ -1766,19 +1766,7 @@ function Controller:build_layout()
   push({ id = "stage", kind = "container", parent = "root", rect = rect_of(L.board), style = "stage" })
 
   -- ===== 顶部工具条 =====
-  -- ★★★★★ 2026-10-07 **触摸遮挡层 `xxx`（用户在编辑器里加的全屏容器）** ✗✓
-  --   ★ 背景（★ 移动端实测反馈 ✓）：★「★ **屏幕上每一点都可以拖动** ⇒ 3D 角色跟着动」✓
-  --     ⇒ ★ 键盘隔离（`disableKeyEventPassthrough` ✓）**管不到触摸** ✗
-  --   ★ 用户在编辑器里做的 ✓：★ **在图层【最底部】加了一个容器节点 `xxx`**
-  --     ★ **并打开了「屏蔽按键」+「屏蔽光标事件」两个开关** ✓✓
-  --   ⇒ ★ 脚本这边只需保证它**不被隐藏** ✓ ——
-  --     ★ 因为 `hide_unlisted` 会把 `MANAGED` 容器（含 `root` ✓）里**不在规划中的直接子控件**藏掉 ✗
-  --     ⇒ ★ **把它写进规划 = 加进白名单** ✓ 这样每帧都带 `visible = true` ✓✓
-  --   ★ 几何给**全屏** ✓（★ 遮挡层必须盖满屏 ✓）
-  --   ⚠️ 控件名是用户起的 `xxx` ✓ 名字变了就要改这里 ✓（★ 想改名告诉我 ✓ 这是**存档侧**的事 ✓ 归我 ✓）
-  push({ id = "xxx", kind = "container", parent = "root",
-         rect = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height },
-         visible = true })
+  -- ★ 2026-10-07 **已退回**：`xxx` 白名单（脚本隔离方案 ✓ 用户要求撤回 ✓）
   push({ id = "topbar", kind = "container", parent = "root", rect = rect_of(L.topbar), style = "topbar" })
   -- 工具条容器：与 topbar 同区（视觉上仍是一条顶栏），只是树里分开，HUD 文字不再和按钮混杂。
   push({ id = "toolbar", kind = "container", parent = "root", rect = rect_of(L.topbar), style = "toolbar" })
