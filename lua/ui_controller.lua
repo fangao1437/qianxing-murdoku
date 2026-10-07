@@ -3992,28 +3992,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
       .. "（模板 1073742421 里应叫 `clue.1.who` / `clue.1.what` / `clue.1.letter`）")
   end
 
-  -- ★★★★★ 2026-10-07 **网格模式的"选中视觉"** ✗✓（用户实测：点线索卡"选中不了"✓）
-  --
-  --   真机证据：点击**完全通**（`★ 诊断GRID：列表项被点到了 ✓ GetItemIndex=2/3/4/5/6`）✓
-  --     `focus_clue` 分支也跑了 ✓ `self.focused_clue` 也被设上了 ✓
-  --   ★ 但**没有任何可见反馈** ✗ —— 原因：`focused_clue` 的可见用途只有两处，
-  --     都是给**老卡片 `clue.N`** 的（滚动定位 + `style="clue.focus"`），
-  --     而网格模式下老卡片**整段不进规划**（控件不存在）⇒ 点了等于没反应 ✓
-  --
-  --   ⇒ 这里给**列表项自己**一个可见状态：聚焦的那条把**描边层 `backrop1`** 染色。
-  --     · 用 `imageColor`（官方素材路线支持的接口 ✓ 见 docs/官方素材方案-脚本一体化.md ✓）
-  --     · **只在这一项"聚焦状态变了"时写一次** ⇒ 稳态零成本（与本函数其它写入同一套规矩）
-  --     · 全程 `pcall` ⇒ 染不上色只丢"高亮"，不会打断引擎的滚动
-  local c_bp = self:_grid_item_child_cached(item, index, pos, "backrop1")
-  if c_bp ~= nil then
-    local want_focus = (self.focused_clue == pos)
-    local rec_focus = self:_grid_item_rec(item, index)
-    if rec_focus ~= nil and rec_focus.focus ~= want_focus then
-      rec_focus.focus = want_focus
-      local col = want_focus and 4294956107 or 4294967295   -- ★ 聚焦=暖金 / 常态=白（乘算着色）
-      pcall(function() c_bp.imageColor = col end)
-    end
-  end
+
   -- 点击 → 聚焦（未验证能力，全程 pcall + 只报一次结论）
   self:_grid_bind_item_click(adapter, grid, item)
       self._grid_bind_n = (self._grid_bind_n or 0) + 1
@@ -4089,7 +4068,37 @@ function Controller:_on_grid_item_click(adapter, grid, item)
   -- ★ 走**和老卡片完全同一条**输入通路：`adapter.on_input` 是 main.lua 接的
   --   （`controller:on_input(event)` + 立刻渲染）⇒ 点列表项和点 `clue.N` 的后续行为
   --   （焦点切换、CLUE_IN 特效、重绘）一模一样，不会出现"两套焦点逻辑"。
-  local ev = { action = "focus_clue", index = pos, phase = "click" }
+    -- ★★★★★ 2026-10-07 **网格选中视觉（只染聚焦那条）** ✗✓
+  --   上一版两个错（用户实测：★"没有点击高亮，但描边更亮了"✓）：
+  --     ① 给**未聚焦**的项也写了白色 ⇒ **整排描边变亮** ✗
+  --     ② 染色写在**填充回调**里 ⇒ 而填充只在"数据变化/滚动"时跑 ⇒ **点击后不重填 ⇒ 高亮永不出现** ✗
+  --   ⇒ 现在：★ **在点击处直接染** ✓ **只染聚焦那条** ✓ **换项/取消时恢复原色** ✓
+  local function _bp_get(it, ix, px)
+    local c2 = nil
+    pcall(function() c2 = self:_grid_item_child_cached(it, ix, px, "backrop1") end)
+    return c2
+  end
+  local turning_on = (self.focused_clue ~= pos)
+  local prev_item, prev_idx, prev_pos = self._grid_focus_item, self._grid_focus_idx, self._grid_focus_pos
+  if prev_item ~= nil then
+    local pc = _bp_get(prev_item, prev_idx or 0, prev_pos or 0)
+    if pc ~= nil then
+      local oc = self._grid_focus_orig
+      if oc ~= nil then pcall(function() pc.imageColor = oc end) end
+    end
+    self._grid_focus_item, self._grid_focus_orig = nil, nil
+  end
+  if turning_on then
+    local c2 = _bp_get(item, idx, pos)
+    if c2 ~= nil then
+      local cur = nil
+      pcall(function() cur = c2.imageColor end)
+      self._grid_focus_orig = cur
+      self._grid_focus_item, self._grid_focus_idx, self._grid_focus_pos = item, idx, pos
+      pcall(function() c2.imageColor = 4294956107 end)   -- ★ 暖金（乘算着色）
+    end
+  end
+local ev = { action = "focus_clue", index = pos, phase = "click" }
   if adapter ~= nil and type(adapter.on_input) == "function" then
     adapter.on_input(ev)
   else
