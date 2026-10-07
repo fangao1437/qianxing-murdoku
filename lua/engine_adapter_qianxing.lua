@@ -4550,6 +4550,28 @@ function Adapter:set_property(id, key, value, nkey)
       --     ⇒ ★ 差的正是 **`active` 这一层** ✓✓
       if txt ~= "" then
         if c.SetActive then pcall(function() c:SetActive(true) end) end
+        -- ★★★★★ 2026-10-07 **给笔记显式设尺寸/位置** ✗✓ —— "看不见"的真正原因 ✓
+        --   ★ 项目自己的注释（本文件 L745~752）写着**同一个坑** ✓：
+        --     「★ **格子模板建出来的 `face` 默认尺寸是 0** ⇒ 图设上了、`visible=true`，
+        --       ★ **画面上什么都没有**」✓✓ ⇒ 所以 `_cells_paint` 额外做了两件事：
+        --       `face:SetSizeDelta(size)` + `face:SetAnchoredPosition(0,0)` ✓
+        --   ★ 笔记是**同一个模板里的子控件** ⇒ **同一个病** ✓ ——
+        --     ★ 编辑器里看着有框 ✓ 但**运行时实例默认尺寸 0** ✓ ⇒ 36 号字被裁光 ✓
+        --   ⇒ ★ 照 `face` 办 ✓：★ 取 **`face` 已经设好的尺寸** ✓ 原样套给 `note` ✓
+        --     （★ `face` 的尺寸由 `_cells_paint` 每帧设成格子大小 ✓ ⇒ 当基准最稳 ✓）
+        local fw, fh = nil, nil
+        pcall(function()
+          local f = self:sub(id, "face")
+          if f ~= nil then fw, fh = f:GetSizeDelta() end
+        end)
+        if fw ~= nil and fh ~= nil and fw > 1 and fh > 1 then
+          if c.SetSizeDelta then pcall(function() c:SetSizeDelta(fw, fh) end) end
+          if c.SetAnchoredPosition then pcall(function() c:SetAnchoredPosition(0, 0) end) end
+          if (self._diag_notesize or 0) < 3 then
+            self._diag_notesize = (self._diag_notesize or 0) + 1
+            print("[murdoku] ★ 诊断NOTESZ：笔记尺寸套用 face = " .. tostring(fw) .. "x" .. tostring(fh))
+          end
+        end
       end
       -- ★★★★★ 2026-10-07 **把笔记提到最上层** ✗✓ —— 这是"字母不显示"的最后一环 ✓
       --   真机探针（全对 ✓）：★ `诊断NOTEV：写入=V  回读text=V  visible=true  fontSize=36`
