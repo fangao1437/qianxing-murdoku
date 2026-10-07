@@ -4109,6 +4109,19 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
       end
     end
   end
+  -- ★ 2026-10-07 **"填的是谁"诊断**（★ 找"第一行上方的幽灵内容" ✓ 最多 14 条 ✓）
+  --   ★ 要弄清三件事 ✓：
+  --     ① ★ 这一项**运行时叫什么名**（★ 是模板克隆 `clue` ✓ 还是**残留的旧卡 `clue.N`** ✗）
+  --     ② ★ 它的 index / pos 是多少 ✓（★ 越界就该是空白 ✓）
+  --     ③ ★ 它挂在谁下面 ✓（★ `clues` 容器 ✓ 还是别处 ✓）
+  if (self._fill_log or 0) < 14 then
+    self._fill_log = (self._fill_log + 1)
+    local _nm, _pn = "?", "?"
+    pcall(function() _nm = tostring(item.name) end)
+    pcall(function() local p = item.parent; _pn = tostring(p and p.name) end)
+    print("[murdoku] ★ 填写诊断：index=" .. tostring(index) .. " pos=" .. tostring(pos)
+      .. " 项名=" .. _nm .. " 父=" .. _pn .. " 文本=" .. tostring(cl.what))
+  end
   local t_who, t_what, t_letter = cl.who, cl.what, cl.letter
   -- ★★★★★ 2026-10-07 **已正式放置 ⇒ 卡片盖一层灰白** ✗✓（用户新功能 ✓ 模板侧已加控件 `gray` ✓）
   --   ★ 分工（用户定的 ✓ 也是"能走控件就不走脚本"✓）：
