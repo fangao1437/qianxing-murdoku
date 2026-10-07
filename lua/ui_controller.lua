@@ -4286,7 +4286,10 @@ function Controller:_on_grid_item_click(adapter, grid, item)
   if (self._clk_log or 0) < 12 then
     self._clk_log = (self._clk_log or 0) + 1
     local _i, _rt, _vis = "?", "?", "?"
-    pcall(function() _i = tostring(item:GetItemIndex()) end)
+    -- ★ 2026-10-07 修读数：★ `GetItemIndex` 是**网格**的方法（★ 不是列表项自己的 ✓）
+    --   ★ 真机证据 ✓：★ 上一版打出 `index=?` ✓ ⇒ ★ 我调错对象了 ✓
+    pcall(function() _i = tostring(grid:GetItemIndex(item)) end)
+    if _i == "?" then pcall(function() _i = tostring(item:GetItemIndex()) end) end
     local _g = nil
     pcall(function() _g = self:_grid_item_child_cached(item, nil, 0, "gray") end)
     if _g ~= nil then
