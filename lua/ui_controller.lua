@@ -545,6 +545,23 @@ function Controller:do_place(r, c)
       .. "  笔记 " .. tostring(_notes_before) .. " ⇒ " .. tostring(_notes_after)
       .. "  放后选中=" .. tostring(core.selected) .. "  placed=" .. tostring(_n2 == 1))
   end
+  -- ★★★★★ 2026-10-07 **正式放置后【撤掉线索卡的选中高亮】** ✗✓
+  --   ★ 真机证据 ✓：数据层已经清了 ✓（`放后选中=nil` ✓）★ 但画面上的高亮还留着 ✗
+  --     ⇒ ★ 看起来就是"没取消选中" ✓
+  --   ★ 原因 ✓：★ 高亮是我在点卡片时**手动染**上去的（`_grid_focus_*`）✓
+  --     而 `selected` 被清时**没人撤那个色** ✗ ⇒ ★ 这里把两套状态一起清 ✓
+  --   ⚠️ 只在**正式放置**里做 ✓（★ 预放置按设计**保留选中** ✓ 高亮该留着 ✓）
+  local _pi, _pix, _ppx = self._grid_focus_item, self._grid_focus_idx, self._grid_focus_pos
+  if _pi ~= nil then
+    local _pc = nil
+    pcall(function() _pc = self:_grid_item_child_cached(_pi, _pix or 0, _ppx or 0, "backrop1") end)
+    if _pc ~= nil and self._grid_focus_orig ~= nil then
+      pcall(function() _pc.imageColor = self._grid_focus_orig end)
+    end
+    self._grid_focus_item, self._grid_focus_orig = nil, nil
+  end
+  self.focused_clue = nil
+  self.dirty = true
   if ok then
     self:fx(self:cell_id(r, c), M.EFFECTS.PLACE)
     if self.opts.on_place then self.opts.on_place(who, r, c) end
