@@ -664,7 +664,8 @@ function Controller:on_cell_click(r, c)
   --   ★★★ 双击（预放置）**不清除笔记** ✓ 长按（正式放置）**清除同名笔记** ✓
   --      —— 这两条核心本来就对（`pre_place` = clear_notes false ✓ `hold_cell` = clear_notes true ✓）
   local _saved_mode = core.mode
-  pcall(function() core:set_mode("note") end)
+  -- ★ 只在【空格子】上切到 note ⇒ 已放置的格子仍旧"拿起" ✓（selftest 三条断言守着 ✓）
+  if not occupied then pcall(function() core:set_mode("note") end) end
   local ok, why = core:tap_cell(r, c)
   pcall(function() core:set_mode(_saved_mode) end)
   if ok then
