@@ -666,6 +666,26 @@ function Controller:on_cell_click(r, c)
   local _saved_mode = core.mode
   -- ★ 只在【空格子】上切到 note ⇒ 已放置的格子仍旧"拿起" ✓（selftest 三条断言守着 ✓）
   if not occupied then pcall(function() core:set_mode("note") end) end
+  -- ★ 2026-10-07 一次性诊断：单击到底把笔记写进核心了吗（★ 写在单击现场 ✓ 不走 flush ✓）
+  if (self._diag_tap2 or 0) < 6 then
+    self._diag_tap2 = (self._diag_tap2 or 0) + 1
+    local nt, sel = "?", "?"
+    pcall(function()
+      sel = tostring(core.selected)
+      local row = core.notes and core.notes[r]
+      local celln = row and row[c]
+      if type(celln) == "table" then
+        local ks = {}
+        for k, v in pairs(celln) do if v then ks[#ks + 1] = tostring(k) end end
+        nt = "{" .. table.concat(ks, ",") .. "}"
+      else
+        nt = tostring(celln)
+      end
+    end)
+    print("[murdoku] ★ 诊断NOTE2：单击(" .. tostring(r) .. "," .. tostring(c) .. ")  occupied="
+      .. tostring(occupied) .. "  selected=" .. sel .. "  返回 ok=" .. tostring(ok)
+      .. " why=" .. tostring(why) .. "  该格笔记=" .. nt)
+  end
   local ok, why = core:tap_cell(r, c)
   pcall(function() core:set_mode(_saved_mode) end)
   if ok then
