@@ -2160,8 +2160,14 @@ function Adapter:ensure_cells(rows, cols)
           end
         end
         local note = self:sub(id, "note")
-        if note ~= nil and note.SetSizeDelta then
-          pcall(function() note:SetSizeDelta(math.max(8, cell_size - 8), math.max(8, math.floor(cell_size * 0.28))) end)
+        -- ★★★★★ 2026-10-07 **这里就是"谁把 note 改成 100×30"的元凶** ✗✓（用户怀疑对了 ✓）
+    --   ★ 原式：`math.max(8, cell_size - 8)` × `math.max(8, math.floor(cell_size * 0.28))`
+    --     ⇒ ★ `cell_size = 108` ⇒ **100 × 30** ✓✓ —— ★ 与真机探针读到的 `100.0x30.0` 一字不差 ✓
+    --   ★ 而 24 号字的**行高 ≈ 36** ⇒ ★ **30 高装不下一行 ⇒ 整行被裁 ⇒ 一个字都不画** ✓
+    --     ⇒ ★ 这就是"编辑器改了也不生效、字母时有时无"的**真正机制** ✓（★ 不是引擎默认 ✓）
+    --   ★ 现在：★ 高改成 `max(40, cell_size × 0.40)` ⇒ ★ `108` 时 = **43** ✓ 一行稳稳装下 ✓
+    if note ~= nil and note.SetSizeDelta then
+          pcall(function() note:SetSizeDelta(math.max(8, cell_size - 8), math.max(40, math.floor(cell_size * 0.40))) end)
           if note.SetAnchoredPosition then pcall(function() note:SetAnchoredPosition(0, 0) end) end
         end
       end
