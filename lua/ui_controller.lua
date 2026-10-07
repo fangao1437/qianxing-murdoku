@@ -3992,6 +3992,28 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
       .. "（模板 1073742421 里应叫 `clue.1.who` / `clue.1.what` / `clue.1.letter`）")
   end
 
+  -- ★★★★★ 2026-10-07 **网格模式的"选中视觉"** ✗✓（用户实测：点线索卡"选中不了"✓）
+  --
+  --   真机证据：点击**完全通**（`★ 诊断GRID：列表项被点到了 ✓ GetItemIndex=2/3/4/5/6`）✓
+  --     `focus_clue` 分支也跑了 ✓ `self.focused_clue` 也被设上了 ✓
+  --   ★ 但**没有任何可见反馈** ✗ —— 原因：`focused_clue` 的可见用途只有两处，
+  --     都是给**老卡片 `clue.N`** 的（滚动定位 + `style="clue.focus"`），
+  --     而网格模式下老卡片**整段不进规划**（控件不存在）⇒ 点了等于没反应 ✓
+  --
+  --   ⇒ 这里给**列表项自己**一个可见状态：聚焦的那条把**描边层 `backrop1`** 染色。
+  --     · 用 `imageColor`（官方素材路线支持的接口 ✓ 见 docs/官方素材方案-脚本一体化.md ✓）
+  --     · **只在这一项"聚焦状态变了"时写一次** ⇒ 稳态零成本（与本函数其它写入同一套规矩）
+  --     · 全程 `pcall` ⇒ 染不上色只丢"高亮"，不会打断引擎的滚动
+  local c_bp = self:_grid_item_child_cached(item, index, pos, "backrop1")
+  if c_bp ~= nil then
+    local want_focus = (self.focused_clue == pos)
+    local rec_focus = self:_grid_item_rec(item, index)
+    if rec_focus ~= nil and rec_focus.focus ~= want_focus then
+      rec_focus.focus = want_focus
+      local col = want_focus and 4294956107 or 4294967295   -- ★ 聚焦=暖金 / 常态=白（乘算着色）
+      pcall(function() c_bp.imageColor = col end)
+    end
+  end
   -- 点击 → 聚焦（未验证能力，全程 pcall + 只报一次结论）
   self:_grid_bind_item_click(adapter, grid, item)
       self._grid_bind_n = (self._grid_bind_n or 0) + 1
