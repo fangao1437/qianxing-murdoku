@@ -4069,6 +4069,13 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   local _placed_now = (cl.who ~= nil) and self.core ~= nil and self.core.placed ~= nil
     and self.core.placed[cl.who] == true
   local _cgray = self:_grid_item_child_cached(item, index, pos, "gray")
+  -- ★ 2026-10-07 一次性诊断：★ "灰白没出现"到底是【没找到 `gray`】还是【placed 判错】✓
+  --   ★ 真机反馈 ✓：★ 颜色在编辑器里都对 ✓ 但**没有卡变灰** ⇒ ★ 说明**脚本这侧没生效** ✓
+  if (self._gray_log or 0) < 4 then
+    self._gray_log = (self._gray_log or 0) + 1
+    print("[murdoku] ★ 灰白诊断：pos=" .. tostring(pos) .. "  who=" .. tostring(cl.who)
+      .. "  placed=" .. tostring(_placed_now) .. "  找到gray=" .. tostring(_cgray ~= nil))
+  end
   if _cgray ~= nil then
     local _rg = self:_grid_item_rec(item, index)
     if _rg ~= nil and _rg.gray ~= _placed_now then
