@@ -1,4 +1,5 @@
 --[[----------------------------------------------------------------------------
+local _silent = function() end   -- ★ 2026-10-07 临时探针已「收声」（保留代码 ⇒ 零语法风险 ✓ 需要时一行改回 print ✓）
   ui_controller.lua —— 操作框架层（页面布局 + 交互状态机 + 特效指令）v0.3.0
 
   交互模型照 murdoku 实证规格：
@@ -541,7 +542,7 @@ function Controller:do_place(r, c)
       end end
     end)
     if (_sel_before ~= nil) and core.placed and core.placed[_sel_before] then _n2 = 1 end
-    print("[murdoku] ★ 放置分辨：走的=【正式放置 hold_cell】 人=" .. tostring(_sel_before)
+    _silent("[murdoku] ★ 放置分辨：走的=【正式放置 hold_cell】 人=" .. tostring(_sel_before)
       .. "  笔记 " .. tostring(_notes_before) .. " ⇒ " .. tostring(_notes_after)
       .. "  放后选中=" .. tostring(core.selected) .. "  placed=" .. tostring(_n2 == 1))
   end
@@ -587,7 +588,7 @@ function Controller:do_pre_place(r, c)
   local _sel_b2 = core.selected
   local ok, why = core:pre_place(r, c)
   if ok then
-    print("[murdoku] ★ 放置分辨：走的=【预放置 pre_place】 人=" .. tostring(_sel_b2)
+    _silent("[murdoku] ★ 放置分辨：走的=【预放置 pre_place】 人=" .. tostring(_sel_b2)
       .. "  放后选中=" .. tostring(core.selected) .. "（★ 应仍是 " .. tostring(_sel_b2) .. " ✓）")
   end
   if ok then
@@ -620,7 +621,7 @@ function Controller:on_cell_up(r, c, x, y)
     if dx > TAP_MOVE_TOLERANCE or dy > TAP_MOVE_TOLERANCE then return false end
   end
   local ok = self:do_place(r, c)
-  print("[murdoku] ★ 放置分辨：抬起被判定为【长按】✓ 时长=" .. string.format("%.2f", dt))
+  _silent("[murdoku] ★ 放置分辨：抬起被判定为【长按】✓ 时长=" .. string.format("%.2f", dt))
   if ok then
     self._suppress_click = true     -- 紧跟着的那个 CursorClick 不要重复处理
   end
@@ -731,7 +732,7 @@ function Controller:on_cell_click(r, c)
         nt = tostring(celln)
       end
     end)
-    print("[murdoku] ★ 诊断NOTE2：单击(" .. tostring(r) .. "," .. tostring(c) .. ")  occupied="
+    _silent("[murdoku] ★ 诊断NOTE2：单击(" .. tostring(r) .. "," .. tostring(c) .. ")  occupied="
       .. tostring(occupied) .. "  selected=" .. sel .. "  返回 ok=" .. tostring(ok)
       .. " why=" .. tostring(why) .. "  该格笔记=" .. nt)
   end
@@ -4129,7 +4130,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   -- 点击 → 聚焦（未验证能力，全程 pcall + 只报一次结论）
   self:_grid_bind_item_click(adapter, grid, item)
       self._grid_bind_n = (self._grid_bind_n or 0) + 1
-      if self._grid_bind_n == 1 then print("[murdoku] ★ 诊断GRID：正在给列表项绑点击（第 1 个）") end
+      if self._grid_bind_n == 1 then _silent("[murdoku] ★ 诊断GRID：正在给列表项绑点击（第 1 个）") end
 end
 
 -- 给列表项挂点击。★ 列表项是**复用**的：同一个控件会先后代表不同线索 ⇒
@@ -4141,7 +4142,7 @@ function Controller:_grid_bind_item_click(adapter, grid, item)
       self._grid_bind_n = 0
       local nm2 = "?"
       pcall(function() nm2 = tostring(item.name) end)
-      print("[murdoku] ★ 诊断GRID：列表项【不支持光标事件】⇒ 点击绑不上！item=" .. nm2 .. "（AddCursorEventListener=" .. tostring(item ~= nil and item.AddCursorEventListener ~= nil) .. "）")
+      _silent("[murdoku] ★ 诊断GRID：列表项【不支持光标事件】⇒ 点击绑不上！item=" .. nm2 .. "（AddCursorEventListener=" .. tostring(item ~= nil and item.AddCursorEventListener ~= nil) .. "）")
     end
     return
   end
@@ -4187,7 +4188,7 @@ function Controller:_on_grid_item_click(adapter, grid, item)
     if not self._grid_idx_log then self._grid_idx_log = 0 end
     if self._grid_idx_log < 5 then
       self._grid_idx_log = self._grid_idx_log + 1
-      print("[murdoku] ★ 诊断GRID：列表项被点到了 ✓ GetItemIndex=" .. tostring(idx))
+      _silent("[murdoku] ★ 诊断GRID：列表项被点到了 ✓ GetItemIndex=" .. tostring(idx))
     end
   if type(idx) ~= "number" then
     -- 反查失败 ⇒ 这一次点击**宁可丢掉**，也不要聚焦到错误的一条（聚焦错了会误导推理）
@@ -4245,7 +4246,7 @@ function Controller:_on_grid_item_click(adapter, grid, item)
         end
       end
     end)
-    print("[murdoku] ★ 诊断CLUE：pos=" .. tostring(pos) .. "  字段名=[" .. table.concat(ks, ",")
+    _silent("[murdoku] ★ 诊断CLUE：pos=" .. tostring(pos) .. "  字段名=[" .. table.concat(ks, ",")
       .. "]  值(" .. table.concat(vs, " ") .. ")")
   end
   -- ★★★★★ 2026-10-07 **方案 A：点线索卡 = 高亮这条 + 选中卡上那个人** ✗✓（用户确认走 A ✓）
