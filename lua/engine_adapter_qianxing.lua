@@ -4553,6 +4553,15 @@ function Adapter:set_property(id, key, value, nkey)
       --   ⇒ ★ **有笔记时 `SetAsLastSibling()` 提到最上** ✓（官方："数值越大越靠上" ✓）
       if txt ~= "" then
         if c.SetAsLastSibling then pcall(function() c:SetAsLastSibling() end) end
+        -- ★★★★★ 2026-10-07 **分辨性实验：临时把字号放大到 96** ✗✓
+        --   现状（★ 探针全对 ✓ 补丁确认在跑 ✓）：★ 文本=V ✓ 可见 ✓ 纯黑 ✓ 已提到最上层 ✓ —— 仍看不见 ✓
+        --   ⇒ ★ 只剩两种可能 ✓：
+        --     ① **被裁掉**：模板里 `note` 的框太小 ⇒ 36 号字整块被裁 ✓
+        --     ② **状态节点没引用 `note`**：★ 预设按钮只画"状态节点引用到的子控件" ✓（★ 与弹窗四键同一个坑 ✓）
+        --   ★ 分辨 ✓：**放大到 96**
+        --     · 出现巨大字母 ⇒ ★ ① 尺寸问题 ✓ ⇒ 我设一个格子大小的框 ✓
+        --     · 仍旧空白 ⇒ ★ ② 状态节点 ✓ ⇒ **你把 `note` 拖进单元格的状态节点** ✓
+        if c.fontSize ~= nil then pcall(function() c.fontSize = 96 end) end
       end
       -- ★★★★★ 2026-10-07 一次性诊断：**写【之后】回读** ✓
       --   用户确认 `note` **本来就是文本框** ⇒ `.text` 能写 ✓ ⇒ 问题变成"写进去了看不见" ✓
