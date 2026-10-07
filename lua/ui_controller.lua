@@ -657,7 +657,16 @@ function Controller:on_cell_click(r, c)
   self.pending_click = nil
   local had = core.grid[r][c]
   local had_selected = core.selected          -- 要在 tap_cell **之前**取：它会改选中态
+  -- ★★★★★ 2026-10-07 **单击 = 铅笔笔记** ✗✓（用户要求：★"完全恢复初始设计，单击标记"✓
+  --   "铅笔功能加回来但不加按钮"✓）
+  --   ★ 机制：核心 `tap_cell` 按 `self.mode` 分派 ⇒ **只有 note 模式才写笔记** ✓
+  --   ★★ ⇒ 临时切到 `note` 再调 ✓ 调完立刻还原 ✓ ⇒ **不需要任何按钮 ✓ 单击永远是"标记"** ✓
+  --   ★★★ 双击（预放置）**不清除笔记** ✓ 长按（正式放置）**清除同名笔记** ✓
+  --      —— 这两条核心本来就对（`pre_place` = clear_notes false ✓ `hold_cell` = clear_notes true ✓）
+  local _saved_mode = core.mode
+  pcall(function() core:set_mode("note") end)
   local ok, why = core:tap_cell(r, c)
+  pcall(function() core:set_mode(_saved_mode) end)
   if ok then
     if had then
       -- ★ 2026-09-27 修（用户报"双击格子有时会导致其消失"）：
@@ -675,7 +684,7 @@ function Controller:on_cell_click(r, c)
     if (not occupied) and mode == "place" then
       self.last_click = {
         r = r, c = c, t = self.now,
-        did = had_selected and "pre" or "x",
+        did = "note",   -- ★ 第一击 = 铅笔笔记（单击=标记）
       }
     end
     self.dirty = true
