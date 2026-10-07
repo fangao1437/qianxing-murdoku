@@ -524,7 +524,27 @@ function Controller:do_place(r, c)
   self.last_click = nil
   self.pending_click = nil
   local who = core.selected
+  -- ★ 2026-10-07 分辨日志：★ 长按到底走的是"正式放置"吗 ✓ 核心前后状态对不对 ✓
+  local _sel_before = core.selected
+  local _notes_before = 0
+  pcall(function()
+    for rr, row in pairs(core.notes or {}) do for cc, set in pairs(row) do
+      for id, v in pairs(set) do if v then _notes_before = _notes_before + 1 end end
+    end end
+  end)
   local ok, why = core:hold_cell(r, c)
+  if ok then
+    local _notes_after, _n2 = 0, 0
+    pcall(function()
+      for rr, row in pairs(core.notes or {}) do for cc, set in pairs(row) do
+        for id, v in pairs(set) do if v then _notes_after = _notes_after + 1 end end
+      end end
+    end)
+    if (_sel_before ~= nil) and core.placed and core.placed[_sel_before] then _n2 = 1 end
+    print("[murdoku] ★ 放置分辨：走的=【正式放置 hold_cell】 人=" .. tostring(_sel_before)
+      .. "  笔记 " .. tostring(_notes_before) .. " ⇒ " .. tostring(_notes_after)
+      .. "  放后选中=" .. tostring(core.selected) .. "  placed=" .. tostring(_n2 == 1))
+  end
   if ok then
     self:fx(self:cell_id(r, c), M.EFFECTS.PLACE)
     if self.opts.on_place then self.opts.on_place(who, r, c) end
@@ -546,7 +566,13 @@ function Controller:do_pre_place(r, c)
   self.last_click = nil
   self.pending_click = nil
   local who = core.selected
+  -- ★ 2026-10-07 分辨日志：★ 双击走的是"预放置"吗 ✓ 选中该保留 ✓
+  local _sel_b2 = core.selected
   local ok, why = core:pre_place(r, c)
+  if ok then
+    print("[murdoku] ★ 放置分辨：走的=【预放置 pre_place】 人=" .. tostring(_sel_b2)
+      .. "  放后选中=" .. tostring(core.selected) .. "（★ 应仍是 " .. tostring(_sel_b2) .. " ✓）")
+  end
   if ok then
     self:fx(self:cell_id(r, c), M.EFFECTS.PLACE)
     if self.opts.on_place then self.opts.on_place(who, r, c) end
@@ -577,6 +603,7 @@ function Controller:on_cell_up(r, c, x, y)
     if dx > TAP_MOVE_TOLERANCE or dy > TAP_MOVE_TOLERANCE then return false end
   end
   local ok = self:do_place(r, c)
+  print("[murdoku] ★ 放置分辨：抬起被判定为【长按】✓ 时长=" .. string.format("%.2f", dt))
   if ok then
     self._suppress_click = true     -- 紧跟着的那个 CursorClick 不要重复处理
   end
