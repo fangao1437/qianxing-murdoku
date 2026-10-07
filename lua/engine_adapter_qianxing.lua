@@ -2333,6 +2333,8 @@ local CURSOR_CONTAINERS = {
 }
 
 function Adapter:hide_unlisted(keep)
+  -- ★ 2026-10-07 一次性诊断：把"这一趟实际藏了谁"打出来（用户要看弹窗被谁藏了）
+  local _names = {}
   local hidden = 0
   for i = 1, #MANAGED do
     local parent = self:find(MANAGED[i])
@@ -2346,12 +2348,17 @@ function Adapter:hide_unlisted(keep)
           if name ~= nil and name ~= "" and not keep[name] and not DECOR[name] then
             if child.SetVisible ~= nil then
               local ok2 = pcall(function() child:SetVisible(false) end)
-              if ok2 then hidden = hidden + 1 end
+              if ok2 then hidden = hidden + 1; _names[#_names + 1] = name end
             end
           end
         end
       end
     end
+  end
+  if self._hide_log == nil then self._hide_log = 0 end
+  if self._hide_log < 3 then
+    self._hide_log = self._hide_log + 1
+    print("[murdoku] ★ 诊断HIDE：这一趟藏了 " .. tostring(hidden) .. " 个：" .. table.concat(_names, " "))
   end
   return hidden
 end
