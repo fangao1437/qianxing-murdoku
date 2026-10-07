@@ -3681,6 +3681,43 @@ function Adapter:seal_container(id)
   return n > 0
 end
 
+-- ★★★★★ 2026-10-07 **触摸遮挡层：挡住"全屏拖动 3D 角色"** ✗✓
+--
+--   背景（★ 用户请人做移动端测试反馈 ✓）：★「★ **屏幕上的每一点都可以拖动**，官方 UI 也能正常点」✓
+--     ⇒ ★ 移动端的 3D 角色是吃 **cursor（触摸/拖动）** 事件的 ✓
+--   而 `seal_container` 只挡**按键** ✓ ——
+--     ★ 它刻意把 `disableCursorEventPassthrough` 留成 `false` ✓
+--       （★ 真机教训：设 `true` 会让【该容器内的按钮】全部点不动 ✗ 见那里的注释 ✓）
+--     ⇒ ★ **所以触摸这条完全没被挡住** ✓✓
+--
+--   ★ 解法 ✓：★ **单独做一层"全屏遮挡层"**（控件名 `shield` ✓ 由 `.gil` 建 ✓）
+--     · ★ **只对它**设 `disableCursorEventPassthrough = true` ✓
+--       ⇒ ★ 落在【空白处】的触摸被它吃掉 ✓ ⇒ ★ 传不到 3D ⇒ **人物不再乱跑** ✓
+--     · ★ 它的 Z 序在我们 UI 的**最下面**（★ `root` 的第一个子控件 ✓）
+--       ⇒ ★ 落在**我们按钮上**的触摸**先被按钮拿到** ✓ ⇒ ★ **点击照常** ✓✓
+--     （★ 与"把整个界面设 true"的关键区别：那一层**不含我们的按钮** ✓ 所以不会锁死界面 ✓）
+--
+--   ⚠️ 控件不存在时**什么都不做**（安全 ✓）并**只报一次** ⇒ 建好控件即自动生效 ✓
+function Adapter:seal_cursor_shield()
+  local c = nil
+  pcall(function() c = self:find("shield") end)
+  if c == nil then
+    self:warn_once("shield:missing",
+      "还没建触摸遮挡层控件 `shield`（全屏容器/光标检测区域，放在 `root` 的**第一个**子控件位）⇒ "
+      .. "移动端在空白处拖动仍会让 3D 角色移动。")
+    return false
+  end
+  local n = 0
+  if c.disableCursorEventPassthrough ~= nil then
+    if pcall(function() c.disableCursorEventPassthrough = true end) then n = n + 1 end
+  end
+  if c.showCursor ~= nil then pcall(function() c.showCursor = true end) end
+  if c.raycastTarget ~= nil then pcall(function() c.raycastTarget = true end) end
+  if n > 0 then
+    print("[murdoku] 触摸遮挡层 `shield`：已屏蔽点击穿透（移动端空白处拖动不再带动 3D 角色）")
+  end
+  return n > 0
+end
 -- 批量：给一组容器屏蔽穿透。返回成功的个数。
 function Adapter:seal_containers(list)
   if list == nil then return 0 end

@@ -620,6 +620,11 @@ function Murdoku.start(level_id, opts)
   --      这条日志打出"设了几个"，方便对照。
   if adapter.seal_containers ~= nil then
     local sealed = adapter:seal_containers({ "home", "select" })
+    -- ★ 2026-10-07 **触摸遮挡层**（★ 移动端：全屏拖动会带动 3D 角色 ✓ 用户实测反馈 ✓）
+    --   与上面"屏蔽按键"是**两条独立的链** ✓ 键盘归那条 ✓ 触摸归这条 ✓（★ 见适配器 `seal_cursor_shield` ✓）
+    if adapter.seal_cursor_shield ~= nil then
+      pcall(function() adapter:seal_cursor_shield() end)
+    end
     if print then
       print(string.format("[murdoku] 2D/3D 输入隔离：主页/选关容器已屏蔽穿透 %d 个", sealed))
       -- ★★★ 2026-09-30：**把验收方法直接写进日志**（目标⑦）。
