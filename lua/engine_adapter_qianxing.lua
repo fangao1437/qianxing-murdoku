@@ -3700,10 +3700,13 @@ end
 --   ⚠️ 控件不存在时**什么都不做**（安全 ✓）并**只报一次** ⇒ 建好控件即自动生效 ✓
 function Adapter:seal_cursor_shield()
   local c = nil
-  pcall(function() c = self:find("shield") end)
+  -- ★ 2026-10-07 用户实际用的是编辑器里那个名叫 `xxx` 的全屏容器 ✓（★ 两个开关都在编辑器里开了 ✓）
+  --   ⇒ 这里**先找 `xxx`** ✓ 再兜 `shield`（★ 万一以后改名 ✓）
+  pcall(function() c = self:find("xxx") end)
+  if c == nil then pcall(function() c = self:find("shield") end) end
   if c == nil then
     self:warn_once("shield:missing",
-      "还没建触摸遮挡层控件 `shield`（全屏容器/光标检测区域，放在 `root` 的**第一个**子控件位）⇒ "
+      "还没建触摸遮挡层控件 `xxx`（全屏容器/光标检测区域，放在 `root` 的**第一个**子控件位）⇒ "
       .. "移动端在空白处拖动仍会让 3D 角色移动。")
     return false
   end
@@ -3714,7 +3717,7 @@ function Adapter:seal_cursor_shield()
   if c.showCursor ~= nil then pcall(function() c.showCursor = true end) end
   if c.raycastTarget ~= nil then pcall(function() c.raycastTarget = true end) end
   if n > 0 then
-    print("[murdoku] 触摸遮挡层 `shield`：已屏蔽点击穿透（移动端空白处拖动不再带动 3D 角色）")
+    print("[murdoku] 触摸遮挡层 `xxx`：已屏蔽点击穿透（移动端空白处拖动不再带动 3D 角色）")
   end
   return n > 0
 end
