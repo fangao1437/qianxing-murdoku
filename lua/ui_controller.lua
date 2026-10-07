@@ -4109,6 +4109,34 @@ function Controller:_on_grid_item_click(adapter, grid, item)
       pcall(function() c2.imageColor = 4294956107 end)   -- ★ 暖金（乘算着色）
     end
   end
+  -- ★★★★★ 2026-10-07 **方案 A：点线索卡 = 高亮这条 + 选中卡上那个人** ✗✓（用户确认走 A ✓）
+  --
+  --   为什么必须有：真机日志「★ **点 (第1行 第2列) 没生效：先点一个头像　当前工具=place　已选=nil**」✓
+  --     ⇒ ★ **`selected` 一直是 nil** ⇒ ★ **铅笔笔记 / 预放置 / 正式放置【三者全被拦在这一步】** ✓
+  --   根因：★ 老卡片里头像 `face` 是**按钮**（`push({id="clue."..i..".face", kind="button"})` ✓）
+  --     点它才发 `suspect` ✓ 而**网格模式下列表项点击只发 `focus_clue`** ✗ ⇒ ★ **选人的手势丢了** ✓
+  --   ⇒ 这里补上：★ **点卡片即选中卡上那个人** ✓（★ 一步完成"高亮 + 选人"✓）
+  --   ★ 取值**防御式**：线索记录里人物字段可能叫 `person`/`who_id`/`id`/`key` ✓
+  --     再兜一层"从头像素材名 `portrait.X` 里取 X" ✓ 取不到就不动作（绝不误选）✓
+  pcall(function()
+    local v2 = self.core:view() or {}
+    local cl = (v2.clues or {})[pos]
+    if cl ~= nil then
+      local pid = cl.person or cl.who_id or cl.id or cl.key
+      if pid == nil then
+        local pn = cl.portrait or cl.face or cl.asset
+        if pn ~= nil then pid = tostring(pn):gsub("^portrait%.", "") end
+      end
+      if pid ~= nil then
+        local ev2 = { action = "suspect", id = pid }
+        if type(self.adapter) == "table" and type(self.adapter.on_input) == "function" then
+          self.adapter.on_input(ev2)
+        else
+          self:on_input(ev2)
+        end
+      end
+    end
+  end)
 local ev = { action = "focus_clue", index = pos, phase = "click" }
   if adapter ~= nil and type(adapter.on_input) == "function" then
     adapter.on_input(ev)
