@@ -4066,8 +4066,20 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   --   ★ 判据用 **`core.placed[cl.who]`** ✓（★ `cl.who` 就是人物 id ✓ 与徽章字母同一个 ✓）
   --   ★ 规矩：★ **与 `face`/文字同一套"值变了才写"** ✓ ⇒ 稳态零成本 ✓
   --   ⚠️ 列表项是复用的 ✓ ⇒ 每次填充都要按**当前 `pos`** 重新判 ✓（不能缓存上一次的结论 ✓）
-  local _placed_now = (cl.who ~= nil) and self.core ~= nil and self.core.placed ~= nil
-    and self.core.placed[cl.who] == true
+  -- ★★★★★ 2026-10-07 **人物 id 要从【头像素材名】取** ✗✓（真机诊断一次命中 ✓）
+  --   ★ 证据 ✓：★ `★ 灰白诊断：pos=3  who=老宅主  placed=false  找到gray=true` ✓
+  --     ⇒ ★ `cl.who` 是**显示名**（老宅主 ✗）而不是 **id**（`V` ✓）
+  --       ⇒ ★ `core.placed["老宅主"]` 恒为 nil ⇒ ★ **灰白永远不开** ✓✓
+  --   ★ 而列表项本来就知道 id ✓：★ **头像素材名 `portrait.V`** ✓（★ 填充里用 `t_portrait` ✓）
+  --     ⇒ ★ 去掉 `portrait.` 前缀就是 id ✓（★ 与 `who=V` / `who=D` 同一套字母 ✓）
+  local _pid = nil
+  if t_portrait ~= nil and t_portrait ~= "" then
+    _pid = tostring(t_portrait):gsub("^portrait%.", "")
+  end
+  if _pid == nil or #_pid > 2 then _pid = cl.who end          -- 兜底：万一素材名不是这个格式
+  if type(_pid) == "string" and _pid:sub(1, 1) == "@" then _pid = nil end   -- 特殊角色（如 @thief）不算人
+  local _placed_now = (_pid ~= nil) and self.core ~= nil and self.core.placed ~= nil
+    and self.core.placed[_pid] == true
   local _cgray = self:_grid_item_child_cached(item, index, pos, "gray")
   -- ★ 2026-10-07 一次性诊断：★ "灰白没出现"到底是【没找到 `gray`】还是【placed 判错】✓
   --   ★ 真机反馈 ✓：★ 颜色在编辑器里都对 ✓ 但**没有卡变灰** ⇒ ★ 说明**脚本这侧没生效** ✓
