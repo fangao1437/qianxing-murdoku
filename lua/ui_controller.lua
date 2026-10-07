@@ -611,6 +611,14 @@ function Controller:on_cell_click(r, c)
   --   ⇒ 这不是"错"，只是**这次点击本来就没落在任何格子上** —— 什么都不做才是对的。
   --   ⚠️ 必须放在**读 `core.grid` 之前**：放在后面就等于没放。
   if r == nil or c == nil then return end
+  -- ★★★★★ 2026-10-07 **吃掉"点线索卡"带出来的那一次格子点击** ✗✓（治穿透 ✓）
+  --   ★ 网格视窗不消费点击 ⇒ ★ 同一次指针事件会**先给列表项、再给棋盘** ✓
+  --     ⇒ ★ 点卡片就会顺手点一下格子 ✓（真机日志两次可见 ✓ 见 `_on_grid_item_click` 处注释 ✓）
+  --   ★ 这里用"刚点过卡片"的时间戳挡掉 ✓ 窗口 0.35 秒（= 双击窗口 ✓）
+  --     ⚠️ 只挡**单击**这一路 ✓ 不影响双击放置/长按 ✓（它们走 down/up 判定，不经过这里 ✓）
+  if self._grid_click_t ~= nil and (self.now or 0) - self._grid_click_t <= 0.35 then
+    return
+  end
   local core = self.core
   self.now = self.now or 0
   local occupied = core.grid[r][c] ~= nil
