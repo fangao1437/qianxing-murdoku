@@ -2725,8 +2725,15 @@ function Controller:build_layout()
         --     · 核心 `core.notes[r][c]` = ★ **`{ [人物id]=true }`** ⇒ 键**就是徽章字母** ✓（探针：`{V}` ✓）
         --     · 视图 `cd.notes`        = ★ 键是**数字** ✗ ⇒ `tostring(k)` 得到 `"1"` ✓（正是看到的那个 1 ✓）
         --   ⇒ ★ **以核心为准** ✓（视图那份只当兜底 ✓）
+        -- ★★★★★ 2026-10-07 **笔记清空时要下发 `false`（不是 nil）** ✗✓ —— "清掉了但没重画" ✓
+        --   ★ 元凶 ✓：★ `note_list_of` 在"没有笔记"时返回 **nil** ✓
+        --     ⇒ ★ Lua 里 `notes = nil` 等于**这个键不存在** ✓ ⇒ **适配器永远收不到"该清空"** ✗
+        --       ⇒ ★ 屏幕上的字母**留着不动** ✓ —— ★ 于是"正式放置清了笔记"你也看不出来 ✓✓
+        --   ★ 项目自己早就吃过同一个坑 ✓（`image` 那条注释写着 ✓ `ui_controller.lua:2677~2680` ✓：
+        --     「★ 用 `false` 而不是 nil 当"这格没有人"……否则**旧格的头像永远不清**」✓）
+        --   ⇒ ★ 这里照办 ✓：★ 没有笔记时下发 **`false`** ✓ ⇒ 适配器 `txt = ""` ⇒ `SetVisible(false)` ✓
         notes = note_list_of((self.core and self.core.notes and self.core.notes[r]
-          and self.core.notes[r][c]) or cd.notes),
+          and self.core.notes[r][c]) or cd.notes) or false,
         room = cd.room,
         -- ★★ 2026-09-28 新增：**显式告诉适配层"这格有没有物件"**。
         --
