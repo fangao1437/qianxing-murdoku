@@ -47,7 +47,6 @@ M.SIGNALS = {
   SAVE       = "murdoku/save",
   RESTORE    = "murdoku/restore",
   SYNC_STATE = "murdoku/sync",
-  SETTLE     = "murdoku/settle",   -- ★ 2026-10-07 存档并结算
 }
 
 -- 信号参数按顺序添加；这里给出"信号名 → 字段顺序"，收信号时按它还原成字典
@@ -61,7 +60,6 @@ M.SIGNAL_SCHEMA = {
   [M.SIGNALS.SAVE]       = { "level_id", "state_code", "moves", "elapsed", "solved" },
   [M.SIGNALS.RESTORE]    = { "state_code", "moves", "elapsed", "solved" },
   [M.SIGNALS.SYNC_STATE] = { "who", "r", "c" },
-  [M.SIGNALS.SETTLE] = { "level_id" },
 }
 
 ----------------------------------------------------------------------------
@@ -2286,36 +2284,6 @@ end
 --
 --   ⚠️ 这是本项目反复吃亏的"**门控②**"（docs/环境问题-诊断记录.md）：
 --      加一个新容器就**必须**同步加进这份名单 —— 我加 `home`/`select` 时漏了。
--- ★★★★★ 2026-10-07 **装饰性子控件不参与 `hide_unlisted`** ✗✓
---
---   真机症状（用户实测）：弹窗出来了、标题正文都在，但**四个按钮既没底图也没文字、点了没音效**。
---   根因：`hide_unlisted` 是**按名字**判断的 —— 它遍历 `MANAGED` 容器（含 `modal`），
---   把「不在当前计划里的直接子控件」逐个 `SetVisible(false)`。
---   而按钮的子控件名字是 ★ **`label`**（文字）和 ★ **`bg`**（底图）——
---   这两个名字**永远不可能出现在计划里**（计划里的 id 是 `modal.exit` 这种），
---   ⇒ **它们每次都被当成"多余的旧控件"藏掉** ⇒ 按钮成了**看不见的空壳** ✓
---   （用户"没有点击音效"也正是这个原因：看得见的只有标题/正文那两行文字。）
---
---   ⇒ 规则：**只看带点的托管 id**，这几个"装饰名"一律跳过。
---     它们的主人是按钮自己，显隐该由按钮的状态节点决定，不该由这份名单管。
-local DECOR = {
-  -- ★★★★★ 2026-10-07 **内层装饰控件一律不参与 `hide_unlisted`** ✗✓
-  --
-  --   真机症状（用户实测）：★ **弹窗四键空壳但可点** ✓ ★ **`clues` 头像卡【208 起就没显示过】** ✓
-  --   机制：`hide_unlisted` 遍历 `MANAGED` 容器，把「不在计划里的直接子控件」逐个隐藏 ——
-  --   而**计划里只有外层控件的名字**（`clues.bg` / `tray.A` / `modal.exit`…），
-  --   **内层装饰子控件**（`face` `backrop1` `badge` `letter` `what` `who` …）**永远不在计划里**
-  --   ⇒ **每次都被当成"多余的旧控件"藏掉** ⇒ 用户看到的正是"图片被藏住了" ✓
-  --   （上一版只豁免了 `label`/`bg`/`pic`/`icon` 四个名字，其余内层名照样中招 ✗）
-  --
-  --   ⇒ 规则：★ **这些内层名字一律跳过**（它们的主人是父控件，显隐该由父控件/状态决定）。
-  --     加新控件时若用了别的内层名，**一并加到这里** ✓
-  label = true, bg = true, pic = true, icon = true,
-  face = true, note = true, x = true, obj = true, text = true, portrait = true,
-  backrop1 = true, backrop2 = true, badge = true, letter = true, what = true, who = true,
-  frame = true, card = true, art = true, image = true, img = true,
-}
-
 local MANAGED = {
   "root", "topbar", "left", "tray", "clues", "board",
   "right", "actions", "modal", "intro",
@@ -2333,8 +2301,6 @@ local CURSOR_CONTAINERS = {
 }
 
 function Adapter:hide_unlisted(keep)
-  -- ★ 2026-10-07 一次性诊断：把"这一趟实际藏了谁"打出来（用户要看弹窗被谁藏了）
-  local _names = {}
   local hidden = 0
   for i = 1, #MANAGED do
     local parent = self:find(MANAGED[i])
@@ -2345,20 +2311,15 @@ function Adapter:hide_unlisted(keep)
           local child = kids[k]
           local name = nil
           pcall(function() name = child.name end)
-          if name ~= nil and name ~= "" and not keep[name] and not DECOR[name] then
+          if name ~= nil and name ~= "" and not keep[name] then
             if child.SetVisible ~= nil then
               local ok2 = pcall(function() child:SetVisible(false) end)
-              if ok2 then hidden = hidden + 1; _names[#_names + 1] = name end
+              if ok2 then hidden = hidden + 1 end
             end
           end
         end
       end
     end
-  end
-  if self._hide_log == nil then self._hide_log = 0 end
-  if self._hide_log < 3 then
-    self._hide_log = self._hide_log + 1
-    print("[murdoku] ★ 诊断HIDE：这一趟藏了 " .. tostring(hidden) .. " 个：" .. table.concat(_names, " "))
   end
   return hidden
 end

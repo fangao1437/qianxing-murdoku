@@ -884,11 +884,11 @@ function Controller:on_input(event)
   --   为什么这么做：这三个都是**不可逆**的（回菜单、交卷、清空整局），
   --   参考图里也是"点一下先问、再执行"的两段式。
   elseif a == "back_confirm" then
-    -- ★ 2026-10-07 改成弹「退出菜单」四键（四句缺一不可 ✓ 漏 dirty ⇒ 规划不重跑 ⇒ 弹窗不出现 ✓）
-    self.modal = { kind = "exit_menu" }
-    self.pending = nil
-    self.dirty = true
+    self.pending = { action = "back" }
     self:sync_confirm()
+    -- ★ 2026-10-04 **按下就给反馈**（用户反馈"点击动画只有提示有"）：
+    --   这三个键原来只设 `pending`、不播动画 ⇒ 点了像没反应，要等 ✓ 才有动静。
+    --   真正的执行动画仍在 `confirm_yes` → `do_submit()` 那条路上播。
     self:fx("hex.back", M.EFFECTS.SELECT)
 
   elseif a == "submit" then
@@ -1003,23 +1003,6 @@ function Controller:on_input(event)
 
   elseif a == "close_modal" then
     self.modal = nil
-
-  -- ★ 2026-10-07 「退出菜单」三个动作
-  elseif a == "exit_menu_go" then
-    self.modal = nil
-    self.screen = "select"
-    self.dirty = true
-    if self.opts.on_back then self.opts.on_back() end
-
-  elseif a == "exit_menu_save" then
-    if self.opts.on_save then self.opts.on_save() end
-    self.modal = nil
-    self.dirty = true
-
-  elseif a == "exit_menu_settle" then
-    if self.opts.on_save then self.opts.on_save() end
-    if self.opts.on_settle then self.opts.on_settle() end
-    self.dirty = true
 
   elseif a == "level_list" then
     -- 打开选关面板（关卡清单由 main.lua 通过 opts.levels 给进来）
@@ -2798,41 +2781,6 @@ function Controller:build_layout()
       btn("modal.next", "modal", { x = mx + 440, y = my + mh - 88, w = 200, h = 60 }, "下一关",
           { action = "next_level" }, "stamp.primary")
 
-    elseif modal.kind == "exit_menu" then
-      -- ★ 2026-10-07 「退出菜单」四键（几何由编辑器/gil 说了算 ✓ `pos_runtime` 缺省 = 不下发几何 ✓）
-      btn("modal.exit", "modal", { x = mx + 40, y = my + 170, w = mw - 80, h = 64 },
-          "退出至菜单", { action = "exit_menu_go" }, "stamp")
-      btn("modal.save", "modal", { x = mx + 40, y = my + 246, w = mw - 80, h = 64 },
-          "仅存档", { action = "exit_menu_save" }, "stamp")
-      btn("modal.settle", "modal", { x = mx + 40, y = my + 322, w = mw - 80, h = 64 },
-          "存档并结算", { action = "exit_menu_settle" }, "stamp.primary")
-      btn("modal.cancel", "modal", { x = mx + 40, y = my + mh - 88, w = mw - 80, h = 64 },
-          "取消", { action = "close_modal" }, "tab")
-
-      -- ★★★★★ 2026-10-07 **给四个键设【官方胶囊底图】** ✗✓（用户要求配图 ✓）
-      --   ★ 为什么走脚本而不是改 `.gil`：`docs/官方素材方案-脚本一体化.md` 已论证
-      --     「**官方素材 + 脚本 = 图 / 色 / 尺寸 / 位置全可运行时改**」⇒ 配图本来就该脚本做 ✓
-      --     （团队连改 4 轮 `.gil` 记录数组都卡在手工下标上 ✗ 这条路整个绕开 ✓）
-      --   ★ 素材：★ **`107179`**（760×152，两端全圆角、米白）—— 与用户截图里的胶囊按钮同形 ✓
-      --     `set_image_deep` 会自己往下找带 `SetImage` 的子控件（= 按钮的 `bg` ✓），
-      --     并沿用控件自己编辑器里配的图集（`bg` 的 imageSource = 官方图集 ✓）✓
-      --   ★ 只做一次（每帧设图会白烧成本 ✓ 本项目对每帧成本敏感 ✓）。
-      -- ★★★★★ 2026-10-07 **只给 `bg` 子控件设胶囊底图** ✗✓（用户要求配图 ✓）
-      --   上一版用 `set_image_deep(按钮, …)`：它"找第一个带 SetImage 的子控件"
-      --   ⇒ 真机很可能命中 `label`（文字控件也有 SetImage）⇒ **图盖在文字上 ⇒ 图文都没了**
-      --   （对照：加它之前"有字无图" ✓ 加它之后"图文都没有" ✗ ⇒ 变量只有这一个 ✓）
-      --   ⇒ 现在**显式指名 `bg`**（`Adapter:sub(id, "bg")` ✓ 它就是按钮的底图那一层 ✓）
-      --   素材 ★ **107179**（760×152 · 两端全圆角米白）= 用户选定 ✓ 沿用控件自己的官方图集 ✓
-      if (not self._exit_menu_art) and self.adapter ~= nil then
-        self._exit_menu_art = true
-        for _, bid in ipairs({ "modal.exit", "modal.save", "modal.settle", "modal.cancel" }) do
-          local bg = nil
-          pcall(function() bg = self.adapter:sub(bid, "bg") end)
-          if bg ~= nil and self.adapter.set_image_deep ~= nil then
-            pcall(function() self.adapter:set_image_deep(bg, 107179, nil, nil, "弹窗胶囊") end)
-          end
-        end
-      end
     elseif modal.kind == "share" then
       -- ★ 2026-10-05 **这一支目前没有入口按钮**（用户当天决定去掉「分享棋局」按钮，
       --   见上面 `modal.kind == "result"` 里那段删除说明）。
@@ -3330,8 +3278,6 @@ function Controller:layout_plan()
     { name = "share",             intro = 99,
       modal = { kind = "share", code = "（分享码）" }, screen = nil },
     { name = "howto",             intro = 99, modal = { kind = "howto" }, screen = nil },
-    { name = "exit_menu",         intro = 99,
-      modal = { kind = "exit_menu" }, screen = nil },   -- ★ 2026-10-07 退出菜单（★ 进计划 ⇒ 建进 gil）
     { name = "levelselect",       intro = 99,
       modal = { kind = "levelselect" }, screen = nil },
   }
@@ -3408,7 +3354,7 @@ function Controller:layout_plan()
     for k = 1, #it.states do
       if it.states[k] == "board" or it.states[k] == "intro" or it.states[k] == "accuse_thief"
          or it.states[k] == "accuse_accomplice" or it.states[k] == "result"
-         or it.states[k] == "share" or it.states[k] == "howto" or it.states[k] == "exit_menu" then in_board = true end   -- ★ 退出菜单也要能显形
+         or it.states[k] == "share" or it.states[k] == "howto" then in_board = true end
     end
     it.visible = in_board and it.visible
   end
@@ -3614,7 +3560,24 @@ function Controller:sync_clue_grid(adapter)
 
   -- ② 只在**关卡里**碰它：主页/选关时这块区域整个是藏起来的（父级 `clues` 不可见），
   --    那时去 RefreshItems 既没意义、又可能因为"控件不可见 ⇒ 引擎不建列表项"而误判失败。
-  if self.screen ~= nil then return end
+  -- ★★★★★ 2026-10-07 **"从别的屏回到关卡"时解开封死的网格判定** ✗✓
+  --   用户实测（老问题 ✓）：
+  --     · 退出至菜单 → 重进【同一关】⇒ 网格视窗**不渲染** ✗
+  --     · 换一关进 ⇒ 正常 ✓   再换回来 ⇒ 正常 ✓   再退出重进 ⇒ 又不正常 ✗
+  --   ⇒ 分水岭：**同一个控制器只改 `screen`** ✗  vs  **新控制器（`start_other`）** ✓
+  --   机制：本函数下面的 `if self._grid_broken then return end` 是**永久闩锁** ✗ ——
+  --     选关那一屏 `screen ~= nil` ⇒ 函数直接 return ✓ 但**之前**在关卡里若已判定失败，
+  --     闩锁就留着了 ⇒ 重进同一关 ⇒ 永远 return ⇒ `_grid_state` 停在 "off"
+  --     ⇒ 规划里 `clues.grid` 的 `visible` 恒为 false ⇒ **永不显示** ✓
+  --   ⇒ 修法：★ **检测 `screen` 从"非 nil"跃迁到"nil"（= 刚进关卡）⇒ 允许重试一次** ✓
+  --     换关走 `start_other` 是新建控制器 ⇒ 本来干净 ⇒ 不受影响 ✓
+  if self.screen == nil and self._grid_last_screen ~= nil then
+    self._grid_broken = nil
+    self._grid_tries = 0
+    self._grid_state = nil
+    self._grid = nil
+  end
+  self._grid_last_screen = self.screen  if self.screen ~= nil then return end
 
   -- ③ 已经失败过就不再重试（老路径接管；`_grid_state` 已经是 "off"）
   if self._grid_broken then return end

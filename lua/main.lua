@@ -206,17 +206,7 @@ function Murdoku.start(level_id, opts)
   if opts.screen ~= nil then want_screen = opts.screen end
   controller = UIC.new(core, {
     debug = opts.debug,
-    -- ★★★★★ 2026-10-07 **开场页默认【跳过】** ✗✓
-    --   真机证据（02:21 日志）：★ `intro_active=true  intro_page=1  #INTRO=5`
-    --     ⇒ `is_intro_active()` **恒为真** ⇒ `build_layout` 的弹窗闸门
-    --       `if modal and not self:is_intro_active()` **永远不成立**
-    --     ⇒ **退出菜单/指认/结果/选关…所有弹窗一个都弹不出来**。
-    --   为什么卡在 1：★ `intro.*` 那 5 个控件**还没建**（在"还没建 93 个"名单里）
-    --     ⇒ 开场页画不出来 ⇒ 连"下一页"都点不到 ⇒ `intro_page` 永远停在 1 ✓
-    --   所以：★ **没有开场控件时，开场必须视为已结束**（否则它挡死整条弹窗链）。
-    --     `start_other` 早就这么做了（切关时 `o.skip_intro = true`）—— 这里把默认值对齐。
-    --     ⚠️ 显式传 `skip_intro = false` 仍可强制放开场（将来 intro.* 建好后用）。
-    skip_intro = (opts.skip_intro ~= false),
+    skip_intro = opts.skip_intro,
     levels = level_list,
     screen = want_screen,
     -- ★★★★★ 2026-10-05 **"格子要不要推 text"这一个开关**（每帧成本第 (4) 条）。
@@ -265,21 +255,6 @@ function Murdoku.start(level_id, opts)
         --   ★ 所以这里必须补一句 —— 与下面"点的是当前这一关"那支（L228）**同一套写法** ✓
         --     （"同一件事两处实现必然漂移"是本项目反复踩到的病 ⇒ 两支都要写 ✓）
         if controller ~= nil then controller.screen = nil end
-
-  -- ★★★★★ 2026-10-07 **进入关卡时清掉"网格视窗"的失败闩锁** ✗✓（老问题，用户实测定位 ✓）
-  --   现象：★ **退出至菜单 → 重进【同一关】⇒ 网格视窗不渲染** ✗
-  --         换一关进 ⇒ 正常 ✓ 再换回来 ⇒ 正常 ✓ 再退出重进 ⇒ 又不正常 ✗
-  --   ⇒ 分水岭 = **同一控制器只改 `screen`** ✗ vs **新控制器（`start_other`）** ✓
-  --   机制：`sync_clue_grid` 里 `if self._grid_broken then return end` 是【永久闩锁】
-  --         ⇒ 选关那一屏（列表被藏 ⇒ 引擎不建列表项 ⇒ 误判失败）拉上闩锁后，
-  --           **重进同一关直接 return ⇒ `_grid_state` 停在 "off" ⇒ `clues.grid` 永不显示**
-  --   ⇒ 修法：每次"进入关卡"清一次闩锁（换关是新建控制器，本来就干净）
-  if controller ~= nil then
-    controller._grid_broken = nil
-    controller._grid_tries = 0
-    controller._grid_state = nil
-    controller.dirty = true
-  end
       else
         -- 点的是当前这一关：只是退出选关界面，不用重开
         controller.screen = nil
@@ -317,16 +292,6 @@ function Murdoku.start(level_id, opts)
       --   之前只发了信号、没落盘 ⇒ 卡片永远显示"未开始"，
       --   玩家看不出自己打过哪几关（这正是「参考原作卡片选关」要看的信息）。
       Murdoku.mark_cleared(level.id)
-    end,
-
-    -- ★ 2026-10-07 退出菜单要的两个回调（adapter 只在这一层拿得到 ✓）
-    on_save = function()
-      Murdoku.save_now()
-    end,
-
-    on_settle = function()
-      Murdoku.save_now()
-      adapter:signal_emit(Qianxing.SIGNALS.SETTLE, { tostring(level.id) })
     end,
   })
 
@@ -654,13 +619,7 @@ function Murdoku.start(level_id, opts)
   --      如果连自己也收不到，就缩小范围（只用 `disableCursorEventPassthrough`）。
   --      这条日志打出"设了几个"，方便对照。
   if adapter.seal_containers ~= nil then
-    -- ★★★★★ 2026-10-07 **`modal` 也要在这份名单里** ✗✓ —— 修"弹窗看得见但点不动"。
-    --   机制：这个调用把容器的 `disableCursorEventPassthrough` 写成 `false`（= 允许点击穿透/下落）。
-    --   `home` 能点，正是因为它在名单里；★ 而 `modal` 不在 ⇒ **弹窗四个键的点击被它吞掉** ✓。
-    --   真机症状完全吻合：★ 弹窗显示正常、文字可见、**点击无任何反应** ✓。
-    --   （并存证据：团队比对 `home` vs `modal` 时，唯一像开关的字段差异正好是
-    --     `#505/#503/#14/#17` —— 疑似 `disableCursorEventPassthrough`，但离线判不定 ✓）
-    local sealed = adapter:seal_containers({ "home", "select", "modal" })
+    local sealed = adapter:seal_containers({ "home", "select" })
     if print then
       print(string.format("[murdoku] 2D/3D 输入隔离：主页/选关容器已屏蔽穿透 %d 个", sealed))
       -- ★★★ 2026-09-30：**把验收方法直接写进日志**（目标⑦）。
