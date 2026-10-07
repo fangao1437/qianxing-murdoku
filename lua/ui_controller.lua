@@ -713,29 +713,6 @@ function Controller:on_cell_click(r, c)
   local had = core.grid[r][c]
   local had_selected = core.selected          -- 要在 tap_cell **之前**取：它会改选中态
   local ok, why = core:tap_cell(r, c)
-  -- ★ 2026-10-07 一次性诊断（★ 这次插在赋值【之后】✓ 上一版插在前面，打的是全局 nil ✗）
-  --   核心 `tap_cell` 在 **place 模式**就已经是：★ 已有人 ⇒ 拿起 ✓ 没选人 ⇒ 切 ✗ ✓
-  --     ★ **选了人 + 空格 ⇒ `toggle_note(selected)` = 铅笔笔记** ✓（`murdoku_core.lua:1910` ✓）
-  --   ⇒ **不需要切模式** ✓ 所以这一段只做观测 ✓
-  if (self._diag_tap2 or 0) < 6 then
-    self._diag_tap2 = (self._diag_tap2 or 0) + 1
-    local nt, sel = "?", "?"
-    pcall(function()
-      sel = tostring(core.selected)
-      local row = core.notes and core.notes[r]
-      local celln = row and row[c]
-      if type(celln) == "table" then
-        local ks = {}
-        for k, v in pairs(celln) do if v then ks[#ks + 1] = tostring(k) end end
-        nt = "{" .. table.concat(ks, ",") .. "}"
-      else
-        nt = tostring(celln)
-      end
-    end)
-    _silent("[murdoku] ★ 诊断NOTE2：单击(" .. tostring(r) .. "," .. tostring(c) .. ")  occupied="
-      .. tostring(occupied) .. "  selected=" .. sel .. "  返回 ok=" .. tostring(ok)
-      .. " why=" .. tostring(why) .. "  该格笔记=" .. nt)
-  end
   if ok then
     if had then
       -- ★ 2026-09-27 修（用户报"双击格子有时会导致其消失"）：
@@ -4231,23 +4208,6 @@ function Controller:_on_grid_item_click(adapter, grid, item)
       self._grid_focus_item, self._grid_focus_idx, self._grid_focus_pos = item, idx, pos
       pcall(function() c2.imageColor = 4294956107 end)   -- ★ 暖金（乘算着色）
     end
-  end
-  -- ★ 2026-10-07 一次性诊断：把该线索记录的【真实字段名】打出来（方案 A 取值失败 ⇒ 不猜了）
-  if (self._diag_clue or 0) < 3 then
-    self._diag_clue = (self._diag_clue or 0) + 1
-    local ks, vs = {}, {}
-    pcall(function()
-      local v3 = self.core:view() or {}
-      local c3 = (v3.clues or {})[pos]
-      if c3 ~= nil then
-        for k, v in pairs(c3) do
-          ks[#ks + 1] = tostring(k)
-          if type(v) ~= "table" then vs[#vs + 1] = tostring(k) .. "=" .. tostring(v) end
-        end
-      end
-    end)
-    _silent("[murdoku] ★ 诊断CLUE：pos=" .. tostring(pos) .. "  字段名=[" .. table.concat(ks, ",")
-      .. "]  值(" .. table.concat(vs, " ") .. ")")
   end
   -- ★★★★★ 2026-10-07 **方案 A：点线索卡 = 高亮这条 + 选中卡上那个人** ✗✓（用户确认走 A ✓）
   --
