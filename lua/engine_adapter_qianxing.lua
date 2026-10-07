@@ -4498,6 +4498,28 @@ function Adapter:set_property(id, key, value, nkey)
       if txt ~= "" then
         if c.SetActive then pcall(function() c:SetActive(true) end) end
         if c.SetAsLastSibling then pcall(function() c:SetAsLastSibling() end) end
+        -- ★★★★★ 2026-10-07 **钉住位置 (0,0)（尺寸仍听编辑器）** ✗✓
+        --   ★ 实测三次对比（★ 唯一能解释"时有时无"的一条 ✓）：
+        --     · 脚本**同时**设了尺寸+位置 ⇒ ★ 字母出现 ✓（108×108 ✓ 108×36 ✓ 两轮都出现 ✓）
+        --     · 脚本**只**用存档尺寸、**不设位置** ⇒ ★ 字不出现 ✗（两轮都如此 ✓）
+        --   ⇒ ★ 结论：★ **存档里 `note` 的框在运行时【位置上不被沿用】** ✓（★ 飘到格子外 ⇒ 引擎不画 ✓）
+        --     ★ 而 `face` 也是靠脚本 `SetAnchoredPosition(0,0)` 才铺满格子的 ✓（项目 L752 ✓）
+        --   ⇒ ★ 所以位置【必须由脚本钉住】✓；★ **尺寸交给编辑器**（用户已调好 ✓）
+        --     ★ 只有"运行时尺寸为 0"这种模板坑才兜一个中间条 ✓
+        if c.SetAnchoredPosition then pcall(function() c:SetAnchoredPosition(0, 0) end) end
+        local nw, nh = nil, nil
+        pcall(function() nw, nh = c:GetSizeDelta() end)
+        if nw == nil or nh == nil or nw <= 1 or nh <= 1 then
+          local fw, fh = nil, nil
+          pcall(function()
+            local f = self:sub(id, "face")
+            if f ~= nil then fw, fh = f:GetSizeDelta() end
+          end)
+          if fw ~= nil and fh ~= nil and fw > 1 and fh > 1 then
+            if c.SetSizeDelta then pcall(function() c:SetSizeDelta(fw, math.max(30, fh / 3)) end) end
+            print("[murdoku] 笔记：运行时尺寸为 0 ⇒ 兜底设成中间条 " .. tostring(fw) .. "x" .. tostring(math.max(30, fh / 3)))
+          end
+        end
       end
     end
   elseif key == "x_mark" then
