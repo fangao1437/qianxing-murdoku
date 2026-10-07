@@ -313,6 +313,24 @@ function Controller:fx(target, kind, params)
   return e
 end
 
+-- ★★★★★ 2026-10-07 **笔记：集合 → 数组** ✗✓（用户报"字母没出现"的根因 ✓）
+--
+--   真机探针（权威）✓：★ `★ 诊断NOTE2：单击(1,1) … 返回 ok=true  why=nil  该格笔记={V}` ✓
+--     ⇒ ★ **核心写进去了** ✓ ⇒ ★ 问题在【下发/绘制】这一侧 ✓
+--   ★ 根因 ✓：适配器的 `key == "notes"` 分支是 `table.concat(value or {}, " ")` ✓
+--     而核心 `notes[r][c]` 的形状是**集合**（`{[id] = true}` ✓ **非连续整数键** ✗）⇒
+--     `table.concat` 只吃数组 ⇒ 得到**空串** ⇒ 适配器判定"没笔记" ⇒ `SetVisible(false)` ✗✗
+--   ⇒ ★★ **笔记一直是"写进去了、也一直没画出来"** ✓ 与用户看到的现象完全一致 ✓
+--   ★ 转换后：★ **id 本身就是徽章字母**（真机日志 `who=V` / `who=D` ✓）⇒ 直接当字母用 ✓
+--     （★ 排序只为稳定 ✓ 集合遍历顺序不定，不排的话文字每帧可能抖动 ✓）
+local function note_list_of(set)
+  if type(set) ~= "table" then return nil end
+  local out = {}
+  for kk, vv in pairs(set) do if vv then out[#out + 1] = tostring(kk) end end
+  if #out == 0 then return nil end
+  table.sort(out)
+  return out
+end
 function Controller:cell_id(r, c) return string.format("cell.%d.%d", r, c) end
 
 -- 结案判定：盗窃者 + 有没有同伙（+ 同伙是谁）
@@ -2679,7 +2697,8 @@ function Controller:build_layout()
         --   这就是用户报的「换位后头像卡残留」。
         --   （和 `obj` 白块是**同一个 bug 形状** —— 我在同一个坑里摔了两次。）
         image = cd.suspect and Controller.portrait_of(vm, cd.suspect) or false,
-        notes = cd.notes,
+        -- ★ 见 `note_list_of` 那段：适配器要**数组** ✓ 核心给的是**集合** ✗（不转 = 永远空串 = 永不显示）
+        notes = note_list_of(cd.notes),
         room = cd.room,
         -- ★★ 2026-09-28 新增：**显式告诉适配层"这格有没有物件"**。
         --
