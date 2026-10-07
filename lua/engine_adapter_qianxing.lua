@@ -4550,6 +4550,29 @@ function Adapter:set_property(id, key, value, nkey)
       --     ⇒ ★ 差的正是 **`active` 这一层** ✓✓
       if txt ~= "" then
         if c.SetActive then pcall(function() c:SetActive(true) end) end
+        -- ★★★★★ 2026-10-07 **字号缩小 + 尝试居中** ✗✓（用户实测：★ 字母出来了 ✓ 但偏左上、偏大 ✓）
+        --   ★ 字号：模板给的是 36 ⇒ 缩小到 **24**（★ 要再调改这个数字即可 ✓）
+        --   ★ 居中：文本框的对齐字段名官方没在客户端文档里写死 ⇒ **逐个试**（★ 存在的才写 ✓）
+        --     常见约定：★ **0=左 1=中 2=右** ✓ ⇒ 一律写 1 ✓ 并把"哪些字段存在/写前写后"打一次 ✓
+        if c.fontSize ~= nil then pcall(function() c.fontSize = 24 end) end
+        if (self._diag_notealign or 0) < 1 then
+          self._diag_notealign = 1
+          local names = { "textAlign", "horizontalAlign", "alignment", "align",
+                          "horizontalAlignment", "textAlignment", "verticalAlign" }
+          local report = {}
+          for i = 1, #names do
+            local k = names[i]
+            local before, after = nil, nil
+            pcall(function() before = c[k] end)
+            if before ~= nil then
+              pcall(function() c[k] = 1 end)
+              pcall(function() after = c[k] end)
+              report[#report + 1] = k .. ":" .. tostring(before) .. "->" .. tostring(after)
+            end
+          end
+          print("[murdoku] ★ 诊断NOTEALIGN：存在的对齐字段 = "
+            .. (table.concat(report, "  ") ~= "" and table.concat(report, "  ") or "（一个都没有）"))
+        end
         -- ★★★★★ 2026-10-07 **给笔记显式设尺寸/位置** ✗✓ —— "看不见"的真正原因 ✓
         --   ★ 项目自己的注释（本文件 L745~752）写着**同一个坑** ✓：
         --     「★ **格子模板建出来的 `face` 默认尺寸是 0** ⇒ 图设上了、`visible=true`，
