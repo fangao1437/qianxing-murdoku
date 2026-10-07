@@ -4579,7 +4579,10 @@ function Adapter:set_property(id, key, value, nkey)
             if f ~= nil then fw, fh = f:GetSizeDelta() end
           end)
           if fw ~= nil and fh ~= nil and fw > 1 and fh > 1 then
-            if c.SetSizeDelta then pcall(function() c:SetSizeDelta(fw, fh) end) end
+            -- ★ 2026-10-07 **改成"中间窄条"** ✗✓（用户：★ note 的文本框在格子中间 ✓ 填不到顶部 ✓）
+            --   上一版撑成整个格子 ⇒ 字被顶到顶部 ✗ ⇒ 现在只在"运行时尺寸为 0"时给一条**中间的条** ✓
+            --     ★ 宽度=格子宽 ✓ 高度=格子的 **1/3** ✓ 位置 (0,0) ✓（★ 模板本来就是中间一条 ✓）
+            if c.SetSizeDelta then pcall(function() c:SetSizeDelta(fw, math.max(8, fh / 3)) end) end
             if c.SetAnchoredPosition then pcall(function() c:SetAnchoredPosition(0, 0) end) end
             if (self._diag_notesize or 0) < 3 then
               self._diag_notesize = (self._diag_notesize or 0) + 1
