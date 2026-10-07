@@ -4490,6 +4490,27 @@ function Adapter:set_property(id, key, value, nkey)
       if c0 ~= nil then pcall(function() txt0 = tostring(c0.text) end) end
       print("[murdoku] ★ 诊断NOTES：id=" .. tostring(id) .. "  value=" .. n2
         .. "  子控件note=" .. tostring(c0 ~= nil) .. "  读回text=" .. txt0)
+      -- ★ 再深一层：note 控件到底是什么（★ 名字/子控件/可用接口 ✓）
+      if c0 ~= nil then
+        local kn, kids, hasSetText = "?", "", "?"
+        pcall(function() kn = tostring(c0.name) end)
+        pcall(function() hasSetText = tostring(c0.SetText ~= nil) end)
+        pcall(function()
+          local ch = c0:GetChildren()
+          if type(ch) == "table" then
+            local nm = {}
+            for i = 1, #ch do
+              local s = "?"
+              pcall(function() s = tostring(ch[i].name) end)
+              nm[#nm + 1] = s
+            end
+            kids = table.concat(nm, ",")
+          else
+            kids = "(" .. type(ch) .. ")"
+          end
+        end)
+        print("[murdoku] ★ 诊断NOTE3：note.name=" .. kn .. "  SetText=" .. hasSetText .. "  子控件=[" .. kids .. "]")
+      end
     end
     local c = self:sub(id, "note")
     if c ~= nil then
