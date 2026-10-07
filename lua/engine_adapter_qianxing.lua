@@ -2298,7 +2298,23 @@ end
 --
 --   ⇒ 规则：**只看带点的托管 id**，这几个"装饰名"一律跳过。
 --     它们的主人是按钮自己，显隐该由按钮的状态节点决定，不该由这份名单管。
-local DECOR = { label = true, bg = true, pic = true, icon = true }
+local DECOR = {
+  -- ★★★★★ 2026-10-07 **内层装饰控件一律不参与 `hide_unlisted`** ✗✓
+  --
+  --   真机症状（用户实测）：★ **弹窗四键空壳但可点** ✓ ★ **`clues` 头像卡【208 起就没显示过】** ✓
+  --   机制：`hide_unlisted` 遍历 `MANAGED` 容器，把「不在计划里的直接子控件」逐个隐藏 ——
+  --   而**计划里只有外层控件的名字**（`clues.bg` / `tray.A` / `modal.exit`…），
+  --   **内层装饰子控件**（`face` `backrop1` `badge` `letter` `what` `who` …）**永远不在计划里**
+  --   ⇒ **每次都被当成"多余的旧控件"藏掉** ⇒ 用户看到的正是"图片被藏住了" ✓
+  --   （上一版只豁免了 `label`/`bg`/`pic`/`icon` 四个名字，其余内层名照样中招 ✗）
+  --
+  --   ⇒ 规则：★ **这些内层名字一律跳过**（它们的主人是父控件，显隐该由父控件/状态决定）。
+  --     加新控件时若用了别的内层名，**一并加到这里** ✓
+  label = true, bg = true, pic = true, icon = true,
+  face = true, note = true, x = true, obj = true, text = true, portrait = true,
+  backrop1 = true, backrop2 = true, badge = true, letter = true, what = true, who = true,
+  frame = true, card = true, art = true, image = true, img = true,
+}
 
 local MANAGED = {
   "root", "topbar", "left", "tray", "clues", "board",
