@@ -4530,10 +4530,12 @@ function Adapter:set_property(id, key, value, nkey)
           -- ★ 位置也**不设**（★ 查证模式 ✓）—— 改为**只读**实例真实几何并打一行 ✓
           if (self._geom_probe or 0) < 6 then
             self._geom_probe = (self._geom_probe or 0) + 1
-            local gx, gy = nil, nil
+            local gx, gy, gw, gh = nil, nil, nil, nil
             pcall(function() gx, gy = c:GetAnchoredPosition() end)
-            print("[murdoku] ★ 几何探针：note 实例尺寸=" .. tostring(fw) .. "x" .. tostring(fh)
-              .. "（face 值 ✓ 仅作参照）  实例位置=" .. tostring(gx) .. "," .. tostring(gy))
+            pcall(function() gw, gh = c:GetSizeDelta() end)
+            print("[murdoku] ★ 几何探针：note 实例尺寸=" .. tostring(gw) .. "x" .. tostring(gh)
+              .. "  实例位置=" .. tostring(gx) .. "," .. tostring(gy)
+              .. "   （面/格子 = " .. tostring(fw) .. "x" .. tostring(fh) .. " 仅作参照）")
           end
         end
       end
