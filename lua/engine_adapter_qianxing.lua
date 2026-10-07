@@ -4480,6 +4480,17 @@ function Adapter:set_property(id, key, value, nkey)
     end
 
   elseif key == "notes" then
+    -- ★ 2026-10-07 一次性诊断：这条分支跑没跑 ✓ value 什么形状 ✓ note 子控件找不找得到 ✓
+    if (self._diag_notes or 0) < 5 then
+      self._diag_notes = (self._diag_notes or 0) + 1
+      local n2, c0, txt0 = "?", nil, "?"
+      if type(value) == "table" then n2 = 0; for _ in pairs(value) do n2 = n2 + 1 end; n2 = "table(" .. n2 .. ")"
+      else n2 = tostring(value) end
+      pcall(function() c0 = self:sub(id, "note") end)
+      if c0 ~= nil then pcall(function() txt0 = tostring(c0.text) end) end
+      print("[murdoku] ★ 诊断NOTES：id=" .. tostring(id) .. "  value=" .. n2
+        .. "  子控件note=" .. tostring(c0 ~= nil) .. "  读回text=" .. txt0)
+    end
     local c = self:sub(id, "note")
     if c ~= nil then
       local txt = table.concat(value or {}, " ")
