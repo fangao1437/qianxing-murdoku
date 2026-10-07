@@ -4119,6 +4119,19 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
       .. "  ★ id=" .. tostring(_pid) .. "  portrait=" .. tostring(t_portrait))
   end
   if _cgray ~= nil then
+    -- ★★★★★ 2026-10-07 **灰白图必须【不参与射线】** ✗✓（"预放置也像被取消选中"的真因 ✓）
+    --   ★ 真机反馈 ✓：★ 灰白出来之后 ⇒ ★「★ **预放置也会取消选中，且要双击才能重新选中**」✗
+    --   ★ 机制 ✓：★ `gray` 是卡片里**最上层**的图片 ✓ ⇒ ★ 它**挡在最上面吃点击** ✗
+    --     ⇒ ★ 单击落在它身上 ⇒ **到不了卡片按钮** ⇒ ★ 表现就是"点不中/像没选中" ✓✓
+    --   ⇒ ★ 这里把它的**射线与交互一起关掉** ✓ ⇒ ★ **点击穿透到卡片** ✓（★ 灰白只是视觉层 ✓）
+    --   ⚠️ 只做一次（★ 记住做过 ✓ 免得每帧写字段 ✓）
+    if self._gray_noray ~= true then
+      self._gray_noray = true
+      if _cgray.raycastTarget ~= nil then pcall(function() _cgray.raycastTarget = false end) end
+      if _cgray.blockRaycast ~= nil then pcall(function() _cgray.blockRaycast = false end) end
+      if _cgray.interactable ~= nil then pcall(function() _cgray.interactable = false end) end
+      print("[murdoku] 灰白层 `gray`：已关掉射线与交互（点击照常落在卡片上）")
+    end
     local _rg = self:_grid_item_rec(item, index)
     if _rg ~= nil and _rg.gray ~= _placed_now then
       _rg.gray = _placed_now
