@@ -4522,8 +4522,19 @@ function Adapter:set_property(id, key, value, nkey)
         end)
         if fw ~= nil and fh ~= nil and fw > 1 and fh > 1 then
           local hbox = math.max(30, fh / 3)
-          if c.SetSizeDelta then pcall(function() c:SetSizeDelta(fw, hbox) end) end
-          if c.SetAnchoredPosition then pcall(function() c:SetAnchoredPosition(0, 0) end) end
+          -- ★★★★★ 2026-10-07 **查证模式：不设尺寸** ✗✓（用户要求 ✓ 文本控件不能有未知机制 ✓）
+          --   ★ 上一版这里是：`c:SetSizeDelta(fw, hbox)` ⇒ 字母出现 ✓
+          --   ⇒ 现在**一个字都不设** ✓ 由编辑器给尺寸 ✓ 看引擎认不认 ✓
+          --     · 认 ⇒ ★ 编辑器是唯一权威 ✓ 结案 ✓
+          --     · 不认 ⇒ ★ 就是"运行时实例不沿用模板几何"这个机制 ✓ 我们把它查实 ✓
+          -- ★ 位置也**不设**（★ 查证模式 ✓）—— 改为**只读**实例真实几何并打一行 ✓
+          if (self._geom_probe or 0) < 6 then
+            self._geom_probe = (self._geom_probe or 0) + 1
+            local gx, gy = nil, nil
+            pcall(function() gx, gy = c:GetAnchoredPosition() end)
+            print("[murdoku] ★ 几何探针：note 实例尺寸=" .. tostring(fw) .. "x" .. tostring(fh)
+              .. "（face 值 ✓ 仅作参照）  实例位置=" .. tostring(gx) .. "," .. tostring(gy))
+          end
         end
       end
     end
