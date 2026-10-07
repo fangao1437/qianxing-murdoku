@@ -4125,8 +4125,13 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
     --     ⇒ ★ 单击落在它身上 ⇒ **到不了卡片按钮** ⇒ ★ 表现就是"点不中/像没选中" ✓✓
     --   ⇒ ★ 这里把它的**射线与交互一起关掉** ✓ ⇒ ★ **点击穿透到卡片** ✓（★ 灰白只是视觉层 ✓）
     --   ⚠️ 只做一次（★ 记住做过 ✓ 免得每帧写字段 ✓）
-    if self._gray_noray ~= true then
-      self._gray_noray = true
+    -- ⚠️⚠️ 2026-10-07 **必须【按列表项实例】记** ✗✓（我第一版用了全局标志 ⇒ 只有第 1 个实例做了 ✗）
+    --   ★ 真机证据 ✓：★ 日志里那句"已关掉射线"**只出现一次**（紧跟 `pos=1` ✓）
+    --     ⇒ ★ 其余 6 个实例（以及后来复用的）**射线还开着** ✗ ⇒ ★ **放置过的卡上抢点击依旧** ✓✓
+    --   ★ 列表项是复用的 ✓ ⇒ 每个实例各记一份 ✓（挂在 `_grid_item_rec` 的缓存表上 ✓）
+    local _rg_pre = self:_grid_item_rec(item, index)
+    if _rg_pre == nil or _rg_pre.gray_noray ~= true then
+      if _rg_pre ~= nil then _rg_pre.gray_noray = true end
       if _cgray.raycastTarget ~= nil then pcall(function() _cgray.raycastTarget = false end) end
       if _cgray.blockRaycast ~= nil then pcall(function() _cgray.blockRaycast = false end) end
       if _cgray.interactable ~= nil then pcall(function() _cgray.interactable = false end) end
