@@ -4278,6 +4278,24 @@ end
 
 -- 点了某一条列表项 → 聚焦这条线索。
 function Controller:_on_grid_item_click(adapter, grid, item)
+  -- ★ 2026-10-07 **抢点击定位读数**（★ 一次定案 ✓ 最多 12 行 ✓）
+  --   ★ 要分清三件事 ✓：
+  --     ① ★ **回调有没有进来**（★ 进来 ⇒ 引擎把点击给了卡片 ✓ 没进来 ⇒ 被别的东西吃掉 ✗）
+  --     ② ★ **该卡是不是"已放置"**（★ `gray` 是否可见 ✓）—— 你说的现象**只在放置过的卡上** ✓
+  --     ③ ★ 读回 `gray` 的 `raycastTarget` / 可见性 ✓ ⇒ 看"关射线"到底生效没有 ✓
+  if (self._clk_log or 0) < 12 then
+    self._clk_log = (self._clk_log or 0) + 1
+    local _i, _rt, _vis = "?", "?", "?"
+    pcall(function() _i = tostring(item:GetItemIndex()) end)
+    local _g = nil
+    pcall(function() _g = self:_grid_item_child_cached(item, nil, 0, "gray") end)
+    if _g ~= nil then
+      pcall(function() _rt = tostring(_g.raycastTarget) end)
+      pcall(function() _vis = tostring(_g.visible) end)
+    end
+    print("[murdoku] ★ 抢点击诊断：回调进来了 ✓ 列表项index=" .. _i
+      .. "  gray存在=" .. tostring(_g ~= nil) .. " gray可见=" .. _vis .. " gray射线=" .. _rt)
+  end
   -- ★ 官方：「列表项索引以运行时传入和返回的 index 为准」⇒ **只能反查**。
   --   按兄弟序号取是错的：列表项会被复用，兄弟顺序不稳定（用户也专门点了这一条）。
   local idx = nil
