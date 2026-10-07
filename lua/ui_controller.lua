@@ -4139,7 +4139,10 @@ function Controller:_on_grid_item_click(adapter, grid, item)
     local v2 = self.core:view() or {}
     local cl = (v2.clues or {})[pos]
     if cl ~= nil then
-      local pid = cl.person or cl.who_id or cl.id or cl.key
+      -- ★ 真字段名（真机探针实测 ✓）：★ `who` —— 值形如 `V` / `D` / `@thief`
+      --   ⇒ `@` 开头的是【特殊角色】（如盗窃者），不是可选的"人"，跳过 ✓
+      local pid = cl.who or cl.person or cl.who_id or cl.id
+      if type(pid) == "string" and pid:sub(1, 1) == "@" then pid = nil end
       if pid == nil then
         local pn = cl.portrait or cl.face or cl.asset
         if pn ~= nil then pid = tostring(pn):gsub("^portrait%.", "") end
