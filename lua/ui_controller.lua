@@ -4058,6 +4058,25 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   local cl = pay.items[pos]
   if cl == nil then return end        -- 超出本关线索数（理论上不会来）⇒ 什么都不写
   local t_who, t_what, t_letter = cl.who, cl.what, cl.letter
+  -- ★★★★★ 2026-10-07 **已正式放置 ⇒ 卡片盖一层灰白** ✗✓（用户新功能 ✓ 模板侧已加控件 `gray` ✓）
+  --   ★ 分工（用户定的 ✓ 也是"能走控件就不走脚本"✓）：
+  --     · ★ **模板**：★ 列表项模板 `clue`（1073742421）里加了一个**图片控件 `gray`** ✓
+  --       ★ 它在同级里排**第 7/7 = 最上层** ✓ 尺寸/位置/颜色/20% 透明**全在编辑器里** ✓
+  --     · ★ **脚本只做一件事** ✓：★ **按"这个人是否已正式放置"开/关它的可见性** ✓
+  --   ★ 判据用 **`core.placed[cl.who]`** ✓（★ `cl.who` 就是人物 id ✓ 与徽章字母同一个 ✓）
+  --   ★ 规矩：★ **与 `face`/文字同一套"值变了才写"** ✓ ⇒ 稳态零成本 ✓
+  --   ⚠️ 列表项是复用的 ✓ ⇒ 每次填充都要按**当前 `pos`** 重新判 ✓（不能缓存上一次的结论 ✓）
+  local _placed_now = (cl.who ~= nil) and self.core ~= nil and self.core.placed ~= nil
+    and self.core.placed[cl.who] == true
+  local _cgray = self:_grid_item_child_cached(item, index, pos, "gray")
+  if _cgray ~= nil then
+    local _rg = self:_grid_item_rec(item, index)
+    if _rg ~= nil and _rg.gray ~= _placed_now then
+      _rg.gray = _placed_now
+      if _cgray.SetVisible then pcall(function() _cgray:SetVisible(_placed_now) end) end
+      if _cgray.SetActive then pcall(function() _cgray:SetActive(_placed_now) end) end
+    end
+  end
   local t_portrait = cl.portrait        -- ★ 头像素材名（★ 如 `portrait.A` ✓；★ nil ⇒ 不写图 ✓）
 
   -- ★ 子控件句柄走记忆表（改之前：一次回调 54 次 `item:GetChild`，滚动时每帧 54 次）
