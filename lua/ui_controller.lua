@@ -563,6 +563,14 @@ function Controller:do_place(r, c)
   self.focused_clue = nil
   self.dirty = true
   if ok then
+    -- ★★★★★ 2026-10-07 **放置后强制重填线索卡** ✗✓（灰白卡的关键 ✓）
+    --   ★ 真机证据 ✓：★ `★ 灰白诊断：pos=3 … ★ id=V`（★ id 已经对了 ✓ 但 `placed=false` ✓）
+    --     ⇒ ★ 那几行是**开局填充**跑的 ✓ ⇒ ★ **放置之后卡片没有重新填充** ✗
+    --       ⇒ ★ 灰白永远停留在"放置前"的状态 ✓✓
+    --   ★ 机制 ✓：★ 列表项的填充由 `RefreshItems` 回调驱动 ✓
+    --     ★ 而它有个**签名门**（`_grid_sig`）✓ ⇒ ★ 签名没变就不再重填 ✓
+    --   ⇒ ★ 这里**清掉签名** ✓ ⇒ 下一帧网格同步会重新填一遍 ✓ ⇒ **灰白跟着出来** ✓✓
+    self._grid_sig = nil
     self:fx(self:cell_id(r, c), M.EFFECTS.PLACE)
     if self.opts.on_place then self.opts.on_place(who, r, c) end
     self.dirty = true
@@ -591,6 +599,14 @@ function Controller:do_pre_place(r, c)
       .. "  放后选中=" .. tostring(core.selected) .. "（★ 应仍是 " .. tostring(_sel_b2) .. " ✓）")
   end
   if ok then
+    -- ★★★★★ 2026-10-07 **放置后强制重填线索卡** ✗✓（灰白卡的关键 ✓）
+    --   ★ 真机证据 ✓：★ `★ 灰白诊断：pos=3 … ★ id=V`（★ id 已经对了 ✓ 但 `placed=false` ✓）
+    --     ⇒ ★ 那几行是**开局填充**跑的 ✓ ⇒ ★ **放置之后卡片没有重新填充** ✗
+    --       ⇒ ★ 灰白永远停留在"放置前"的状态 ✓✓
+    --   ★ 机制 ✓：★ 列表项的填充由 `RefreshItems` 回调驱动 ✓
+    --     ★ 而它有个**签名门**（`_grid_sig`）✓ ⇒ ★ 签名没变就不再重填 ✓
+    --   ⇒ ★ 这里**清掉签名** ✓ ⇒ 下一帧网格同步会重新填一遍 ✓ ⇒ **灰白跟着出来** ✓✓
+    self._grid_sig = nil
     self:fx(self:cell_id(r, c), M.EFFECTS.PLACE)
     if self.opts.on_place then self.opts.on_place(who, r, c) end
     self.dirty = true
