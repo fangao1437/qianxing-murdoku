@@ -4543,6 +4543,17 @@ function Adapter:set_property(id, key, value, nkey)
       end
       -- 有笔记才显示；没笔记藏起来，免得留一个空框
       if c.SetVisible then pcall(function() c:SetVisible(txt ~= "") end) end
+      -- ★★★★★ 2026-10-07 **把笔记提到最上层** ✗✓ —— 这是"字母不显示"的最后一环 ✓
+      --   真机探针（全对 ✓）：★ `诊断NOTEV：写入=V  回读text=V  visible=true  fontSize=36`
+      --     ★ `fontColor=4278190080`（★ 不透明纯黑 ✓）
+      --   ⇒ ★ **控件层面没有任何问题** ⇒ 只剩**被盖住** ✓✓
+      --   ★ 机制 ✓：层序那一步用的是 `SetAsFirstSibling()` ⇒ **置底** ✓
+      --     （真机日志：★「图层顺序：对 25 个格子排过层序，**子控件成功置底 275 个**」✓）
+      --     ⇒ ★ 若 `face`（**不透明白图** ✓）排在笔记之后 ⇒ **白图压在字母上 ⇒ 看不见** ✓✓
+      --   ⇒ ★ **有笔记时 `SetAsLastSibling()` 提到最上** ✓（官方："数值越大越靠上" ✓）
+      if txt ~= "" then
+        if c.SetAsLastSibling then pcall(function() c:SetAsLastSibling() end) end
+      end
       -- ★★★★★ 2026-10-07 一次性诊断：**写【之后】回读** ✓
       --   用户确认 `note` **本来就是文本框** ⇒ `.text` 能写 ✓ ⇒ 问题变成"写进去了看不见" ✓
       --   三种原因一次分辨 ✓：★ ① 字色=底色（白压白）★ ② 显隐 false ★ ③ 字号/尺寸极小 ✓
