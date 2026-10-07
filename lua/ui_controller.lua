@@ -4109,6 +4109,23 @@ function Controller:_on_grid_item_click(adapter, grid, item)
       pcall(function() c2.imageColor = 4294956107 end)   -- ★ 暖金（乘算着色）
     end
   end
+  -- ★ 2026-10-07 一次性诊断：把该线索记录的【真实字段名】打出来（方案 A 取值失败 ⇒ 不猜了）
+  if (self._diag_clue or 0) < 3 then
+    self._diag_clue = (self._diag_clue or 0) + 1
+    local ks, vs = {}, {}
+    pcall(function()
+      local v3 = self.core:view() or {}
+      local c3 = (v3.clues or {})[pos]
+      if c3 ~= nil then
+        for k, v in pairs(c3) do
+          ks[#ks + 1] = tostring(k)
+          if type(v) ~= "table" then vs[#vs + 1] = tostring(k) .. "=" .. tostring(v) end
+        end
+      end
+    end)
+    print("[murdoku] ★ 诊断CLUE：pos=" .. tostring(pos) .. "  字段名=[" .. table.concat(ks, ",")
+      .. "]  值(" .. table.concat(vs, " ") .. ")")
+  end
   -- ★★★★★ 2026-10-07 **方案 A：点线索卡 = 高亮这条 + 选中卡上那个人** ✗✓（用户确认走 A ✓）
   --
   --   为什么必须有：真机日志「★ **点 (第1行 第2列) 没生效：先点一个头像　当前工具=place　已选=nil**」✓
