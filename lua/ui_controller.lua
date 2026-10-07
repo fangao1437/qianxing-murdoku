@@ -4072,7 +4072,20 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   --       ⇒ ★ `core.placed["老宅主"]` 恒为 nil ⇒ ★ **灰白永远不开** ✓✓
   --   ★ 而列表项本来就知道 id ✓：★ **头像素材名 `portrait.V`** ✓（★ 填充里用 `t_portrait` ✓）
   --     ⇒ ★ 去掉 `portrait.` 前缀就是 id ✓（★ 与 `who=V` / `who=D` 同一套字母 ✓）
+  -- ★★★★★ 2026-10-07 **id 改用【核心视图】那条记录** ✗✓
+  --   ★ 上一版从 `t_portrait` 取 ⇒ 真机仍是 `placed=false` ✗（★ 说明那个变量在这段作用域里不是 `portrait.X` 格式 ✓
+  --     或索引对不上 ✓）⇒ ★ **不再猜变量** ✓
+  --   ★ 权威来源 ✓：★ **`诊断CLUE` 早就证明** 视图里的线索记录有 **`who=V`**（★ id ✓ 不是显示名 ✓）
+  --     ⇒ ★ 用 `self.core:view().clues[pos].who` ✓ 取不到再退回 `t_portrait` ⇒ 再退回 `cl.who` ✓
   local _pid = nil
+  pcall(function()
+    local v = self.core and self.core:view() or nil
+    local cc = v and v.clues and v.clues[pos] or nil
+    if cc ~= nil and cc.who ~= nil then _pid = cc.who end
+  end)
+  if _pid == nil and t_portrait ~= nil and t_portrait ~= "" then
+    _pid = tostring(t_portrait):gsub("^portrait%.", "")
+  end
   if t_portrait ~= nil and t_portrait ~= "" then
     _pid = tostring(t_portrait):gsub("^portrait%.", "")
   end
@@ -4086,7 +4099,8 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   if (self._gray_log or 0) < 4 then
     self._gray_log = (self._gray_log or 0) + 1
     print("[murdoku] ★ 灰白诊断：pos=" .. tostring(pos) .. "  who=" .. tostring(cl.who)
-      .. "  placed=" .. tostring(_placed_now) .. "  找到gray=" .. tostring(_cgray ~= nil))
+      .. "  placed=" .. tostring(_placed_now) .. "  找到gray=" .. tostring(_cgray ~= nil)
+      .. "  ★ id=" .. tostring(_pid) .. "  portrait=" .. tostring(t_portrait))
   end
   if _cgray ~= nil then
     local _rg = self:_grid_item_rec(item, index)
