@@ -501,6 +501,21 @@ function Controller:flush_pending_note()
   if (self.now or 0) - p.t < DOUBLE_CLICK_SECONDS then return end
   self.pending_click = nil
   local ok, why = self.core:tap_cell(p.r, p.c)
+  -- ★ 2026-10-07 一次性诊断：笔记有没有【写进核心】（分辨"没写入" vs "写了没画出来"）
+  if (self._diag_tap or 0) < 6 then
+    self._diag_tap = (self._diag_tap or 0) + 1
+    local st = "?"
+    pcall(function()
+      local v = self.core:view() or {}
+      local find = nil
+      for _, cd in ipairs(v.cells or {}) do
+        if cd ~= nil and cd.r == p.r and cd.c == p.c then find = cd end
+      end
+      st = tostring(find and find.notes)
+    end)
+    print("[murdoku] ★ 诊断TAP：tap_cell(" .. tostring(p.r) .. "," .. tostring(p.c) .. ")  ok="
+      .. tostring(ok) .. "  why=" .. tostring(why) .. "  该格 notes=" .. st)
+  end
   if ok then
     self:fx(self:cell_id(p.r, p.c), M.EFFECTS.NOTE)
     self.dirty = true
