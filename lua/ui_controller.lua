@@ -485,6 +485,17 @@ end
 
 -- 把挂起的单击落成铅笔笔记（等过双击窗口才执行，免得抢在第二次点击前面）
 function Controller:flush_pending_note()
+  -- ★ 2026-10-07 一次性诊断：笔记这条路到底走到哪一步（用户报"铅笔笔记 + 两种放置都没生效"）
+  if self._diag_note == nil then self._diag_note = 0 end
+  if self._diag_note < 4 then
+    self._diag_note = self._diag_note + 1
+    local md, sel = "?", "?"
+    pcall(function() md = tostring(self.core and self.core.mode) end)
+    pcall(function() sel = tostring(self.core and self.core.selected) end)
+    print("[murdoku] ★ 诊断NOTE：flush_pending_note 被调用（第 " .. tostring(self._diag_note)
+      .. " 次）  mode=" .. md .. "  selected=" .. sel
+      .. "  pending_click=" .. tostring(self.pending_click ~= nil))
+  end
   local p = self.pending_click
   if p == nil then return end
   if (self.now or 0) - p.t < DOUBLE_CLICK_SECONDS then return end
