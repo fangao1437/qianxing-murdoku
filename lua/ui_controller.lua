@@ -2698,7 +2698,16 @@ function Controller:build_layout()
         --   （和 `obj` 白块是**同一个 bug 形状** —— 我在同一个坑里摔了两次。）
         image = cd.suspect and Controller.portrait_of(vm, cd.suspect) or false,
         -- ★ 见 `note_list_of` 那段：适配器要**数组** ✓ 核心给的是**集合** ✗（不转 = 永远空串 = 永不显示）
-        notes = note_list_of(cd.notes),
+        -- ★★★★★ 2026-10-07 **改用核心那份笔记表** ✗✓（真机探针：写入通道全通、但写进去的是 `1` ✗）
+        --   ★ 探针铁证 ✓：★ `诊断NOTECH：写笔记通道=text  文本=1` ✓
+        --     ★ `诊断NOTEV：回读text=1  visible=true  fontSize=36  fontColor=4278190080`（黑 ✓）
+        --   ⇒ ★ **显示通路完全正常** ✓ ⇒ ★ 唯一的问题是**取的源表错了** ✓✓
+        --   ★ 两份表的键不同 ✓：
+        --     · 核心 `core.notes[r][c]` = ★ **`{ [人物id]=true }`** ⇒ 键**就是徽章字母** ✓（探针：`{V}` ✓）
+        --     · 视图 `cd.notes`        = ★ 键是**数字** ✗ ⇒ `tostring(k)` 得到 `"1"` ✓（正是看到的那个 1 ✓）
+        --   ⇒ ★ **以核心为准** ✓（视图那份只当兜底 ✓）
+        notes = note_list_of((self.core and self.core.notes and self.core.notes[r]
+          and self.core.notes[r][c]) or cd.notes),
         room = cd.room,
         -- ★★ 2026-09-28 新增：**显式告诉适配层"这格有没有物件"**。
         --
