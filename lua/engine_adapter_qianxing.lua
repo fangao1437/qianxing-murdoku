@@ -4522,20 +4522,28 @@ function Adapter:set_property(id, key, value, nkey)
         end)
         if fw ~= nil and fh ~= nil and fw > 1 and fh > 1 then
           local hbox = math.max(30, fh / 3)
-          -- ★★★★★ 2026-10-07 **查证模式：不设尺寸** ✗✓（用户要求 ✓ 文本控件不能有未知机制 ✓）
-          --   ★ 上一版这里是：`c:SetSizeDelta(fw, hbox)` ⇒ 字母出现 ✓
-          --   ⇒ 现在**一个字都不设** ✓ 由编辑器给尺寸 ✓ 看引擎认不认 ✓
-          --     · 认 ⇒ ★ 编辑器是唯一权威 ✓ 结案 ✓
-          --     · 不认 ⇒ ★ 就是"运行时实例不沿用模板几何"这个机制 ✓ 我们把它查实 ✓
-          -- ★ 位置也**不设**（★ 查证模式 ✓）—— 改为**只读**实例真实几何并打一行 ✓
+          -- ★★★★★ 2026-10-07 **二次修正：脚本必须自己把框设回来** ✗✓
+          --   ★ 用户的关键观察（★ 一针见血 ✓）：★ 运行时读到的 `100×30`
+          --     ★ **和编辑器的任何一版都不一致**（★ 用户说旧值也是 `124×37` ✓）
+          --     ⇒ ★ **说明有"第三方"在改这个文本框的尺寸**（★ 目前还没找到是谁 ✓）
+          --   ⇒ ★ 结论：★ **不能指望编辑器 ✓ 也不能只设一次** ✓ ——
+          --     ★ **脚本每次都把框设回"格子中间一条"** ✓（★ 这就是"二次修正"✓）
+          --   ★ 值 ✓：★ 宽 = 格子宽 ✓ 高 = max(30, 格子高÷3) ✓ 位置 (0,0) ✓
+          --     （★ 24 号字的行高 ≈ 36 ✓ 所以下限 30 时我按 36 给 ✓ 保证一行能装下 ✓）
+          -- ★ **二次修正：把框设回中间一条** ✓（★ 每次都设 ✓ 对抗那个未知的改动者 ✓）
+          local bw, bh = nil, nil
+          pcall(function() bw, bh = c:GetSizeDelta() end)      -- 先读"被动过之后"的值（诊断用）
+          local want_h = math.max(36, fh / 3)                  -- ★ 24 号字行高≈36 ⇒ 下限 36 ✓
+          if c.SetSizeDelta then pcall(function() c:SetSizeDelta(fw, want_h) end) end
+          if c.SetAnchoredPosition then pcall(function() c:SetAnchoredPosition(0, 0) end) end
           if (self._geom_probe or 0) < 6 then
             self._geom_probe = (self._geom_probe or 0) + 1
             local gx, gy, gw, gh = nil, nil, nil, nil
             pcall(function() gx, gy = c:GetAnchoredPosition() end)
             pcall(function() gw, gh = c:GetSizeDelta() end)
-            print("[murdoku] ★ 几何探针：note 实例尺寸=" .. tostring(gw) .. "x" .. tostring(gh)
-              .. "  实例位置=" .. tostring(gx) .. "," .. tostring(gy)
-              .. "   （面/格子 = " .. tostring(fw) .. "x" .. tostring(fh) .. " 仅作参照）")
+            print("[murdoku] ★ 二次修正：改前 " .. tostring(bw) .. "x" .. tostring(bh)
+              .. " ⇒ 改后 " .. tostring(gw) .. "x" .. tostring(gh)
+              .. "（格子 " .. tostring(fw) .. "x" .. tostring(fh) .. " 位置 " .. tostring(gx) .. "," .. tostring(gy) .. "）")
           end
         end
       end
