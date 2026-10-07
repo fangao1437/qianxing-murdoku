@@ -4072,7 +4072,43 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   --   文案只跟关卡数据有关（见 `_grid_text_payload` 的注释）⇒ 算一次就够。
   local pay = self:_grid_text_payload()
   local cl = pay.items[pos]
-  if cl == nil then return end        -- 超出本关线索数（理论上不会来）⇒ 什么都不写
+  -- ★★★★★ 2026-10-07 **越界项必须【抹掉】，不能只是 `return`** ✗✓（用户反馈 ✓）
+  --   ★ 现象 ✓：★「★ **网格视窗第一行上面刷出有效内容，而且不属于本关任何一张卡**」✗
+  --   ★ 元凶 ✓：★ 原代码 `if cl == nil then return end` ⇒ ★ **超出线索数的列表项【什么都不写】** ✗
+  --     ⇒ ★ 它就**留着上一次填充写进去的内容**（★ 或模板自带的内容 ✓）⇒ ★ 露在可视区外沿 ✓✓
+  --   ★ 修法 ✓：★ **把这些项的三个文字子控件隐藏** ✓（★ 加上图片与灰白层 ✓）
+  --     · ★ 只隐藏、不写空串 ✓ ⇒ ★ 不依赖后文才定义的文字写入函数 ✓（★ 前向引用会报错 ✓）
+  --     · ★ 复用项再次进入有效范围时，下面会**把它们显回来** ✓（★ `_rg0.blank` 标记 ✓）
+  if cl == nil then
+    local _rg0 = self:_grid_item_rec(item, index)
+    if _rg0 == nil or _rg0.blank ~= true then
+      if _rg0 ~= nil then _rg0.blank = true end
+      local _nm = { "who", "what", "letter", "face", "gray" }
+      for _i0 = 1, #_nm do
+        local _c0 = self:_grid_item_child_cached(item, index, pos, _nm[_i0])
+        if _c0 ~= nil then
+          pcall(function() _c0:SetVisible(false) end)
+          pcall(function() if _c0.SetActive then _c0:SetActive(false) end end)
+        end
+      end
+    end
+    return
+  end
+  -- ★ 曾经被抹掉、现在又有效 ⇒ **显回来** ✓（★ 只在这一种情况下做 ✓ 稳态零成本 ✓）
+  do
+    local _rg0b = self:_grid_item_rec(item, index)
+    if _rg0b ~= nil and _rg0b.blank == true then
+      _rg0b.blank = nil
+      local _nm = { "who", "what", "letter" }
+      for _i0 = 1, #_nm do
+        local _c0 = self:_grid_item_child_cached(item, index, pos, _nm[_i0])
+        if _c0 ~= nil then
+          pcall(function() _c0:SetVisible(true) end)
+          pcall(function() if _c0.SetActive then _c0:SetActive(true) end end)
+        end
+      end
+    end
+  end
   local t_who, t_what, t_letter = cl.who, cl.what, cl.letter
   -- ★★★★★ 2026-10-07 **已正式放置 ⇒ 卡片盖一层灰白** ✗✓（用户新功能 ✓ 模板侧已加控件 `gray` ✓）
   --   ★ 分工（用户定的 ✓ 也是"能走控件就不走脚本"✓）：
