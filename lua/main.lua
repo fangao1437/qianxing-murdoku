@@ -619,18 +619,11 @@ function Murdoku.start(level_id, opts)
   --      如果连自己也收不到，就缩小范围（只用 `disableCursorEventPassthrough`）。
   --      这条日志打出"设了几个"，方便对照。
   if adapter.seal_containers ~= nil then
-    -- ★★★★★ 2026-10-07 **改由编辑器里的容器 `xxx` 代劳** ✗✓（用户要求 ✓ 实测可行 ✓）
-    --   ★ `xxx` = 你在图层**最底部**加的全屏容器 ✓ 编辑器里开了
-    --     **「屏蔽按键」+「屏蔽光标事件」两个开关** ✓ ⇒ ★ **键盘与触摸两件事它一起管** ✓✓
-    --   ⇒ ★ 脚本这条"逐个容器设 `disableKeyEventPassthrough`"就**不需要了** ✓ 停用 ✓
-    --     ★ 好处 ✓：★ 少一层脚本介入 ✓ 且**编辑器里看得见、可随时调** ✓
-    --   ⚠️ **回退只需一行** ✓：把下面那行注释取消即可 ✓
-    -- local sealed = adapter:seal_containers({ "home", "select" })
-    local sealed = adapter:seal_containers({ "home", "select" })   -- ★ 已恢复（用户要求撤回脚本隔离 ✓）
+    local sealed = adapter:seal_containers({ "home", "select" })
     -- ★ 2026-10-07 **触摸遮挡层**（★ 移动端：全屏拖动会带动 3D 角色 ✓ 用户实测反馈 ✓）
     --   与上面"屏蔽按键"是**两条独立的链** ✓ 键盘归那条 ✓ 触摸归这条 ✓（★ 见适配器 `seal_cursor_shield` ✓）
     if adapter.seal_cursor_shield ~= nil then
-      -- pcall(function() adapter:seal_cursor_shield() end)   -- ★ 已退回 ✓
+      pcall(function() adapter:seal_cursor_shield() end)
     end
     if print then
       print(string.format("[murdoku] 2D/3D 输入隔离：主页/选关容器已屏蔽穿透 %d 个", sealed))

@@ -1,5 +1,4 @@
 --[[----------------------------------------------------------------------------
-local _silent = function() end   -- ★ 2026-10-07 临时探针已「收声」（保留代码 ⇒ 零语法风险 ✓ 需要时一行改回 print ✓）
   ui_controller.lua —— 操作框架层（页面布局 + 交互状态机 + 特效指令）v0.3.0
 
   交互模型照 murdoku 实证规格：
@@ -542,7 +541,7 @@ function Controller:do_place(r, c)
       end end
     end)
     if (_sel_before ~= nil) and core.placed and core.placed[_sel_before] then _n2 = 1 end
-    _silent("[murdoku] ★ 放置分辨：走的=【正式放置 hold_cell】 人=" .. tostring(_sel_before)
+    print("[murdoku] ★ 放置分辨：走的=【正式放置 hold_cell】 人=" .. tostring(_sel_before)
       .. "  笔记 " .. tostring(_notes_before) .. " ⇒ " .. tostring(_notes_after)
       .. "  放后选中=" .. tostring(core.selected) .. "  placed=" .. tostring(_n2 == 1))
   end
@@ -588,7 +587,7 @@ function Controller:do_pre_place(r, c)
   local _sel_b2 = core.selected
   local ok, why = core:pre_place(r, c)
   if ok then
-    _silent("[murdoku] ★ 放置分辨：走的=【预放置 pre_place】 人=" .. tostring(_sel_b2)
+    print("[murdoku] ★ 放置分辨：走的=【预放置 pre_place】 人=" .. tostring(_sel_b2)
       .. "  放后选中=" .. tostring(core.selected) .. "（★ 应仍是 " .. tostring(_sel_b2) .. " ✓）")
   end
   if ok then
@@ -621,7 +620,7 @@ function Controller:on_cell_up(r, c, x, y)
     if dx > TAP_MOVE_TOLERANCE or dy > TAP_MOVE_TOLERANCE then return false end
   end
   local ok = self:do_place(r, c)
-  _silent("[murdoku] ★ 放置分辨：抬起被判定为【长按】✓ 时长=" .. string.format("%.2f", dt))
+  print("[murdoku] ★ 放置分辨：抬起被判定为【长按】✓ 时长=" .. string.format("%.2f", dt))
   if ok then
     self._suppress_click = true     -- 紧跟着的那个 CursorClick 不要重复处理
   end
@@ -661,7 +660,9 @@ function Controller:on_cell_click(r, c)
   --     ⇒ ★ 点卡片就会顺手点一下格子 ✓（真机日志两次可见 ✓ 见 `_on_grid_item_click` 处注释 ✓）
   --   ★ 这里用"刚点过卡片"的时间戳挡掉 ✓ 窗口 0.35 秒（= 双击窗口 ✓）
   --     ⚠️ 只挡**单击**这一路 ✓ 不影响双击放置/长按 ✓（它们走 down/up 判定，不经过这里 ✓）
-  -- ★ 2026-10-07 **已撤**：这段守卫会吞掉"选中卡片后紧接着的那一次点击" ✗
+  if self._grid_click_t ~= nil and (self.now or 0) - self._grid_click_t <= 0.35 then
+    return
+  end
   local core = self.core
   self.now = self.now or 0
   -- ★★★★★ 2026-10-07 **吃掉"点线索卡"带出来的那一次格子点击** ✗✓（治穿透 ✓）
@@ -669,7 +670,9 @@ function Controller:on_cell_click(r, c)
   --     ⇒ ★ 点卡片就会顺手点一下格子 ✓（真机日志两轮都可见 ✓）
   --   ★ 这里用"刚点过卡片"的时间戳挡掉 ✓ 窗口 0.35 秒（= 双击窗口 ✓）
   --     ⚠️ 只挡**单击**这一路 ✓ 双击/长按走 down-up 判定，不经过这里 ✓ ⇒ 不受影响 ✓
-  -- ★ 2026-10-07 **已撤**：这段守卫会吞掉"选中卡片后紧接着的那一次点击" ✗
+  if self._grid_click_t ~= nil and (self.now or 0) - self._grid_click_t <= 0.35 then
+    return
+  end
   local occupied = core.grid[r][c] ~= nil
   local mode = core.mode
 
@@ -728,7 +731,7 @@ function Controller:on_cell_click(r, c)
         nt = tostring(celln)
       end
     end)
-    _silent("[murdoku] ★ 诊断NOTE2：单击(" .. tostring(r) .. "," .. tostring(c) .. ")  occupied="
+    print("[murdoku] ★ 诊断NOTE2：单击(" .. tostring(r) .. "," .. tostring(c) .. ")  occupied="
       .. tostring(occupied) .. "  selected=" .. sel .. "  返回 ok=" .. tostring(ok)
       .. " why=" .. tostring(why) .. "  该格笔记=" .. nt)
   end
@@ -1766,7 +1769,19 @@ function Controller:build_layout()
   push({ id = "stage", kind = "container", parent = "root", rect = rect_of(L.board), style = "stage" })
 
   -- ===== 顶部工具条 =====
-  -- ★ 2026-10-07 **已退回**：`xxx` 白名单（脚本隔离方案 ✓ 用户要求撤回 ✓）
+  -- ★★★★★ 2026-10-07 **触摸遮挡层 `xxx`（用户在编辑器里加的全屏容器）** ✗✓
+  --   ★ 背景（★ 移动端实测反馈 ✓）：★「★ **屏幕上每一点都可以拖动** ⇒ 3D 角色跟着动」✓
+  --     ⇒ ★ 键盘隔离（`disableKeyEventPassthrough` ✓）**管不到触摸** ✗
+  --   ★ 用户在编辑器里做的 ✓：★ **在图层【最底部】加了一个容器节点 `xxx`**
+  --     ★ **并打开了「屏蔽按键」+「屏蔽光标事件」两个开关** ✓✓
+  --   ⇒ ★ 脚本这边只需保证它**不被隐藏** ✓ ——
+  --     ★ 因为 `hide_unlisted` 会把 `MANAGED` 容器（含 `root` ✓）里**不在规划中的直接子控件**藏掉 ✗
+  --     ⇒ ★ **把它写进规划 = 加进白名单** ✓ 这样每帧都带 `visible = true` ✓✓
+  --   ★ 几何给**全屏** ✓（★ 遮挡层必须盖满屏 ✓）
+  --   ⚠️ 控件名是用户起的 `xxx` ✓ 名字变了就要改这里 ✓（★ 想改名告诉我 ✓ 这是**存档侧**的事 ✓ 归我 ✓）
+  push({ id = "xxx", kind = "container", parent = "root",
+         rect = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height },
+         visible = true })
   push({ id = "topbar", kind = "container", parent = "root", rect = rect_of(L.topbar), style = "topbar" })
   -- 工具条容器：与 topbar 同区（视觉上仍是一条顶栏），只是树里分开，HUD 文字不再和按钮混杂。
   push({ id = "toolbar", kind = "container", parent = "root", rect = rect_of(L.topbar), style = "toolbar" })
@@ -4114,7 +4129,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   -- 点击 → 聚焦（未验证能力，全程 pcall + 只报一次结论）
   self:_grid_bind_item_click(adapter, grid, item)
       self._grid_bind_n = (self._grid_bind_n or 0) + 1
-      if self._grid_bind_n == 1 then _silent("[murdoku] ★ 诊断GRID：正在给列表项绑点击（第 1 个）") end
+      if self._grid_bind_n == 1 then print("[murdoku] ★ 诊断GRID：正在给列表项绑点击（第 1 个）") end
 end
 
 -- 给列表项挂点击。★ 列表项是**复用**的：同一个控件会先后代表不同线索 ⇒
@@ -4126,7 +4141,7 @@ function Controller:_grid_bind_item_click(adapter, grid, item)
       self._grid_bind_n = 0
       local nm2 = "?"
       pcall(function() nm2 = tostring(item.name) end)
-      _silent("[murdoku] ★ 诊断GRID：列表项【不支持光标事件】⇒ 点击绑不上！item=" .. nm2 .. "（AddCursorEventListener=" .. tostring(item ~= nil and item.AddCursorEventListener ~= nil) .. "）")
+      print("[murdoku] ★ 诊断GRID：列表项【不支持光标事件】⇒ 点击绑不上！item=" .. nm2 .. "（AddCursorEventListener=" .. tostring(item ~= nil and item.AddCursorEventListener ~= nil) .. "）")
     end
     return
   end
@@ -4172,7 +4187,7 @@ function Controller:_on_grid_item_click(adapter, grid, item)
     if not self._grid_idx_log then self._grid_idx_log = 0 end
     if self._grid_idx_log < 5 then
       self._grid_idx_log = self._grid_idx_log + 1
-      _silent("[murdoku] ★ 诊断GRID：列表项被点到了 ✓ GetItemIndex=" .. tostring(idx))
+      print("[murdoku] ★ 诊断GRID：列表项被点到了 ✓ GetItemIndex=" .. tostring(idx))
     end
   if type(idx) ~= "number" then
     -- 反查失败 ⇒ 这一次点击**宁可丢掉**，也不要聚焦到错误的一条（聚焦错了会误导推理）
@@ -4230,7 +4245,7 @@ function Controller:_on_grid_item_click(adapter, grid, item)
         end
       end
     end)
-    _silent("[murdoku] ★ 诊断CLUE：pos=" .. tostring(pos) .. "  字段名=[" .. table.concat(ks, ",")
+    print("[murdoku] ★ 诊断CLUE：pos=" .. tostring(pos) .. "  字段名=[" .. table.concat(ks, ",")
       .. "]  值(" .. table.concat(vs, " ") .. ")")
   end
   -- ★★★★★ 2026-10-07 **方案 A：点线索卡 = 高亮这条 + 选中卡上那个人** ✗✓（用户确认走 A ✓）
