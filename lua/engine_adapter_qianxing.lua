@@ -4543,6 +4543,21 @@ function Adapter:set_property(id, key, value, nkey)
       end
       -- 有笔记才显示；没笔记藏起来，免得留一个空框
       if c.SetVisible then pcall(function() c:SetVisible(txt ~= "") end) end
+      -- ★★★★★ 2026-10-07 一次性诊断：**写【之后】回读** ✓
+      --   用户确认 `note` **本来就是文本框** ⇒ `.text` 能写 ✓ ⇒ 问题变成"写进去了看不见" ✓
+      --   三种原因一次分辨 ✓：★ ① 字色=底色（白压白）★ ② 显隐 false ★ ③ 字号/尺寸极小 ✓
+      if (self._diag_notev or 0) < 6 then
+        self._diag_notev = (self._diag_notev or 0) + 1
+        local rt, rv, rfz, rfc, rsd = "?", "?", "?", "?", "?"
+        pcall(function() rt = tostring(c.text) end)
+        pcall(function() rv = tostring(c.visible) end)
+        pcall(function() rfz = tostring(c.fontSize) end)
+        pcall(function() rfc = tostring(c.fontColor) end)
+        pcall(function() rsd = tostring(c.sizeDelta) end)
+        print("[murdoku] ★ 诊断NOTEV：id=" .. tostring(id) .. "  写入=" .. tostring(txt)
+          .. "  回读text=" .. rt .. "  visible=" .. rv .. "  fontSize=" .. rfz
+          .. "  fontColor=" .. rfc .. "  sizeDelta=" .. rsd)
+      end
     end
 
   elseif key == "x_mark" then
