@@ -265,6 +265,21 @@ function Murdoku.start(level_id, opts)
         --   ★ 所以这里必须补一句 —— 与下面"点的是当前这一关"那支（L228）**同一套写法** ✓
         --     （"同一件事两处实现必然漂移"是本项目反复踩到的病 ⇒ 两支都要写 ✓）
         if controller ~= nil then controller.screen = nil end
+
+  -- ★★★★★ 2026-10-07 **进入关卡时清掉"网格视窗"的失败闩锁** ✗✓（老问题，用户实测定位 ✓）
+  --   现象：★ **退出至菜单 → 重进【同一关】⇒ 网格视窗不渲染** ✗
+  --         换一关进 ⇒ 正常 ✓ 再换回来 ⇒ 正常 ✓ 再退出重进 ⇒ 又不正常 ✗
+  --   ⇒ 分水岭 = **同一控制器只改 `screen`** ✗ vs **新控制器（`start_other`）** ✓
+  --   机制：`sync_clue_grid` 里 `if self._grid_broken then return end` 是【永久闩锁】
+  --         ⇒ 选关那一屏（列表被藏 ⇒ 引擎不建列表项 ⇒ 误判失败）拉上闩锁后，
+  --           **重进同一关直接 return ⇒ `_grid_state` 停在 "off" ⇒ `clues.grid` 永不显示**
+  --   ⇒ 修法：每次"进入关卡"清一次闩锁（换关是新建控制器，本来就干净）
+  if controller ~= nil then
+    controller._grid_broken = nil
+    controller._grid_tries = 0
+    controller._grid_state = nil
+    controller.dirty = true
+  end
       else
         -- 点的是当前这一关：只是退出选关界面，不用重开
         controller.screen = nil
