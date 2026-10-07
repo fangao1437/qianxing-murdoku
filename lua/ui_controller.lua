@@ -757,6 +757,18 @@ function Controller:on_cell_click(r, c)
     end
     self.dirty = true
   else
+    -- ★★★★★ 2026-10-07 **失败也要记下这一击** ✗✓（"不能以预放置挪位"的真因 ✓）
+    --   ★ 真机证据 ✓：★ 正式放置过 V 之后再双击别的格子 ⇒ 日志里**两次都是单击**（`诊断NOTE2`）✗
+    --     ⇒ ★ 说明**双击没被识别** ✓
+    --   ★ 原因 ✓：★ 第一击 `ok=false`（★ 笔记被"这个人已正式放置"规则拒 ✓）
+    --     ⇒ ★ 而 `last_click` **只在 `ok == true` 时记录** ✗
+    --       ⇒ ★ 第二击来的时候 `last = nil` ⇒ ★ **永远判不出双击** ✗✗
+    --         ⇒ ★ **`do_pre_place` 永不触发** ⇒ ★ **"选中之后想双击挪位"被拦** ✓✓
+    --   ★ 修法 ✓：★ **失败也记** ✓ 且 `did = "none"` ⇒
+    --     ★ 第二击**不会去"撤销第一击"**（★ 什么都没做 ✓ 无需撤 ✓）★ 只做预放置 ✓✓
+    if (not occupied) and mode == "place" and self.last_click == nil then
+      self.last_click = { r = r, c = c, t = self.now, did = "none" }
+    end
     self:_refuse(r, c, why)
   end
 end
