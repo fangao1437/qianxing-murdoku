@@ -748,6 +748,25 @@ function Adapter:create_control(node)
           --   却看不见，就是这个。
           --   对照证据：v044（纯图片模板）下同样这段代码是**看得见**的，因为纯图片模板的
           --   图片子节点自带尺寸；v045 换成格子模板后就消失了。
+  -- ★★★★★ 2026-10-07 **实验探针：新文本框控件的运行时尺寸** ✗✓
+  --   目的（用户要求 ✓）：★ 确认 `100×30` 到底是【引擎默认】还是【模板数据】✓
+  --   ★ 做法：用户新建一个文本框控件（★ 名字 `probe_tb` ✓ 编辑器里尺寸设 `200×50` ✓）
+  --     ⇒ 若运行时读到 **100×30** ⇒ ★ **实锤引擎默认** ✓（编辑器管不了 ✓）
+  --     ⇒ 若读到 **200×50** ⇒ ★ 说明"二级子控件才不沿用" ✓ ⇒ 我把 `note` 挪到顶层的同级位置即可 ✓
+  if (self._probe_tb or 0) < 8 then
+    self._probe_tb = (self._probe_tb or 0) + 1
+    local tb = nil
+    pcall(function() tb = self:find("probe_tb") end)
+    if tb ~= nil then
+      local w, h, x, y = nil, nil, nil, nil
+      pcall(function() w, h = tb:GetSizeDelta() end)
+      pcall(function() x, y = tb:GetAnchoredPosition() end)
+      print("[murdoku] ★ 实验探针：probe_tb 实例尺寸=" .. tostring(w) .. "x" .. tostring(h)
+        .. "  位置=" .. tostring(x) .. "," .. tostring(y) .. "（编辑器设的是 200x50）")
+    elseif self._probe_tb == 1 then
+      print("[murdoku] ★ 实验探针：没找到 `probe_tb`（★ 名字要一模一样 ✓ 或还没建 ✓）")
+    end
+  end
           --   `_cells_paint` 是 25 个格子正在用的那条路（`格子底图已点亮：25 个 face`），
           --   它多做两件事：`face:SetSizeDelta(size)` + `face:SetAnchoredPosition(0,0)`。
           --   第 4 个参数传该图标自己的素材；`size` 传 nil ⇒ 它按控件实际尺寸算。
