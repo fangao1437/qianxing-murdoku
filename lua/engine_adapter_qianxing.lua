@@ -4506,19 +4506,24 @@ function Adapter:set_property(id, key, value, nkey)
         --     ★ 而 `face` 也是靠脚本 `SetAnchoredPosition(0,0)` 才铺满格子的 ✓（项目 L752 ✓）
         --   ⇒ ★ 所以位置【必须由脚本钉住】✓；★ **尺寸交给编辑器**（用户已调好 ✓）
         --     ★ 只有"运行时尺寸为 0"这种模板坑才兜一个中间条 ✓
-        if c.SetAnchoredPosition then pcall(function() c:SetAnchoredPosition(0, 0) end) end
-        local nw, nh = nil, nil
-        pcall(function() nw, nh = c:GetSizeDelta() end)
-        if nw == nil or nh == nil or nw <= 1 or nh <= 1 then
-          local fw, fh = nil, nil
-          pcall(function()
-            local f = self:sub(id, "face")
-            if f ~= nil then fw, fh = f:GetSizeDelta() end
-          end)
-          if fw ~= nil and fh ~= nil and fw > 1 and fh > 1 then
-            if c.SetSizeDelta then pcall(function() c:SetSizeDelta(fw, math.max(30, fh / 3)) end) end
-            print("[murdoku] 笔记：运行时尺寸为 0 ⇒ 兜底设成中间条 " .. tostring(fw) .. "x" .. tostring(math.max(30, fh / 3)))
-          end
+        -- ★★★★★ 2026-10-07 **恒定设成"格子中间一条"（尺寸 + 位置都设）** ✗✓
+        --   ★ 四轮实测收敛出的**唯一稳定解** ✓：
+        --     · 存档给 `100×30`、脚本不设 ⇒ ★ **不画** ✗（两次 ✓）
+        --     · 脚本设 `108×108` ⇒ ★ **画** ✓   脚本设 `108×36` ⇒ ★ **画且居中** ✓（你确认过 ✓）
+        --     · 只钉位置、不设尺寸 ⇒ ★ **不画** ✗（刚验过 ✓）
+        --   ⇒ ★ 结论：★ **这个控件必须由脚本给出"够大、穿过格子中部"的框，引擎才画** ✓
+        --     （★ 存档里的框/位置在运行时都不被沿用 —— 与 `face` 同一个坑 ✓ 见项目 L745~752 ✓）
+        --   ★ 现在：★ 宽 = 格子宽 ✓ 高 = 格子高 ÷ 3（下限 30）✓ 位置 (0,0) ✓
+        --     ⇒ ★ 框正好穿过格子中间 ✓ **字号/对齐仍由编辑器决定** ✓
+        local fw, fh = nil, nil
+        pcall(function()
+          local f = self:sub(id, "face")
+          if f ~= nil then fw, fh = f:GetSizeDelta() end
+        end)
+        if fw ~= nil and fh ~= nil and fw > 1 and fh > 1 then
+          local hbox = math.max(30, fh / 3)
+          if c.SetSizeDelta then pcall(function() c:SetSizeDelta(fw, hbox) end) end
+          if c.SetAnchoredPosition then pcall(function() c:SetAnchoredPosition(0, 0) end) end
         end
       end
     end
