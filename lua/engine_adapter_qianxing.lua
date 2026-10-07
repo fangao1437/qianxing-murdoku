@@ -4515,7 +4515,32 @@ function Adapter:set_property(id, key, value, nkey)
     local c = self:sub(id, "note")
     if c ~= nil then
       local txt = table.concat(value or {}, " ")
-      if c.text ~= nil then c.text = txt end
+      -- ★★★★★ 2026-10-07 **多通道写笔记文本** ✗✓（用户选路线 ①：把模板的 `note` 换成文本控件 ✓）
+      --   真机铁证（探针 ✓）：★ `note.name=note  SetText=false  子控件=[]` ✓
+      --     ⇒ ★ **模板里的 `note` 既不是文本控件、也没有子控件** ✗ ⇒ 文本无处可写 ✓
+      --   ⇒ 这段**按顺序试三条通道** ✓，只要用户换成其中任意一种就能通 ✓：
+      --     ① `.text = txt`         ★ 文本控件 ✓（官方：`textBox.text = "..."`）
+      --     ② `:SetText(txt)`      ★ 若该控件类型提供这个方法 ✓
+      --     ③ 子控件 `note.text` / `note.label`  ★ 容器里放一个文本子控件 ✓
+      --   并**只报一次**实际生效的通道 ✓（★ `通道=nil` 就说明还是没换成文本控件 ✓）
+      local done_ch = nil
+      if c.text ~= nil then c.text = txt; done_ch = "text" end
+      if done_ch == nil and type(c.SetText) == "function" then
+        pcall(function() c:SetText(txt) end); done_ch = "SetText"
+      end
+      if done_ch == nil then
+        local names = { "text", "label" }
+        for i = 1, #names do
+          local ch2 = nil
+          pcall(function() ch2 = self:sub(id, "note." .. names[i]) end)
+          if ch2 == nil then pcall(function() ch2 = c:GetChild(names[i]) end) end
+          if ch2 ~= nil and ch2.text ~= nil then ch2.text = txt; done_ch = "note." .. names[i]; break end
+        end
+      end
+      if (self._diag_notech or 0) < 3 then
+        self._diag_notech = (self._diag_notech or 0) + 1
+        print("[murdoku] ★ 诊断NOTECH：写笔记通道=" .. tostring(done_ch) .. "  文本=" .. tostring(txt))
+      end
       -- 有笔记才显示；没笔记藏起来，免得留一个空框
       if c.SetVisible then pcall(function() c:SetVisible(txt ~= "") end) end
     end
