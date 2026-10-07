@@ -657,16 +657,11 @@ function Controller:on_cell_click(r, c)
   self.pending_click = nil
   local had = core.grid[r][c]
   local had_selected = core.selected          -- 要在 tap_cell **之前**取：它会改选中态
-  -- ★★★★★ 2026-10-07 **单击 = 铅笔笔记** ✗✓（用户要求：★"完全恢复初始设计，单击标记"✓
-  --   "铅笔功能加回来但不加按钮"✓）
-  --   ★ 机制：核心 `tap_cell` 按 `self.mode` 分派 ⇒ **只有 note 模式才写笔记** ✓
-  --   ★★ ⇒ 临时切到 `note` 再调 ✓ 调完立刻还原 ✓ ⇒ **不需要任何按钮 ✓ 单击永远是"标记"** ✓
-  --   ★★★ 双击（预放置）**不清除笔记** ✓ 长按（正式放置）**清除同名笔记** ✓
-  --      —— 这两条核心本来就对（`pre_place` = clear_notes false ✓ `hold_cell` = clear_notes true ✓）
-  local _saved_mode = core.mode
-  -- ★ 只在【空格子】上切到 note ⇒ 已放置的格子仍旧"拿起" ✓（selftest 三条断言守着 ✓）
-  if not occupied then pcall(function() core:set_mode("note") end) end
-  -- ★ 2026-10-07 一次性诊断：单击到底把笔记写进核心了吗（★ 写在单击现场 ✓ 不走 flush ✓）
+  local ok, why = core:tap_cell(r, c)
+  -- ★ 2026-10-07 一次性诊断（★ 这次插在赋值【之后】✓ 上一版插在前面，打的是全局 nil ✗）
+  --   核心 `tap_cell` 在 **place 模式**就已经是：★ 已有人 ⇒ 拿起 ✓ 没选人 ⇒ 切 ✗ ✓
+  --     ★ **选了人 + 空格 ⇒ `toggle_note(selected)` = 铅笔笔记** ✓（`murdoku_core.lua:1910` ✓）
+  --   ⇒ **不需要切模式** ✓ 所以这一段只做观测 ✓
   if (self._diag_tap2 or 0) < 6 then
     self._diag_tap2 = (self._diag_tap2 or 0) + 1
     local nt, sel = "?", "?"
@@ -686,8 +681,6 @@ function Controller:on_cell_click(r, c)
       .. tostring(occupied) .. "  selected=" .. sel .. "  返回 ok=" .. tostring(ok)
       .. " why=" .. tostring(why) .. "  该格笔记=" .. nt)
   end
-  local ok, why = core:tap_cell(r, c)
-  pcall(function() core:set_mode(_saved_mode) end)
   if ok then
     if had then
       -- ★ 2026-09-27 修（用户报"双击格子有时会导致其消失"）：
@@ -705,7 +698,7 @@ function Controller:on_cell_click(r, c)
     if (not occupied) and mode == "place" then
       self.last_click = {
         r = r, c = c, t = self.now,
-        did = "note",   -- ★ 第一击 = 铅笔笔记（单击=标记）
+        did = had_selected and "pre" or "x",
       }
     end
     self.dirty = true
