@@ -630,7 +630,8 @@ function Murdoku.start(level_id, opts)
     -- ★ 2026-10-07 **触摸遮挡层**（★ 移动端：全屏拖动会带动 3D 角色 ✓ 用户实测反馈 ✓）
     --   与上面"屏蔽按键"是**两条独立的链** ✓ 键盘归那条 ✓ 触摸归这条 ✓（★ 见适配器 `seal_cursor_shield` ✓）
     if adapter.seal_cursor_shield ~= nil then
-      pcall(function() adapter:seal_cursor_shield() end)
+      -- ★ 2026-10-08 **已撤** ✓（★ 用户新方案：★ `xxx` 在客户端容器之外 ⇒ 脚本碰不到 ⇒ 也不用兜底 ✓）
+      -- pcall(function() adapter:seal_cursor_shield() end)
     end
     if print then
       print(string.format("[murdoku] 2D/3D 输入隔离：主页/选关容器已屏蔽穿透 %d 个", sealed))
