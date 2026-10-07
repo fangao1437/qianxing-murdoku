@@ -4352,6 +4352,13 @@ function Controller:_on_grid_item_click(adapter, grid, item)
     return
   end
   local pos = idx - (self._grid_base or 1) + 1
+  -- ★★★★★ 2026-10-07 **点卡片后强制重填一次** ✗✓（治"取消选中后高亮还在" ✓）
+  --   ★ 真机反馈 ✓：★「★ **预放置的卡，取消选中后高亮还在**」✗
+  --   ★ 机制 ✓：★ 高亮由**填充**按 `core.selected` 画 ✓（提交 371 ✓）
+  --     ⇒ ★ 而"取消选中"这一步**不触发重填** ✗ ⇒ ★ 填充没机会把金色复原 ✓✓
+  --   ⇒ ★ 这里清掉网格签名 ✓ ⇒ ★ 下一帧重填 ⇒ ★ **高亮立刻跟着选中状态走** ✓✓
+  --     ★（★ 与"放置后重填"用的是同一招 ✓ 提交 363 ✓ 一套机制两处用 ✓）
+  self._grid_sig = nil
   local n = #((self.core:view() or {}).clues or {})
   if pos < 1 or pos > n then return end
 
