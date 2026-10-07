@@ -4480,165 +4480,26 @@ function Adapter:set_property(id, key, value, nkey)
     end
 
   elseif key == "notes" then
-    -- ★ 2026-10-07 一次性诊断：这条分支跑没跑 ✓ value 什么形状 ✓ note 子控件找不找得到 ✓
-    if (self._diag_notes or 0) < 5 then
-      self._diag_notes = (self._diag_notes or 0) + 1
-      local n2, c0, txt0 = "?", nil, "?"
-      if type(value) == "table" then n2 = 0; for _ in pairs(value) do n2 = n2 + 1 end; n2 = "table(" .. n2 .. ")"
-      else n2 = tostring(value) end
-      pcall(function() c0 = self:sub(id, "note") end)
-      if c0 ~= nil then pcall(function() txt0 = tostring(c0.text) end) end
-      print("[murdoku] ★ 诊断NOTES：id=" .. tostring(id) .. "  value=" .. n2
-        .. "  子控件note=" .. tostring(c0 ~= nil) .. "  读回text=" .. txt0)
-      -- ★ 再深一层：note 控件到底是什么（★ 名字/子控件/可用接口 ✓）
-      if c0 ~= nil then
-        local kn, kids, hasSetText = "?", "", "?"
-        pcall(function() kn = tostring(c0.name) end)
-        pcall(function() hasSetText = tostring(c0.SetText ~= nil) end)
-        pcall(function()
-          local ch = c0:GetChildren()
-          if type(ch) == "table" then
-            local nm = {}
-            for i = 1, #ch do
-              local s = "?"
-              pcall(function() s = tostring(ch[i].name) end)
-              nm[#nm + 1] = s
-            end
-            kids = table.concat(nm, ",")
-          else
-            kids = "(" .. type(ch) .. ")"
-          end
-        end)
-        print("[murdoku] ★ 诊断NOTE3：note.name=" .. kn .. "  SetText=" .. hasSetText .. "  子控件=[" .. kids .. "]")
-      end
-    end
+    -- ★★★★★ 2026-10-07 **铅笔笔记（清理版 ✓）** ✗✓
+    --   ★ 用户已确认：★ **字母在格子中间居中显示** ✓ ⇒ 本轮**删掉所有临时脚本与探针** ✓
+    --   ★ 六轮排障的结论（留在这里当知识 ✓ 以后别再重走）：
+    --     ① ★ 取源表要取 **核心** `core.notes`（★ 键是徽章字母 ✓）；视图那份键是数字 ⇒ 会写成 `1` ✗
+    --     ② ★ 适配器要**数组**（`table.concat`）⇒ 集合必须先转数组 ✗
+    --     ③ ★ 要 `SetVisible` **且** `SetActive`（★ 本项目社区结论：少 active 会少一层可见性 ✓）
+    --     ④ ★ 子控件被"置底"过 ⇒ **不透明的 `face` 会压住字** ✓ ⇒ 有笔记时提到最上 ✓
+    --     ⑤ ★ 模板子控件**运行时尺寸可能为 0** ⇒ 那时引擎不画 ✓
+    --        （★ 现已由**编辑器存档**给好尺寸/对齐/字号 ✓ 脚本**不再插手几何** ✓）
     local c = self:sub(id, "note")
     if c ~= nil then
       local txt = table.concat(value or {}, " ")
-      -- ★★★★★ 2026-10-07 **多通道写笔记文本** ✗✓（用户选路线 ①：把模板的 `note` 换成文本控件 ✓）
-      --   真机铁证（探针 ✓）：★ `note.name=note  SetText=false  子控件=[]` ✓
-      --     ⇒ ★ **模板里的 `note` 既不是文本控件、也没有子控件** ✗ ⇒ 文本无处可写 ✓
-      --   ⇒ 这段**按顺序试三条通道** ✓，只要用户换成其中任意一种就能通 ✓：
-      --     ① `.text = txt`         ★ 文本控件 ✓（官方：`textBox.text = "..."`）
-      --     ② `:SetText(txt)`      ★ 若该控件类型提供这个方法 ✓
-      --     ③ 子控件 `note.text` / `note.label`  ★ 容器里放一个文本子控件 ✓
-      --   并**只报一次**实际生效的通道 ✓（★ `通道=nil` 就说明还是没换成文本控件 ✓）
-      local done_ch = nil
-      if c.text ~= nil then c.text = txt; done_ch = "text" end
-      if done_ch == nil and type(c.SetText) == "function" then
-        pcall(function() c:SetText(txt) end); done_ch = "SetText"
-      end
-      if done_ch == nil then
-        local names = { "text", "label" }
-        for i = 1, #names do
-          local ch2 = nil
-          pcall(function() ch2 = self:sub(id, "note." .. names[i]) end)
-          if ch2 == nil then pcall(function() ch2 = c:GetChild(names[i]) end) end
-          if ch2 ~= nil and ch2.text ~= nil then ch2.text = txt; done_ch = "note." .. names[i]; break end
-        end
-      end
-      if (self._diag_notech or 0) < 3 then
-        self._diag_notech = (self._diag_notech or 0) + 1
-        print("[murdoku] ★ 诊断NOTECH：写笔记通道=" .. tostring(done_ch) .. "  文本=" .. tostring(txt))
-      end
-      -- 有笔记才显示；没笔记藏起来，免得留一个空框
+      if c.text ~= nil then c.text = txt end
+      if type(c.SetText) == "function" then pcall(function() c:SetText(txt) end) end
       if c.SetVisible then pcall(function() c:SetVisible(txt ~= "") end) end
-      -- ★★★★★ 2026-10-07 **显式补 `SetActive(true)`** ✗✓（★ 用户判断："涂层与可见性没打开" ✓）
-      --   ★ 项目构建标记里的社区结论原文 ✓：
-      --     「★ **要显示时显式补 `SetActive(true)`（手写树漏写 active 会少一层可见性）**」✓
-      --   ★ 探针证明 `visible=true` ✓ 文本/颜色/层序都正确 ✓ 却仍看不见
-      --     ⇒ ★ 差的正是 **`active` 这一层** ✓✓
       if txt ~= "" then
         if c.SetActive then pcall(function() c:SetActive(true) end) end
-        -- ★★★★★ 2026-10-07 **字号缩小 + 尝试居中** ✗✓（用户实测：★ 字母出来了 ✓ 但偏左上、偏大 ✓）
-        --   ★ 字号：模板给的是 36 ⇒ 缩小到 **24**（★ 要再调改这个数字即可 ✓）
-        --   ★ 居中：文本框的对齐字段名官方没在客户端文档里写死 ⇒ **逐个试**（★ 存在的才写 ✓）
-        --     常见约定：★ **0=左 1=中 2=右** ✓ ⇒ 一律写 1 ✓ 并把"哪些字段存在/写前写后"打一次 ✓
-        if c.fontSize ~= nil then pcall(function() c.fontSize = 24 end) end
-
-        -- ★★★★★ 2026-10-07 **给笔记显式设尺寸/位置** ✗✓ —— "看不见"的真正原因 ✓
-        --   ★ 项目自己的注释（本文件 L745~752）写着**同一个坑** ✓：
-        --     「★ **格子模板建出来的 `face` 默认尺寸是 0** ⇒ 图设上了、`visible=true`，
-        --       ★ **画面上什么都没有**」✓✓ ⇒ 所以 `_cells_paint` 额外做了两件事：
-        --       `face:SetSizeDelta(size)` + `face:SetAnchoredPosition(0,0)` ✓
-        --   ★ 笔记是**同一个模板里的子控件** ⇒ **同一个病** ✓ ——
-        --     ★ 编辑器里看着有框 ✓ 但**运行时实例默认尺寸 0** ✓ ⇒ 36 号字被裁光 ✓
-        --   ⇒ ★ 照 `face` 办 ✓：★ 取 **`face` 已经设好的尺寸** ✓ 原样套给 `note` ✓
-        --     （★ `face` 的尺寸由 `_cells_paint` 每帧设成格子大小 ✓ ⇒ 当基准最稳 ✓）
-        -- ★★★★★ 2026-10-07 **只在"自身尺寸为 0"时才兜底** ✗✓（用户实测指出我把框撑错了 ✓）
-        --   ★ 上一版无条件 `SetSizeDelta(face 的尺寸)` ⇒ **把 note 的框撑成整个格子** ✗
-        --     ⇒ ★ 字被顶到**格子顶部** ✓（★ 用户：★"note 正常填不到格子顶部，文本框在格子中间"✓）
-        --   ⇒ ★ 现在：★ **先读 note 自己的尺寸** ✓ **非 0 就【一个字都不动】** ✓
-        --     ★ 只有"运行时实例尺寸为 0"（模板子控件的经典坑 ✓ 见 L745~752 ✓）才兜个底 ✓
-        -- ★★★★★ 2026-10-07 **恒定用"格子中间一条"** ✗✓（真机对比得出的结论 ✓）
-        --   ★ 实测对比 ✓：
-        --     · 存档给的 `note` 框 = **100×30** ⇒ ★ **字不显示** ✗（同名日志 `诊断NOTESZ：100.0x30.0`✓）
-        --     · 我把框撑成**整格 108×108** ⇒ ★ **字出现了** ✓（上一轮截图 ✓）
-        --   ⇒ ★ 这个控件【框小/位置偏就不画】✓
-        --   ★ 现在：★ **无条件设成"格子宽 × 格子高÷3"，位置 (0,0)** ✓
-        --     ⇒ ★ 框 = 格子中间一条 ✓（★ 正合用户说的"文本框在格子中间"✓）★ 且尺寸够大使文字必现 ✓
-        local nw, nh = nil, nil
-        pcall(function() nw, nh = c:GetSizeDelta() end)
-        if true then
-          local fw, fh = nil, nil
-          pcall(function()
-            local f = self:sub(id, "face")
-            if f ~= nil then fw, fh = f:GetSizeDelta() end
-          end)
-          if fw ~= nil and fh ~= nil and fw > 1 and fh > 1 then
-            -- ★ 2026-10-07 **改成"中间窄条"** ✗✓（用户：★ note 的文本框在格子中间 ✓ 填不到顶部 ✓）
-            --   上一版撑成整个格子 ⇒ 字被顶到顶部 ✗ ⇒ 现在只在"运行时尺寸为 0"时给一条**中间的条** ✓
-            --     ★ 宽度=格子宽 ✓ 高度=格子的 **1/3** ✓ 位置 (0,0) ✓（★ 模板本来就是中间一条 ✓）
-            if c.SetSizeDelta then pcall(function() c:SetSizeDelta(fw, math.max(30, fh / 3)) end) end
-            if c.SetAnchoredPosition then pcall(function() c:SetAnchoredPosition(0, 0) end) end
-            if (self._diag_notesize or 0) < 3 then
-              self._diag_notesize = (self._diag_notesize or 0) + 1
-              print("[murdoku] ★ 诊断NOTESZ：设成中间条 = " .. tostring(fw) .. "x" .. tostring(math.max(30, fh / 3))
-                .. "（原尺寸 " .. tostring(nw) .. "x" .. tostring(nh) .. "）")
-            end
-          end
-        elseif (self._diag_notesize or 0) < 3 then
-          self._diag_notesize = (self._diag_notesize or 0) + 1
-          print("[murdoku] ★ 诊断NOTESZ：note 自带尺寸 = " .. tostring(nw) .. "x" .. tostring(nh) .. "（★ 保持不动 ✓）")
-        end
-      end
-      -- ★★★★★ 2026-10-07 **把笔记提到最上层** ✗✓ —— 这是"字母不显示"的最后一环 ✓
-      --   真机探针（全对 ✓）：★ `诊断NOTEV：写入=V  回读text=V  visible=true  fontSize=36`
-      --     ★ `fontColor=4278190080`（★ 不透明纯黑 ✓）
-      --   ⇒ ★ **控件层面没有任何问题** ⇒ 只剩**被盖住** ✓✓
-      --   ★ 机制 ✓：层序那一步用的是 `SetAsFirstSibling()` ⇒ **置底** ✓
-      --     （真机日志：★「图层顺序：对 25 个格子排过层序，**子控件成功置底 275 个**」✓）
-      --     ⇒ ★ 若 `face`（**不透明白图** ✓）排在笔记之后 ⇒ **白图压在字母上 ⇒ 看不见** ✓✓
-      --   ⇒ ★ **有笔记时 `SetAsLastSibling()` 提到最上** ✓（官方："数值越大越靠上" ✓）
-      if txt ~= "" then
         if c.SetAsLastSibling then pcall(function() c:SetAsLastSibling() end) end
-        -- ★★★★★ 2026-10-07 **分辨性实验：临时把字号放大到 96** ✗✓
-        --   现状（★ 探针全对 ✓ 补丁确认在跑 ✓）：★ 文本=V ✓ 可见 ✓ 纯黑 ✓ 已提到最上层 ✓ —— 仍看不见 ✓
-        --   ⇒ ★ 只剩两种可能 ✓：
-        --     ① **被裁掉**：模板里 `note` 的框太小 ⇒ 36 号字整块被裁 ✓
-        --     ② **状态节点没引用 `note`**：★ 预设按钮只画"状态节点引用到的子控件" ✓（★ 与弹窗四键同一个坑 ✓）
-        --   ★ 分辨 ✓：**放大到 96**
-        --     · 出现巨大字母 ⇒ ★ ① 尺寸问题 ✓ ⇒ 我设一个格子大小的框 ✓
-        --     · 仍旧空白 ⇒ ★ ② 状态节点 ✓ ⇒ **你把 `note` 拖进单元格的状态节点** ✓
-        -- ★ 96 号实验已撤（★ 用户：文本框装不下巨大字母 ✓ 无意义 ✓）
-      end
-      -- ★★★★★ 2026-10-07 一次性诊断：**写【之后】回读** ✓
-      --   用户确认 `note` **本来就是文本框** ⇒ `.text` 能写 ✓ ⇒ 问题变成"写进去了看不见" ✓
-      --   三种原因一次分辨 ✓：★ ① 字色=底色（白压白）★ ② 显隐 false ★ ③ 字号/尺寸极小 ✓
-      if (self._diag_notev or 0) < 6 then
-        self._diag_notev = (self._diag_notev or 0) + 1
-        local rt, rv, rfz, rfc, rsd = "?", "?", "?", "?", "?"
-        pcall(function() rt = tostring(c.text) end)
-        pcall(function() rv = tostring(c.visible) end)
-        pcall(function() rfz = tostring(c.fontSize) end)
-        pcall(function() rfc = tostring(c.fontColor) end)
-        pcall(function() rsd = tostring(c.sizeDelta) end)
-        print("[murdoku] ★ 诊断NOTEV：id=" .. tostring(id) .. "  写入=" .. tostring(txt)
-          .. "  回读text=" .. rt .. "  visible=" .. rv .. "  fontSize=" .. rfz
-          .. "  fontColor=" .. rfc .. "  sizeDelta=" .. rsd)
       end
     end
-
   elseif key == "x_mark" then
     local c = self:sub(id, "x")
     if c and c.SetVisible then c:SetVisible(value and true or false) end
