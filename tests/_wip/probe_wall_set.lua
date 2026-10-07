@@ -1,4 +1,4 @@
-﻿local HERE = (arg and arg[0] and arg[0]:match("^(.*)[/\\][^/\\]*$")) or "tests/_wip"
+local HERE = (arg and arg[0] and arg[0]:match("^(.*)[/\\][^/\\]*$")) or "tests/_wip"
 local root = HERE .. "/../.."
 package.path = root .. "/lua/?.lua;" .. root .. "/lua/?/init.lua;" .. root .. "/?.lua;" .. package.path
 local Core = require("murdoku_core")

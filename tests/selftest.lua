@@ -168,7 +168,12 @@ check("双击=预放置（**不清空**选中）", core.selected == "A", tostrin
 
 -- 正式放置：换一格放（顺带验证"同一个人换位置 = 等效撤销后重放"）
 ctrl:do_place(1, 3)
-check("长按=正式放置后清空选中", core.selected == nil, tostring(core.selected))
+-- ★ 2026-10-07 **设计变更**（用户新要求 ✓）：
+  --   ★ 原设计：正式放置 ⇒ **取消选中** ✓ ⇒ ★ 结果是"必须重新选人才能继续操作" ✗
+  --   ★ 新设计：★「★ **选中之后就能做所有操作**」✓ ⇒ ★ **正式放置后【保留选中】** ✓✓
+  --     ⇒ 这条断言随之改成"保留" ✓（★ 核心 `hold_cell` 自己仍会清 ✓
+  --       ★ 是**控制器**把它恢复回来 ✓ 见 `Controller:do_place` ✓）
+  check("长按=正式放置后**保留**选中（新设计）", core.selected == "A", tostring(core.selected))
 check("正式放置把人挪到了新格（旧格已清）",
       core.grid[1][3] == "A" and core.grid[1][1] == nil,
       tostring(core.grid[1][1]) .. "/" .. tostring(core.grid[1][3]))
