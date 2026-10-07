@@ -3994,13 +3994,23 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
 
   -- 点击 → 聚焦（未验证能力，全程 pcall + 只报一次结论）
   self:_grid_bind_item_click(adapter, grid, item)
+      self._grid_bind_n = (self._grid_bind_n or 0) + 1
+      if self._grid_bind_n == 1 then print("[murdoku] ★ 诊断GRID：正在给列表项绑点击（第 1 个）") end
 end
 
 -- 给列表项挂点击。★ 列表项是**复用**的：同一个控件会先后代表不同线索 ⇒
 --   回调里**不能**捕获 index，必须用 `GetItemIndex` 现查（见 `_on_grid_item_click`）。
 --   重复挂监听会一次点击触发多遍 ⇒ 用一个**弱键表**按控件身份去重（控件回收后自动释放）。
 function Controller:_grid_bind_item_click(adapter, grid, item)
-  if item == nil or item.AddCursorEventListener == nil then return end
+  if item == nil or item.AddCursorEventListener == nil then
+    if self._grid_bind_n == nil then
+      self._grid_bind_n = 0
+      local nm2 = "?"
+      pcall(function() nm2 = tostring(item.name) end)
+      print("[murdoku] ★ 诊断GRID：列表项【不支持光标事件】⇒ 点击绑不上！item=" .. nm2 .. "（AddCursorEventListener=" .. tostring(item ~= nil and item.AddCursorEventListener ~= nil) .. "）")
+    end
+    return
+  end
   -- ★★★★★ 2026-10-05 **列表项是"引擎运行时克隆出来的按钮"，它的 `raycastTarget` 必须就地开**
   --   （每帧成本第 (3) 条的有意补偿）。
   --
@@ -4040,6 +4050,11 @@ function Controller:_on_grid_item_click(adapter, grid, item)
   --   按兄弟序号取是错的：列表项会被复用，兄弟顺序不稳定（用户也专门点了这一条）。
   local idx = nil
   pcall(function() idx = grid:GetItemIndex(item) end)
+    if not self._grid_idx_log then self._grid_idx_log = 0 end
+    if self._grid_idx_log < 5 then
+      self._grid_idx_log = self._grid_idx_log + 1
+      print("[murdoku] ★ 诊断GRID：列表项被点到了 ✓ GetItemIndex=" .. tostring(idx))
+    end
   if type(idx) ~= "number" then
     -- 反查失败 ⇒ 这一次点击**宁可丢掉**，也不要聚焦到错误的一条（聚焦错了会误导推理）
     self:_grid_log("noindex", "网格视窗：GetItemIndex 读不到索引 ⇒ 这一次点击忽略（不改焦点）")
