@@ -4129,7 +4129,17 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
     local _cbp2 = self:_grid_item_child_cached(item, index, pos, "backrop1")
     local _rg2 = self:_grid_item_rec(item, index)
     if _cbp2 ~= nil and _rg2 ~= nil then
-      local _sel = (cl.who ~= nil) and self.core ~= nil and self.core.selected == cl.who
+      -- ★★★ 2026-10-07 **比的是【人物 id】不是 `cl.who`（那是显示名 ✗）** ✓
+      --   ★ 真机教训 ✓：★ 填充里 `cl.who = 老宅主` ✗（显示名 ✓）而 `core.selected = "V"` ✓
+      --     ⇒ ★ 拿它比永远不等 ⇒ ★ **重填后高亮不再画 ⇒ 预放置丢高亮** ✗（用户回报 ✓）
+      --   ★ id 的权威来源 ✓：★ **视图记录 `self.core:view().clues[pos].who`** ✓（★ 与 `诊断CLUE` 一致 ✓）
+      local _pid2 = nil
+      pcall(function()
+        local v = self.core and self.core:view() or nil
+        local cc = v and v.clues and v.clues[pos] or nil
+        if cc ~= nil and cc.who ~= nil then _pid2 = cc.who end
+      end)
+      local _sel = (_pid2 ~= nil) and self.core ~= nil and self.core.selected == _pid2
       if _sel then
         if _rg2.tint ~= "sel" then
           if _rg2.tint_orig == nil then
