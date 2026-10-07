@@ -4555,24 +4555,7 @@ function Adapter:set_property(id, key, value, nkey)
         --   ★ 居中：文本框的对齐字段名官方没在客户端文档里写死 ⇒ **逐个试**（★ 存在的才写 ✓）
         --     常见约定：★ **0=左 1=中 2=右** ✓ ⇒ 一律写 1 ✓ 并把"哪些字段存在/写前写后"打一次 ✓
         if c.fontSize ~= nil then pcall(function() c.fontSize = 24 end) end
-        if (self._diag_notealign or 0) < 1 then
-          self._diag_notealign = 1
-          local names = { "textAlign", "horizontalAlign", "alignment", "align",
-                          "horizontalAlignment", "textAlignment", "verticalAlign" }
-          local report = {}
-          for i = 1, #names do
-            local k = names[i]
-            local before, after = nil, nil
-            pcall(function() before = c[k] end)
-            if before ~= nil then
-              pcall(function() c[k] = 1 end)
-              pcall(function() after = c[k] end)
-              report[#report + 1] = k .. ":" .. tostring(before) .. "->" .. tostring(after)
-            end
-          end
-          print("[murdoku] ★ 诊断NOTEALIGN：存在的对齐字段 = "
-            .. (table.concat(report, "  ") ~= "" and table.concat(report, "  ") or "（一个都没有）"))
-        end
+
         -- ★★★★★ 2026-10-07 **给笔记显式设尺寸/位置** ✗✓ —— "看不见"的真正原因 ✓
         --   ★ 项目自己的注释（本文件 L745~752）写着**同一个坑** ✓：
         --     「★ **格子模板建出来的 `face` 默认尺寸是 0** ⇒ 图设上了、`visible=true`，
@@ -4582,18 +4565,30 @@ function Adapter:set_property(id, key, value, nkey)
         --     ★ 编辑器里看着有框 ✓ 但**运行时实例默认尺寸 0** ✓ ⇒ 36 号字被裁光 ✓
         --   ⇒ ★ 照 `face` 办 ✓：★ 取 **`face` 已经设好的尺寸** ✓ 原样套给 `note` ✓
         --     （★ `face` 的尺寸由 `_cells_paint` 每帧设成格子大小 ✓ ⇒ 当基准最稳 ✓）
-        local fw, fh = nil, nil
-        pcall(function()
-          local f = self:sub(id, "face")
-          if f ~= nil then fw, fh = f:GetSizeDelta() end
-        end)
-        if fw ~= nil and fh ~= nil and fw > 1 and fh > 1 then
-          if c.SetSizeDelta then pcall(function() c:SetSizeDelta(fw, fh) end) end
-          if c.SetAnchoredPosition then pcall(function() c:SetAnchoredPosition(0, 0) end) end
-          if (self._diag_notesize or 0) < 3 then
-            self._diag_notesize = (self._diag_notesize or 0) + 1
-            print("[murdoku] ★ 诊断NOTESZ：笔记尺寸套用 face = " .. tostring(fw) .. "x" .. tostring(fh))
+        -- ★★★★★ 2026-10-07 **只在"自身尺寸为 0"时才兜底** ✗✓（用户实测指出我把框撑错了 ✓）
+        --   ★ 上一版无条件 `SetSizeDelta(face 的尺寸)` ⇒ **把 note 的框撑成整个格子** ✗
+        --     ⇒ ★ 字被顶到**格子顶部** ✓（★ 用户：★"note 正常填不到格子顶部，文本框在格子中间"✓）
+        --   ⇒ ★ 现在：★ **先读 note 自己的尺寸** ✓ **非 0 就【一个字都不动】** ✓
+        --     ★ 只有"运行时实例尺寸为 0"（模板子控件的经典坑 ✓ 见 L745~752 ✓）才兜个底 ✓
+        local nw, nh = nil, nil
+        pcall(function() nw, nh = c:GetSizeDelta() end)
+        if nw == nil or nh == nil or nw <= 1 or nh <= 1 then
+          local fw, fh = nil, nil
+          pcall(function()
+            local f = self:sub(id, "face")
+            if f ~= nil then fw, fh = f:GetSizeDelta() end
+          end)
+          if fw ~= nil and fh ~= nil and fw > 1 and fh > 1 then
+            if c.SetSizeDelta then pcall(function() c:SetSizeDelta(fw, fh) end) end
+            if c.SetAnchoredPosition then pcall(function() c:SetAnchoredPosition(0, 0) end) end
+            if (self._diag_notesize or 0) < 3 then
+              self._diag_notesize = (self._diag_notesize or 0) + 1
+              print("[murdoku] ★ 诊断NOTESZ：note 自身尺寸=0 ⇒ 兜底套用 face = " .. tostring(fw) .. "x" .. tostring(fh))
+            end
           end
+        elseif (self._diag_notesize or 0) < 3 then
+          self._diag_notesize = (self._diag_notesize or 0) + 1
+          print("[murdoku] ★ 诊断NOTESZ：note 自带尺寸 = " .. tostring(nw) .. "x" .. tostring(nh) .. "（★ 保持不动 ✓）")
         end
       end
       -- ★★★★★ 2026-10-07 **把笔记提到最上层** ✗✓ —— 这是"字母不显示"的最后一环 ✓
