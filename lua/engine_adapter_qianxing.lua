@@ -4543,6 +4543,14 @@ function Adapter:set_property(id, key, value, nkey)
       end
       -- 有笔记才显示；没笔记藏起来，免得留一个空框
       if c.SetVisible then pcall(function() c:SetVisible(txt ~= "") end) end
+      -- ★★★★★ 2026-10-07 **显式补 `SetActive(true)`** ✗✓（★ 用户判断："涂层与可见性没打开" ✓）
+      --   ★ 项目构建标记里的社区结论原文 ✓：
+      --     「★ **要显示时显式补 `SetActive(true)`（手写树漏写 active 会少一层可见性）**」✓
+      --   ★ 探针证明 `visible=true` ✓ 文本/颜色/层序都正确 ✓ 却仍看不见
+      --     ⇒ ★ 差的正是 **`active` 这一层** ✓✓
+      if txt ~= "" then
+        if c.SetActive then pcall(function() c:SetActive(true) end) end
+      end
       -- ★★★★★ 2026-10-07 **把笔记提到最上层** ✗✓ —— 这是"字母不显示"的最后一环 ✓
       --   真机探针（全对 ✓）：★ `诊断NOTEV：写入=V  回读text=V  visible=true  fontSize=36`
       --     ★ `fontColor=4278190080`（★ 不透明纯黑 ✓）
@@ -4561,7 +4569,7 @@ function Adapter:set_property(id, key, value, nkey)
         --   ★ 分辨 ✓：**放大到 96**
         --     · 出现巨大字母 ⇒ ★ ① 尺寸问题 ✓ ⇒ 我设一个格子大小的框 ✓
         --     · 仍旧空白 ⇒ ★ ② 状态节点 ✓ ⇒ **你把 `note` 拖进单元格的状态节点** ✓
-        if c.fontSize ~= nil then pcall(function() c.fontSize = 96 end) end
+        -- ★ 96 号实验已撤（★ 用户：文本框装不下巨大字母 ✓ 无意义 ✓）
       end
       -- ★★★★★ 2026-10-07 一次性诊断：**写【之后】回读** ✓
       --   用户确认 `note` **本来就是文本框** ⇒ `.text` 能写 ✓ ⇒ 问题变成"写进去了看不见" ✓
