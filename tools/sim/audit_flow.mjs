@@ -18,7 +18,10 @@ import path from 'node:path';
 import { makeController, loadPlan, buildProject, indexTree, textOf, visibleOf, WORKSPACE } from './kit.mjs';
 
 const c = await makeController();
-buildProject(c, loadPlan(), path.join(WORKSPACE, 'dist', 'client_script.lua'));
+// ★ 2026-10-09：把 `loadPlan()` 的结果**绑到 `plan`** —— 本轮新加的哨兵要用它
+//   （原来只把返回值直接喂给 `buildProject`，没留引用 ⇒ 脚本里没有 `plan` 这个变量 ✓）
+const plan = loadPlan();
+buildProject(c, plan, path.join(WORKSPACE, 'dist', 'client_script.lua'));
 
 const get = async () => { const g = await c.play('get', { inspect: true }); return g && g.result ? g.result : g; };
 const tick = async (dt) => { await c.play('step', { dt }); };
@@ -59,7 +62,11 @@ function where(ri) {
 /** 棋盘上有几个"已放置"的（看每格的 face 有没有图 —— 用 obj/tray 太间接，直接数 cell 的可见 face 文字太多；
  *  改用"提交按钮是否可点"这个间接信号：摆满才能提交） */
 const progressText = (ri) => String(textOf(ri, 'hud.progress') || '');
-const movesText = (ri) => String(textOf(ri, 'hud.moves') || '');
+// ★ 2026-10-09 **删掉 `movesText`** ✗✓ —— 它读的 `hud.moves` **已不存在** ✓
+//   （实测 `layout-plan.json`：`hud.*` 只有 title/subtitle/timer/progress；
+//    `moves` 现在只活在信号契约 `M.SIGNAL_SCHEMA` 里 ✓）
+//   留着它只会让"步数归零"那种**恒红**断言继续出现 ✓ ⇒ 两处调用都已改判 ✓
+//   （⑤ 改成哨兵、⑥ 改成真读 `hud.progress` —— 见下面两段的说明 ✓）
 
 await c.play('start', {}); await settle();
 let ri = await get();
@@ -136,18 +143,33 @@ check('标题换成了另一关（不是回到原来那关）', level2Title !== 
 
 // ⑤ 切关后状态重置
 console.log('\n── ⑤ 切关后状态重置 ──');
-check('新关卡的步数归零', /^0\s*步/.test(movesText(ri)), JSON.stringify(movesText(ri)));
+// ★★★★★ 2026-10-09 **改判（依据，不是放宽）**：`hud.moves` **已不存在** ✗✓
+//   （实测 `layout-plan.json`：`hud.*` 只有 title/subtitle/timer/progress；
+//    `ui_controller.lua:2136` 的 `hud.timer` 现在只放时间；`moves` 只在信号契约里 ✓）
+//   ⇒ 原来这两条读 `hud.moves` 得 `""` ⇒ **永远红** ✓
+//   ★ 改法 ✓：**「归零」这件事由还活着的 `hud.progress` 来锁** ✓
+//     下面那条 `新关卡的进度归零` 本来就在 ✓ ⇒ 这里改成**哨兵**（不再重复读同一个事实 ✓）
+check('步数显示 hud.moves 按设计已移除（若出现 ⇒ 上面这条应改回读它）',
+  !plan.nodes.some((n) => n.id === 'hud.moves'),
+  plan.nodes.some((n) => n.id === 'hud.moves') ? '★ 它又出现了' : '计划里没有 ✓');
 check('新关卡的进度归零', /0\s*\//.test(progressText(ri)) || progressText(ri) === '',
   JSON.stringify(progressText(ri)));
 
 // ⑥ 「重置关卡」停在本关
 console.log('\n── ⑥ 重置关卡 ──');
-await click('action.redo'); await settle();
+// ★ 2026-10-09：`action.redo` **按设计已删** ✗（本仓库 `play_test.mjs` 的 `OLD_TEXT_KEYS`
+//   自己就断言它"按设计不存在" ✓）⇒ 点它**什么都不发生** ⇒
+//   原来那条「仍在本关」是**假绿**（点了没反应当然还在本关 ✗）✓ 接替者 = **`hex.redo`** ✓
+await click('hex.redo'); await settle();
 ri = await get();
 check('点「重置关卡」仍在本关', where(ri) === 'level', where(ri));
 check('重置后标题不变（没被送回主页/选关）',
   String(textOf(ri, 'hud.title') || '') === level2Title, JSON.stringify(textOf(ri, 'hud.title')));
-check('重置后步数归零', /^0\s*步/.test(movesText(ri)), JSON.stringify(movesText(ri)));
+// ★ 2026-10-09 **补一条真断言**：原来这里读的是已删的 `hud.moves`（恒 `""` ⇒ 恒红 ✗），
+//   而 `重置后进度归零` **从来没被断言过** ✗ ⇒ 现在改成读还活着的 `hud.progress` ✓
+//   —— 这比原来**更强**（原来那条根本测不到任何东西 ✓）
+check('重置后进度归零', /0\s*\//.test(progressText(ri)),
+  JSON.stringify(progressText(ri)));
 
 // ⑦ 乱点不崩（连点返回、反复进出）
 console.log('\n── ⑦ 乱点不崩 ──');

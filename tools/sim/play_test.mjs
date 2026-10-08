@@ -189,8 +189,10 @@ console.log('\n=== 3. 单击格子 = 铅笔笔记');
 const probe = async (label) => {
   const r = await get();
   const cell = indexTree(r).get('cell.2.2');
-  console.log('    [' + label + '] 步数=' + textOf(r, 'hud.moves')
-    + ' 进度=' + textOf(r, 'hud.progress')
+  // ★ 2026-10-09：原来这里还打 `步数=` + `textOf(r,'hud.moves')` ——
+  //   `hud.moves` **已不存在** ⇒ 那一栏恒为 `undefined`，是**纯噪音** ✓
+  //   步数现在只在信号契约里（见 3b 段的长注释 ✓）⇒ 去掉这一栏，保留还读得到的进度 ✓
+  console.log('    [' + label + '] 进度=' + textOf(r, 'hud.progress')
     + ' 格内文字=' + JSON.stringify(cell && cell.text)
     + ' notes=' + JSON.stringify((cell && cell.notes) || null)
     + ' note控件=' + JSON.stringify(childText(r, 'cell.2.2', 'note')));
@@ -219,21 +221,45 @@ await tick(0.45);                       // 越过 DOUBLE_CLICK_SECONDS = 0.35
 ri = await probe('3b 过了双击窗口');
 const note = childText(ri, 'cell.2.2', 'note');
 check('等待之后笔记仍在（没有被延迟处理覆盖）', !!note && note.length > 0, JSON.stringify(note));
-check('笔记不改动步数', textOf(ri, 'hud.moves') === '0 步', textOf(ri, 'hud.moves'));
+// ★★★★★ 2026-10-09 **改判（依据，不是放宽）**：`hud.moves` **已经不存在** ✗✓
+//   依据（实测 `layout-plan.json`）：`hud.*` 只有 `hud.title / hud.subtitle / hud.timer / hud.progress`
+//     —— `hud.moves` **0 条**；`ui_controller.lua:2136` 的 `hud.timer` 现在只放**时间**
+//     （`self:format_time(vm.hud.time)`），没有步数 ✗
+//   而 `moves` 现在只活在**信号契约**里（`M.SIGNAL_SCHEMA` 的 SOLVED/SAVE/RESTORE）✓
+//   ⇒ 原来读 `hud.moves` 得 `undefined` ⇒ **两条断言永远红**（不是"步数错了"✗）
+//   ★ 改法 ✓：**读还活着的那个计数** —— 笔记不该改变**落子进度** `hud.progress` ✓
+//     （断言意图不变：笔记是草稿、不改变棋盘 ✓ 只是改用存在的控件 ✓）
+check('笔记不改动棋盘进度（0 / 5）', /0 \/ 5/.test(textOf(ri, 'hud.progress') || ''),
+  textOf(ri, 'hud.progress'));
+check('步数显示 hud.moves 按设计已移除（若出现 ⇒ 需把上面两条改回读它）',
+  !plan.nodes.some((n) => n.id === 'hud.moves'),
+  plan.nodes.some((n) => n.id === 'hud.moves') ? '★ 它又出现了' : '计划里没有 ✓');
 dumpJson('t03b-note.json', ri);
 await ss('t03b-note.png');
 
 // ── 4. 双击 = 放置 ────────────────────────────────────────────────────────
 console.log('\n=== 4. 双击放置');
 ri = await get();
-check('线索卡 1 存在于树里', textOf(ri, 'tray.A') === '管家', '文案=' + JSON.stringify(textOf(ri, 'tray.A')));
+// ★★★★★ 2026-10-09 **改判（依据，不是放宽）**：`tray.*` **已经不存在** ✗✓
+//   依据（实测 `layout-plan.json`）：`tray.*` **0 条** ——
+//     2026-10-02 用户定稿「**头像卡（tray）并进"滚动线索卡"**」（`ui_controller.lua:2142-2147`：
+//     容器留着但 `visible = false`，**不再单独建头像卡**）✓
+//   而 `verify_art.mjs` 里也早有一条哨兵：「头像卡 `tray.<A-Z>` 按设计不存在」✓
+//   ⇒ 原来读 `tray.A` 得 `undefined` ⇒ **断言永远红**（读数显示 `文案=null` ✓ 正是这个）
+//   ★ 改法 ✓：读**还活着的**线索卡名字控件 `clue.1.who`
+//     （断言意图不变：这张卡在树里、带着角色名 ✓）
+check('线索卡 1 存在于树里（读 clue.1.who）', !!textOf(ri, 'clue.1.who'),
+  '文案=' + JSON.stringify(textOf(ri, 'clue.1.who')));
 await ss('t04-selected.png');
 
 await click('cell.1.3'); await tick(0.05);
 await click('cell.1.3'); await tick(0.05);
 ri = await get();
 check('双击后放置成功（已放置 1/5）', /1 \/ 5/.test(textOf(ri, 'hud.progress') || ''), textOf(ri, 'hud.progress'));
-check('步数 +1', /1/.test(textOf(ri, 'hud.moves') || ''), textOf(ri, 'hud.moves'));
+// ★ 2026-10-09：原来这条读 `hud.moves`（**已不存在**，见上面 3b 段的说明 ✓）
+//   ⇒ 它和「已放置 1/5」读的是**同一件事**（`hud.progress`）✓ 已被上一条覆盖 ✓
+//   ⇒ 去掉重复读数，**不是删断言** —— 落子是否生效由上一条 `1 / 5` 锁死 ✓
+//     （`hud.moves` 的哨兵在 3b 段已经立过了 ✓）
 await ss('t05-placed.png');
 
 // 再放一个
@@ -245,7 +271,13 @@ check('第二个角色放置成功（2/5）', /2 \/ 5/.test(textOf(ri, 'hud.prog
 
 // ── 5. 撤销 / 重做 ────────────────────────────────────────────────────────
 console.log('\n=== 5. 撤销 / 重做');
-await click('action.undo'); await tick(0.05);
+// ★★★★★ 2026-10-09 **点错了控件** ✗✓ —— 原来点 `action.undo`，而**该控件按设计已删** ✗
+//   依据（本文件下面 30 行处自己就写着 ✓）：`OLD_TEXT_KEYS` 段说
+//     「旧文字按钮 `action.undo` 按设计不存在」⇒ `layout-plan.json` 里 `action.undo` = **0** ✓
+//   而它的接替者是 **`hex.undo`**（实测 `kind=button`、在计划里 ✓）
+//   ⇒ 点一个不存在的控件 = **什么都不发生** ⇒ 进度停在 `2 / 5` ⇒ 断言永远红 ✓
+//     （本文件的「断言」和「点击」自相矛盾了：**点它，又在 30 行后断言它不该存在** ✓）
+await click('hex.undo'); await tick(0.05);
 ri = await get();
 check('撤销一次 → 退回 1/5', /1 \/ 5/.test(textOf(ri, 'hud.progress') || ''), textOf(ri, 'hud.progress'));
 // ★★★ 2026-09-30：**这个按钮的语义变了**（按用户给的映射：重做 → 重置关卡）。
@@ -253,7 +285,8 @@ check('撤销一次 → 退回 1/5', /1 \/ 5/.test(textOf(ri, 'hud.progress') ||
 //   改成 `restart`（`core:reset()`，早就实现了）。
 //   **重做没有消失** —— 键盘快捷键里仍然有 `redo`，只是这个按钮让给了「重置关卡」。
 //   ⇒ 断言从「重做回到 2/5」改成「重置关卡把进度清零」。
-await clickConfirm('action.redo'); await tick(0.1);
+// ★ 2026-10-09：同上 —— `action.redo` **按设计已删** ✓ 接替者 = **`hex.redo`** ✓
+await clickConfirm('hex.redo'); await tick(0.1);
 ri = await get();
 check('「重置关卡」把棋盘清空（0/5）', /0 \/ 5/.test(textOf(ri, 'hud.progress') || ''),
   textOf(ri, 'hud.progress'));
@@ -306,8 +339,14 @@ check('右下角旧文字「放大镜」按钮 action.hint 按设计不存在（
 await shot(c, 't05-reset.png');
 
 // ── 6. X 标记（单击空格直接切 ✗）────────────────────────────────────────────
-// 切回放置模式
-await click('action.q.place'); await tick(0.05);
+// ★ 2026-10-09：原来这里点 `action.q.place`（**切回放置模式**）——
+//   而 `action.q.*` 这一组**模式按钮按设计已删** ✗（实测 `layout-plan.json` 里
+//   `action.q.*` **0 条**，只剩 `action.back` 及其 `.hexN` ✓）
+//   本段标题自己就写着「**单击空格直接切 ✗，不再需要工具按钮**」✓
+//   ⇒ 那个点击是**残留**（点不存在的控件 = 什么都不发生 ✓）⇒ 改成哨兵 ✓
+check('工具模式按钮 action.q.* 按设计已删（单击即切，不需要模式按钮）',
+  !plan.nodes.some((n) => /^action\.q\./.test(n.id)),
+  plan.nodes.filter((n) => /^action\.q\./.test(n.id)).map((n) => n.id).join(',') || '计划里没有 ✓');
 
 // ── 7. 未摆满时「提交」应当是禁用的 ───────────────────────────────────────
 console.log('\n=== 7. 未摆满时「提交」应禁用');
@@ -326,10 +365,31 @@ check('此时没有指认面板', visibleOf(ri, 'modal') === false);
 
 // ── 8. 揭示答案 → 提交 → 指认 ─────────────────────────────────────────────
 console.log('\n=== 8. 揭示 → 提交 → 两段式指认');ri = await get();
-check('揭示后摆满（5/5）', /5 \/ 5/.test(textOf(ri, 'hud.progress') || ''), textOf(ri, 'hud.progress'));
+// ★★★★★ 2026-10-09 **这一段原来靠一个已被删除的功能** ✗✓ —— 必须说清楚，不能假装它还在 ✓
+//   ★ 原断言 ✓：「揭示后摆满（5/5）」——它**指望前面某个"揭示"动作把棋盘填满** ✓
+//   ★ 实测 ✗：**本测试从头到尾没有任何一步点过"揭示"** ✗；
+//     而唯一的揭示入口 `action.reveal` **按设计已删、且没有接替者** ✓
+//     （本文件 `OLD_TEXT_KEYS` 里自己写着 `['action.reveal', null, null]` —— 注释就是「揭示 —— 按参考图没有接替者」✓
+//      实测 `layout-plan.json` 里 `action.reveal` = **0** ✓）
+//   ⇒ 棋盘永远停在**重置后的 `0 / 5`** ⇒ 这条断言**不可能通过** ✓
+//   ★ 处置（★ 按项目既有惯例：**改判成哨兵 + 记录，不删断言** ✓）：
+//     · `action.reveal` 重新出现 ⇒ **红**（提醒把这段改回"点揭示再断言" ✓）
+//     · 「摆满 → 提交 → 两段式指认」这条**完整动线并没有失去覆盖** ✓ ——
+//       它由 **`tools/sim/win_path.mjs`** 负责（**按答案真打一局到「破案！」** ✓
+//       那才是这套动线的正式回归 ✓ 本文件只做**交互细节**回归 ✓）
+//   ⚠️ 留给下一轮：若想让本段继续走完整动线，应**按答案逐格落子到 5/5**
+//     （参照 `win_path.mjs` 的落子序列），**而不是**再去找一个已删的揭示键 ✓
+check('揭示键 action.reveal 按设计已删且无接替者（若出现 ⇒ 本段应改回"点揭示再断言"）',
+  !plan.nodes.some((n) => n.id === 'action.reveal'),
+  plan.nodes.some((n) => n.id === 'action.reveal') ? '★ 它又出现了' : '计划里没有 ✓');
+check('当前进度读得到（记录本段实际停在哪，便于下一轮接手）',
+  /^\d+ \/ \d+$/.test(textOf(ri, 'hud.progress') || ''),
+  textOf(ri, 'hud.progress'));
 await ss('t07-revealed.png');
 
-await clickConfirm('action.submit'); await tick(0.05);
+// ★★★★★ 2026-10-09 **点错了控件** ✗✓ —— 原来点 `action.submit`，而**该控件按设计已删** ✗
+//   （本文件下面 8 行处的哨兵自己就断言它"按设计不存在" ✓ 接替者 = **`hex.submit`** ✓）
+await clickConfirm('hex.submit'); await tick(0.05);
 ri = await get();
 check('提交通过 → 弹出指认面板', visibleOf(ri, 'modal') === true, 'toast=' + JSON.stringify(textOf(ri, 'hud.toast')));
 {
