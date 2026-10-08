@@ -226,6 +226,52 @@ function OnUpdate(dt)
     end
   end
 
+  -- ── 4) ★★ 对照组（**必须同一次、同一时刻**）──────────────────────────────
+  --   用户提的判据：如果 `modal` 也取不到 ⇒ 是"创建路径"问题；`modal` 取得到 ⇒ 不是。
+  --   ⚠️ 这个对照**必须同一次、同一时刻做**。分开两次测会被"句柄过期 / 树被重建"污染 ——
+  --      已有的两份证据就是这样：`modal` ✓ 来自**开局**那次回读，`assets` ✗ 来自**调色板查找**那次，
+  --      两者时刻不同，**不构成对照**。
+  --   同时给出"陈旧句柄判据"：`adapter:find("root")` 靠**命中缓存**返回（缓存从不校验是否还活着），
+  --      若它已不是当前的根 / 子控件数为 0，而 `GetClientUIRoots()` 的根是好的 ⇒ 就是句柄过期。
+  do
+    local CAND = { "assets", "modal", "clues", "topbar", "home", "right", "toolbar",
+                   "stage", "tpl.cell", "portrait.V", "row.1.1" }
+    local function probe_list(tag, node)
+      if node == nil then
+        print(P .. "4) " .. tag .. " = **nil（拿不到句柄）**")
+        return
+      end
+      local ks = kids_of(node)
+      local kn = (ks ~= nil) and #ks or -1
+      local parts = {}
+      for i = 1, #CAND do
+        parts[#parts + 1] = CAND[i] .. "="
+          .. tostring(S(function() return node:GetChild(CAND[i]) end, nil) ~= nil)
+      end
+      print(P .. "4) " .. tag .. "  直接子控件数=" .. tostring(kn))
+      print(P .. "      " .. table.concat(parts, "  "))
+    end
+    if type(roots) == "table" then
+      for i = 1, rn do
+        probe_list("GetClientUIRoots()[" .. i .. "] name=" .. name_of(roots[i]), roots[i])
+      end
+    end
+    local ad4 = S(function() return _G.__murdoku_debug and _G.__murdoku_debug.adapter end, nil)
+    if ad4 ~= nil then
+      local cached = S(function() return ad4:find("root") end, nil)
+      probe_list("adapter:find('root') ← ★ 走命中缓存，可能是陈旧句柄", cached)
+      local same = "**不是任何根**"
+      if type(roots) == "table" then
+        for i = 1, rn do if roots[i] == cached then same = "就是根" .. i end end
+      end
+      print(P .. "4) ★ 陈旧句柄判据：adapter:find('root') " .. same
+        .. "（若它子控件数=0 / 取不到 assets，而上面的根取得到 ⇒ **句柄过期**，"
+        .. "对应 docs/assets取不到-追查.md §四 H8）")
+    else
+      print(P .. "4) 拿不到工程适配器（__murdoku_debug.adapter），跳过缓存句柄对照")
+    end
+  end
+
   print(P .. "========== 结束（把上面所有 [qxprobe] 行发出来即可定案）==========")
 end
 

@@ -396,6 +396,14 @@ end
 -- 触发时机全都是**控件树真的变了**的事件，不是每帧。
 function Adapter:invalidate_lookups(why)
   self._misses = nil
+  -- ★★★★★ 2026-10-08 **命中缓存也要一起清** ✗✓（★ 成员第 4 轮 H8：陈旧句柄 ✓ 机制已逐行核对 ✓）
+  --   ★ 依据（官方）✓：★「玩家传送、断线重连时，**所有客户端控件都会被销毁**然后回到初始状态」✓
+  --     ★「客户端容器控件**隐藏或销毁**时，客户端控件**销毁**」✓
+  --   ★ 而旧实现只清 `_misses` ✗ ⇒ ★ **`find` 命中缓存后从不校验句柄是否还活着** ✗
+  --     ⇒ ★ 一旦控件被销毁重建 ⇒ ★ 缓存的 `root` 成了**陈旧句柄** ⇒ ★ `GetChild("assets")`=nil ✗
+  --       ★ **`GetChildren()`=空** ✗ —— ★ **两个症状一次解释** ✓✓（★ 且编辑器侧无需任何异常 ✓）
+  --   ★ 所以 ✓：★ **作废时连命中缓存一起清** ✓ ⇒ ★ 下次 `find` 会真的重新深搜 ✓
+  self.controls = {}
   self._subtree_dirty = true
   self._lookup_gen = (self._lookup_gen or 0) + 1
   if self.cfg and self.cfg.debug_lookup and print then
