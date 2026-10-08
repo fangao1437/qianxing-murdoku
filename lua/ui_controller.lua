@@ -2984,6 +2984,11 @@ function Controller:build_layout()
       --   ★ 要分清两种可能 ✓：★ ① `self.adapter` 此刻是 nil ✗ ★ ② `_exit_menu_art` 已被置真 ✗
       if (self._art_gate_log or 0) < 6 then
         self._art_gate_log = (self._art_gate_log or 0) + 1
+        -- ★★★★★ 2026-10-08 **渲染分支置标记** ✗✓（★ 本行已证"弹窗开着时每帧都跑" ✓ 真机日志可证 ✓）
+        --   ★ 为什么只置标记 ✓：★ 这里的 `self.adapter` **是 nil** ✗（★ 真机连打 6 次全 false ✓）
+        --     ⇒ ★ 本处**只报告"弹窗此刻开着"** ✓ ★ 读 `bg` 的活儿交给"拿得到 adapter"的那一侧 ✓
+        --   ★ 标记 = 一个递增计数 ＋ 最近一次的时间戳 ✓（★ 两侧靠它对齐 ✓）
+        self._modal_seen = (self._modal_seen or 0) + 1
         print("[murdoku] ★ 胶囊底图：到守卫  adapter=" .. tostring(self.adapter ~= nil)
           .. "  闩锁=" .. tostring(self._exit_menu_art))
       end
