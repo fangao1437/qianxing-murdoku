@@ -206,7 +206,18 @@ function Murdoku.start(level_id, opts)
   if opts.screen ~= nil then want_screen = opts.screen end
   controller = UIC.new(core, {
     debug = opts.debug,
-    skip_intro = opts.skip_intro,
+    skip_intro = (opts.skip_intro ~= false),   -- ★ 2026-10-08 恢复：**默认跳过开屏**（★ 显式传 false 仍可放开场 ✓）
+    -- ★ 2026-10-08 **退出菜单要的两个回调**（★ 从提交 295 删掉的原文照抄恢复 ✓ adapter 只在这一层拿得到 ✓）
+    --   ★ `on_save` ⇒ `Murdoku.save_now()` ✓ ★ `on_settle` ⇒ 先存档、再发 `SETTLE` 信号（带 level.id ✓）
+    on_save = function()
+      if Murdoku ~= nil and Murdoku.save_now ~= nil then pcall(function() Murdoku.save_now() end) end
+    end,
+    on_settle = function()
+      if Murdoku ~= nil and Murdoku.save_now ~= nil then pcall(function() Murdoku.save_now() end) end
+      if adapter ~= nil and adapter.signal_emit ~= nil then
+        pcall(function() adapter:signal_emit(Qianxing.SIGNALS.SETTLE, { tostring(level.id) }) end)
+      end
+    end,
     levels = level_list,
     screen = want_screen,
     -- ★★★★★ 2026-10-05 **"格子要不要推 text"这一个开关**（每帧成本第 (4) 条）。
