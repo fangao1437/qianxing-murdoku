@@ -60,13 +60,20 @@ console.log('  要对账的非 cell 名字 ' + planKeep.length + ' 个'
 //   新增开关：`--strict` ⇒ 真缺也算失败（默认只报告 —— 用户已确认"界面就是现在这些" ✓）
 
 // ── 脚本会自动创建的白名单：**从源码读**，不硬编码 ✓ ─────────────────────
-const AUTO = (() => {
+//   ★ 2026-10-09：`hex.*` / `hit.*` **已经搬进存档**（用户拍板「搬 1」✓
+//     产物 `230-图标搬进存档.gil`，搬法见 `tools/gil/gen_icons.mjs` ✓）
+//     ⇒ 那份白名单**已从 `entry_client_script.lua` 整段删除** ✓
+//     ⇒ 这段现在读不到东西 ⇒ `AUTO` 为空 ✓ **这是对的**（确实没有控件由脚本自动建了 ✓）
+//   ⚠️ 所以下面的 🟢 计数为 0 时**不要**当成"读失败" —— 它反映的是现状 ✓
+const AUTO_SRC = (() => {
   const p = path.join(ROOT, 'lua', 'entry_client_script.lua');
-  if (!fs.existsSync(p)) return new Set();
+  if (!fs.existsSync(p)) return { set: new Set(), found: false };
   const m = fs.readFileSync(p, 'utf8').match(/auto_create_only\s*=\s*\{([\s\S]*?)\n\s*\}/);
-  if (!m) return new Set();
-  return new Set([...m[1].matchAll(/\["([^"]+)"\]/g)].map((x) => x[1]));
+  if (!m) return { set: new Set(), found: false };
+  return { set: new Set([...m[1].matchAll(/\["([^"]+)"\]/g)].map((x) => x[1])), found: true };
 })();
+const AUTO = AUTO_SRC.set;
+const AUTO_RETIRED = !AUTO_SRC.found;   // 白名单已被移除 ⇒ 🟢 恒 0 是正常的 ✓
 
 // ── 已被换代：网格视窗在运行时造列表项 ⇒ `clue.<n>` 家族不必手摆 ✓ ────────
 //   ⚠️ 前提是**存档里真有网格视窗** ✓（没有就不能这么判 ✓ 否则会掩盖真缺 ✓）
@@ -92,7 +99,9 @@ const byPrefix = (arr) => {
 
 console.log('① 规划需要但存档里【缺失】共 ' + missing.length + ' 个 —— **按性质分三类**：\n');
 console.log('   🟢 脚本会自动建  ' + String(auto.length).padStart(3) + ' 个'
-  + '（白名单读自 `lua/entry_client_script.lua`）' + (auto.length ? '：' + byPrefix(auto) : ''));
+  + (AUTO_RETIRED
+    ? '（★ 脚本里**已无**自动创建白名单 ⇒ 恒为 0，**这是正常的** ✓）'
+    : '（白名单读自 `lua/entry_client_script.lua`）' + (auto.length ? '：' + byPrefix(auto) : '')));
 console.log('   🔵 已被换代      ' + String(superseded.length).padStart(3) + ' 个'
   + '（网格视窗运行时造列表项）' + (superseded.length ? '：' + byPrefix(superseded) : '')
   + (hasGrid ? '' : '   ⚠️ 存档里没有 `clues.grid` ⇒ 本类**不成立**，已全部计入"真缺" ✓'));

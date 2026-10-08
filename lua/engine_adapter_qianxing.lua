@@ -610,19 +610,22 @@ function Adapter:create_control(node)
     end
     return ad.cfg.cells and ad.cfg.cells.prefab
   end
-  -- ★★★★★ 2026-10-03 **`auto_create` 的粒度问题**：
-  --   原来是 `if ctrl == nil and self.cfg.auto_create ~= false and ...`，
-  --   而 `entry_client_script.lua` 里 `auto_create = false` ⇒ **整个分支被跳过**
-  --   ⇒ 我新加的七个 `hex.*` 图标（以及一直存在的 `obj.*`）**根本建不出来**
-  --   —— 真机日志里它们出现在"这些控件还没建"清单，就是这条造成的。
+  -- ★★★★★ 2026-10-09 **白名单 `cfg.auto_create_only` 已删除**（那 14 个控件搬进存档了 ✓）
   --
-  --   但**不能**简单把 `auto_create` 改成 true：那会一次性去建规划里缺的 96 个控件
-  --   （`clue.*` `ruler.*` `room.*` `obj.*` …），副作用不可控。
+  --   历史 ✓：`auto_create = false` 是**全局**开关，一关就全关 ——
+  --     连新加的七个 `hex.*` 图标也一起被挡在外面（真机日志里它们出现在"这些控件还没建 ×7"✓）
+  --     但**不能**改回 true：那会一次性去建规划里缺的 96 个控件
+  --     （`clue.*` `ruler.*` `room.*` `obj.*` …）⇒ 又变成"一堆白块盖住界面" ✗
+  --     ⇒ 当时的折中是加一层**按 id 的白名单**，只放行 `hex.*` / `hit.*` ✓
   --
-  --   ⇒ 加一层**按 id 的白名单** `cfg.auto_create_only`：
-  --     只有名单里的节点才走自动创建，其它一律照旧。这一轮名单 = 七个 `hex.*`。
+  --   ★ 现在白名单**整段删掉**了 ✓（用户 2026-10-09：「同意搬 1」✓）
+  --     · 搬法：`tools/gil/gen_icons.mjs` ⇒ 产物 `230-图标搬进存档.gil` ✓
+  --     · 实测印证 ✓：`check_names` 的「🟢 脚本会自动建」**14 → 0** ✓
+  --     · 而且下面这段本来就"**先找、找不到才建**"（`ctrl == nil`）✓
+  --       ⇒ 存档里有了 ⇒ 永远走"找到"这一支 ⇒ 白名单确实成了死配置 ✓
+  --   ⇒ `auto_create`（全局）**保留** ✓ —— 它是"绝不让脚本按 kind 造白块"的底线 ✓
+  --     本改动**只删白名单**，不动那条底线 ✓
   local allow_auto = (self.cfg.auto_create == true)
-    or (self.cfg.auto_create_only ~= nil and self.cfg.auto_create_only[node.id] == true)
   if ctrl == nil and allow_auto and game and game.InstantiateClientUIControl then
     local prefab = (self.cfg.prefab_of and self.cfg.prefab_of[node.id]) or nil
     if prefab == nil then prefab = auto_prefab(self, node) end

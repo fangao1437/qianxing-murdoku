@@ -184,7 +184,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v094 / 2026-10-09 / 四键胶囊底图真修好(adapter 在入口层是全局 nil + 被 face 变更门关着 = 从没跑过) + v093 的:exit_menu入计划/调色板搜寻真跑/清缓存无条件/M.SIGNALS补SETTLE/四键几何设计稿B =====")
+        print("[murdoku] ===== 构建标记 v095 / 2026-10-09 / 图标与热区搬进存档(白名单 auto_create_only 整段删除) + v094 的:四键胶囊底图真修好 + v093 的:exit_menu入计划/调色板搜寻真跑/清缓存无条件/M.SIGNALS补SETTLE/四键几何设计稿B =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -304,36 +304,23 @@ local function build_adapter()
     --   现在改成**以 93.gil 为基底**（它有全部控件和素材）+ 把 97 的 stage 三条搬回来，
     --   ⇒ 界面控件重新由编辑器提供 ⇒ **自动创建必须关掉**，否则又是一堆白块。
     auto_create = false,   -- true 才让 create_control 按 kind 自动实例化（全局开关，保持关）
-    -- ★★★★★ 2026-10-03 **按 id 的白名单**：只有名单里的节点才允许自动创建。
+    -- ★★★★★ 2026-10-09 **白名单整段删掉** —— 那 14 个控件已经**搬进存档**了 ✓
     --
-    --   为什么需要它：`auto_create = false` 是个**全局**开关，一关就全关 ——
-    --   于是我新加的七个官方素材图标（`hex.*`，见 `ui_controller.lua` 的 ICON_ASSETS）
-    --   也一起被挡在外面，真机日志里它们出现在"这些控件还没建 ×7"就是这条造成的。
-    --   但**不能**把 `auto_create` 改回 true：那会一次性去建规划里缺的 96 个控件
-    --   （`clue.*` `ruler.*` `room.*` `obj.*` …），又会变成"一堆白块盖住界面"。
+    --   用户 2026-10-09 拍板：「**同意搬 1，然后 2，3 保持脚本**」✓
+    --     · 搬 1 = `hex.*` ×7 ＋ `hit.*` ×7（**固定不变** ⇒ 该进存档 ✓）
+    --     · 留 2 = `selbtn.*`（随关卡数变 ⇒ 脚本建 ✓）
+    --     · 留 3 = `cell.*`（引擎按索引克隆 ⇒ 脚本建 ✓）
+    --   搬法见 `tools/gil/gen_icons.mjs` ✓ 产物 `230-图标搬进存档.gil` ✓
+    --     · `hex.*` ← 克隆 `cell.1.1.content.face`（**纯图片**，能渲染、收不到光标事件 ✓）
+    --     · `hit.*` ← 克隆 `home.select` 且**不建 bg/label**（点击照收、什么都不画 ✓）
+    --     · **顺序**：hex 先、hit 后 ⇒ 热区在上，射线不会被图片控件吞掉 ✓
     --
-    --   ⇒ 折中：**只放行这七个图标**。它们走 `auto_prefab`（= 格子的客户端控件模板
-    --     1073741876，真机已多次验证可实例化），建出来后由适配器新加的那段
-    --     `SetImage(node.image_id)` 把官方素材贴上去。
-    auto_create_only = {
-      ["hex.back"]   = true,
-      ["hex.submit"] = true,
-      ["hex.redo"]   = true,
-      ["hex.undo"]   = true,
-      ["hex.hint"]   = true,
-      ["hex.ok"]     = true,
-      ["hex.no"]     = true,
-      -- ★ 2026-10-04 **七个透明热区**（用户构思：图标纯贴图 + 交互按钮单独做）。
-      --   它们走 `cfg.cells.prefab`（真机验证可点），且**不给 image_id**
-      --   ⇒ face 不会被点亮 ⇒ 完全透明，只负责收点击。
-      ["hit.back"]   = true,
-      ["hit.submit"] = true,
-      ["hit.redo"]   = true,
-      ["hit.undo"]   = true,
-      ["hit.hint"]   = true,
-      ["hit.ok"]     = true,
-      ["hit.no"]     = true,
-    },
+    --   ⇒ ★ 所以这份 `auto_create_only` 白名单**已经没有用了** ✓
+    --     实测印证：`check_names` 报的「🟢 脚本会自动建」从 **14 → 0** ✓
+    --     而且适配器那段本来就"**先找、找不到才建**" ⇒ 存档里有了就只走"找到" ✓
+    --   ⇒ ★ 删掉它 = 少一处会漂移的配置，也少一条"脚本偷偷造控件"的路 ✓
+    --     （`auto_create = false` **保留** ✓ —— 那条全局开关还有意义：
+    --      它是"绝不让脚本按 kind 造一堆白块盖住界面"的底线 ✓）
 
     -- ★★★★★ 2026-10-03 **图标专用模板**（用户 20:45 提供索引 **1073742356**）
     --
