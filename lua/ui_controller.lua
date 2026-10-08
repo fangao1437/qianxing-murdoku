@@ -4186,8 +4186,33 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
         local _as = nil
         local _seen = 0
         pcall(function()
-          local r0 = self.adapter:find("root")
-          if r0 == nil then return end
+          -- ★★★★★ 2026-10-08 **改用引擎自己的入口** ✗✓（用户点出：编辑器里 assets 明确与 home 平级 ✓）
+          --   ★ 怀疑 ✓：★ 我上一版从 `self.adapter:find("root")` 起走 ⇒ ★ 它可能返回**不是 UI 根**的那个 root ✗
+          --     （★ 与"读 218.1 时按字段号下钻"是同一类错误：★ **拿一个"看起来像"的入口当权威** ✗）
+          --   ★ 权威入口 ✓：★ **`game.GetClientUIRoots()`** ✓ —— ★ 适配器文档第 14 条写的就是它 ✓
+          --   ⇒ ★ 从这里起遍历 ✓ ★ 并把**根的名字**打出来 ✓（★ 一眼确认走对了没有 ✓）
+          local _roots = nil
+          pcall(function() _roots = game.GetClientUIRoots() end)
+          local _rn = 0
+          if _roots ~= nil then pcall(function() _rn = #_roots end) end
+          if (self._roots_log or 0) < 2 then
+            self._roots_log = (self._roots_log or 0) + 1
+            local _nm = {}
+            for i = 1, math.min(_rn, 8) do
+              local x = _roots[i]
+              local xn = nil
+              pcall(function() xn = tostring(x.name) end)
+              _nm[#_nm + 1] = tostring(xn)
+            end
+            print("[murdoku] ★ 调色板搜寻：客户端根 " .. tostring(_rn) .. " 个 = " .. table.concat(_nm, " , "))
+          end
+          if _rn == 0 then
+            local r0 = self.adapter:find("root")     -- 兜底：引擎入口拿不到时，退回按名找
+            if r0 == nil then return end
+            _search(r0, 0)
+          else
+            for i = 1, _rn do _search(_roots[i], 0) end
+          end
           local function _search(node, depth)
             if node == nil or depth > 4 or _as ~= nil then return end
             local kids = nil
