@@ -2980,6 +2980,13 @@ function Controller:build_layout()
       --   （对照：加它之前"有字无图" ✓ 加它之后"图文都没有" ✗ ⇒ 变量只有这一个 ✓）
       --   ⇒ 现在**显式指名 `bg`**（`Adapter:sub(id, "bg")` ✓ 它就是按钮的底图那一层 ✓）
       --   素材 ★ **107179**（760×152 · 两端全圆角米白）= 用户选定 ✓ 沿用控件自己的官方图集 ✓
+      -- ★ 2026-10-08 **守卫【外面】的探针** ✓（★ 真机：里面那两条一行没打 ✗ ⇒ 根本没进来 ✓）
+      --   ★ 要分清两种可能 ✓：★ ① `self.adapter` 此刻是 nil ✗ ★ ② `_exit_menu_art` 已被置真 ✗
+      if (self._art_gate_log or 0) < 6 then
+        self._art_gate_log = (self._art_gate_log or 0) + 1
+        print("[murdoku] ★ 胶囊底图：到守卫  adapter=" .. tostring(self.adapter ~= nil)
+          .. "  闩锁=" .. tostring(self._exit_menu_art))
+      end
       if (not self._exit_menu_art) and self.adapter ~= nil then
         self._exit_menu_art = true
         for _, bid in ipairs({ "modal.exit", "modal.save", "modal.settle", "modal.cancel" }) do
