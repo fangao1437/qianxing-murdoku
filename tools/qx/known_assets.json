@@ -122,7 +122,8 @@
   "superseded_guess": {
     "old_mapping": { "A": 105104, "B": 112031, "C": 105105 },
     "why_wrong": "The three ids were right but assigned to the wrong letters, and A was missing. 105104/105105 are slimes, not portraits; 112031 is the masked character.",
-    "corrected_mapping": { "A": 112042, "B": 105104, "C": 112031, "D": 105105 }
+    "corrected_mapping": { "A": 112042, "B": 105104, "V": 112031, "D": 105105 },
+    "naming_note": "2026-10-09: the third key was written as C here, but the current archive names that control portrait.V (112031 is the masked character). The three other ids were already correct. Ids are unchanged; only the label was wrong, and it was this note that made docs/assets取不到-追查.md report a contradiction with lua/ui_controller.lua:4491, which reads A=112042 B=105104 V=112031 D=105105. Both sides agree and always did."
   },
   "side_findings": {
     "identical_files": [

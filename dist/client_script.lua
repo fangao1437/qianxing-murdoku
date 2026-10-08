@@ -17201,8 +17201,21 @@ local function check_canvas()
       --   起因：改完代码、真机跑了一遍，贴回来的日志**时间戳还是上一轮的**，
       --   里面既没有新打印、`cell` 尺寸也还是旧值 ⇒ 我误以为"改动没生效"，
       --   实际是**贴了旧日志**。加这一行后，一看首行就能确认跑的是哪一版。
+      --
+      -- ★★★★★ 2026-10-09 **标记从 v076 直接跳到 v093 —— 中间 17 轮全丢了** ✗✓
+      --   ★ 症状 ✓：`PLAN.md` D2 记的「十几次安装后无法从日志分辨版本」——
+      --     标记停在 **v076**（10-05），而 `versions/` 已经到
+      --     **`134-弹窗四键成型-v092`** ⇒ 中间每一轮的日志首行**都是 v076** ✓
+      --     ⇒ 贴回来的日志到底对应哪一版，**根本看不出来** ✓（正是当初加标记要解决的问题 ✗）
+      --   ★ 本次动作 ✓：**只把标记本身补上**（v093 = 紧随 versions/ 的 v092 ✓）
+      --     —— **没有**顺手加自动化：那要改 `tools/install_script_to_sandbox.ps1`，
+      --     而本文件对 BOM **极敏感**（历史事故：用 `Set-Content` 写它会加 BOM ⇒
+      --     打包后 Lua 5.3 报 `unexpected symbol near '<\239>'` ⇒ `check_all` 2c 永久变红 ✓）
+      --     ⇒ ★ 规则：**本文件只许用 `edit` 工具改，改完必跑 `node tools/check_encoding.mjs`** ✓
+      --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
+      --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v076 / 2026-10-05 18:0x / 社区知识落地: 要显示时显式补 SetActive(true)(手写树漏写 active 会少一层可见性) =====")
+        print("[murdoku] ===== 构建标记 v093 / 2026-10-09 / 四键根因修复(exit_menu 入计划) + 调色板搜寻真跑起来(_search 先定义后调用) + 清缓存与按名取assets无条件执行 + M.SIGNALS 补 SETTLE(murdoku/settle) + 四键几何改设计稿B(312x60) =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
