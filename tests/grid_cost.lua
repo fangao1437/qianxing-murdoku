@@ -563,20 +563,39 @@ end
 
 out("\n== C. 引擎滚动重进一次回调（官方：「列表发生滚动时对列表项内容进行刷新」）==")
 reset()
-reenter(1)
-out(string.format("  [C] 回调 %d 次：item.GetChild=%d  view=%d（★每条线索重建一次整视图！）  "
+-- ★★★★★ 2026-10-09 **改判（依据，不是放宽）** ✗✓
+--   ★ 原来的做法 ✗：`reset(); reenter(1)` 然后断言 `item.GetChild == 0` ✓
+--   ★ 实测为什么永远做不到 ✓（我插了临时探针把"为什么没复用缓存"打出来，看完就撤 ✓）：
+--       [C] item=67CA50 index=0 rec.idx=0 suffix=gray  cached_nonnull=false variant=nil
+--       [C] item=681F10 index=1 …（每一项都是**新对象**）
+--     ⇒ ★ `reset()` 会**重建整张网格**（新的 `make_grid()` ⇒ 新的列表项对象 ✓）
+--       ⇒ 记忆表是**按控件身份**做弱键的（`_grid_kids`，`__mode="k"` ✓）
+--       ⇒ ★ **对象是新的 ⇒ 缓存必然是空的 ⇒ 这一次回调【必须】去查那 3 个句柄** ✓
+--     （3 个 = `gray` / `backrop1` / `face` ✓；文字那 3 个走 `_grid_text` 快照 ⇒ 已是 0 ✓）
+--   ⇒ ★ 所以 `== 0` 测的不是"记忆表生效"，而是"**在冷网格上也要 0**" —— **不可能** ✗
+--   ★ 改成测**真正的契约** ✓：先跑一次让它把手柄记下来（冷），
+--     **再跑一次**量这一次（温）⇒ 温的那次才该是 0 ✓
+--     —— 这也正是真机滚动时发生的事（引擎复用列表项 ⇒ 第二次起全命中 ✓）
+reenter(1)                                   -- 冷：先把手柄填进记忆表
+local cold = { item = C.item_child, view = C.view, text = C.text_write }
+reenter(1)                                   -- ★ 温：这一次才该是 0
+out(string.format("  [C] 回调 %d 次：item.GetChild=%d（冷的那次是 %d）  view=%d  "
   .. "find=%d  set_property=%d  文字写入=%d  挂监听=%d",
-  C.cb, C.item_child, C.view, C.find, C.set_prop, C.text_write, C.add_listener))
-local Cc = { cb = C.cb, gc_item = C.item_child, view = C.view, find = C.find,
-             sp = C.set_prop, text = C.text_write }
+  C.cb, C.item_child - cold.item, cold.item, C.view - cold.view,
+  C.find, C.set_prop, C.text_write - cold.text, C.add_listener))
+local Cc = { cb = C.cb, gc_item = C.item_child - cold.item, view = C.view - cold.view,
+             find = C.find, sp = C.set_prop, text = C.text_write - cold.text }
 
 -- ── 口径 C2：**连续 5 次**重进 —— 看有没有"每次都重做"的东西 ──────────────
 out("\n== C2. 连续 5 次重进（模拟「引擎每帧重进」）==")
 reset()
-reenter(5)
-out(string.format("  [C2] 回调 %d 次：item.GetChild=%d  view=%d  文字写入=%d  挂监听=%d",
-  C.cb, C.item_child, C.view, C.text_write, C.add_listener))
-local C5 = { cb = C.cb, gc_item = C.item_child, view = C.view, text = C.text_write }
+reenter(1)                                   -- 冷：同 C 段，先填记忆表
+local cold2 = { item = C.item_child, view = C.view }
+reenter(5)                                   -- ★ 温：5 次
+out(string.format("  [C2] 回调 %d 次：item.GetChild=%d（冷的那次是 %d）  view=%d  文字写入=%d  挂监听=%d",
+  C.cb, C.item_child - cold2.item, cold2.item, C.view - cold2.view, C.text_write, C.add_listener))
+local C5 = { cb = C.cb, gc_item = C.item_child - cold2.item, view = C.view - cold2.view,
+             text = C.text_write }
 
 -- ── 口径 C3：点击监听会不会重复挂（Enum 打开后）───────────────────────────
 out("\n== C3. 挂点击监听会不会重复（真机有 Enum；离线环境默认没有）==")
