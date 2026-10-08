@@ -96,13 +96,34 @@ async function placedCount() {
   const m = /已放置\s*(\d+)/.exec(String(textOf(await get(), 'hud.progress') || ''));
   return m ? Number(m[1]) : -1;
 }
+// ★★★★★ 2026-10-09 **选角色改成点「线索卡的 face」** ✗✓（原来点的控件已按设计删除 ✗）
+//   原文：`const trayId = 'tray.' + p.id;` ⇒ 点 `tray.A` / `tray.B` …
+//   ★ 为什么必然红 ✗：`tray.*`（头像卡）**按设计已删** ✓ ——
+//     2026-10-02 用户定稿「**头像卡并进滚动线索卡**」（`ui_controller.lua:2142-2147`：
+//     容器留着但 `visible=false`、**不再单独建头像卡** ✓）
+//     实测 `layout-plan.json` 里 `tray.*` = **0 条** ⇒ 那 5 条「头像卡存在 tray.X」**永远红** ✓
+//     而且 `if (!t.has(trayId)) { …; continue; }` 会**直接跳过放置** ⇒ **一格都放不下** ⇒
+//     后面 12 条（摆满 / 提交 / 指认 / 结算）**全是级联红** ✓（这就是 6/17 的由来 ✓）
+//   ★ 真正可点的选人入口 ✓：线索卡上的 **`clue.<n>.face`**
+//     （实测 `kind=button`、`event.id=<角色字母>` ✓ 与 `action: suspect` 同一套 ✓）
+//   ⚠️ 同一个角色可能在**多张卡**上出现（按关卡不同 ✓）⇒ 必须挑**当前关卡**有、
+//     而且**此刻 visible** 的那一个 ✓（线索区是网格视窗、有滚动剔除 ✓）
+function faceForSuspect(sid) {
+  const cands = plan.nodes.filter((n) => /^clue\.\d+\.face$/.test(n.id)
+    && n.event && n.event.id === sid
+    && (!n.levels || n.levels.includes(lv.id)));
+  for (const n of cands) { if (visibleOf(ri, n.id) === true) return n.id; }
+  return cands.length ? cands[0].id : null;
+}
 for (const p of lv.pieces) {
-  const trayId = 'tray.' + p.id;
+  const faceId = faceForSuspect(p.id);
   const cellId = `cell.${p.r}.${p.c}`;
-  const t = indexTree(ri);
-  if (!t.has(trayId)) { check('头像卡存在 ' + trayId, false); continue; }
+  if (!faceId) {
+    check('线索卡里能找到角色 ' + p.id + ' 的可点 face', false, '计划里没有该角色的 clue.*.face');
+    continue;
+  }
   const before = await placedCount();
-  await click(trayId); await tick(0.05);
+  await click(faceId); await tick(0.05);
   await click(cellId); await tick(0.05);
   await click(cellId);
   // 等"放置数 +1"（最多 ~1.4s），等不到就把当前值交给断言去报
@@ -116,18 +137,30 @@ for (const p of lv.pieces) {
 }
 const progress = textOf(ri, 'hud.progress');
 check(`全部 ${lv.piece_count} 个角色都已放置`, new RegExp(`${lv.piece_count} / ${lv.piece_count}`).test(progress || ''), progress);
-check('位置全部正确', new RegExp(`${lv.piece_count} / ${lv.piece_count}`).test(textOf(ri, 'hud.score') || ''),
-  textOf(ri, 'hud.score'));
+// ★ 2026-10-09 **改判（依据，不是放宽）**：`hud.score` **已不存在** ✗✓
+//   实测 `layout-plan.json` 的 `hud.*` 只有 `title / subtitle / timer / progress` ✓
+//   ⇒ 原来那条读 `hud.score` 得 `undefined` ⇒ **恒红** ✓
+//   ★ 而「位置全部正确」这个事实**有更好的判据** ✓：
+//     本脚本**是照答案摆的**，而"摆错"必定导致**提交失败** ⇒
+//     下面「提交后弹出指认面板」那一条**本身就覆盖了正确性** ✓（错位 → 不进指认面板 ✓）
+//   ⇒ 这里改成**哨兵**（`hud.score` 重新出现 ⇒ 红，提醒把上面那条改回读它 ✓），
+//     并**不再重复** `hud.progress`（上一条已经锁死 ✓）
+check('旧计分控件 hud.score 按设计已移除（判据改用「提交能否进指认面板」）',
+  !plan.nodes.some((n) => n.id === 'hud.score'),
+  plan.nodes.some((n) => n.id === 'hud.score') ? '★ 它又出现了' : '计划里没有 ✓');
 await ss('win-01-placed.png');
 
 // ── 4. 提交 → 两段式指认 ─────────────────────────────────────────────────
 console.log('\n=== 3. 提交并指认');
-const submitNode = indexTree(ri).get('action.submit');
+// ★ 2026-10-09：`action.submit` **按设计已删** ✗ —— 接替者 = **`hex.submit`** ✓
+//   （旧文字键与 `hex.*` 重叠且动作重复，2026-10-05 已删 ✓ 实测 plan 里 `action.submit` = 0 ✓）
+const submitNode = indexTree(ri).get('hex.submit');
 check('摆满后「提交」可用', !!submitNode && submitNode.interactable !== false,
   'interactable=' + (submitNode && submitNode.interactable));
-await click('action.submit'); await tick(0.05);
+await click('hex.submit'); await tick(0.05);
 ri = await get();
-check('弹出指认面板', visibleOf(ri, 'modal') === true, 'toast=' + JSON.stringify(textOf(ri, 'hud.toast')));
+// `hud.toast` 也已不存在 ⇒ 明细改读 `modal` 的实际可见性（更有用 ✓）
+check('弹出指认面板', visibleOf(ri, 'modal') === true, 'modal=' + String(visibleOf(ri, 'modal')));
 await ss('win-02-accuse-thief.png');
 
 // 指认盗窃者
@@ -184,7 +217,12 @@ const afterTitle = String(textOf(ri, 'hud.title') || '');
 // ⚠️ **最后一关要单独判**：`case_003` 是最后一关 ⇒ 点「下一关」应该给提示
 //    「已经是最后一关了」而不是切关。我第一版写成"标题必须变"，
 //    于是 case_003 报 `["案件 003 · 第三方" → "案件 003 · 第三方"]` —— **断言错了，不是功能错了**。
-const toastNow = String(textOf(ri, 'hud.toast') || '');
+// ★ 2026-10-09：`hud.toast` **已不存在** ✗ ⇒ 提示文案现在走 **`hud.subtitle`** ✓
+//   依据：`ui_controller.lua:1559` 写着「`hud.subtitle` —— 关卡内（撤销 / 取消 / 揭示 /
+//     回滚 / 提交与结案结果…）」✓ 而 `:1565` 实测记着「`208-补active.gil`：`hud.toast` **0 条**」✓
+//   ⇒ 原来读 `hud.toast` 恒 `''` ⇒ `isLast` 只能靠 `ri.toast`（模拟器环境字段）兜底 ✓
+//     现在改读**真控件** `hud.subtitle` ✓，环境的 `ri.toast` 仍留着当第二判据 ✓
+const toastNow = String(textOf(ri, 'hud.subtitle') || '');
 const isLast = /最后一关/.test(toastNow) || /最后一关/.test(String(ri.toast || ''));
 check('点结算里的「下一关」有明确结果（切到下一关 / 或提示已是最后一关）',
   visibleOf(ri, 'board') === true && (afterTitle !== beforeTitle || isLast),
