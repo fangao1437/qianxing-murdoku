@@ -2955,24 +2955,41 @@ function Controller:build_layout()
       btn("modal.next", "modal", { x = mx + 440, y = my + mh - 88, w = 200, h = 60 }, "下一关",
           { action = "next_level" }, "stamp.primary")
 
-      elseif modal.kind == "exit_menu" then
-        -- ★ 2026-10-08 「退出菜单」四键（★ 从提交 272 原文整段照抄恢复 ✓ 295 那次整份删掉 ✗）
-        --   ★ 几何由编辑器/gil 说了算 ✓（`pos_runtime` 缺省 = 不下发几何 ✓）—— ★ 这正是"显示问题"要处理的层 ✓
-        push({ id = "modal.title", kind = "text", parent = "modal",
-          rect = { x = mx + 30, y = my + 30, w = mw - 60, h = 56 },
-          text = "离开这一关？", style = "modal.title" })
-        push({ id = "modal.body", kind = "text", parent = "modal",
-          rect = { x = mx + 30, y = my + 100, w = mw - 60, h = 40 },
-          text = "可以直接退出，也可以先存下进度", style = "muted" })
-        btn("modal.exit", "modal", { x = mx + 40, y = my + 170, w = mw - 80, h = 64 },
+    elseif modal.kind == "exit_menu" then
+      -- ★ 2026-10-07 「退出菜单」四键（几何由编辑器/gil 说了算 ✓ `pos_runtime` 缺省 = 不下发几何 ✓）
+      btn("modal.exit", "modal", { x = mx + 40, y = my + 170, w = mw - 80, h = 64 },
           "退出至菜单", { action = "exit_menu_go" }, "stamp")
-        btn("modal.save", "modal", { x = mx + 40, y = my + 246, w = mw - 80, h = 64 },
+      btn("modal.save", "modal", { x = mx + 40, y = my + 246, w = mw - 80, h = 64 },
           "仅存档", { action = "exit_menu_save" }, "stamp")
-        btn("modal.settle", "modal", { x = mx + 40, y = my + 322, w = mw - 80, h = 64 },
+      btn("modal.settle", "modal", { x = mx + 40, y = my + 322, w = mw - 80, h = 64 },
           "存档并结算", { action = "exit_menu_settle" }, "stamp.primary")
-        btn("modal.cancel", "modal", { x = mx + 40, y = my + mh - 88, w = mw - 80, h = 60 },
+      btn("modal.cancel", "modal", { x = mx + 40, y = my + mh - 88, w = mw - 80, h = 64 },
           "取消", { action = "close_modal" }, "tab")
 
+      -- ★★★★★ 2026-10-07 **给四个键设【官方胶囊底图】** ✗✓（用户要求配图 ✓）
+      --   ★ 为什么走脚本而不是改 `.gil`：`docs/官方素材方案-脚本一体化.md` 已论证
+      --     「**官方素材 + 脚本 = 图 / 色 / 尺寸 / 位置全可运行时改**」⇒ 配图本来就该脚本做 ✓
+      --     （团队连改 4 轮 `.gil` 记录数组都卡在手工下标上 ✗ 这条路整个绕开 ✓）
+      --   ★ 素材：★ **`107179`**（760×152，两端全圆角、米白）—— 与用户截图里的胶囊按钮同形 ✓
+      --     `set_image_deep` 会自己往下找带 `SetImage` 的子控件（= 按钮的 `bg` ✓），
+      --     并沿用控件自己编辑器里配的图集（`bg` 的 imageSource = 官方图集 ✓）✓
+      --   ★ 只做一次（每帧设图会白烧成本 ✓ 本项目对每帧成本敏感 ✓）。
+      -- ★★★★★ 2026-10-07 **只给 `bg` 子控件设胶囊底图** ✗✓（用户要求配图 ✓）
+      --   上一版用 `set_image_deep(按钮, …)`：它"找第一个带 SetImage 的子控件"
+      --   ⇒ 真机很可能命中 `label`（文字控件也有 SetImage）⇒ **图盖在文字上 ⇒ 图文都没了**
+      --   （对照：加它之前"有字无图" ✓ 加它之后"图文都没有" ✗ ⇒ 变量只有这一个 ✓）
+      --   ⇒ 现在**显式指名 `bg`**（`Adapter:sub(id, "bg")` ✓ 它就是按钮的底图那一层 ✓）
+      --   素材 ★ **107179**（760×152 · 两端全圆角米白）= 用户选定 ✓ 沿用控件自己的官方图集 ✓
+      if (not self._exit_menu_art) and self.adapter ~= nil then
+        self._exit_menu_art = true
+        for _, bid in ipairs({ "modal.exit", "modal.save", "modal.settle", "modal.cancel" }) do
+          local bg = nil
+          pcall(function() bg = self.adapter:sub(bid, "bg") end)
+          if bg ~= nil and self.adapter.set_image_deep ~= nil then
+            pcall(function() self.adapter:set_image_deep(bg, 107179, nil, nil, "弹窗胶囊") end)
+          end
+        end
+      end
     elseif modal.kind == "share" then
       -- ★ 2026-10-05 **这一支目前没有入口按钮**（用户当天决定去掉「分享棋局」按钮，
       --   见上面 `modal.kind == "result"` 里那段删除说明）。
