@@ -47,6 +47,19 @@ M.SIGNALS = {
   SAVE       = "murdoku/save",
   RESTORE    = "murdoku/restore",
   SYNC_STATE = "murdoku/sync",
+  -- ★★★★★ 2026-10-09 **补 `SETTLE`（「存档并结算」）** ✗✓
+  --   ★ 为什么必须有 ✓：`main.lua:218` 的 `on_settle` 调
+  --     `adapter:signal_emit(Qianxing.SIGNALS.SETTLE, { tostring(level.id) })` ✓
+  --   ★ 之前没有这一条会怎样 ✗：`SIGNALS.SETTLE` 求值为 **nil** ⇒
+  --     `signal_emit(nil, …)` ⇒ ★ 被 `pcall` 吞掉 ⇒ **一个错都不报** ✗
+  --     ⇒ ★ 玩家点「存档并结算」时：**本地存档照做、结算信号永远发不出去** ✓
+  --     —— ★ 正是本项目最常见的那种「静默失效」✓（不报错、只是不生效 ✓）
+  --   ★ 出处 ✓：`docs/弹窗-线索汇总.md` §7 第 1 步列的 5 块补丁里，
+  --     其余 4 块（入口分支 / 三动作 / 渲染分支 / DECOR）都已恢复，
+  --     **只有"适配器 SIGNALS"这一块漏了** ✓ ⇒ 本次补上 ✓
+  --   ⚠️ 节点图侧要按这个名字接线；该信号名**此前在任何文档里都查不到** ✓
+  --     ⇒ 已同步写进 `docs/节点图接线与素材清单.md` ✓
+  SETTLE     = "murdoku/settle",
 }
 
 -- 信号参数按顺序添加；这里给出"信号名 → 字段顺序"，收信号时按它还原成字典
@@ -60,6 +73,8 @@ M.SIGNAL_SCHEMA = {
   [M.SIGNALS.SAVE]       = { "level_id", "state_code", "moves", "elapsed", "solved" },
   [M.SIGNALS.RESTORE]    = { "state_code", "moves", "elapsed", "solved" },
   [M.SIGNALS.SYNC_STATE] = { "who", "r", "c" },
+  -- ★ 2026-10-09 随 `M.SIGNALS.SETTLE` 一起补 ✓ 参数按序 = 关卡 id（`main.lua:218` 只传这一个 ✓）
+  [M.SIGNALS.SETTLE]     = { "level_id" },
 }
 
 ----------------------------------------------------------------------------

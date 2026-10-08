@@ -3514,6 +3514,26 @@ function Controller:layout_plan()
     { name = "howto",             intro = 99, modal = { kind = "howto" }, screen = nil },
     { name = "levelselect",       intro = 99,
       modal = { kind = "levelselect" }, screen = nil },
+    -- ★★★★★ 2026-10-09 **补 `exit_menu`（四键退出弹窗）** ✗✓
+    --   ★ 为什么必须在这里 ✓：★ 本清单是**全状态并集**的唯一来源 ✓，它同时喂给
+    --     · 模拟器控件树（`tools/sim/kit.mjs:23` 的 `loadPlan()` **直接读 `layout-plan.json`** 建树 ✓）
+    --     · 编辑器搭建表（`docs/控件坐标表-1600x900.md`，由同一个 plan 生成 ✓）
+    --     · 批量生成器（`tools/gil/gen_bulk.mjs` ✓）
+    --   ★ 少了这一条会怎样 ✗（★ 实测 ✓）：★ `build_layout()` 里
+    --     `elseif modal.kind == "exit_menu"`（本文件 :2958）那四个 `btn(...)`
+    --     **永远不被 layout_plan 采集** ✗ ⇒ `layout-plan.json` 里**没有**
+    --     `modal.exit / modal.save / modal.settle` ✗ ⇒
+    --       · 模拟器建出来的树没有它们 ⇒ 适配器 `find()` 失败 ⇒
+    --         真机/模拟器日志出现「这些控件还没建 ×3」✗（**8/13 与 15/15 两步审计就是这样红的** ✓）
+    --       · 搭建表也不列它们 ⇒ **一旦照表重建界面，四键会被漏掉** ✗
+    --   ★ 与 `kit.mjs:152-161` 记的是**同一种病** ✓：那一处是 `bg`/`label` 被写进 `.gil`
+    --     却不在 plan 里 ⇒ 模拟器缺件；这一处是四个键本身不在 plan 里 ✓
+    --     ⇒ ★ 修法统一：**让 plan 覆盖到真实存在的东西** ✓（而不是在模拟器里继续手工补件 ✓）
+    --   ★ 为什么之前漏了 ✓：`docs/弹窗-线索汇总.md` §7 第 1 步列的 5 块里，
+    --     入口分支 / 三动作 / 渲染分支 / DECOR 都补了，**唯独「计划状态 exit_menu」没补** ✓
+    --   ⚠️ `modal.cancel` 本来就在 plan 里（被 accuse_thief / howto / levelselect 等
+    --     6 个状态共用 ✓）⇒ ★ 它一直正常 ✓ —— 这正是「四个键只有一个好使」的出处 ✓
+    { name = "exit_menu",         intro = 99, modal = { kind = "exit_menu" }, screen = nil },
   }
 
   local order, byId = {}, {}
@@ -4340,24 +4360,26 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
             end
             print("[murdoku] ★ 按名取清单：root 名=" .. _rn1 .. "   " .. table.concat(_parts, "  "))
           end
-          if _rn == 0 then
-          -- ★ 2026-10-08 **查调色板前先清一次"名字缓存"** ✗✓（★ 用项目现成的机制 ✓ 不自造遍历 ✓）
-          --   ★ 依据 ✓：★ 适配器自己就是用 `find("assets")` 找调色板的（★ adapter L3343 ✓）⇒ ★ 那条路本来就成熟 ✓
-          --   ★ 而 `find` 有**负缓存** ✗：★ 某名字被判"不在树上" ⇒ **这一代永久 nil** ✓（★ adapter L417~459 ✓）
-          --     ★ 项目还专门写了 ✓：「★ 不做这一步的话，"上一关没有、这一关有"的控件会被负缓存判成不存在」✓
-          --   ★ 所以 ✓：★ **先清一代缓存 ⇒ 再查** ✓ ⇒ ★ `assets` 就会被真真正正地搜一次 ✓✓
-          --   ★ 只清一次 ✓（★ 用 `_cache_cleared` 标记 ✓ 查到就进命中缓存 ✓ 稳态零成本 ✓）
+          -- ★★★★★ 2026-10-09 **【B2】清缓存与「按名取 assets」必须【无条件】执行** ✗✓
+          --   ★ 原文的错 ✗：这两件事被关在 `if _rn == 0 then` 里（★ 只有"引擎一个根都拿不到"时才跑 ✓）
+          --     ⇒ ★ 真机 `_rn = 2`（`111` + `root` 两个客户端容器 ✓）⇒ **走 else 分支 ⇒ 两件事从未执行** ✗✗
+          --     ⇒ ★ 于是「`assets` 按名取」从来没试过 ✓ ★ 「负缓存清一代」也从来没做过 ✓
+          --     ⇒ ★ `docs/assets取不到-追查.md` 里"已排除负缓存"的**前提不成立** ✓（要重判 ✓）
+          --   ★ 为什么本来就该无条件 ✓：★ 清缓存是**幂等的一次性动作** ✓（`_cache_cleared` 把关 ✓）
+          --     ★ 按名取是**主路径** ✓（★ 与 `_rn` 毫无关系 ✓）⇒ 两者都不该依赖根的数量 ✓
           if self.adapter ~= nil and not self._cache_cleared then
             self._cache_cleared = true
             if self.adapter.invalidate_lookups ~= nil then pcall(function() self.adapter:invalidate_lookups("调色板查找前") end) else pcall(function() self.adapter._misses = nil; self.adapter.controls = {} end) end
           end
           pcall(function() local _r = self.adapter:find("root"); if _r ~= nil and _as == nil then _as = _r:GetChild("assets") end end)   -- ★ 按名取 assets ✓
-            local r0 = self.adapter:find("root")     -- 兜底：引擎入口拿不到时，退回按名找
-            if r0 == nil then return end
-            _search(r0, 0)
-          else
-            for i = 1, _rn do _search(_roots[i], 0) end
-          end
+
+          -- ★★★★★ 2026-10-09 **【B1】`_search` 必须先【定义】、再【调用】** ✗✓
+          --   ★ 原文的错 ✗：调用在 :4377 / :4379，而赋值 `_search = function…` 在 :4381 ✓
+          --     ⇒ ★ `attempt to call a nil value` ✓ ★ 被本函数最外层的**大 pcall 吞掉** ✗
+          --     ⇒ ★ 静默失效：**调用点之后的整段都不执行**（连那行赋值本身也不执行 ✓）
+          --     ⇒ ★ 所以真机日志里「调色板搜寻：第N层看到」**一行都没有** ✓✓
+          --   ★ `:4298` 那条注释以为"先 `local _search = nil` 声明就修好了" ✗
+          --     —— ★ **声明成 nil 并不能防止调用 nil** ✓ 必须先赋值 ✓（本项目第 N 次同形状 ✓）
           _search = function(node, depth)
             if node == nil or depth > 4 or _as ~= nil then return end
             local kids = nil
@@ -4379,7 +4401,18 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
               _search(x, depth + 1)
             end
           end
-          _search(r0, 0)
+
+          -- ★ 只有在"按名取"没拿到时，才值得退回去递归搜（省掉稳态的整树遍历 ✓）
+          --   ⚠️ 原文这里还有一句 `if r0 == nil then return end` ✗ —— 那个 `return` 会
+          --      **中断整个大 pcall 的函数体**（★ 连后面的赋值一起跳过 ✓）⇒ 已去掉 ✓
+          if _as == nil then
+            if _rn == 0 then
+              local r0 = self.adapter:find("root")     -- 兜底：引擎入口拿不到时，退回按名找
+              if r0 ~= nil then _search(r0, 0) end
+            else
+              for i = 1, _rn do _search(_roots[i], 0) end
+            end
+          end
         end)        if _as ~= nil then
           local k1 = nil
           pcall(function() k1 = _as:GetChildren() end)

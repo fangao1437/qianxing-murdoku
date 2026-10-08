@@ -25,6 +25,13 @@ const ROOT = process.cwd();
 const SKIP = new Set([
   'node_modules', '.git', 'dist', 'versions', '_backup', 'baseline',
   'tools/bin', 'tools/_dl', 'tools/lua-tooling/out', 'tools/lua53check/node_modules',
+  // ★★★★★ 2026-10-09 **归档快照目录也要排除** ✗✓
+  //   `old-repo/` 是「另一个本地仓库」的 `git archive` 快照（提交 b4f8336 加进来的），
+  //   是**历史原件**、不是本工程的在用源码 ⇒ 不该被本哨兵判红，更不该被"规整" ✓
+  //   （实测：不排除时本步 25 项违规**全部**来自 `old-repo/`，
+  //     其中 `old-repo/tools/lua53check/node_modules/fengari/…` 还带 node_modules ✓
+  //     —— 上面那条 `tools/lua53check/node_modules` 因为多了 `old-repo/` 前缀而匹配不上 ✗）
+  'old-repo',
 ]);
 
 // 规则表：扩展名 → 期望
