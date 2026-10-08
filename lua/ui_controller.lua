@@ -4220,6 +4220,25 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
             self._g_log = (self._g_log or 0) + 1
             print("[murdoku] ★ 按名取：assets=" .. tostring(_as ~= nil) .. "  portrait.<id>=" .. tostring(_pal ~= nil))
           end
+          -- ★ 2026-10-08 **按名取清单**（★ 真机 `assets=false` ✗ ⇒ 先看清"哪些名字取得"✓）
+          --   ★ 项目里早有过提醒 ✓：★「脚本是精确匹配的：大小写、空格、**自动后缀**都算不一样」✓
+          --     ⇒ ★ 引擎可能给 `assets` 加了后缀（如 `assets(1)` ✓）★ 或名字其实不同 ✓
+          if (self._g_log or 0) < 4 then
+            self._g_log = (self._g_log or 0) + 1
+            local _cands = { "assets", "assets(1)", "assets1", "home", "topbar", "clues", "row.1.1", "row.1.2", "portrait.V", "portrait.A" }
+            local _parts = {}
+            local _r1 = self.adapter:find("root")
+            local _rn1 = "?"
+            pcall(function() _rn1 = tostring(_r1 and _r1.name) end)
+            if _r1 ~= nil then
+              for _i1 = 1, #_cands do
+                local _got = nil
+                pcall(function() _got = _r1:GetChild(_cands[_i1]) end)
+                _parts[#_parts + 1] = _cands[_i1] .. "=" .. tostring(_got ~= nil)
+              end
+            end
+            print("[murdoku] ★ 按名取清单：root 名=" .. _rn1 .. "   " .. table.concat(_parts, "  "))
+          end
           if _rn == 0 then
           pcall(function() local _r = self.adapter:find("root"); if _r ~= nil and _as == nil then _as = _r:GetChild("assets") end end)   -- ★ 按名取 assets ✓
             local r0 = self.adapter:find("root")     -- 兜底：引擎入口拿不到时，退回按名找
