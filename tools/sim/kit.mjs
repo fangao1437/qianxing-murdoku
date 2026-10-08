@@ -8,6 +8,9 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+// ★ 2026-10-09：为了 `SIM_ARCHIVE=1`（按真机存档建树）读存档的名字清单 ✓
+//   用**静态** import —— `buildProject` 是同步函数，不能在里面 await ✓
+import { readGil } from '../gil/gilread.mjs';
 
 export const SIM_PLUGIN = process.env.SIM_PLUGIN
   || 'C:/Users/18182/.dsh/profiles/web/node_modules/dsh-plugin-beyond-simulator/dsh-plugin/dist/index.js';
@@ -88,7 +91,42 @@ export function buildProject(c, plan, luaFile, opts = {}) {
   const boxOf = (n) => ({ cx: n.cx, cy: n.cy, w: n.w, h: n.h });
 
   let made = 0;
+  // ★★★★★ 2026-10-09 **重要：模拟器默认建的树，比真机【多两百多个控件】** ✗✓
+  //
+  //   ★ 事实（实测 ✓）：
+  //     · 这里 `for (const n of plan.nodes)` ⇒ **把规划 371 个节点全建出来** ✓
+  //     · 而**真机存档只有 88 个名字**（`227` 实测：158 条记录 / 157 个有名字 ✓）
+  //     · 且 `cfg.auto_create = false`（`entry_client_script.lua:306`）
+  //       ⇒ 脚本**不会**把缺的补上 ✗（只放行 14 个白名单 ✓）
+  //     ⇒ ★ **模拟器凭空多出约 283 个控件** ✓
+  //
+  //   ★ 后果（这就是"模拟器全绿、真机坏"的系统性原因 ✓）：
+  //     · 模拟器里 `select` / `intro` / `ruler` / `room` / `obj` **都存在** ⇒
+  //       `audit_flow` 报「✓ 进选关 [select]」✗ —— 而**真机上 `select` 根本不存在** ✓
+  //     · 同理 `play_test` 的 52/8、`verify_art` 的 11/2 **都不能外推到真机** ✓
+  //     · 我前几轮反复被这个骗（"模拟器说好的呀"）✗ 根子就在这里 ✓
+  //
+  //   ★ 现在怎么改 ✓：加一个**可选**开关 `--archive-faithful`（或环境变量 `SIM_ARCHIVE=1`）——
+  //     只建**存档里真有的名字** + **运行时真会生成的家族**（`cell.*` 由脚本实例化 ✓）
+  //     ⇒ 模拟器才**像真机** ✓
+  //   ⚠️ **默认仍保持原样**（不破坏现有读数 ✓）—— 因为它会让**一大批断言变红**（那是真话 ✓）
+  //     要不要切成默认，是个**决策**（见 `接手待办.md`）✓
+  const faithful = process.env.SIM_ARCHIVE === '1' || process.argv.includes('--archive-faithful');
+  let archiveNames = null, skipped = 0;
+  if (faithful) {
+    try {
+      const gilFile = process.env.SIM_GIL
+        || fs.readdirSync(WORKSPACE).filter((f) => /^2\d\d-.*\.gil$/.test(f)).sort().pop();
+      archiveNames = readGil(path.resolve(WORKSPACE, gilFile)).names;
+      console.log('    [SIM_ARCHIVE] 用存档建树：' + gilFile + '（' + archiveNames.size + ' 个名字）');
+    } catch (e) {
+      console.log('    [SIM_ARCHIVE] 读不到存档，退回按规划建树：' + e.message);
+      archiveNames = null;
+    }
+  }
+  const runtimeGen = (id) => /^cell\.\d/.test(id);     // ★ 脚本运行时真的会造的 ✓
   for (const n of plan.nodes) {
+    if (archiveNames && !archiveNames.has(n.id) && !runtimeGen(n.id)) { skipped++; continue; }
     const parentId = (n.parent && idOf[n.parent]) || canvasRoot.id;
     const kind = KIND[n.kind] || 'container';
     const vis = n.visible === false ? { visible: false } : {};
@@ -96,6 +134,10 @@ export function buildProject(c, plan, luaFile, opts = {}) {
     if (!id) continue;
     idOf[n.id] = id;
     made++;
+  }
+  if (archiveNames) {
+    console.log('    [SIM_ARCHIVE] **按存档建树**：建 ' + made + ' 个、跳过规划里存档没有的 '
+      + skipped + ' 个（真机也就没有它们 ✓）');
   }
 
   // ── 3. 子控件（适配层约定）──────────────────────────────────────────────
