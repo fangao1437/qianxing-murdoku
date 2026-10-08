@@ -4297,7 +4297,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
             --   ★ 甲：★ 脚本画的不是编辑器那个实例 ⇒ ★ `bg.imageId` 应为 `100001`（或取不到）✗
             --   ★ 乙：★ 图设上了但没渲染 ⇒ ★ 应读到 `107179` ✓
             --   ★ 本处放在"调色板查找"同一个函数里 ✓ —— ★ 真机已证它在跑（★ 下面那句 `★ 按名取` 每帧可见 ✓）
-            if (self._exit_probe or 0) < 8 then
+            if self.modal ~= nil and (self._exit_probe or 0) < 12 then   -- ★ 只在弹窗开着时才打 ✓（上一版在弹窗关着时打完了 8 次 ✗）
               self._exit_probe = (self._exit_probe or 0) + 1
               local _m = nil
               pcall(function() _m = self.adapter:sub("modal", "modal.exit") end)
