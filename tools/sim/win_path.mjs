@@ -249,8 +249,11 @@ check('通关后卡片显示「★ 已破案」', marked, cardInfo || '（8 张�
 await click('select.card.2'); await tick(0.25);
 await click('intro.skip'); await tick(0.25);
 ri = await get();
+// ★ 2026-10-09：明细里原来带 `步数=` + `textOf(r,'hud.moves')` ——
+//   而 **`hud.moves` 已按用户指示【从存档里删掉】** ✓（`227-删掉死控件hud.moves.gil` ✓）
+//   ⇒ 那一栏恒 `undefined`，是纯噪音 ⇒ 去掉 ✓
 check('通关后还能再进关卡（往返没坏）', visibleOf(ri, 'board') === true,
-  'board=' + visibleOf(ri, 'board') + ' 步数=' + JSON.stringify(textOf(ri, 'hud.moves')));
+  'board=' + visibleOf(ri, 'board') + ' 进度=' + JSON.stringify(textOf(ri, 'hud.progress')));
 
 dumpJson('win-final.json', ri);
 console.log(`\n════════ ${lv.id}：${pass} 通过 / ${fail} 失败 ════════`);
