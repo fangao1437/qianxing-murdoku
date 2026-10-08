@@ -724,6 +724,46 @@ end
 
 function Murdoku.on_update(dt)
   if not current then return end
+  -- ★★★★★ 2026-10-09 **四键胶囊底图：真正修好（原来那段【一次都没跑过】）** ✗✓
+  --
+  --   ★ 真机症状 ✓：四键**能点**（`收到点击 → 控件 modal.save 事件=exit_menu_save` ✓）
+  --     但**没有图文** ✗，日志里只有渲染分支那句 `★ 胶囊底图：到守卫 adapter=false 闩锁=nil` ✓
+  --
+  --   ★ 根因（两个，都得修）✗：
+  --     ① ★ **`adapter` 在这个作用域里是 nil** ✗✓
+  --        本文件里 `adapter` **只在 `Murdoku.start`（L117）和 `Murdoku.on_start`（L685）里是 local** ✓
+  --        而那段代码在**另一个函数**里 ⇒ 它读到的是**全局 `adapter`** ⇒ **恒为 nil** ✗
+  --        ⇒ `adapter ~= nil` **永远为假** ⇒ **整段静默跳过** ✓（所以真机日志里一行都没有 ✓）
+  --        ★ 本文件里拿适配器的正确写法是 **`current.adapter`** ✓（L312 `self.adapter = adapter` ✓
+  --          上面的四键探针 L732/L738 用的就是它 ✓）
+  --     ② ★ 它被**两层无关的门**关着 ✗：`if n > 0 and current._face_on ~= n then`（只在
+  --        **face 数量变化那一帧**才进 ✓）＋ `if print then` ✓
+  --        ⇒ 即使 ① 修了，也只是"恰好在某帧碰上了"才设得上 ✗ 不可靠 ✓
+  --
+  --   ★ 修法 ✓：搬到 `on_update` 的**最前面**（每帧都跑到 ✓），自己用闩锁保证只做一次 ✓
+  --     ⇒ 稳态**零成本** ✓（一次 set + 一个布尔判断 ✓）
+  --     ⚠️ 用 `current.adapter` ✓ **不要**再用裸 `adapter` ✓
+  if (not Murdoku._exit_art_done) and current.adapter ~= nil then
+    Murdoku._exit_art_done = true
+    for _, _bid in ipairs({ "modal.exit", "modal.save", "modal.settle", "modal.cancel" }) do
+      local _bg = nil
+      pcall(function() _bg = current.adapter:sub(_bid, "bg") end)
+      if _bg ~= nil then
+        local _src = nil
+        pcall(function() _src = _bg.imageSource end)
+        pcall(function() _bg:SetImage(_src or 4294967295, 107179) end)
+        local _rb = nil
+        pcall(function() _rb = tostring(_bg.imageId) end)
+        if print then
+          print("[murdoku] ★ 胶囊底图(入口层)：bid=" .. tostring(_bid) .. "  回读=" .. tostring(_rb))
+        end
+      else
+        if print then
+          print("[murdoku] ★ 胶囊底图(入口层)：bid=" .. tostring(_bid) .. "  **bg 取不到**")
+        end
+      end
+    end
+  end
   -- ★★★★★ 2026-10-08 **四键探针（真·每帧入口 ＋ adapter 在手 ✓）** ✗✓
   --   ★ 为什么这里能读 ✓：★ 本函数是 `Murdoku.on_update`（★ 入口脚本 L853 的 `OnUpdate` 调它 ✓
   --     ★ 且 `script:EnableUpdate(true)` 已开 ✓）★ 而 `current.adapter` **就在这里** ✓✓
@@ -2031,30 +2071,9 @@ function Murdoku.on_update(dt)
       if n > 0 and current._face_on ~= n then
         current._face_on = n
         if print then
-          -- ★★★★★ 2026-10-08 **四键胶囊底图：在入口层的每帧段做** ✗✓（★ 真机实证 ✓）
-          --   ★ 为什么在这里 ✓：★ 四键的**渲染分支里 `self.adapter` 是 nil** ✗（★ 真机打 `adapter=false` ✓ 连打 4 次 ✓）
-          --     ⇒ ★ 那段守卫永远不过 ⇒ ★ **胶囊底图从没设上** ✓（★ 这就是"没图"的真因 ✓）
-          --   ★ 本文件是**入口层** ✓ —— ★ 官方方案文档的原话：★「★ **只有入口层拿得到 adapter**」✓
-          --     ★ 而本段每帧都在跑 ✓（★ 下面那句 `格子底图已点亮` 就是证据 ✓）⇒ ★ 一定拿得到 ✓
-          --   ★ 只做一次 ✓（★ 闩锁 ✓ 零每帧成本 ✓）★ 显式指名 `bg` ✓ ＋ **`SetImage`** ✓
-          --     ★（★ 不用"往下找第一个带 SetImage 的子控件" ✗ —— ★ 那会命中 `label` ✓）
-          if (not _exit_art_done) and adapter ~= nil then
-            _exit_art_done = true
-            for _, _bid in ipairs({ "modal.exit", "modal.save", "modal.settle", "modal.cancel" }) do
-              local _bg = nil
-              pcall(function() _bg = adapter:sub(_bid, "bg") end)
-              if _bg ~= nil then
-                local _src = nil
-                pcall(function() _src = _bg.imageSource end)
-                pcall(function() _bg:SetImage(_src or 4294967295, 107179) end)
-                local _rb = nil
-                pcall(function() _rb = tostring(_bg.imageId) end)
-                print("[murdoku] ★ 胶囊底图(入口层)：bid=" .. tostring(_bid) .. "  回读=" .. tostring(_rb))
-              else
-                print("[murdoku] ★ 胶囊底图(入口层)：bid=" .. tostring(_bid) .. "  **bg 取不到**")
-              end
-            end
-          end
+          -- ★ 2026-10-09：**这里原来那段胶囊底图已【上移到 `on_update` 开头】** ✓
+          --   原因见那边的长注释 ✓ 一句话：`adapter` 在本作用域是全局 nil ✗ ＋ 被
+          --   `_face_on ~= n` / `print` 两层门关着 ⇒ **一次都没跑过** ✓
           print("[murdoku] 格子底图已点亮：" .. tostring(n) .. " 个 face（每帧保持）")
         end
       end
