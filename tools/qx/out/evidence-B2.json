@@ -1,0 +1,24 @@
+[
+    {
+        "slot":  "B2",
+        "id":  105104,
+        "diff":  16.97,
+        "similarity":  93.34,
+        "fitBox":  94,
+        "dx":  0,
+        "dy":  2,
+        "maxPixel":  136,
+        "file":  "D:\\新建文件夹\\miHoYo Launcher\\qianxing-murdoku\\tools\\qx\\out\\evidence-B2-105104.png"
+    },
+    {
+        "slot":  "B2",
+        "id":  105105,
+        "diff":  25.96,
+        "similarity":  89.82,
+        "fitBox":  96,
+        "dx":  0,
+        "dy":  2,
+        "maxPixel":  192,
+        "file":  "D:\\新建文件夹\\miHoYo Launcher\\qianxing-murdoku\\tools\\qx\\out\\evidence-B2-105105.png"
+    }
+]

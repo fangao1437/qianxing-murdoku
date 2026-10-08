@@ -4149,6 +4149,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
       end
     end
   end
+
   if _cgray ~= nil then
     -- ★★★★★ 2026-10-07 **灰白图必须【不参与射线】** ✗✓（"预放置也像被取消选中"的真因 ✓）
     --   ★ 真机反馈 ✓：★ 灰白出来之后 ⇒ ★「★ **预放置也会取消选中，且要双击才能重新选中**」✗

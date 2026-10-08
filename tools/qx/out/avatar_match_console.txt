@@ -1,0 +1,48 @@
+
+================ RESULTS ================
+metric: mean absolute RGB difference (0..255) over the whole 108x108 avatar box; lower = better
+
+--- slot A   (screenshot s1, box x=127 y=340 108x108, backdrop #29252A) ---
+  #1  id=112042   diff=20.49   maskedDiff=17.05 (coverage 0.693)   spriteBox=94  off=(1,-1)
+  #2  id=107016   diff=46.42   maskedDiff=52.34 (coverage 0.726)   spriteBox=94  off=(0,0)
+  #3  id=107258   diff=47.5   maskedDiff=53.8 (coverage 0.722)   spriteBox=96  off=(-1,1)
+  #4  id=107283   diff=48.12   maskedDiff=54.23 (coverage 0.365)   spriteBox=87  off=(-2,2)
+  #5  id=107017   diff=48.16   maskedDiff=54.79 (coverage 0.726)   spriteBox=94  off=(0,0)
+  #6  id=107011   diff=48.46   maskedDiff=55.91 (coverage 0.68)   spriteBox=96  off=(-1,1)
+  #7  id=101067   diff=48.92   maskedDiff=55.96 (coverage 0.566)   spriteBox=104  off=(1,2)
+  #8  id=107261   diff=49.53   maskedDiff=57.43 (coverage 0.676)   spriteBox=96  off=(-2,2)
+
+--- slot B   (screenshot s1, box x=127 y=463 108x108, backdrop #27252B) ---
+  #1  id=105104   diff=16.69   maskedDiff=24.56 (coverage 0.484)   spriteBox=94  off=(1,2)
+  #2  id=105105   diff=25.22   maskedDiff=39.26 (coverage 0.507)   spriteBox=95  off=(1,2)
+  #3  id=112005   diff=27.15   maskedDiff=36.55 (coverage 0.422)   spriteBox=89  off=(2,2)
+  #4  id=112006   diff=27.15   maskedDiff=36.55 (coverage 0.422)   spriteBox=89  off=(2,2)
+  #5  id=107255   diff=28.68   maskedDiff=49.54 (coverage 0.186)   spriteBox=85  off=(1,2)
+  #6  id=112004   diff=28.86   maskedDiff=47.96 (coverage 0.476)   spriteBox=84  off=(2,2)
+  #7  id=107245   diff=31.57   maskedDiff=48.06 (coverage 0.434)   spriteBox=84  off=(1,2)
+  #8  id=107401   diff=31.63   maskedDiff=48.6 (coverage 0.42)   spriteBox=84  off=(1,2)
+
+--- slot C   (screenshot s1, box x=127 y=586 108x108, backdrop #27262B) ---
+  #1  id=112031   diff=10.01   maskedDiff=15.34 (coverage 0.43)   spriteBox=94  off=(1,-2)
+  #2  id=107356   diff=30.77   maskedDiff=65.89 (coverage 0.248)   spriteBox=95  off=(1,1)
+  #3  id=111025   diff=31.57   maskedDiff=66.96 (coverage 0.13)   spriteBox=97  off=(-1,-2)
+  #4  id=111080   diff=31.65   maskedDiff=59.2 (coverage 0.298)   spriteBox=85  off=(-2,1)
+  #5  id=107150   diff=31.99   maskedDiff=58.27 (coverage 0.267)   spriteBox=84  off=(1,-2)
+  #6  id=111030   diff=32.21   maskedDiff=61.5 (coverage 0.283)   spriteBox=84  off=(2,2)
+  #7  id=112030   diff=32.3   maskedDiff=69.39 (coverage 0.295)   spriteBox=84  off=(1,-2)
+  #8  id=111081   diff=32.31   maskedDiff=60.43 (coverage 0.304)   spriteBox=87  off=(-2,-1)
+
+--- slot D   (screenshot s1, box x=127 y=709 108x108, backdrop #28252C) ---
+  #1  id=105105   diff=7.56   maskedDiff=7.52 (coverage 0.519)   spriteBox=96  off=(1,2)
+  #2  id=105104   diff=25.96   maskedDiff=38.61 (coverage 0.527)   spriteBox=98  off=(1,2)
+  #3  id=111137   diff=26.72   maskedDiff=38.66 (coverage 0.484)   spriteBox=95  off=(1,2)
+  #4  id=112004   diff=27.5   maskedDiff=41.54 (coverage 0.513)   spriteBox=87  off=(1,-1)
+  #5  id=103130   diff=29.11   maskedDiff=44.03 (coverage 0.466)   spriteBox=88  off=(1,2)
+  #6  id=105264   diff=29.86   maskedDiff=35.59 (coverage 0.44)   spriteBox=93  off=(1,2)
+  #7  id=105186   diff=30.28   maskedDiff=47.3 (coverage 0.514)   spriteBox=98  off=(1,2)
+  #8  id=105265   diff=31.25   maskedDiff=39.31 (coverage 0.44)   spriteBox=90  off=(1,2)
+
+--- cross-check of the same suspects in screenshot 2 ---
+  B2: id=105104 d=10.91   |   id=105105 d=25.6   |   id=107255 d=25.97   |   id=112005 d=26.9   |   id=112006 d=26.9
+  C2: id=112031 d=9.42   |   id=107356 d=29.94   |   id=111025 d=30.46   |   id=111080 d=30.93   |   id=107150 d=31.57
+  D2: id=105105 d=7.77   |   id=105104 d=25.21   |   id=111137 d=26.32   |   id=112004 d=27.42   |   id=103130 d=28.92

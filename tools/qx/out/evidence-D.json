@@ -1,0 +1,35 @@
+[
+    {
+        "slot":  "D",
+        "id":  105105,
+        "diff":  7.56,
+        "similarity":  97.03,
+        "fitBox":  96,
+        "dx":  1,
+        "dy":  2,
+        "maxPixel":  179,
+        "file":  "D:\\新建文件夹\\miHoYo Launcher\\qianxing-murdoku\\tools\\qx\\out\\evidence-D-105105.png"
+    },
+    {
+        "slot":  "D",
+        "id":  105104,
+        "diff":  25.96,
+        "similarity":  89.82,
+        "fitBox":  98,
+        "dx":  1,
+        "dy":  2,
+        "maxPixel":  201,
+        "file":  "D:\\新建文件夹\\miHoYo Launcher\\qianxing-murdoku\\tools\\qx\\out\\evidence-D-105104.png"
+    },
+    {
+        "slot":  "D",
+        "id":  111137,
+        "diff":  26.77,
+        "similarity":  89.5,
+        "fitBox":  96,
+        "dx":  1,
+        "dy":  2,
+        "maxPixel":  220,
+        "file":  "D:\\新建文件夹\\miHoYo Launcher\\qianxing-murdoku\\tools\\qx\\out\\evidence-D-111137.png"
+    }
+]

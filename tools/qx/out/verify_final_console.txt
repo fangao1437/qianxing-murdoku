@@ -1,0 +1,52 @@
+
+=== slot A  (box 127,340 108x108, backdrop #29252A) ===
+    id       fullDiff insetDiff maskedDiff interiorDiff     cov     box  within12
+    112042      20.49     17.27      17.05        16.86   0.655      94     60.2%
+    107016      46.42     52.34      52.34        52.59   0.694      94      7.6%
+    107258       47.5     53.71       53.8        54.28    0.69      96      1.6%
+    107283      48.24     54.63      54.65         54.6   0.326      86        8%
+
+=== slot B  (box 127,463 108x108, backdrop #27252B) ===
+    id       fullDiff insetDiff maskedDiff interiorDiff     cov     box  within12
+    105104      16.69     21.35      24.56        21.76   0.453      94     52.4%
+    105105      25.61     33.47      40.02        38.31   0.487      96      8.3%
+    112005      27.36      36.1      35.68        33.98   0.387      88     37.6%
+    112004      28.86     38.18      47.96        46.56   0.449      84     10.1%
+
+=== slot C  (box 127,586 108x108, backdrop #27262B) ===
+    id       fullDiff insetDiff maskedDiff interiorDiff     cov     box  within12
+    112031      10.01      11.9      15.34         14.9   0.393      94     69.1%
+    107356      30.74     39.95      66.58        67.23   0.211      92      3.6%
+    111025      31.56     41.06      66.92        66.56    0.11      96        1%
+    112030       32.3     42.08      69.39        67.34    0.26      84     24.2%
+
+=== slot D  (box 127,709 108x108, backdrop #28252C) ===
+    id       fullDiff insetDiff maskedDiff interiorDiff     cov     box  within12
+    105105       7.56      7.63       7.52          6.6   0.487      96       88%
+    105104      25.96     32.41      38.61        37.87   0.494      98      9.5%
+    111137      26.77     34.02      39.56        37.03   0.466      96     11.4%
+    112004      27.73     35.33      40.91        40.42   0.473      86       13%
+
+=== slot B2  (box 133,314 107x107, backdrop #27262B) ===
+    id       fullDiff insetDiff maskedDiff interiorDiff     cov     box  within12
+    105104      16.97     21.86      24.73        22.01   0.461      94     51.2%
+    105105      25.96     34.05      39.97        38.28   0.495      96      8.4%
+    112005      27.32     36.17      37.22        34.99   0.414      90     36.8%
+    112004      29.41     39.06      48.36        46.77   0.459      84      9.3%
+
+=== slot C2  (box 133,465 107x107, backdrop #28262C) ===
+    id       fullDiff insetDiff maskedDiff interiorDiff     cov     box  within12
+    112031       7.87      8.38      11.54        11.01   0.425      96     73.6%
+    107356       31.4      38.7      62.08        62.29   0.235      96      8.3%
+    111025      31.69     39.07       68.9        68.81   0.102      92      0.9%
+    112030      32.87     40.71      70.23         68.1    0.27      84     23.1%
+
+=== slot D2  (box 133,619 107x107, backdrop #28262C) ===
+    id       fullDiff insetDiff maskedDiff interiorDiff     cov     box  within12
+    105105      12.33     15.29      15.71         13.7   0.495      96     65.7%
+    105104      26.21     33.76      39.38        38.74   0.503      98      8.4%
+    111137      28.11        37      40.82        38.21   0.474      96      8.9%
+    112004      27.32     35.91      41.07        40.22   0.482      86     12.9%
+
+interiorDiff uses only pixels whose full 3x3 sprite-mask neighbourhood is opaque, so it is immune
+to resampling, anti-aliasing and JPEG ringing.  The interior artwork must match almost exactly.
