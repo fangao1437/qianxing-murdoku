@@ -64,23 +64,24 @@ export function buildProject(c, plan, luaFile, opts = {}) {
     const id = r.selectedId;
     const props = { width: box.w, height: box.h, posX: box.cx, posY: box.cy };
     if (kind === 'button') { props.raycastTarget = true; props.interactable = true; }
-    // ★★★★★ 2026-10-09 **容器必须带上这两个"穿透开关"字段** ✗✓
-    //   ★ 为什么 ✓：适配器的 `seal_container`（`engine_adapter_qianxing.lua:3752`）是这么写的 ——
-    //       `if c.disableKeyEventPassthrough ~= nil then … c.disableKeyEventPassthrough = true`
-    //       `if c.disableCursorEventPassthrough ~= nil then … = false`
-    //     ⇒ ★ **字段不存在就整条跳过** ✓ ⇒ 计数恒为 0 ✗
-    //   ★ 后果（实测 ✓）：`play_test` 报
-    //       `✗ 主页/选关容器已设「屏蔽按键事件穿透」  [2D/3D 输入隔离：主页/选关容器已屏蔽穿透 0 个]`
-    //     —— 而 `home` / `select` **在计划里是有的**（我一度误以为"模拟器缺这两个容器" ✗ 不是 ✓）
-    //     真因就是**模拟器没造这两个字段** ✓ ⇒ **假红** ✓
-    //   ★ 初值与真机一致 ✓：真机是**编辑器里配的**，而脚本的口径是
-    //     "穿透默认放开、由脚本按屏幕去封" ⇒ 这里给 `false`（=未封）✓
-    //     `kit.mjs:154` 那段注释早就立过规矩：「模拟器要**逐字段**对齐真机存档，
-    //     多一个少一个都会造成假阳性/假阴性」✓ —— 这条正是它说的那种 ✗
-    if (kind === 'container') {
-      props.disableCursorEventPassthrough = false;
-      props.disableKeyEventPassthrough = false;
-    }
+    // ★★★★★ 2026-10-09 **【已撤回】给容器补"穿透开关"字段 —— 实测无效，不留** ✗✓
+    //   我一度在这里加过：
+    //       if (kind === 'container') {
+    //         props.disableCursorEventPassthrough = false;
+    //         props.disableKeyEventPassthrough = false;
+    //       }
+    //   动机 ✓：适配器的 `seal_container` 写的是 `if c.xxx ~= nil then … = true end`
+    //     ⇒ 字段不存在就整条跳过 ⇒ 计数恒 0 ⇒ `play_test` 那条
+    //       「主页/选关容器已设「屏蔽按键事件穿透」」**永远红** ✓ 想修掉这个假红 ✓
+    //   ★ **实测结论：没用** ✗ —— 改完连跑两套：
+    //     · `verify_art`：改前 **11/2 · 439s**，改后 **11/2 · 532s**（同样两条失败）⇒ **零差别** ✓
+    //     · `play_test`：`屏蔽穿透` 仍是 **0 个** ✗（假红没修掉）
+    //     而建树本身 **`建树错误 0`** ⇒ `set` 没报错、字段确实写进去了 ✓
+    //   ⇒ ★ **既没效果、也没被证实有用 ⇒ 不留** ✓
+    //     （用户第五轮指示「把不必要的东西裁掉」✓ 项目也讲"不留没验证的东西"✓）
+    //   ⇒ ★ **留给以后**：要让模拟器表达这个字段，先得确认
+    //     `seal_containers` 究竟有没有找到 `home`/`select`（**可能是 `find` 的事，不是字段的事** ✗）
+    //     —— 没定位之前**别继续往 mock 上加字段** ✓
     for (const [k, v] of Object.entries({ ...props, ...(extra || {}) })) P(name + '.' + k, { op: 'set', id, key: k, value: v });
     return id;
   };
