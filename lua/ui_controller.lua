@@ -1015,7 +1015,9 @@ function Controller:on_input(event)
   --   为什么这么做：这三个都是**不可逆**的（回菜单、交卷、清空整局），
   --   参考图里也是"点一下先问、再执行"的两段式。
   elseif a == "back_confirm" then
-    self.pending = { action = "back" }
+    -- ★ 2026-10-08 **甲案**：★ 用四键弹窗**取代** ✓/✗ 确认卡（★ 262 的原始意图 ✓ 用户拍板 ✓）
+    self.modal = { kind = "exit_menu" }   -- ★ 开四键弹窗 ✓（取代 pending 确认卡 ✓）
+    self.dirty = true
     self:sync_confirm()
     -- ★ 2026-10-04 **按下就给反馈**（用户反馈"点击动画只有提示有"）：
     --   这三个键原来只设 `pending`、不播动画 ⇒ 点了像没反应，要等 ✓ 才有动静。
