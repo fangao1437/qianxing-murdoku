@@ -1135,6 +1135,24 @@ function Controller:on_input(event)
   elseif a == "close_modal" then
     self.modal = nil
 
+  -- ★ 2026-10-08 **「退出菜单」四键的三个动作**（★ 从提交 272 原文照抄恢复 ✓ 那次被 295 整份删掉 ✗）
+  --   ★ 回调走 `self.opts.on_save` / `on_settle` ✓ ⇒ ★ 已在 main.lua 补回（提交 398 ✓）⇒ 移植过去即生效 ✓
+  elseif a == "exit_menu_go" then
+    self.modal = nil
+    self.screen = "select"
+    self.dirty = true
+    if self.opts.on_back then self.opts.on_back() end
+
+  elseif a == "exit_menu_save" then
+    if self.opts.on_save then self.opts.on_save() end
+    self.modal = nil
+    self.dirty = true
+
+  elseif a == "exit_menu_settle" then
+    if self.opts.on_save then self.opts.on_save() end
+    if self.opts.on_settle then self.opts.on_settle() end
+    self.dirty = true
+
   elseif a == "level_list" then
     -- 打开选关面板（关卡清单由 main.lua 通过 opts.levels 给进来）
     self.modal = { kind = "levelselect" }
