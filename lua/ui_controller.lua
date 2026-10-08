@@ -4178,23 +4178,38 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
         --      ⇒ ★ 现在**每一步各自 pcall** ✓ ⇒ 哪一步失败日志里都看得见 ✓
         --   ③ ★ 已知结构（gil 侧实证 ✓）：★ `assets` 是 **`root` 的第 1 个子控件** ✓
         --      ⇒ ★ **只需走两层**：`root` → 子控件里找 `assets` → 它子控件里找 `portrait.<id>` ✓ 不必深递归 ✓
+        -- ★★★★★ 2026-10-08 **限深递归搜 `assets`** ✗✓（真机证据：它不是 `root` 的直接子控件 ✗）
+        --   ★ 上一版只扫 `root` 一层 ⇒ 真机报「root 的直接子控件里没有 assets」✗
+        --     （★ 而 gil 记录里它的父【是】`root` ✓ ⇒ **真机树与存档结构不同** ✓）
+        --   ★ 现在：★ 从 `root` 起**限深 4 层**递归搜名字 ✓ ★ **每步单独 pcall** ✓（★ 哪步失败看得见 ✓）
+        --   ★ 并**打印沿途看到的名字**（★ 最多 16 条 ✓）⇒ 下次一眼知道它挂在哪 ✓
         local _as = nil
+        local _seen = 0
         pcall(function()
           local r0 = self.adapter:find("root")
           if r0 == nil then return end
-          local k0 = nil
-          pcall(function() k0 = r0:GetChildren() end)
-          if k0 == nil then return end
-          local n0 = 0
-          pcall(function() n0 = #k0 end)
-          for i = 1, n0 do
-            local x = k0[i]
-            local xn = nil
-            pcall(function() xn = tostring(x.name) end)
-            if xn == "assets" then _as = x break end
+          local function _search(node, depth)
+            if node == nil or depth > 4 or _as ~= nil then return end
+            local kids = nil
+            pcall(function() kids = node:GetChildren() end)
+            if kids == nil then return end
+            local n = 0
+            pcall(function() n = #kids end)
+            for i = 1, n do
+              if _as ~= nil then return end
+              local x = kids[i]
+              local xn = nil
+              pcall(function() xn = tostring(x.name) end)
+              if _seen < 16 then
+                _seen = _seen + 1
+                print("[murdoku] ★ 调色板搜寻：第" .. tostring(depth + 1) .. "层看到 " .. tostring(xn))
+              end
+              if xn == "assets" then _as = x return end
+              _search(x, depth + 1)
+            end
           end
-        end)
-        if _as ~= nil then
+          _search(r0, 0)
+        end)        if _as ~= nil then
           local k1 = nil
           pcall(function() k1 = _as:GetChildren() end)
           if k1 ~= nil then
