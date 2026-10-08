@@ -4158,10 +4158,45 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   --   ★ 写法 ✓：★ 直接写字段 ✓（★ 与既有的 `imageColor`/`raycastTarget` 同一手法 ✓ 全程 pcall ✓）
   --   ★ 去重 ✓：★ 记住上次写的 id ✓ ⇒ 值没变不重复写 ✓（★ 稳态零成本 ✓）
   do
+    -- ★★★★★ 2026-10-08 **调色板查找改成"遍历 `assets` 子控件按名匹配"** ✗✓
+    --   ★ 真机证据 ✓：★ `★ 头像分件：id=V  pal=false(nil)  face=true` ✓
+    --     ⇒ ★ **`adapter:find("portrait.V")` 找不到** ✗（★ 而卡片的 `face` 找得到 ✓ 说明不是"控件系统坏了"✓）
+    --   ★ 原因 ✓：★ `find` 的搜索范围不覆盖 `assets` 那一层（★ 或名字与预期不同 ✓）
+    --   ★ 改法 ✓：★ **先试 `find`** ✓ **不行就取 `assets` 容器、遍历它的子控件按名比** ✓
+    --     ★ 顺手**打印候选名**（★ 最多 12 行 ✓）⇒ 万一名字不同，一眼就能看见 ✓✓
+    --   ★ 缓存 ✓：★ 找到就记住 ✓ ⇒ 稳态零成本 ✓
     local _pal = nil
-    pcall(function()
-      if _pid ~= nil and self.adapter ~= nil then _pal = self.adapter:find("portrait." .. tostring(_pid)) end
-    end)
+    self._pal_cache = self._pal_cache or {}
+    if _pid ~= nil then
+      _pal = self._pal_cache[_pid]
+      local _nm = "portrait." .. tostring(_pid)
+      if _pal == nil then pcall(function() _pal = self.adapter:find(_nm) end) end
+      if _pal == nil then
+        local _as = nil
+        pcall(function() _as = self.adapter:find("assets") end)
+        if _as ~= nil and _as.GetChildren ~= nil then
+          local _kids, _n = nil, 0
+          pcall(function() _kids = _as:GetChildren() end)
+          if _kids ~= nil then pcall(function() _n = #_kids end) end
+          for _i = 1, _n do
+            local _k = _kids[_i]
+            local _kn = nil
+            pcall(function() _kn = tostring(_k.name) end)
+            if _kn == _nm then _pal = _k end
+            if (self._pn_log or 0) < 12 then
+              self._pn_log = (self._pn_log or 0) + 1
+              print("[murdoku] ★ 调色板候选：assets 下有 " .. tostring(_kn))
+            end
+          end
+        else
+          if (self._as_log or 0) < 2 then
+            self._as_log = (self._as_log or 0) + 1
+            print("[murdoku] ★ 调色板候选：找不到 assets 容器（或它没有 GetChildren）")
+          end
+        end
+      end
+      if _pal ~= nil then self._pal_cache[_pid] = _pal end
+    end
     local _cf = self:_grid_item_child_cached(item, index, pos, "face")
     -- ★ 2026-10-08 **分件诊断**（真机：`头像贴图` 一行都没出现 ⇒ 说明取不到 ✓ 那就分别打出来 ✓）
     --   ① `_pid`（人物 id ✓ 应为 V/D/A/B ✓）② `_pal`（调色板控件找到没 ✓）③ `_cf`（卡片 face 找到没 ✓）
