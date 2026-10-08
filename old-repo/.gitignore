@@ -1,0 +1,16 @@
+﻿# 可再生成的产物
+tools/sim/out/
+dist/
+_backup/
+# 抓取缓存（体积大、且可由脚本重建）
+docs/api-cache/
+docs/community-cache/
+# 杂项
+*.log
+tools/check_all_last.log
+
+# ── 第三方下载物 / 工具二进制（2026-10-05：让它们留在磁盘、不进仓库）──
+tools/bin/
+tools/_dl/
+docs/research-raw/_*.cjs
+tests/_wip/

@@ -1,0 +1,23 @@
+版本：043-底板对齐棋盘+建控件前摆stage
+时间：2026/10/4 16:39:04
+配套 .gil：完整界面174-底板对齐棋盘.gil
+说明：见提交说明：① 底板 board.bg 尺寸跟随 stage（677→584）；② 把 stage 的尺寸/位置提到建控件之前，避免 cell_geometry 按 .gil 的 1600x900 算出格子 171（真机日志 wall.up 目标 171x8、25 个 face 171x171 两处实证）；③ 棋盘几何抽成唯一常量 BOARD_W/H=584、BOARD_X/Y=(100,20)。脚本 v042。
+
+文件清单：
+  engine_adapter.lua              5397 字节
+  engine_adapter_qianxing.lua     230269 字节
+  entry_client_script.lua         48384 字节
+  main.lua                        99981 字节
+  murdoku_core.lua                102564 字节
+  room_map.lua                    5227 字节
+  ui_controller.lua               154744 字节
+  client_script.lua               677439 字节（真机跑的就是这份）
+  完整界面174-底板对齐棋盘.gil              767207 字节（配套存档）
+
+用途：**这一版是"当时能跑的那一份"**。要回退：
+  1) 把本目录的 *.lua 拷回 qianxing-murdoku\lua\
+  2) 跑 node tools/bundle_client_script.lua，再 powershell -File tools/install_script_to_sandbox.ps1
+     （或直接用本目录的 client_script.lua 覆盖沙箱里的那份，省掉打包）
+  3) 导入本目录里的 .gil
+
+规则（重要）：**每轮一个新编号，不删旧的、不覆盖**。

@@ -1,0 +1,23 @@
+版本：053-图标位置归位+按下反馈
+时间：2026/10/4 18:00:14
+配套 .gil：完整界面184-图标位置归位+按下反馈.gil
+说明：见提交说明：① hex.*/hit.* 的规划父级 root -> stage（真机点击坐标算出 +92/+24 = stage 自身偏移；适配器自动创建的默认父级就是 stage，规划必须一致），改后六个位置逐个精确命中；② back_confirm/submit/restart 三个键按下时补 fx 反馈。脚本 v051。
+
+文件清单：
+  engine_adapter.lua              5397 字节
+  engine_adapter_qianxing.lua     232449 字节
+  entry_client_script.lua         50088 字节
+  main.lua                        100665 字节
+  murdoku_core.lua                102564 字节
+  room_map.lua                    5227 字节
+  ui_controller.lua               167259 字节
+  client_script.lua               694522 字节（真机跑的就是这份）
+  完整界面184-图标位置归位+按下反馈.gil         776909 字节（配套存档）
+
+用途：**这一版是"当时能跑的那一份"**。要回退：
+  1) 把本目录的 *.lua 拷回 qianxing-murdoku\lua\
+  2) 跑 node tools/bundle_client_script.lua，再 powershell -File tools/install_script_to_sandbox.ps1
+     （或直接用本目录的 client_script.lua 覆盖沙箱里的那份，省掉打包）
+  3) 导入本目录里的 .gil
+
+规则（重要）：**每轮一个新编号，不删旧的、不覆盖**。

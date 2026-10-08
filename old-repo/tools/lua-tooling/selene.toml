@@ -1,0 +1,30 @@
+# tools/lua-tooling/selene.toml —— 本工程的 Lua 静态检查配置
+#
+# 跑法（在工程根目录）：
+#   tools\bin\selene\selene.exe --config tools\lua-tooling\selene.toml lua
+# 或直接走包装脚本：
+#   powershell -ExecutionPolicy Bypass -File tools\lua_lint.ps1
+#
+# 设计原则：**只留会指向真问题的规则**。本工程大量使用「一行一个 if … end」
+# 这类紧凑写法，如果让风格类规则也报出来，1000+ 条噪音会把 3 条真问题埋掉
+# （这正是本工程反复吃过的「断言锁死现状 / 噪音淹没信号」）。
+#
+# std：`lua53` 是引擎的语法基线，`qianxing`（同目录 qianxing.yml）补上引擎注入的全局。
+std = "lua53+qianxing"
+
+[lints]
+# 风格类 —— 本工程**有意**这么写，关掉：
+#   multiple_statements：`if x then y end` / `a = 1 b = 2` 单行多语句（实测 953 条）
+multiple_statements = "allow"
+#   if_same_then_else：本工程两处命中都是**误报** —— selene 只比较块体是否相同，
+#   不看条件。例如 main.lua 的「① 旧结构：board/cell.1.1 任一 → ready = true」
+#   和「② 新结构：stage/home 任一 → ready = true」块体相同但语义完全不同。
+#   （另见 tools/check_all.log 里「布局给编辑器」那几条同类注释。）
+if_same_then_else = "allow"
+#   shadowing：`local self = self` 这类在适配层是刻意写法（10 条）
+shadowing = "allow"
+
+# 真问题类 —— 保持报警，**不要**改成 allow：
+#   unused_variable / empty_if / unscoped_variables / undefined_variable …
+#   ⚠️ unscoped_variables 抓到的是**真的漏写 local**（会把变量泄进引擎全局表），
+#      不是风格问题；empty_if 抓到的是「条件写了、分支忘了写」。

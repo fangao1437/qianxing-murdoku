@@ -1,0 +1,38 @@
+﻿# 行尾符策略 —— ★ 保守版：默认不碰，只显式管我们自己的源码
+#
+# 2026-10-06 的教训（★ 这个文件改过两版 ✓）：
+#   · 第一版写了 `* text=auto eol=crlf` + `*.gil text eol=crlf` ✗
+#     ⇒ ★ git 把 `.gil`（编辑器存档 ✗ 二进制 ✓）当文本规范化 ✗
+#       ⇒ 索引 blob 被改小 10KB/文件 ✗（★ 工作区文件没坏 ✓ 但已足够吓人 ✓）
+#   · 所以改成【保守版】：★ 默认 `-text`（**一律不转换** ✓）
+#     ★ 只有下面显式列出的类型才按文本处理 ✓
+#   ⇒ ★ 这样未知/少见的文件类型【永远不会】被误转换 ✓
+
+# 默认：不当文本 ⇒ 永不转换（★ 二进制安全的兜底 ✓）
+* -text
+
+# ── 以下是我们自己的源码：仓库内存 LF ✓ 检出给 CRLF ✓ ──
+*.lua    text eol=crlf
+*.md     text eol=crlf
+*.ps1    text eol=crlf
+*.json   text eol=crlf
+*.txt    text eol=crlf
+
+# ── Node/Shell 脚本：统一 LF ──
+*.mjs    text eol=lf
+*.js     text eol=lf
+*.sh     text eol=lf
+
+# ── 明确二进制（★ 永不动 ✓）──
+*.gil    binary
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.zip    binary
+*.exe    binary
+*.dll    binary
+
+# ── 生成物：不进 diff 噪音 ──
+dist/**     -text
+versions/** -text

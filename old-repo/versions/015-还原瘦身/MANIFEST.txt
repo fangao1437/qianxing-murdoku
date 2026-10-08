@@ -1,0 +1,23 @@
+版本：015-还原瘦身
+时间：2026/10/3 21:17:29
+配套 .gil：完整界面145-还原瘦身.gil
+说明：四处 if false 全部还原成原条件（回到 008 状态）；debug_* 还原为 true。棋盘应恢复
+
+文件清单：
+  engine_adapter.lua              5397 字节
+  engine_adapter_qianxing.lua     219603 字节
+  entry_client_script.lua         42179 字节
+  main.lua                        83704 字节
+  murdoku_core.lua                102564 字节
+  room_map.lua                    5227 字节
+  ui_controller.lua               148826 字节
+  client_script.lua               638373 字节（真机跑的就是这份）
+  完整界面145-还原瘦身.gil                728640 字节（配套存档）
+
+用途：**这一版是"当时能跑的那一份"**。要回退：
+  1) 把本目录的 *.lua 拷回 qianxing-murdoku\lua\
+  2) 跑 node tools/bundle_client_script.lua，再 powershell -File tools/install_script_to_sandbox.ps1
+     （或直接用本目录的 client_script.lua 覆盖沙箱里的那份，省掉打包）
+  3) 导入本目录里的 .gil
+
+规则（重要）：**每轮一个新编号，不删旧的、不覆盖**。

@@ -1,0 +1,23 @@
+版本：040-容器不再归零+棋盘位置
+时间：2026/10/4 16:18:54
+配套 .gil：完整界面171-顶栏右栏归位.gil
+说明：根因已彻底查清（324 规划节点 vs 93 记录的几何核对）：运行时会把规划几何重新下发（SetAnchoredPosition(规划中心 − 规划父级中心)），而 anchoredPosition 相对真实父级解释 ⇒ 父级实际中心必须等于规划父级中心。main.lua 每帧把 topbar/right 锚点归零，恰好破坏这个不变式：topbar 子控件下移 407px、right 子控件左移 575px/下移 23px。本轮把整段归零删掉（两半都删），并修 action.redo 的规划父级 root→topbar（否则归还偏移后它高出 407px），另把 board/stage 位置由写死的 (0,0) 改成规划值 (-35,8)。脚本 v038->v039。
+
+文件清单：
+  engine_adapter.lua              5397 字节
+  engine_adapter_qianxing.lua     229439 字节
+  entry_client_script.lua         48642 字节
+  main.lua                        95584 字节
+  murdoku_core.lua                102564 字节
+  room_map.lua                    5227 字节
+  ui_controller.lua               151378 字节
+  client_script.lua               669104 字节（真机跑的就是这份）
+  完整界面171-顶栏右栏归位.gil              758872 字节（配套存档）
+
+用途：**这一版是"当时能跑的那一份"**。要回退：
+  1) 把本目录的 *.lua 拷回 qianxing-murdoku\lua\
+  2) 跑 node tools/bundle_client_script.lua，再 powershell -File tools/install_script_to_sandbox.ps1
+     （或直接用本目录的 client_script.lua 覆盖沙箱里的那份，省掉打包）
+  3) 导入本目录里的 .gil
+
+规则（重要）：**每轮一个新编号，不删旧的、不覆盖**。

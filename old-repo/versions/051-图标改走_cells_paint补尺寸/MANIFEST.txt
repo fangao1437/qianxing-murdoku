@@ -1,0 +1,23 @@
+版本：051-图标改走_cells_paint补尺寸
+时间：2026/10/4 17:40:33
+配套 .gil：完整界面182-图标补尺寸.gil
+说明：见提交说明：图标看不见的机制是格子模板的 face 默认尺寸为 0，而递归设图那条路不设尺寸。改走 _cells_paint（25 个格子正在用、能渲染的那条路），并给它加第 4 个参数 img 与size
+
+文件清单：
+  engine_adapter.lua              5397 字节
+  engine_adapter_qianxing.lua     232449 字节
+  entry_client_script.lua         49589 字节
+  main.lua                        100665 字节
+  murdoku_core.lua                102564 字节
+  room_map.lua                    5227 字节
+  ui_controller.lua               164557 字节
+  client_script.lua               691321 字节（真机跑的就是这份）
+  完整界面182-图标补尺寸.gil               773708 字节（配套存档）
+
+用途：**这一版是"当时能跑的那一份"**。要回退：
+  1) 把本目录的 *.lua 拷回 qianxing-murdoku\lua\
+  2) 跑 node tools/bundle_client_script.lua，再 powershell -File tools/install_script_to_sandbox.ps1
+     （或直接用本目录的 client_script.lua 覆盖沙箱里的那份，省掉打包）
+  3) 导入本目录里的 .gil
+
+规则（重要）：**每轮一个新编号，不删旧的、不覆盖**。
