@@ -85,6 +85,36 @@ local function make_ctrl(name)
   return c
 end
 
+-- ★★★★★ 2026-10-09 **按"真机现在的树形"建树：`root` → `stage` → 格子** ✗✓
+--
+--   ★ 为什么必须补这个helper（★ 这是 §6/§6b/§6c/§6d **15 条红的唯一根因**）✗✓
+--
+--   ★ 症状 ✓：这四段一共 15 条断言全红，而**断言文案其实都是对的** ——
+--     我一度以为是"日志文案过期"（因为 `探针已销毁` / `缺 25 个格子` 在源码里 `grep` 不到），
+--     **但那是 grep 的错觉** ✗：那两句在源码里是**拼接**出来的
+--     （`"探针已" .. (dok and "销毁" or "**销毁失败**…")`，`engine_adapter_qianxing.lua:2030`；
+--       `"有 " .. missing .. " 个格子还没建"`，同文件 `:2039`）⇒ grep 当然找不到 ✓
+--
+--   ★ 真因（★ 我插了一段临时 dump 把日志全打出来才看见 ✓）✗✓：
+--        [murdoku] ⚠️ 建控件前没找到 stage（root 底下没有）
+--        [murdoku] 生成格子失败：找不到父控件 stage
+--     ⇒ ★ `ensure_cells` **第一句就返回了** ✗ ⇒ 这四段想验的东西
+--       （模板引用控件让位 / 逐格自检 / 中间容器穿透）**一次都没被执行到** ✓✓
+--
+--   ★ 为什么树形变了 ✓：本项目在 2026-10 把格子从 `board` 挪到了 **`stage`**
+--     （提交 `234` 的记录：真机日志 `stage` 有 27 个子控件，而 `board` **两边都找不到**；
+--      `ui_controller` 的规划里也早就 `push({ id = "stage", … })` ✓）
+--     —— 而本测试的假树**还停在旧的 `board`** ✗ ⇒ 结构性过期，不是文案过期 ✓
+--
+--   ⚠️ 以后树形再变，**要改的是这里**，不是去改断言文案 ✓
+local function tree_root(kids)
+  local root = make_ctrl("root")
+  local stage = make_ctrl("stage")
+  stage.__kids = kids or {}
+  root.__kids = { stage }
+  return root, stage
+end
+
 -- ★ 官方 Color(r,g,b,a?) 创建 ColorValue（0-255，a 可省略）—— 染色的 imageColor 就是它。
 --   冒烟环境要提供，否则 tint 那条只会打「拿不到 Color」。
 _G.Color = function(r, g, b, a) return { r = r, g = g, b = b, a = (a == nil) and 255 or a } end
@@ -262,12 +292,12 @@ sent_signals = {}
 canvas.w, canvas.h = 1600.0, 900.0
 local chunk4 = loadfile(bundle_path)
 pcall(chunk4)
-local board2 = make_ctrl("board")
 local tplc = make_ctrl("tpl.cell")
 tplc.kind = "button"
 tplc.prefabIndex = 1073741876          -- 模拟"模板引用控件"带的可用模板索引
-board2.__kids = { tplc }
-roots = { board2 }
+-- ★ 2026-10-09：改挂到 `stage` 下（见 `tree_root` 的长注释 ✓）
+local root6 = tree_root({ tplc })
+roots = { root6 }
 local ok6, err6 = pcall(function()
   OnInit()
   OnStart()
@@ -298,14 +328,34 @@ sent_signals = {}
 canvas.w, canvas.h = 1600.0, 900.0
 local chunk5 = loadfile(bundle_path)
 pcall(chunk5)
-local board3 = make_ctrl("board")
+-- ★★★★★ 2026-10-09 **逐格自检现在有一道闸，验它之前必须先开闸** ✗✓
+--   ★ 闸在哪 ✓：`main.lua:672` 是 `if Murdoku.DIAG then pcall(function() adapter:diagnose_grid(...) end) end`
+--   ★ 默认值 ✓：`main.lua:853` 写着 `Murdoku.DIAG = Murdoku.DIAG or false` ⇒ **默认关** ✓
+--     （关得有道理 ✓：诊断会刷屏，而本项目对每帧成本敏感 ✓ 用法注释在同文件 `:850` ✓）
+--   ⇒ ★ 本段要验的三条（`逐格自检` / `树上实际有` / `来源统计`）**本来就只在开闸时才打** ✓
+--     ⇒ ★ 不开闸 = 在测"闸关着"，不是"自检查不出来" ✗ —— 那是**假红** ✓
+--   ⚠️⚠️ **不能直接写 `Murdoku.DIAG = true`** ✗ —— 我第一版就是这么写的，**静默无效** ✓
+--     实测（临时打印）：本测试的全局环境里 **`Murdoku = nil`** ✗
+--     （打包器把模块裹进了作用域 ✓ —— `entry_client_script.lua:50` 那个赋值
+--       在本测试的 `_G` 里**看不到** ✓）
+--   ★ 正确的把手 ✓：`entry_client_script.lua:573` 导出了
+--     **`_G.__murdoku_debug = { adapter = adapter, Murdoku = Murdoku }`** ✓
+--   ⚠️ 时机 ✓：`__murdoku_debug` 是 **`OnInit` 里**才建的 ✓
+--     ⇒ 只能在 `OnInit()` **之后**、`OnStart()` **之前**设 ✓
+--     （`diagnose_grid` 在 `Murdoku.start` 里跑 ✓ 而 `start` 是 `OnStart` 调的 ✓ 来得及 ✓）
 local squat = make_ctrl("cell.1.1")
 squat.kind = "button"
 squat.prefabIndex = 1073741876        -- ★ 与 cfg.cells.prefab 相同 → 它就是引用控件
-board3.__kids = { squat }
-roots = { board3 }
+-- ★ 2026-10-09：**格子必须挂在 `stage` 下**，否则 `ensure_cells` 第一句就返回（见 `tree_root`）
+local root6b = tree_root({ squat })
+roots = { root6b }
 local ok6b, err6b = pcall(function()
   OnInit()
+  -- ★ 开闸的**唯一正确时机**：`__murdoku_debug` 刚由 OnInit 建好，而 `diagnose_grid`
+  --   要等 OnStart→Murdoku.start 才跑（详见上面那段长注释 ✓）
+  if _G.__murdoku_debug ~= nil and _G.__murdoku_debug.Murdoku ~= nil then
+    _G.__murdoku_debug.Murdoku.DIAG = true
+  end
   OnStart()
   for _ = 1, 5 do OnUpdate(0.5) end
 end)
@@ -346,13 +396,13 @@ sent_signals = {}
 canvas.w, canvas.h = 1600.0, 900.0
 local chunk6 = loadfile(bundle_path)
 pcall(chunk6)
-local board4 = make_ctrl("board")
 local refc = make_ctrl("cell.1.1")
 refc.kind = "button"
 refc.prefabIndex = 1073741885            -- ← 控件**自身**的索引（不是模板）
 refc.referencedPrefabIndex = 1073741876  -- ← 引用的**模板**索引（== cfg.cells.prefab）
-board4.__kids = { refc }
-roots = { board4 }
+-- ★ 2026-10-09：同 6b，格子挂 `stage` 下（见 `tree_root`）
+local root6c = tree_root({ refc })
+roots = { root6c }
 local ok6c, err6c = pcall(function()
   OnInit()
   OnStart()
@@ -377,8 +427,10 @@ logs = {}
 canvas.w, canvas.h = 1600.0, 900.0
 local chunk7 = loadfile(bundle_path)
 pcall(chunk7)
--- 造一棵树：board + 调色板 assets(room.kitchen) + 一个格子（带 face / wall.up / door.left）
-local board5 = make_ctrl("board")
+-- 造一棵树：stage + 调色板 assets(room.kitchen) + 一个格子（带 face / wall.up / door.left）
+-- ★ 2026-10-09：格子从 `board` 改挂 `stage`（见 `tree_root`）——
+--   否则 `open_click_passthrough`（`engine_adapter_qianxing.lua:3771`）
+--   根本不会被调用 ⇒ 那条「中间容器穿透被关掉」的断言必然假红 ✓
 local pal = make_ctrl("assets")
 local pal_img = make_ctrl("room.kitchen")
 pal_img.imageSource = "StaticReference"
@@ -401,8 +453,8 @@ content.disableCursorEventPassthrough = true     -- 故意开着：脚本必须�
 content.disableKeyEventPassthrough = true
 content.__kids = { face, wallup, doorl }
 cellc.__kids = { content }
-board5.__kids = { cellc }
-roots = { board5, pal }
+local root6d = tree_root({ cellc })
+roots = { root6d, pal }
 local ok6d, err6d = pcall(function()
   OnInit()
   OnStart()
