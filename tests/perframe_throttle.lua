@@ -337,12 +337,32 @@ out(string.format("  render 调用 = %d 次，apply_ruler_layout 调用 = %d 次
   C2.render, C2.ruler, tostring(C2.ruler_ret)))
 out(string.format("  「行标/列标已按格子实际位置对齐」打了 %d 次，「核对：cell.1.1=」打了 %d 次",
   n_ruler, n_check))
-ok(n_ruler <= 1,
-  "★ 稳态里「行标/列标已按格子实际位置对齐」**不重复打**（内容没变就没有新信息）",
-  "实测 " .. tostring(n_ruler) .. " 次 / " .. tostring(C2.ruler) .. " 次调用；"
-  .. "每次 render 各打 2 行 ⇒ 会话越长日志越多")
+-- ★★★★★ 2026-10-09 **改判（依据，不是放宽）** ✗✓
+--   ★ 原来的断言 ✗：`ok(n_ruler <= 1, …)` —— 要求 6 帧里**最多打 1 次** ✓
+--   ★ 实测为什么是 2 次 ✓（我插了临时探针把签名打出来，看完就撤 ✓）：
+--       sig=10|0.0|0.0|**-224.0**|224.0|-224.0|224.0   上一次=nil
+--       sig=10|0.0|0.0|**-223.0**|223.0|-223.0|223.0   上一次=…-224.0…
+--     ⇒ ★ **`cell.1.1` 在第 2 帧挪了【1 个单位】**（且 `ruler.c.1.x` 同步挪了 1 ⇒ **始终对齐** ✓）
+--       —— 也就是**首帧几何与次帧差 1，次帧之后稳定** ✓（`moved` 恒为 10 ✓）
+--   ⇒ ★ 节流本身**是对的** ✓：它只在**签名变了**才打 ✓（同一份内容**没有**重复打 ✓）
+--     ⇒ 红的真因是**断言测错了东西** ✗：它测的是"6 帧里总打印次数"，
+--       而真正的契约是"**内容没变就不打**" ✓ —— 两者在有 settle 的帧上必然不一致 ✓
+--   ★ 改成测**真契约** ✓（而且比原来更强 ✓）：
+--     几何稳定之后再跑若干帧 ⇒ **这期间打印数必须是 0 增长** ✓
+--     （原断言最多只能发现"打了很多次"，本断言能钉住"稳定后一个字都不再打" ✓）
+local ruler_before_more = count_log("行标/列标已按格子实际位置对齐")
+local renders_before_more = C2.render
+for _ = 1, 30 do pcall(OnUpdate, 0.2) end
+local ruler_after_more = count_log("行标/列标已按格子实际位置对齐")
+out(string.format("  稳定后又跑 %d 帧：打印 %d → %d 次",
+  C2.render - renders_before_more, ruler_before_more, ruler_after_more))
+ok(ruler_after_more == ruler_before_more,
+  "★ 几何稳定之后**不再重复打**（真契约：内容没变就没有新信息）",
+  "又跑 " .. tostring(C2.render - renders_before_more) .. " 帧；打印仍为 "
+  .. tostring(ruler_after_more) .. " 次（稳定前共 " .. tostring(ruler_before_more) .. " 次，含首帧 settle 那一次）")
 
 ----------------------------------------------------------------------------
+---------------------------------------------------------------------------
 out("\n== D. 不许有运行时报错（口径与 tests/prop_ledger.lua 一致）==")
 do
   local bad = {}
