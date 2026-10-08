@@ -66,26 +66,39 @@ const GIT = (() => {
   return null;
 })();
 
-// ── `--check`：相对 HEAD 有没有递增（用来当"交付前闸门"✓）────────────────
+// ── `--check`：**改了 lua 却没递增标记** ⇒ 失败 ✓
+//   ★ 判据（第一版写错过 ✗，实测被 `check_all` 抓出来 ✓）：
+//     我原来只比"标记和 HEAD 一不一样" ⇒ ★ **两次交付之间它必然报红** ✗
+//       （因为那段时间本来就没打算发布 ✓）⇒ 那样它就不是闸门，是噪音 ✓
+//   ⇒ 正确的语义 ✓：**只有"这一轮动了 lua"时才要求标记递增** ✓
+//     · 标记变了              ⇒ 通过 ✓（递增过了）
+//     · 标记没变 + lua 也没变 ⇒ 通过 ✓（没东西要交付，不要求递增）
+//     · 标记没变 + **lua 变了** ⇒ **失败** ✓ ← ★ 这才是要拦的情况 ✓
 if (CHECK) {
   if (!GIT) { console.log('（找不到 git，跳过检查）'); process.exit(0); }
+  const gitOut = (a) => execFileSync(GIT, a, { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   let headSrc = null;
-  try {
-    headSrc = execFileSync(GIT, ['show', 'HEAD:lua/entry_client_script.lua'],
-      { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
-  } catch (e) {
-    console.log('（拿不到 HEAD 版本，跳过检查）');
-    process.exit(0);
-  }
+  try { headSrc = gitOut(['show', 'HEAD:lua/entry_client_script.lua']); }
+  catch (e) { console.log('（拿不到 HEAD 版本，跳过检查）'); process.exit(0); }
   const hm = headSrc.match(RE);
   if (!hm) { console.log('（HEAD 里没有标记，跳过）'); process.exit(0); }
-  if (hm[1] === curV) {
-    console.error('\n❌ **构建标记没有递增**：HEAD 也是 ' + curV + ' ✗');
-    console.error('   跑：node tools/bump_build_marker.mjs --note="这一轮做了什么"');
-    process.exit(2);
+  if (hm[1] !== curV) {
+    console.log('\n★ 标记已递增：' + hm[1] + ' → ' + curV + ' ✓');
+    process.exit(0);
   }
-  console.log('\n★ 标记已递增：' + hm[1] + ' → ' + curV + ' ✓');
-  process.exit(0);
+  // 标记没变 ⇒ 看 lua/ 有没有改动（**工作树 vs HEAD** ✓）
+  let dirty = '';
+  try { dirty = gitOut(['status', '--porcelain', '--', 'lua/']); }
+  catch (e) { console.log('（拿不到工作树状态，跳过检查）'); process.exit(0); }
+  if (dirty.trim() === '') {
+    console.log('\n★ 标记没变（' + curV + '），但 lua/ 相对 HEAD **也没有改动** ⇒ 没有要交付的东西 ✓ 通过');
+    process.exit(0);
+  }
+  console.error('\n❌ **改了 lua 却没递增构建标记** ✗（标记仍是 ' + curV + '，与 HEAD 相同）');
+  console.error('   改动的文件：');
+  for (const l of dirty.trim().split('\n')) console.error('     ' + l.trim());
+  console.error('   跑：node tools/bump_build_marker.mjs --note="这一轮做了什么"');
+  process.exit(2);
 }
 
 // ── 递增 ────────────────────────────────────────────────────────────────────
