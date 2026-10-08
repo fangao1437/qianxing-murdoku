@@ -1,0 +1,311 @@
+﻿# 提交 295（afb7cab）在 lua/ 里删掉的内容 —— 原文存档（★ 免得线索丢 ✓）
+# 生成时间：2026-10-08 18:40
+# 用途：重做弹窗时，需要把其中这四样【原样补回】：
+#   ① hide_unlisted 的 DECOR 豁免（不补 ⇒ 四键是"没图没字的空壳"）
+#   ② start_other/进关的 skip_intro 默认值（不补 ⇒ 弹窗根本弹不出来）
+#   ③ on_save / on_settle 两个回调（弹窗的"仅存档 / 存档并结算"靠它）
+#   ④ 进关清网格闩锁（已被 295 自己改成"跃迁检测"⇒ 视情况决定是否保留旧写法）
+# ⚠️ 不要整份 checkout afb7cab^（那会把 295 的网格修复一起退掉 ✗）—— 只挑上面四条 ✓
+commit afb7cabafb0ffc6c7fc921e596a22972013d69bf
+Author: dev <dev@local>
+Date:   Wed Oct 7 16:24:02 2026 +0800
+
+    295: allow the grid viewport to retry once the player comes back into a level from another screen. The previous attempt cleared the latch from the caller, which is not where the transition is visible; the sync now watches for the screen going from set to empty itself. Switching levels builds a fresh controller and was never affected, which is exactly why that path looked fine.
+
+diff --git a/lua/engine_adapter_qianxing.lua b/lua/engine_adapter_qianxing.lua
+index 44565d7..59d6404 100644
+--- a/lua/engine_adapter_qianxing.lua
++++ b/lua/engine_adapter_qianxing.lua
+@@ -47,7 +47,6 @@ M.SIGNALS = {
+   SAVE       = "murdoku/save",
+   RESTORE    = "murdoku/restore",
+   SYNC_STATE = "murdoku/sync",
+-  SETTLE     = "murdoku/settle",   -- ★ 2026-10-07 存档并结算
+ }
+ 
+ -- 信号参数按顺序添加；这里给出"信号名 → 字段顺序"，收信号时按它还原成字典
+@@ -61,7 +60,6 @@ M.SIGNAL_SCHEMA = {
+   [M.SIGNALS.SAVE]       = { "level_id", "state_code", "moves", "elapsed", "solved" },
+   [M.SIGNALS.RESTORE]    = { "state_code", "moves", "elapsed", "solved" },
+   [M.SIGNALS.SYNC_STATE] = { "who", "r", "c" },
+-  [M.SIGNALS.SETTLE] = { "level_id" },
+ }
+ 
+ ----------------------------------------------------------------------------
+@@ -2286,36 +2284,6 @@ end
+ --
+ --   ⚠️ 这是本项目反复吃亏的"**门控②**"（docs/环境问题-诊断记录.md）：
+ --      加一个新容器就**必须**同步加进这份名单 —— 我加 `home`/`select` 时漏了。
+--- ★★★★★ 2026-10-07 **装饰性子控件不参与 `hide_unlisted`** ✗✓
+---
+---   真机症状（用户实测）：弹窗出来了、标题正文都在，但**四个按钮既没底图也没文字、点了没音效**。
+---   根因：`hide_unlisted` 是**按名字**判断的 —— 它遍历 `MANAGED` 容器（含 `modal`），
+---   把「不在当前计划里的直接子控件」逐个 `SetVisible(false)`。
+---   而按钮的子控件名字是 ★ **`label`**（文字）和 ★ **`bg`**（底图）——
+---   这两个名字**永远不可能出现在计划里**（计划里的 id 是 `modal.exit` 这种），
+---   ⇒ **它们每次都被当成"多余的旧控件"藏掉** ⇒ 按钮成了**看不见的空壳** ✓
+---   （用户"没有点击音效"也正是这个原因：看得见的只有标题/正文那两行文字。）
+---
+---   ⇒ 规则：**只看带点的托管 id**，这几个"装饰名"一律跳过。
+---     它们的主人是按钮自己，显隐该由按钮的状态节点决定，不该由这份名单管。
+-local DECOR = {
+-  -- ★★★★★ 2026-10-07 **内层装饰控件一律不参与 `hide_unlisted`** ✗✓
+-  --
+-  --   真机症状（用户实测）：★ **弹窗四键空壳但可点** ✓ ★ **`clues` 头像卡【208 起就没显示过】** ✓
+-  --   机制：`hide_unlisted` 遍历 `MANAGED` 容器，把「不在计划里的直接子控件」逐个隐藏 ——
+-  --   而**计划里只有外层控件的名字**（`clues.bg` / `tray.A` / `modal.exit`…），
+-  --   **内层装饰子控件**（`face` `backrop1` `badge` `letter` `what` `who` …）**永远不在计划里**
+-  --   ⇒ **每次都被当成"多余的旧控件"藏掉** ⇒ 用户看到的正是"图片被藏住了" ✓
+-  --   （上一版只豁免了 `label`/`bg`/`pic`/`icon` 四个名字，其余内层名照样中招 ✗）
+-  --
+-  --   ⇒ 规则：★ **这些内层名字一律跳过**（它们的主人是父控件，显隐该由父控件/状态决定）。
+-  --     加新控件时若用了别的内层名，**一并加到这里** ✓
+-  label = true, bg = true, pic = true, icon = true,
+-  face = true, note = true, x = true, obj = true, text = true, portrait = true,
+-  backrop1 = true, backrop2 = true, badge = true, letter = true, what = true, who = true,
+-  frame = true, card = true, art = true, image = true, img = true,
+-}
+-
+ local MANAGED = {
+   "root", "topbar", "left", "tray", "clues", "board",
+   "right", "actions", "modal", "intro",
+@@ -2333,8 +2301,6 @@ local CURSOR_CONTAINERS = {
+ }
+ 
+ function Adapter:hide_unlisted(keep)
+-  -- ★ 2026-10-07 一次性诊断：把"这一趟实际藏了谁"打出来（用户要看弹窗被谁藏了）
+-  local _names = {}
+   local hidden = 0
+   for i = 1, #MANAGED do
+     local parent = self:find(MANAGED[i])
+@@ -2345,21 +2311,16 @@ function Adapter:hide_unlisted(keep)
+           local child = kids[k]
+           local name = nil
+           pcall(function() name = child.name end)
+-          if name ~= nil and name ~= "" and not keep[name] and not DECOR[name] then
++          if name ~= nil and name ~= "" and not keep[name] then
+             if child.SetVisible ~= nil then
+               local ok2 = pcall(function() child:SetVisible(false) end)
+-              if ok2 then hidden = hidden + 1; _names[#_names + 1] = name end
++              if ok2 then hidden = hidden + 1 end
+             end
+           end
+         end
+       end
+     end
+   end
+-  if self._hide_log == nil then self._hide_log = 0 end
+-  if self._hide_log < 3 then
+-    self._hide_log = self._hide_log + 1
+-    print("[murdoku] ★ 诊断HIDE：这一趟藏了 " .. tostring(hidden) .. " 个：" .. table.concat(_names, " "))
+-  end
+   return hidden
+ end
+ 
+diff --git a/lua/main.lua b/lua/main.lua
+index 04c78af..5ffe895 100644
+--- a/lua/main.lua
++++ b/lua/main.lua
+@@ -206,17 +206,7 @@ function Murdoku.start(level_id, opts)
+   if opts.screen ~= nil then want_screen = opts.screen end
+   controller = UIC.new(core, {
+     debug = opts.debug,
+-    -- ★★★★★ 2026-10-07 **开场页默认【跳过】** ✗✓
+-    --   真机证据（02:21 日志）：★ `intro_active=true  intro_page=1  #INTRO=5`
+-    --     ⇒ `is_intro_active()` **恒为真** ⇒ `build_layout` 的弹窗闸门
+-    --       `if modal and not self:is_intro_active()` **永远不成立**
+-    --     ⇒ **退出菜单/指认/结果/选关…所有弹窗一个都弹不出来**。
+-    --   为什么卡在 1：★ `intro.*` 那 5 个控件**还没建**（在"还没建 93 个"名单里）
+-    --     ⇒ 开场页画不出来 ⇒ 连"下一页"都点不到 ⇒ `intro_page` 永远停在 1 ✓
+-    --   所以：★ **没有开场控件时，开场必须视为已结束**（否则它挡死整条弹窗链）。
+-    --     `start_other` 早就这么做了（切关时 `o.skip_intro = true`）—— 这里把默认值对齐。
+-    --     ⚠️ 显式传 `skip_intro = false` 仍可强制放开场（将来 intro.* 建好后用）。
+-    skip_intro = (opts.skip_intro ~= false),
++    skip_intro = opts.skip_intro,
+     levels = level_list,
+     screen = want_screen,
+     -- ★★★★★ 2026-10-05 **"格子要不要推 text"这一个开关**（每帧成本第 (4) 条）。
+@@ -265,21 +255,6 @@ function Murdoku.start(level_id, opts)
+         --   ★ 所以这里必须补一句 —— 与下面"点的是当前这一关"那支（L228）**同一套写法** ✓
+         --     （"同一件事两处实现必然漂移"是本项目反复踩到的病 ⇒ 两支都要写 ✓）
+         if controller ~= nil then controller.screen = nil end
+-
+-  -- ★★★★★ 2026-10-07 **进入关卡时清掉"网格视窗"的失败闩锁** ✗✓（老问题，用户实测定位 ✓）
+-  --   现象：★ **退出至菜单 → 重进【同一关】⇒ 网格视窗不渲染** ✗
+-  --         换一关进 ⇒ 正常 ✓ 再换回来 ⇒ 正常 ✓ 再退出重进 ⇒ 又不正常 ✗
+-  --   ⇒ 分水岭 = **同一控制器只改 `screen`** ✗ vs **新控制器（`start_other`）** ✓
+-  --   机制：`sync_clue_grid` 里 `if self._grid_broken then return end` 是【永久闩锁】
+-  --         ⇒ 选关那一屏（列表被藏 ⇒ 引擎不建列表项 ⇒ 误判失败）拉上闩锁后，
+-  --           **重进同一关直接 return ⇒ `_grid_state` 停在 "off" ⇒ `clues.grid` 永不显示**
+-  --   ⇒ 修法：每次"进入关卡"清一次闩锁（换关是新建控制器，本来就干净）
+-  if controller ~= nil then
+-    controller._grid_broken = nil
+-    controller._grid_tries = 0
+-    controller._grid_state = nil
+-    controller.dirty = true
+-  end
+       else
+         -- 点的是当前这一关：只是退出选关界面，不用重开
+         controller.screen = nil
+@@ -318,16 +293,6 @@ function Murdoku.start(level_id, opts)
+       --   玩家看不出自己打过哪几关（这正是「参考原作卡片选关」要看的信息）。
+       Murdoku.mark_cleared(level.id)
+     end,
+-
+-    -- ★ 2026-10-07 退出菜单要的两个回调（adapter 只在这一层拿得到 ✓）
+-    on_save = function()
+-      Murdoku.save_now()
+-    end,
+-
+-    on_settle = function()
+-      Murdoku.save_now()
+-      adapter:signal_emit(Qianxing.SIGNALS.SETTLE, { tostring(level.id) })
+-    end,
+   })
+ 
+   local self = setmetatable({}, Murdoku)
+@@ -654,13 +619,7 @@ function Murdoku.start(level_id, opts)
+   --      如果连自己也收不到，就缩小范围（只用 `disableCursorEventPassthrough`）。
+   --      这条日志打出"设了几个"，方便对照。
+   if adapter.seal_containers ~= nil then
+-    -- ★★★★★ 2026-10-07 **`modal` 也要在这份名单里** ✗✓ —— 修"弹窗看得见但点不动"。
+-    --   机制：这个调用把容器的 `disableCursorEventPassthrough` 写成 `false`（= 允许点击穿透/下落）。
+-    --   `home` 能点，正是因为它在名单里；★ 而 `modal` 不在 ⇒ **弹窗四个键的点击被它吞掉** ✓。
+-    --   真机症状完全吻合：★ 弹窗显示正常、文字可见、**点击无任何反应** ✓。
+-    --   （并存证据：团队比对 `home` vs `modal` 时，唯一像开关的字段差异正好是
+-    --     `#505/#503/#14/#17` —— 疑似 `disableCursorEventPassthrough`，但离线判不定 ✓）
+-    local sealed = adapter:seal_containers({ "home", "select", "modal" })
++    local sealed = adapter:seal_containers({ "home", "select" })
+     if print then
+       print(string.format("[murdoku] 2D/3D 输入隔离：主页/选关容器已屏蔽穿透 %d 个", sealed))
+       -- ★★★ 2026-09-30：**把验收方法直接写进日志**（目标⑦）。
+diff --git a/lua/ui_controller.lua b/lua/ui_controller.lua
+index c6e5530..075e771 100644
+--- a/lua/ui_controller.lua
++++ b/lua/ui_controller.lua
+@@ -884,11 +884,11 @@ function Controller:on_input(event)
+   --   为什么这么做：这三个都是**不可逆**的（回菜单、交卷、清空整局），
+   --   参考图里也是"点一下先问、再执行"的两段式。
+   elseif a == "back_confirm" then
+-    -- ★ 2026-10-07 改成弹「退出菜单」四键（四句缺一不可 ✓ 漏 dirty ⇒ 规划不重跑 ⇒ 弹窗不出现 ✓）
+-    self.modal = { kind = "exit_menu" }
+-    self.pending = nil
+-    self.dirty = true
++    self.pending = { action = "back" }
+     self:sync_confirm()
++    -- ★ 2026-10-04 **按下就给反馈**（用户反馈"点击动画只有提示有"）：
++    --   这三个键原来只设 `pending`、不播动画 ⇒ 点了像没反应，要等 ✓ 才有动静。
++    --   真正的执行动画仍在 `confirm_yes` → `do_submit()` 那条路上播。
+     self:fx("hex.back", M.EFFECTS.SELECT)
+ 
+   elseif a == "submit" then
+@@ -1004,23 +1004,6 @@ function Controller:on_input(event)
+   elseif a == "close_modal" then
+     self.modal = nil
+ 
+-  -- ★ 2026-10-07 「退出菜单」三个动作
+-  elseif a == "exit_menu_go" then
+-    self.modal = nil
+-    self.screen = "select"
+-    self.dirty = true
+-    if self.opts.on_back then self.opts.on_back() end
+-
+-  elseif a == "exit_menu_save" then
+-    if self.opts.on_save then self.opts.on_save() end
+-    self.modal = nil
+-    self.dirty = true
+-
+-  elseif a == "exit_menu_settle" then
+-    if self.opts.on_save then self.opts.on_save() end
+-    if self.opts.on_settle then self.opts.on_settle() end
+-    self.dirty = true
+-
+   elseif a == "level_list" then
+     -- 打开选关面板（关卡清单由 main.lua 通过 opts.levels 给进来）
+     self.modal = { kind = "levelselect" }
+@@ -2798,41 +2781,6 @@ function Controller:build_layout()
+       btn("modal.next", "modal", { x = mx + 440, y = my + mh - 88, w = 200, h = 60 }, "下一关",
+           { action = "next_level" }, "stamp.primary")
+ 
+-    elseif modal.kind == "exit_menu" then
+-      -- ★ 2026-10-07 「退出菜单」四键（几何由编辑器/gil 说了算 ✓ `pos_runtime` 缺省 = 不下发几何 ✓）
+-      btn("modal.exit", "modal", { x = mx + 40, y = my + 170, w = mw - 80, h = 64 },
+-          "退出至菜单", { action = "exit_menu_go" }, "stamp")
+-      btn("modal.save", "modal", { x = mx + 40, y = my + 246, w = mw - 80, h = 64 },
+-          "仅存档", { action = "exit_menu_save" }, "stamp")
+-      btn("modal.settle", "modal", { x = mx + 40, y = my + 322, w = mw - 80, h = 64 },
+-          "存档并结算", { action = "exit_menu_settle" }, "stamp.primary")
+-      btn("modal.cancel", "modal", { x = mx + 40, y = my + mh - 88, w = mw - 80, h = 64 },
+-          "取消", { action = "close_modal" }, "tab")
+-
+-      -- ★★★★★ 2026-10-07 **给四个键设【官方胶囊底图】** ✗✓（用户要求配图 ✓）
+-      --   ★ 为什么走脚本而不是改 `.gil`：`docs/官方素材方案-脚本一体化.md` 已论证
+-      --     「**官方素材 + 脚本 = 图 / 色 / 尺寸 / 位置全可运行时改**」⇒ 配图本来就该脚本做 ✓
+-      --     （团队连改 4 轮 `.gil` 记录数组都卡在手工下标上 ✗ 这条路整个绕开 ✓）
+-      --   ★ 素材：★ **`107179`**（760×152，两端全圆角、米白）—— 与用户截图里的胶囊按钮同形 ✓
+-      --     `set_image_deep` 会自己往下找带 `SetImage` 的子控件（= 按钮的 `bg` ✓），
+-      --     并沿用控件自己编辑器里配的图集（`bg` 的 imageSource = 官方图集 ✓）✓
+-      --   ★ 只做一次（每帧设图会白烧成本 ✓ 本项目对每帧成本敏感 ✓）。
+-      -- ★★★★★ 2026-10-07 **只给 `bg` 子控件设胶囊底图** ✗✓（用户要求配图 ✓）
+-      --   上一版用 `set_image_deep(按钮, …)`：它"找第一个带 SetImage 的子控件"
+-      --   ⇒ 真机很可能命中 `label`（文字控件也有 SetImage）⇒ **图盖在文字上 ⇒ 图文都没了**
+-      --   （对照：加它之前"有字无图" ✓ 加它之后"图文都没有" ✗ ⇒ 变量只有这一个 ✓）
+-      --   ⇒ 现在**显式指名 `bg`**（`Adapter:sub(id, "bg")` ✓ 它就是按钮的底图那一层 ✓）
+-      --   素材 ★ **107179**（760×152 · 两端全圆角米白）= 用户选定 ✓ 沿用控件自己的官方图集 ✓
+-      if (not self._exit_menu_art) and self.adapter ~= nil then
+-        self._exit_menu_art = true
+-        for _, bid in ipairs({ "modal.exit", "modal.save", "modal.settle", "modal.cancel" }) do
+-          local bg = nil
+-          pcall(function() bg = self.adapter:sub(bid, "bg") end)
+-          if bg ~= nil and self.adapter.set_image_deep ~= nil then
+-            pcall(function() self.adapter:set_image_deep(bg, 107179, nil, nil, "弹窗胶囊") end)
+-          end
+-        end
+-      end
+     elseif modal.kind == "share" then
+       -- ★ 2026-10-05 **这一支目前没有入口按钮**（用户当天决定去掉「分享棋局」按钮，
+       --   见上面 `modal.kind == "result"` 里那段删除说明）。
+@@ -3330,8 +3278,6 @@ function Controller:layout_plan()
+     { name = "share",             intro = 99,
+       modal = { kind = "share", code = "（分享码）" }, screen = nil },
+     { name = "howto",             intro = 99, modal = { kind = "howto" }, screen = nil },
+-    { name = "exit_menu",         intro = 99,
+-      modal = { kind = "exit_menu" }, screen = nil },   -- ★ 2026-10-07 退出菜单（★ 进计划 ⇒ 建进 gil）
+     { name = "levelselect",       intro = 99,
+       modal = { kind = "levelselect" }, screen = nil },
+   }
+@@ -3408,7 +3354,7 @@ function Controller:layout_plan()
+     for k = 1, #it.states do
+       if it.states[k] == "board" or it.states[k] == "intro" or it.states[k] == "accuse_thief"
+          or it.states[k] == "accuse_accomplice" or it.states[k] == "result"
+-         or it.states[k] == "share" or it.states[k] == "howto" or it.states[k] == "exit_menu" then in_board = true end   -- ★ 退出菜单也要能显形
++         or it.states[k] == "share" or it.states[k] == "howto" then in_board = true end
+     end
+     it.visible = in_board and it.visible
+   end
+@@ -3614,7 +3560,24 @@ function Controller:sync_clue_grid(adapter)
+ 
+   -- ② 只在**关卡里**碰它：主页/选关时这块区域整个是藏起来的（父级 `clues` 不可见），
+   --    那时去 RefreshItems 既没意义、又可能因为"控件不可见 ⇒ 引擎不建列表项"而误判失败。
+-  if self.screen ~= nil then return end
++  -- ★★★★★ 2026-10-07 **"从别的屏回到关卡"时解开封死的网格判定** ✗✓
++  --   用户实测（老问题 ✓）：
++  --     · 退出至菜单 → 重进【同一关】⇒ 网格视窗**不渲染** ✗
++  --     · 换一关进 ⇒ 正常 ✓   再换回来 ⇒ 正常 ✓   再退出重进 ⇒ 又不正常 ✗
++  --   ⇒ 分水岭：**同一个控制器只改 `screen`** ✗  vs  **新控制器（`start_other`）** ✓
++  --   机制：本函数下面的 `if self._grid_broken then return end` 是**永久闩锁** ✗ ——
++  --     选关那一屏 `screen ~= nil` ⇒ 函数直接 return ✓ 但**之前**在关卡里若已判定失败，
++  --     闩锁就留着了 ⇒ 重进同一关 ⇒ 永远 return ⇒ `_grid_state` 停在 "off"
++  --     ⇒ 规划里 `clues.grid` 的 `visible` 恒为 false ⇒ **永不显示** ✓
++  --   ⇒ 修法：★ **检测 `screen` 从"非 nil"跃迁到"nil"（= 刚进关卡）⇒ 允许重试一次** ✓
++  --     换关走 `start_other` 是新建控制器 ⇒ 本来干净 ⇒ 不受影响 ✓
++  if self.screen == nil and self._grid_last_screen ~= nil then
++    self._grid_broken = nil
++    self._grid_tries = 0
++    self._grid_state = nil
++    self._grid = nil
++  end
++  self._grid_last_screen = self.screen  if self.screen ~= nil then return end
+ 
+   -- ③ 已经失败过就不再重试（老路径接管；`_grid_state` 已经是 "off"）
+   if self._grid_broken then return end

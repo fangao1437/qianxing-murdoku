@@ -4170,57 +4170,59 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
     if _pid ~= nil then
       _pal = self._pal_cache[_pid]
       local _nm = "portrait." .. tostring(_pid)
-      if _pal == nil then pcall(function() _pal = self.adapter:find(_nm) end) end
       if _pal == nil then
-        -- ★★★★★ 2026-10-08 **从 `root` 逐层递归找 `assets`** ✗✓
-        --   ★ 真机证据 ✓：★ `find("assets")` 也报"找不到" ✗ —— ★ 而 `root`/`clues`/`home` 找得到 ✓
-        --     ⇒ ★ 说明 `find` **不下潜到那一层**（★ 或它跳过不可见控件 ✓ 用户把 `assets` 设成不可见 ✓）
-        --   ★ 改法 ✓：★ **自己拿 `root`、用引擎的 `GetChildren` 递归搜名字** ✓（★ 不受可见性影响 ✓）
-        --     ★ 深度上限 6 层 ✓ ★ 找到 `assets` 后，再在它下面按 `portrait.<id>` 找 ✓
+        -- ★★★★★ 2026-10-08 **一层层走、每步单独 pcall** ✗✓（三个真机教训一起修 ✓）
+        --   ① ★ `Adapter:find` 有**负缓存** ✗：★ 一旦某名字被判定"不在树上" ⇒ **这一代直接返回 nil** ✓
+        --      ⇒ ★ 开局树空时查过的名字**永远查不到** ✓ ⇒ **不能依赖 `find` 找 `assets`** ✓
+        --   ② ★ 上一版把整段递归包在一个大 pcall 里 ✗ ⇒ 中间出错就**整体静默失败** ✓（表现就是"找不到" ✓）
+        --      ⇒ ★ 现在**每一步各自 pcall** ✓ ⇒ 哪一步失败日志里都看得见 ✓
+        --   ③ ★ 已知结构（gil 侧实证 ✓）：★ `assets` 是 **`root` 的第 1 个子控件** ✓
+        --      ⇒ ★ **只需走两层**：`root` → 子控件里找 `assets` → 它子控件里找 `portrait.<id>` ✓ 不必深递归 ✓
         local _as = nil
         pcall(function()
-          local function _walk(node, depth)
-            if node == nil or depth > 6 then return nil end
-            local kids = nil
-            pcall(function() kids = node:GetChildren() end)
-            if kids == nil then return nil end
-            local n = 0
-            pcall(function() n = #kids end)
-            for i = 1, n do
-              local k = kids[i]
-              local kn = nil
-              pcall(function() kn = tostring(k.name) end)
-              if kn == "assets" then return k end
-              local hit = _walk(k, depth + 1)
-              if hit ~= nil then return hit end
-            end
-            return nil
+          local r0 = self.adapter:find("root")
+          if r0 == nil then return end
+          local k0 = nil
+          pcall(function() k0 = r0:GetChildren() end)
+          if k0 == nil then return end
+          local n0 = 0
+          pcall(function() n0 = #k0 end)
+          for i = 1, n0 do
+            local x = k0[i]
+            local xn = nil
+            pcall(function() xn = tostring(x.name) end)
+            if xn == "assets" then _as = x break end
           end
-          local r = self.adapter:find("root")
-          if r ~= nil then _as = _walk(r, 0) end
         end)
-        if _as ~= nil and _as.GetChildren ~= nil then
-          local _kids, _n = nil, 0
-          pcall(function() _kids = _as:GetChildren() end)
-          if _kids ~= nil then pcall(function() _n = #_kids end) end
-          for _i = 1, _n do
-            local _k = _kids[_i]
-            local _kn = nil
-            pcall(function() _kn = tostring(_k.name) end)
-            if _kn == _nm then _pal = _k end
-            if (self._pn_log or 0) < 12 then
-              self._pn_log = (self._pn_log or 0) + 1
-              print("[murdoku] ★ 调色板候选：assets 下有 " .. tostring(_kn))
+        if _as ~= nil then
+          local k1 = nil
+          pcall(function() k1 = _as:GetChildren() end)
+          if k1 ~= nil then
+            local n1 = 0
+            pcall(function() n1 = #k1 end)
+            for i = 1, n1 do
+              local x = k1[i]
+              local xn = nil
+              pcall(function() xn = tostring(x.name) end)
+              if xn == _nm then _pal = x end
+              if (self._pn_log or 0) < 12 then
+                self._pn_log = (self._pn_log or 0) + 1
+                print("[murdoku] ★ 调色板候选：assets 下有 " .. tostring(xn))
+              end
+            end
+          else
+            if (self._as_log or 0) < 2 then
+              self._as_log = (self._as_log or 0) + 1
+              print("[murdoku] ★ 调色板候选：找到 assets，但取不到它的子控件（GetChildren 失败）")
             end
           end
         else
           if (self._as_log or 0) < 2 then
             self._as_log = (self._as_log or 0) + 1
-            print("[murdoku] ★ 调色板候选：找不到 assets 容器（或它没有 GetChildren）")
+            print("[murdoku] ★ 调色板候选：root 的直接子控件里没有 assets")
           end
         end
-      end
-      if _pal ~= nil then self._pal_cache[_pid] = _pal end
+      end      if _pal ~= nil then self._pal_cache[_pid] = _pal end
     end
     local _cf = self:_grid_item_child_cached(item, index, pos, "face")
     -- ★ 2026-10-08 **分件诊断**（真机：`头像贴图` 一行都没出现 ⇒ 说明取不到 ✓ 那就分别打出来 ✓）
