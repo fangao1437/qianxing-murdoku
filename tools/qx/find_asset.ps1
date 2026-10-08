@@ -1,4 +1,4 @@
-# =====================================================================
+﻿# =====================================================================
 #  SUPERSEDED - DO NOT TRUST THESE NUMBERS   (marked 2026-10-08)
 #
 #  This was the first attempt at finding the clue-avatar asset ids.

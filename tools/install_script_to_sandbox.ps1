@@ -78,6 +78,45 @@ foreach ($dir in $ordered) {
   $tag = 'Local'
   if ($dir -like '*\LocalLow\*') { $tag = 'LocalLow' }
   $dst = Join-Path $dir 'client_script.lua'
+  # ---------------------------------------------------------------
+  # Archive the OLD script before overwriting it (user request, 2026-10-09).
+  #
+  # Why this exists: importing a .gil creates a NEW level save folder, and
+  #   the script that appears inside it is the copy EMBEDDED in that .gil.
+  #   That copy can be very old -- measured: folder 1073742018 held v075
+  #   while the newest build was v093, so the device ran month-old code and
+  #   the log looked like the new work had never been applied.
+  #   Once overwritten there is no way to tell which build was running, so
+  #   archive first. Content already identical => skip, so repeated syncs do
+  #   not pile up duplicates.
+  #   Name carries level id + build marker + timestamp.
+  #
+  # NOTE: strings here stay ASCII on purpose (see the header note). The build
+  #   marker is matched by pattern vNNN followed by a date, not by its label.
+  # ---------------------------------------------------------------
+  if (Test-Path -LiteralPath $dst) {
+    $alreadySame = $false
+    try { $alreadySame = ((Get-FileHash -LiteralPath $dst -Algorithm SHA256).Hash -eq $srcHash) } catch { $alreadySame = $false }
+    if (-not $alreadySame) {
+      $bakDir = Join-Path $root '_backup\sandbox-scripts'
+      if (-not (Test-Path -LiteralPath $bakDir)) { New-Item -ItemType Directory -Force -Path $bakDir | Out-Null }
+      $marker = 'unknown'
+      try {
+        $txt = [System.IO.File]::ReadAllText($dst)
+        $m = [regex]::Match($txt, 'v\d{2,4}(?= / 20\d\d-)')
+        if ($m.Success) { $marker = $m.Value }
+      } catch { }
+      $lvId = Split-Path (Split-Path $dir -Parent) -Leaf
+      $stamp = (Get-Date).ToString('yyyy-MM-dd_HHmmss')
+      $bakName = $lvId + '__' + $marker + '__' + $stamp + '.lua'
+      try {
+        Copy-Item -LiteralPath $dst -Destination (Join-Path $bakDir $bakName) -Force -ErrorAction Stop
+        Write-Output ('[' + $tag + '] old script archived -> _backup\sandbox-scripts\' + $bakName)
+      } catch {
+        Write-Output ('[' + $tag + '] WARNING: could not archive old script: ' + $_.Exception.Message)
+      }
+    }
+  }
   $copyErr = $null
   try { Copy-Item -LiteralPath $src -Destination $dst -Force -ErrorAction Stop }
   catch { $copyErr = $_.Exception.Message }

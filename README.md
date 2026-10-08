@@ -39,6 +39,27 @@ powershell -ExecutionPolicy Bypass -File tools/install_script_to_sandbox.ps1
 
 > ⚠️ **每次导入 `.gil` 之后都要重跑一次同步** —— 导入会换关卡目录，旧同步对新关卡无效。
 
+> 🔴 **`.gil` 里内嵌着一份脚本副本，导入时游戏用的是【那一份】**（2026-09-27 与 2026-10-09 各踩一次）
+>
+> - 实测：导入 `225` 后新关卡目录 `1073742018` 里出现的是 **`v075`**，
+>   而当时最新已经是 **`v093`** ⇒ **日志首行是旧版**，看起来像新改动全没生效 ✗
+> - ⇒ ★ **凡是准备交付/导入的 `.gil`，先跑一次 `embed_script.mjs` 把当前脚本嵌进去**：
+>   ```powershell
+>   $lua = "$env:LOCALAPPDATA\Programs\Lua\bin\lua.exe"
+>   & $lua tools/bundle_client_script.lua                     # 先出最新包
+>   node tools/gil/find_script.mjs <存档.gil>                  # 看里面嵌的是多大（可选）
+>   node tools/gil/embed_script.mjs --in=<存档.gil> --out=<新存档.gil>
+>   ```
+>   **判据**：末尾必须打出 `✅ 内嵌脚本 == dist/client_script.lua（N 字节）` ✓
+>   不通过就**别交付** ✓（`embed_script.mjs` 自检不过会 `exit 3`）
+> - ⇒ 这样**导入即最新**，连第 2 步的手动同步都不需要（但重跑一次也无害 ✓）
+>
+> 🗄️ **同步脚本现在会【自动备份旧脚本】**（2026-10-09 起）：
+> 覆盖前比 sha256，**内容不同就归档**成
+> `_backup\sandbox-scripts\<关卡id>__<构建标记>__<时间>.lua` ✓
+> —— 那是"**真机当时到底跑了哪一版**"的唯一证据，**已从 .gitignore 里放行、会入库** ✓
+> （同内容则跳过，不会堆重复档 ✓）
+
 ---
 
 ## 3. 开发工具（`tools/`）
