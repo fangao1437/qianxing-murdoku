@@ -4163,6 +4163,15 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
       if _pid ~= nil and self.adapter ~= nil then _pal = self.adapter:find("portrait." .. tostring(_pid)) end
     end)
     local _cf = self:_grid_item_child_cached(item, index, pos, "face")
+    -- ★ 2026-10-08 **分件诊断**（真机：`头像贴图` 一行都没出现 ⇒ 说明取不到 ✓ 那就分别打出来 ✓）
+    --   ① `_pid`（人物 id ✓ 应为 V/D/A/B ✓）② `_pal`（调色板控件找到没 ✓）③ `_cf`（卡片 face 找到没 ✓）
+    if (self._pd_log or 0) < 8 then
+      self._pd_log = (self._pd_log or 0) + 1
+      local _pn = "?"
+      pcall(function() _pn = tostring(_pal and _pal.name) end)
+      print("[murdoku] ★ 头像分件：id=" .. tostring(_pid) .. "  pal=" .. tostring(_pal ~= nil)
+        .. "(" .. _pn .. ")  face=" .. tostring(_cf ~= nil))
+    end
     if _pal ~= nil and _cf ~= nil then
       local _ps, _pi = nil, nil
       pcall(function() _ps = _pal.imageSource end)
