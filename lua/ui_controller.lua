@@ -4172,8 +4172,33 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
       local _nm = "portrait." .. tostring(_pid)
       if _pal == nil then pcall(function() _pal = self.adapter:find(_nm) end) end
       if _pal == nil then
+        -- ★★★★★ 2026-10-08 **从 `root` 逐层递归找 `assets`** ✗✓
+        --   ★ 真机证据 ✓：★ `find("assets")` 也报"找不到" ✗ —— ★ 而 `root`/`clues`/`home` 找得到 ✓
+        --     ⇒ ★ 说明 `find` **不下潜到那一层**（★ 或它跳过不可见控件 ✓ 用户把 `assets` 设成不可见 ✓）
+        --   ★ 改法 ✓：★ **自己拿 `root`、用引擎的 `GetChildren` 递归搜名字** ✓（★ 不受可见性影响 ✓）
+        --     ★ 深度上限 6 层 ✓ ★ 找到 `assets` 后，再在它下面按 `portrait.<id>` 找 ✓
         local _as = nil
-        pcall(function() _as = self.adapter:find("assets") end)
+        pcall(function()
+          local function _walk(node, depth)
+            if node == nil or depth > 6 then return nil end
+            local kids = nil
+            pcall(function() kids = node:GetChildren() end)
+            if kids == nil then return nil end
+            local n = 0
+            pcall(function() n = #kids end)
+            for i = 1, n do
+              local k = kids[i]
+              local kn = nil
+              pcall(function() kn = tostring(k.name) end)
+              if kn == "assets" then return k end
+              local hit = _walk(k, depth + 1)
+              if hit ~= nil then return hit end
+            end
+            return nil
+          end
+          local r = self.adapter:find("root")
+          if r ~= nil then _as = _walk(r, 0) end
+        end)
         if _as ~= nil and _as.GetChildren ~= nil then
           local _kids, _n = nil, 0
           pcall(function() _kids = _as:GetChildren() end)
