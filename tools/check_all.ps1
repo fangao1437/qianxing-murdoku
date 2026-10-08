@@ -1,4 +1,4 @@
-﻿# tools/check_all.ps1 —— 一键全量自检
+# tools/check_all.ps1 —— 一键全量自检
 #
 # 跑法（在工程根目录）：
 #   powershell -ExecutionPolicy Bypass -File tools\check_all.ps1
@@ -101,6 +101,14 @@ Run-Step '2c/13 文件编码归一（BOM）' 'powershell' @('-ExecutionPolicy', 
 #     这里直接造 Controller 调 on_cell_down / on_cell_drag / on_cell_up 把它钉死，
 #     顺带复验长按=放置、抑制尾随点击、键盘光标与回车放置。
 Run-Step '2d/13 输入手势状态机'                 $lua @('tests\input_logic.lua') | Out-Null
+# 2c2：**构建标记有没有递增**（接手待办 P1 ✓）
+#   为什么要当闸门：`PLAN.md` D2 那次事故 —— 标记停在 v076 而 `versions/` 到 v092
+#     ⇒ 十几次安装之后**无法从日志分辨跑的是哪一版** ✗ 根因就是"靠人记得递增" ✓
+#   判据：`--check` 拿 `git show HEAD:lua/entry_client_script.lua` 里的标记比一比 ✓
+#     · 不一样 ⇒ 通过（说明本轮递增过 ✓）
+#     · 一样   ⇒ **失败 exit 2** ⇒ 跑 `node tools/bump_build_marker.mjs --note="…"` ✓
+#   ⚠️ 它**只查"递增了没有"**，不管说明写得好不好 ✓ 那是人写的，工具管不了 ✓
+Run-Step '2c2/13 构建标记已递增（P1）' 'node' @('tools\bump_build_marker.mjs', '--check') | Out-Null
 # 2e：四方对照（我的代码 / 模拟器 / 官方文档 / 真机实测）。
 #     ① sim_surface：**机械提取**模拟器插件的 API 面（不再靠读源码猜 ——
 #        我曾因此断言"模拟器没有 InstantiateClientUIControl"，其实是有的）

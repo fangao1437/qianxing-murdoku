@@ -1,0 +1,119 @@
+// tools/bump_build_marker.mjs —— **构建标记的递增，交给工具，不靠人记得**（接手待办 P1）
+//
+// 为什么要有它（`PLAN.md` D2 的老毛病 ✓，`entry_client_script.lua:174` 记着那次事故）：
+//   ★ 症状 ✓：**十几次安装之后，无法从日志分辨跑的是哪一版** ✗
+//     标记停在 **v076**（10-05），而 `versions/` 已经到 `134-弹窗四键成型-v092`
+//     ⇒ 中间每一轮的日志首行**都是 v076** ✓ 于是"贴回来的日志对应哪一版"根本看不出来 ✓
+//   ★ 根因 ✓：递增**靠人记得** ✗ —— 而每一轮都在忙着改逻辑，标记这种"纯记账"最容易被漏 ✓
+//   ⇒ ★ 所以做成工具 ✓：一条命令把 `vNNN` 加一、日期改成今天、说明换成这一轮的 ✓
+//
+// ⚠️⚠️ 本文件对 BOM **极敏感**（`entry_client_script.lua:181` 记着历史事故：
+//   用 `Set-Content` 写它会加 BOM ⇒ 打包后 Lua 5.3 报 `unexpected symbol near '<\239>'`
+//   ⇒ `check_all` 永久变红 ✓）
+//   ⇒ 本工具**只替换标记那一小段**、其余字节原样保留 ✓
+//     而且写完**自己复读一次**：① 没有 BOM ② 标记确实变了 ✓
+//
+// 用法：
+//   node tools/bump_build_marker.mjs --note="这一轮做了什么"            # 递增一位并把说明换成它
+//   node tools/bump_build_marker.mjs --note="…" --set=096               # 直接指定编号
+//   node tools/bump_build_marker.mjs --check                            # 只检查"相对 HEAD 有没有递增"
+//   node tools/bump_build_marker.mjs --show                             # 只看当前标记
+
+import fs from 'node:fs';
+import path from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const ENTRY = path.join(ROOT, 'lua', 'entry_client_script.lua');
+const arg = (k, d) => {
+  const h = process.argv.find((s) => s.startsWith('--' + k + '='));
+  return h ? h.slice(k.length + 3).replace(/^"|"$/g, '') : d;
+};
+const SHOW = process.argv.includes('--show');
+const CHECK = process.argv.includes('--check');
+const SET = arg('set');
+const NOTE = arg('note');
+
+// ★ 标记的形状：`构建标记 vNNN / YYYY-MM-DD / 说明`（与 `entry_client_script.lua` 一致 ✓）
+const RE = /构建标记 (v\d{2,4}) \/ (\d{4}-\d{2}-\d{2}) \/ ([^"\\]*?)(?=\s*=====)/;
+
+const src = fs.readFileSync(ENTRY, 'utf8');
+const m = src.match(RE);
+if (!m) {
+  console.error('✗ 在 ' + path.relative(ROOT, ENTRY) + ' 里找不到构建标记（形状应为 `构建标记 vNNN / YYYY-MM-DD / 说明`）');
+  process.exit(1);
+}
+const [full, curV, curDate, curNote] = m;
+const fmt = (n) => 'v' + String(n).padStart(3, '0');
+
+console.log('当前标记：' + curV + ' / ' + curDate);
+console.log('  说明：' + curNote.trim().slice(0, 100) + (curNote.trim().length > 100 ? '…' : ''));
+
+if (SHOW) process.exit(0);
+
+// ── 找 git（⚠️ 这台机器上 git **不在 PATH 里** ⇒ 光写 'git' 会拿不到 HEAD ✓ 实测踩过）
+const GIT = (() => {
+  const cands = [
+    'git',
+    process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, 'Programs', 'ds-harness-desktop', 'runtime', 'git', 'cmd', 'git.exe'),
+    'C:\\Program Files\\Git\\cmd\\git.exe',
+    'C:\\Program Files (x86)\\Git\\cmd\\git.exe',
+  ].filter(Boolean);
+  for (const c of cands) {
+    try { execFileSync(c, ['--version'], { stdio: 'ignore' }); return c; } catch (e) { /* 换下一个 */ }
+  }
+  return null;
+})();
+
+// ── `--check`：相对 HEAD 有没有递增（用来当"交付前闸门"✓）────────────────
+if (CHECK) {
+  if (!GIT) { console.log('（找不到 git，跳过检查）'); process.exit(0); }
+  let headSrc = null;
+  try {
+    headSrc = execFileSync(GIT, ['show', 'HEAD:lua/entry_client_script.lua'],
+      { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  } catch (e) {
+    console.log('（拿不到 HEAD 版本，跳过检查）');
+    process.exit(0);
+  }
+  const hm = headSrc.match(RE);
+  if (!hm) { console.log('（HEAD 里没有标记，跳过）'); process.exit(0); }
+  if (hm[1] === curV) {
+    console.error('\n❌ **构建标记没有递增**：HEAD 也是 ' + curV + ' ✗');
+    console.error('   跑：node tools/bump_build_marker.mjs --note="这一轮做了什么"');
+    process.exit(2);
+  }
+  console.log('\n★ 标记已递增：' + hm[1] + ' → ' + curV + ' ✓');
+  process.exit(0);
+}
+
+// ── 递增 ────────────────────────────────────────────────────────────────────
+let nextV;
+if (SET) {
+  nextV = SET.startsWith('v') ? SET : fmt(Number(SET));
+} else {
+  nextV = fmt(Number(curV.slice(1)) + 1);
+}
+const today = new Date().toLocaleDateString('sv-SE');      // sv-SE = YYYY-MM-DD ✓ 本地时区 ✓
+if (!NOTE) {
+  console.error('\n✗ 递增时必须给 --note="这一轮做了什么"（不然标记没有信息量 ✓）');
+  process.exit(1);
+}
+
+const next = '构建标记 ' + nextV + ' / ' + today + ' / ' + NOTE;
+const out = src.replace(RE, next);
+if (out === src) { console.error('✗ 替换没生效（形状可能变了）'); process.exit(1); }
+
+fs.writeFileSync(ENTRY, out, 'utf8');       // ★ 不加 BOM ✓
+
+// ── 自检：复读一次 ✓（① 无 BOM ② 标记真的变了 ✓）──────────────────────────
+const raw = fs.readFileSync(ENTRY);
+const hasBom = raw.length >= 3 && raw[0] === 0xEF && raw[1] === 0xBB && raw[2] === 0xBF;
+const back = raw.toString('utf8').match(RE);
+console.log('\n已写入 ' + path.relative(ROOT, ENTRY));
+console.log('  新标记：' + (back ? back[1] + ' / ' + back[2] : '**读不回来** ✗'));
+console.log('  BOM 检查：' + (hasBom ? '❌ **有 BOM**（会炸）' : '✅ 无 BOM ✓'));
+if (hasBom || !back || back[1] !== nextV) { console.error('✗ 自检没过'); process.exit(3); }
+console.log('  文件大小：' + raw.length + ' 字节（原 ' + Buffer.byteLength(src, 'utf8') + '）');
+console.log('\n下一步：node tools/bundle_client_script.lua');
