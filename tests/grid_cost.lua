@@ -225,7 +225,21 @@ local function make_item()
   local it = make_ctrl("clue")
   it.kind = "button"
   it.raycastTarget = false        -- ★ 列表项是从按钮模板克隆的 ⇒ 真机上也有这个字段
-  for _, sfx in ipairs({ "who", "what", "letter", "backrop1", "backrop2", "face" }) do
+  -- ★★★★★ 2026-10-09 **补上 `gray`** ✗✓（原来这里没有它 ⇒ **句柄记忆表永远有一条查不到** ✓）
+  --   ★ 怎么发现的 ✓（临时探针把每次缓存判定打出来，看完就撤 ✓）：
+  --       suffix=gray  index=5  rec.idx=5  c=nil  variant=0  fast=false     ← ★ 每一项、每一趟都是这样
+  --       suffix=face  index=5  rec.idx=5  c=有   variant=3  fast=true      ← 其它 6 个都命中缓存 ✓
+  --     ⇒ ★ **`gray` 是"4 个名字全试完还是没有"** ✗ ⇒ `_grid_item_child` 返回 `nil`
+  --       ⇒ 而记忆表**故意不缓存 nil**（"查不到下次再试" ✓ 见 `_grid_item_child_cached` 的注释 ✓）
+  --       ⇒ ★ **每次填充都重试 4 个名字** ✓
+  --   ★ 为什么计数是"每项 3 次"而不是 4 次 ✓：那 4 个名字里前 3 个以 `clue.` 开头（本文件的
+  --     `GetChild` 包装器**只数 `clue.` 开头的** ✓），第 4 个是裸名 `gray` ✗ 不计
+  --     ⇒ **3 次/项 × 7 项 = 21** ✓ 与实测**完全对上** ✓
+  --   ★ 而**真机没有这个问题** ✓：`gray` 在存档里是**存在的** ✓（`226/227` 的 89 个名字里有 `gray` ✓）
+  --     ⇒ 真机会在第 1 个名字就命中 ⇒ 进记忆表 ⇒ **零重试** ✓
+  --   ⇒ ★ 所以这是**模拟器缺件**（`kit.mjs:154` 那条"逐字段对齐真机"的老毛病 ✓），**不是真机成本** ✓
+  --     补上它，那条断言才真的在测"记忆表生效"✓
+  for _, sfx in ipairs({ "who", "what", "letter", "backrop1", "backrop2", "face", "gray" }) do
     attach(it, make_text("clue.1." .. sfx))
   end
   -- 列表项上的 GetChild **单独计数**（真机上它是引擎侧的子树查找，比 GetChildren 便宜，
