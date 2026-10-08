@@ -4150,6 +4150,38 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
     end
   end
 
+  -- ★★★★★ 2026-10-08 **把调色板里的头像【成对】写到卡片 `face` 上** ✗✓（"百四方块"的治本一步 ✓）
+  --   ★ 依据 ✓：★ 日志里 `调色板里没有素材「portrait.X」` **已经消失** ⇒ ★ **调色板找得到** ✓
+  --     ⇒ ★ 剩下的就是"**找到之后没贴到卡片上**" ✓（用户看到的仍是占位方块 ✓）
+  --   ★ 项目铁律 ✓：★ **图片要【成对写】`imageSource` + `imageId`** ✗
+  --     （★ 只写 id ⇒ "属性变了、画面没变" ✓ 本项目多处注释反复强调 ✓）
+  --   ★ 写法 ✓：★ 直接写字段 ✓（★ 与既有的 `imageColor`/`raycastTarget` 同一手法 ✓ 全程 pcall ✓）
+  --   ★ 去重 ✓：★ 记住上次写的 id ✓ ⇒ 值没变不重复写 ✓（★ 稳态零成本 ✓）
+  do
+    local _pal = nil
+    pcall(function()
+      if _pid ~= nil and self.adapter ~= nil then _pal = self.adapter:find("portrait." .. tostring(_pid)) end
+    end)
+    local _cf = self:_grid_item_child_cached(item, index, pos, "face")
+    if _pal ~= nil and _cf ~= nil then
+      local _ps, _pi = nil, nil
+      pcall(function() _ps = _pal.imageSource end)
+      pcall(function() _pi = _pal.imageId end)
+      local _rg3 = self:_grid_item_rec(item, index)
+      if _pi ~= nil and (_rg3 == nil or _rg3.pimg ~= _pi) then
+        if _rg3 ~= nil then _rg3.pimg = _pi end
+        if _ps ~= nil then pcall(function() _cf.imageSource = _ps end) end
+        pcall(function() _cf.imageId = _pi end)
+        pcall(function() _cf:SetVisible(true) end)
+        pcall(function() if _cf.SetActive then _cf:SetActive(true) end end)
+        if (self._pt_log or 0) < 8 then
+          self._pt_log = (self._pt_log or 0) + 1
+          print("[murdoku] ★ 头像贴图：face ← portrait." .. tostring(_pid)
+            .. "  src=" .. tostring(_ps) .. "  id=" .. tostring(_pi))
+        end
+      end
+    end
+  end
   if _cgray ~= nil then
     -- ★★★★★ 2026-10-07 **灰白图必须【不参与射线】** ✗✓（"预放置也像被取消选中"的真因 ✓）
     --   ★ 真机反馈 ✓：★ 灰白出来之后 ⇒ ★「★ **预放置也会取消选中，且要双击才能重新选中**」✗
