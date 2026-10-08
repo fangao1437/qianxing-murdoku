@@ -6021,14 +6021,34 @@ function Controller:build_layout()
           { action = "next_level" }, "stamp.primary")
 
     elseif modal.kind == "exit_menu" then
-      -- ★ 2026-10-07 「退出菜单」四键（几何由编辑器/gil 说了算 ✓ `pos_runtime` 缺省 = 不下发几何 ✓）
-      btn("modal.exit", "modal", { x = mx + 40, y = my + 170, w = mw - 80, h = 64 },
+      -- ★★★★★ 2026-10-09 **几何改为【设计稿 B】** ✗✓（用户 2026-10-09 拍板选 B ✓）
+      --   ★ 设计稿 B（画布空间 1600×900）✓：
+      --     · 键尺寸 **312×60** ★ 横间距（pitch）**80** ★ cx=800（面板水平居中 ✓）
+      --     · 四个键的**中心** cy = **570 / 490 / 410 / 330** ✓（面板中心 450 ⇒ 上下对称 ✓）
+      --   ★ 换算到**脚本空间**（1920×1080，`M.DESIGN`）✓：画布 × 1.2 ✓
+      --     · w = 312×1.2 = **374** ✓ · h = 60×1.2 = **72** ✓ · pitch = 80×1.2 = **96** ✓
+      --     · cx = 800×1.2 = **960** ⇒ x = 960 − 374/2 = **773** = `mx + (mw−374)/2` ✓
+      --   ★★ `rect.y` 的语义（★ 本项目把 ①③ 写反过 ✗，这里写死讲清 ✓）：
+      --     · **`y` = 从父控件【顶边】往下数的偏移** ✓（不是左下原点的 cy ✗）
+      --     · 面板 `modal` 顶边 = `my + mh` ⇒ 目标中心 y 对应的偏移
+      --       = `mh − (cy_script − my) − h/2`
+      --     · 逐个算 ✓：exit 50 · save 146 · settle 242 · cancel 338
+      --       （校验：my+mh−偏移−h/2 = 684 / 588 / 492 / 396 ⇒ ÷1.2 = 570/490/410/330 ✓ 与设计稿一致 ✓）
+      --   ★ 为什么改脚本就够 ✓：`root` 带 `pos_runtime = true`
+      --     ⇒ `inherit_pos_runtime`（本文件 :1361）**沿子树继承** ⇒ `modal` 与这四个键
+      --     **都算"运行时控件"** ⇒ 适配器每帧下发脚本算出的几何 ✓
+      --     ⇒ ★ `.gil` 里那套 480×56 **运行时不生效** ✓（★ 这正是"编辑器预览是 480×56、
+      --        进关卡却是另一套"的由来 ✓ —— PLAN.md A4 说的「A/B 二选一」其实一直是 B 在跑 ✓）
+      --   ⚠️ 存档 `.gil` 里的 480×56 与 `label` 的 559×20 **仍待同步**（见 `接手待办.md` A4 备注 ✓）
+      local kw, kh = 374, 72
+      local kx = mx + math.floor((mw - kw) / 2)
+      btn("modal.exit", "modal", { x = kx, y = my + 50, w = kw, h = kh },
           "退出至菜单", { action = "exit_menu_go" }, "stamp")
-      btn("modal.save", "modal", { x = mx + 40, y = my + 246, w = mw - 80, h = 64 },
+      btn("modal.save", "modal", { x = kx, y = my + 146, w = kw, h = kh },
           "仅存档", { action = "exit_menu_save" }, "stamp")
-      btn("modal.settle", "modal", { x = mx + 40, y = my + 322, w = mw - 80, h = 64 },
+      btn("modal.settle", "modal", { x = kx, y = my + 242, w = kw, h = kh },
           "存档并结算", { action = "exit_menu_settle" }, "stamp.primary")
-      btn("modal.cancel", "modal", { x = mx + 40, y = my + mh - 88, w = mw - 80, h = 64 },
+      btn("modal.cancel", "modal", { x = kx, y = my + 338, w = kw, h = kh },
           "取消", { action = "close_modal" }, "tab")
 
       -- ★★★★★ 2026-10-07 **给四个键设【官方胶囊底图】** ✗✓（用户要求配图 ✓）
