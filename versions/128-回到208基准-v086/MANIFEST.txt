@@ -1,0 +1,23 @@
+版本：128-回到208基准-v086
+时间：2026/10/7 01:38:44
+配套 .gil：208.2-新基准.gil
+说明：用户决定作废 209~223 全部版本（已移入 作废/），以重新导出的 208.2.gil 为新基准；脚本回退到 versions/117-三项收尾-v076（208 那版）。原因：那一串改动把脚本运行时动态创建的 hex.*/hit.* 搬进了 gil，且净新增按钮缺 label 子控件导致功能按键完全透明
+
+文件清单：
+  engine_adapter.lua              5397 字节
+  engine_adapter_qianxing.lua     294102 字节
+  entry_client_script.lua         50169 字节
+  main.lua                        122474 字节
+  murdoku_core.lua                102564 字节
+  room_map.lua                    5227 字节
+  ui_controller.lua               265355 字节
+  client_script.lua               876278 字节（真机跑的就是这份）
+  208.2-新基准.gil                   1028968 字节（配套存档）
+
+用途：**这一版是"当时能跑的那一份"**。要回退：
+  1) 把本目录的 *.lua 拷回 qianxing-murdoku\lua\
+  2) 跑 node tools/bundle_client_script.lua，再 powershell -File tools/install_script_to_sandbox.ps1
+     （或直接用本目录的 client_script.lua 覆盖沙箱里的那份，省掉打包）
+  3) 导入本目录里的 .gil
+
+规则（重要）：**每轮一个新编号，不删旧的、不覆盖**。

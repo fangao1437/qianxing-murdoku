@@ -1,0 +1,12 @@
+{
+  "success": true,
+  "data": {
+    "skill": "miliastra-knowledge",
+    "tool": "list_client_documents",
+    "result": {
+      "total": 0,
+      "documents": []
+    }
+  },
+  "error": null
+}

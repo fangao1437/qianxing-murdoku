@@ -1,0 +1,23 @@
+版本：132-回到真208基准-v090
+时间：2026/10/7 02:06:32
+配套 .gil：211-弹窗底图.gil
+说明：回退目标修正：versions/117 是 10-05 的 v076（比 208 早约 20 小时），漏掉了 10-06 的线索区/墙门/网格视窗整套修复 ⇒ 表现为 clues 区域与门墙渲染坏掉。改用 git 历史里与 208.1.gil 同时代的 1f8f6d5（10-06 17:59，比导出早 4 分钟）为基准，并在其上重新叠加「退出菜单」五处改动
+
+文件清单：
+  engine_adapter.lua              5397 字节
+  engine_adapter_qianxing.lua     306017 字节
+  entry_client_script.lua         50169 字节
+  main.lua                        127741 字节
+  murdoku_core.lua                102564 字节
+  room_map.lua                    5227 字节
+  ui_controller.lua               289680 字节
+  client_script.lua               917785 字节（真机跑的就是这份）
+  211-弹窗底图.gil                    1058277 字节（配套存档）
+
+用途：**这一版是"当时能跑的那一份"**。要回退：
+  1) 把本目录的 *.lua 拷回 qianxing-murdoku\lua\
+  2) 跑 node tools/bundle_client_script.lua，再 powershell -File tools/install_script_to_sandbox.ps1
+     （或直接用本目录的 client_script.lua 覆盖沙箱里的那份，省掉打包）
+  3) 导入本目录里的 .gil
+
+规则（重要）：**每轮一个新编号，不删旧的、不覆盖**。

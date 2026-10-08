@@ -1,0 +1,23 @@
+版本：123-弹窗控件入giL-v081
+时间：2026/10/7 00:35:13
+配套 .gil：210-弹窗四键控件.gil
+说明：layout_plan 增加 exit_menu 状态；gen_bulk 原型解析带兜底（board/proto.btn/proto.text 缺失时用 clues/home.select/home.title）；生成 210-弹窗四键控件.gil 含 modal.title/body/stats 与 exit/save/settle/cancel 四键，共 401 控件
+
+文件清单：
+  engine_adapter.lua              5555 字节
+  engine_adapter_qianxing.lua     306181 字节
+  entry_client_script.lua         50169 字节
+  main.lua                        132510 字节
+  murdoku_core.lua                105240 字节
+  room_map.lua                    5359 字节
+  ui_controller.lua               298824 字节
+  client_script.lua               934632 字节（真机跑的就是这份）
+  210-弹窗四键控件.gil                  1234047 字节（配套存档）
+
+用途：**这一版是"当时能跑的那一份"**。要回退：
+  1) 把本目录的 *.lua 拷回 qianxing-murdoku\lua\
+  2) 跑 node tools/bundle_client_script.lua，再 powershell -File tools/install_script_to_sandbox.ps1
+     （或直接用本目录的 client_script.lua 覆盖沙箱里的那份，省掉打包）
+  3) 导入本目录里的 .gil
+
+规则（重要）：**每轮一个新编号，不删旧的、不覆盖**。

@@ -1,0 +1,117 @@
+// tools/gil/gen_modal_art2.mjs —— 弹窗四键：整份克隆同类底图 + 新几何（收集-后应用，修正下标 bug）
+//
+// ★ 上一版（gen_modal_art.mjs）为什么坏：删旧 bg 与插新 bg **混在同一轮**里，而 `rec.index`
+//   是**读入时**的下标 —— 删除让其后 -1、插入让其后 +1 ⇒ 记录被插进别的记录中间（被劈开）。
+//   `check_childlist_top` 报 exit 1 抓到。
+//   ⇒ 本版**只收集，不边算边改**：先把"要删的字段 / 要插的克隆体"记下来，
+//     最后**当场用 `indexOf` 重算插入点、按降序一次性应用**（降序保证前面的插入不影响后面的下标）。
+//
+// 用法：node tools/gil/gen_modal_art2.mjs --in=213-弹窗四键.gil --out=214-弹窗配图.gil [--probe]
+
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import {
+  readGil, encodeMsg, cloneField, setPair, pairOf, stateBlocks, textsOf,
+  findChildListTop, ensureChildListTop, setChildList, asIdList, writeVarint,
+} from './gilread.mjs';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const argOf = (k) => { const a = process.argv.find((s) => s.startsWith('--' + k + '=')); return a ? a.slice(k.length + 3) : null; };
+const DRY = process.argv.includes('--probe');
+const BASE = argOf('in') || path.join(ROOT, '213-弹窗四键.gil');
+const OUT = argOf('out') || path.join(ROOT, '214-弹窗配图.gil');
+const BGP = argOf('bg-proto') || 'home.select/bg';     // 同类控件的底图（按 父名/子名 查）
+const W = 480, H = 56, PITCH = 80;
+// 用户新几何：整体在面板内垂直居中（面板 633×383 @ 800,450），四键 cy 570/490/410/330
+const KEYS = [
+  { name: 'modal.exit',   cy: 570, text: '退出至菜单' },
+  { name: 'modal.save',   cy: 490, text: '仅存档' },
+  { name: 'modal.settle', cy: 410, text: '存档并结算' },
+  { name: 'modal.cancel', cy: 330, text: '取消' },
+];
+
+const g = readGil(BASE);
+const [PG, CG] = BGP.split('/');
+const pr = g.byName.get(PG);
+const proto = pr ? g.recs.find((r) => r.parentId === pr.id && r.name === CG) : null;
+if (!proto) { console.error('找不到底图原型 ' + BGP); process.exit(1); }
+const modal = g.byName.get('modal');
+const pcy = 450;
+console.log('基准 ' + path.basename(BASE) + '（' + g.recs.length + ' 条）  底图原型 ' + BGP + ' #' + proto.id);
+
+const removals = [];       // 旧 bg 字段
+const inserts = [];        // { holder, anchorField, clone }
+let nextId = Math.max(...g.recs.map((r) => r.id)) + 1;
+
+for (const k of KEYS) {
+  const rec = g.byName.get(k.name);
+  if (!rec) { console.error('找不到 ' + k.name); process.exit(2); }
+  // 收集：删旧 bg
+  const old = g.recs.find((r) => r.parentId === rec.id && r.name === 'bg');
+  if (old) removals.push(old.field);
+  // 收集：整份克隆同类底图
+  const clone = cloneField(proto.field);
+  const nid = nextId++;
+  (function fx(fs2) { for (const f of fs2) { if (f.wt === 0 && Number(f.num) === proto.id) f.num = BigInt(nid); else if (f.wt === 2 && f.sub === null && !f.isText && f.payload && f.payload.length >= 1 && f.payload.length <= 8) { const a = asIdList(f.payload, false); if (a && a.length === 1 && a[0] === proto.id) { f.payload = writeVarint(nid); f.len = f.payload.length; } } if (f.sub) fx(f.sub); } })(clone.sub);
+  let pOk = false;
+  (function fp(fs2) { for (const f of fs2) { if (!pOk && f.wt === 0 && f.field === 504 && Number(f.num) === proto.parentId) { f.num = BigInt(rec.id); pOk = true; } if (f.sub) fp(f.sub); } })(clone.sub);
+  const nf = textsOf(clone.sub, []).find((t) => t.payload.toString('utf8') === proto.name);
+  let nOk = false; if (nf) { nf.payload = Buffer.from('bg', 'utf8'); nf.len = nf.payload.length; nOk = true; }
+  let geo = 0;
+  for (const b of stateBlocks(clone.sub, [])) { setPair(pairOf(b, 504), 0, 0); setPair(pairOf(b, 505), W, H); geo++; }
+  if (!pOk || !nOk || geo !== 4) { console.error('  ❌ ' + k.name + ' 底图克隆不完整'); process.exit(3); }
+  inserts.push({ rec, clone, nid });
+  // 四键几何：480×56，同列居中，cy 按新表
+  let g2 = 0;
+  for (const b of stateBlocks(rec.field.sub, [])) { if (setPair(pairOf(b, 504), 0, k.cy - pcy)) g2++; setPair(pairOf(b, 505), W, H); }
+  if (g2 !== 4) { console.error('  ❌ ' + k.name + ' 四状态几何只改 ' + g2); process.exit(4); }
+  // 登记（ID 列表）：新 bg 放第 1 位
+  const lst = ensureChildListTop(rec, null);
+  const cur = (asIdList(lst.payload, true) || []).filter((x) => x !== (old && old.id));
+  setChildList(lst, [nid, ...cur]);
+  // label 文案（引擎不存控件文字，能写则写）
+  const lab = g.recs.find((r) => r.parentId === rec.id && r.name === 'label');
+  let tOk = false;
+  if (lab) (function put(fs2) { for (const f of fs2) { if (f.wt === 2 && f.isText && f.payload && f.payload.toString('utf8') !== 'label' && f.len > 0 && f.len <= 64) { f.payload = Buffer.from(k.text, 'utf8'); f.len = f.payload.length; tOk = true; return; } if (f.sub) put(f.sub); } })(lab.field.sub);
+  console.log('  ' + k.name.padEnd(13) + 'bg #' + nid + '  cy=' + k.cy + '  文案「' + k.text + '」' + (tOk ? '已写入' : '（label 无可写文本字段，引擎不存文字）'));
+}
+
+// ── 一次性应用：先删（按 field 身份），再插（当场重算下标 + 降序）──────────
+for (const f of removals) { const h = g.recHolder; const at = h.indexOf(f); if (at >= 0) h.splice(at, 1); }
+const byHolder = new Map();
+for (const it of inserts) {
+  const h = it.rec.field.sub ? it.rec.holder : null;
+  const holder = h || g.recHolder;
+  if (!byHolder.has(holder)) byHolder.set(holder, []);
+  byHolder.get(holder).push(it);
+}
+for (const [holder, items] of byHolder) {
+  const plan = items.map((it) => ({ at: holder.indexOf(it.rec.field) + 1, clone: it.clone }));
+  plan.sort((a, b) => b.at - a.at);                 // ★ 降序：后面的插入不影响前面的下标
+  for (const p of plan) holder.splice(p.at, 0, p.clone);
+}
+console.log('  已删旧 bg ' + removals.length + ' 条，插入新 bg ' + inserts.length + ' 条（降序一次性应用）');
+
+if (DRY) { console.log('--probe：不写文件'); process.exit(0); }
+fs.writeFileSync(OUT, g.pack(encodeMsg(g.tree)));
+
+// ── 内建自检（写出的文件重新读一遍；不通过就非零退出）────────────────────
+const g2 = readGil(OUT);
+let bad = 0;
+for (const k of KEYS) {
+  const r = g2.byName.get(k.name);
+  const lst = r ? findChildListTop(r.field.sub) : null;
+  const ids = lst ? asIdList(lst.payload, true) : null;
+  const first = ids ? g2.recs.find((x) => x.id === ids[0]) : null;
+  const b = r ? g2.recs.find((x) => x.parentId === r.id && x.name === 'bg') : null;
+  const ok = lst && first && first.name === 'bg' && b;
+  if (!ok) { bad++; console.log('  ❌ ' + k.name + ' 自检失败（顶层列表/首子/底图）'); }
+}
+const order = []; const ml = findChildListTop(modal.field.sub);
+if (ml) { const ids = asIdList(ml.payload, true); for (const id of ids) { const nm = (g2.recs.find((x) => x.id === id) || {}).name; if (KEYS.some((k) => k.name === nm)) order.push(nm); } }
+const orderOk = order.join(',') === KEYS.map((k) => k.name).join(',');
+console.log('  自检：四键 top-#503/首子=bg ' + (KEYS.length - bad) + '/' + KEYS.length + '   兄弟顺序 ' + (orderOk ? '✅ ' : '❌ ') + order.join(' → '));
+const rt = encodeMsg(g2.tree);
+console.log('  自检：记录 ' + g2.recs.length + '  体 ' + rt.length + ' == 头里的 ' + g2.hdr[4] + ' ? ' + (rt.length === g2.hdr[4] ? '✅' : '❌'));
+process.exit(bad === 0 && orderOk && rt.length === g2.hdr[4] ? 0 : 5);

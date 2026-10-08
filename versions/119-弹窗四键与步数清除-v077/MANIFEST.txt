@@ -1,0 +1,23 @@
+版本：119-弹窗四键与步数清除-v077
+时间：2026/10/7 00:02:23
+配套 .gil：208.1.gil
+说明：退出菜单四键弹窗（退出至菜单/仅存档/存档并结算/取消）替换原 Y/X 确认卡；步数 UI 与内部计数清除（协议位保留）；诊断块全部上闸（切屏对比/根清单/对照组/逐格自检）；bundle 增加自动同步到编辑器 external_lua_file 目录
+
+文件清单：
+  engine_adapter.lua              5555 字节
+  engine_adapter_qianxing.lua     305895 字节
+  entry_client_script.lua         50169 字节
+  main.lua                        131635 字节
+  murdoku_core.lua                105240 字节
+  room_map.lua                    5359 字节
+  ui_controller.lua               298574 字节
+  client_script.lua               933417 字节（真机跑的就是这份）
+  208.1.gil                       1014216 字节（配套存档）
+
+用途：**这一版是"当时能跑的那一份"**。要回退：
+  1) 把本目录的 *.lua 拷回 qianxing-murdoku\lua\
+  2) 跑 node tools/bundle_client_script.lua，再 powershell -File tools/install_script_to_sandbox.ps1
+     （或直接用本目录的 client_script.lua 覆盖沙箱里的那份，省掉打包）
+  3) 导入本目录里的 .gil
+
+规则（重要）：**每轮一个新编号，不删旧的、不覆盖**。

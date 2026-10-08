@@ -1,19 +1,21 @@
-﻿# 可再生成的产物
-tools/sim/out/
-dist/
-_backup/
-# 抓取缓存（体积大、且可由脚本重建）
-docs/api-cache/
-docs/community-cache/
-# 杂项
-*.log
-tools/check_all_last.log
-
-# ── 第三方下载物 / 工具二进制（2026-10-05：让它们留在磁盘、不进仓库）──
+# ===== 机器专用二进制 / 可重新下载的工具（体积大、不必入库）=====
 tools/bin/
 tools/_dl/
-docs/research-raw/_*.cjs
-tests/_wip/
-
+tools/sim/out/
+_backup/
 sim-save/
+sim-out/
+node_modules/
+*.zip
+*.tar.gz
 
+# ===== 可再生成的产物 =====
+dist/_tmp/
+*.log
+*.tmp
+
+# ===== 系统 / 编辑器 =====
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/

@@ -1,0 +1,23 @@
+版本：134-弹窗四键成型-v092
+时间：2026/10/7 02:29:18
+配套 .gil：213-弹窗四键.gil
+说明：四键定型：480x56 同列 cy=500/430/360/290，兄弟顺序 exit→save→settle→cancel；每键加 bg 图片子控件（克隆 clues.bg，source 4279900704 id 100001）并置于子列表第1位
+
+文件清单：
+  engine_adapter.lua              5397 字节
+  engine_adapter_qianxing.lua     306005 字节
+  entry_client_script.lua         50169 字节
+  main.lua                        132923 字节
+  murdoku_core.lua                105240 字节
+  room_map.lua                    5227 字节
+  ui_controller.lua               297318 字节
+  client_script.lua               933269 字节（真机跑的就是这份）
+  213-弹窗四键.gil                    1061197 字节（配套存档）
+
+用途：**这一版是"当时能跑的那一份"**。要回退：
+  1) 把本目录的 *.lua 拷回 qianxing-murdoku\lua\
+  2) 跑 node tools/bundle_client_script.lua，再 powershell -File tools/install_script_to_sandbox.ps1
+     （或直接用本目录的 client_script.lua 覆盖沙箱里的那份，省掉打包）
+  3) 导入本目录里的 .gil
+
+规则（重要）：**每轮一个新编号，不删旧的、不覆盖**。
