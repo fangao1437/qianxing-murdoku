@@ -54,6 +54,17 @@ powershell -ExecutionPolicy Bypass -File tools/install_script_to_sandbox.ps1
 >   不通过就**别交付** ✓（`embed_script.mjs` 自检不过会 `exit 3`）
 > - ⇒ 这样**导入即最新**，连第 2 步的手动同步都不需要（但重跑一次也无害 ✓）
 >
+> 🔎 **导入前还可以对一次名字账**（2026-10-09 起改成**分类报告** ✓）：
+> ```powershell
+> node tools/gil/check_names.mjs <存档.gil>            # 默认：只把"运行必须"的名字当判据
+> node tools/gil/check_names.mjs <存档.gil> --strict    # 连"真缺"也算失败（补齐界面那一轮用）
+> ```
+> 它把"规划要、存档没有"的 281 个名字**分成三类** ✓：
+> 🟢 **脚本会自动建**（14，白名单读自 `entry_client_script.lua`）·
+> 🔵 **已被换代**（139，`clue.*` 被网格视窗取代）·
+> 🔴 **真缺**（128，`select` 78 / `ruler` 15 / `room` 8 / `intro` 6 / `obj` 4 …）
+> ⇒ ★ 旧版把三类混在一起 ⇒ **恒定 281、永远红** ⇒ 闸门失效 ✗ 现在只有 🔴 需要人管 ✓
+>
 > 🗄️ **同步脚本现在会【自动备份旧脚本】**（2026-10-09 起）：
 > 覆盖前比 sha256，**内容不同就归档**成
 > `_backup\sandbox-scripts\<关卡id>__<构建标记>__<时间>.lua` ✓
