@@ -4293,6 +4293,27 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
           if _as ~= nil and _pal == nil then pcall(function() _pal = _as:GetChild(_nm) end) end
           if (self._g_log or 0) < 4 then
             self._g_log = (self._g_log or 0) + 1
+            -- ★★★★★ 2026-10-08 **只读探针：运行时四键 `bg` 的 imageId 是多少** ✗✓（★ 用来分甲/乙 ✓）
+            --   ★ 甲：★ 脚本画的不是编辑器那个实例 ⇒ ★ `bg.imageId` 应为 `100001`（或取不到）✗
+            --   ★ 乙：★ 图设上了但没渲染 ⇒ ★ 应读到 `107179` ✓
+            --   ★ 本处放在"调色板查找"同一个函数里 ✓ —— ★ 真机已证它在跑（★ 下面那句 `★ 按名取` 每帧可见 ✓）
+            if (self._exit_probe or 0) < 8 then
+              self._exit_probe = (self._exit_probe or 0) + 1
+              local _m = nil
+              pcall(function() _m = self.adapter:sub("modal", "modal.exit") end)
+              if _m == nil then pcall(function() _m = self.adapter:find("modal.exit") end) end
+              local _b = nil
+              if _m ~= nil then pcall(function() _b = self.adapter:sub("modal.exit", "bg") end) end
+              local _id, _src, _vis = "?", "?", "?"
+              if _b ~= nil then
+                pcall(function() _id = tostring(_b.imageId) end)
+                pcall(function() _src = tostring(_b.imageSource) end)
+                pcall(function() _vis = tostring(_b.visible) end)
+              end
+              print("[murdoku] ★ 四键探针：exit=" .. tostring(_m ~= nil) .. "  bg=" .. tostring(_b ~= nil)
+                .. "  imageId=" .. _id .. "  source=" .. _src .. "  visible=" .. _vis
+                .. "  弹窗开着=" .. tostring(self.modal ~= nil))
+            end
             print("[murdoku] ★ 按名取：assets=" .. tostring(_as ~= nil) .. "  portrait.<id>=" .. tostring(_pal ~= nil))
           end
           -- ★ 2026-10-08 **按名取清单**（★ 真机 `assets=false` ✗ ⇒ 先看清"哪些名字取得"✓）
