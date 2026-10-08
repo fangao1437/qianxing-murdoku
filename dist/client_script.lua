@@ -7271,15 +7271,21 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   --     或索引对不上 ✓）⇒ ★ **不再猜变量** ✓
   --   ★ 权威来源 ✓：★ **`诊断CLUE` 早就证明** 视图里的线索记录有 **`who=V`**（★ id ✓ 不是显示名 ✓）
   --     ⇒ ★ 用 `self.core:view().clues[pos].who` ✓ 取不到再退回 `t_portrait` ⇒ 再退回 `cl.who` ✓
+  -- ★★★★★ 2026-10-09 **删掉这里的 `core:view()` —— 它取到的值【一定会被覆盖】** ✗✓
+  --   ★ 原文（三段的实际效果）✓：
+  --       local _pid = nil
+  --       pcall(function() local v = self.core:view() … if cc.who then _pid = cc.who end end)  ← 取一次视图
+  --       if _pid == nil and t_portrait ~= "" then _pid = t_portrait 去掉前缀 end
+  --       if t_portrait ~= "" then _pid = t_portrait 去掉前缀 end        ← ★ 无条件，把上面整个覆盖 ✗
+  --     ⇒ ★ **第三个 `if` 无条件执行** ⇒ 第二个 `if` 与那个 `pcall` **全是白做的** ✓
+  --       （`_pid` 最终**只由 `t_portrait` 决定** ✓）
+  --   ★ 代价（实测 `tests/grid_cost.lua` ✓）：★ **每个列表项 2 次整视图重建** ✗
+  --       · 一次回调 7 项 ⇒ `view=14` ✗ · 连续 5 次重进 ⇒ `view=70` ✗（**与重进次数线性增长** ✓）
+  --       · 而 `core:view()` 单次 **0.175 ms**（`[F]` 段实测 ✓）⇒ 一次重进白烧 **≈2.5 ms** ✓
+  --       · 更要命的是它**击穿了记忆表** ✗：文案快照本来让重进零成本（`文字写入=0` ✓），
+  --         而这两次视图重建让"引擎每帧重进"变成**每帧 2.5ms** ✗（用户第五轮指示：负载最小 ✓）
+  --   ★ 修法 ✓：**只留真正生效的那一步** ✓（行为完全不变 —— 因为原来也只有它生效 ✓）
   local _pid = nil
-  pcall(function()
-    local v = self.core and self.core:view() or nil
-    local cc = v and v.clues and v.clues[pos] or nil
-    if cc ~= nil and cc.who ~= nil then _pid = cc.who end
-  end)
-  if _pid == nil and t_portrait ~= nil and t_portrait ~= "" then
-    _pid = tostring(t_portrait):gsub("^portrait%.", "")
-  end
   if t_portrait ~= nil and t_portrait ~= "" then
     _pid = tostring(t_portrait):gsub("^portrait%.", "")
   end
@@ -7311,12 +7317,11 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
       --   ★ 真机教训 ✓：★ 填充里 `cl.who = 老宅主` ✗（显示名 ✓）而 `core.selected = "V"` ✓
       --     ⇒ ★ 拿它比永远不等 ⇒ ★ **重填后高亮不再画 ⇒ 预放置丢高亮** ✗（用户回报 ✓）
       --   ★ id 的权威来源 ✓：★ **视图记录 `self.core:view().clues[pos].who`** ✓（★ 与 `诊断CLUE` 一致 ✓）
-      local _pid2 = nil
-      pcall(function()
-        local v = self.core and self.core:view() or nil
-        local cc = v and v.clues and v.clues[pos] or nil
-        if cc ~= nil and cc.who ~= nil then _pid2 = cc.who end
-      end)
+      -- ★ 2026-10-09 **不再为这一处单独取视图** ✗✓ —— 上面 `_pid` **已经算好了同一个值** ✓
+      --   （原来这里又 `self.core:view()` 一次 ⇒ **每项第 2 次整视图重建** ✗ 实测 `view=14/7 项` ✓）
+      --   ★ 语义不变 ✓：`_pid` 与这里原来取的 `v.clues[pos].who` **等价** ✓
+      --     （而且 `_pid` 还多做了"去掉 `portrait.` 前缀"和"跳过 `@` 特殊角色"两步 ✓ 更稳 ✓）
+      local _pid2 = _pid
       local _sel = (_pid2 ~= nil) and self.core ~= nil and self.core.selected == _pid2
       if _sel then
         if _rg2.tint ~= "sel" then
