@@ -4191,6 +4191,12 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
           --     （★ 与"读 218.1 时按字段号下钻"是同一类错误：★ **拿一个"看起来像"的入口当权威** ✗）
           --   ★ 权威入口 ✓：★ **`game.GetClientUIRoots()`** ✓ —— ★ 适配器文档第 14 条写的就是它 ✓
           --   ⇒ ★ 从这里起遍历 ✓ ★ 并把**根的名字**打出来 ✓（★ 一眼确认走对了没有 ✓）
+          -- ★★★★★ 2026-10-08 **前向声明** ✗✓（真机：一行"第N层看到"都没有 ⇒ 递归根本没跑 ✓）
+          --   ★ 元凶 ✓：★ 我把 `_search(...)` 的**调用写在了它的 `local function` 定义之前** ✗
+          --     ⇒ ★ Lua 里此刻 `_search` 还是 nil ⇒ ★ 调用即报错 ⇒ ★ **被外层 pcall 吞掉** ✓
+          --       ⇒ ★ 表现就是"什么都没发生"（★ 与"大 pcall 掩盖错误"是同一个坑 ✓ 我又踩了一次 ✓）
+          --   ★ 修法 ✓：★ **先声明再赋值**（`local _search` 在前 ✓ `_search = function` 在后 ✓）✓
+          local _search = nil
           local _roots = nil
           pcall(function() _roots = game.GetClientUIRoots() end)
           local _rn = 0
@@ -4213,7 +4219,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
           else
             for i = 1, _rn do _search(_roots[i], 0) end
           end
-          local function _search(node, depth)
+          _search = function(node, depth)
             if node == nil or depth > 4 or _as ~= nil then return end
             local kids = nil
             pcall(function() kids = node:GetChildren() end)
