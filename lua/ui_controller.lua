@@ -2953,6 +2953,24 @@ function Controller:build_layout()
       btn("modal.next", "modal", { x = mx + 440, y = my + mh - 88, w = 200, h = 60 }, "下一关",
           { action = "next_level" }, "stamp.primary")
 
+      elseif modal.kind == "exit_menu" then
+        -- ★ 2026-10-08 「退出菜单」四键（★ 从提交 272 原文整段照抄恢复 ✓ 295 那次整份删掉 ✗）
+        --   ★ 几何由编辑器/gil 说了算 ✓（`pos_runtime` 缺省 = 不下发几何 ✓）—— ★ 这正是"显示问题"要处理的层 ✓
+        push({ id = "modal.title", kind = "text", parent = "modal",
+          rect = { x = mx + 30, y = my + 30, w = mw - 60, h = 56 },
+          text = "离开这一关？", style = "modal.title" })
+        push({ id = "modal.body", kind = "text", parent = "modal",
+          rect = { x = mx + 30, y = my + 100, w = mw - 60, h = 40 },
+          text = "可以直接退出，也可以先存下进度", style = "muted" })
+        btn("modal.exit", "modal", { x = mx + 40, y = my + 170, w = mw - 80, h = 64 },
+          "退出至菜单", { action = "exit_menu_go" }, "stamp")
+        btn("modal.save", "modal", { x = mx + 40, y = my + 246, w = mw - 80, h = 64 },
+          "仅存档", { action = "exit_menu_save" }, "stamp")
+        btn("modal.settle", "modal", { x = mx + 40, y = my + 322, w = mw - 80, h = 64 },
+          "存档并结算", { action = "exit_menu_settle" }, "stamp.primary")
+        btn("modal.cancel", "modal", { x = mx + 40, y = my + mh - 88, w = mw - 80, h = 60 },
+          "取消", { action = "close_modal" }, "tab")
+
     elseif modal.kind == "share" then
       -- ★ 2026-10-05 **这一支目前没有入口按钮**（用户当天决定去掉「分享棋局」按钮，
       --   见上面 `modal.kind == "result"` 里那段删除说明）。
