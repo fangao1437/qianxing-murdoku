@@ -2291,6 +2291,21 @@ end
 --
 --   ⚠️ 这是本项目反复吃亏的"**门控②**"（docs/环境问题-诊断记录.md）：
 --      加一个新容器就**必须**同步加进这份名单 —— 我加 `home`/`select` 时漏了。
+-- ★★★★★ 2026-10-08 **内层装饰控件一律不参与 `hide_unlisted`**（★ 从提交 295 删掉的原文照抄恢复 ✓）
+--   ★ 真机症状（用户实测 ✓）：★ **弹窗四键空壳但可点** ✓ ★ **`clues` 头像卡 208 起就没显示过** ✓
+--   ★ 机制 ✓：★ `hide_unlisted` 遍历 `MANAGED`，把"不在计划里的直接子控件"逐个隐藏 ✗ ——
+--     ★ 而计划里只有**外层**名字（`clues.bg` / `tray.A` / `modal.exit`…）⇒
+--     ★ **内层装饰名**（`face` `backrop1` `badge` `letter` `what` `who`…）**永远不在计划里** ✗
+--     ⇒ ★ 每次都被当成"多余的旧控件"藏掉 ⇒ ★ 用户看到的就是"图片被藏住了" ✓✓
+--   ★ 规则 ✓：★ **这些内层名字一律跳过**（★ 它们的主人=父控件，显隐由父控件/状态决定 ✓）
+--     ★ 以后加新控件若用了别的内层名 ⇒ **一并加到这里** ✓
+local DECOR = {
+  label = true, bg = true, pic = true, icon = true,
+  face = true, note = true, x = true, obj = true, text = true, portrait = true,
+  backrop1 = true, backrop2 = true, badge = true, letter = true, what = true, who = true,
+  frame = true, card = true, art = true, image = true, img = true,
+}
+
 local MANAGED = {
   "root", "topbar", "left", "tray", "clues", "board",
   "right", "actions", "modal", "intro",
@@ -2318,7 +2333,7 @@ function Adapter:hide_unlisted(keep)
           local child = kids[k]
           local name = nil
           pcall(function() name = child.name end)
-          if name ~= nil and name ~= "" and not keep[name] then
+          if name ~= nil and name ~= "" and not keep[name] and not DECOR[name] then
             if child.SetVisible ~= nil then
               local ok2 = pcall(function() child:SetVisible(false) end)
               if ok2 then hidden = hidden + 1 end
