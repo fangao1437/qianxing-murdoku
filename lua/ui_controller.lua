@@ -4327,6 +4327,21 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
       if _pi ~= nil and (_rg3 == nil or _rg3.pimg ~= _pi) then
         if _rg3 ~= nil then _rg3.pimg = _pi end
         if _ps ~= nil then pcall(function() _cf.imageSource = _ps end) end
+        -- ★★★★★ 2026-10-08 **头像 id 直接写死（甲案）** ✓✓（★ 用户拍板 ✓）
+        --   ★ 为什么 ✓：★ `assets` 容器在运行时**取不到** ✗（★ 已排除负缓存/可见性/画布位置 ✓）
+        --     ⇒ ★ 而 4 个头像 id **早已确证** ✓（★ 四种独立指标交叉验证 ✓ 有证据图 ✓）
+        --   ★ 写法 ✓：★ 调色板取不到时 ⇒ ★ **用写死的表兜底** ✓（★ `_ps` 用素材库哨兵 `4294967295` ✓
+        --     与存档里 `portrait.*` 的 `imageSource` 一致 ✓）
+        --   ★ 以后要"可配置"✓ ⇒ ★ 等 `assets` 的事查清，把这张表换回"从容器读"即可 ✓（★ 一处 ✓）
+        if _pi == nil and _pid ~= nil then
+          local _IDS = { A = 112042, B = 105104, V = 112031, D = 105105 }
+          local _hit = _IDS[tostring(_pid)]
+          if _hit ~= nil then _ps = 4294967295; _pi = _hit end
+          if (self._ids_log or 0) < 6 then
+            self._ids_log = (self._ids_log or 0) + 1
+            print("[murdoku] ★ 写死表：id=" .. tostring(_pid) .. "  imageId=" .. tostring(_hit))
+          end
+        end
         pcall(function() if _cf.SetImage ~= nil then _cf:SetImage(_ps or _cf.imageSource, _pi) end end)   -- ★ 官方贴图接口 ✓
         pcall(function() _cf.imageId = _pi end)
         pcall(function() _cf:SetVisible(true) end)
