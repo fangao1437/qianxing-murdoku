@@ -724,6 +724,32 @@ end
 
 function Murdoku.on_update(dt)
   if not current then return end
+  -- ★★★★★ 2026-10-08 **四键探针（真·每帧入口 ＋ adapter 在手 ✓）** ✗✓
+  --   ★ 为什么这里能读 ✓：★ 本函数是 `Murdoku.on_update`（★ 入口脚本 L853 的 `OnUpdate` 调它 ✓
+  --     ★ 且 `script:EnableUpdate(true)` 已开 ✓）★ 而 `current.adapter` **就在这里** ✓✓
+  --   ★ 触发条件 ✓：★ 渲染分支刚记录过"弹窗开着"（★ `current._modal_seen` 在涨 ✓）
+  --     ★ 那一侧拿不到 adapter ✗ ⇒ ★ **两边拼起来**：★ 一边报"开着" ✓ ★ 一边读控件 ✓
+  if current ~= nil and current.adapter ~= nil then
+    local _seen = current._modal_seen or 0
+    if _seen > (Murdoku._probe_seen or 0) and (Murdoku._probe_n or 0) < 12 then
+      Murdoku._probe_seen = _seen
+      Murdoku._probe_n = (Murdoku._probe_n or 0) + 1
+      local _k = nil
+      pcall(function() _k = current.adapter:sub("modal", "modal.exit") end)
+      if _k == nil then pcall(function() _k = current.adapter:find("modal.exit") end) end
+      local _b = nil
+      if _k ~= nil then pcall(function() _b = current.adapter:sub("modal.exit", "bg") end) end
+      local _id, _src, _vis, _sz = "?", "?", "?", "?"
+      if _b ~= nil then
+        pcall(function() _id = tostring(_b.imageId) end)
+        pcall(function() _src = tostring(_b.imageSource) end)
+        pcall(function() _vis = tostring(_b.visible) end)
+        pcall(function() _sz = tostring(_b.sizeDelta and (_b.sizeDelta.x .. "x" .. _b.sizeDelta.y) or "无") end)
+      end
+      print("[murdoku] ★ 四键探针2：exit=" .. tostring(_k ~= nil) .. "  bg=" .. tostring(_b ~= nil)
+        .. "  imageId=" .. _id .. "  source=" .. _src .. "  visible=" .. _vis .. "  size=" .. _sz)
+    end
+  end
   current.adapter:on_tick(dt)
   current.controller:tick(dt)
 
