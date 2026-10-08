@@ -4213,6 +4213,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
             print("[murdoku] ★ 调色板搜寻：客户端根 " .. tostring(_rn) .. " 个 = " .. table.concat(_nm, " , "))
           end
           if _rn == 0 then
+          pcall(function() local _r = self.adapter:find("root"); if _r ~= nil and _as == nil then _as = _r:GetChild("assets") end end)   -- ★ 按名取 assets ✓
             local r0 = self.adapter:find("root")     -- 兜底：引擎入口拿不到时，退回按名找
             if r0 == nil then return end
             _search(r0, 0)
@@ -4227,6 +4228,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
             local n = 0
             pcall(function() n = #kids end)
             for i = 1, n do
+        if _as ~= nil and _pal == nil then pcall(function() _pal = _as:GetChild(_nm) end) end   -- ★ 按名取 portrait.<id> ✓
               if _as ~= nil then return end
               local x = kids[i]
               local xn = nil
@@ -4288,6 +4290,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
       if _pi ~= nil and (_rg3 == nil or _rg3.pimg ~= _pi) then
         if _rg3 ~= nil then _rg3.pimg = _pi end
         if _ps ~= nil then pcall(function() _cf.imageSource = _ps end) end
+        pcall(function() if _cf.SetImage ~= nil then _cf:SetImage(_ps or _cf.imageSource, _pi) end end)   -- ★ 官方贴图接口 ✓
         pcall(function() _cf.imageId = _pi end)
         pcall(function() _cf:SetVisible(true) end)
         pcall(function() if _cf.SetActive then _cf:SetActive(true) end end)
