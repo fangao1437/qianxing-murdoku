@@ -4212,6 +4212,14 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
             end
             print("[murdoku] ★ 调色板搜寻：客户端根 " .. tostring(_rn) .. " 个 = " .. table.concat(_nm, " , "))
           end
+          -- ★ 2026-10-08 **在主路径上按名取 assets**（★ 用户指出：两个客户端容器 ✓ `111` 是屏蔽节点那个 ✓）
+          --   ★ 只有 `root`（挂了脚本的那个 ✓）里才有 `assets` ✓ ⇒ ★ 用 `find("root")` + `GetChild("assets")` ✓
+          pcall(function() local _r = self.adapter:find("root"); if _r ~= nil and _as == nil then _as = _r:GetChild("assets") end end)
+          if _as ~= nil and _pal == nil then pcall(function() _pal = _as:GetChild(_nm) end) end
+          if (self._g_log or 0) < 4 then
+            self._g_log = (self._g_log or 0) + 1
+            print("[murdoku] ★ 按名取：assets=" .. tostring(_as ~= nil) .. "  portrait.<id>=" .. tostring(_pal ~= nil))
+          end
           if _rn == 0 then
           pcall(function() local _r = self.adapter:find("root"); if _r ~= nil and _as == nil then _as = _r:GetChild("assets") end end)   -- ★ 按名取 assets ✓
             local r0 = self.adapter:find("root")     -- 兜底：引擎入口拿不到时，退回按名找
