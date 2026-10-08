@@ -4240,6 +4240,16 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
             print("[murdoku] ★ 按名取清单：root 名=" .. _rn1 .. "   " .. table.concat(_parts, "  "))
           end
           if _rn == 0 then
+          -- ★ 2026-10-08 **查调色板前先清一次"名字缓存"** ✗✓（★ 用项目现成的机制 ✓ 不自造遍历 ✓）
+          --   ★ 依据 ✓：★ 适配器自己就是用 `find("assets")` 找调色板的（★ adapter L3343 ✓）⇒ ★ 那条路本来就成熟 ✓
+          --   ★ 而 `find` 有**负缓存** ✗：★ 某名字被判"不在树上" ⇒ **这一代永久 nil** ✓（★ adapter L417~459 ✓）
+          --     ★ 项目还专门写了 ✓：「★ 不做这一步的话，"上一关没有、这一关有"的控件会被负缓存判成不存在」✓
+          --   ★ 所以 ✓：★ **先清一代缓存 ⇒ 再查** ✓ ⇒ ★ `assets` 就会被真真正正地搜一次 ✓✓
+          --   ★ 只清一次 ✓（★ 用 `_cache_cleared` 标记 ✓ 查到就进命中缓存 ✓ 稳态零成本 ✓）
+          if self.adapter ~= nil and not self._cache_cleared then
+            self._cache_cleared = true
+            if self.adapter.invalidate_lookups ~= nil then pcall(function() self.adapter:invalidate_lookups("调色板查找前") end) else pcall(function() self.adapter._misses = nil; self.adapter.controls = {} end) end
+          end
           pcall(function() local _r = self.adapter:find("root"); if _r ~= nil and _as == nil then _as = _r:GetChild("assets") end end)   -- ★ 按名取 assets ✓
             local r0 = self.adapter:find("root")     -- 兜底：引擎入口拿不到时，退回按名找
             if r0 == nil then return end
