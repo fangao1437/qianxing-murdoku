@@ -2985,8 +2985,21 @@ function Controller:build_layout()
         for _, bid in ipairs({ "modal.exit", "modal.save", "modal.settle", "modal.cancel" }) do
           local bg = nil
           pcall(function() bg = self.adapter:sub(bid, "bg") end)
+          -- ★ 2026-10-08 探针：★ `bg` 取到没 ✓（★ 取不到 ⇒ 与 `assets` 同源 ✗ 按名取子控件 ✓）
+          if (self._art_log or 0) < 8 then
+            self._art_log = (self._art_log or 0) + 1
+            local _sz = "?"
+            pcall(function() _sz = tostring(bg and (bg.sizeDelta and (bg.sizeDelta.x .. "x" .. bg.sizeDelta.y) or "无sizeDelta")) end)
+            print("[murdoku] ★ 胶囊底图：bid=" .. tostring(bid) .. "  bg=" .. tostring(bg ~= nil) .. "  size=" .. _sz)
+          end
           if bg ~= nil and self.adapter.set_image_deep ~= nil then
             pcall(function() self.adapter:set_image_deep(bg, 107179, nil, nil, "弹窗胶囊") end)
+          if (self._art_log2 or 0) < 8 then
+            self._art_log2 = (self._art_log2 or 0) + 1
+            local _rb = nil
+            pcall(function() _rb = tostring(bg and bg.imageId) end)
+            print("[murdoku] ★ 胶囊底图：设图后回读 imageId=" .. tostring(_rb))
+          end
           end
         end
       end
