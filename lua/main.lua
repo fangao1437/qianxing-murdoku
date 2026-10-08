@@ -1818,6 +1818,27 @@ function Murdoku.on_update(dt)
       local forcing = (fnow < (murdoku_vis_force_to or 0))
       local wrote = 0
       local function setv(nm, want)
+        -- ★★★★★ 2026-10-08 **四键胶囊底图：放在每帧函数的【开头】** ✗✓（★ 前两次位置都不对 ✓ 已排除 ✓）
+        --   ★ 位置依据 ✓：★ ① 渲染分支里 `self.adapter` **永久为 nil** ✗（★ 真机连打 6 次全 false ✓）
+        --     ★ ② 上一版落在了"只跑一次"的分支里 ✗ ⇒ ★ 太早、且不重试 ✓
+        --   ★ 本处 ✓：★ 每帧都执行 ✓ ＋ ★ 带闩锁 ⇒ ★ 没成就下一帧再试 ✓
+        if (not _exit_art_done) and adapter ~= nil then
+          _exit_art_done = true
+          for _, _bid in ipairs({ "modal.exit", "modal.save", "modal.settle", "modal.cancel" }) do
+            local _bg = nil
+            pcall(function() _bg = adapter:sub(_bid, "bg") end)
+            if _bg ~= nil then
+              local _src = nil
+              pcall(function() _src = _bg.imageSource end)
+              pcall(function() _bg:SetImage(_src or 4294967295, 107179) end)
+              local _rb = nil
+              pcall(function() _rb = tostring(_bg.imageId) end)
+              print("[murdoku] ★ 胶囊底图(每帧开头)：bid=" .. tostring(_bid) .. "  回读=" .. tostring(_rb))
+            else
+              print("[murdoku] ★ 胶囊底图(每帧开头)：bid=" .. tostring(_bid) .. "  **bg 取不到**")
+            end
+          end
+        end
         -- ★★★★★ 2026-10-03 **改用 `adapter.controls` 直接取引用，不再依赖 `find`**。
         --
         --   真机证据链（22:33 日志）：
@@ -2005,30 +2026,6 @@ function Murdoku.on_update(dt)
       if n > 0 and current._face_on ~= n then
         current._face_on = n
         if print then
-          -- ★★★★★ 2026-10-08 **四键胶囊底图：在入口层的每帧段做** ✗✓（★ 真机实证 ✓）
-          --   ★ 为什么在这里 ✓：★ 四键的**渲染分支里 `self.adapter` 是 nil** ✗（★ 真机打 `adapter=false` ✓ 连打 4 次 ✓）
-          --     ⇒ ★ 那段守卫永远不过 ⇒ ★ **胶囊底图从没设上** ✓（★ 这就是"没图"的真因 ✓）
-          --   ★ 本文件是**入口层** ✓ —— ★ 官方方案文档的原话：★「★ **只有入口层拿得到 adapter**」✓
-          --     ★ 而本段每帧都在跑 ✓（★ 下面那句 `格子底图已点亮` 就是证据 ✓）⇒ ★ 一定拿得到 ✓
-          --   ★ 只做一次 ✓（★ 闩锁 ✓ 零每帧成本 ✓）★ 显式指名 `bg` ✓ ＋ **`SetImage`** ✓
-          --     ★（★ 不用"往下找第一个带 SetImage 的子控件" ✗ —— ★ 那会命中 `label` ✓）
-          if (not _exit_art_done) and adapter ~= nil then
-            _exit_art_done = true
-            for _, _bid in ipairs({ "modal.exit", "modal.save", "modal.settle", "modal.cancel" }) do
-              local _bg = nil
-              pcall(function() _bg = adapter:sub(_bid, "bg") end)
-              if _bg ~= nil then
-                local _src = nil
-                pcall(function() _src = _bg.imageSource end)
-                pcall(function() _bg:SetImage(_src or 4294967295, 107179) end)
-                local _rb = nil
-                pcall(function() _rb = tostring(_bg.imageId) end)
-                print("[murdoku] ★ 胶囊底图(入口层)：bid=" .. tostring(_bid) .. "  回读=" .. tostring(_rb))
-              else
-                print("[murdoku] ★ 胶囊底图(入口层)：bid=" .. tostring(_bid) .. "  **bg 取不到**")
-              end
-            end
-          end
           print("[murdoku] 格子底图已点亮：" .. tostring(n) .. " 个 face（每帧保持）")
         end
       end
