@@ -1334,27 +1334,6 @@ function Controller:tick(dt)
 end
 
 function Controller:is_intro_active() return (self.intro_page or 1) <= #M.INTRO end
-  -- ★★★★★ 2026-10-08 **四键胶囊底图：放在这个每帧方法里** ✗✓（★ 真机已证 `self.adapter` 在此可用 ✓）
-  --   ★ 排除过的位置 ✓：★ ① 渲染分支：`self.adapter` **永久 nil** ✗（★ 真机连打 6 次全 false ✓）
-  --     ★ ② `main.lua` 的"只跑一次"分支：太早、不重试 ✗ ★ ③ `setv` 辅助函数：不是每帧 ✗
-  --   ★ 本处 ✓：★ 调色板查找已在同一函数里跑通（★ `★ 按名取：…` 真机每帧可见 ✓）⇒ ★ 适配器可用 ✓
-  if (not self._exit_art_done) and self.adapter ~= nil then
-    self._exit_art_done = true
-    for _, _bid in ipairs({ "modal.exit", "modal.save", "modal.settle", "modal.cancel" }) do
-      local _bg = nil
-      pcall(function() _bg = self.adapter:sub(_bid, "bg") end)
-      if _bg ~= nil then
-        local _src = nil
-        pcall(function() _src = _bg.imageSource end)
-        pcall(function() _bg:SetImage(_src or 4294967295, 107179) end)
-        local _rb = nil
-        pcall(function() _rb = tostring(_bg.imageId) end)
-        print("[murdoku] ★ 胶囊底图(控制器)：bid=" .. tostring(_bid) .. "  回读=" .. tostring(_rb))
-      else
-        print("[murdoku] ★ 胶囊底图(控制器)：bid=" .. tostring(_bid) .. "  **bg 取不到**")
-      end
-    end
-  end
 
 ----------------------------------------------------------------------------
 -- 布局规格
