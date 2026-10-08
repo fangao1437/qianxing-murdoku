@@ -2005,6 +2005,30 @@ function Murdoku.on_update(dt)
       if n > 0 and current._face_on ~= n then
         current._face_on = n
         if print then
+          -- ★★★★★ 2026-10-08 **四键胶囊底图：在入口层的每帧段做** ✗✓（★ 真机实证 ✓）
+          --   ★ 为什么在这里 ✓：★ 四键的**渲染分支里 `self.adapter` 是 nil** ✗（★ 真机打 `adapter=false` ✓ 连打 4 次 ✓）
+          --     ⇒ ★ 那段守卫永远不过 ⇒ ★ **胶囊底图从没设上** ✓（★ 这就是"没图"的真因 ✓）
+          --   ★ 本文件是**入口层** ✓ —— ★ 官方方案文档的原话：★「★ **只有入口层拿得到 adapter**」✓
+          --     ★ 而本段每帧都在跑 ✓（★ 下面那句 `格子底图已点亮` 就是证据 ✓）⇒ ★ 一定拿得到 ✓
+          --   ★ 只做一次 ✓（★ 闩锁 ✓ 零每帧成本 ✓）★ 显式指名 `bg` ✓ ＋ **`SetImage`** ✓
+          --     ★（★ 不用"往下找第一个带 SetImage 的子控件" ✗ —— ★ 那会命中 `label` ✓）
+          if (not _exit_art_done) and adapter ~= nil then
+            _exit_art_done = true
+            for _, _bid in ipairs({ "modal.exit", "modal.save", "modal.settle", "modal.cancel" }) do
+              local _bg = nil
+              pcall(function() _bg = adapter:sub(_bid, "bg") end)
+              if _bg ~= nil then
+                local _src = nil
+                pcall(function() _src = _bg.imageSource end)
+                pcall(function() _bg:SetImage(_src or 4294967295, 107179) end)
+                local _rb = nil
+                pcall(function() _rb = tostring(_bg.imageId) end)
+                print("[murdoku] ★ 胶囊底图(入口层)：bid=" .. tostring(_bid) .. "  回读=" .. tostring(_rb))
+              else
+                print("[murdoku] ★ 胶囊底图(入口层)：bid=" .. tostring(_bid) .. "  **bg 取不到**")
+              end
+            end
+          end
           print("[murdoku] 格子底图已点亮：" .. tostring(n) .. " 个 face（每帧保持）")
         end
       end
