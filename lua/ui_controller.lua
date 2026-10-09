@@ -1984,7 +1984,16 @@ function Controller:build_layout()
         -- ★ 真机日志显示：sync_plan 克隆出来的图元是 imageType=Basic（按原始像素铺），
         --   而正常工作的 bg/face 都是 Stretch。Basic 时若素材本身很小，画出来就等于看不见
         --   （这很可能就是「截图上什么都没有」的原因）。
-        --   imageType 不在存档里（比过 wall.left/wall.right，只差 id），只能运行时设。
+        -- ★★★★★ 2026-10-09 **「imageType 不在存档里」这条【已被证伪】** ✗✓
+        --   ⚠️ 原文（错 ✗）：「比过 wall.left/wall.right，只差 id ⇒ 只能运行时设」
+        --   ★ 实测：它**就在存档里**，路径 **`/505/503/84/504`**（`=1` ⇒ Stretch ✓
+        --     官方枚举 `Basic=0/Stretch=1` ＋ proto3 省略 0 ✓）
+        --     · `229` 里 44 条带图片描述组的记录中 5 条写了它、值恒为 1
+        --     · 那 5 条**恰好**是真机日志里 `type=Enum.ImageType.Stretch id=100108` 的那 5 条 ✓
+        --   ★ 当年为什么没比出来 ✗：`wall.left`/`wall.right` **恰好都缺**这个叶子
+        --     ⇒ 那次比对**结构上就看不见它** ✓（又一个"抽样看不到 ≠ 不存在" ✓）
+        --   ⇒ ★ **两条路都通**：存档能带（`tools/gil/fix_btn_bg_type.mjs` ✓ 产物 `234` ✓），
+        --     运行时也能设（下面这个字段 ✓）⇒ **双保险**，但别再当"只能运行时" ✗
         imageType = "Stretch",
         rect = {
           x = cx + math.floor(p[2] * s + 0.5) - math.floor(w / 2),

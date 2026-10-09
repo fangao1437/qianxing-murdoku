@@ -4135,12 +4135,25 @@ function Adapter:set_property(id, key, value, nkey)
     --   日志自己也提示过：「静态引用大多不支持拉伸 —— 需要拉伸的地方请选「底板」类素材；
     --   imageType 显示 Stretch 才说明这个素材支持，Basic 就只能按原样铺」。
     --
-    --   而 `imageType` 是**读写**字段（docs/未验证清单.md 第 2 条那条「SetImage 之后
-    --   imageType 会不会变」的验证日志里记着），所以这里直接赋枚举值即可。
+    -- ★★★★★ 2026-10-09 **下面这条结论【已被证伪】，留在这里当反面教材** ✗✓
+    --   ⚠️ 原文（错 ✗）：
+    --     「为什么要在脚本里设、而不是写进 `.gil`：`imageType` **不在存档记录里**
+    --      （我把 wall.left / wall.right 逐字段比过，只差 id，没有任何 visible/imageType 差异）
+    --      ⇒ 它是引擎按素材算出来的默认值 ⇒ 只能运行时改。」
+    --   ★ 实测（2026-10-09 ✓，见 `tools/gil/fix_btn_bg_type.mjs`）：
+    --     `imageType` **就在存档里** ✓，路径 = **`/505/503/84/504`**（紧挨着 imageSource / imageId ✓）
+    --     · `229` 里 44 条带图片描述组的记录中，**5 条**写了它，取值**恒为 `1`**
+    --     · 那 5 条**恰好**是本行上面引的那 5 条 `imageId=100108` 的记录 ✓
+    --       ⇒ ★ **存档字节与真机日志对上了**（`type=Enum.ImageType.Stretch` ✓）
+    --     · 官方枚举 `Basic=0 / Stretch=1`，proto3 省略 0 ⇒ `=1` 就是 `Stretch` ✓
+    --   ★ **当年为什么没比出来** ✗：拿来比的是 `wall.left` / `wall.right`，
+    --     而那两个**恰好都缺**这个叶子 ⇒ 那次比对**结构上就看不见它** ✓
+    --     ⇒ ★ 又一个「抽样看不到 ≠ 不存在」✓（同一类错我在这个项目里犯过好几次 ✓）
+    --   ⇒ ★ **两条路都通** ✓：存档能带（`234-四键图片类型拉伸.gil` 就是 ✓），运行时也能设（下面对 ✓）
+    --     ⇒ 所以**下面这段保留**当第二道保险 ✓ —— 但**别再**说"只能运行时设"了 ✗
     --
-    --   为什么要在脚本里设、而不是写进 `.gil`：`imageType` **不在存档记录里**
-    --   （我把 wall.left / wall.right 逐字段比过，只差 id，没有任何 visible/imageType 差异）
-    --   ⇒ 它是引擎按素材算出来的默认值 ⇒ 只能运行时改。
+    --   而 `imageType` 是**读写**字段（官方原文 ✓ `docs/api-cache/mhtakr07vej4.txt:1439-1442`），
+    --   所以这里直接赋枚举值即可 ✓
     local want = nil
     pcall(function() want = value end)
     if want ~= nil then

@@ -5049,7 +5049,16 @@ function Controller:build_layout()
         -- ★ 真机日志显示：sync_plan 克隆出来的图元是 imageType=Basic（按原始像素铺），
         --   而正常工作的 bg/face 都是 Stretch。Basic 时若素材本身很小，画出来就等于看不见
         --   （这很可能就是「截图上什么都没有」的原因）。
-        --   imageType 不在存档里（比过 wall.left/wall.right，只差 id），只能运行时设。
+        -- ★★★★★ 2026-10-09 **「imageType 不在存档里」这条【已被证伪】** ✗✓
+        --   ⚠️ 原文（错 ✗）：「比过 wall.left/wall.right，只差 id ⇒ 只能运行时设」
+        --   ★ 实测：它**就在存档里**，路径 **`/505/503/84/504`**（`=1` ⇒ Stretch ✓
+        --     官方枚举 `Basic=0/Stretch=1` ＋ proto3 省略 0 ✓）
+        --     · `229` 里 44 条带图片描述组的记录中 5 条写了它、值恒为 1
+        --     · 那 5 条**恰好**是真机日志里 `type=Enum.ImageType.Stretch id=100108` 的那 5 条 ✓
+        --   ★ 当年为什么没比出来 ✗：`wall.left`/`wall.right` **恰好都缺**这个叶子
+        --     ⇒ 那次比对**结构上就看不见它** ✓（又一个"抽样看不到 ≠ 不存在" ✓）
+        --   ⇒ ★ **两条路都通**：存档能带（`tools/gil/fix_btn_bg_type.mjs` ✓ 产物 `234` ✓），
+        --     运行时也能设（下面这个字段 ✓）⇒ **双保险**，但别再当"只能运行时" ✗
         imageType = "Stretch",
         rect = {
           x = cx + math.floor(p[2] * s + 0.5) - math.floor(w / 2),
@@ -12770,12 +12779,25 @@ function Adapter:set_property(id, key, value, nkey)
     --   日志自己也提示过：「静态引用大多不支持拉伸 —— 需要拉伸的地方请选「底板」类素材；
     --   imageType 显示 Stretch 才说明这个素材支持，Basic 就只能按原样铺」。
     --
-    --   而 `imageType` 是**读写**字段（docs/未验证清单.md 第 2 条那条「SetImage 之后
-    --   imageType 会不会变」的验证日志里记着），所以这里直接赋枚举值即可。
+    -- ★★★★★ 2026-10-09 **下面这条结论【已被证伪】，留在这里当反面教材** ✗✓
+    --   ⚠️ 原文（错 ✗）：
+    --     「为什么要在脚本里设、而不是写进 `.gil`：`imageType` **不在存档记录里**
+    --      （我把 wall.left / wall.right 逐字段比过，只差 id，没有任何 visible/imageType 差异）
+    --      ⇒ 它是引擎按素材算出来的默认值 ⇒ 只能运行时改。」
+    --   ★ 实测（2026-10-09 ✓，见 `tools/gil/fix_btn_bg_type.mjs`）：
+    --     `imageType` **就在存档里** ✓，路径 = **`/505/503/84/504`**（紧挨着 imageSource / imageId ✓）
+    --     · `229` 里 44 条带图片描述组的记录中，**5 条**写了它，取值**恒为 `1`**
+    --     · 那 5 条**恰好**是本行上面引的那 5 条 `imageId=100108` 的记录 ✓
+    --       ⇒ ★ **存档字节与真机日志对上了**（`type=Enum.ImageType.Stretch` ✓）
+    --     · 官方枚举 `Basic=0 / Stretch=1`，proto3 省略 0 ⇒ `=1` 就是 `Stretch` ✓
+    --   ★ **当年为什么没比出来** ✗：拿来比的是 `wall.left` / `wall.right`，
+    --     而那两个**恰好都缺**这个叶子 ⇒ 那次比对**结构上就看不见它** ✓
+    --     ⇒ ★ 又一个「抽样看不到 ≠ 不存在」✓（同一类错我在这个项目里犯过好几次 ✓）
+    --   ⇒ ★ **两条路都通** ✓：存档能带（`234-四键图片类型拉伸.gil` 就是 ✓），运行时也能设（下面对 ✓）
+    --     ⇒ 所以**下面这段保留**当第二道保险 ✓ —— 但**别再**说"只能运行时设"了 ✗
     --
-    --   为什么要在脚本里设、而不是写进 `.gil`：`imageType` **不在存档记录里**
-    --   （我把 wall.left / wall.right 逐字段比过，只差 id，没有任何 visible/imageType 差异）
-    --   ⇒ 它是引擎按素材算出来的默认值 ⇒ 只能运行时改。
+    --   而 `imageType` 是**读写**字段（官方原文 ✓ `docs/api-cache/mhtakr07vej4.txt:1439-1442`），
+    --   所以这里直接赋枚举值即可 ✓
     local want = nil
     pcall(function() want = value end)
     if want ~= nil then
@@ -17284,7 +17306,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v097 / 2026-10-09 / 修回归:id 退化成显示名导致选中反馈全消失(从快照取回 cl.id,零额外 view 成本);grid_cost 补 H 段护栏 =====")
+        print("[murdoku] ===== 构建标记 v098 / 2026-10-09 / 证伪'imageType 不在存档里'(实测路径 /505/503/84/504);资料员独立复现并给了更强的真机日志吻合证据 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
