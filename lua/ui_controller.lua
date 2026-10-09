@@ -3970,6 +3970,72 @@ function Controller:sync_clue_grid(adapter)
   self._grid_state = "on"
 
   -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  -- ★★ 2026-10-09 **几何探针：把引擎【自己算出来】的那几个数打出来** ✗✓
+  --
+  --   ★ 为什么需要它 ✓（用户原话 ✓）：
+  --     「我能在线索卡可见区域内选中三个，而**第一行上方还有可选中内容**，
+  --       滚轮列表**之上**的区域我选到了第四个人，也就是说**原本的填入方式有问题**，
+  --       确实把线索**填到了不该有的地方**」✗
+  --     ⇒ ★ 换成选关条就是"**填进去的关卡错位**" ✓ 同一个根 ✓
+  --
+  --   ★ 官方原文给的两条（`get_client_document("网格视窗控件")` ✓）：
+  --     · ★「列表采用**复用列表**结构，出于性能考虑，**仅会加载处于可见范围内的列表项**」✓
+  --       ⇒ 引擎**自己就裁剪** ✓ ⇒ 所以"填多了不裁"**不是**原因 ✗
+  --     · ★「**排列限制和预览数量**：将**预览数量**对应的列表项展示在界面中，
+  --         以**模拟实际运行时**的效果」✓
+  --       ⇒ ★ 存档里 `#80/511 = 5` 只是**编辑器预览数量** ✓ **不是运行时限制** ✗
+  --
+  --   ★ 而官方**没有**说明的两件（所以只能实测 ✓）：
+  --     ① 列表项模板自己的**位置**算不算数？（模板 `clue` 实测在 `(-6, 212)` ✗ 不在 (0,0)）
+  --     ② `scrollProgress` 归不归零？（★ 若用户滚过 ⇒ 列表上移 ⇒ "第一行"其实不是第一项）
+  --
+  --   ★★ 好在这几个官方接口**都能运行时读** ✓（`ClientUIGridScrollerControl` ✓）：
+  --     `itemCount`(只读) · `scrollProgress`(读写) · `GetItemSize()` · `GetItemSpacing()`
+  --     `GetPadding()` · `GetContentLength()` · `scrollDirection`(只读) · `layoutConstraint`(只读)
+  --     `layoutConstraintFixedCount`(只读)
+  --   ⇒ ★ **一次就能算出**"引擎认为内容有多长" vs "视窗有多高" ✓
+  --     · 若 `GetContentLength()` == 视窗高 ⇒ ★ 内容没超 ⇒ 但用户看到了第 4 个人 ⇒ **错位** ✗
+  --     · 若 `scrollProgress` ≠ 0 ⇒ ★ 列表被滚上去了 ⇒ **"第一行"不是第一项** ✓✓
+  --     · 若 `GetItemSize()` ≠ 存档里的 360×96 ⇒ ★ 引擎用的不是存档那个尺寸 ⇒ 布点基准不同 ✓
+  --   ⇒ ★ 这一行日志能一次分清上面三种 ✓ —— 别再猜 ✓
+  if (self._grid_geom_log or 0) < 3 and print then
+    self._grid_geom_log = (self._grid_geom_log or 0) + 1
+    local _f = function(fn)
+      local vals = nil
+      pcall(function() vals = { fn() } end)
+      if vals == nil then return "读不到" end
+      local out = {}
+      for i = 1, #vals do out[i] = tostring(vals[i]) end
+      return table.concat(out, ",")
+    end
+    local _one = function(k)
+      local v = nil
+      pcall(function() v = cg[k] end)
+      return tostring(v)
+    end
+    local _cg2 = grid
+    if _cg2 == nil then pcall(function() _cg2 = adapter:find("clues.grid") end) end
+    if _cg2 ~= nil then
+      local _sz = "读不到"
+      pcall(function() _sz = tostring(_cg2.sizeDeltaX) .. "×" .. tostring(_cg2.sizeDeltaY) end)
+      print("[murdoku] ★ 网格几何1（引擎自己算的）: "
+        .. "itemCount=" .. _one("itemCount")
+        .. "  **scrollProgress=" .. _one("scrollProgress") .. "**"
+        .. "  itemSize=" .. _f(function() return _cg2:GetItemSize() end)
+        .. "  spacing=" .. _f(function() return _cg2:GetItemSpacing() end)
+        .. "  padding=" .. _f(function() return _cg2:GetPadding() end))
+      print("[murdoku] ★ 网格几何2: **GetContentLength=" .. _f(function() return _cg2:GetContentLength() end)
+        .. "**  视窗自身 sizeDelta=" .. _sz
+        .. "  scrollDirection=" .. _one("scrollDirection")
+        .. "  layoutConstraint=" .. _one("layoutConstraint")
+        .. "  fixedCount=" .. _one("layoutConstraintFixedCount"))
+      print("[murdoku] ★ 网格几何3（读法）: 内容长度 > 视窗尺寸 ⇒ 有得滚 ✓；"
+        .. "**scrollProgress ≠ 0 ⇒ 列表已上移 ⇒ 你看到的「第一行」不是第一项** ✗；"
+        .. "itemSize 与存档里的 360×96 不一致 ⇒ 引擎用的不是存档那个尺寸")
+    end
+  end
+
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
   -- ★★ 2026-10-06 **绕过规划/账本，直接点亮 `clues.grid`** ✗✓ —— 真凶在此 ✓
   --
   --   ★ 为什么规划那条路不行（★ 诊断2 真机实测 ✓）：
