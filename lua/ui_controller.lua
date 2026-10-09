@@ -4450,7 +4450,82 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
     if (self._grid_pos_note or 0) < 1 and print then
       self._grid_pos_note = (self._grid_pos_note or 0) + 1
       print("[murdoku] ★ 位置判据已关闭：真机实测**布局后**七项仍读同一个 y（=模板位置 ✗）"
-        .. "⇒ **脚本无法知道哪一项在可见区内** ✓ 要靠结构方案解决（见 接手待办 ✓）")
+        .. "⇒ **脚本无法知道哪一项在可见区内** ✓ 改用【超出容量的项做成空白且不可点】✓")
+    end
+  end
+
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  -- ★★ 2026-10-10 **超出容量的项 ⇒ 做成「空白 ＋ 不能点」** ✗✓ —— ★ 用户想的方案 ✓
+  --
+  --   ★ 用户原话 ✓：
+  --     「我觉得还有一种等价方案 —— 之前本来就出现过**在列表上却没有填内容也不能选的卡**，
+  --       那我们直接把**前两张卡换成这种设置**不就绕过了这个问题 ✓
+  --       既然**避免不了溢出**，就放**两张空白且不能点的卡**不就行了」✓
+  --
+  --   ★★ 为什么这个方案**成立** ✓（三条官方事实拼起来 ✓）：
+  --     ① 官方：★「网格视窗的列表采用**复用列表**结构，出于性能考虑，
+  --          **仅会加载处于可见范围内的列表项**」✓
+  --     ② 官方：★「网格视窗**列表发生滚动时**：对列表项内容进行刷新(**触发回调**)」✓
+  --     ③ 实测：★ 引擎**确实会重进回调** ✓（真机累计 60 次 ✓）
+  --     ⇒ ★★ **引擎只会为"进入可见范围"的项重进回调** ✓
+  --     ⇒ ★★★ **所以：一开始把超出容量的项清空 ✓
+  --        它们被滚进可见区时，引擎【会自动重进回调】把它们填回真实内容** ✓✓
+  --        回到区外则不会 ← ⚠️ 见下面的"残留"说明 ✓
+  --   ⇒ ★ **不需要 `ScrollToItemAt`** ✓ ★ **不需要知道滚动窗口** ✓
+  --     ★ **引擎自己的滚动与滚动条全部保留** ✓ —— ★ 正合用户「还是自带的网格视窗更方便」✓
+  --
+  --   ★ 容量 ✓：`_grid_visible_count()` 现在算得对 ✓（真机数 ⇒ **5 项** ✓）
+  --   ★ 溢出 ✓：7 项 − 5 = **2 项** ✓ ⇒ ★ **正是用户说的"两张卡"** ✓✓
+  --
+  --   ⚠️ **一处残留（如实说明 ✓）**：★ 滚出去的项**不会**再被回调 ⇒
+  --     它的"可点"状态会**留着** ✗ ⇒ ★ 若用户滚下去又滚回来，先前被填实的那几项
+  --     回到区外时**仍可点** ✗ —— ★ 比修之前好得多（**默认状态下完全不出现** ✓）
+  --     但要**彻底**解决仍需脚本接管滚动（乙 ✓）
+  --   ★ 只清**装饰与文字** ＋ **关射线** ✓ —— 不动几何、不动模板 ✓
+  --
+  --   ★★★★★ **关键设计点：只在【我们自己那趟】清，绝不在引擎重进时清** ✗✓
+  --     ★ 我第一版写成"每趟都判 `pos > cap`"✗ ⇒ ★ **错** ✗：
+  --       ★ 用户滚下去 ⇒ 第 6 项进入可见区 ⇒ 引擎重进回调 ⇒ `pos=6 > 5` ⇒
+  --         ★ **被我又清一遍** ✗ ⇒ ★ **第 6 项永远显示不出来** ✗✗
+  --     ⇒ ★ 正确 ✓：
+  --       · `_grid_in_refresh == true`（**我们**调 `RefreshItems` ✓）⇒ ★ 超出容量的才清 ✓
+  --       · `_grid_in_refresh == false`（**引擎**重进 ✓）⇒ ★ **一律正常填** ✓
+  --         ⇒ ★ **滚进可见区的项自动恢复真实内容** ✓✓（这就是本方案能成立的关键 ✓）
+  do
+    local cap = self:_grid_visible_count(grid)
+    local in_our_refresh = (self._grid_in_refresh == true)
+    local _blanked = false
+    if in_our_refresh and cap ~= nil and pos > cap then
+      _blanked = true
+      -- ★★ 计数器 ✓：让离线的护栏能**不依赖假件**地断言"我们那趟清了几项"✓
+      --   ★ 为什么需要它 ✗：★ 假件把 `ensure_raycast` 也模拟了 ⇒ 它**会把射线又打开** ✗
+      --     ⇒ ★ "射线有没有被关"这一条**查假件会假红** ✗ ⇒ 改查这个计数器 ✓
+      --     （★ 又一次**假件保真度**问题 ✓ —— 与 `gray`/`anchoredPositionY`/`"clues.bg"` 同族 ✓）
+      self._grid_blank_our = (self._grid_blank_our or 0) + 1
+      -- ★ ① 关射线与交互 ✓（"不能点" ✓）
+      pcall(function() if item.raycastTarget ~= nil then item.raycastTarget = false end end)
+      pcall(function() if item.interactable ~= nil then item.interactable = false end end)
+      pcall(function() if item.blockRaycast ~= nil then item.blockRaycast = false end end)
+      -- ★ ② 清空文字 ✓（"空白" ✓）—— 走项目现成的写入器 ✓ 这样"值变了才写"的记忆表也一致 ✓
+      local function _blank(sfx)
+        local c = self:_grid_item_child_cached(item, index, pos, sfx)
+        if c ~= nil then
+          pcall(function() self:write_control_text(c, "") end)
+        end
+      end
+      _blank("who"); _blank("what"); _blank("letter")
+      -- ★ ③ 头像不贴图 ✓（清掉图 id ⇒ 不显示 ✓ 但不改模板 ✓）
+      local fc = self:_grid_item_child_cached(item, index, pos, "face")
+      if fc ~= nil then pcall(function() fc.imageId = 0 end) end
+      -- ★ ④ 灰白层藏起来 ✓
+      local gc = self:_grid_item_child_cached(item, index, pos, "gray")
+      if gc ~= nil then pcall(function() if gc.SetVisible then gc:SetVisible(false) end end) end
+      if (self._grid_blank_log or 0) < 4 and print then
+        self._grid_blank_log = (self._grid_blank_log or 0) + 1
+        print("[murdoku] ★ 超出容量的项 ⇒ 已做成**空白且不能点**：pos=" .. tostring(pos)
+          .. "（一屏 " .. tostring(cap) .. " 项 ✓）"
+          .. "　⇒ ★ 它被滚进可见区时引擎会**自动重进回调**填回真实内容 ✓")
+      end
     end
   end
 

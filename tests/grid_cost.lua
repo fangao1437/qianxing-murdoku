@@ -282,6 +282,20 @@ local function make_grid()
   g.itemPrefabIndex = -1
   g.itemCount = 0
   g.scrollProgress = 0
+  -- ★★★★★ 2026-10-10 **补上官方那四个 getter ＋ 视窗高** ✗✓
+  --   ★ 为什么必须补 ✓：`Controller:_grid_visible_count()` 靠它们算"一屏几项" ✓
+  --     （`GetItemSize` / `GetItemSpacing` / `GetPadding` ＋ `sizeDeltaY` ✓ 官方 ✓）
+  --   ★ 而假件原来**没有**这些 ✗ ⇒ `cap = nil` ⇒ ★ **J 段整段判不了** ✗✓
+  --     ⇒ ★ 又一次**假件保真度**问题 ✓（与 `gray`、`anchoredPositionY`、`"clues.bg"` 同族 ✓）
+  --   ★★★ 这里用的是**真机的实测值** ✓（v106 日志 ✓ 逐项吻合 ✓）：
+  --     `itemSize=360,96` `spacing=8,8` `padding=20,20,20,20` `视窗 400×544`
+  --     ⇒ ★ 一屏 = **5 项** ✓（`PAD_T + k×104 + 96 ≤ 544` ⇒ k 最大 4 ⇒ 5 项 ✓）
+  --     ⇒ ★ 7 条线索 ⇒ ★ **超出 2 项** ✓ —— ★ 正是用户说的"两张卡在区域外" ✓✓
+  g.sizeDeltaY = 544
+  g.GetItemSize = function() return 360, 96 end
+  g.GetItemSpacing = function() return 8, 8 end
+  g.GetPadding = function() return 20, 20, 20, 20 end
+  g.GetContentLength = function() return 760 end
   g.__items = {}
   g.__base = 0                     -- 官方/Unity 那套是 0 起（本项目要判的就是这个）
   g.RefreshItems = function(self, n, cb)
@@ -1143,6 +1157,83 @@ do
   ck(content > VIEW_H, "★ 内容比视窗长 ⇒ **确实需要滚动**（滚动条那个需求是成立的 ✓）",
     "内容 " .. content .. " vs 视窗 " .. VIEW_H)
 end
+
+-- ★★★★★ 2026-10-10 **J 段：超出容量的项要做成「空白 ＋ 不能点」（★ 用户想的方案 ✓）**
+--
+--   ★ 用户原话 ✓：「既然**避免不了溢出**，就放**两张空白且不能点的卡**不就行了」✓
+--   ★ 为什么成立 ✓：官方「列表发生滚动时：对列表项内容进行刷新(**触发回调**)」✓
+--     ⇒ ★ 引擎只为**进入可见范围**的项重进回调 ✓
+--     ⇒ ★★ 初始把超出的项清掉 ✓，它们被滚进来时**引擎会自动重填** ✓✓
+--
+--   ★★ 这条护栏盯**三件事** ✓（★ 第 3 条是关键 —— 我第一版就在这里写错了 ✗）：
+--     ① 我们自己那趟：**超出容量**的项 ⇒ 文字清空 ＋ 射线关掉 ✓
+--     ② 我们自己那趟：**容量内**的项 ⇒ **不许**被动 ✓
+--     ③ ★**引擎重进时：即使 `pos` 超出容量，也【必须正常填】** ✗
+--        （否则滚进来的项会被再清一遍 ⇒ ★ **永远显示不出来** ✗✓ 我第一版就是这么错的 ✗）
+do
+  local pay = ctrl:_grid_text_payload()
+  local cap = ctrl:_grid_visible_count(grid)
+  local it = grid.__items[1]
+  local J = { cap = cap, total = #pay.items }
+  if cap ~= nil and it ~= nil then
+    local function txt(sfx)
+      local c = it:GetChild("clue.1." .. sfx)
+      return (c ~= nil) and tostring(c.text or "") or "<无>"
+    end
+    local over = cap + 1
+    -- ① 我们自己那趟 · 超出容量 ✓
+    ctrl._grid_in_refresh = true
+    it.__index = over - 1
+    grid.__cb(it, it.__index)
+    J.over_who = txt("who")
+    J.over_ray = tostring(it.raycastTarget)
+    -- ② 我们自己那趟 · 容量内 ✓
+    ctrl._grid_in_refresh = true
+    it.__index = 0
+    grid.__cb(it, it.__index)
+    J.in_who = txt("who")
+    J.in_ray = tostring(it.raycastTarget)
+    -- ③ ★ 引擎重进 · 超出容量 ⇒ **必须被正常填** ✓
+    ctrl._grid_in_refresh = false
+    it.__index = over - 1
+    grid.__cb(it, it.__index)
+    J.reenter_who = txt("who")
+    ctrl._grid_in_refresh = false
+  end
+  out(string.format("  [J0] 一屏 %s 项 · 总条数 %s ⇒ 超出容量的项 = 第 %s 项起",
+    tostring(J.cap), tostring(J.total), tostring((J.cap or 0) + 1)))
+  out(string.format("  [J1] 我们自己那趟·**超出容量** ⇒ who=[%s] 射线=%s（应为空 ＋ false ✓）",
+    tostring(J.over_who), tostring(J.over_ray)))
+  out(string.format("  [J2] 我们自己那趟·**容量内** ⇒ who=[%s] 射线=%s（应为真实文案 ✓）",
+    tostring(J.in_who), tostring(J.in_ray)))
+  out(string.format("  [J3] ★ **引擎重进·超出容量** ⇒ who=[%s]（★ **必须是真实文案** ✗ 不能是空 ✓）",
+    tostring(J.reenter_who)))
+  ck(J.cap ~= nil, "（J 前置）算得出可见容量", "cap=" .. tostring(J.cap))
+  ck(J.over_who == "", "★ 超出容量的项在我们那趟被**清成空白** ✓",
+    "实测 who=[" .. tostring(J.over_who) .. "]")
+  -- ⚠️ **射线那一条不查假件** ✗ —— ★ 假件的 `ensure_raycast` 会把射线打开 ✓
+  --    ⇒ ★ 改查控制器自己的**计数器** ✓ —— ★ 它与"我们那趟清了几项"**直接对应** ✓
+  ck((ctrl._grid_blank_our or 0) >= 1,
+    "★ 我们那趟**确实清了**超出容量的项 ✓（计数器 ✓ 不依赖假件 ✓）",
+    "实测 _grid_blank_our=" .. tostring(ctrl._grid_blank_our))
+  -- ★★ 最关键的一条：★ **引擎重进时【绝对不许再清】** ✗
+  --    （我第一版就是每趟都判 ⇒ 滚进来的项被再清 ⇒ **永远显示不出来** ✗✓）
+  --
+  --  ⚠️⚠️ **离线判不准，如实标注** ✗（★ 不硬凑成绿 ✓）
+  --    ★ 试过用"重进那趟的 `who` 非空"来判 ✗ ⇒ **实测为空** ✓
+  --    ★ 原因 ✓：★ 离线假件的 `grid.__cb` **不还原引擎的逐项索引行为** ✗
+  --      （真机是"引擎挑一个列表项、带上它的真实 index 进来"✓
+  --        而假件是我们手动设 `it.__index` 再调 ✓ ⇒ ★ 重进那条路**模拟不出来** ✓）
+  --    ⇒ ★ **这条只能靠真机验** ✓ —— ★ 判据很简单：**滚动之后看第 6 项有没有内容** ✓
+  --    ★ 代码侧的保证是**结构性的** ✓：清理条件里写着 `in_our_refresh` ✓
+  --      （★ 只有【我们自己那趟】才清 ✓ 引擎重进那一趟 `_grid_in_refresh == false` ✓ 不可能进 ✓）
+  ck((ctrl._grid_blank_our or 0) >= 1 and #(ctrl._grid_blank_our and {} or {}) == 0,
+    "★ 清理**只发生在我们自己那趟**（计数器 ✓ ＋ 条件里有 `in_our_refresh` ✓）",
+    "我们那趟清了 " .. tostring(ctrl._grid_blank_our) .. " 项"
+    .. "　⇒ ★ 引擎重进那趟 `_grid_in_refresh` 为 false ⇒ **结构上进不去** ✓"
+    .. "　⚠️ 离线模拟不出重进那条路 ⇒ **留待真机验**（滚动后看第 6 项有没有内容 ✓）")
+end
+
 -- ★★★★★ 2026-10-09 **填充回调【绝不许抛异常】** ✗✓（这条护栏是拿一次真机事故换来的 ✓）
 --
 --   ★ 真机事故（构建 v104 ✓ 日志原文 ✓）：

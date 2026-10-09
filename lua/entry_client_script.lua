@@ -184,7 +184,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v109 / 2026-10-09 / 更正:配置是填好的(我误把 wt=5 浮点看成空消息)+一屏是5项不是4(资料员指出);官方立场是不裁溢出、不推荐超出控件尺寸 =====")
+        print("[murdoku] ===== 构建标记 v110 / 2026-10-09 / 按用户方案:超出容量的项做成空白+不能点(只在我们那趟清,引擎重进时正常填⇒滚进来的自动恢复) =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
