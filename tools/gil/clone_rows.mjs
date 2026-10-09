@@ -92,8 +92,21 @@ const collect = (rec) => {
 collect(proto);
 console.log('  原型子树 ' + subtree.length + ' 条：' + subtree.map((r) => r.name).join(', '));
 
+// ★★★★★ 2026-10-10 **第一版的致命 bug（用户实测抓出 ✓）** ✗✓
+//   ★ 用户原话 ✓：「264 里面**只剩一个 `row.3.9`** ✗，**连我的 `1.1` 都没有**」✗
+//   ★★ 根因 ✓：我在**每个 row 的循环里**都调了
+//       `ensureChildListTop(parent, findChildListTop(proto.field.sub))` ✓
+//     ⇒ ★ 它把 `assets` 的子列表**重新初始化成原型那一份** ✗
+//     ⇒ ★★ **后一次覆盖前一次** ⇒ ★ **只剩最后一个** ✗
+//     ⇒ ★★★ **连用户自己做的 `row.1.1` 也被冲掉** ✓✓
+//   ⇒ ★★ 修法 ✓：**改两阶段** ✓
+//     ★ 一阶段：★ **只造记录** ✓ **一个字都不写父级子列表** ✗
+//     ★ 二阶段：★ **读一次原始子列表** ⇒ **原样 + 全部新 id** ⇒ **只写一次** ✓
+//   ★ 教训 ✓：★ **"边造边挂"在共享父级上是错的** ✗ ——
+//     ★ 凡"往同一个容器里追加"✗，都要**先收集齐、最后一次性写** ✓
 let nextId = Math.max(...g.recs.map((r) => Number(r.id))) + 1;
 const specs = SPEC.split(',').map((s) => s.trim()).filter(Boolean);
+const newRootIds = [];          // ★ 第一阶段只收集 ✓ 不挂 ✗
 let made = 0, madeRecs = 0;
 
 for (const sp of specs) {
@@ -140,24 +153,41 @@ for (const sp of specs) {
     g.byName.set(newName, nr);
     madeRecs++;
   }
-  // ⑥ 把新 row 挂进 `assets`
+  // ★★ **【绝不在这里挂父级子列表】】** ✗✓ —— ★ 那正是第一版的致命 bug ✓
   const rootNewId = idMap.get(String(proto.id));
-  const pl = ensureChildListTop(parent, findChildListTop(proto.field.sub));
-  if (pl) {
-    const cur = asIdList(pl).map(String);
-    if (!cur.includes(String(rootNewId))) { cur.push(String(rootNewId)); setChildList(pl, cur); }
-  }
+  newRootIds.push(rootNewId);       // ★ 只收集 ✓
   made++;
-  console.log('  ✅ row.' + sp + '  id=' + rootNewId);
+  console.log('  ✅ 造出 row.' + sp + '  id=' + rootNewId + '（★ 还没挂 ✓ 统一到最后 ✓）');
 }
 
 if (made === 0) { console.error('❌ 一份都没建，不写文件'); process.exit(3); }
+
+// ★★★★★★ 2026-10-10 **【一个字段都别碰】—— 父子关系是"子指向父"，父级没有子列表** ✗✓
+//
+//   ★★★ 用户实测抓出的灾难 ✓：「264 里面**只剩一个 `row.3.9`** ✗，连我的 `1.1` 都没有」✗
+//   ★★ 真机/存档实证（`_who_owns.mjs` ✓）：
+//     `=== 谁"包含" row.1.1 的 id ===`
+//       `row.1.1  #1073742516   字段 /501`        ← ★ 自己的 id ✓
+//       `who.1.1  #1073742539   字段 /504`        ← ★★ **子控件用 `/504` 指向父级** ✓
+//       `letter.1.1 / what.1.1 / face.1.1 也是 `/504` ✓
+//       ★ **`assets` 的字段里【一处都没有 `row.1.1`】** ✗
+//   ⇒ ★★★ **父子关系是【子指向父】** ✓ —— ★ **父级那边【根本没有子列表】** ✗
+//   ⇒ ★★ 而我第一版去写 `assets` 的 `#503` ✗ —— ★ **那不是子列表** ✗（★ 它原本就是**空的** ✓）
+//     ⇒ ★ **我那句"重置"恰好把它覆盖了** ✗ ⇒ ★ **编辑器只看到一个** ✓✓
+//
+//   ★★★ 所以正解 ✓：★ **只追加记录** ✓ ★ **带对 `/501`（自己）与 `/504`（父级）** ✓
+//     ★ **父级一行都不用改** ✗ —— ★ 因为 `row.1.1` 和它的 4 个子控件就是这么存在的 ✓
+//   ★ 教训 ✓：★ **"要改父级的子列表"是我的【假设】** ✗ —— ★ 存档里根本没有那个东西 ✓
+//     ⇒ ★ **照抄存档已验证的形状** ✓ 比"按我以为的结构去写"安全得多 ✓
 const buf = g.pack(encodeMsg(g.tree));
 fs.writeFileSync(P(OUT), buf);
 console.log('  写出 ' + path.basename(P(OUT)) + '  ' + Math.round(buf.length / 1024) + ' KB（row ' + made + ' 个 / 记录 ' + madeRecs + ' 条）');
 
 // ── 回读自检 ✓
 const g2 = readGil(P(OUT));
+const a2b = g2.recs.find((r) => r.name === PARENT);
+const kids2 = g2.recs.filter((r) => r.parentId === a2b.id).map((r) => r.name);
+console.log('  assets 子控件 ' + kids2.length + ' 个：' + kids2.filter((n) => n.startsWith('row.')).sort().join(', '));
 let bad = 0;
 for (const sp of specs) {
   for (const pre of ['row', 'who', 'what', 'face', 'letter']) {
@@ -166,8 +196,8 @@ for (const sp of specs) {
     if (!r) { console.log('  ❌ 回读找不到 ' + nm); bad++; }
   }
 }
-const a2 = g2.recs.find((r) => r.name === PARENT);
-const kids2 = g2.recs.filter((r) => r.parentId === a2.id);
-console.log('  assets 子控件 ' + kids2.length + ' 个');
+const kids2map = kids2.filter((n) => n.startsWith('row.')).sort();
+console.log('  assets 子控件 ' + kids2.length + ' 个：row 共 ' + kids2map.length + ' 个');
+console.log('    ' + kids2map.join(', '));
 console.log(bad ? ('  ❌ 回读有 ' + bad + ' 个不对') : '  ★ 回读全部就位 ✅');
 console.log('⚠️ 交付前必须跑：node tools/gil/roundtrip.mjs ' + path.basename(P(OUT)));
