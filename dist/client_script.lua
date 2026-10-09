@@ -7843,8 +7843,20 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                 if iid ~= nil then
                   local src = nil
                   pcall(function() src = k.imageSource end)
-                  pcall(function() if src ~= nil then dst.imageSource = src end end)
-                  pcall(function() dst.imageId = iid end)
+                  -- ★★★★★★ 2026-10-10 **图片用 `SetImage`，不用属性赋值** ✗✓✓（★ 同文字那次的模式 ✓）
+                  --   ★ 项目自己的写入器（`engine_adapter_qianxing.lua:730-732` ✓）：
+                  --     `local ok2 = pcall(function() target:SetImage(src, node.image_id) end)`
+                  --     `if not ok2 then pcall(function() target:SetImage(node.image_id) end) end`
+                  --   ★ 而我写的是 `dst.imageSource = src` ＋ `dst.imageId = iid` ✗
+                  --   ★ 项目注释 ✓：「运行时新建的客户端控件，在"根节点"上 `SetImage` 直接返回 false、
+                  --     `imageId` 一直是 0」⇒ ★ **属性赋值对图片不通** ✓
+                  local _okImg = false
+                  if src ~= nil then pcall(function() dst:SetImage(src, iid) _okImg = true end) end
+                  if not _okImg then pcall(function() dst:SetImage(iid) _okImg = true end) end
+                  if not _okImg then
+                    pcall(function() if src ~= nil then dst.imageSource = src end end)
+                    pcall(function() dst.imageId = iid end)
+                  end
                   wrote = wrote + 1
                 end
               end
@@ -18531,7 +18543,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v144 / 2026-10-10 / 头像同模式修复:项目用SetImage(src,id)而我用属性赋值⇒改用SetImage优先+两级兜底 =====")
+        print("[murdoku] ===== 构建标记 v145 / 2026-10-10 / 补早期单射的图片写入也改SetImage(两处缩进不同,上次只中一处) =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

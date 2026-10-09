@@ -4778,8 +4778,20 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                 if iid ~= nil then
                   local src = nil
                   pcall(function() src = k.imageSource end)
-                  pcall(function() if src ~= nil then dst.imageSource = src end end)
-                  pcall(function() dst.imageId = iid end)
+                  -- ★★★★★★ 2026-10-10 **图片用 `SetImage`，不用属性赋值** ✗✓✓（★ 同文字那次的模式 ✓）
+                  --   ★ 项目自己的写入器（`engine_adapter_qianxing.lua:730-732` ✓）：
+                  --     `local ok2 = pcall(function() target:SetImage(src, node.image_id) end)`
+                  --     `if not ok2 then pcall(function() target:SetImage(node.image_id) end) end`
+                  --   ★ 而我写的是 `dst.imageSource = src` ＋ `dst.imageId = iid` ✗
+                  --   ★ 项目注释 ✓：「运行时新建的客户端控件，在"根节点"上 `SetImage` 直接返回 false、
+                  --     `imageId` 一直是 0」⇒ ★ **属性赋值对图片不通** ✓
+                  local _okImg = false
+                  if src ~= nil then pcall(function() dst:SetImage(src, iid) _okImg = true end) end
+                  if not _okImg then pcall(function() dst:SetImage(iid) _okImg = true end) end
+                  if not _okImg then
+                    pcall(function() if src ~= nil then dst.imageSource = src end end)
+                    pcall(function() dst.imageId = iid end)
+                  end
                   wrote = wrote + 1
                 end
               end
