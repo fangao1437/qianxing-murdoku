@@ -4445,6 +4445,42 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   --     ⇒ ★ **滚动位置才保得住** ✓✓（★ 这是"点一下弹回顶部"的治本一步 ✓）
   self._grid_seen = self._grid_seen or {}
   self._grid_seen[item] = index
+  -- ★★★★★ 2026-10-10 **只读探针：同一控件会不会被交给两条不同线索** ✗✓
+  --   ★ 用户诊断 ✓：「**可能只是视觉反馈侧的问题，高亮/灰白的判定粘连了**」✓
+  --     ＋「确实有**两人头像不同**的情况」✗ ⇒ ★ 是真 bug ✓
+  --   ★★ 真机日志显示**每次点击的 index 都正确** ✓ ⇒ ★ 「判定」没错 ✗
+  --     ⇒ ★ 那就是**写到了错的控件上** ✓ ⇒ ★ 首要嫌疑：
+  --       ★ **引擎把【同一个列表项控件】先后交给两条不同的线索** ✗
+  --       （★ 若如此，控件上只能留【最后一次】的状态 ✓ ⇒ 前一条的视觉就「粘」着 ✓）
+  --   ★ 本探针**只读** ✓：记下"每个控件最近一次代表的 pos" ✓
+  --     ⚠️ **绝不改任何功能开关** ✗（★ 上次写 `interactable` 把滚动弄坏过 ✓）
+  do
+    local iid = nil
+    pcall(function() iid = item.id end)
+    if iid ~= nil then
+      self._grid_iid = self._grid_iid or {}
+      local last = self._grid_iid[iid]
+      if last == nil then
+        self._grid_iid[iid] = pos
+        self._grid_iid_n = (self._grid_iid_n or 0) + 1
+        if print then
+          print("[murdoku] ★ 探针·列表项控件：**新控件 id=" .. tostring(iid)
+            .. "** 首次代表 pos=" .. tostring(pos)
+            .. "　（累计 " .. tostring(self._grid_iid_n) .. " 个控件）")
+        end
+      elseif last ~= pos then
+        self._grid_iid[iid] = pos
+        self._grid_iid_reuse = (self._grid_iid_reuse or 0) + 1
+        if (self._grid_iid_log or 0) < 8 and print then
+          self._grid_iid_log = (self._grid_iid_log or 0) + 1
+          print("[murdoku] ★ 探针·控件复用：id=" .. tostring(iid)
+            .. " 从 pos=" .. tostring(last) .. " **改代表** pos=" .. tostring(pos)
+            .. "（累计复用 " .. tostring(self._grid_iid_reuse) .. " 次）"
+            .. "　⇒ ★ 控件上只能留最后一次的状态 ✓ ⇒ **前一条的视觉会粘着** ✗")
+        end
+      end
+    end
+  end
   -- ★★★★★ 2026-10-10 **只读探针：记录引擎到底把哪几项交给我们** ✗✓
   --   ★ 用户要查清的正是这件事 ✓（日志显示 `n=15` 却只回调 7 次 ✗）
   --   ★ 官方：「仅会加载处于**可见范围**内的列表项」✓ —— ★ 那"可见范围"到底是几项 ✗
