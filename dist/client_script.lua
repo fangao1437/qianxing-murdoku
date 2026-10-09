@@ -8558,7 +8558,25 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                   local txt = nil
                   pcall(function() txt = k.text end)
                   if type(txt) == "string" then
+                    -- ★★★★★ 2026-10-10 **探针：写入前后各读一次** ✗✓（★ 一次定案 ✓）
+                    --   ★ 现象 ✓：日志说"写了 2 个槽位"✓ 但画面上看不到 ✗
+                    --   ⇒ ★ 三种可能 ✓：① 写到错的控件 ✗ ② 写了但被属性挡住 ✗ ③ 引擎重画 ✗
+                    --   ★ 本探针把三者分开 ✓：★ 目标控件名 / 写入值 / 写后读回 ✓
+                    local _dn, _before, _after = nil, nil, nil
+                    pcall(function() _dn = tostring(dst.name) end)
+                    pcall(function() _before = dst.text end)
                     pcall(function() self:write_control_text(dst, txt) end)
+                    pcall(function() _after = dst.text end)
+                    if (self._row_probe or 0) < 12 and print then
+                      self._row_probe = (self._row_probe or 0) + 1
+                      print("[murdoku] ★ 单射写入探针：slot=" .. tostring(slot)
+                        .. "  目标控件=" .. tostring(_dn)
+                        .. "  写入=" .. tostring(txt)
+                        .. "  写前=" .. tostring(_before)
+                        .. "  写后读回=" .. tostring(_after)
+                        .. (tostring(_after) == tostring(txt) and "  ⇒ ★ 控件里【确实变了】✓（那问题在渲染层 ✓）"
+                            or "  ⇒ ★★ 控件里【没变】**（写没进去 ✓ 或写错控件 ✓）"))
+                    end
                     wrote2 = wrote2 + 1
                   end
                   local iid = nil
@@ -18283,7 +18301,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v139 / 2026-10-10 / 按用户要求关掉算法填文案(功能冗余+每帧跑60次+和单射抢覆盖);ALGO_TEXT=false一行可恢复;gray/高亮/点击保留 =====")
+        print("[murdoku] ===== 构建标记 v140 / 2026-10-10 / 单射加写入探针:打印slot/目标控件名/写入值/写前写后读回⇒区分'写错控件'与'渲染层' =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
