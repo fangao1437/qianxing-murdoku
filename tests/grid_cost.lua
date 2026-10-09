@@ -1119,17 +1119,20 @@ out("\n== I. 网格布点数学（★ 纯离线哨兵：这条 bug 以前测不�
 do
   local VIEW_H, ITEM_H, GAP_Y, PAD_T, PAD_B = 544, 96, 8, 20, 20
   local N_TOTAL = 7
-  local avail = VIEW_H - PAD_T - PAD_B
+  -- ★ 2026-10-09 **算术更正** ✗✓（资料员指出 ✓ 我复核 ✓）：
+  --   `PAD_B` 属于【内容末端】✓ **不约束列表顶端** ✗
+  --   第 k 项（0 起）占 [PAD_T + k×每项占, +ITEM_H] ⇒ 装得下 ⇔ PAD_T + k×每项占 + ITEM_H ≤ VIEW_H
   local per = ITEM_H + GAP_Y
-  local vis = math.floor(avail / per)
+  local vis = 0
+  while PAD_T + vis * per + ITEM_H <= VIEW_H and vis < 512 do vis = vis + 1 end
   local content = PAD_T + N_TOTAL * ITEM_H + (N_TOTAL - 1) * GAP_Y + PAD_B
-  out(string.format("  [I0] 视窗高 %d − 边距 %d/%d ⇒ 可用 %d；每项 %d + %d = %d",
-    VIEW_H, PAD_T, PAD_B, avail, ITEM_H, GAP_Y, per))
+  out(string.format("  [I0] 视窗高 %d；每项 %d + 间距 %d = %d；首项从 PAD_T=%d 起 ⇒ 一屏 **%d 项**",
+    VIEW_H, ITEM_H, GAP_Y, per, PAD_T, vis))
   out(string.format("  [I1] ★ 一屏放得下 **%d 项**；而 `RefreshItems` 传的是 **总条数 %d** ⇒ **%d 项在可见区外**",
     vis, N_TOTAL, N_TOTAL - vis))
   out(string.format("  [I2] 内容总长 %d vs 视窗 %d ⇒ 超出 **%d px**（有得滚 ⇒ 滚动条才有意义）",
     content, VIEW_H, content - VIEW_H))
-  ck(vis == 4, "★ 按真存档数字，一屏 = **4 项**（改了 `#80` 的边距/项高就要改这里 ✓）",
+  ck(vis == 5, "★ 按真存档数字，一屏 = **5 项**（★ 更正：原写 4 ✗ 把 PAD_B 也算进去了 ✓）",
     "实测算出 " .. tostring(vis) .. " 项（视窗 " .. VIEW_H .. " · 项高 " .. ITEM_H
     .. " · 间距 " .. GAP_Y .. " · 边距 " .. PAD_T .. "/" .. PAD_B .. "）")
   ck(N_TOTAL > vis,
