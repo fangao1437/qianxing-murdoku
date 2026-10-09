@@ -13985,6 +13985,37 @@ function Adapter:enforce_hidden_subtrees()
   self._subtree_dirty = false
   local hid = self._hidden_ids
   if hid == nil then return end
+  -- ★★★★★ 2026-10-09 **这里【漏了 `DECOR` 豁免】—— 这正是「四键有壳没图文」的真因** ✗✓✓
+  --
+  --   ★ 真机证据（用户 19:01 那份日志 ✓ 探针打印的）：
+  --     ① 开局（`on_start` 之后立刻）：`bg visible=true   label visible=true`  ✓ **是好的** ✓
+  --     ② 之后每次弹窗：           `bg visible=false  label visible=false` ✗ **被关掉了** ✓
+  --     `GetSiblingIndex` 正常（`bg=0 label=1` ✓）⇒ ★ **不是被盖住，是被 SetVisible(false) 关的** ✓
+  --
+  --   ★ 机制（本函数 ✓）：对 `_hidden_ids` 里每个控件，把它的**直接子控件**和**孙子**
+  --     **一律 `SetVisible(false)`** ✗ —— ★ **它只会隐藏，从不恢复** ✓
+  --     ⇒ 四键（`modal.exit` 等）在弹窗关着时被记进 `_hidden_ids` ✓
+  --       ⇒ 弹窗**打开**时父控件被显示 ✓ 但它的 `bg`/`label` **已经被这个函数关掉** ✗
+  --       ⇒ ★ **只剩一个能点的空壳** —— 正是用户看到的现象 ✓✓
+  --
+  --   ★ 为什么是漏的 ✓：它的**姊妹函数** `hide_unlisted` **有** `DECOR` 豁免 ✓
+  --     （L2320-2327 那段注释写得明明白白：★「**内层装饰控件一律不参与 `hide_unlisted`**」
+  --       ★ 理由：「计划里只有**外层**名字 ⇒ 内层装饰名（`face`/`bg`/`label`/`backrop1`…）
+  --         **永远不在计划里** ⇒ 每次都被当成'多余的旧控件'藏掉 ⇒ 用户看到'图片被藏住了'」✓）
+  --     ⇒ ★ 而本函数是**同一件事的兜底版**，却**没把那条规则抄过来** ✗✓
+  --       ⇒ 于是"内层装饰"照样被藏 ⇒ **`hide_unlisted` 那一侧的豁免形同虚设** ✓
+  --
+  --   ⇒ ★ 修法 = **把 `DECOR` 规则补到这一侧** ✓（与 L2326 的既定规则一致 ✓ 不是新发明）
+  --   ⚠️ 只跳**内层装饰名** ✓ —— 其余子控件（真正该藏的旧控件）**照旧隐藏** ✓
+  local function decor(nm)
+    if nm == nil or nm == "" then return false end
+    return DECOR[nm] == true
+  end
+  local function nameOf(c)
+    local nm = nil
+    pcall(function() nm = c.name end)
+    return nm
+  end
   for id in pairs(hid) do
     if true then   -- ★ 对所有"被隐藏的控件"都兜底（原来只对 cell. 生效，范围开小了）
       local c = self:find(id)
@@ -13995,13 +14026,16 @@ function Adapter:enforce_hidden_subtrees()
           for i = 1, math.min(#kids, 64) do
             local k = kids[i]
             if k ~= nil and k.SetVisible then
-              pcall(function() k:SetVisible(false) end)
-              local kk = nil
-              pcall(function() kk = k:GetChildren() end)
-              if type(kk) == "table" then
-                for j = 1, math.min(#kk, 32) do
-                  if kk[j] ~= nil and kk[j].SetVisible then
-                    pcall(function() kk[j]:SetVisible(false) end)
+              -- ★ 内层装饰（`bg`/`label`/`face`…）**不参与兜底隐藏** ✓
+              if not decor(nameOf(k)) then
+                pcall(function() k:SetVisible(false) end)
+                local kk = nil
+                pcall(function() kk = k:GetChildren() end)
+                if type(kk) == "table" then
+                  for j = 1, math.min(#kk, 32) do
+                    if kk[j] ~= nil and kk[j].SetVisible and not decor(nameOf(kk[j])) then
+                      pcall(function() kk[j]:SetVisible(false) end)
+                    end
                   end
                 end
               end
@@ -17346,7 +17380,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v100 / 2026-10-09 / 修好四键探针(它从没触发过:读的是会话的_modal_seen而写在控制器上)+按资料员建议加 GetSiblingIndex 一条定分叉 =====")
+        print("[murdoku] ===== 构建标记 v101 / 2026-10-09 / 真因:enforce_hidden_subtrees 漏了 DECOR 豁免,把四键的 bg/label 压成 invisible 且从不恢复(探针实测开局 true→之后 false);hide_safety 假件名字修正+护栏 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

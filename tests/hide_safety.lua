@@ -115,7 +115,16 @@ do
     end
   end
   clues_ctrl = make_ctrl("clues")
-  bg_ctrl = attach(clues_ctrl, make_ctrl("clues.bg"))
+  -- ★★★★★ 2026-10-09 **假控件的名字必须是【裸名 `bg`】，不能是 `clues.bg`** ✗✓
+  --   ★ 为什么 ✓：真机上子控件的 `name` 就是**裸名** ——
+  --     `Adapter:sub(parent, child)` 走的是 `parent:GetChild(child_name)`（`engine_adapter:533` ✓）
+  --     ⇒ 也就是**按名字查** ⇒ 真名必须是 `bg` ✓
+  --   ★ 而 `DECOR` 豁免表（`engine_adapter:2328` ✓）里写的也是**裸名**（`label`/`bg`/`face`… ✓）
+  --     ⇒ ★ 这里原来写成 `"clues.bg"` ✗ ⇒ `DECOR["clues.bg"]` 恒 nil
+  --       ⇒ ★ **豁免永远不生效** ✗ ⇒ 于是这条测试**把 bug 当成了正确行为**锁死 ✗✓
+  --         （L244 / L256 那两条断言写的就是"`clues.bg` 应该被压成 invisible" ✗）
+  --   ★ 这是**假件保真度**问题 ✓ —— 与 `kit.mjs` 的 `gray`、`home`/`select` 那几次同族 ✓
+  bg_ctrl = attach(clues_ctrl, make_ctrl("bg"))
   for i = 1, 3 do
     local card = make_ctrl("clue." .. i)
     card.kind = "button"
@@ -196,14 +205,29 @@ local function count_gc(fn)
   return C.gc - g0, r
 end
 -- 子树里"还有没有亮着的"（= 该隐藏却没藏住的）
-local function visible_descendants(c)
+--
+-- ★ 2026-10-09 加第二个参数 `exclude_decor` ✗✓：
+--   传 true ⇒ **跳过内层装饰名**（`bg`/`label`/`face`… ✓ 与 `engine_adapter:2328` 的 `DECOR` 同表 ✓）
+--   ★ 为什么需要 ✓：装饰类**本来就该保持可见** ✓（`enforce_hidden_subtrees` 漏了这条豁免 ✗）
+--     ⇒ 老判据"子树一个都不许亮"会把**正确的状态**判成失败 ✗✓
+local DECOR_NAMES = {
+  label = true, bg = true, pic = true, icon = true,
+  face = true, note = true, x = true, obj = true, text = true, portrait = true,
+  backrop1 = true, backrop2 = true, badge = true, letter = true, what = true, who = true,
+  frame = true, card = true, art = true, image = true, img = true,
+}
+local function visible_descendants(c, exclude_decor)
   local n = 0
   local function walk(x, d)
     if x == nil or d > 4 then return end
     local kids = x.__kids or {}
     for i = 1, #kids do
-      if kids[i].visible ~= false then n = n + 1 end
-      walk(kids[i], d + 1)
+      local k = kids[i]
+      -- ★ 装饰类不算"该藏没藏住" ✓（名单与 `engine_adapter:2328` 的 `DECOR` 保持一致 ✓）
+      if not (exclude_decor and DECOR_NAMES[k.name] == true) then
+        if k.visible ~= false then n = n + 1 end
+      end
+      walk(k, d + 1)
     end
   end
   walk(c, 0)
@@ -238,10 +262,27 @@ do
   ok(n_enforce >= 1,
     "★ 脚本改过 visible ⇒ 兜底隐藏跑了（事件驱动的主触发源）",
     "跑了 " .. tostring(n_enforce) .. " 次")
-  ok(clues_ctrl.visible == false and after == 0,
-    "★ 被隐藏容器的**整棵子树**都看不见了（这就是它防的那件事）",
-    "跑之前还有 " .. tostring(before) .. " 个亮的，现在 " .. tostring(after) .. " 个")
-  ok(bg_ctrl.visible == false, "`clues.bg` 被压成 visible=false", "visible=" .. tostring(bg_ctrl.visible))
+  -- ★★★★★ 2026-10-09 **改判（依据，不是放宽）** ✗✓
+  --   ★ 原来这里断言 `after == 0`（**整棵子树**全灭 ✗）＋ 下面 `bg_ctrl.visible == false` ✗
+  --     —— 那两条**把 bug 当成了正确行为** ✗✓
+  --   ★ 真机证据（用户 19:01 日志 ✓）：四键开局 `bg visible=true` ✓ 之后变 `false` ✗
+  --     ⇒ ★ **`enforce_hidden_subtrees` 把内层装饰也压掉了**，而它**从不恢复**
+  --       ⇒ 四键**有壳没图文** ✓ 而它的姊妹函数 `hide_unlisted` **有** `DECOR` 豁免 ✓
+  --       ⇒ 本函数**漏抄了那条规则** ✗ （项目自己在 `engine_adapter:2320-2327` 写着：
+  --          「**内层装饰控件一律不参与**」✓ 理由是"计划里只有外层名字 ⇒ 内层永远不在计划里"✓）
+  --   ⇒ ★ 所以正确的判据是：**非装饰的子树被压下去 ✓ 装饰（`bg`）留着 ✓**
+  local after_non_decor = visible_descendants(clues_ctrl, true)
+  ok(clues_ctrl.visible == false,
+    "★ 被隐藏容器自己看不见了（这就是它防的那件事）",
+    "clues.visible=" .. tostring(clues_ctrl.visible))
+  ok(after_non_decor == 0,
+    "★ 被隐藏容器里**非装饰**的子控件全被压下去 ✓（`bg`/`label` 这类内层装饰不算 ✗）",
+    "还剩 " .. tostring(after_non_decor) .. " 个亮的非装饰控件")
+  ok(bg_ctrl.visible == true,
+    "★★ **内层装饰（`bg`）【不该】被压下去** —— DECOR 豁免（真机「四键有壳没图文」的真因）",
+    "visible=" .. tostring(bg_ctrl.visible)
+    .. " ⇒ 若为 false，就是 `enforce_hidden_subtrees` 漏了 DECOR 豁免，"
+    .. "真机表现是「四键只有空壳、图和字都没了」✗")
 end
 
 -- ── 4. [乙-2] 收到光标事件 ⇒ 必须跑（引擎可能把子控件显示出来）──────────────
@@ -253,8 +294,9 @@ do
   adapter:_fire({ action = "test" }, "click", nil)
   pcall(function() OnUpdate(1 / 60) end)
   ok(n_enforce >= 1, "★ 收到光标事件 ⇒ 兜底隐藏跑了", "跑了 " .. tostring(n_enforce) .. " 次")
-  ok(bg_ctrl.visible == false,
-    "★ 引擎自己显示出来的子控件又被压了回去（不靠每帧扫也兜得住）",
+  -- ★ 同上改判 ✓：装饰类**不该**被压回去 ✓（否则"引擎一显示就被脚本再藏"⇒ 图文永远出不来 ✗）
+  ok(bg_ctrl.visible == true,
+    "★ 引擎自己显示出来的**装饰**子控件【不该】被压回去（DECOR 豁免 ✓）",
     "visible=" .. tostring(bg_ctrl.visible))
 end
 

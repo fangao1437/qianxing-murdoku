@@ -184,7 +184,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v100 / 2026-10-09 / 修好四键探针(它从没触发过:读的是会话的_modal_seen而写在控制器上)+按资料员建议加 GetSiblingIndex 一条定分叉 =====")
+        print("[murdoku] ===== 构建标记 v101 / 2026-10-09 / 真因:enforce_hidden_subtrees 漏了 DECOR 豁免,把四键的 bg/label 压成 invisible 且从不恢复(探针实测开局 true→之后 false);hide_safety 假件名字修正+护栏 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
