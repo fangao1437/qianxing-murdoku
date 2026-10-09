@@ -7439,22 +7439,51 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   --   ★ 每次回调按**当前**位置现算 ✓ ⇒ 将来上了滚动，被滚进来的项**自动恢复** ✓
   --     （所以**不缓存"关过谁"** ✓ —— 与 `_fill_grid_item` 的无状态约定一致 ✓）
   do
+    -- ★★★★★ 2026-10-09 **只在【引擎重进回调】时判位置** ✗✓ —— 这一轮的真正修法 ✓
+    --
+    --   ★ 真机实测（v105 ✓ 日志原文 ✓）：
+    --       `★ 列表项位置：pos=1  y=211.99996948242` … `pos=7  y=211.99996948242`
+    --     ★ **七项读出【同一个值】** ✗ ⇒ 我的位置判据**当场失效** ✓
+    --   ★ 而那个 212 不是巧合 ✓：
+    --       `clues` 容器 y=-61.1 高=544 ⇒ 上边 = **+210.90** ✓
+    --     ⇒ ★ `212` ≈ **容器的上边缘** ✓ ⇒ 它其实是**第一格该在的地方** ✓
+    --   ★★ 结论 ✓：★ **`RefreshItems` 期间引擎【还没布局】**
+    --     ⇒ 那时每个列表项都还停在**模板/上一帧**的位置 ✗ ⇒ **读位置毫无意义** ✓✓
+    --     ⇒ ★ 我上一轮那个探针上限 **8 行** ✗ ⇒ **八行全被"我们自己那趟"占满** ✓
+    --       ⇒ ★ **从没打印过布局之后的位置** ✓（所以一直看不出问题在哪 ✓）
+    --
+    --   ★ 修法 ✓：★ **用 `_grid_in_refresh` 分开两种时机** ✓ —— 项目里早就有这个标志 ✓
+    --     · `_grid_in_refresh == true`  ⇒ 是**我们**在调 `RefreshItems` ⇒ ★ **不判** ✗（位置是旧的）
+    --     · `_grid_in_refresh == false` ⇒ 是**引擎**重进（官方：滚动时会重进 ✓ 日志已证实 ✓）
+    --       ⇒ ★ **这时布局已完成** ✓ ⇒ **判位置** ✓
+    --   ★ 时机上也正好 ✓：引擎**滚动时**必然重进 ✓
+    --     ⇒ 滚出可见区的项**当场被关射线** ✓、滚回来的**当场恢复** ✓✓
+    local in_our_refresh = (self._grid_in_refresh == true)
     local half = self:_grid_band(grid)
     local y = nil
     pcall(function() y = item.anchoredPositionY end)
     if half ~= nil and y ~= nil then
       local hh = self._grid_item_h or 0
-      if math.abs(y) > half + hh / 2 then
+      local outside = math.abs(y) > half + hh / 2
+      if not in_our_refresh and outside then
         pcall(function() if item.raycastTarget ~= nil then item.raycastTarget = false end end)
         pcall(function() if item.interactable ~= nil then item.interactable = false end end)
         pcall(function() if item.blockRaycast ~= nil then item.blockRaycast = false end end)
       end
-      -- ★ 一次性诊断 ✓：把"这一项在哪儿、有没有被关"打出来 ⇒ 下次真机能直接看 ✓
-      if (self._grid_out_log or 0) < 8 and print then
-        self._grid_out_log = (self._grid_out_log or 0) + 1
-        print("[murdoku] ★ 列表项位置：pos=" .. tostring(pos) .. "  y=" .. tostring(y)
-          .. "  半径=" .. tostring(half) .. "  项高=" .. tostring(hh)
-          .. "  ⇒ " .. ((math.abs(y) > half + hh / 2) and "**在可见区外 ⇒ 已关射线** ✓" or "在可见区内 ✓"))
+      -- ★ 诊断：★ **两种时机各打几行** ✓ —— 上一轮就是只打了"我们自己那趟"，白跑一次真机 ✗
+      if in_our_refresh then
+        if (self._grid_pos_log_in or 0) < 3 and print then
+          self._grid_pos_log_in = (self._grid_pos_log_in or 0) + 1
+          print("[murdoku] ★ 列表项位置【我们那趟·布局前，位置不可信 ✗】：pos=" .. tostring(pos)
+            .. "  y=" .. tostring(y) .. "  ⇒ ★ 不据此判定 ✓")
+        end
+      else
+        if (self._grid_pos_log_out or 0) < 12 and print then
+          self._grid_pos_log_out = (self._grid_pos_log_out or 0) + 1
+          print("[murdoku] ★ 列表项位置【引擎重进·布局后 ✓】：pos=" .. tostring(pos)
+            .. "  y=" .. tostring(y) .. "  半径=" .. tostring(half) .. "  项高=" .. tostring(hh)
+            .. "  ⇒ " .. (outside and "**在可见区外 ⇒ 已关射线** ✓" or "在可见区内 ✓"))
+        end
       end
     end
   end
@@ -17563,7 +17592,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v105 / 2026-10-09 / 修我自己造成的回调崩溃:方法名与缓存字段名撞了(取到函数⇒算术抛错⇒整卡不填⇒点击反馈全坏);假件补 anchoredPositionY + 加'回调不许抛'护栏 =====")
+        print("[murdoku] ===== 构建标记 v106 / 2026-10-09 / 按位置判可见区要挑时机:RefreshItems 期间引擎还没布局(七项都读同一个 y=212=容器上边缘);改到引擎重进回调时判 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
