@@ -225,6 +225,19 @@ local function make_item()
   local it = make_ctrl("clue")
   it.kind = "button"
   it.raycastTarget = false        -- ★ 列表项是从按钮模板克隆的 ⇒ 真机上也有这个字段
+  -- ★★★★★ 2026-10-09 **必须补 `anchoredPositionY`** ✗✓（★ 它缺失，害我漏了一个真机崩溃 ✗）
+  --   ★ 真机事故 ✓（构建 v104 ✓ 日志原文 ✓）：
+  --       `网格视窗：列表项填充回调抛过异常
+  --        （client_script:7447: attempt to perform arithmetic on a function value (local 'half')）`
+  --     ⇒ ★ **整张卡都没填上** ⇒ 用户看到「**线索区点击反馈又坏了**」✗
+  --   ★ 根因（我的锅 ✗）：★ **方法名与字段名撞了** ✗
+  --     `function Controller:_grid_half_h(grid)` ＋ `self._grid_half_h` 同名
+  --     ⇒ ★ 方法体里 `self._grid_half_h` 取到的是**方法本身（函数）** ✗ ⇒ 算术用函数 ⇒ 抛错 ✓
+  --   ★★ **而本文件当时全绿** ✗ —— 因为假件**没有 `anchoredPositionY`** ✗
+  --     ⇒ 取 `y` 得 `nil` ⇒ 那个分支**整段被跳过** ⇒ ★ **这条路【从未被离线走到过** ✗✓
+  --     ⇒ ★ 又一个**假件保真度**问题 ✓（与 `gray`、`home`/`select`、`"clues.bg"` 同族 ✓）
+  --   ⇒ ★ 补上它，这条分支才会被真正执行 ✓
+  it.anchoredPositionY = 0        -- ★ 位置（真机是读写字段 ✓ 官方 `ClientUIBaseControl` ✓）
   -- ★★★★★ 2026-10-09 **补上 `gray`** ✗✓（原来这里没有它 ⇒ **句柄记忆表永远有一条查不到** ✓）
   --   ★ 怎么发现的 ✓（临时探针把每次缓存判定打出来，看完就撤 ✓）：
   --       suffix=gray  index=5  rec.idx=5  c=nil  variant=0  fast=false     ← ★ 每一项、每一趟都是这样
@@ -1127,6 +1140,22 @@ do
   ck(content > VIEW_H, "★ 内容比视窗长 ⇒ **确实需要滚动**（滚动条那个需求是成立的 ✓）",
     "内容 " .. content .. " vs 视窗 " .. VIEW_H)
 end
+-- ★★★★★ 2026-10-09 **填充回调【绝不许抛异常】** ✗✓（这条护栏是拿一次真机事故换来的 ✓）
+--
+--   ★ 真机事故（构建 v104 ✓ 日志原文 ✓）：
+--     `网格视窗：列表项填充回调抛过异常
+--      （client_script:7447: attempt to perform arithmetic on a function value (local 'half')）`
+--     ⇒ ★ **回调一抛，整张卡就都没填上** ⇒ 用户看到「**线索区点击反馈又坏了**」✗
+--   ★ 根因：★ 我把**方法名与缓存字段名起成同一个** ✗
+--     （`Controller:_grid_half_h` ＋ `self._grid_half_h` ⇒ 方法体里取到的是**函数** ✗）
+--   ★★ 而**当时本文件全绿** ✗ —— 因为假件没有 `anchoredPositionY` ⇒ 那条分支**从没被走到** ✗
+--     （已在上面的 `make_item` 补上 ✓）
+--   ⇒ ★ 这条断言直接盯 `_grid_cb_err`（控制器自己记的"回调抛过什么" ✓ 见 `ui_controller.lua` ✓）
+--     ⇒ ★ 它是**兜底**：以后任何原因让回调抛错，这里都会红 ✓
+ck(ctrl._grid_cb_err == nil,
+  "★★ **列表项填充回调【一次都没抛过异常】**（真机 v104 就栽在这上面 ✗）",
+  "抛过：" .. tostring(ctrl._grid_cb_err)
+  .. " ⇒ ★ 回调一抛，整张卡都填不上 ⇒ 真机表现是「线索区点击反馈全坏」✗")
 ck(A.view <= 1,
   "稳态一次 render 里 view() ≤ 1 次（网格那句「多余的整视图重建」已去掉）",
   "实测 " .. tostring(A.view) .. " 次（改之前是 2：网格 1 + 布局 1）；单次 " ..

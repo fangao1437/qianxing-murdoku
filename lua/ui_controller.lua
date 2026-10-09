@@ -4269,7 +4269,7 @@ function Controller:_grid_visible_count(grid)
   -- ★ 2026-10-09 **同时记下"可见带半径"与"项高"** ✓ —— 位置判据要用 ✓
   --   ★ 为什么不能只用序号 ✗：真机实测 `scrollProgress=nil`（**只读字段全读不到** ✗）
   --     ⇒ 一旦滚动过，"可见区"就**不是**第 1..N 项 ✓ ⇒ 必须按**位置**判 ✓
-  self._grid_half_h = vh / 2
+  self._grid_band_h = vh / 2
   self._grid_item_h = ih
   self._grid_vis_why = "项高=" .. tostring(ih) .. " 纵间距=" .. tostring(sy)
     .. " 上边距=" .. tostring(pt) .. " 下边距=" .. tostring(pb)
@@ -4286,10 +4286,10 @@ function Controller:_grid_visible_count(grid)
 end
 
 -- 可见带半径（视窗高的一半）—— `_grid_visible_count` 里顺便算好的 ✓
-function Controller:_grid_half_h(grid)
-  if self._grid_half_h ~= nil then return self._grid_half_h end
+function Controller:_grid_band(grid)
+  if self._grid_band_h ~= nil then return self._grid_band_h end
   self:_grid_visible_count(grid)
-  return self._grid_half_h
+  return self._grid_band_h
 end
 
 -- 填**一条**列表项。★ 无状态：内容全部由 `index` 现算（官方：滚动会重复进入回调）。
@@ -4374,7 +4374,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   --   ★ 每次回调按**当前**位置现算 ✓ ⇒ 将来上了滚动，被滚进来的项**自动恢复** ✓
   --     （所以**不缓存"关过谁"** ✓ —— 与 `_fill_grid_item` 的无状态约定一致 ✓）
   do
-    local half = self:_grid_half_h(grid)
+    local half = self:_grid_band(grid)
     local y = nil
     pcall(function() y = item.anchoredPositionY end)
     if half ~= nil and y ~= nil then

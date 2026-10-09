@@ -184,7 +184,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v104 / 2026-10-09 / 修上一版判据错误:改成按【位置】判可见区(anchoredPositionY),不按序号(因 scrollProgress 只读读不到) =====")
+        print("[murdoku] ===== 构建标记 v105 / 2026-10-09 / 修我自己造成的回调崩溃:方法名与缓存字段名撞了(取到函数⇒算术抛错⇒整卡不填⇒点击反馈全坏);假件补 anchoredPositionY + 加'回调不许抛'护栏 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
