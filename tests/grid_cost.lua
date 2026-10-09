@@ -1230,6 +1230,61 @@ do
     .. " 次 ⇒ ★ 必须是 0 ✓（「不能点」改由点击处理忽略 ✓）")
 end
 
+-- ★★★★★ 2026-10-10 **K 段：高亮不许"留在被回收的列表项上"** ✗✓
+--
+--   ★ 真机 bug（用户回报 ✓）：「**点一个人选两张**」✗ —— ★ 实为「**两张卡同时高亮**」✓
+--   ★ 触发条件 ✓：★ **线索条数 > 5 的关卡** ✓（⇒ 列表滚动 ⇒ 列表项**被回收** ✓）
+--
+--   ★★ 根因（读代码读出来的 ✓ 不是猜 ✓）：
+--     ★ 原写法 `elseif _rg2.tint == "sel" then 还原` ✗
+--     ★ 而 `_rg2 = self:_grid_item_rec(item, index)` —— ★ **按 `(item, index)` 缓存** ✗
+--     ⇒ ★ 回收给另一条线索时 `index` 变了 ⇒ ★ **记录是新的** ⇒ `_rg2.tint == nil`
+--       ⇒ ★★ **`elseif` 进不去 ⇒ 还原永不执行** ⇒ ★ **金色留在卡上** ✓✓
+--
+--   ★★ 修法 ✓：★ **判定改看"当前实际颜色"** ✓（无状态 ✓ 不依赖任何按 index 缓存的状态 ✗）
+--   ★ 本段就盯这条 ✓：★ **换了 index（新记录）也必须能还原** ✓
+do
+  local K = {}
+  local pay = ctrl:_grid_text_payload()
+  local it = grid.__items[1]
+  if it ~= nil and ctrl.core ~= nil then
+    local bp = it:GetChild("clue.1.backrop1")
+    -- ★★ 补上"模板原色"这一环 ✓ —— ★ 真机上 `adapter:sub("clue","backrop1").imageColor` 取得 ✓
+    --   ★ 为什么必须有它 ✗：★ 若卡片**一开始就是金色**（上次残留 ✗）✓
+    --     ⇒ ★ **永远学不到"原色"** ✗ ⇒ ★ 还原无从下手 ✓✓（★ 这正是 [K1] 第一次失败的原因 ✓）
+    if bp ~= nil then bp.imageColor = 4294967295 end          -- 先给它一个正常的白 ✓
+    ctrl._clue_tpl_tint = 4294967295                          -- ★ 模拟"从模板取到的原色" ✓
+    local target = nil
+    for i = 1, #(pay.items or {}) do
+      if pay.items[i].id ~= nil and pay.items[i].id ~= "" then target = i break end
+    end
+    K.found = (target ~= nil)
+    if target ~= nil and bp ~= nil then
+      ctrl.core.selected = pay.items[target].id
+      ctrl._grid_in_refresh = true
+      it.__index = target - 1
+      grid.__cb(it, it.__index)
+      K.tinted = tostring(bp.imageColor)
+      -- ★★ 关键一步 ✓：**取消选中** ＋ ★ **把这一项换到【另一个 index】** ✗
+      --    ⇒ ★ 这会拿到一份**全新的记录** ✓ —— ★ 正是真机上"回收"发生的事 ✓
+      ctrl.core.selected = nil
+      ctrl._grid_in_refresh = true
+      it.__index = 0
+      grid.__cb(it, it.__index)
+      K.after_recycle = tostring(bp.imageColor)
+    end
+  end
+  out(string.format("  [K0] 选中后颜色 = %s（应为高亮色 4294956107 ✓）", tostring(K.tinted)))
+  out(string.format("  [K1] ★ 取消选中 ＋ **换了 index（新记录）** 后颜色 = %s（★ **必须还原** ✗）",
+    tostring(K.after_recycle)))
+  ck(K.found == true, "（K 前置）找得到带 id 的线索", "target=" .. tostring(K.found))
+  ck(K.tinted == "4294956107", "★ 选中时确实涂了高亮色 ✓", "实测 " .. tostring(K.tinted))
+  ck(K.after_recycle ~= "4294956107",
+    "★★ **取消选中后必须还原**（★ 换 index 拿新记录也要还原 ✗）—— 这正是「两张卡同时高亮」的根因 ✓",
+    "实测 " .. tostring(K.after_recycle)
+    .. " ⇒ 若仍是高亮色，说明还原还依赖「按 index 缓存的 tint 标记」✗")
+end
+
 -- ★★★★★ 2026-10-09 **填充回调【绝不许抛异常】** ✗✓（这条护栏是拿一次真机事故换来的 ✓）
 --
 --   ★ 真机事故（构建 v104 ✓ 日志原文 ✓）：

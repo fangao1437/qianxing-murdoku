@@ -4651,19 +4651,62 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
       --     （而且 `_pid` 还多做了"去掉 `portrait.` 前缀"和"跳过 `@` 特殊角色"两步 ✓ 更稳 ✓）
       local _pid2 = _pid
       local _sel = (_pid2 ~= nil) and self.core ~= nil and self.core.selected == _pid2
+      -- ★★★★★ 2026-10-10 **改成【看当前颜色】的无状态判定** ✗✓
+      --   ★★ 真机 bug（用户回报 ✓）：「**点一个人选两张**」✗ —— ★ 实为「**两张卡同时高亮**」✓
+      --     ★ 触发条件 ✓：★ **线索条数 > 5 的关卡** ✓（⇒ 列表会滚动 ✓）
+      --   ★★ 根因（我读代码读出来的 ✓ 不是猜 ✓）：
+      --     原写法是 ★ `elseif _rg2.tint == "sel" then 还原` ✗
+      --     ★ 而 `_rg2 = self:_grid_item_rec(item, index)` ✓ —— ★ **它是按 `(item, index)` 缓存的** ✗
+      --     ⇒ ★ 列表项被**回收给另一条线索**时 `index` 变了 ✓
+      --       ⇒ ★ **拿到一份【全新的记录】** ✓ ⇒ `_rg2.tint == nil` ✗
+      --       ⇒ ★★ **`elseif` 进不去 ⇒ 【还原永远不执行】** ✗✓
+      --       ⇒ ★ **那张卡就一直留着金色** ✓ ⇒ ★ **两张卡同时高亮** ✓✓
+      --   ★ 为什么"条数 > 5"才会出现 ✓：★ 条数少时列表**不滚动** ⇒ 列表项**不被回收** ⇒ 记录不会错位 ✓
+      --
+      --   ⇒ ★★ 修法 ✓：★ **判定不再依赖任何"按 index 缓存"的状态** ✗
+      --     · 取**当前实际颜色** ✓ ⇒ ★ 它就是"这张卡现在是不是金的"的唯一真相 ✓
+      --     · 是金色而**这一项不该高亮** ⇒ ★ **无条件还原** ✓（不再问"记录记没记着"✗）
+      --     · 原色从哪来 ✓：★ 先看记录 ✓；记录没有（新记录 ✗）⇒ ★ **回落到模板的原色** ✓✓
+      local HL = 4294956107          -- ★ 高亮色（暖金 ✓ 乘算着色 ✓）
+      local _cur = nil
+      pcall(function() _cur = _cbp2.imageColor end)
       if _sel then
-        if _rg2.tint ~= "sel" then
+        -- ★ 记原色只在"当前不是金色"时 ✓（★ 免得把金色当成原色记下来 ✗ —— 原注释就强调过 ✓）
+        if _cur ~= HL then
           if _rg2.tint_orig == nil then
-            pcall(function() _rg2.tint_orig = _cbp2.imageColor end)
+            pcall(function() _rg2.tint_orig = _cur end)
           end
-          _rg2.tint = "sel"
-          pcall(function() _cbp2.imageColor = 4294956107 end)     -- ★ 暖金（乘算着色）
+          -- ★ 同时记到**控制器级**的兜底表 ✓（按 item 存 ✓ 不按 index ✗）
+          --   ★ 这样列表项被回收后，即便记录是新的，也能拿回原色 ✓✓
+          self._grid_tint_fallback = self._grid_tint_fallback or {}
+          if self._grid_tint_fallback[item] == nil then
+            self._grid_tint_fallback[item] = _cur
+          end
+          pcall(function() _cbp2.imageColor = HL end)
         end
-      elseif _rg2.tint == "sel" then
+        _rg2.tint = "sel"
+      elseif _cur == HL then
+        -- ★★ **只要"现在确实是金色"就还原** ✓ —— ★ 不看 `_rg2.tint` ✗（那正是 bug 的来源 ✓）
+        local _orig = _rg2.tint_orig
+        if _orig == nil then
+          _orig = (self._grid_tint_fallback or {})[item]
+        end
+        if _orig == nil then
+          -- ★ 兜底：从**模板**取原色 ✓（最稳 ✓ 模板是这一切的源头 ✓）
+          if self._clue_tpl_tint == nil then
+            local _tpl = nil
+            pcall(function() _tpl = adapter:find("clue") end)
+            local _tbp = nil
+            if _tpl ~= nil then pcall(function() _tbp = adapter:sub("clue", "backrop1") end) end
+            if _tbp ~= nil then pcall(function() self._clue_tpl_tint = _tbp.imageColor end) end
+          end
+          _orig = self._clue_tpl_tint
+        end
+        if _orig ~= nil then
+          pcall(function() _cbp2.imageColor = _orig end)
+        end
         _rg2.tint = nil
-        if _rg2.tint_orig ~= nil then
-          pcall(function() _cbp2.imageColor = _rg2.tint_orig end)  -- ★ 复原（★ 不写白 ✓）
-        end
+        self._grid_tint_fixed = (self._grid_tint_fixed or 0) + 1
       end
     end
   end
