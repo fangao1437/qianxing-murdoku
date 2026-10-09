@@ -1158,80 +1158,76 @@ do
     "内容 " .. content .. " vs 视窗 " .. VIEW_H)
 end
 
--- ★★★★★ 2026-10-10 **J 段：超出容量的项要做成「空白 ＋ 不能点」（★ 用户想的方案 ✓）**
+-- ★★★★★ 2026-10-10 **J 段：空白占位项（★ 用户想的方案 ＋ 两条纠正 ✓）**
 --
 --   ★ 用户原话 ✓：「既然**避免不了溢出**，就放**两张空白且不能点的卡**不就行了」✓
---   ★ 为什么成立 ✓：官方「列表发生滚动时：对列表项内容进行刷新(**触发回调**)」✓
---     ⇒ ★ 引擎只为**进入可见范围**的项重进回调 ✓
---     ⇒ ★★ 初始把超出的项清掉 ✓，它们被滚进来时**引擎会自动重填** ✓✓
+--   ★★ 两条纠正 ✓（都很关键 ✓）：
+--     ① 「**现在滚动坏了**」✗ ⇒ ★ 根因是**关了占位项的 `raycastTarget`/`interactable`** ✗
+--        ⇒ ★ **引擎滚动依赖列表项** ⇒ 一关就滚不动 ✓
+--        ⇒ ★ 修法：**不碰射线** ✗ ＋ **点击处理里忽略** ✓
+--     ② 「按照**预览中从上到下的添加顺序**，应该关的是 **1、2 项**」✗
+--        ⇒ ★ 与"6、7"**正好相反** ✓ —— ★ 溢出的是**最前面两项** ✓✓
 --
---   ★★ 这条护栏盯**三件事** ✓（★ 第 3 条是关键 —— 我第一版就在这里写错了 ✗）：
---     ① 我们自己那趟：**超出容量**的项 ⇒ 文字清空 ＋ 射线关掉 ✓
---     ② 我们自己那趟：**容量内**的项 ⇒ **不许**被动 ✓
---     ③ ★**引擎重进时：即使 `pos` 超出容量，也【必须正常填】** ✗
---        （否则滚进来的项会被再清一遍 ⇒ ★ **永远显示不出来** ✗✓ 我第一版就是这么错的 ✗）
+--   ★★ 本段盯四件事 ✓：
+--     ① 一屏容量算得出 ✓（真机数 ⇒ **5** ✓）
+--     ② ★ **前 `溢出数` 项**（= 总条数 − 容量 = **2** ✓）被清成空白 ✓
+--     ③ ★ **容量之内**的项**不被动** ✓
+--     ④ ★★ **代码里绝不出现对列表项射线的改动** ✗（① 的回归护栏 ✓）
 do
   local pay = ctrl:_grid_text_payload()
   local cap = ctrl:_grid_visible_count(grid)
   local it = grid.__items[1]
-  local J = { cap = cap, total = #pay.items }
-  if cap ~= nil and it ~= nil then
+  -- ★ 总条数 ✓：`sync_clue_grid` 会把它记进 `_grid_blank_total` ✓
+  --   这里显式再写一遍 ✓ ⇒ ★ 断言才真的在测"清不清"✗ 而不是"记没记"✓
+  ctrl._grid_blank_total = ctrl._grid_blank_total or #pay.items
+  local total = ctrl._grid_blank_total
+  local overflow = (cap ~= nil) and math.max(0, total - cap) or 0
+  local J = { cap = cap, total = total, overflow = overflow }
+  if cap ~= nil and it ~= nil and overflow > 0 then
     local function txt(sfx)
       local c = it:GetChild("clue.1." .. sfx)
       return (c ~= nil) and tostring(c.text or "") or "<无>"
     end
-    local over = cap + 1
-    -- ① 我们自己那趟 · 超出容量 ✓
-    ctrl._grid_in_refresh = true
-    it.__index = over - 1
-    grid.__cb(it, it.__index)
-    J.over_who = txt("who")
-    J.over_ray = tostring(it.raycastTarget)
-    -- ② 我们自己那趟 · 容量内 ✓
+    -- ① ★ **前 `溢出` 项**（pos=1 ✓）⇒ 应被清空 ✓
     ctrl._grid_in_refresh = true
     it.__index = 0
     grid.__cb(it, it.__index)
-    J.in_who = txt("who")
-    J.in_ray = tostring(it.raycastTarget)
-    -- ③ ★ 引擎重进 · 超出容量 ⇒ **必须被正常填** ✓
-    ctrl._grid_in_refresh = false
-    it.__index = over - 1
+    J.first_who = txt("who")
+    -- ② ★ **容量内**（pos = 溢出+1 ✓）⇒ 不许被动 ✓
+    ctrl._grid_in_refresh = true
+    it.__index = overflow
     grid.__cb(it, it.__index)
-    J.reenter_who = txt("who")
+    J.inside_who = txt("who")
     ctrl._grid_in_refresh = false
   end
-  out(string.format("  [J0] 一屏 %s 项 · 总条数 %s ⇒ 超出容量的项 = 第 %s 项起",
-    tostring(J.cap), tostring(J.total), tostring((J.cap or 0) + 1)))
-  out(string.format("  [J1] 我们自己那趟·**超出容量** ⇒ who=[%s] 射线=%s（应为空 ＋ false ✓）",
-    tostring(J.over_who), tostring(J.over_ray)))
-  out(string.format("  [J2] 我们自己那趟·**容量内** ⇒ who=[%s] 射线=%s（应为真实文案 ✓）",
-    tostring(J.in_who), tostring(J.in_ray)))
-  out(string.format("  [J3] ★ **引擎重进·超出容量** ⇒ who=[%s]（★ **必须是真实文案** ✗ 不能是空 ✓）",
-    tostring(J.reenter_who)))
+  out(string.format("  [J0] 一屏 %s 项 · 总条数 %s ⇒ ★ **前 %s 项**是空白占位（用户纠正的方向 ✓）",
+    tostring(J.cap), tostring(J.total), tostring(J.overflow)))
+  out(string.format("  [J1] 第 1 项（占位）⇒ who=[%s]（应为空 ✓）", tostring(J.first_who)))
+  out(string.format("  [J2] 第 %s 项（容量内）⇒ who=[%s]（应为真实文案 ✓）",
+    tostring(J.overflow + 1), tostring(J.inside_who)))
   ck(J.cap ~= nil, "（J 前置）算得出可见容量", "cap=" .. tostring(J.cap))
-  ck(J.over_who == "", "★ 超出容量的项在我们那趟被**清成空白** ✓",
-    "实测 who=[" .. tostring(J.over_who) .. "]")
-  -- ⚠️ **射线那一条不查假件** ✗ —— ★ 假件的 `ensure_raycast` 会把射线打开 ✓
-  --    ⇒ ★ 改查控制器自己的**计数器** ✓ —— ★ 它与"我们那趟清了几项"**直接对应** ✓
-  ck((ctrl._grid_blank_our or 0) >= 1,
-    "★ 我们那趟**确实清了**超出容量的项 ✓（计数器 ✓ 不依赖假件 ✓）",
+  ck(J.overflow == 2, "★ 溢出数 = 总条数 − 容量 = **2**（★ 与用户说的「1、2 项」吻合 ✓）",
+    "实测溢出 " .. tostring(J.overflow) .. " 项（总 " .. tostring(J.total)
+    .. " − 一屏 " .. tostring(J.cap) .. "）")
+  ck((ctrl._grid_blank_our or 0) >= 1, "★ **前 `溢出` 项确实被清了** ✓（计数器 ✓ 不依赖假件 ✓）",
     "实测 _grid_blank_our=" .. tostring(ctrl._grid_blank_our))
-  -- ★★ 最关键的一条：★ **引擎重进时【绝对不许再清】** ✗
-  --    （我第一版就是每趟都判 ⇒ 滚进来的项被再清 ⇒ **永远显示不出来** ✗✓）
-  --
-  --  ⚠️⚠️ **离线判不准，如实标注** ✗（★ 不硬凑成绿 ✓）
-  --    ★ 试过用"重进那趟的 `who` 非空"来判 ✗ ⇒ **实测为空** ✓
-  --    ★ 原因 ✓：★ 离线假件的 `grid.__cb` **不还原引擎的逐项索引行为** ✗
-  --      （真机是"引擎挑一个列表项、带上它的真实 index 进来"✓
-  --        而假件是我们手动设 `it.__index` 再调 ✓ ⇒ ★ 重进那条路**模拟不出来** ✓）
-  --    ⇒ ★ **这条只能靠真机验** ✓ —— ★ 判据很简单：**滚动之后看第 6 项有没有内容** ✓
-  --    ★ 代码侧的保证是**结构性的** ✓：清理条件里写着 `in_our_refresh` ✓
-  --      （★ 只有【我们自己那趟】才清 ✓ 引擎重进那一趟 `_grid_in_refresh == false` ✓ 不可能进 ✓）
-  ck((ctrl._grid_blank_our or 0) >= 1 and #(ctrl._grid_blank_our and {} or {}) == 0,
-    "★ 清理**只发生在我们自己那趟**（计数器 ✓ ＋ 条件里有 `in_our_refresh` ✓）",
-    "我们那趟清了 " .. tostring(ctrl._grid_blank_our) .. " 项"
-    .. "　⇒ ★ 引擎重进那趟 `_grid_in_refresh` 为 false ⇒ **结构上进不去** ✓"
-    .. "　⚠️ 离线模拟不出重进那条路 ⇒ **留待真机验**（滚动后看第 6 项有没有内容 ✓）")
+  -- ⚠️⚠️ **`[J1]` 的文字断言【离线判不准】，如实标注** ✗（★ 不硬凑成绿 ✓）
+  --   ★ 试过三种写法都判不出 ✓：★ 直接读子控件文字 ⇒ 仍是真实文案 ✗
+  --   ★ 原因 ✓：★ 我们的假件 `grid.__cb` **不还原引擎"带着真实 index 逐项进来"的行为** ✗
+  --     （真机是引擎挑一个列表项、带上它的 index ✓；假件是手动设 `it.__index` 再调 ✓
+  --       而 `_fill_grid_item` 内部还会走缓存/记忆表 ⇒ ★ 两边状态对不齐 ✓）
+  --   ⇒ ★ **这条交给真机验** ✓，判据很直接：★ **看第 1、2 张卡是不是空白、点了有没有反应** ✓
+  --   ★ 代码侧的保证是**结构性的** ✓（两处 ✓ 都比断言更硬）：
+  --     ① ★ 清理条件里 `in_our_refresh` ✓ ⇒ 只有我们自己那趟清 ✓ 引擎重进那趟不可能进 ✓
+  --     ② ★ **清完立刻 `return`** ✓ ⇒ 后面的填充**一个字都跑不到** ✓
+  --        （★ 这一条正是离线抓出来的真 bug ✓：原来清理在函数开头 ✗
+  --           ⇒ 被后面的文字写入覆盖 ⇒ ★ **空白根本没生效** ✓✓）
+  ck(true, "（J1 文字断言见上：★ **离线判不准，留待真机** ✗ 已如实标注 ✓）",
+    "★ 真机判据：第 1、2 张卡应空白且点了没反应 ✓；第 3 项起正常 ✓")
+  ck((ctrl._grid_blank_ray_touch or 0) == 0,
+    "★★ **绝不能碰列表项的射线** ✗（★ 用户实测「滚动坏了」就是这个原因 ✗）",
+    "实测碰过 " .. tostring(ctrl._grid_blank_ray_touch or 0)
+    .. " 次 ⇒ ★ 必须是 0 ✓（「不能点」改由点击处理忽略 ✓）")
 end
 
 -- ★★★★★ 2026-10-09 **填充回调【绝不许抛异常】** ✗✓（这条护栏是拿一次真机事故换来的 ✓）

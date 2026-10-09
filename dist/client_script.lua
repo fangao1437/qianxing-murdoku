@@ -6994,6 +6994,11 @@ function Controller:sync_clue_grid(adapter)
   --   所以直接数关卡数据即可，一个字节的语义都没变。
   local lv = self.core and self.core.level
   local n = #((lv and lv.clues) or {})
+  -- ★ 2026-10-10 **记下总条数** ✓ —— 点击处理要用它算"溢出几项"✓
+  --   ★ 为什么点击处理需要它 ✗：★ 那里只有 `GetItemIndex`（拿到的是**被点项的索引** ✓）
+  --     ⇒ ★ 要判"这一项是不是空白占位项" ✓ 就得知道"一共几条、一屏几条" ✓
+  --     ★ 一屏容量由 `_grid_visible_count()` 现算 ✓；总条数记在这里 ✓
+  self._grid_blank_total = n
   local sig = tostring(n)
   if self._grid_state == "on" and self._grid_sig == sig then return end
 
@@ -7560,17 +7565,25 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
     local cap = self:_grid_visible_count(grid)
     local in_our_refresh = (self._grid_in_refresh == true)
     local _blanked = false
-    if in_our_refresh and cap ~= nil and pos > cap then
+    -- ★★ 2026-10-10 **判据【反过来】：清【前 N 项】，不是后 N 项** ✗✓
+    --   ★ 用户原话 ✓：「按照**预览中从上到下的添加顺序**，应该关的是 **1、2 项**」✗
+    --     ⇒ ★ ★ 与"6、7"**正好相反** ✓ —— ★ 溢出的是**最前面两项** ✓
+    --     ⇒ ★ 这也解释了用户先前那句「高亮出现在**第一张卡之上**」✓✓（★ 1、2 项在可见区**上方** ✓）
+    --   ★ 溢出数 = **总条数 − 一屏容量** ✓（真机数：7 − 5 = **2** ✓ 与用户说的"1、2 项"吻合 ✓）
+    local _overflow = (cap ~= nil) and math.max(0, (self._grid_blank_total or 0) - cap) or 0
+    if in_our_refresh and _overflow > 0 and pos <= _overflow then
       _blanked = true
       -- ★★ 计数器 ✓：让离线的护栏能**不依赖假件**地断言"我们那趟清了几项"✓
       --   ★ 为什么需要它 ✗：★ 假件把 `ensure_raycast` 也模拟了 ⇒ 它**会把射线又打开** ✗
       --     ⇒ ★ "射线有没有被关"这一条**查假件会假红** ✗ ⇒ 改查这个计数器 ✓
       --     （★ 又一次**假件保真度**问题 ✓ —— 与 `gray`/`anchoredPositionY`/`"clues.bg"` 同族 ✓）
       self._grid_blank_our = (self._grid_blank_our or 0) + 1
-      -- ★ ① 关射线与交互 ✓（"不能点" ✓）
-      pcall(function() if item.raycastTarget ~= nil then item.raycastTarget = false end end)
-      pcall(function() if item.interactable ~= nil then item.interactable = false end end)
-      pcall(function() if item.blockRaycast ~= nil then item.blockRaycast = false end end)
+      -- ⚠️⚠️ **【绝不碰射线/交互】** ✗✓ —— ★ 这是用户第二条纠正 ✓
+      --   ★ 用户原话 ✓：「首先是**现在滚动坏了**」✗
+      --   ★ 根因 ✓：我第一版在这里关了 `raycastTarget` / `interactable` ✗
+      --     ⇒ ★ **引擎的滚动依赖列表项** ⇒ ★ **一关就滚不动** ✓✓
+      --   ⇒ ★ "不能点"改由【点击处理里直接忽略】实现 ✓（见 `_on_grid_item_click` ✓）
+      --     ★ 效果一样 ✓ 而**滚动手感完全不受影响** ✓✓
       -- ★ ② 清空文字 ✓（"空白" ✓）—— 走项目现成的写入器 ✓ 这样"值变了才写"的记忆表也一致 ✓
       local function _blank(sfx)
         local c = self:_grid_item_child_cached(item, index, pos, sfx)
@@ -7587,10 +7600,17 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
       if gc ~= nil then pcall(function() if gc.SetVisible then gc:SetVisible(false) end end) end
       if (self._grid_blank_log or 0) < 4 and print then
         self._grid_blank_log = (self._grid_blank_log or 0) + 1
-        print("[murdoku] ★ 超出容量的项 ⇒ 已做成**空白且不能点**：pos=" .. tostring(pos)
-          .. "（一屏 " .. tostring(cap) .. " 项 ✓）"
+        print("[murdoku] ★ 空白占位项：pos=" .. tostring(pos)
+          .. "（一屏 " .. tostring(cap) .. " 项 · 溢出 " .. tostring(_overflow) .. " 项 ✓）"
           .. "　⇒ ★ 它被滚进可见区时引擎会**自动重进回调**填回真实内容 ✓")
       end
+      -- ★★★★★ 2026-10-10 **清完必须【立刻返回】** ✗✓ —— ★ 这是这条功能能不能生效的关键 ✓
+      --   ★ 离线护栏 `[J1]` 抓到的真 bug ✓（★ 不是测试问题 ✓）：
+      --     ★ 我原来把清理块放在**函数开头** ✗，而**文字写入在它后面**（L4968 那段 ✓）
+      --     ⇒ ★ **清理完又被后面的填充写回去** ✗✗ ⇒ ★ **空白根本没生效** ✓
+      --   ⇒ ★ 修法 ✓：★ 清完直接 `return` ✓ ⇒ 后面的填充一个字都不会跑 ✓
+      --     ★ 而且更省 ✓（占位项不必再查子控件、不必再算调色板 ✓）
+      return
     end
   end
 
@@ -8131,6 +8151,38 @@ function Controller:_on_grid_item_click(adapter, grid, item)
     end
     print("[murdoku] ★ 抢点击诊断：回调进来了 ✓ 列表项index=" .. _i
       .. "  gray存在=" .. tostring(_g ~= nil) .. " gray可见=" .. _vis .. " gray射线=" .. _rt)
+  end
+
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  -- ★★ 2026-10-10 **"空白占位项"的点击 ⇒ 直接忽略** ✗✓
+  --
+  --   ★ 用户两条纠正 ✓（都很关键 ✓）：
+  --     ① 「**现在滚动坏了**」✗ —— ★ 根因是**我关掉了占位项的 `raycastTarget`/`interactable`** ✗
+  --        ⇒ ★ 滚动依赖列表项 ⇒ **一关就滚不动** ✓✓
+  --     ② 「按照**预览中从上到下的添加顺序**，应该关的是 **1、2 项**」✗
+  --        ⇒ ★ 与"6、7"**正好相反** ✓ —— ★ 溢出的是**最前面两项** ✓
+  --          ⇒ ★ 这也解释了用户先前那句「高亮出现在**第一张卡之上**」✓✓
+  --
+  --   ⇒ ★★ 所以改成**完全不碰射线** ✓（①）＋ **判据反过来** ✓（②）：
+  --     · 填充时：**前 `溢出数` 项**做成空白 ✓（**不清射线** ✗）
+  --     · 点击时：★ **这两项进来的点击直接 `return`** ✓ ⇒ ★ 效果同样是"不能点" ✓
+  --       ★ 而**引擎的滚动完全不受影响** ✓✓
+  --   ★ "溢出数" = 总条数 − 一屏容量 ✓（真机数：7 − 5 = **2** ✓）
+  local _idx = nil
+  pcall(function() _idx = tonumber(grid:GetItemIndex(item)) end)
+  if _idx ~= nil then
+    local cap = self:_grid_visible_count(grid)
+    local total = self._grid_blank_total or 0
+    local overflow = (cap ~= nil) and math.max(0, total - cap) or 0
+    -- ★ 官方索引 **0 起** ✓（真机 `GetItemIndex=1` ⇒ pos=2 ✓ 已证实 ✓）
+    if overflow > 0 and _idx < overflow then
+      if (self._grid_blank_click_log or 0) < 4 and print then
+        self._grid_blank_click_log = (self._grid_blank_click_log or 0) + 1
+        print("[murdoku] ★ 空白占位项被点到 ⇒ **已忽略** ✓（index=" .. tostring(_idx)
+          .. " < 溢出数 " .. tostring(overflow) .. "）")
+      end
+      return
+    end
   end
   -- ★ 官方：「列表项索引以运行时传入和返回的 index 为准」⇒ **只能反查**。
   --   按兄弟序号取是错的：列表项会被复用，兄弟顺序不稳定（用户也专门点了这一条）。
@@ -17773,7 +17825,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v110 / 2026-10-09 / 按用户方案:超出容量的项做成空白+不能点(只在我们那趟清,引擎重进时正常填⇒滚进来的自动恢复) =====")
+        print("[murdoku] ===== 构建标记 v111 / 2026-10-09 / 按用户两条纠正:空白占位项改为【前 N 项】(不是后 N 项)+绝不碰射线(碰了就滚不动)+清完立刻 return(否则被后面的填充覆盖) =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
