@@ -4266,6 +4266,11 @@ function Controller:_grid_visible_count(grid)
   local n = math.floor(avail / per)
   if n < 1 then n = 1 end
   self._grid_vis_n = n
+  -- ★ 2026-10-09 **同时记下"可见带半径"与"项高"** ✓ —— 位置判据要用 ✓
+  --   ★ 为什么不能只用序号 ✗：真机实测 `scrollProgress=nil`（**只读字段全读不到** ✗）
+  --     ⇒ 一旦滚动过，"可见区"就**不是**第 1..N 项 ✓ ⇒ 必须按**位置**判 ✓
+  self._grid_half_h = vh / 2
+  self._grid_item_h = ih
   self._grid_vis_why = "项高=" .. tostring(ih) .. " 纵间距=" .. tostring(sy)
     .. " 上边距=" .. tostring(pt) .. " 下边距=" .. tostring(pb)
     .. " 视窗高=" .. tostring(vh)
@@ -4273,8 +4278,18 @@ function Controller:_grid_visible_count(grid)
     print("[murdoku] ★ 网格可见数：一屏放得下 **" .. tostring(n) .. " 项**（"
       .. tostring(self._grid_vis_why) .. "）"
       .. "　⇒ ★ 可见区【之外】的项会被关掉射线 ✓（官方**没有**裁剪承诺 ✗）")
+    print("[murdoku] ★ 网格可见带：**|y| ≤ " .. tostring(vh / 2 + ih / 2)
+      .. "** 才算在可见区（视窗半高 " .. tostring(vh / 2) .. " ＋ 半个项高 " .. tostring(ih / 2)
+      .. "）⇒ 超出就关射线 ✓　（★ 按**位置**判，不按序号 ✗ —— 因为 `scrollProgress` 读不到 ✓）")
   end
   return n
+end
+
+-- 可见带半径（视窗高的一半）—— `_grid_visible_count` 里顺便算好的 ✓
+function Controller:_grid_half_h(grid)
+  if self._grid_half_h ~= nil then return self._grid_half_h end
+  self:_grid_visible_count(grid)
+  return self._grid_half_h
 end
 
 -- 填**一条**列表项。★ 无状态：内容全部由 `index` 现算（官方：滚动会重复进入回调）。
@@ -4319,54 +4334,63 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   local pos = (tonumber(index) or self._grid_base) - self._grid_base + 1
 
   -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-  -- ★★ 2026-10-09 **可见区【之外】的列表项必须关掉射线** ✗✓
-  --    —— 这是用户那个「**填到了不该有的地方**」的**真因** ✓
+  -- ★★ 2026-10-09 **可见区外的列表项必须关掉射线 —— 而且要按【位置】判，不能按【序号】判** ✗✓
   --
-  --   ★ 用户原话 ✓：
-  --     「我能在线索卡可见区域内选中三个，而**第一行上方还有可选中内容**，
-  --       滚轮列表**之上**的区域我选到了**第四个人**，也就是说**原本的填入方式有问题**，
-  --       确实把线索**填到了不该有的地方**」✗
-  --     ⇒ ★ 换成选关条就是「**填进去的关卡错位**」✓（用户拦住我说"先解决这个"✓）
+  --   ★ 用户原话 ✓：「我能在线索卡可见区域内选中三个，而**第一行上方还有可选中内容**，
+  --     滚轮列表**之上**的区域我选到了**第四个人**……确实把线索**填到了不该有的地方**」✗
+  --     换选关条就是「**填进去的关卡错位**」✓
   --
-  --   ★★ 真因（资料员查证 ＋ 我复算 ✓）：★ **官方【从未承诺】网格视窗会裁剪或屏蔽射线** ✗
-  --     官方唯一相关的话（《网格视窗控件》✓ 用 `get_client_document` 取的原文 ✓）：
-  --       「网格视窗的列表采用**复用列表**结构，出于性能考虑，
-  --         **仅会加载处于可见范围内的列表项**」✓
-  --     ⇒ 那说的是"**只加载**哪些项"（**性能机制** ✓），
-  --       **不是**"会裁掉超出部分的显示/射线" ✗✓
-  --     ⇒ ★ 于是：**填 7 项、一屏只放得下 4 项** ⇒ 多出的 3 项**落在可视区外却照样能点** ✓✓
+  --   ★ ★★ 我第一版修**错了** ✗（v103 ⇒ 真机仍能点到 ✓ 用户反馈「高亮出现在第一张卡之上」✓）：
+  --     我当时的判据是 **`pos > 可见数`** ✗ —— ★ **那是把"可见区"当成了"第 1..N 项"** ✗✓
+  --     而真机日志给了反证 ✓：
+  --       `★ 网格几何1: itemCount=nil  **scrollProgress=nil** …`
+  --     ★ **只读字段全读不到** ✗ ⇒ 我**无法**知道滚动位置 ✗
+  --     ⇒ ★ **列表一旦滚动，"可见区"就不是 1..4 项** ✗
+  --       ⇒ 被滚到视窗**之上**的项，`pos` 可能很小，却**明明在可见区外** ✓
+  --       ⇒ ★ 判决必须看 **这一项在哪儿**，而不是**它是第几项** ✓✓
   --
-  --   ★ 用存档数字复算（`clues.grid` 的 `#80` 块 ✓）：
-  --       视窗高 **544** − 边距 上20/下20 ⇒ 可用 **504**
-  --       每项 **96** ＋ 间距 **8** ⇒ 每项占 **104**
-  --       ⇒ ★ 一屏 = floor(504/104) = **4 项**（第 5 项只露 88 px）
-  --       内容总长（7 项）= 20 + 7×96 + 6×8 + 20 = **760** ⇒ ★ **超出视窗 216 px** ✓
-  --     ⇒ ★ **3 项**落在可视区外 ✓ —— 与"上面还能点到第四个人"**完全吻合** ✓✓
+  --   ★ 官方字段（`ClientUIBaseControl` ✓ 读写 ✓）：
+  --     `anchoredPositionX` / `anchoredPositionY` = **位置** ✓
+  --     `sizeDeltaX` / `sizeDeltaY` = 尺寸 ✓
+  --   ⇒ ★ 判据 ✓：列表项相对**网格视窗**（它的父级 ✓）的位置
+  --       视窗高 `H` ⇒ 可见带 `y ∈ [−H/2, +H/2]`（pivot 0.5 ✓ 居中 ✓）
+  --       项高 `h` ⇒ 一项**整块**都在带外 ⇔ `|y| > H/2 + h/2`
+  --       ⇒ ★ `|y| > H/2 + h/2` ⇒ **完全在可见区外** ⇒ 关射线 ✓
+  --     （★ 用"整块在外"而不是"中心在外" ✓ —— 宁可少关一点，也不要误关半露的可点项 ✗）
   --
-  --   ★ 为什么**离线永远绿灯** ✗（资料员指出、我复测确认 ✓）：
-  --     · `tools/sim/kit.mjs` **没有网格布点模型** ✗（grep padding/itemSize/spacing ⇒ **0 命中**）
-  --     · `tests/grid_cost.lua` 的假 grid **只建模成本**（回调次数/查找/文字写入 ✓）
-  --       ★ **没有布点数学** ✗
-  --     · ★★ 更要命的是**口径就错了** ✗：`grid_cost.lua:23` 把 `RefreshItems` 那个数
-  --       叫成「**7 个可见列表项**」✗ —— 而它其实是**总条数** ✓
-  --       （官方字段 `itemCount` = 「列表项数量」✓；`RefreshItems(itemCount, cb)` =
-  --         「刷新列表项并**逐项**调用回调」✓ ⇒ ★ **传总条数是对的** ✓）
-  --       ⇒ ★ **把"总条数"当成"可见条数"** ⇒ 这类 bug 在离线**不可能**被测出来 ✓✓
+  --   ★ 为什么是这个机制 ✓（资料员查证 ＋ 我复算 ✓）：
+  --     ★ **官方【从未承诺】网格视窗会裁剪或屏蔽射线** ✗
+  --     唯一相关的话是「列表采用复用列表结构，出于性能考虑，
+  --     **仅会加载处于可见范围内的列表项**」✓ —— 那是**性能机制**，不是裁剪 ✗
+  --     ⇒ 官方文档**没有**"裁剪/遮罩/屏蔽射线"的任何表述 ✓（资料员把 API 文档 grep 过 ✓
+  --       10 处 `mask` 命中**全是图片控件**的 ✗）
   --
-  --   ★ 修法 ✓（★ 走脚本 ✓ —— 可见数随**视窗尺寸/关卡数**变，
-  --     正合用户那条「**数量随关卡变走脚本**」✓）：
-  --     · 用**官方 getter** 算"一屏放得下几项" ✓（`GetItemSize`/`GetItemSpacing`/`GetPadding` ✓）
-  --     · `pos` 超出 ⇒ **把这一项的射线/交互关掉** ✓ ⇒ 点不到 ✓
-  --     ⚠️ `pcall` 包住 ✓；读不到 ⇒ **什么都不做** ✓（宁可不修，也不能误关可见项 ✗）
-  --   ★ 这同时是"真滚动"的**前置** ✓：将来上了滚动，被滚进来的项
-  --     会因为 `pos` 进入范围而**自动恢复** ✓（所以这里**不缓存"关过谁"** ✓
-  --     —— 每次按当前 `pos` 现算 ✓ 与 `_fill_grid_item` 的无状态约定一致 ✓）
+  --   ★ 数字全部实测确认 ✓（真机日志 ✓）：
+  --     项高 96 · 纵间距 8 · 上/下边距 20/20 · 视窗 400×**544** ⇒ 可见 4 项 ✓
+  --     内容总长 **`GetContentLength=760`** ✓（= 20+7×96+6×8+20 ✓ 我算的 760 ✓ **逐位吻合** ✓）
+  --     ⇒ ★ 760 > 544 ⇒ **确实溢出 216 px** ⇒ 有 3 项在可见区外 ✓✓
+  --
+  --   ⚠️ 读不到位置就**什么都不做** ✓（宁可不修，也不能误关可见项 ✗）
+  --   ★ 每次回调按**当前**位置现算 ✓ ⇒ 将来上了滚动，被滚进来的项**自动恢复** ✓
+  --     （所以**不缓存"关过谁"** ✓ —— 与 `_fill_grid_item` 的无状态约定一致 ✓）
   do
-    local _vis = self:_grid_visible_count(grid)
-    if _vis ~= nil and pos > _vis then
-      pcall(function() if item.raycastTarget ~= nil then item.raycastTarget = false end end)
-      pcall(function() if item.interactable ~= nil then item.interactable = false end end)
-      pcall(function() if item.blockRaycast ~= nil then item.blockRaycast = false end end)
+    local half = self:_grid_half_h(grid)
+    local y = nil
+    pcall(function() y = item.anchoredPositionY end)
+    if half ~= nil and y ~= nil then
+      local hh = self._grid_item_h or 0
+      if math.abs(y) > half + hh / 2 then
+        pcall(function() if item.raycastTarget ~= nil then item.raycastTarget = false end end)
+        pcall(function() if item.interactable ~= nil then item.interactable = false end end)
+        pcall(function() if item.blockRaycast ~= nil then item.blockRaycast = false end end)
+      end
+      -- ★ 一次性诊断 ✓：把"这一项在哪儿、有没有被关"打出来 ⇒ 下次真机能直接看 ✓
+      if (self._grid_out_log or 0) < 8 and print then
+        self._grid_out_log = (self._grid_out_log or 0) + 1
+        print("[murdoku] ★ 列表项位置：pos=" .. tostring(pos) .. "  y=" .. tostring(y)
+          .. "  半径=" .. tostring(half) .. "  项高=" .. tostring(hh)
+          .. "  ⇒ " .. ((math.abs(y) > half + hh / 2) and "**在可见区外 ⇒ 已关射线** ✓" or "在可见区内 ✓"))
+      end
     end
   end
 
