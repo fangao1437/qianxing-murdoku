@@ -5402,15 +5402,40 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
     if rec ~= nil then rec.text = tv end
   end
   if tv ~= nil then
-    if tv.who    ~= t_who    then if write_control_text(c_who, t_who)       then tv.who    = t_who    end end
-    if tv.what   ~= t_what   then if write_control_text(c_what, t_what)     then tv.what   = t_what   end end
-    if tv.letter ~= t_letter then if write_control_text(c_letter, t_letter) then tv.letter = t_letter end end
-  else
-    -- 理论上到不了（`_grid_item_rec` 对非 nil 的 item 一定给得出记录）；兜底照旧写。
-    write_control_text(c_who, t_who)
-    write_control_text(c_what, t_what)
-    write_control_text(c_letter, t_letter)
-  end
+    -- ★★★★★★ 2026-10-10 **算法不再填文案** ✗✓✓ —— ★ 用户要求 ✓
+    --
+    --   ★★ 用户原话 ✓（很准 ✓）：「**所以为什么不像我说的，把填文本的算法直接删了**？
+    --     **与其和它竞争覆盖，不如让这一堆吃性能还干扰功能的废弃脚本直接消失**」✓
+    --
+    --   ★ 它现在的处境 ✓：
+    --     ★ ① **功能上完全冗余** ✗ —— ★ 内容由 `assets/row.<关>.<行>` 提供 ✓
+    --     ★ ② **每帧都在跑** ✗ —— ★ 引擎每帧重进回调 ⇒ ★ **每秒 60 次全量算法** ✓
+    --     ★ ③ **它在和单射抢覆盖** ✗ —— ★ 逼我加"末次单射"这种补丁 ✓
+    --   ⇒ ★★ 留着它只有坏处 ✓ ⇒ ★ **关掉** ✓
+    --
+    --   ★ 保留的部分 ✓（★ 这些不冲突 ✓）：
+    --     ★ **`gray` 灰白层** ✓　★ **高亮** ✓　★ **列表项点击** ✓　★ **格子/棋盘** ✓
+    --   ★ 想恢复 ✗：★ 把下面 `ALGO_TEXT` 改成 `true` 即可 ✓（一行 ✓）
+      local ALGO_TEXT = false
+      if ALGO_TEXT then
+      -- ★★★★★★ 2026-10-10 **算法不再填文案** ✗✓✓ —— ★ 用户要求 ✓
+      --   ★★ 用户原话 ✓：「**与其和它竞争覆盖，不如让这一堆吃性能还干扰功能的废弃脚本直接消失**」✓
+      --   ⇒ 它现在：★ 功能冗余 ✗ ＋ **每帧跑 60 次** ✗ ＋ **和单射抢覆盖** ✗ ⇒ ★ 关掉 ✓
+      --   ★ 保留 ✓：★ `gray` 灰白 ✓　★ 高亮 ✓　★ 点击 ✓　★ 格子/棋盘 ✓
+      --   ★ 想恢复 ✗：★ `ALGO_TEXT` 改 `true` ✓（一行 ✓）
+        local ALGO_TEXT = false
+        if ALGO_TEXT then
+        if tv.who    ~= t_who    then if write_control_text(c_who, t_who)       then tv.who    = t_who    end end
+        if tv.what   ~= t_what   then if write_control_text(c_what, t_what)     then tv.what   = t_what   end end
+        if tv.letter ~= t_letter then if write_control_text(c_letter, t_letter) then tv.letter = t_letter end end
+      else
+        -- 理论上到不了（`_grid_item_rec` 对非 nil 的 item 一定给得出记录）；兜底照旧写。
+        write_control_text(c_who, t_who)
+        write_control_text(c_what, t_what)
+        write_control_text(c_letter, t_letter)
+      end
+        end   -- ★ if ALGO_TEXT then 收尾 ✓
+      end   -- ★ if ALGO_TEXT then 收尾 ✓
 
   -- 子控件找不到时**只报一次**（这条日志直接告诉你要在模板里补哪个名字）
   if c_who == nil or c_what == nil or c_letter == nil then
