@@ -4236,6 +4236,47 @@ function Controller:_grid_text_payload()
 end
 
 
+-- ★★★★★ 2026-10-09 **用官方 getter 算出"一屏放得下几项"** ✓（只在第一次算，之后走缓存 ✓）
+--
+--   ★ 官方语义（`ClientUIGridScrollerControl` ✓ 我逐个核过 ✓）：
+--     `GetItemSize()`      → `x, y`（列表项**宽、高** ✓）
+--     `GetItemSpacing()`   → `x, y`（**水平、垂直**间距 ✓）
+--     `GetPadding()`       → `top, bottom, left, right`（**上、下、左、右**内边距 ✓）
+--     `GetContentLength()` → 滚动内容在滚动方向上的长度（**总长** ✓ 不是可见数 ✗）
+--     `sizeDeltaY`         → 视窗自身高 ✓（基类字段 ✓）
+--   ⇒ 纵向时：★ `可见数 = floor((视窗高 − 上边距 − 下边距) / (项高 + 纵间距))` ✓
+--
+--   ⚠️ **官方没有"可见项数"的现成接口** ✗ ⇒ 只能自己算 ✓（资料员也确认了这一点 ✓）
+--   ⚠️ 任何一个数读不到 ⇒ 返回 `nil` ⇒ 调用方**什么都不做** ✓（宁可不修，也不能误关可见项 ✗）
+function Controller:_grid_visible_count(grid)
+  if self._grid_vis_n ~= nil then return self._grid_vis_n end
+  if grid == nil then return nil end
+  local iw, ih = nil, nil
+  local sx, sy = nil, nil
+  local pt, pb = nil, nil
+  local vh = nil
+  pcall(function() iw, ih = grid:GetItemSize() end)
+  pcall(function() sx, sy = grid:GetItemSpacing() end)
+  pcall(function() pt, pb = grid:GetPadding() end)
+  pcall(function() vh = grid.sizeDeltaY end)
+  if ih == nil or vh == nil then return nil end
+  local avail = vh - (pt or 0) - (pb or 0)
+  local per = ih + (sy or 0)
+  if per <= 0 or avail <= 0 then return nil end
+  local n = math.floor(avail / per)
+  if n < 1 then n = 1 end
+  self._grid_vis_n = n
+  self._grid_vis_why = "项高=" .. tostring(ih) .. " 纵间距=" .. tostring(sy)
+    .. " 上边距=" .. tostring(pt) .. " 下边距=" .. tostring(pb)
+    .. " 视窗高=" .. tostring(vh)
+  if print then
+    print("[murdoku] ★ 网格可见数：一屏放得下 **" .. tostring(n) .. " 项**（"
+      .. tostring(self._grid_vis_why) .. "）"
+      .. "　⇒ ★ 可见区【之外】的项会被关掉射线 ✓（官方**没有**裁剪承诺 ✗）")
+  end
+  return n
+end
+
 -- 填**一条**列表项。★ 无状态：内容全部由 `index` 现算（官方：滚动会重复进入回调）。
 function Controller:_fill_grid_item(adapter, grid, item, index)
   self._grid_calls = (self._grid_calls or 0) + 1
@@ -4276,6 +4317,58 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
     self._grid_base = (tonumber(index) == 0) and 0 or 1
   end
   local pos = (tonumber(index) or self._grid_base) - self._grid_base + 1
+
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  -- ★★ 2026-10-09 **可见区【之外】的列表项必须关掉射线** ✗✓
+  --    —— 这是用户那个「**填到了不该有的地方**」的**真因** ✓
+  --
+  --   ★ 用户原话 ✓：
+  --     「我能在线索卡可见区域内选中三个，而**第一行上方还有可选中内容**，
+  --       滚轮列表**之上**的区域我选到了**第四个人**，也就是说**原本的填入方式有问题**，
+  --       确实把线索**填到了不该有的地方**」✗
+  --     ⇒ ★ 换成选关条就是「**填进去的关卡错位**」✓（用户拦住我说"先解决这个"✓）
+  --
+  --   ★★ 真因（资料员查证 ＋ 我复算 ✓）：★ **官方【从未承诺】网格视窗会裁剪或屏蔽射线** ✗
+  --     官方唯一相关的话（《网格视窗控件》✓ 用 `get_client_document` 取的原文 ✓）：
+  --       「网格视窗的列表采用**复用列表**结构，出于性能考虑，
+  --         **仅会加载处于可见范围内的列表项**」✓
+  --     ⇒ 那说的是"**只加载**哪些项"（**性能机制** ✓），
+  --       **不是**"会裁掉超出部分的显示/射线" ✗✓
+  --     ⇒ ★ 于是：**填 7 项、一屏只放得下 4 项** ⇒ 多出的 3 项**落在可视区外却照样能点** ✓✓
+  --
+  --   ★ 用存档数字复算（`clues.grid` 的 `#80` 块 ✓）：
+  --       视窗高 **544** − 边距 上20/下20 ⇒ 可用 **504**
+  --       每项 **96** ＋ 间距 **8** ⇒ 每项占 **104**
+  --       ⇒ ★ 一屏 = floor(504/104) = **4 项**（第 5 项只露 88 px）
+  --       内容总长（7 项）= 20 + 7×96 + 6×8 + 20 = **760** ⇒ ★ **超出视窗 216 px** ✓
+  --     ⇒ ★ **3 项**落在可视区外 ✓ —— 与"上面还能点到第四个人"**完全吻合** ✓✓
+  --
+  --   ★ 为什么**离线永远绿灯** ✗（资料员指出、我复测确认 ✓）：
+  --     · `tools/sim/kit.mjs` **没有网格布点模型** ✗（grep padding/itemSize/spacing ⇒ **0 命中**）
+  --     · `tests/grid_cost.lua` 的假 grid **只建模成本**（回调次数/查找/文字写入 ✓）
+  --       ★ **没有布点数学** ✗
+  --     · ★★ 更要命的是**口径就错了** ✗：`grid_cost.lua:23` 把 `RefreshItems` 那个数
+  --       叫成「**7 个可见列表项**」✗ —— 而它其实是**总条数** ✓
+  --       （官方字段 `itemCount` = 「列表项数量」✓；`RefreshItems(itemCount, cb)` =
+  --         「刷新列表项并**逐项**调用回调」✓ ⇒ ★ **传总条数是对的** ✓）
+  --       ⇒ ★ **把"总条数"当成"可见条数"** ⇒ 这类 bug 在离线**不可能**被测出来 ✓✓
+  --
+  --   ★ 修法 ✓（★ 走脚本 ✓ —— 可见数随**视窗尺寸/关卡数**变，
+  --     正合用户那条「**数量随关卡变走脚本**」✓）：
+  --     · 用**官方 getter** 算"一屏放得下几项" ✓（`GetItemSize`/`GetItemSpacing`/`GetPadding` ✓）
+  --     · `pos` 超出 ⇒ **把这一项的射线/交互关掉** ✓ ⇒ 点不到 ✓
+  --     ⚠️ `pcall` 包住 ✓；读不到 ⇒ **什么都不做** ✓（宁可不修，也不能误关可见项 ✗）
+  --   ★ 这同时是"真滚动"的**前置** ✓：将来上了滚动，被滚进来的项
+  --     会因为 `pos` 进入范围而**自动恢复** ✓（所以这里**不缓存"关过谁"** ✓
+  --     —— 每次按当前 `pos` 现算 ✓ 与 `_fill_grid_item` 的无状态约定一致 ✓）
+  do
+    local _vis = self:_grid_visible_count(grid)
+    if _vis ~= nil and pos > _vis then
+      pcall(function() if item.raycastTarget ~= nil then item.raycastTarget = false end end)
+      pcall(function() if item.interactable ~= nil then item.interactable = false end end)
+      pcall(function() if item.blockRaycast ~= nil then item.blockRaycast = false end end)
+    end
+  end
 
   -- ★★★★★ 2026-10-05 **文案查缓存表，不再"每条线索重建一次整视图"**。
   --

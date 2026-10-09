@@ -20,7 +20,7 @@
 
   三个口径（分开报，别混在一起）：
     A. 稳态一帧（什么状态都没变，`dirty=false`）：`sync_clue_grid` + `render` 各做了什么
-    B. 一次完整 `RefreshItems`（进关那一下，7 个可见列表项）
+    B. 一次完整 `RefreshItems`（进关那一下，**总条数 7** —— ★【总条数】不是可见数 ✗）
     C. 引擎**滚动重进**一次回调（如果它每帧重进，这就是**每帧**的账）
 
   跑法：lua tests/grid_cost.lua
@@ -496,7 +496,7 @@ local n_clues = #((core:view() or {}).clues or {})
 out(string.format("  关卡=%s  棋盘=%dx%d  线索=%d 条  cfg.use_grid=%s  prefab=%s",
   tostring((core.level or {}).id or "?"), core.rows, core.cols, n_clues,
   tostring(adapter.cfg.use_grid), tostring(adapter.cfg.clues_grid_prefab)))
-out(string.format("  grid 控件：%s（列表项 %d 个可见）",
+out(string.format("  grid 控件：%s（`RefreshItems` 传的**总条数** %d —— ★ 不是可见数 ✗）",
   tostring(grid_ctrl ~= nil), VISIBLE_ITEMS))
 
 -- 让网格这条路真的接管（真机：关卡内 `controller.screen` 是 nil）
@@ -538,7 +538,7 @@ local A = { find = C.find, deep = C.find_deep, miss = C.find_miss, sp = C.set_pr
             back_find = finds_of("action.back"), back_sp = C.setprop_names["action.back"] or 0,
             fail = C.setprop_fail }
 
--- ── 口径 B：一次**冷**RefreshItems（进关那一下，7 个可见列表项）────────────
+-- ── 口径 B：一次**冷**RefreshItems（进关那一下，**总条数 7**）────────────
 out("\n== B. 一次冷 RefreshItems（进关那一下：句柄/文案都还没缓存）==")
 ctrl._grid_sig = nil                      -- 骗过"条数没变就跳过"的守卫，强制重发一次
 ctrl._grid_kids = nil                     -- 清掉记忆表 = 冷启动那一次
@@ -560,7 +560,7 @@ out(string.format("      列表项 GetChild 尝试过的名字种类=%d 种，�
 -- ── 口径 C：引擎滚动重进一次回调（= 如果它每帧重进，这就是每帧的账）────────
 local grid = ctrl._grid
 -- 「引擎重进一次回调」= 官方「列表发生滚动时对列表项内容进行刷新」那句话的字面实现：
--- 对每个可见列表项，用**运行时索引**再进一次回调。
+-- 对每个列表项，用**运行时索引**再进一次回调。
 local function reenter(rounds)
   if grid == nil or grid.__cb == nil then return end
   ctrl._grid_in_refresh = false           -- 模拟"回调从引擎那边进来"（不是我们调的）
@@ -1086,6 +1086,47 @@ ck(HH.after == true,
   "实测 visible=" .. tostring(HH.after) .. "；线索 id=" .. tostring(HH.letter)
   .. " ⇒ 若这里是 false，多半是 id 退化成显示名了"
   .. "（真机表现正是「线索区选中反馈全消失」✗）")
+
+-- ★★★★★ 2026-10-09 **I 段：网格【布点数学】的离线哨兵** ✗✓
+--
+--   为什么必须有这一段 ✓（资料员的发现，我复测确认 ✓）：
+--     ★ 用户报的那个「**第一行上方还有可选中内容**」的 bug，
+--       在**整个离线体系里不可能被测出来** ✗ ——
+--       · `tools/sim/kit.mjs` **没有网格布点模型** ✗（grep padding/itemSize/spacing ⇒ 0 命中）
+--       · 本文件的假 grid **只建模成本**（回调次数/查找/文字写入 ✓）
+--       · ★★ 而**本文件第 23 行原本把它叫成「7 个可见列表项」** ✗
+--         ⇒ ★ **口径上就把"总条数"当成了"可见条数"** ✓
+--     ⇒ ★ 所以补这一段**纯数学**的断言 ✓ —— 不需要真机 ✓
+--
+--   ★ 数字全部来自**真存档**（`clues.grid` 的 `#80` 块 ✓ 实测 ✓）：
+--     视窗高 544 · 项高 96 · 纵间距 8 · 上边距 20 · 下边距 20
+--   ★ 公式（官方 getter 语义 ✓ `GetItemSize`/`GetItemSpacing`/`GetPadding` ✓）：
+--     可见数 = floor((视窗高 − 上边距 − 下边距) / (项高 + 纵间距))
+out("\n== I. 网格布点数学（★ 纯离线哨兵：这条 bug 以前测不出来 ✓）==")
+do
+  local VIEW_H, ITEM_H, GAP_Y, PAD_T, PAD_B = 544, 96, 8, 20, 20
+  local N_TOTAL = 7
+  local avail = VIEW_H - PAD_T - PAD_B
+  local per = ITEM_H + GAP_Y
+  local vis = math.floor(avail / per)
+  local content = PAD_T + N_TOTAL * ITEM_H + (N_TOTAL - 1) * GAP_Y + PAD_B
+  out(string.format("  [I0] 视窗高 %d − 边距 %d/%d ⇒ 可用 %d；每项 %d + %d = %d",
+    VIEW_H, PAD_T, PAD_B, avail, ITEM_H, GAP_Y, per))
+  out(string.format("  [I1] ★ 一屏放得下 **%d 项**；而 `RefreshItems` 传的是 **总条数 %d** ⇒ **%d 项在可见区外**",
+    vis, N_TOTAL, N_TOTAL - vis))
+  out(string.format("  [I2] 内容总长 %d vs 视窗 %d ⇒ 超出 **%d px**（有得滚 ⇒ 滚动条才有意义）",
+    content, VIEW_H, content - VIEW_H))
+  ck(vis == 4, "★ 按真存档数字，一屏 = **4 项**（改了 `#80` 的边距/项高就要改这里 ✓）",
+    "实测算出 " .. tostring(vis) .. " 项（视窗 " .. VIEW_H .. " · 项高 " .. ITEM_H
+    .. " · 间距 " .. GAP_Y .. " · 边距 " .. PAD_T .. "/" .. PAD_B .. "）")
+  ck(N_TOTAL > vis,
+    "★★ **总条数 > 可见数** ⇒ ★ **必须有关掉可见区外射线的机制** ✗"
+    .. "（官方**没有**裁剪承诺 ⇒ 否则就会出现「上面还能点到」✓）",
+    "总条数 " .. N_TOTAL .. " · 可见 " .. vis
+    .. " ⇒ 若这条不成立，说明 `#80` 或关卡数变了，`_grid_visible_count` 的修法要重新评估 ✓")
+  ck(content > VIEW_H, "★ 内容比视窗长 ⇒ **确实需要滚动**（滚动条那个需求是成立的 ✓）",
+    "内容 " .. content .. " vs 视窗 " .. VIEW_H)
+end
 ck(A.view <= 1,
   "稳态一次 render 里 view() ≤ 1 次（网格那句「多余的整视图重建」已去掉）",
   "实测 " .. tostring(A.view) .. " 次（改之前是 2：网格 1 + 布局 1）；单次 " ..

@@ -184,7 +184,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v102 / 2026-10-09 / 加网格几何探针(读引擎自己算的 itemSize/spacing/padding/GetContentLength/scrollProgress)以定'填到不该有的地方'的真因 =====")
+        print("[murdoku] ===== 构建标记 v103 / 2026-10-09 / 修'填到不该有的地方':可见区外的列表项关掉射线(官方没有裁剪承诺);grid_cost 补 I 段布点数学哨兵+改正'总条数当可见数'的口径 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
