@@ -101,7 +101,26 @@ export function encodeMsg(fields) {
     else if (f.wt === 5) { const b = Buffer.alloc(4); b.writeFloatLE(f.f); parts.push(b); }
     else if (f.wt === 1) parts.push(Buffer.alloc(8));
     else {
-      const body = f.sub !== null ? encodeMsg(f.sub) : (f.payload || Buffer.alloc(0));
+      // ★★★★★★ 2026-10-10 **`#503` 永远用 `payload`，绝不用 `sub`** ✗✓✓
+      //   ★★★ 这是**污染每一个存档**的那一行 ✓ —— ★ 也是"不同读法"的最根本一层 ✓
+      //     ★ `#503` 的 payload 是**裸 varint ID 列表** ✓ —— ★ 但通用解析会**试着当消息** ✗
+      //     ★★ "成不成功"取决于**第一个 ID 的首字节** ✗：
+      //        · `row.3.2` 首字节 `86` ⇒ wt=6 **非法** ⇒ 解析失败 ⇒ `sub=null` ✓ 正常 ✓
+      //        · `row.3.1` 首字节 `81` ⇒ wt=1 **合法** ⇒ **"碰巧"解析成功** ✗ ⇒ `sub`=假消息 ✓
+      //     ★ 全量 63 处 `#503`：**60 处正常 ✓ / 3 处被误判** ✗（★ 取决于 ID 数值 ✓）
+      //   ⇒ ★★ 而这一行原来写的是 `f.sub !== null ? …` ✗
+      //     ⇒ ★ **有假消息的字段 ⇒ 把假消息编码回去** ✗✗
+      //     ⇒ ★★★ **我每次保存，都把假消息【烤进文件】** ✓✓
+      //     ⇒ ★ 所以：★ **用户的 `269.gil`（原始导出）干净** ✓，
+      //        **我经手的 `271/273/274/276` 的 `#503` 全被污染** ✗
+      //     ⇒ ★★★ **这正是用户看到的"控件丢了 / 恢复原样"** ✓✓✓
+      //   ★ 为什么修在这里而不是 `parseMsg` ✗：
+      //     ★ 我试过在 `parseMsg` 里豁免 503 ✗ ⇒ **`readGil` 直接读成 0 条记录** ✗
+      //       （★ 记录判据 `geomPairs ≥ 2 && bigIds ≥ 1` 依赖 `sub` 的递归 ✓）
+      //     ⇒ ★★ **改编码侧【零风险】** ✓：★ 解码照旧 ✓ 只堵住写出的那一步 ✓✓
+      //   ⚠️ 遗留 ✓：★ `sub` 仍可能在内存里是假消息 ✗ ⇒
+      //     ★ **凡"用 `sub` 判断 `#503`"的代码都要按字段号来** ✓（★ 见 `findChildListTop` ✓）
+      const body = (f.sub !== null && f.field !== 503) ? encodeMsg(f.sub) : (f.payload || Buffer.alloc(0));
       parts.push(writeVarint(BigInt(body.length)));
       parts.push(body);
     }
@@ -197,8 +216,17 @@ export function findChildList(fields, allowEmpty) {
  *     （与 `board` 的字段顺序一致：`#501 #502 #503 #504 #505…`）。
  */
 export function findChildListTop(fields) {
+  // ★★★★★ 2026-10-10 **绑字段号 503** ✗✓ —— ★ 原来的判据 `f.sub === null` 会漏判 ✓
+  //   ★ 被 `parseMsg` 误判的记录 `sub` **不是 null** ✗ ⇒ 原判据直接跳过 ⇒ 返回 null ✓
+  //     ⇒ ★ 写入端 `if (clc)` **静默跳过** ⇒ 那几条的 `#503` 没被更新 ✓
+  //     ⇒ ★★ **用户说的"控件依然丢"** ✓
+  //   ★ 依据（资料员全量实测 ✓）：★ **63 处 `#503` 全是子列表** ✓、★ **候选不唯一 = 0** ✓ ⇒ 绑号安全 ✓
   for (const f of fields) {
-    if (f.wt === 2 && f.sub === null && !f.isText && f.payload && asIdList(f.payload, true) !== null) return f;
+    if (f.field !== 503) continue;
+    if (f.wt !== 2 || f.isText) continue;
+    if (!f.payload) continue;
+    if (asIdList(f.payload, true) === null) continue;
+    return f;
   }
   return null;
 }
