@@ -73,31 +73,65 @@ const DUMP = argv.includes('--dump');
 const TPL = arg('tpl', 'clue');
 const WANT_X = Number(arg('x', '0'));
 const WANT_Y = Number(arg('y', '0'));
+// ★★★ 2026-10-10 新增两个开关（★ lead 要求"4 块版的开关先备好" ✓）
+//   `--states=first|all`  ：★ 只改第 1 个状态块（默认 ✓，与历史成功产物 `251` 同形 ✓）
+//                           ★ 还是 4 个状态块全改 ✓
+//   `--records=first|all` ：★ 只改第 1 个同名记录（默认 ✓）
+//                           ★ 还是所有同名记录都改 ✓
+//   ⇒ ★★ 为什么需要 `--records`（★ 2026-10-10 `inspect_gil.mjs` 实测发现 ✓）：
+//     ★ `296` 里有 **两个** `clue` 记录 ✗：
+//       · `#1073742421`（父 `1` = root ✓，★ 素材库模板 ✓）—— blk[0] 已归零 ✓、blk[1..3] **还是 (-6,212)** ✗
+//       · `#1073742428`（父 `#1073741844` ✓）—— ★ **4 个块全都还是 (-6,212)** ✗
+//     ⇒ ★ 若引擎用的是**后者**，那么只改前者的 blk[0] **当然看不出变化** ✗✓
+//     ⇒ ★★ 所以"用户还是看到 −2"时，第一条命令就是：
+//       `--states=all --records=all` ✓（★ 一条命令出全归零版 ✓）
+const STATES = arg('states', 'first');
+const RECORDS = arg('records', 'first');
 
-if (!IN) { console.error('用法: node tools/gil/fix_clue_tpl_origin.mjs --in=<存档> [--out=<输出>] [--dump]'); process.exit(1); }
+if (!IN) { console.error('用法: node tools/gil/fix_clue_tpl_origin.mjs --in=<存档> [--out=<输出>] [--dump] [--states=first|all] [--records=first|all]'); process.exit(1); }
+if (!['first', 'all'].includes(STATES)) { console.error('✗ --states 只能是 first 或 all'); process.exit(1); }
+if (!['first', 'all'].includes(RECORDS)) { console.error('✗ --records 只能是 first 或 all'); process.exit(1); }
 
 const g = readGil(IN);
 console.log('存档：' + path.basename(IN) + '（记录 ' + g.recs.length + ' 条）');
+console.log('开关：--states=' + STATES + '　--records=' + RECORDS);
 
-const tpl = g.recs.find((r) => r.name === TPL);
-if (tpl === undefined) { console.error('✗ 找不到模板 ' + TPL); process.exit(2); }
+const named = g.recs.filter((r) => r.name === TPL);
+if (!named.length) { console.error('✗ 找不到模板 ' + TPL); process.exit(2); }
+const tpls = RECORDS === 'all' ? named : [named[0]];
+if (named.length > 1) {
+  console.log('⚠️ 有 ' + named.length + ' 个同名记录 ' + TPL + '：'
+    + named.map((r) => '#' + r.id + '(父' + r.parentId + ')').join('、')
+    + (RECORDS === 'all' ? '　⇒ ★ 全部都要改 ✓' : '　⇒ ★ 只改第一个 ✗（要全改请加 --records=all ✓）'));
+}
 
-// 定位列表项模板的"位置"叶子：在它第 1 个状态块的 `/501/502` 里，字段 `#504`（x,y 一对）
-const geo = (rec) => {
-  const o = []; stateBlocks(rec.field.sub, o);
-  if (!o[0]) return null;
-  return { blk: o[0], x: pairOf(o[0], 504), y: pairOf(o[0], 505) };
-};
+// 定位列表项模板的"位置"叶子：状态块里的 `#504`（x,y 一对）
 const posPair = (rec) => {
   const o = []; stateBlocks(rec.field.sub, o);
   if (!o[0]) return null;
   return pairOf(o[0], 504);
 };
+const blocksOf = (rec) => { const o = []; stateBlocks(rec.field.sub, o); return o; };
 
-const before = posPair(tpl);
-if (before === null) { console.error('✗ 模板里找不到位置对'); process.exit(2); }
-const bx = pairValue(before, 0), by = pairValue(before, 1);
-console.log('模板 ' + TPL + '  #' + tpl.id + '　★ 位置 = (' + bx + ', ' + by + ')');
+// ── 收集"要改的目标"：每个记录 × 选中的状态块 ──────────────────────────────
+const targets = [];
+for (const rec of tpls) {
+  const blks = blocksOf(rec);
+  const want = STATES === 'all' ? blks.map((b, i) => [b, i]) : (blks[0] ? [[blks[0], 0]] : []);
+  for (const [blk, i] of want) {
+    const pair = pairOf(blk, 504);
+    if (!pair) { console.error('✗ #' + rec.id + ' 的 blk[' + i + '] 里没有位置对 #504 ⇒ 拒绝写出（静默跳过是敌人 ✗）'); process.exit(2); }
+    targets.push({ rec, blkIdx: i, pair, x0: pairValue(pair, 0), y0: pairValue(pair, 1) });
+  }
+}
+if (!targets.length) { console.error('✗ 没有任何状态块可改'); process.exit(2); }
+
+console.log('');
+console.log('目标 ' + targets.length + ' 处（记录 × 状态块）：');
+for (const t of targets) {
+  console.log('  ' + TPL + ' #' + t.rec.id + '  blk[' + t.blkIdx + ']  现 (' + t.x0 + ', ' + t.y0 + ')'
+    + ((t.x0 === WANT_X && t.y0 === WANT_Y) ? '  ← 已是目标值 ✓' : ''));
+}
 
 // 顺带把容器与网格的位置打出来，便于对照
 for (const nm of ['clues', 'clues.grid']) {
@@ -119,16 +153,23 @@ const setPair = (pair, x, y) => {
   }
   return n >= 2;
 };
-const ok = setPair(before, WANT_X, WANT_Y);
-console.log('\n写入 (' + WANT_X + ', ' + WANT_Y + ') ⇒ ' + (ok ? '成功 ✓' : '失败 ✗（位置对里没有 501/502 两个浮点）'));
-if (!ok) { console.error('✗ 位置对结构不符，拒绝写出（静默跳过是敌人 ✗）'); process.exit(2); }
+let failed = 0;
+for (const t of targets) {
+  if (!setPair(t.pair, WANT_X, WANT_Y)) {
+    console.error('✗ #' + t.rec.id + ' blk[' + t.blkIdx + '] 的位置对里没有 501/502 两个浮点 ⇒ 拒绝写出 ✗');
+    failed++;
+  }
+}
+console.log('\n写入 (' + WANT_X + ', ' + WANT_Y + ') ⇒ ' + (failed ? '失败 ✗' : '成功 ✓（' + targets.length + ' 处）'));
+if (failed) { console.error('✗ 有目标结构不符，拒绝写出（静默跳过是敌人 ✗）'); process.exit(2); }
 
 // ★★ 会变几个叶子：x/y 各自"真的变了"才算 1 个 ✓ —— ★ 用来断言"只改了这些" ✓
-const nDiff = (bx !== WANT_X ? 1 : 0) + (by !== WANT_Y ? 1 : 0);
+const nDiff = targets.reduce((s, t) => s + (t.x0 !== WANT_X ? 1 : 0) + (t.y0 !== WANT_Y ? 1 : 0), 0);
 if (nDiff === 0) {
   console.log('\n★ 目标值已经是 (' + WANT_X + ', ' + WANT_Y + ')，无需改动 ✓（不写文件 ✓）');
   process.exit(0);
 }
+console.log('预计改动叶子 ' + nDiff + ' 个（每个状态块的 x/y 各算一个 ✓）');
 
 // ★★★ 走唯一安全通道 ✓ —— ★ 落盘 → **从磁盘重读** → 往返闸门 → 字段级 diff 断言 ✓
 //   ★ 为什么必须这样（2026-10-10 事故）：★ 旧版这里只 `fs.writeFileSync` + 打印"成功"✓，
@@ -136,16 +177,22 @@ if (nDiff === 0) {
 let rep;
 try {
   rep = writeGil(g, OUT, {
-    label: TPL + ' 模板位置 → (' + WANT_X + ', ' + WANT_Y + ')',
+    label: TPL + ' ×' + tpls.length + ' 记录 × ' + (STATES === 'all' ? '4' : '1') + ' 状态块 → (' + WANT_X + ', ' + WANT_Y + ')',
     expectDiffs: nDiff,          // ★ 只允许改动这几个叶子 —— 多一处就抛异常 ✓
     assert: (g2) => {            // ★ g2 是【从磁盘重读】的那份 ✓
-      const t = g2.recs.find((r) => r.name === TPL);
-      if (!t) return '重读后找不到模板 ' + TPL;
-      const o = []; stateBlocks(t.field.sub, o);
-      const p = o[0] ? pairOf(o[0], 504) : null;
-      const ax = pairValue(p, 0), ay = pairValue(p, 1);
-      return (String(ax) === String(WANT_X) && String(ay) === String(WANT_Y))
-        || ('重读后位置 = (' + ax + ', ' + ay + ')，应为 (' + WANT_X + ', ' + WANT_Y + ')');
+      // ★ 逐个目标复读：★ 这也是"4 块版"的验收 —— 每一块都必须真的变成 (0,0) ✓
+      const named2 = g2.recs.filter((r) => r.name === TPL);
+      for (const t of targets) {
+        const rec = named2.find((r) => r.id === t.rec.id);
+        if (!rec) return '重读后找不到 #' + t.rec.id;
+        const o = []; stateBlocks(rec.field.sub, o);
+        const p = o[t.blkIdx] ? pairOf(o[t.blkIdx], 504) : null;
+        const ax = pairValue(p, 0), ay = pairValue(p, 1);
+        if (String(ax) !== String(WANT_X) || String(ay) !== String(WANT_Y)) {
+          return '#' + t.rec.id + ' blk[' + t.blkIdx + '] 重读后 = (' + ax + ', ' + ay + ')，应为 (' + WANT_X + ', ' + WANT_Y + ')';
+        }
+      }
+      return true;
     },
   });
 } catch (e) {
@@ -155,15 +202,21 @@ try {
 
 // ── 复读核对（★ 用 writeGil 重读磁盘的那一份，不是内存 ✗）──────────────────
 const g2 = rep.g2;
-const t2 = g2.recs.find((r) => r.name === TPL);
-const after = posPair(t2);
-const ax = pairValue(after, 0), ay = pairValue(after, 1);
-console.log('\n── 复读核对（从磁盘重读）──');
-console.log('  ✅ 模板 ' + TPL + ' 位置 = (' + ax + ', ' + ay + ')'
-  + '　（原值 (' + bx + ', ' + by + ')，要回退就写回这两个数 ✓）');
+console.log('\n── 复读核对（从磁盘重读 ✓，逐个目标）──');
+for (const t of targets) {
+  const rec = g2.recs.filter((r) => r.name === TPL).find((r) => r.id === t.rec.id);
+  const o = []; stateBlocks(rec.field.sub, o);
+  const p = o[t.blkIdx] ? pairOf(o[t.blkIdx], 504) : null;
+  const ax = pairValue(p, 0), ay = pairValue(p, 1);
+  const okOne = String(ax) === String(WANT_X) && String(ay) === String(WANT_Y);
+  console.log('  ' + (okOne ? '✅' : '❌') + ' #' + t.rec.id + ' blk[' + t.blkIdx + '] = (' + ax + ', ' + ay + ')'
+    + '　（原值 (' + t.x0 + ', ' + t.y0 + ')，要回退就写回它 ✓）');
+}
 console.log('  ✅ 其他字段**一个都没动** ✓ —— 字段级 diff 已断言差异恰好 ' + rep.diffs + ' 处 ✓');
 console.log('\n★ 模板已归零 ✓ —— 请真机看"还从负数区开始填吗"');
-console.log('★ 闸门已在 writeGil 内跑过（往返逐字节一致 ✓）；要独立复核可再跑：');
+console.log('★ 出货前建议再跑一次体检（只读 ✓，一眼看全 clue 的 4 个块 ✓）：');
+console.log('    node tools/gil/inspect_gil.mjs ' + path.basename(OUT));
+console.log('★ 要独立复核编码正确性：');
 console.log('    node tools/gil/roundtrip.mjs ' + path.basename(OUT));
 console.log('    node tools/gil/diff_fields.mjs ' + path.basename(IN) + ' ' + path.basename(OUT));
 process.exit(0);

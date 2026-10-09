@@ -126,6 +126,41 @@ export function diffGilFiles(fa, fb, max = 50) {
   return diffTrees(loadTree(fa), loadTree(fb), max);
 }
 
+// ── 内嵌脚本的"版本标记" ──────────────────────────────────────────────────
+//   ★★★ 为什么需要它（2026-10-10 lead 点名 ✓）：
+//     ★ 叠脚本的工具**只断言"字节变了"是不够的** ✗ ——
+//       ★ **字节变了、但叠进去的是【旧脚本】，一样是静默失败** ✗✓
+//       （★ 实测事故：`295` 里内嵌的脚本是旧的 1099635B，而 `dist` 已经 1107369B ✓）
+//     ★ 而"内嵌 == `dist/client_script.lua`"这种自检是**循环论证** ✗：
+//       ★ 它只证明"复制成功" ✓，**证明不了 `dist` 本身是新的** ✗
+//     ⇒ ★ 所以必须断言一个**独立可读的版本事实** ✓：
+//       ★ `lua/entry_client_script.lua` 里的 `print("[murdoku] ===== 构建标记 vNNN / 日期 / 说明 =====")`
+//       ★ 取 `vNNN` 那一段 ✓ —— ★ 它在**日志第一行**打出来 ✓，是**人和机器都能看的事实** ✓
+export const MARKER_RE = /构建标记\s*(v\d{2,4})/;
+
+export function markerOf(buf) {
+  const m = Buffer.isBuffer(buf) ? buf.toString('utf8').match(MARKER_RE) : String(buf).match(MARKER_RE);
+  return m ? m[1] : null;
+}
+
+/** 树里"内嵌脚本"那个叶子：最大的、像 Lua 的文本字段（判据与 `find_script.mjs` 一致 ✓） */
+export function findScriptLeaf(g, minBytes = 2000) {
+  let best = null;
+  (function walk(fields, p) {
+    for (const f of fields) {
+      const here = p + '/#' + f.field;
+      if (f.wt === 2 && f.sub === null && f.payload && f.payload.length > minBytes) {
+        const s = f.payload.toString('utf8');
+        if ((s.match(/\uFFFD/g) || []).length < f.payload.length * 0.01 && /function\s|local\s/.test(s)) {
+          if (!best || f.payload.length > best.len) best = { len: f.payload.length, path: here, buf: f.payload, field: f };
+        }
+      }
+      if (f.sub) walk(f.sub, here);
+    }
+  })(g.tree, '');
+  return best;
+}
+
 // ── 落盘 + 全套断言 ───────────────────────────────────────────────────────
 export class GilWriteError extends Error {}
 
@@ -147,7 +182,7 @@ export class GilWriteError extends Error {}
 export function writeGil(g, out, opts = {}) {
   const {
     label = 'writeGil', mustDiffer = true, expectRecs = g.recs ? g.recs.length : undefined,
-    expectDiffs, assert, quiet = false,
+    expectDiffs, assert, expectMarker, quiet = false,
   } = opts;
   const say = (s) => { if (!quiet) console.log(s); };
 
@@ -187,7 +222,7 @@ export function writeGil(g, out, opts = {}) {
   }
 
   // ⑥ 记录数断言
-  const recs2 = recordsOf(g2.tree);
+  const recs2 = g2.recs;
   if (expectRecs != null && recs2.length !== expectRecs) {
     throw new GilWriteError(`[${label}] ★ 记录数变了：期望 ${expectRecs}，实得 ${recs2.length} ✗`);
   }
@@ -206,7 +241,21 @@ export function writeGil(g, out, opts = {}) {
     if (r !== true && r !== undefined) throw new GilWriteError(`[${label}] ★ 断言失败：${r} ✗`);
   }
 
-  const rep = { bytes: buf.length, diffs: d.total, compared: d.compared, list: d.diffs, g2, recs: recs2.length };
+  // ⑨ ★ 内嵌脚本的版本标记断言（★ 可选 ✓；叠脚本的工具**必须**传 ✓）
+  let marker = null;
+  if (expectMarker !== undefined) {
+    const leaf = findScriptLeaf(g2);
+    if (!leaf) throw new GilWriteError(`[${label}] ★ 重读后找不到内嵌脚本叶子 ⇒ 标记无法断言 ✗（★ 不许静默放过 ✗）`);
+    marker = markerOf(leaf.buf);
+    if (marker !== expectMarker) {
+      throw new GilWriteError(
+        `[${label}] ★★ 内嵌脚本的版本标记不符：期望 ${expectMarker}，实得 ${marker} ✗\n`
+        + `   ⇒ ★ 这通常意味着【叠进去的是旧脚本】✗ —— 先跑 \`lua tools/bundle_client_script.lua\` 重建 dist ✓\n`
+        + `   （★ "字节变了"并不等于"叠对了版本" ✗ —— 这正是 2026-10-10 那次静默失败 ✓）`);
+    }
+  }
+
+  const rep = { bytes: buf.length, diffs: d.total, compared: d.compared, list: d.diffs, g2, recs: recs2.length, marker };
   say(`\n── writeGil 验收（${label}）──`);
   say(`  ✅ ② 输出 ≠ 输入（${g.src.length} → ${buf.length} 字节）`);
   say(`  ✅ ④ 已从磁盘重读 ${path.basename(out)}（记录 ${recs2.length} 条）`);
@@ -214,6 +263,7 @@ export function writeGil(g, out, opts = {}) {
   say(`  ✅ ⑦ 字段级 diff：比过 ${d.compared} 个节点，差异 ${d.total} 处` + (d.total ? `（${[...new Set(d.diffs.map((x) => x.kind))].join('、')}）` : ''));
   for (const x of d.diffs.slice(0, 6)) say(`       · [${x.kind}] ${x.ctx}  ${x.detail}`);
   if (d.total > 6) say(`       …还有 ${d.total - 6} 处`);
+  if (marker) say(`  ✅ ⑨ 内嵌脚本版本标记 = ${marker}（★ 独立事实，不是"复制成功"的循环论证 ✓）`);
   return rep;
 }
 

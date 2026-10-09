@@ -21,8 +21,20 @@
 //     · wt1 fixed64  ⇒ 比**原始 8 字节**
 //     · wt2 消息     ⇒ 两边都有 `sub` ⇒ **递归** ✓；否则比 `payload` 字节 ✓
 //
-//   ★ 附带：差异路径会带上**它所属的控件记录**（用 `readGil` 自己的记录判据 ✓），
+//   ★ 附带：差异路径会带上**它所属的控件记录**（用 `recordsOf` 自己的记录判据 ✓），
 //     这样"第 3 个状态块的位置对"这种话能直接落到「哪个控件」上 ✓。
+//
+// ⚠️⚠️ ★★★ 本工具的**已知局限**（★ 2026-10-10 lead 要求写清 ✓）：
+//   ★ 它是**按位置**比对的 ✗ —— ★ 于是"**插入 / 删除**记录"会让**后续兄弟节点下标整体位移** ✗，
+//     ★ 逐位比下去就**全都对不上** ✓ ⇒ ★ 报出**大量连带差异** ✗（★ 实测：`gen_palette` 加 4 条记录
+//     ⇒ **3780 处差异** ✓，★ 而实际上只加了 4 条、别的都没坏 ✓）
+//   ⇒ ★★ **判据要分类型用** ✓：
+//     · ★ **"只改几个值"类** ⇒ ★ 用 `--max` + **断言差异条数**（★ `writeGil({expectDiffs:N})` ✓）
+//     · ★ **"新增 / 删除记录"类** ⇒ ★ **别按 diff 条数判死** ✗
+//       ★ 改用 ★ **记录数断言 ＋ 结构性断言** ✓（★ 例：`gen_palette` 断言"4 个壳都在 assets 下、
+//         父引用正确、已登记进子列表、图片 id 写对" ✓ —— 见 `inspect_gil.mjs` 的 `assertAssets` ✓）
+//   ★ 本工具现在会**自动提示** ✓：★ 一旦发现**记录数变了** ✗ 或差异数很大 ✗，
+//     就会打印那句"疑似插入/删除 ⇒ 请改用记录数＋结构断言" ✓ —— ★ 免得有人拿条数误判 ✓
 //
 // 用法：
 //   node tools/gil/diff_fields.mjs <A.gil> <B.gil>            # 全量报告
@@ -127,6 +139,21 @@ walkTree(A.tree, B.tree, '/', [], 0);
 
 console.log('比过的字段节点：' + compared + ' 个');
 console.log('差异：' + diffs.length + ' 处');
+
+// ★★★ 自动提示：★ 一旦"记录数变了"或"差异数很大" ⇒ ★ 大概率是**插入/删除**，
+//   ★ 而不是"改坏了" ✗ ⇒ ★ 必须当场拦住"拿 diff 条数判死"的人 ✓（★ lead 2026-10-10 要求 ✓）
+const recsA = recordsOf(A.tree).length, recsB = recordsOf(B.tree).length;
+if (recsA !== recsB || diffs.length > 200) {
+  console.log('');
+  console.log('⚠️⚠️ ★ 本次疑似【插入 / 删除记录】✗ —— ★ 不要按 diff 条数判死 ✗');
+  console.log('   记录数：A ' + recsA + ' → B ' + recsB + (recsA !== recsB ? '（★ 变了 ' + (recsB - recsA) + ' 条 ✓）' : ''));
+  console.log('   原因：★ 本工具**按位置**比对 ⇒ 插入/删除会让后续兄弟节点**下标整体位移** ✗');
+  console.log('        ⇒ ★ 后面的节点会"逐个对不上" ⇒ 报出**大量连带差异** ✓（不是真改坏了 ✓）');
+  console.log('   ⇒ ★★ 这类编辑请改用：★ **记录数断言 ＋ 结构性断言** ✓');
+  console.log('        例：node tools/gil/inspect_gil.mjs ' + path.basename(FB) + '   # 看 assets 名单/父引用/子列表 ✓');
+  console.log('        写工具时用 writeGil({ expectRecs: …, assert: (g2) => … }) ✓');
+  console.log('   ⇒ ★ "只改几个值"类才适合按条数断言（expectDiffs: N ✓）');
+}
 if (diffs.length === 0) {
   console.log('\n★★★ 两个文件**字段级完全一致**（连 float 的位模式都一样）。');
   process.exit(0);

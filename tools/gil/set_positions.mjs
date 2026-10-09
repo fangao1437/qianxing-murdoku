@@ -16,11 +16,28 @@
 //
 // 用法：
 //   node tools/gil/set_positions.mjs --gil=<文件> [--out=<文件>] [--only=前缀,前缀] [--dry]
+//
+// ★★ 验收（★ 判据，不是建议 ✓）：
+//   node tools/gil/set_positions.mjs --gil=<输入> --out=<输出>
+//     ⇒ 必须打印 "✅ ⑧ 断言：N 个控件的每个状态块都 == 规划值"（★ 用**重读磁盘**的那份 ✓）
+//     ⇒ 若所有坐标本来就已是规划值 ⇒ ★ 会打印"无需改动"并**不写文件** ✓（★ 不是静默失败 ✗）
+//   ★ 独立复核：node tools/gil/roundtrip.mjs <输出>
+//
+// ★★ 2026-10-10 迁移到 `writeGil()`（★ 全项目写工具统一通道 ✓）：
+//   ★ 旧版是 `g.pack(encodeMsg(g.tree))` + `fs.writeFileSync` ✗ ⇒
+//     ★ **只要编码器有一处走不到（例如 `#503` 冻结 ✗），它就会"报成功而文件没变"** ✗
+//     ★ 实测 `set_positions` 改的正是**状态块里的位置对** ✓ ——
+//       ★ 而 `clue` 的位置对就住在 `#503` 底下 ✓ ⇒ ★ **它当时也中过同一个 bug** ✗✓
+//   ⇒ ★ 现在改成走 `writeGil()` ✓：★ 落盘→**重读磁盘**→往返闸门→字段级 diff→**逐控件断言** ✓
+//   ⚠️ ★ 本工具**不用** `expectDiffs: N` ✗ —— ★ 因为 `setPair` 是**稀疏编码** ✓
+//     （★ 值为 0 的分量会被**删掉** ✓）⇒ ★ "叶子个数"本身会变 ✓ ⇒ ★ 差异条数不可预测 ✓
+//     ⇒ ★★ 所以判据用 ★ **结构化断言**：★ **每个控件的每个状态块都必须读回规划值** ✓（更强 ✓）
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readGil, encodeMsg, pairOf, setPair, stateBlocks } from './gilread.mjs';
+import { readGil, pairOf, pairValue, setPair, stateBlocks } from './gilread.mjs';
+import { writeGil } from './gilwrite.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const arg = (k, d) => { const h = process.argv.find((s) => s.startsWith('--' + k + '=')); return h ? h.slice(k.length + 3) : d; };
