@@ -37,12 +37,30 @@
 //
 // 用法：
 //   node tools/gil/fix_clue_tpl_origin.mjs --in=<存档> --dump
-//   node tools/gil/fix_clue_tpl_origin.mjs --in=<存档> --out=<输出>
+//   node tools/gil/fix_clue_tpl_origin.mjs --in=<存档> --out=<输出> [--x=0 --y=0] [--tpl=clue]
+//
+// ★★ 验收（★ 这是判据，不是建议 ✓）：
+//   node tools/gil/fix_clue_tpl_origin.mjs --in="290.gil" --out="295-模板clue归零-v149.gil"
+//     → 必须打印 "✅ 模板 clue 位置 = (0, 0)"（★ 从磁盘重读 ✓）
+//     → 且打印 "✅ ② 输出 ≠ 输入" / "✅ ⑤ 往返闸门" / "✅ ⑦ 字段级 diff：差异 2 处"
+//   ★ 独立复核（两道外部闸门 ✓）：
+//     node tools/gil/roundtrip.mjs "295-模板clue归零-v149.gil"      # 逐字节往返一致
+//     node tools/gil/diff_fields.mjs "290.gil" "295-模板clue归零-v149.gil"   # 差异恰好 2 处
+//
+// ★★ 2026-10-10 事故与修复（★ 改这个文件前必读 ✓）：
+//   ★ 本工具曾**连续两次**打印"✅ 成功"，而**输出与输入逐字节相同** ✗（等于什么都没写）
+//   ★ 真因不在本文件，而在 `gilread.mjs` 的 `encodeMsg`：`#503` 被无条件当成
+//     "裸 ID 子列表"⇒ 用旧 `payload` 快照、**不递归 `sub`** ✗ ⇒ 冻结 96% 的树 ✗
+//     （`clue` 的位置对正好住在一个 `#503` 下面 ⇒ 修改被丢弃 ✓）
+//   ★ 修法：① `encodeMsg` 按**类型定义**判定 `#503`；② wt1 保留原始 8 字节；
+//           ③ ★ 本文件改成走 `writeGil()`（落盘→**重读磁盘**→往返→字段 diff 断言 ✓）
+//   ⇒ ★★ 教训：★ **"内存改了"永远不能当验收** ✗ —— ★ 必须**从磁盘重读** ✓
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readGil, encodeMsg, stateBlocks, pairOf, pairValue } from './gilread.mjs';
+import { writeGil } from './gilwrite.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const argv = process.argv.slice(2);
@@ -91,7 +109,7 @@ for (const nm of ['clues', 'clues.grid']) {
 
 if (DUMP) { console.log('\n（--dump 模式，未写文件）'); process.exit(0); }
 
-// ★ 只改值 ✓ —— 不加叶子、不删叶子 ✓
+// ★ 只改值 ✓ —— 不加叶子、不删叶子 ✓（★ 与历史成功产物 `251` 的字节形态一致 ✓：显式写 0 ✓）
 const setPair = (pair, x, y) => {
   if (pair === null) return false;
   let n = 0;
@@ -103,21 +121,49 @@ const setPair = (pair, x, y) => {
 };
 const ok = setPair(before, WANT_X, WANT_Y);
 console.log('\n写入 (' + WANT_X + ', ' + WANT_Y + ') ⇒ ' + (ok ? '成功 ✓' : '失败 ✗（位置对里没有 501/502 两个浮点）'));
+if (!ok) { console.error('✗ 位置对结构不符，拒绝写出（静默跳过是敌人 ✗）'); process.exit(2); }
 
-const buf = g.pack(encodeMsg(g.tree));
-fs.writeFileSync(OUT, buf);
-console.log('已写出：' + path.basename(OUT) + '（' + fs.statSync(OUT).size + ' 字节）');
+// ★★ 会变几个叶子：x/y 各自"真的变了"才算 1 个 ✓ —— ★ 用来断言"只改了这些" ✓
+const nDiff = (bx !== WANT_X ? 1 : 0) + (by !== WANT_Y ? 1 : 0);
+if (nDiff === 0) {
+  console.log('\n★ 目标值已经是 (' + WANT_X + ', ' + WANT_Y + ')，无需改动 ✓（不写文件 ✓）');
+  process.exit(0);
+}
 
-// ── 复读核对（★ 从磁盘重读 ✓）──────────────────────────────────────────────
-const g2 = readGil(OUT);
+// ★★★ 走唯一安全通道 ✓ —— ★ 落盘 → **从磁盘重读** → 往返闸门 → 字段级 diff 断言 ✓
+//   ★ 为什么必须这样（2026-10-10 事故）：★ 旧版这里只 `fs.writeFileSync` + 打印"成功"✓，
+//     而 `encodeMsg` 的 `#503` 冻结让它**逐字节没写进去** ✗ ⇒ ★ 报了两个月假成功 ✗
+let rep;
+try {
+  rep = writeGil(g, OUT, {
+    label: TPL + ' 模板位置 → (' + WANT_X + ', ' + WANT_Y + ')',
+    expectDiffs: nDiff,          // ★ 只允许改动这几个叶子 —— 多一处就抛异常 ✓
+    assert: (g2) => {            // ★ g2 是【从磁盘重读】的那份 ✓
+      const t = g2.recs.find((r) => r.name === TPL);
+      if (!t) return '重读后找不到模板 ' + TPL;
+      const o = []; stateBlocks(t.field.sub, o);
+      const p = o[0] ? pairOf(o[0], 504) : null;
+      const ax = pairValue(p, 0), ay = pairValue(p, 1);
+      return (String(ax) === String(WANT_X) && String(ay) === String(WANT_Y))
+        || ('重读后位置 = (' + ax + ', ' + ay + ')，应为 (' + WANT_X + ', ' + WANT_Y + ')');
+    },
+  });
+} catch (e) {
+  console.error('\n❌ ' + e.message);
+  process.exit(3);
+}
+
+// ── 复读核对（★ 用 writeGil 重读磁盘的那一份，不是内存 ✗）──────────────────
+const g2 = rep.g2;
 const t2 = g2.recs.find((r) => r.name === TPL);
 const after = posPair(t2);
 const ax = pairValue(after, 0), ay = pairValue(after, 1);
-const good = String(ax) === String(WANT_X) && String(ay) === String(WANT_Y);
 console.log('\n── 复读核对（从磁盘重读）──');
-console.log('  ' + (good ? '✅' : '❌') + ' 模板 ' + TPL + ' 位置 = (' + ax + ', ' + ay + ')'
+console.log('  ✅ 模板 ' + TPL + ' 位置 = (' + ax + ', ' + ay + ')'
   + '　（原值 (' + bx + ', ' + by + ')，要回退就写回这两个数 ✓）');
-console.log('  ⓘ 其他字段**一个都没动** ✓（只改值 ✓ 不加不删 ✓）');
-console.log('\n' + (good ? '★ 模板已归零 ✓ —— 请真机看"还从负数区开始填吗"' : '❌ 没写进去'));
-console.log('⚠️ 交付前**必须**跑：node tools/gil/roundtrip.mjs ' + path.basename(OUT));
-process.exit(good ? 0 : 3);
+console.log('  ✅ 其他字段**一个都没动** ✓ —— 字段级 diff 已断言差异恰好 ' + rep.diffs + ' 处 ✓');
+console.log('\n★ 模板已归零 ✓ —— 请真机看"还从负数区开始填吗"');
+console.log('★ 闸门已在 writeGil 内跑过（往返逐字节一致 ✓）；要独立复核可再跑：');
+console.log('    node tools/gil/roundtrip.mjs ' + path.basename(OUT));
+console.log('    node tools/gil/diff_fields.mjs ' + path.basename(IN) + ' ' + path.basename(OUT));
+process.exit(0);

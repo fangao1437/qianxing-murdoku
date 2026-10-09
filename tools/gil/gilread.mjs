@@ -88,7 +88,17 @@ export function parseMsg(b, from, to, depth) {
       out.push({ field, wt, f: b.readFloatLE(p), s0, s1: p + 4 }); p += 4;
     } else if (wt === 1) {
       if (p + 8 > to) return null;
-      out.push({ field, wt, s0, s1: p + 8 }); p += 8;
+      // ★★★★★★ 2026-10-10 **wt1 必须留原始 8 字节** ✗✓✓
+      //   ★ 原来这里**不存值**，而 `encodeMsg` 对 wt1 写的是 `Buffer.alloc(8)`（**8 个零**）✗
+      //   ★ 后果：**凡是被递归到的 wt1 字段，值全部被清零** ✗ —— 静默数据损坏 ✓
+      //   ★ 实测 `290.gil` 里有 **2 个** wt1 字段，**原始 8 字节非零** ✓：
+      //       depth 3  #134217824  c786808004c68680
+      //       depth 3  #134217829  af86808004ad8680
+      //   ★ 它们**当时没被清掉**，只因它们正好住在 `#503` 子树里（见下面 `encodeMsg` 的旧 bug）
+      //     ⇒ ★ 那个 bug 把整棵子树冻结了，**"因祸得福"地挡掉了这次清零** ✓
+      //   ⇒ ★★ 修 `#503` 的**同时必须**修这里 ✗，否则一改 `#503`，这 16 字节立刻被清零 ✓
+      //   ★ 独立闸门 `roundtrip.mjs:114` 的做法就是"回写 raw 尾部 8 字节" ✓ —— 与这里对齐 ✓
+      out.push({ field, wt, raw: Buffer.from(b.subarray(p, p + 8)), s0, s1: p + 8 }); p += 8;
     } else return null;
   }
   return p === to ? out : null;
@@ -99,28 +109,49 @@ export function encodeMsg(fields) {
     parts.push(writeVarint(BigInt(f.field) * 8n + BigInt(f.wt)));
     if (f.wt === 0) parts.push(writeVarint(f.num));
     else if (f.wt === 5) { const b = Buffer.alloc(4); b.writeFloatLE(f.f); parts.push(b); }
-    else if (f.wt === 1) parts.push(Buffer.alloc(8));
+    else if (f.wt === 1) parts.push((f.raw && f.raw.length === 8) ? f.raw : Buffer.alloc(8));
     else {
-      // ★★★★★★ 2026-10-10 **`#503` 永远用 `payload`，绝不用 `sub`** ✗✓✓
-      //   ★★★ 这是**污染每一个存档**的那一行 ✓ —— ★ 也是"不同读法"的最根本一层 ✓
-      //     ★ `#503` 的 payload 是**裸 varint ID 列表** ✓ —— ★ 但通用解析会**试着当消息** ✗
-      //     ★★ "成不成功"取决于**第一个 ID 的首字节** ✗：
-      //        · `row.3.2` 首字节 `86` ⇒ wt=6 **非法** ⇒ 解析失败 ⇒ `sub=null` ✓ 正常 ✓
-      //        · `row.3.1` 首字节 `81` ⇒ wt=1 **合法** ⇒ **"碰巧"解析成功** ✗ ⇒ `sub`=假消息 ✓
-      //     ★ 全量 63 处 `#503`：**60 处正常 ✓ / 3 处被误判** ✗（★ 取决于 ID 数值 ✓）
-      //   ⇒ ★★ 而这一行原来写的是 `f.sub !== null ? …` ✗
-      //     ⇒ ★ **有假消息的字段 ⇒ 把假消息编码回去** ✗✗
-      //     ⇒ ★★★ **我每次保存，都把假消息【烤进文件】** ✓✓
-      //     ⇒ ★ 所以：★ **用户的 `269.gil`（原始导出）干净** ✓，
-      //        **我经手的 `271/273/274/276` 的 `#503` 全被污染** ✗
-      //     ⇒ ★★★ **这正是用户看到的"控件丢了 / 恢复原样"** ✓✓✓
-      //   ★ 为什么修在这里而不是 `parseMsg` ✗：
-      //     ★ 我试过在 `parseMsg` 里豁免 503 ✗ ⇒ **`readGil` 直接读成 0 条记录** ✗
-      //       （★ 记录判据 `geomPairs ≥ 2 && bigIds ≥ 1` 依赖 `sub` 的递归 ✓）
-      //     ⇒ ★★ **改编码侧【零风险】** ✓：★ 解码照旧 ✓ 只堵住写出的那一步 ✓✓
-      //   ⚠️ 遗留 ✓：★ `sub` 仍可能在内存里是假消息 ✗ ⇒
-      //     ★ **凡"用 `sub` 判断 `#503`"的代码都要按字段号来** ✓（★ 见 `findChildListTop` ✓）
-      const body = (f.sub !== null && f.field !== 503) ? encodeMsg(f.sub) : (f.payload || Buffer.alloc(0));
+      // ★★★★★★ 2026-10-10（二修）**`#503` 不是"一律用 payload"** ✗✓✓ —— ★ 这是"改了写不进去"的真因 ✓
+      //
+      //   ★ 上一版（2026-10-10 第一次修）写的是：
+      //       const body = (f.sub !== null && f.field !== 503) ? encodeMsg(f.sub) : payload;
+      //     ★ 它的**前提**是「`#503` 全是裸 varint 子控件 ID 列表」✗ —— ★ **这个前提是错的** ✓
+      //
+      //   ★ 全量实测（`_probe_503.mjs` ✓）—— ★ **`#503` 的绝大多数【是普通嵌套消息】** ✓：
+      //       存档             #503(wt2) 总数    裸 ID 列表     真消息
+      //       249-…-v111.gil        1640            52          1588
+      //       251-…-v112.gil        1640            52          1588
+      //       290.gil               2785            65          2720
+      //     ⇒ ★ **96% 的 `#503` 被那条规则当成了"ID 列表"** ✗
+      //     ⇒ ★★ **它们底下的整棵子树被【冻结】** ✗ —— ★ 因为 `payload` 是解析时的快照 ✓
+      //     ⇒ ★★★ **在冻结子树里的任何内存修改，都会被原样丢弃** ✗✓
+      //
+      //   ★ 实测受害路径（`_probe_writepath.mjs` ✓，`249` 的 `clue` 模板）：
+      //       tree[#9] → #502 → #505 → **#503** → #13 → #12 → #501 → #502 → #504(位置对)
+      //     ★ 位置对**正好住在一个真消息 `#503` 下面** ✓
+      //     ⇒ ★ `encodeMsg(g.tree)` **走到那个 `#503` 就不再往下递归** ✗
+      //     ⇒ ★ 只编码那个 `#504` 对 ⇒ **字节确实变** ✓；编码整棵树 ⇒ **0 字节变化** ✗✓
+      //     ⇒ ★★ 这就是"内存里改了、单独编码也对、**写出去却逐字节不变**"的全部原因 ✓✓
+      //
+      //   ★ 为什么以前是对的（★ 回溯 ✓）：
+      //     `251-模板归零+关后两项-v112.gil`（20:49 产出）里 `clue` 的 blk[0] **确实是 (0,0)** ✓
+      //     ⇒ ★ 那时 `encodeMsg` 还是 `f.sub !== null ? …` ✓ ⇒ 递归没断 ✓
+      //     ★ 02:07 的这次"修 `#503`"把它改成了现在的样子 ⇒ **回归** ✗
+      //
+      //   ⇒ ★★ 正确判据（★ 按【类型定义】而不是按字段号 ✗）：
+      //     ★ **`#503` 是子控件 ID 列表 ⟺ 它的 payload 完全由合法 ID 范围 varint 组成** ✓
+      //       （这正是 `gilread` 头部文档写的判据 ✓，也是 `asIdList` 干的事 ✓）
+      //     ★ 是 ID 列表 ⇒ 用 `payload` ✓（★ 保住第一次修的成果：**假消息不会被烤进文件** ✓）
+      //     ★ 不是 ID 列表 ⇒ 它就是个普通消息 ⇒ **递归进 `sub`** ✓（★ 修掉冻结 ✓）
+      //
+      //   ★ 反例核对 ✓：`249` 有 1 处、`290` 有 3 处 `#503` 的 payload 是 ID 列表**且**
+      //     `sub` 是"碰巧解析成功"的假消息 ✓ ⇒ ★ 这几处仍走 `payload` ✓ **污染依旧被堵住** ✓
+      //
+      //   ★ 为什么不用"重编码与 payload 相同就回写 payload"来兜底 ✗：
+      //     ★ 那会让"直接改 `payload` 但没同步 `sub`"的旧工具（`setChildList` 等）**丢改动** ✗
+      //     ⇒ ★ 保持"有 `sub` 就以 `sub` 为准" ✓（`roundtrip.mjs` 的独立实现也是这个语义 ✓）
+      const isPlainIdList = f.field === 503 && f.payload != null && asIdList(f.payload, true) !== null;
+      const body = (f.sub !== null && !isPlainIdList) ? encodeMsg(f.sub) : (f.payload || Buffer.alloc(0));
       parts.push(writeVarint(BigInt(body.length)));
       parts.push(body);
     }
@@ -304,15 +335,17 @@ export function pairValue(p, i) {
 }
 
 // ── 读一个 .gil ───────────────────────────────────────────────────────────
-export function readGil(file) {
-  const src = fs.readFileSync(file);
-  const HEAD = 20;
-  const hdr = []; for (let i = 0; i < 5; i++) hdr.push(src.readUInt32BE(i * 4));
-  const bodyEnd = HEAD + hdr[4];
-  const trailer = src.subarray(bodyEnd);
-  const tree = parseMsg(src, HEAD, bodyEnd, 0);
-  if (!tree) throw new Error('体解析失败：' + file);
 
+/**
+ * ★ 从一棵**已解析好的**字段树里挑出控件记录 —— `readGil` 与 `diff_fields.mjs` 共用这一份。
+ *
+ *   ★ 为什么抽成导出函数：`diff_fields.mjs` 需要"这个叶子属于哪个控件" ✓，
+ *     而它自己已经 `parseMsg` 过一次 ✓ ⇒ ★ 若它再调一次 `readGil`（**重新解析** ✗），
+ *     拿到的会是**另一套对象** ⇒ ★ 身份 `Map` **永远匹配不上** ✗
+ *     （★ 2026-10-10 实测踩到：归属全打成"(非控件记录)" ✗）
+ *   ⇒ ★ 判据**只有一份** ✓：把树交给它，它返回和 `readGil().recs` 同构的记录数组 ✓
+ */
+export function recordsOf(tree) {
   const recs = [];
   (function walk(fields) {
     for (let i = 0; i < fields.length; i++) {
@@ -354,6 +387,19 @@ export function readGil(file) {
       walk(f.sub);
     }
   })(tree);
+  return recs;
+}
+
+export function readGil(file) {
+  const src = fs.readFileSync(file);
+  const HEAD = 20;
+  const hdr = []; for (let i = 0; i < 5; i++) hdr.push(src.readUInt32BE(i * 4));
+  const bodyEnd = HEAD + hdr[4];
+  const trailer = src.subarray(bodyEnd);
+  const tree = parseMsg(src, HEAD, bodyEnd, 0);
+  if (!tree) throw new Error('体解析失败：' + file);
+
+  const recs = recordsOf(tree);
 
   return {
     file, src, hdr, bodyEnd, trailer, tree, recs,
