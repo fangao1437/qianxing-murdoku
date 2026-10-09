@@ -4238,16 +4238,122 @@ end
 --   ★ 为什么这样最省 ✓：★ 内容全在**编辑器里可视化摆** ✓
 --     ⇒ ★ 不需要脚本里写死任何"第几关第几行是什么" ✓✓
 -- ★ 只读 ✓：本函数只**取**控件，不写任何东西 ✓
+-- ★★★★★ 2026-10-10 **全树按名找控件** ✗✓ —— ★ `#503` 不全时的救命路 ✓
+--
+--   ★★ 用户实测 ✓：「我补的 **3.9 和 3.1 恢复原样了**」✗
+--     ＋「**我导出的 `269` 重新导入是正常的**」✓
+--   ⇒ ★ 读回实证 ✓：★ 这两行的 **`#503` 是空的** ✗（★ 子控件在，但没进子列表 ✓）
+--     ⇒ ★ **`row:GetChildren()` 拿不到它们** ✓ ⇒ 单射一个槽位都写不到 ✓
+--   ⇒ ★★ 而**名字是确定的** ✓：`<槽位>.<关>.<行>` ✓（★ `who.3.1` 这种 ✓）
+--     ⇒ ★★★ **按名全树找一定能拿到** ✓✓
+--   ★ 入口同 `_palette_child` ✓：★ `game.GetClientUIRoots()` ＋ 限深走树 ✓（★ 不用缓存句柄 ✗）
+--   ★ 全程**只读** ✓ 每步单独 pcall ✓
+function Controller:_find_by_name(name)
+  if name == nil then return nil end
+  local hit = nil
+  local search = nil
+  search = function(x, d)
+    if hit ~= nil or x == nil or d > 6 then return end
+    local nm = nil
+    pcall(function() nm = tostring(x.name) end)
+    if nm == name then hit = x return end
+    local ks = nil
+    pcall(function() ks = x:GetChildren() end)
+    if ks ~= nil then
+      local n = 0
+      pcall(function() n = #ks end)
+      for i = 1, n do search(ks[i], d + 1) end
+    end
+  end
+  local roots = nil
+  pcall(function() roots = game.GetClientUIRoots() end)
+  if roots ~= nil then
+    local rn = 0
+    pcall(function() rn = #roots end)
+    for i = 1, rn do search(roots[i], 0) end
+  end
+  return hit
+end
+
 function Controller:_palette_child(name)
-  if name == nil or self.adapter == nil then return nil end
-  local out = nil
-  pcall(function()
-    local r = self.adapter:find("root")
-    local a = nil
-    if r ~= nil then a = r:GetChild("assets") end
-    if a ~= nil then out = a:GetChild(name) end
-  end)
-  return out
+  if name == nil then return nil end
+  -- ★★★★★ 2026-10-10 **换成"走树"，不再用 `adapter:find("root")`** ✗✓
+  --
+  --   ★★★ 真机日志（v129 ✓ 原文 ✓）证明单射没通的原因就是取不到：
+  --     `★ 按名取：assets=false  portrait.<id>=false` ✗
+  --     `★ 调色板里没有素材「portrait.B」。当前调色板：（空 —— 找不到 assets 容器？）` ✗
+  --     而**同一份日志**里：★ `★ 调色板搜寻：第1层看到 assets` ✓
+  --   ⇒ ★★ **"按名取"失败、"走树"成功** ✓ —— ★ 两条路的结果不一样 ✓✓
+  --
+  --   ★ 旧项目**早就记下了这件事** ✓（`docs/assets取不到-追查.md` §〇 **H8** ✓ 原话）：
+  --     ★「`Adapter:invalidate_lookups()` **只清【负】缓存** ✗，
+  --        **从不清 `self.controls`（命中缓存）** ✓；
+  --        而 `Adapter:find()` 命中缓存**直接返回、从不校验句柄是否还活着** ✗。
+  --        引擎在**传送 / 断线重连 / 容器隐藏再显示**时会**销毁并重建全部客户端控件** ✓
+  --        ⇒ 之前缓存下来的 `root` 变成**陈旧句柄** ⇒ `GetChild("assets")` = nil ✓」
+  --   ⇒ ★★ 我上一版正是走了这条**陈旧句柄**的路 ✗ ⇒ **必然取不到** ✓✓
+  --
+  --   ★ 修法 ✓：★ **照抄项目里那条走得通的路** ✓（`ui_controller.lua` 调色板那段 ✓）：
+  --     ★ ① 入口用 **`game.GetClientUIRoots()`** ✓（★ 权威 ✓ 不是缓存句柄 ✗）
+  --     ★ ② **限深走树**找 `assets` ✓（★ 每步单独 pcall ✓ 哪步失败看得见 ✓）
+  --     ★ ③ 在 `assets` 的子控件里**按名精确匹配** ✓
+  --   ★ 全程**只读** ✓ ★ 不写任何东西 ✓
+  local assets = nil
+  local search = nil
+  search = function(x, d)
+    if assets ~= nil or x == nil or d > 4 then return end
+    local nm = nil
+    pcall(function() nm = tostring(x.name) end)
+    if nm == "assets" then assets = x return end
+    local ks = nil
+    pcall(function() ks = x:GetChildren() end)
+    if ks ~= nil then
+      local n = 0
+      pcall(function() n = #ks end)
+      for i = 1, n do search(ks[i], d + 1) end
+    end
+  end
+  local roots = nil
+  pcall(function() roots = game.GetClientUIRoots() end)
+  if roots ~= nil then
+    local rn = 0
+    pcall(function() rn = #roots end)
+    for i = 1, rn do search(roots[i], 0) end
+  end
+  if assets == nil then
+    local r0 = nil
+    pcall(function() r0 = self.adapter:find("root") end)
+    if r0 ~= nil then search(r0, 0) end
+  end
+  if assets == nil then
+    if (self._pc_log or 0) < 3 and print then
+      self._pc_log = (self._pc_log or 0) + 1
+      print("[murdoku] ★ 单射取不到：**走树没找到 `assets`** ✗（★ 不是按名取的问题 ✓）")
+    end
+    return nil
+  end
+  -- ★ 在 assets 的子控件里按名精确找 ✓（★ 并打一份实际名字清单 ✓ 便于核对后缀 ✓）
+  local ks = nil
+  pcall(function() ks = assets:GetChildren() end)
+  if ks == nil then return nil end
+  local n = 0
+  pcall(function() n = #ks end)
+  local seen = {}
+  local hit = nil
+  for i = 1, n do
+    local nm = nil
+    pcall(function() nm = tostring(ks[i].name) end)
+    if nm ~= nil then
+      seen[#seen + 1] = nm
+      if nm == name then hit = ks[i] end
+    end
+  end
+  if hit == nil and (self._pc_miss or 0) < 4 and print then
+    self._pc_miss = (self._pc_miss or 0) + 1
+    print("[murdoku] ★ 单射取不到：想要 `" .. tostring(name) .. "` ✗，assets 下实际是："
+      .. table.concat(seen, " , ") .. "　（★ 对照看是不是**后缀/大小写**不一样 ✓）")
+  end
+  return hit
 end
 
 -- ★ 取当前关卡的**序号**（1 起 ✓ 与 `row.1.*` 对上 ✓）。取不到 ⇒ nil ✓
@@ -4513,6 +4619,35 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
         local wrote = 0
         local kids = nil
         pcall(function() kids = rc:GetChildren() end)
+        -- ★★★★★ 2026-10-10 **`#503` 不全时的兜底：四个槽位名【全树按名找】** ✗✓
+        --   ★ 实证 ✓：`row.3.1` / `row.3.9` 的 `#503` 是空的 ✗ ⇒ `GetChildren()` 拿不到子控件 ✓
+        --     ★ 而它们的**名字是确定的** ✓（`who.3.1` 这种 ✓）⇒ ★ **按名找一定能拿到** ✓✓
+        --   ★ 只在这四个槽位、且 `GetChildren()` 没给全时才走 ✓ ⇒ 稳态零成本 ✓
+        do
+          local have = {}
+          if type(kids) == "table" then
+            for ci = 1, #kids do
+              local kn = nil
+              pcall(function() kn = tostring(kids[ci].name) end)
+              if kn ~= nil then have[kn] = true end
+            end
+          end
+          local want = { "who", "what", "letter", "face" }
+          for wi = 1, #want do
+            local full = want[wi] .. "." .. tostring(lv_no) .. "." .. tostring(pos)
+            if have[full] ~= true then
+              local extra = self:_find_by_name(full)
+              if extra ~= nil then
+                if type(kids) ~= "table" then kids = {} end
+                kids[#kids + 1] = extra
+                if (self._row_find_log or 0) < 6 and print then
+                  self._row_find_log = (self._row_find_log or 0) + 1
+                  print("[murdoku] ★ 单射兜底：`" .. full .. "` 不在 #503 里 ✗ ⇒ **按名全树找到** ✓")
+                end
+              end
+            end
+          end
+        end
         if type(kids) == "table" then
           for ci = 1, #kids do
             local k = kids[ci]
@@ -4551,15 +4686,24 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
           print("[murdoku] ★ 单射命中：`row." .. tostring(lv_no) .. "." .. tostring(pos)
             .. "` ⇒ 写了 " .. tostring(wrote) .. " 个槽位 ✓（★ 内容【由你在编辑器里定】✓）")
         end
-        -- ★★★★★ 2026-10-10 **只在【真写了槽位】时才接管** ✗✓
-        --   ★ 为什么 ✗：★ 用户实测里 `row.1.4` 只有 `who`/`face` 两个子控件 ✗、
-        --     `row.3.1` / `row.3.9` 的 `#503` 是空的 ✗（★ 子控件在，但没进子列表 ✓）
-        --   ⇒ ★ 若仍然无条件 `return` ✗ ⇒ ★ **那一行会整行空白** ✓（★ 它把算法挡掉 ✓）
-        --   ⇒ ★ 改成：★ **写了至少一个槽位，才算"这一行由你接管"** ✓
-        --     ★ 一个都没写（★ 列表不全 / 空行 ✓）⇒ ★ **回落到算法** ✓ ⇒ 不会空白 ✓
-        if wrote > 0 then
-          return    -- ★ 你配了 ⇒ 算法不再插手 ✓
-        end
+        -- ★★★★★ 2026-10-10 **【不做 return】—— 写了就写，其余留给算法** ✗✓
+        --
+        --   ★★ 用户实测两次，正好指到两个极端 ✓：
+        --     · 「**子控件没改序号且重复两遍**」✗ ⇒ 那时是【无条件接管】✓
+        --     · 「**我补的 3.9 和 3.1 恢复原样了**」✗ ⇒ 那时是【写了才接管，否则 return】✗
+        --       ⇒ ★ 这两行的 `#503` 是空的 ✓ ⇒ 一个槽位都没写到 ⇒ **回落算法 ⇒ 内容被覆盖** ✓✓
+        --       （★ 而用户说「**我导出的 `269` 重新导入是正常的**」✓
+        --        ⇒ ★ **存档没坏** ✗ —— ★ **是我的脚本把它覆盖了** ✓）
+        --
+        --   ⇒ ★★★ 正解 ✓：★ **根本不要 `return`** ✗
+        --     ★ 找到的槽位 ⇒ 写你配的内容 ✓
+        --     ★ 找不到的（★ `#503` 不全 / 空行 ✓）⇒ **算法照常填** ✓
+        --   ⇒ ★ **两个极端一起解决** ✓：不会整行空白 ✗ 也不会覆盖你已经填好的行 ✓✓
+        --   ⚠️ 仍要防一件事 ✗：★ **写了内容的槽位别被后面的算法覆盖** ✓
+        --     ⇒ ★ 下面用 `self._row_wrote` 记下"这一项这几个槽位是你配的" ✓
+        --       ★ 由算法那几步跳过它们 ✓（★ 见各槽位写入处的判据 ✓）
+        self._row_wrote = self._row_wrote or {}
+        if wrote > 0 then self._row_wrote[pos] = true end
         -- ★ 写了 0 个 ⇒ ★ 不 return ✓ ⇒ 继续走算法 ✓（★ 这一行先别空白 ✓）
       end
     end
