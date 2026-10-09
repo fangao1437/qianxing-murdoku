@@ -4248,6 +4248,48 @@ end
 --     ⇒ ★★★ **按名全树找一定能拿到** ✓✓
 --   ★ 入口同 `_palette_child` ✓：★ `game.GetClientUIRoots()` ＋ 限深走树 ✓（★ 不用缓存句柄 ✗）
 --   ★ 全程**只读** ✓ 每步单独 pcall ✓
+-- ★★★★★★ 2026-10-10 **往下找【能设图】的控件** ✗✓✓
+--
+--   ★★★ 用户推断 ✓（很准 ✓）：「**现在的头像不是图片而是模板引用控件** ✓，
+--     **所以是不是需要再往上追一层去读模板里的内容而不是只读控件内容**」✓✓
+--
+--   ★ 事实 ✓：★ `face.<关>.<行>` 是【**模板引用控件**】✗ —— ★ 不是图片控件 ✓
+--     ⇒ ★ `face.imageId` / `face:SetImage` 对它**都不适用** ✗
+--     ⇒ ★★ **真正的图在它引用的模板【里面】** ✓ ⇒ ★ **要往下钻** ✓
+--   ★ 同理 ✓：★ **卡片那侧的 `face` 也是**（★ 同一个模板体系 ✓）⇒ ★ 两边都要钻 ✓✓
+--   ★ 而我原来的"下钻"**只找 `text`** ✗ —— ★ 从未为图片钻过 ✓
+--     （★ 日志那行 `★ 单射下钻失败：face 及其子孙【都没有 text】` 正是这个 ✓）
+--
+--   ★ 判据 ✓：★ 控件有 `SetImage` ✗ 或 `imageId` ✗ ⇒ ★ 就是它 ✓
+--   ★ 广度优先 ✓ 最多下钻 4 层 ✓ 全程 pcall ✓
+-- ★ 只读 ✓：本函数只**取**控件，不写任何东西 ✓
+function Controller:_find_image_holder(root)
+  if root == nil then return nil end
+  local function canImg(c)
+    if c == nil then return false end
+    local a, b = false, false
+    pcall(function() if type(c.SetImage) == "function" then a = true end end)
+    pcall(function() if c.imageId ~= nil then b = true end end)
+    return a or b
+  end
+  if canImg(root) then return root end
+  local q = { root }
+  local seen = 0
+  for qi = 1, #q do
+    if seen > 60 then break end
+    local ks = nil
+    pcall(function() ks = q[qi]:GetChildren() end)
+    if type(ks) == "table" then
+      for ki = 1, #ks do
+        local kk = ks[ki]
+        seen = seen + 1
+        if canImg(kk) then return kk end
+        if #q < 200 then q[#q + 1] = kk end
+      end
+    end
+  end
+  return nil
+end
 function Controller:_find_by_name(name)
   if name == nil then return nil end
   local hit = nil
@@ -4773,8 +4815,15 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                     if type(dst.SetText) == "function" then pcall(function() dst:SetText(txt) end) end
                   wrote = wrote + 1
                 end
+                -- ★★★★★★ 2026-10-10 **图的来源要【往下钻一层】** ✗✓✓（★ 用户推断 ✓）
+                --   ★ `face.*` 是**模板引用控件** ✗ ⇒ ★ 它自己没有 `imageId` ✓
+                --     ⇒ ★ 真正的图在它引用的模板【里面】** ✓
+                --   ★ 所以先把 `k` 钻到"能设图的那个"，再读它的 `imageId`/`imageSource` ✓
+                --   ★ 钻不到 ⇒ 退回读 `k` 自己 ✓（★ 兼容"直接是图片控件"✓）
+                local _kimg = self:_find_image_holder(k)
+                if _kimg == nil then _kimg = k end
                 local iid = nil
-                pcall(function() iid = k.imageId end)
+                pcall(function() iid = _kimg.imageId end)
                 if iid ~= nil then
                   local src = nil
                   pcall(function() src = k.imageSource end)
@@ -4785,6 +4834,10 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                   --   ★ 而我写的是 `dst.imageSource = src` ＋ `dst.imageId = iid` ✗
                   --   ★ 项目注释 ✓：「运行时新建的客户端控件，在"根节点"上 `SetImage` 直接返回 false、
                   --     `imageId` 一直是 0」⇒ ★ **属性赋值对图片不通** ✓
+                  -- ★ 写入端同样要钻 ✓：★ 卡片的 `face` 也是**模板引用控件** ✗
+                  --   ⇒ ★ 把 `dst` 钻到"能设图的那个" ✓；钻不到就用 `dst` 自己 ✓
+                  local _dimg = self:_find_image_holder(dst)
+                  if _dimg ~= nil then dst = _dimg end
                   local _okImg = false
                   if src ~= nil then pcall(function() dst:SetImage(src, iid) _okImg = true end) end
                   if not _okImg then pcall(function() dst:SetImage(iid) _okImg = true end) end
@@ -5736,8 +5789,15 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                     end
                     wrote2 = wrote2 + 1
                   end
+                  -- ★★★★★★ 2026-10-10 **图的来源要【往下钻一层】** ✗✓✓（★ 用户推断 ✓）
+                  --   ★ `face.*` 是**模板引用控件** ✗ ⇒ ★ 它自己没有 `imageId` ✓
+                  --     ⇒ ★ 真正的图在它引用的模板【里面】** ✓
+                  --   ★ 所以：★ 先把 `k` 钻到"能设图的那个控件"，再读它的 `imageId`/`imageSource` ✓
+                  --   ★ 钻不到 ⇒ 退回读 `k` 自己 ✓（★ 兼容"直接是图片控件"的老做法 ✓）
+                  local _kimg = self:_find_image_holder(k)
+                  if _kimg == nil then _kimg = k end
                   local iid = nil
-                  pcall(function() iid = k.imageId end)
+                  pcall(function() iid = _kimg.imageId end)
                   if iid ~= nil then
                     local src = nil
                     pcall(function() src = k.imageSource end)
@@ -5756,6 +5816,10 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                     --       `imageId` 一直是 0**」✓
                     --   ⇒ 修法 ✓：★ **`SetImage(src, id)` ⇒ 不行试 `SetImage(id)` ⇒
                     --     最后才退回属性赋值** ✓（★ 与项目一致 ✓ 且留了退路 ✓）
+                    -- ★ 写入端同样要钻 ✓：★ 卡片的 `face` 也是**模板引用控件** ✗
+                    --   ⇒ ★ 把 `dst` 钻到"能设图的那个" ✓；钻不到就用 `dst` 自己 ✓
+                    local _dimg = self:_find_image_holder(dst)
+                    if _dimg ~= nil then dst = _dimg end
                     local _okImg = false
                     if src ~= nil then pcall(function() dst:SetImage(src, iid) _okImg = true end) end
                     if not _okImg then pcall(function() dst:SetImage(iid) _okImg = true end) end
