@@ -14998,8 +14998,19 @@ function Murdoku.on_update(dt)
   --     ★ 且 `script:EnableUpdate(true)` 已开 ✓）★ 而 `current.adapter` **就在这里** ✓✓
   --   ★ 触发条件 ✓：★ 渲染分支刚记录过"弹窗开着"（★ `current._modal_seen` 在涨 ✓）
   --     ★ 那一侧拿不到 adapter ✗ ⇒ ★ **两边拼起来**：★ 一边报"开着" ✓ ★ 一边读控件 ✓
+  -- ★★★★★ 2026-10-09 **修好这条探针 —— 它【从来没触发过】** ✗✓
+  --   ★ 症状 ✓：真机日志里**一次都没有** `★ 四键探针2` ✗
+  --   ★ 根因（两处对不上 ✗）：
+  --     · `ui_controller.lua:3028` 是把计数器加在 **控制器** 上：`self._modal_seen = …`
+  --     · 而这里读的是 **会话**：`current._modal_seen` ✗ —— **两个不同的对象** ✓
+  --     ⇒ `current._modal_seen` **恒为 nil** ⇒ `_seen = 0` ⇒ 那个 `>` 判断**永远不成立** ✓
+  --   ⇒ ★ 修法：从**控制器**上读（`current.controller` ✓ 与 L794 的 `current.controller:tick` 同一个 ✓）
+  --   ★ 顺带把资料员要的那两个数打出来 ✓（它建议的"最大的分叉"那条 ✓）：
+  --     `bg` / `label` 的 **同级排序索引**（官方 `GetSiblingIndex()` ✓ 语义：**数值越大越靠上** ✓）
+  --     ⇒ 一行就能分清"**根本没画**"还是"**画了被盖住**" ✓
   if current ~= nil and current.adapter ~= nil then
-    local _seen = current._modal_seen or 0
+    local _ctl = current.controller
+    local _seen = (_ctl and _ctl._modal_seen) or 0
     if _seen > (Murdoku._probe_seen or 0) and (Murdoku._probe_n or 0) < 12 then
       Murdoku._probe_seen = _seen
       Murdoku._probe_n = (Murdoku._probe_n or 0) + 1
@@ -15015,8 +15026,26 @@ function Murdoku.on_update(dt)
         pcall(function() _vis = tostring(_b.visible) end)
         pcall(function() _sz = tostring(_b.sizeDelta and (_b.sizeDelta.x .. "x" .. _b.sizeDelta.y) or "无") end)
       end
+      -- ★★★ 2026-10-09 **资料员建议的那两个数（最大的分叉就在这一行 ✓）**
+      --   官方语义（`docs/api-cache/mhtakr07vej4.txt:1300-1311` ✓）：
+      --     `GetSiblingIndex()` ⇒ 同级排序索引 ✓ **数值越大越靠上** ✓
+      --   读法 ✓：
+      --     · `bg` 的索引 **>** `label` 的 ⇒ ★ **底图压在文字上面** ⇒ 图文一起看不见 ✓
+      --     · 两者都**读不出来**（nil） ⇒ 接口不适用，改看别的 ✓
+      --     · 索引正常（`label` 更大）而画面上还是空 ⇒ ★ **压根没画**（不是被盖住）✓
+      --   ⇒ ★ 这一条能一次分清「没画」还是「被盖住」✓ —— 那是当前最大的分叉 ✓
+      local _bi, _li = "?", "?"
+      local _lb = nil
+      if _k ~= nil then pcall(function() _lb = current.adapter:sub("modal.exit", "label") end) end
+      if _b ~= nil then pcall(function() _bi = tostring(_b:GetSiblingIndex()) end) end
+      if _lb ~= nil then pcall(function() _li = tostring(_lb:GetSiblingIndex()) end) end
       print("[murdoku] ★ 四键探针2：exit=" .. tostring(_k ~= nil) .. "  bg=" .. tostring(_b ~= nil)
         .. "  imageId=" .. _id .. "  source=" .. _src .. "  visible=" .. _vis .. "  size=" .. _sz)
+      print("[murdoku] ★ 四键探针3（谁在上面）：bg 的 GetSiblingIndex=" .. _bi
+        .. "   label 的 GetSiblingIndex=" .. _li
+        .. "   （官方：**数值越大越靠上** ✓ ⇒ bg > label 就是底图压在字上面 ✗）"
+        .. "  label=" .. tostring(_lb ~= nil)
+        .. "  label.visible=" .. (function() local v = "?" pcall(function() v = tostring(_lb.visible) end) return v end)())
     end
   end
   current.adapter:on_tick(dt)
@@ -17317,7 +17346,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v099 / 2026-10-09 / 收回'imageType 是四键没图原因'的结论(用户实测否掉:图标就是 Basic 且正常);记录 case_001 五个都能选、两人错位 =====")
+        print("[murdoku] ===== 构建标记 v100 / 2026-10-09 / 修好四键探针(它从没触发过:读的是会话的_modal_seen而写在控制器上)+按资料员建议加 GetSiblingIndex 一条定分叉 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
