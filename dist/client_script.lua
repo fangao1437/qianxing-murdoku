@@ -7283,6 +7283,57 @@ function Controller:_grid_item_rec(item, index)
   return rec
 end
 
+-- ★★★★★ 2026-10-10 **单射：`assets/row.<关卡序>.<行序>`** ✗✓
+--
+--   ★★ 用户要求 ✓（原话 ✓）：
+--     「我需要**一个区域让我指定第几关第几行填什么**」✓
+--     「现在**第几关第几行怎么填是没有定式的**」✗
+--     「先把这个**单射**做好了，有了这个**一一映射**再查显示问题会更方便」✓
+--     「建立这个单射的过程中**说不定就顺手解决**这个问题了」✓✓
+--   ★★ 已经建好的（存档实证 ✓）：
+--     `assets` 的子控件 9 个 = **`row.1.1` … `row.1.5`** ＋ `portrait.A/B/V/D` ✓
+--     ⇒ ★ **约定就是**：★ **`row.<关卡序>.<行序>`** ✓（★ 你建的 `row.1.*` = 第 1 关 ✓）
+--   ★★ 用法（★ 完全由你在编辑器里定 ✓ 脚本不猜内容 ✗）：
+--     · 在 `assets` 下放一个容器 ✓ 名字 `row.<关卡序>.<行序>` ✓
+--     · ★ **在它里面放子控件，子控件的【名字】= 卡片上的槽位名** ✓：
+--       `who` / `what` / `letter` / `face` / `backrop1` / `backrop2` / `gray` ✓
+--     · ★ 文本控件 ⇒ 它的文字会写到卡片同名槽位 ✓
+--     · ★ 图片控件 ⇒ 它的 `imageId`/`imageSource` 会写到卡片同名槽位 ✓
+--     · ★ **没配的行 ⇒ 自动回落到现在的算法** ✓（★ 向后兼容 ✓ 不会因为没配就空着 ✓）
+--   ★ 为什么这样最省 ✓：★ 内容全在**编辑器里可视化摆** ✓
+--     ⇒ ★ 不需要脚本里写死任何"第几关第几行是什么" ✓✓
+-- ★ 只读 ✓：本函数只**取**控件，不写任何东西 ✓
+function Controller:_palette_child(name)
+  if name == nil or self.adapter == nil then return nil end
+  local out = nil
+  pcall(function()
+    local r = self.adapter:find("root")
+    local a = nil
+    if r ~= nil then a = r:GetChild("assets") end
+    if a ~= nil then out = a:GetChild(name) end
+  end)
+  return out
+end
+
+-- ★ 取当前关卡的**序号**（1 起 ✓ 与 `row.1.*` 对上 ✓）。取不到 ⇒ nil ✓
+function Controller:_level_ordinal()
+  local lv = self.core and self.core.level
+  if lv == nil then return nil end
+  local id = lv.id
+  if id == nil then return nil end
+  local ok, n = pcall(function()
+    local L = __require("levels.init")
+    if type(L) ~= "table" then return nil end
+    if type(L.index_of) == "function" then return L.index_of(id) end
+    if type(L.indexOf) == "function" then return L.indexOf(id) end
+    if type(L.list) == "table" then
+      for i = 1, #L.list do if L.list[i].id == id then return i end end
+    end
+    return nil
+  end)
+  if ok and type(n) == "number" then return n end
+  return nil
+end
 function Controller:_grid_item_child_cached(item, index, pos, suffix)
   local rec = self:_grid_item_rec(item, index)
   if rec == nil then return nil end
@@ -7510,6 +7561,63 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   --     ⇒ ★ **滚动位置才保得住** ✓✓（★ 这是"点一下弹回顶部"的治本一步 ✓）
   self._grid_seen = self._grid_seen or {}
   self._grid_seen[item] = index
+
+  -- ★★★★★ 2026-10-10 **单射优先：用户在 `assets/row.<关>.<行>` 里指定的内容，优先于算法** ✗✓
+  --   ★ 用户要求 ✓（原话 ✓）：「我需要一个区域让我**指定第几关第几行填什么**」✓
+  --     「现在**第几关第几行怎么填是没有定式的**」✗
+  --     「先把这个**单射**做好了，有了这个**一一映射**再查显示问题会更方便」✓
+  --     「建立这个单射的过程中**说不定就顺手解决**这个问题了」✓
+  --   ★ 有配 ⇒ **完全按你配的来** ✓（★ 算法一个字都不写 ✓）
+  --   ★ 没配 ⇒ **回落到现有算法** ✓（★ 向后兼容 ✓ 没配的行不会空着 ✓）
+  --   ★ 只在**我们那趟**做 ✓ —— ★ 引擎重进时不动内容 ✗（★ 那会覆盖引擎的刷新 ✓）
+  if self._grid_in_refresh == true then
+    local lv_no = self:_level_ordinal()
+    if lv_no ~= nil then
+      local rc = self:_palette_child("row." .. tostring(lv_no) .. "." .. tostring(pos))
+      if rc ~= nil then
+        local wrote = 0
+        local kids = nil
+        pcall(function() kids = rc:GetChildren() end)
+        if type(kids) == "table" then
+          for ci = 1, #kids do
+            local k = kids[ci]
+            local kn = nil
+            pcall(function() kn = tostring(k.name) end)
+            -- ★ 槽位名可能带自动后缀 ⇒ 取第一段 ✓（★ 项目注释提过"自动后缀算不一样"✓）
+            local slot = kn
+            if slot ~= nil then slot = string.match(slot, "^[^%s]+") end
+            if slot ~= nil and slot ~= "" then
+              local dst = self:_grid_item_child_cached(item, index, pos, slot)
+              if dst ~= nil then
+                -- ★ 文本 ⇒ 写文字 ✓；★ 图片 ⇒ 成对写 imageSource + imageId ✓（项目铁律 ✓）
+                local txt = nil
+                pcall(function() txt = k.text end)
+                if type(txt) == "string" then
+                  pcall(function() self:write_control_text(dst, txt) end)
+                  wrote = wrote + 1
+                end
+                local iid = nil
+                pcall(function() iid = k.imageId end)
+                if iid ~= nil then
+                  local src = nil
+                  pcall(function() src = k.imageSource end)
+                  pcall(function() if src ~= nil then dst.imageSource = src end end)
+                  pcall(function() dst.imageId = iid end)
+                  wrote = wrote + 1
+                end
+              end
+            end
+          end
+        end
+        if (self._row_log or 0) < 6 and print then
+          self._row_log = (self._row_log or 0) + 1
+          print("[murdoku] ★ 单射命中：`row." .. tostring(lv_no) .. "." .. tostring(pos)
+            .. "` ⇒ 写了 " .. tostring(wrote) .. " 个槽位 ✓（★ 内容【由你在编辑器里定】✓）")
+        end
+        return    -- ★ 你配了 ⇒ 算法不再插手 ✓
+      end
+    end
+  end
   -- ★★★★★ 2026-10-10 **只读探针：记录引擎到底把哪几项交给我们** ✗✓
   --   ★ 用户要查清的正是这件事 ✓（日志显示 `n=15` 却只回调 7 次 ✗）
   --   ★ 官方：「仅会加载处于**可见范围**内的列表项」✓ —— ★ 那"可见范围"到底是几项 ✗
@@ -17880,7 +17988,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v123 / 2026-10-09 / 以257为基线:高亮改成彻底无状态,每次填充【无条件显式写】颜色(选中金色/没选中原色)⇒不可能粘连 =====")
+        print("[murdoku] ===== 构建标记 v124 / 2026-10-09 / 新增单射:assets/row.<关卡序>.<行序>里按槽位名摆内容,脚本搬到线索卡上;没配则回落算法 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
