@@ -29,7 +29,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readGil, stateBlocks, pairOf, pairValue, findChildListTop, asIdList } from './gilread.mjs';
+import { readGil, stateBlocks, pairOf, pairValue, findChildListTop, asIdList, KNOWN_TYPES } from './gilread.mjs';
 import { findScriptLeaf, markerOf } from './gilwrite.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -69,6 +69,99 @@ export function assertAssets(g, expectNames = []) {
     if (!hit) return 'assets 子列表里找不到 ' + n + ' ✗';
   }
   return true;
+}
+
+// ── 可复用：模板"本体 / 实例"判定（★ 2026-10-10 lead 要求固化 ✓）────────────
+/**
+ * ★★★ 背景（★ 用户领域知识 ＋ 实测 ✓）：
+ *   ★ 用户原话：「★ **模板存在一个实例和一个本体** ✓ —— ★ 旧项目里就遇到过 ✓
+ *     ★ 只修改由模板产生的引用只会影响【实例侧】✓，★ 保存模板修改后才会影响【模板本身】✓
+ *     ★ **它们两个以【不同的 id】存在于存档中** ✓」（★ "未必是事实，可查证" ✓）
+ *   ★ 实测 `298` ✓：★ 有**两个** `clue` 记录，各自带**一整套独立子控件** ✓，且**都不在任何父的子列表里** ✓
+ *     ⇒ ★ 与"它们是模板"吻合 ✓
+ *
+ * ★ 判定依据（★ 可执行的那一条 ✓）：★ **`clues.grid` 的 `itemPrefabIndex`**
+ *   ★ 它在 `/#505/#503/#80/#506`（wt0 ✓）★ 实测 = **`1073742421`** ✓
+ *   ⇒ ★★ **列表项运行时取的是 `#1073742421`** ✓
+ *   ⚠️ ★ 这与用户"实例侧才生效"的观察**方向相反** ✗ ⇒ ★ **见下面的"命名之争" ✓**
+ *
+ * ⚠️⚠️ ★★★ **命名之争（★ 2026-10-10 记 ✓ 它是"命名之争"，不是"事实之争" ✓）**：
+ *   ★ 同一天两个人给出的命名**相反** ✗ —— ★ 但**事实完全一致** ✓，只是**判据不同** ✓：
+ *     | | 判据 | 对 `#1073742421` 的叫法 |
+ *     | --- | --- | --- |
+ *     | ★ 工具向（我） | ★ **`itemPrefabIndex` 指向谁** ✓ | 「引用 / 实例侧」 |
+ *     | ★ 资料员 | ★ **顶层有没有 `#504`** ✓ | 「本体」（★ 顶层无父 ✓） |
+ *   ★ **事实（两人都同意 ✓）**：
+ *     · `#1073742421` ★ **顶层没有 `#504`** ✓ ＋ ★ **`itemPrefabIndex` 指向它** ✓
+ *     · `#1073742428` ★ **顶层 `#504` = `ClientUIPrototypeHierarchyRoot`** ✓
+ *   ⇒ ★★★ **所以本工具【不用"本体 / 实例"命名】** ✓ —— ★ 改用**两个不会引起分歧的名字** ✓：
+ *     · `#1073742421` = ★ **「运行时列表项来源」**（★ 依据：`itemPrefabIndex` ✓ **可执行、可复核** ✓）
+ *     · `#1073742428` = ★ **「模板层级根下的那份」**（★ 依据：父 id ✓ 同样是**可复核的事实** ✓）
+ *   ★★ **为什么这样更好** ✓：★ **它不依赖"哪个该叫本体"这个约定** ✗ ⇒
+ *     ★ **资料员查证若改变结论，本工具的输出不用改** ✓ —— ★ 只有"运行时来源"那条会变 ✓，
+ *       而它**由 `itemPrefabIndex` 直接决定** ✓ ⇒ ★ **永远可复核** ✓✓
+ *
+ * ⚠️ ⚠️ ★★ 附带发现（★ 与 `#503` 同一类陷阱 ✓）：★ **`#506` 有【两种含义】** ✗
+ *   · `/#505/#503/#80/#506` = **itemPrefabIndex**（值形如 `1073742421` ✓，★ 指向模板 ✓）
+ *   · `/#505/#503/#81/#506` = **`50888`**（★ 大量按钮都有 ✓ —— ★ 明显是**别的语义** ✗）
+ *   ⇒ ★★ **凡按字段号取值的代码，都要先确认【所在路径】** ✓ ——
+ *     ★ 这正是 `#503` 那次事故的同一个教训 ✓（★ 见 `gilread.mjs` 事故档案 ✓）
+ */
+export function prefabReport(g) {
+  const out = { roots: [], prefabIndex: [], sameName: [] };
+  const textsOfAny = (fs2, o) => {
+    for (const x of fs2) { if (x.wt === 2 && x.isText && x.len <= 64) o.push(x.payload.toString('utf8')); if (x.sub) textsOfAny(x.sub, o); }
+    return o;
+  };
+  // ① 模板层级根：名字含 Prototype/Prefab 的带 id 节点（★ 它不是"控件记录"✗ —— 没有几何对 ✓）
+  (function w(fs2, p) {
+    for (const f of fs2) {
+      const here = p + '/#' + f.field;
+      if (f.sub) {
+        const b = f.sub.find((x) => x.field === 501 && x.wt === 0);
+        if (b && Number(b.num) > 1000000000) {   // ★ 只要【控件 id 量级】的 ✓（★ 排除 `#501=2` 那种枚举值 ✗）
+          const nm = textsOfAny(f.sub, []).find((s) => !KNOWN_TYPES.has(s));
+          if (nm && /Prototype|Prefab/i.test(nm)) out.roots.push({ id: Number(b.num), name: nm, path: here });
+        }
+        w(f.sub, here);
+      }
+    }
+  })(g.tree, '');
+  // ② itemPrefabIndex：值形如"指向某个记录 id"的 #506（★ 与 #81/#506=50888 那种区分开 ✓）
+  (function w(fs2, p) {
+    for (const f of fs2) {
+      const here = p + '/#' + f.field;
+      if (f.field === 506 && f.wt === 0 && g.recs.some((r) => r.id === Number(f.num))) {
+        out.prefabIndex.push({ path: here, value: Number(f.num) });
+      }
+      if (f.sub) w(f.sub, here);
+    }
+  })(g.tree, '');
+  // ③ 同名记录（≥2 个同名 = 本体/实例候选 ✓）＋ 是否被登记进父的子列表
+  const byName = new Map();
+  for (const r of g.recs) if (r.name) byName.set(r.name, [...(byName.get(r.name) || []), r]);
+  const isRegistered = (r) => g.recs.some((p) => {
+    if (!p.childList || !(p.childList.payload || Buffer.alloc(0)).length) return false;
+    let q = 0; const pay = p.childList.payload;
+    while (q < pay.length) {
+      let v = 0n, s = 0n, ok = false;
+      while (q < pay.length) { const b = pay[q++]; v |= BigInt(b & 0x7f) << s; if ((b & 0x80) === 0) { ok = true; break; } s += 7n; }
+      if (!ok) break; if (Number(v) === r.id) return true;
+    }
+    return false;
+  });
+  for (const [name, list] of byName) {
+    if (list.length < 2) continue;
+    // ★★ 只报【模板样】的同名组 ✓ —— ★ **全体都没被登记进任何父的子列表** ✗
+    //   （★ 否则 `bg`/`label` 这种"重名但正常挂着的子控件"会刷屏 ✗ —— 实测 44 组 ✗）
+    if (!list.every((r) => !isRegistered(r))) continue;
+    out.sameName.push({
+      name,
+      items: list.map((r) => ({ id: r.id, parentId: r.parentId, blocks: r.states.length, registered: false })),
+    });
+    if (out.sameName.length >= 8) break;   // ★ 上限 ✓（★ 免得刷屏 ✗）
+  }
+  return out;
 }
 
 // ── 主流程 ────────────────────────────────────────────────────────────────
@@ -155,6 +248,49 @@ function main() {
     if (empty.length) p('  ⚠️ 子列表为空的 row（' + empty.length + ' 个）：' + empty.map((x) => x.name).join('、'));
     else p('  ✅ 每个 row 都有非空子列表 ✓');
   }
+
+  // ⑤b 模板"本体 / 实例"（★ lead 2026-10-10 要求固化 ✓）
+  p('');
+  p('── ⑤b 模板的两份同名记录（★ "该改哪一个"看这里 ✓ 命名见 `prefabReport` 注释 ✓）──');
+  const pf = prefabReport(g);
+  out.prefab = pf;
+  for (const r of pf.roots) p('  ★ 模板层级根：' + r.name + ' #' + r.id + '（' + r.path + '）—— ★ 真实节点 ✓');
+  if (pf.prefabIndex.length) {
+    for (const x of pf.prefabIndex) p('  ★ itemPrefabIndex ' + x.path + ' = ' + x.value + '　⇒ ★ 运行时列表项取 #' + x.value);
+  } else p('  ⚠️ 没找到 itemPrefabIndex（★ 无法判定"运行时用哪一份" ✗）');
+  for (const s of pf.sameName) {
+    const rootId = (pf.roots[0] || {}).id;
+    p('  ★ 同名记录「' + s.name + '」' + s.items.length + ' 份：');
+    for (const it of s.items) {
+      const isPrefab = pf.prefabIndex.some((x) => x.value === it.id);
+      p('     #' + String(it.id).padEnd(12) + ' 父=' + String(it.parentId).padEnd(12)
+        + ' 状态块 ' + it.blocks
+        + (it.parentId === rootId ? '　★ 【模板层级根下的那份】✓（父=模板层级根 ✓）'
+          : (it.parentId == null ? '　★ 【顶层无父】✓（根级 ✓）' : '　★ 顶层父=#' + it.parentId))
+        + (isPrefab ? '　★★ itemPrefabIndex 指向它 ⇒ 【★ 运行时列表项来源】✓' : ''));
+    }
+    // ★★ 判定：★ 有 itemPrefabIndex 指向 ⇒ 那就是运行时来源 ✓；没有 ⇒ 说清两种意图各改哪份 ✓
+    const pref = s.items.filter((it) => pf.prefabIndex.some((x) => x.value === it.id));
+    const noParent = s.items.filter((it) => it.parentId == null);
+    const underRoot2 = s.items.filter((it) => it.parentId === rootId);
+    if (pref.length) {
+      p('     ★ 判定：★ **要改"运行时看到的" ⇒ 改 #' + pref.map((x) => x.id).join(' / #')
+        + ' 的全部状态块** ✓；★ 要改"模板层级根下的那份" ⇒ 改 #' + (underRoot2.map((x) => x.id).join(' / #') || '（无 ✗）') + ' ✓');
+    } else {
+      p('     ★ 判定：★ 本组**没有** itemPrefabIndex 指向 ✗ ⇒ ★ 改"顶层无父的那份"＝ #'
+        + (noParent.map((x) => x.id).join(' / #') || '（无 ✗）') + ' ✓、★ 改"模板层级根下的那份"＝ #'
+        + (underRoot2.map((x) => x.id).join(' / #') || '（无 ✗）') + ' ✓');
+    }
+  }
+  if (pf.sameName.length) {
+    p('  ★★ **通用模型**（★ 实测 ✓）：★ 每个模板控件在存档里有 **2 份** ——'
+      + '★ 一份【顶层无父】（根级 ✓）、★ 一份挂在 `' + ((pf.roots[0] || {}).name || '?') + '` 下 ✓');
+    p('  ⚠️ 命名说明：★ 本工具**不用"本体/实例"** ✓ —— ★ 改用可复核的事实命名：'
+      + '★「运行时列表项来源」（依据 `itemPrefabIndex` ✓）／★「模板层级根下的那份」（依据父 id ✓）');
+    p('  ⚠️ 依据＝ itemPrefabIndex（`/#505/#503/#80/#506` ✓）；★ 资料员若查证出不同结论 ⇒ 只改 `prefabReport` 一处 ✓');
+  }
+  p('  ⚠️ 同字段号不同义：★ `#506` 在 `#80/#506` 是 itemPrefabIndex ✓、在 `#81/#506` 是 `50888`（★ 别的语义 ✗）'
+    + '　⇒ ★ **按字段号取值前先确认路径** ✓（与 `#503` 同类陷阱 ✓）');
 
   // ⑥ 结论
   p('');

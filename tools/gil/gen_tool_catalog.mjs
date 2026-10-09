@@ -298,6 +298,7 @@ md.push('| 我要做的事 | 用这个 | 验收命令 |');
 md.push('| --- | --- | --- |');
 const TASKS = [
   ['★★ 出一版之前先体检（只读 ✓ 最快 ✓）', '`inspect_gil.mjs`', '`node tools/gil/inspect_gil.mjs <存档>` ⇒ 看 clue 4 块 / assets 名单 / row.* 条数 / 脚本标记'],
+  ['★★★ **模板「本体/实例」该改哪一份**（★ 同名记录有 2 份 ✓）', '`inspect_gil.mjs` 的 ⑤b 节', '`node tools/gil/inspect_gil.mjs <存档>` ⇒ ★ 看 `itemPrefabIndex` 指向谁 ⇒ **那份就是运行时用的** ✓'],
   ['改一个控件的位置/尺寸', '`set_positions.mjs`', '`node tools/gil/diff_fields.mjs <输入> <输出>` （差异应=你改的那几个分量）'],
   ['改一个"两浮点对"的值（位置/尺寸/锚点）', '`set_positions.mjs` 或按 `fix_clue_tpl_origin.mjs` 抄一个', '同上'],
   ['把客户端脚本叠进存档（出货前必做）', '`embed_script.mjs`', '`node tools/gil/embed_script.mjs --in=… --out=… --expect-marker=vNNN` ⇒ 必须打印 `✅ ⑨ 版本标记 = vNNN`'],

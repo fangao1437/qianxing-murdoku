@@ -5247,7 +5247,16 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
         --     ⇒ ★ 就是这里取不到 ⇒ 用白兜底 ⇒ 把原色盖掉 ✓✓
         pcall(function() _tpl = self:_find_by_name("clue") end)
         local _tbp = nil
-        if _tpl ~= nil then pcall(function() _tbp = adapter:sub("clue", "backrop1") end) end
+        -- ★★★★★★ 2026-10-10 **这里原来还是 `adapter:sub`** ✗✓✓ —— ★ 这就是"描边变亮"的根 ✓
+        --   ★★★ 症状 ✓（用户报 ✓）：「**描边颜色 131 还正常，134 就变亮了**」✗
+        --   ★ 上一步 `_tpl` 已经改走"按名全树找"了 ✓ —— ★ **而紧接着这一行【又用陈旧句柄】** ✗
+        --     ⇒ ★★ `adapter:sub("clue","backrop1")` **必然取不到** ✓
+        --     ⇒ `_tbp` = nil ⇒ `_clue_tpl_tint` = nil ⇒ ★ **不还原** ✓
+        --     ⇒ ★★★ **而高亮金 `4294956107` 已经写上去了 ⇒ 【永久残留】** ✓✓
+        --   ⇒ ★★ **"变亮" = 高亮金残留** ✓ —— ★ 不是颜色被改坏 ✓，是**没被还原** ✓
+        --   ★ 修法 ✓：★ **改成"按名全树找 `backrop1`"** ✓（★ 与 `_tpl` 同一条路 ✓）
+        --     ★ 卡片模板的子控件名就是 `backrop1` ✓（★ 不带 `clue.1.` 前缀 ✓ —— 实测过 ✓）
+        if _tpl ~= nil then pcall(function() _tbp = self:_find_by_name("backrop1") end) end
         if _tbp ~= nil then pcall(function() self._clue_tpl_tint = _tbp.imageColor end) end
         -- ★★★★★ 2026-10-10 **取不到就【什么都不写】** ✗✓✓
         --   ★ 这里原来写的是「`self._clue_tpl_tint = 4294967295`」（★ 白 ✓）✗
@@ -5261,10 +5270,22 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
       --   ★ 非 `_sel` ⇒ ★ **只有 `_clue_tpl_tint` 有值才写** ✓
       --     ★ 没有值 ⇒ **一个字都不写** ✗ ⇒ ★ 编辑器里的原色保持 ✓✓
       --   ★ 这条是"所有 backrop1 变白"的直接修复 ✓
-      if _sel then
+      -- ★★★★★★ 2026-10-10 **写色三步：高亮 ✓ / 还原 ✓ / 都没有 ⇒ 不写** ✗✓✓
+      --   ★ 现在 `_clue_tpl_tint` 走树了 ✓ ⇒ 正常情况下【一定拿得到】✓ ⇒ 高亮会被正常还原 ✓
+      --   ⚠️ 万一还是拿不到（★ 例：模板还没实例化 ✓）⇒ ★ **不写** ✗：
+      --     ★ **宁可这一次不点亮** ✓，★ **也不要把金色永久留在卡上** ✗✓
+      --     ★（★ 这是"变亮"那一类问题的**兜底原则** ✓ 与"别拿白色顶替"同一条 ✓）
+      if _sel and self._clue_tpl_tint ~= nil then
         pcall(function() _cbp2.imageColor = HL end)
-      elseif self._clue_tpl_tint ~= nil then
+      elseif (not _sel) and self._clue_tpl_tint ~= nil then
         pcall(function() _cbp2.imageColor = self._clue_tpl_tint end)
+      else
+        -- ★ 没拿到原色 ⇒ 高亮也不点 ✗（★ 免得留下不可还原的金色 ✓）
+        if (self._tint_skip or 0) < 3 and print then
+          self._tint_skip = (self._tint_skip or 0) + 1
+          print("[murdoku] ★ 染色跳过：取不到模板原色 ✗ ⇒ 这一次【不点亮】"
+            .. "（★ 免得留下不可还原的金色 ✓ 这是\"变亮\"的兜底 ✓）")
+        end
       end
     end
   end
