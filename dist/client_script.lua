@@ -7764,7 +7764,63 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                 -- ★ 文本 ⇒ 写文字 ✓；★ 图片 ⇒ 成对写 imageSource + imageId ✓（项目铁律 ✓）
                 local txt = nil
                 pcall(function() txt = k.text end)
-                if type(txt) == "string" then
+                -- ★★★★★★ 2026-10-10 **`dst` 自己没有 `text` ⇒ 往下找【有 text 的子孙】** ✗✓✓
+              --
+              --   ★★★ 读到了根 ✓（`write_control_text` 的定义在 L3802 ✓）：
+              --     `if ctrl == nil or ctrl.text == nil then return false end` ✗
+              --   ⇒ ★★ **它要求 `ctrl.text ~= nil`，否则【静默返回 false，一个字都不写】** ✓
+              --   ★ 而探针实测 ✓：★ `slot=who  目标控件=who  写前=  写后读回=`
+              --     ⇒ ★ **`dst.text` 是空的** ✗ ⇒ ★ **`ctrl.text == nil` ⇒ 被挡住** ✓✓
+              --   ⇒ ★★★ **所以 `who` 这个控件【不是文本控件】** ✓
+              --     （★ 很可能是**容器** ✓ 文字在它的**子控件**里 ✓）
+              --   ★★ 而这也解释了"当年算法也填不进去"✗ —— ★ **它同样被这一行挡住** ✓
+              --
+              --   ★ 用户提示 ✓（很准 ✓）：「**你没必要去猜往哪填** ✓
+              --     **那套被删掉的填入方式确实把东西填进去了，你直接去读它的路径**」✓
+              --   ⇒ ★ 读完发现：★ **它用的路径和我【一样】** ✓（`_grid_item_child_cached` ✓）
+              --     ⇒ ★★ **所以问题不在"找哪个控件"** ✗ —— ★ **在那个控件【没有 text】** ✓
+              --
+              --   ⇒ 修法 ✓：★ **`dst` 没有 `text` ⇒ 广度优先找它下面第一个有 `text` 的** ✓
+              --     ★ 找到就用它 ✓；找不到 ⇒ 如实报一次 ✓（★ 不再静默 ✓）
+              if dst ~= nil then
+                local _hasT = false
+                pcall(function() if dst.text ~= nil then _hasT = true end end)
+                if not _hasT then
+                  local _q = { dst }
+                  local _found = nil
+                  for _qi = 1, #_q do
+                    local _ks = nil
+                    pcall(function() _ks = _q[_qi]:GetChildren() end)
+                    if type(_ks) == "table" then
+                      for _ki = 1, #_ks do
+                        local _kk = _ks[_ki]
+                        local _ht = false
+                        pcall(function() if _kk.text ~= nil then _ht = true end end)
+                        if _ht then _found = _kk break end
+                        _q[#_q + 1] = _kk
+                      end
+                    end
+                    if _found ~= nil then break end
+                  end
+                  if _found ~= nil then
+                    dst = _found
+                    if (self._row_deep or 0) < 6 and print then
+                      self._row_deep = (self._row_deep or 0) + 1
+                      local _fn = nil
+                      pcall(function() _fn = tostring(_found.name) end)
+                      print("[murdoku] ★ 单射下钻：`" .. tostring(slot)
+                        .. "` 本身没有 `text` ✗ ⇒ 用它下面的 `" .. tostring(_fn) .. "` ✓")
+                    end
+                  else
+                    if (self._row_notext or 0) < 4 and print then
+                      self._row_notext = (self._row_notext or 0) + 1
+                      print("[murdoku] ★ 单射下钻失败：`" .. tostring(slot)
+                        .. "` 及其子孙【都没有 `text`】✗ ⇒ 写不进去 ✓（★ 这一条要报给你 ✓）")
+                    end
+                  end
+                end
+              end
+              if type(txt) == "string" then
                   pcall(function() self:write_control_text(dst, txt) end)
                   wrote = wrote + 1
                 end
@@ -8627,7 +8683,63 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                 if dst ~= nil then
                   local txt = nil
                   pcall(function() txt = k.text end)
-                  if type(txt) == "string" then
+                  -- ★★★★★★ 2026-10-10 **`dst` 自己没有 `text` ⇒ 往下找【有 text 的子孙】** ✗✓✓
+              --
+              --   ★★★ 读到了根 ✓（`write_control_text` 的定义在 L3802 ✓）：
+              --     `if ctrl == nil or ctrl.text == nil then return false end` ✗
+              --   ⇒ ★★ **它要求 `ctrl.text ~= nil`，否则【静默返回 false，一个字都不写】** ✓
+              --   ★ 而探针实测 ✓：★ `slot=who  目标控件=who  写前=  写后读回=`
+              --     ⇒ ★ **`dst.text` 是空的** ✗ ⇒ ★ **`ctrl.text == nil` ⇒ 被挡住** ✓✓
+              --   ⇒ ★★★ **所以 `who` 这个控件【不是文本控件】** ✓
+              --     （★ 很可能是**容器** ✓ 文字在它的**子控件**里 ✓）
+              --   ★★ 而这也解释了"当年算法也填不进去"✗ —— ★ **它同样被这一行挡住** ✓
+              --
+              --   ★ 用户提示 ✓（很准 ✓）：「**你没必要去猜往哪填** ✓
+              --     **那套被删掉的填入方式确实把东西填进去了，你直接去读它的路径**」✓
+              --   ⇒ ★ 读完发现：★ **它用的路径和我【一样】** ✓（`_grid_item_child_cached` ✓）
+              --     ⇒ ★★ **所以问题不在"找哪个控件"** ✗ —— ★ **在那个控件【没有 text】** ✓
+              --
+              --   ⇒ 修法 ✓：★ **`dst` 没有 `text` ⇒ 广度优先找它下面第一个有 `text` 的** ✓
+              --     ★ 找到就用它 ✓；找不到 ⇒ 如实报一次 ✓（★ 不再静默 ✓）
+              if dst ~= nil then
+                local _hasT = false
+                pcall(function() if dst.text ~= nil then _hasT = true end end)
+                if not _hasT then
+                  local _q = { dst }
+                  local _found = nil
+                  for _qi = 1, #_q do
+                    local _ks = nil
+                    pcall(function() _ks = _q[_qi]:GetChildren() end)
+                    if type(_ks) == "table" then
+                      for _ki = 1, #_ks do
+                        local _kk = _ks[_ki]
+                        local _ht = false
+                        pcall(function() if _kk.text ~= nil then _ht = true end end)
+                        if _ht then _found = _kk break end
+                        _q[#_q + 1] = _kk
+                      end
+                    end
+                    if _found ~= nil then break end
+                  end
+                  if _found ~= nil then
+                    dst = _found
+                    if (self._row_deep or 0) < 6 and print then
+                      self._row_deep = (self._row_deep or 0) + 1
+                      local _fn = nil
+                      pcall(function() _fn = tostring(_found.name) end)
+                      print("[murdoku] ★ 单射下钻：`" .. tostring(slot)
+                        .. "` 本身没有 `text` ✗ ⇒ 用它下面的 `" .. tostring(_fn) .. "` ✓")
+                    end
+                  else
+                    if (self._row_notext or 0) < 4 and print then
+                      self._row_notext = (self._row_notext or 0) + 1
+                      print("[murdoku] ★ 单射下钻失败：`" .. tostring(slot)
+                        .. "` 及其子孙【都没有 `text`】✗ ⇒ 写不进去 ✓（★ 这一条要报给你 ✓）")
+                    end
+                  end
+                end
+              end
+              if type(txt) == "string" then
                     -- ★★★★★ 2026-10-10 **探针：写入前后各读一次** ✗✓（★ 一次定案 ✓）
                     --   ★ 现象 ✓：日志说"写了 2 个槽位"✓ 但画面上看不到 ✗
                     --   ⇒ ★ 三种可能 ✓：① 写到错的控件 ✗ ② 写了但被属性挡住 ✗ ③ 引擎重画 ✗
@@ -18371,7 +18483,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v141 / 2026-10-10 / 探针定案:目标控件叫who而非clue.<行>.who且无text⇒按完整名在item下找+类型验证+短名兜底 =====")
+        print("[murdoku] ===== 构建标记 v142 / 2026-10-10 / 读到write_control_text要求ctrl.text~=nil才写⇒dst没有text就往下找有text的子孙;找不到如实报 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
