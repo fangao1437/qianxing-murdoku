@@ -7571,7 +7571,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
     --     ⇒ ★ 这也解释了用户先前那句「高亮出现在**第一张卡之上**」✓✓（★ 1、2 项在可见区**上方** ✓）
     --   ★ 溢出数 = **总条数 − 一屏容量** ✓（真机数：7 − 5 = **2** ✓ 与用户说的"1、2 项"吻合 ✓）
     local _overflow = (cap ~= nil) and math.max(0, (self._grid_blank_total or 0) - cap) or 0
-    if in_our_refresh and _overflow > 0 and pos <= _overflow then
+    if in_our_refresh and cap ~= nil and _overflow > 0 and pos > cap then
       _blanked = true
       -- ★★ 计数器 ✓：让离线的护栏能**不依赖假件**地断言"我们那趟清了几项"✓
       --   ★ 为什么需要它 ✗：★ 假件把 `ensure_raycast` 也模拟了 ⇒ 它**会把射线又打开** ✗
@@ -8175,7 +8175,7 @@ function Controller:_on_grid_item_click(adapter, grid, item)
     local total = self._grid_blank_total or 0
     local overflow = (cap ~= nil) and math.max(0, total - cap) or 0
     -- ★ 官方索引 **0 起** ✓（真机 `GetItemIndex=1` ⇒ pos=2 ✓ 已证实 ✓）
-    if overflow > 0 and _idx < overflow then
+    if overflow > 0 and cap ~= nil and _idx >= cap then
       if (self._grid_blank_click_log or 0) < 4 and print then
         self._grid_blank_click_log = (self._grid_blank_click_log or 0) + 1
         print("[murdoku] ★ 空白占位项被点到 ⇒ **已忽略** ✓（index=" .. tostring(_idx)
@@ -17825,7 +17825,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v111 / 2026-10-09 / 按用户两条纠正:空白占位项改为【前 N 项】(不是后 N 项)+绝不碰射线(碰了就滚不动)+清完立刻 return(否则被后面的填充覆盖) =====")
+        print("[murdoku] ===== 构建标记 v112 / 2026-10-09 / 治本:模板 clue 的位置(212)就是布局基准⇒整体上移2项(212/104=2.04,与用户观察吻合);存档已归零+空白项改关后两项 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
