@@ -3987,6 +3987,15 @@ function Controller:sync_clue_grid(adapter)
   end)
   self._grid_in_refresh = false
 
+  -- ★ 只读探针 ✓：数"视窗里物理上挂了多少个子控件"✗（= 引擎真的建了几个列表项 ✓）
+  if print then
+    local nk = nil
+    pcall(function() local kids = grid:GetChildren() if type(kids) == "table" then nk = #kids end end)
+    print("[murdoku] ★ 探针·本次 RefreshItems：传了 **n=" .. tostring(n) .. "** 条；"
+      .. "回调进来 **" .. tostring(self._grid_calls or 0) .. "** 次；"
+      .. "视窗子控件 **" .. tostring(nk) .. "** 个"
+      .. "　⇒ ★ 三者不等就是线索所在 ✓（★ 官方：只为**可见范围内**的项回调 ✓）")
+  end
   local calls = self._grid_calls or 0
   if (not ok_ref) or (calls == 0 and n > 0) then
     self:_grid_fail("RefreshItems " .. ((not ok_ref) and ("抛错：" .. tostring(ref_err))
@@ -4436,6 +4445,39 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   --     ⇒ ★ **滚动位置才保得住** ✓✓（★ 这是"点一下弹回顶部"的治本一步 ✓）
   self._grid_seen = self._grid_seen or {}
   self._grid_seen[item] = index
+  -- ★★★★★ 2026-10-10 **只读探针：记录引擎到底把哪几项交给我们** ✗✓
+  --   ★ 用户要查清的正是这件事 ✓（日志显示 `n=15` 却只回调 7 次 ✗）
+  --   ★ 官方：「仅会加载处于**可见范围**内的列表项」✓ —— ★ 那"可见范围"到底是几项 ✗
+  --   ⇒ ★ 这里**只读** ✓ 不写任何功能开关 ✓（★ 上次的教训：探针不许改行为 ✗）
+  self._grid_idx_seen = self._grid_idx_seen or {}
+  if self._grid_idx_seen[pos] == nil then
+    self._grid_idx_seen[pos] = 0
+    self._grid_idx_n = (self._grid_idx_n or 0) + 1
+    -- ★ 集合每变大一次就报一行 ✓ —— 这样能看到"引擎是逐步交出更多项，还是永远只有那几个"✓
+    if print then
+      local ks = {}
+      for k in pairs(self._grid_idx_seen) do ks[#ks + 1] = k end
+      table.sort(ks)
+      local lo, hi = ks[1], ks[#ks]
+      print("[murdoku] ★ 探针·引擎交来的项：**新增 pos=" .. tostring(pos) .. "** "
+        .. "⇒ 累计见过 **" .. tostring(self._grid_idx_n) .. " 项**（范围 " .. tostring(lo)
+        .. "~" .. tostring(hi) .. "）"
+        .. "　总条数=" .. tostring(self._grid_blank_total or "?")
+        .. "　★ 若这里**一直不涨** ⇒ 引擎只为固定的几项回调 ✗ ⇒ 多出的线索永远填不上 ✓")
+    end
+  end
+  self._grid_idx_seen[pos] = self._grid_idx_seen[pos] + 1
+  -- ★ 一次性汇总 ✓：每 600 次回调报一行"各项被回调的次数分布"✓
+  self._grid_cb_total = (self._grid_cb_total or 0) + 1
+  if self._grid_cb_total % 600 == 0 and print then
+    local ks = {}
+    for k in pairs(self._grid_idx_seen) do ks[#ks + 1] = k end
+    table.sort(ks)
+    local parts = {}
+    for i = 1, #ks do parts[i] = tostring(ks[i]) .. "×" .. tostring(self._grid_idx_seen[ks[i]]) end
+    print("[murdoku] ★ 探针·回调分布（累计 " .. tostring(self._grid_cb_total) .. " 次）："
+      .. table.concat(parts, " ") .. "　★ 总条数=" .. tostring(self._grid_blank_total or "?"))
+  end
 
   -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
   -- ★★ 2026-10-09 **可见区外的列表项必须关掉射线 —— 而且要按【位置】判，不能按【序号】判** ✗✓
