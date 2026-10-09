@@ -128,11 +128,22 @@ for (const sp of specs) {
     const pf = cf.sub.find((x) => x.field === 504 && x.wt === 0);
     if (!pf) { console.error('✗ ' + rec.name + ' 克隆体里找不到 #504'); process.exit(2); }
     pf.num = BigInt(newParent);
+    // ★★★★★ 2026-10-10 **条件写反过一次（用户实测抓出 ✓）** ✗✓
+    //   ★ 症状 ✓：「四个子控件**没改序号且重复了两遍**」✗
+    //   ★ 对照实证 ✓：`row.1.2` 的 `#503` 与 `row.1.1` **一模一样** ✗
+    //     ⇒ ★ **编辑器把同一批子控件显示了两遍** ✓
+    //   ★ 根因 ✓：★ **该重映射的是【row 自己】的 `#503`** ✗ ——
+    //     ★ 我写成了 `!isRoot` ✗ ⇒ ★ **row 的 `#503` 一直是克隆来的原型值** ✓
+    //     （★ 而 `who` 这些**叶子根本没有 `#503`** ✓ —— dump 实证 ✓ ⇒ 那个分支纯属空转 ✓）
     const clc = findChildListTop(cf.sub);
-    if (clc && !isRoot) {
+    if (clc && isRoot) {
       const oldCl = findChildListTop(rec.field.sub);
       const oldIds = oldCl ? (asIdList(oldCl.payload, true) || []) : [];
-      setChildList(clc, oldIds.map((oid) => Number(idMap.get(String(oid)))).filter((v) => Number.isFinite(v)));
+      const mapped = oldIds.map((oid) => Number(idMap.get(String(oid))));
+      const bad2 = mapped.filter((v) => !Number.isFinite(v));
+      if (bad2.length) { console.error('✗ ' + rec.name + ' 的子列表有 ' + bad2.length + ' 个 id 映射不到 ⇒ 中止'); process.exit(2); }
+      setChildList(clc, mapped);
+      console.log('      ' + newName + ' 的 #503 → ' + mapped.length + ' 项（已换成自己的 ✓）');
     }
     made.push({ field: cf, id: Number(newId), holderArr: h.arr, holderIndex: h.index, isRoot });
   }
