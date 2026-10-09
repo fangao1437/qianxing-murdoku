@@ -5023,13 +5023,30 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
       local HL = 4294956107          -- ★ 高亮色（暖金 ✓ 乘算着色 ✓）
       if self._clue_tpl_tint == nil then
         local _tpl = nil
-        pcall(function() _tpl = adapter:find("clue") end)
+        -- ★★★★★ 2026-10-10 **改走"按名全树找"** ✗✓ —— `adapter:find` 是陈旧句柄 ✓
+        --   ★ 真机实证 ✓：★ 所有 `backrop1` 被刷成白色 ✗ 而不是 `26262E` ✓
+        --     ⇒ ★ 就是这里取不到 ⇒ 用白兜底 ⇒ 把原色盖掉 ✓✓
+        pcall(function() _tpl = self:_find_by_name("clue") end)
         local _tbp = nil
         if _tpl ~= nil then pcall(function() _tbp = adapter:sub("clue", "backrop1") end) end
         if _tbp ~= nil then pcall(function() self._clue_tpl_tint = _tbp.imageColor end) end
-        if self._clue_tpl_tint == nil then self._clue_tpl_tint = 4294967295 end
+        -- ★★★★★ 2026-10-10 **取不到就【什么都不写】** ✗✓✓
+        --   ★ 这里原来写的是「`self._clue_tpl_tint = 4294967295`」（★ 白 ✓）✗
+        --     ⇒ ★ **把编辑器里的原色（如 `26262E`）整个盖成白** ✓✓
+        --   ⇒ ★ 现在**不兜底** ✗ —— ★ 拿不到原色 ⇒ 后面那步不写 ✓ ⇒ 原色保持 ✓
+        --   ⚠️ 代价 ✓：★ 万一某次取不到模板 ⇒ 高亮**不会**被还原 ✓
+        --     ★ 但**宁可留着高亮，也不该把底图刷白** ✗（★ 白是可见的破坏 ✓）
       end
-      pcall(function() _cbp2.imageColor = _sel and HL or self._clue_tpl_tint end)
+      -- ★★★★★ 2026-10-10 **只在【确实拿到原色】时才写** ✗✓✓
+      --   ★ `_sel` ⇒ 写高亮 ✓（★ 高亮色是常量 ✓ 不依赖取到什么 ✓）
+      --   ★ 非 `_sel` ⇒ ★ **只有 `_clue_tpl_tint` 有值才写** ✓
+      --     ★ 没有值 ⇒ **一个字都不写** ✗ ⇒ ★ 编辑器里的原色保持 ✓✓
+      --   ★ 这条是"所有 backrop1 变白"的直接修复 ✓
+      if _sel then
+        pcall(function() _cbp2.imageColor = HL end)
+      elseif self._clue_tpl_tint ~= nil then
+        pcall(function() _cbp2.imageColor = self._clue_tpl_tint end)
+      end
     end
   end
 
