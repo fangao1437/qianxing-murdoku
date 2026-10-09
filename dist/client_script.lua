@@ -7616,7 +7616,16 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
           print("[murdoku] ★ 单射命中：`row." .. tostring(lv_no) .. "." .. tostring(pos)
             .. "` ⇒ 写了 " .. tostring(wrote) .. " 个槽位 ✓（★ 内容【由你在编辑器里定】✓）")
         end
-        return    -- ★ 你配了 ⇒ 算法不再插手 ✓
+        -- ★★★★★ 2026-10-10 **只在【真写了槽位】时才接管** ✗✓
+        --   ★ 为什么 ✗：★ 用户实测里 `row.1.4` 只有 `who`/`face` 两个子控件 ✗、
+        --     `row.3.1` / `row.3.9` 的 `#503` 是空的 ✗（★ 子控件在，但没进子列表 ✓）
+        --   ⇒ ★ 若仍然无条件 `return` ✗ ⇒ ★ **那一行会整行空白** ✓（★ 它把算法挡掉 ✓）
+        --   ⇒ ★ 改成：★ **写了至少一个槽位，才算"这一行由你接管"** ✓
+        --     ★ 一个都没写（★ 列表不全 / 空行 ✓）⇒ ★ **回落到算法** ✓ ⇒ 不会空白 ✓
+        if wrote > 0 then
+          return    -- ★ 你配了 ⇒ 算法不再插手 ✓
+        end
+        -- ★ 写了 0 个 ⇒ ★ 不 return ✓ ⇒ 继续走算法 ✓（★ 这一行先别空白 ✓）
       end
     end
   end
@@ -17990,7 +17999,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v128 / 2026-10-10 / 修build_rows的子列表重映射条件(写反成!isRoot⇒新row的#503一直指着1.1的子控件) =====")
+        print("[murdoku] ===== 构建标记 v129 / 2026-10-10 / 单射收尾:只在真写了槽位时才接管(1.4/3.1/3.9的子列表不全,否则那几行会空白) =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
