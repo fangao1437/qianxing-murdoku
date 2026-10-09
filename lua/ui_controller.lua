@@ -5436,7 +5436,18 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   --   ⚠️ 锚点教训 ✓：★ 我两次想"移动"这个块都没移成 ✗（★ 锚点不匹配 ✓）
   --     ⇒ ★ 改用"**在确定的位置再跑一次**" ✓ —— ★ 不改动已有代码 ✗ 风险最小 ✓✓
   do
-    if self._grid_in_refresh == true then
+    if true then   -- ★★★★★ 2026-10-10 **去掉了 `_grid_in_refresh == true` 限定** ✗✓✓
+      --   ★★★ 这是"内容依旧没变化"的最后一道坎 ✓
+      --     ★ 真机日志 ✓：`★ 网格视窗：引擎重进回调累计 60 次（≈ 每秒 60 次）`
+      --     ⇒ ★★ **引擎【每帧】重进 `RefreshItems`** ✓
+      --       ★ 而重进时 `_grid_in_refresh == false` ✗ ⇒ ★ **我的末次单射不跑** ✓
+      --       ★ 但**算法每帧都在跑** ✗ ⇒ ★ **它每帧把卡片刷回算法的文字** ✓✓✓
+      --     ⇒ ★★ 所以末次单射**只在第一帧有效**，第二帧就被盖掉 ✓
+      --   ⇒ ★ 修法 ✓：★ **末次单射【不限定哪一趟】** ✓ —— ★ 每次填充都跑 ✓
+      --     ★ 为什么安全 ✗：它**只读 `assets/row.*`** ✓、**只写卡片子控件** ✓
+      --       ★ **不碰引擎的列表项** ✗ ✓、**不碰滚动** ✗ ✓、**不调 `RefreshItems`** ✗ ✓
+      --     ⚠️ 而**前面那个"早期"块仍保留 `_grid_in_refresh` 限定** ✓
+      --       （★ 它只负责计数/日志 ✓ 每帧跑会刷屏 ✓）
       local lv_no = self:_level_ordinal()
       if lv_no ~= nil then
         local rc = self:_palette_child("row." .. tostring(lv_no) .. "." .. tostring(pos))
