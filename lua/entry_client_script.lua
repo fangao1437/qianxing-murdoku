@@ -184,7 +184,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v098 / 2026-10-09 / 证伪'imageType 不在存档里'(实测路径 /505/503/84/504);资料员独立复现并给了更强的真机日志吻合证据 =====")
+        print("[murdoku] ===== 构建标记 v099 / 2026-10-09 / 收回'imageType 是四键没图原因'的结论(用户实测否掉:图标就是 Basic 且正常);记录 case_001 五个都能选、两人错位 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
