@@ -570,7 +570,10 @@ function Controller:do_place(r, c)
     --   ★ 机制 ✓：★ 列表项的填充由 `RefreshItems` 回调驱动 ✓
     --     ★ 而它有个**签名门**（`_grid_sig`）✓ ⇒ ★ 签名没变就不再重填 ✓
     --   ⇒ ★ 这里**清掉签名** ✓ ⇒ 下一帧网格同步会重新填一遍 ✓ ⇒ **灰白跟着出来** ✓✓
-    self._grid_sig = nil
+    -- ★ 2026-10-10 **不再清签名** ✗✓ —— ★ 清签名会重发 RefreshItems
+  --   ⇒ ★ 引擎会把**滚动位置重置到顶部** ✓（用户实测："点第五张卡弹回顶部"✗）
+  --   ⇒ ★ 改成置"待刷新"标志 ✓ 由 `sync_clue_grid` **就地重填** ✓ ⇒ 滚动一动都不动 ✓
+  self._grid_refill_pending = true
     self:fx(self:cell_id(r, c), M.EFFECTS.PLACE)
     if self.opts.on_place then self.opts.on_place(who, r, c) end
     self.dirty = true
@@ -606,7 +609,10 @@ function Controller:do_pre_place(r, c)
     --   ★ 机制 ✓：★ 列表项的填充由 `RefreshItems` 回调驱动 ✓
     --     ★ 而它有个**签名门**（`_grid_sig`）✓ ⇒ ★ 签名没变就不再重填 ✓
     --   ⇒ ★ 这里**清掉签名** ✓ ⇒ 下一帧网格同步会重新填一遍 ✓ ⇒ **灰白跟着出来** ✓✓
-    self._grid_sig = nil
+    -- ★ 2026-10-10 **不再清签名** ✗✓ —— ★ 清签名会重发 RefreshItems
+  --   ⇒ ★ 引擎会把**滚动位置重置到顶部** ✓（用户实测："点第五张卡弹回顶部"✗）
+  --   ⇒ ★ 改成置"待刷新"标志 ✓ 由 `sync_clue_grid` **就地重填** ✓ ⇒ 滚动一动都不动 ✓
+  self._grid_refill_pending = true
     self:fx(self:cell_id(r, c), M.EFFECTS.PLACE)
     if self.opts.on_place then self.opts.on_place(who, r, c) end
     self.dirty = true
@@ -3935,6 +3941,23 @@ function Controller:sync_clue_grid(adapter)
   --     ★ 一屏容量由 `_grid_visible_count()` 现算 ✓；总条数记在这里 ✓
   self._grid_blank_total = n
   local sig = tostring(n)
+  -- ★ 2026-10-10 **先在原地刷新一遍，再走签名门** ✗✓
+  --   ★ 这是"点一下弹回顶部"的治本一步 ✓：
+  --     ★ 要刷新高亮/灰白时，只需对**记得的句柄**再跑一遍填充 ✓
+  --     ⇒ ★ **不重发 `RefreshItems`** ✗ ⇒ ★ 引擎不会重置滚动 ✓✓
+  --   ⚠️ 只有"待刷新"时才跑 ✓ ⇒ 稳态零成本 ✓
+  if self._grid_refill_pending then
+    self._grid_refill_pending = nil
+    local _rn = self:_grid_refill_now(adapter, grid)
+    if _rn > 0 then
+      self._grid_refill_n = (self._grid_refill_n or 0) + 1
+      if (self._grid_refill_log or 0) < 3 and print then
+        self._grid_refill_log = (self._grid_refill_log or 0) + 1
+        print("[murdoku] ★ 就地重填：" .. tostring(_rn) .. " 个列表项（★ **不碰 RefreshItems** ✓ "
+          .. "⇒ 滚动位置不动 ✓）")
+      end
+    end
+  end
   if self._grid_state == "on" and self._grid_sig == sig then return end
 
   local ok_set, set_err = pcall(function() grid.itemPrefabIndex = prefab end)
@@ -4329,6 +4352,45 @@ function Controller:_grid_band(grid)
   return self._grid_band_h
 end
 
+-- ★★★★★ 2026-10-10 **就地重填：不碰 `RefreshItems`，滚动位置完全不动** ✗✓
+--
+--   ★★ 用户新报的症状 ✓（★ 一条就把全串起来了 ✓）：
+--     「**点第五张卡会弹回视窗顶部**」✗ ＋「后面的卡要么点不动，要么**一次点击选两张**」✗
+--     ＋「其它关卡也有类似情况」✓
+--
+--   ★★ 根因（**一个根因，四个症状** ✓）：
+--     ★ 点卡 / 放置 / 取消选中，都会 `self._grid_sig = nil` ✗（L573 / L609 / L5186 三处 ✓）
+--     ⇒ ★ 下一帧 `sync_clue_grid` 见签名变了 ⇒ ★ **重发 `grid:RefreshItems(...)`** ✗
+--     ⇒ ★★ **引擎收到 `RefreshItems` 会把滚动位置重置到顶部** ✗✓
+--     ⇒ ★ 于是：
+--         ① ★ **页面弹回顶部** ✓
+--         ② ★ 可见的那一批卡**换人了** ⇒ ★ `GetItemIndex` 映射到**别的线索** ✓
+--         ③ ⇒ ★ **点后面的卡"选错人 / 选两张"** ✓✓
+--         ④ ⇒ ★ 看着像"点不动"（其实点到了别的卡 ✓）
+--
+--   ★ 那三处**为什么**要清签名 ✓：★ 为了让"灰白/高亮"立刻跟着状态刷新 ✓（原注释写得很清楚 ✓）
+--     ★ 但网格这条路**代价太大** ✗ —— ★ 刷一次就把用户的滚动位置**丢掉** ✓
+--
+--   ⇒ ★★ 修法 ✓：★ **改成【就地重填】** ✓
+--     · ★ 填充回调本来就会拿到列表项句柄 ✓ ⇒ ★ **把它们记下来** ✓（`_grid_seen` ✓）
+--     · ★ 要刷新时 ⇒ ★ **直接对这些句柄再跑一遍 `_fill_grid_item`** ✓
+--       ⇒ ★ **完全不碰 `RefreshItems`** ✗ ⇒ ★ **滚动位置一动不动** ✓✓
+--     · ★ 三处改成置一个**待刷新标志** ✓ 由 `sync_clue_grid` 消费 ✓
+--   ★ 这比"方案 2（每关一个视窗）"**简单得多** ✓ —— ★ 不动存档、不动视图数量 ✓
+function Controller:_grid_refill_now(adapter, grid)
+  if grid == nil then return 0 end
+  local seen = self._grid_seen
+  if seen == nil then return 0 end
+  local n = 0
+  self._grid_in_refresh = false          -- ★ 当作"引擎那趟"⇒ 正常填 ✓（不触发占位清空 ✓）
+  for item, idx in pairs(seen) do
+    pcall(function() self:_fill_grid_item(adapter, grid, item, idx) end)
+    n = n + 1
+  end
+  self._grid_in_refresh = false
+  return n
+end
+
 -- 填**一条**列表项。★ 无状态：内容全部由 `index` 现算（官方：滚动会重复进入回调）。
 function Controller:_fill_grid_item(adapter, grid, item, index)
   self._grid_calls = (self._grid_calls or 0) + 1
@@ -4369,6 +4431,11 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
     self._grid_base = (tonumber(index) == 0) and 0 or 1
   end
   local pos = (tonumber(index) or self._grid_base) - self._grid_base + 1
+  -- ★ 2026-10-10 **记下句柄与它当时的 index** ✓ —— ★ 就地重填要用 ✓
+  --   ★ 为什么要有它 ✗：★ 有了句柄就能【不重发 RefreshItems】而刷新内容 ✓
+  --     ⇒ ★ **滚动位置才保得住** ✓✓（★ 这是"点一下弹回顶部"的治本一步 ✓）
+  self._grid_seen = self._grid_seen or {}
+  self._grid_seen[item] = index
 
   -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
   -- ★★ 2026-10-09 **可见区外的列表项必须关掉射线 —— 而且要按【位置】判，不能按【序号】判** ✗✓
@@ -5183,7 +5250,10 @@ function Controller:_on_grid_item_click(adapter, grid, item)
   --     ⇒ ★ 而"取消选中"这一步**不触发重填** ✗ ⇒ ★ 填充没机会把金色复原 ✓✓
   --   ⇒ ★ 这里清掉网格签名 ✓ ⇒ ★ 下一帧重填 ⇒ ★ **高亮立刻跟着选中状态走** ✓✓
   --     ★（★ 与"放置后重填"用的是同一招 ✓ 提交 363 ✓ 一套机制两处用 ✓）
-  self._grid_sig = nil
+  -- ★ 2026-10-10 **不再清签名** ✗✓ —— ★ 清签名会重发 RefreshItems
+  --   ⇒ ★ 引擎会把**滚动位置重置到顶部** ✓（用户实测："点第五张卡弹回顶部"✗）
+  --   ⇒ ★ 改成置"待刷新"标志 ✓ 由 `sync_clue_grid` **就地重填** ✓ ⇒ 滚动一动都不动 ✓
+  self._grid_refill_pending = true
   local n = #((self.core:view() or {}).clues or {})
   if pos < 1 or pos > n then return end
 
