@@ -8794,8 +8794,28 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                   if iid ~= nil then
                     local src = nil
                     pcall(function() src = k.imageSource end)
-                    pcall(function() if src ~= nil then dst.imageSource = src end end)
-                    pcall(function() dst.imageId = iid end)
+-- ★★★★★★ 2026-10-10 **图片用 `SetImage`，不用属性赋值** ✗✓✓
+                    --
+                    --   ★★★ 与文字那次【同一个模式】✓（★ 用户再次指对 ✓）：
+                    --     ★ 项目自己的图片写入器（`engine_adapter_qianxing.lua:730-732` ✓）：
+                    --       `pcall(function() src = target.imageSource end)`
+                    --       `local ok2 = pcall(function() target:SetImage(src, node.image_id) end)`
+                    --       `if not ok2 then pcall(function() target:SetImage(node.image_id) end) end`
+                    --     ⇒ ★★ **它用【专用方法 `SetImage`】** ✓
+                    --   ★ 而我写的是 ★ `dst.imageSource = src` ＋ `dst.imageId = iid` ✗
+                    --     ⇒ ★★ **属性赋值对图片【不通】** ✓
+                    --   ★ 项目注释也写着 ✓（L936-937 ✓）：
+                    --     「**运行时新建的客户端控件，在"根节点"上 `SetImage` 直接返回 false、
+                    --       `imageId` 一直是 0**」✓
+                    --   ⇒ 修法 ✓：★ **`SetImage(src, id)` ⇒ 不行试 `SetImage(id)` ⇒
+                    --     最后才退回属性赋值** ✓（★ 与项目一致 ✓ 且留了退路 ✓）
+                    local _okImg = false
+                    if src ~= nil then pcall(function() dst:SetImage(src, iid) _okImg = true end) end
+                    if not _okImg then pcall(function() dst:SetImage(iid) _okImg = true end) end
+                    if not _okImg then
+                      pcall(function() if src ~= nil then dst.imageSource = src end end)
+                      pcall(function() dst.imageId = iid end)
+                    end
                     wrote2 = wrote2 + 1
                   end
                 end
@@ -18511,7 +18531,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v143 / 2026-10-10 / 找到差异:项目写入器.text不行会再试SetText,而write_control_text只看.text⇒nil就放弃;两处单射改成双写 =====")
+        print("[murdoku] ===== 构建标记 v144 / 2026-10-10 / 头像同模式修复:项目用SetImage(src,id)而我用属性赋值⇒改用SetImage优先+两级兜底 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
