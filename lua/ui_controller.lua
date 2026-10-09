@@ -4751,9 +4751,28 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
             self._grid_tint_fallback[item] = _cur
           end
           pcall(function() _cbp2.imageColor = HL end)
+          -- ★ 按【控件】记一笔 ✓ —— 复用到别的线索后也要能还原 ✓
+          self._grid_tinted = self._grid_tinted or {}
+          self._grid_tinted[item] = true
         end
         _rg2.tint = "sel"
-      elseif _cur == HL then
+      elseif (self._grid_tinted or {})[item] == true or _cur == HL then
+        -- ★★★★★ 2026-10-10 **改判据：按【控件】记"我涂过"，不再只靠颜色比对** ✗✓
+        --   ★★ 用户 A/B 对照（★ 最强证据 ✓）：
+        --     · 较早那版：★ 视觉上两张卡高亮 ✗ 但**点 e 出 e、点 v 出 v** ✓ ⇒ 事件独立 ✓
+        --     · 258 那版：★ **选谁都是 e** ✗ ⇒ ★ **那才真是一张** ✓
+        --   ⇒ ★★ **"两张高亮"是【纯视觉】问题** ✓（★ 事件侧本来是好的 ✓）
+        --   ★ 根因（我推断 ✓ 待真机确认 ✗）：
+        --     v114 我把判定从"看 `_rg2.tint`（按 `(item,index)` 缓存 ✗）"
+        --     改成了"**看当前实际颜色**"`_cur == HL` ✓ —— ★ 方向对 ✓
+        --     ★★ 但如果引擎**读回来的颜色 ≠ 写进去的值** ✗（★ 被规范化/带 alpha ✓）
+        --       ⇒ ★ **`_cur == HL` 永远不成立 ⇒ **永不还原** ✗✓
+        --       ⇒ ★ 高亮**永久留在那个控件上** ✓ ⇒ ★ 它现在代表**另一条线索** ✓
+        --       ⇒ ★★ **视觉上"两张卡同时高亮"** ✓✓✓
+        --   ⇒ ★ 修法 ✓：★ **按【控件】记"我涂过"** ✓（`_grid_tinted[item]` ✓）
+        --     ★ 为什么按控件而不按 `(item,index)` ✗：★ **控件被复用后 index 会变** ✓
+        --       ⇒ 按 index 记的状态会**留在旧 index 上** ✗ ⇒ 那正是 v114 之前的病 ✓
+        --     ★ 颜色比对**保留**作为兜底 ✓（两条任一成立就还原 ✓ 更稳 ✓）
         -- ★★ **只要"现在确实是金色"就还原** ✓ —— ★ 不看 `_rg2.tint` ✗（那正是 bug 的来源 ✓）
         local _orig = _rg2.tint_orig
         if _orig == nil then
@@ -4774,6 +4793,8 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
           pcall(function() _cbp2.imageColor = _orig end)
         end
         _rg2.tint = nil
+        if self._grid_tinted ~= nil then self._grid_tinted[item] = nil end
+        -- ★ 还原后**清掉这一笔** ✓ —— ★ 不清就会【永远涂色】✗（★ 我第一版漏了 ✓）
         self._grid_tint_fixed = (self._grid_tint_fixed or 0) + 1
       end
     end
