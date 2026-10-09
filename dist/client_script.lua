@@ -15454,79 +15454,6 @@ function Murdoku.on_update(dt)
   end
 
   -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-  -- ★★ 2026-10-09 **网格滚动验证探针 —— 一锤定音** ✗✓
-  --
-  --   ★★ 为什么需要它 ✓：用户选了「乙 · 由脚本接管滚动」✓
-  --     而乙的**全部依赖**只有一个官方接口 ✓：
-  --       `ScrollToItemAt(index, scrollAlignType)`
-  --       官方原文：「**滚动到索引为 index 的列表项，并按 scrollAlignType 对齐**」✓
-  --     它**按索引**收参数 ✓ ⇒ ★ **不需要写 `scrollProgress`** ✓
-  --       ⇒ ★ 绕开了"`scrollProgress` 写不写得进去"这个不确定性 ✓（读是 `nil` ✗）
-  --     而且**按索引滚** ⇒ ★ 脚本就知道窗口的第一项是谁 ✓ ⇒ **能算可见项** ✓
-  --       ⇒ **能关掉可见区外的射线** ✓✓（那正是用户报的那个 bug ✓）
-  --
-  --   ★ 用户点出的一条限制 ✓（我核实过 ✓ 用户是对的）：
-  --     ★ **官方【没有滚轮事件】** ✗ ——「滚轮」在 API 全文 **0 次命中** ✗
-  --     「Wheel」只有 3 处，全是 `OpenShortcutWheelKey`（**呼出快捷轮盘** ✓ 默认 Tab ✓）
-  --       ⇒ ★ 与滚动**毫无关系** ✗
-  --     ★ 但**拖拽有** ✓：`CursorBeginDrag`/`CursorDrag`/`CursorEndDrag` ✓
-  --       ＋ `CursorEventData:GetUIPosDelta()` =「本次事件的**屏幕 UI 位移**」✓
-  --     ⇒ ★ 所以乙的输入 = **拖拽 ＋ 方向键 ＋ 箭头按钮** ✓ **滚轮排除** ✗
-  --
-  --   ★ 探针要一次答完三问 ✓：
-  --     ① `ScrollToItemAt` **调得动吗**？调完**列表真的滚了吗**？（★ 用户肉眼可见 ✓）
-  --     ② `interactable = false` **关得掉引擎自己滚吗**？（★ 两套滚动不能打架 ✗）
-  --     ③ 滚动之后 **`GetItemIndex` 报的索引有没有变**？（★ 变了就说明窗口真的动了 ✓）
-  --
-  --   ★ 做法 ✓：进线索区后**自动表演一次** —— 滚到第 3 项，停几秒，再滚回第 1 项 ✓
-  --     ⇒ ★ 用户只要看「列表有没有跳」就能回答 ① ✓ 不用解读日志 ✓
-  if current ~= nil and current.adapter ~= nil and Murdoku ~= nil then
-    Murdoku._scroll_probe_f = (Murdoku._scroll_probe_f or 0) + 1
-    local _f = Murdoku._scroll_probe_f
-    -- ★ 进线索区后等 90 帧再动 ✓（让 `clues.grid` 先就绪 ✓）
-    -- ★★ **周期性来回跳** ✓ —— 只跳 3 次太容易错过 ✗ ⇒ 每 150 帧换一次、来回 8 次 ✓
-    --    ⇒ ★ 用户**一定看得见** ✓（第 1 项 ⇄ 第 3 项 ✓ 大约每 2.5 秒一次 ✓）
-    local _phase = math.floor((_f - 120) / 150)
-    if _f >= 120 and _phase < 8 and ((_f - 120) % 150) == 0 then
-      local ctl = current.controller
-      local g = nil
-      pcall(function() g = current.adapter:find("clues.grid") end)
-      if g == nil and ctl ~= nil then pcall(function() g = ctl._grid end) end
-      if g ~= nil then
-        local want = (_phase % 2 == 0) and 3 or 1     -- ★ 偶数趟去第 3 项、奇数趟回第 1 项 ✓
-        local idx0 = want - 1                          -- ★ 官方索引 0 起 ✓
-        local align = nil
-        pcall(function() align = Enum.ScrollAlignType.Top end)
-        if align == nil then pcall(function() align = Enum.ScrollAlignType.Center end) end
-        if align == nil then align = "Top" end
-        local ok, err = pcall(function() g:ScrollToItemAt(idx0, align) end)
-        local itb = "?"
-        pcall(function() itb = tostring(g.interactable) end)
-        print("[murdoku] ★ 滚动探针（第 " .. tostring(_phase + 1) .. "/8 趟）：**ScrollToItemAt("
-          .. tostring(idx0) .. ", " .. tostring(align) .. ") 调用"
-          .. (ok and "成功 ✓" or ("失败 ✗ " .. tostring(err))) .. "**"
-          .. "　interactable 读=" .. itb
-          .. "　⇒ ★ **请看画面：线索列表跳了吗？**（跳到第 " .. tostring(want) .. " 项？）"
-          .. "　跳了 ⇒ 乙成立 ✓　没跳 ⇒ 退回甲的改存档方案 ✗")
-      end
-    end
-    -- ★ 问②：把引擎自己那套滚动**关掉**，看回读 ✓（两套滚动同时开会打架 ✗）
-    if _f == 200 then
-      local g = nil
-      pcall(function() g = current.adapter:find("clues.grid") end)
-      if g ~= nil then
-        local b = "?"
-        pcall(function() b = tostring(g.interactable) end)
-        local ok = pcall(function() g.interactable = false end)
-        local a = "?"
-        pcall(function() a = tostring(g.interactable) end)
-        print("[murdoku] ★ 滚动探针·interactable：读=" .. b .. " 写 false "
-          .. (ok and "成功" or "失败 ✗") .. " 回读=" .. a
-          .. "　⇒ ★ 回读 false ⇒ 引擎自己那套滚动被关掉了 ✓（脚本接管 ✓）"
-          .. "；回读 true/不可写 ⇒ 两套会打架 ✗ 需换招")
-      end
-    end
-  end
   current.adapter:on_tick(dt)
   current.controller:tick(dt)
 
@@ -17825,7 +17752,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v112 / 2026-10-09 / 治本:模板 clue 的位置(212)就是布局基准⇒整体上移2项(212/104=2.04,与用户观察吻合);存档已归零+空白项改关后两项 =====")
+        print("[murdoku] ===== 构建标记 v113 / 2026-10-09 / 删掉滚动探针(它 interactable=false 关掉了引擎滚动+反复 ScrollToItemAt 与手动滚动打架);保留模板归零与空白占位 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
