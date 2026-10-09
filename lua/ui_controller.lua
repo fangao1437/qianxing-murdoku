@@ -4520,7 +4520,9 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
             pcall(function() kn = tostring(k.name) end)
             -- ★ 槽位名可能带自动后缀 ⇒ 取第一段 ✓（★ 项目注释提过"自动后缀算不一样"✓）
             local slot = kn
-            if slot ~= nil then slot = string.match(slot, "^[^%s]+") end
+            -- ★★ 修正（用户示例实证 ✓）：子控件名是 `who.1.1` 这种带后缀的 ✗
+            --   ⇒ ★ 槽位名 = **第一个点号之前** ✓（★ 我原来写"第一段非空白"✗ ⇒ 取到 `who.1.1` ⇒ 对不上卡片的 `who` ✓）
+            if slot ~= nil then slot = string.match(slot, "^[^%.]+") end
             if slot ~= nil and slot ~= "" then
               local dst = self:_grid_item_child_cached(item, index, pos, slot)
               if dst ~= nil then

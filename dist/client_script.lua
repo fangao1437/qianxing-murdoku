@@ -7585,7 +7585,9 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
             pcall(function() kn = tostring(k.name) end)
             -- ★ 槽位名可能带自动后缀 ⇒ 取第一段 ✓（★ 项目注释提过"自动后缀算不一样"✓）
             local slot = kn
-            if slot ~= nil then slot = string.match(slot, "^[^%s]+") end
+            -- ★★ 修正（用户示例实证 ✓）：子控件名是 `who.1.1` 这种带后缀的 ✗
+            --   ⇒ ★ 槽位名 = **第一个点号之前** ✓（★ 我原来写"第一段非空白"✗ ⇒ 取到 `who.1.1` ⇒ 对不上卡片的 `who` ✓）
+            if slot ~= nil then slot = string.match(slot, "^[^%.]+") end
             if slot ~= nil and slot ~= "" then
               local dst = self:_grid_item_child_cached(item, index, pos, slot)
               if dst ~= nil then
@@ -17988,7 +17990,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v124 / 2026-10-09 / 新增单射:assets/row.<关卡序>.<行序>里按槽位名摆内容,脚本搬到线索卡上;没配则回落算法 =====")
+        print("[murdoku] ===== 构建标记 v125 / 2026-10-09 / 修槽位名提取:who.1.1⇒取第一个点号前=who(用户示例实证);并建齐row.1.1-1.5/2.1-2.6/3.1-3.9 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
