@@ -7670,58 +7670,17 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   --       · `_grid_in_refresh == true`（**我们**调 `RefreshItems` ✓）⇒ ★ 超出容量的才清 ✓
   --       · `_grid_in_refresh == false`（**引擎**重进 ✓）⇒ ★ **一律正常填** ✓
   --         ⇒ ★ **滚进可见区的项自动恢复真实内容** ✓✓（这就是本方案能成立的关键 ✓）
-  do
-    local cap = self:_grid_visible_count(grid)
-    local in_our_refresh = (self._grid_in_refresh == true)
-    local _blanked = false
-    -- ★★ 2026-10-10 **判据【反过来】：清【前 N 项】，不是后 N 项** ✗✓
-    --   ★ 用户原话 ✓：「按照**预览中从上到下的添加顺序**，应该关的是 **1、2 项**」✗
-    --     ⇒ ★ ★ 与"6、7"**正好相反** ✓ —— ★ 溢出的是**最前面两项** ✓
-    --     ⇒ ★ 这也解释了用户先前那句「高亮出现在**第一张卡之上**」✓✓（★ 1、2 项在可见区**上方** ✓）
-    --   ★ 溢出数 = **总条数 − 一屏容量** ✓（真机数：7 − 5 = **2** ✓ 与用户说的"1、2 项"吻合 ✓）
-    local _overflow = (cap ~= nil) and math.max(0, (self._grid_blank_total or 0) - cap) or 0
-    if in_our_refresh and cap ~= nil and _overflow > 0 and pos > cap then
-      _blanked = true
-      -- ★★ 计数器 ✓：让离线的护栏能**不依赖假件**地断言"我们那趟清了几项"✓
-      --   ★ 为什么需要它 ✗：★ 假件把 `ensure_raycast` 也模拟了 ⇒ 它**会把射线又打开** ✗
-      --     ⇒ ★ "射线有没有被关"这一条**查假件会假红** ✗ ⇒ 改查这个计数器 ✓
-      --     （★ 又一次**假件保真度**问题 ✓ —— 与 `gray`/`anchoredPositionY`/`"clues.bg"` 同族 ✓）
-      self._grid_blank_our = (self._grid_blank_our or 0) + 1
-      -- ⚠️⚠️ **【绝不碰射线/交互】** ✗✓ —— ★ 这是用户第二条纠正 ✓
-      --   ★ 用户原话 ✓：「首先是**现在滚动坏了**」✗
-      --   ★ 根因 ✓：我第一版在这里关了 `raycastTarget` / `interactable` ✗
-      --     ⇒ ★ **引擎的滚动依赖列表项** ⇒ ★ **一关就滚不动** ✓✓
-      --   ⇒ ★ "不能点"改由【点击处理里直接忽略】实现 ✓（见 `_on_grid_item_click` ✓）
-      --     ★ 效果一样 ✓ 而**滚动手感完全不受影响** ✓✓
-      -- ★ ② 清空文字 ✓（"空白" ✓）—— 走项目现成的写入器 ✓ 这样"值变了才写"的记忆表也一致 ✓
-      local function _blank(sfx)
-        local c = self:_grid_item_child_cached(item, index, pos, sfx)
-        if c ~= nil then
-          pcall(function() self:write_control_text(c, "") end)
-        end
-      end
-      _blank("who"); _blank("what"); _blank("letter")
-      -- ★ ③ 头像不贴图 ✓（清掉图 id ⇒ 不显示 ✓ 但不改模板 ✓）
-      local fc = self:_grid_item_child_cached(item, index, pos, "face")
-      if fc ~= nil then pcall(function() fc.imageId = 0 end) end
-      -- ★ ④ 灰白层藏起来 ✓
-      local gc = self:_grid_item_child_cached(item, index, pos, "gray")
-      if gc ~= nil then pcall(function() if gc.SetVisible then gc:SetVisible(false) end end) end
-      if (self._grid_blank_log or 0) < 4 and print then
-        self._grid_blank_log = (self._grid_blank_log or 0) + 1
-        print("[murdoku] ★ 空白占位项：pos=" .. tostring(pos)
-          .. "（一屏 " .. tostring(cap) .. " 项 · 溢出 " .. tostring(_overflow) .. " 项 ✓）"
-          .. "　⇒ ★ 它被滚进可见区时引擎会**自动重进回调**填回真实内容 ✓")
-      end
-      -- ★★★★★ 2026-10-10 **清完必须【立刻返回】** ✗✓ —— ★ 这是这条功能能不能生效的关键 ✓
-      --   ★ 离线护栏 `[J1]` 抓到的真 bug ✓（★ 不是测试问题 ✓）：
-      --     ★ 我原来把清理块放在**函数开头** ✗，而**文字写入在它后面**（L4968 那段 ✓）
-      --     ⇒ ★ **清理完又被后面的填充写回去** ✗✗ ⇒ ★ **空白根本没生效** ✓
-      --   ⇒ ★ 修法 ✓：★ 清完直接 `return` ✓ ⇒ 后面的填充一个字都不会跑 ✓
-      --     ★ 而且更省 ✓（占位项不必再查子控件、不必再算调色板 ✓）
-      return
-    end
-  end
+  -- ★★★★★ 2026-10-10 **「空白占位项」整段已移除** ✗✓
+  --
+  --   ★ 它当初是为解决「多出的线索填不上」而加的 ✗ —— ★ 而那个前提**已被只读探针证伪** ✓：
+  --     `★ 探针·本次 RefreshItems：传了 n=15 条；回调进来 7 次；视窗子控件 7 个`
+  --     `★ 网格视窗：滚动时引擎**会**重进 RefreshItems 回调 ✓`
+  --     `★ 探针·引擎交来的项：新增 pos=8 … 15` ✓✓
+  --   ⇒ ★★ **滚动时引擎会【逐个交出】后面的项** ✓ ⇒ ★ **ListView 完全正常** ✓
+  --   ⇒ ★ 用户也实测到「后续卡**依然被填上了头像**」✓ ⇒ ★ **填充没问题** ✓
+  --   ⇒ ★ **所以不但不必「占位」，占位反而有害** ✗：它会清空本该正常的项 ✓
+  --   ★ 教训 ✓：★ **先证明「坏」存在，再加补丁** ✗ —— ★ 猜个坏因就下补丁，补丁会自己制造症状 ✓
+  --   ⚠️ `_grid_visible_count` / `_grid_band` **保留** ✓（只读、无害 ✓）
 
   -- ★★★★★ 2026-10-05 **文案查缓存表，不再"每条线索重建一次整视图"**。
   --
@@ -8320,22 +8279,11 @@ function Controller:_on_grid_item_click(adapter, grid, item)
   --     · 点击时：★ **这两项进来的点击直接 `return`** ✓ ⇒ ★ 效果同样是"不能点" ✓
   --       ★ 而**引擎的滚动完全不受影响** ✓✓
   --   ★ "溢出数" = 总条数 − 一屏容量 ✓（真机数：7 − 5 = **2** ✓）
-  local _idx = nil
-  pcall(function() _idx = tonumber(grid:GetItemIndex(item)) end)
-  if _idx ~= nil then
-    local cap = self:_grid_visible_count(grid)
-    local total = self._grid_blank_total or 0
-    local overflow = (cap ~= nil) and math.max(0, total - cap) or 0
-    -- ★ 官方索引 **0 起** ✓（真机 `GetItemIndex=1` ⇒ pos=2 ✓ 已证实 ✓）
-    if overflow > 0 and cap ~= nil and _idx >= cap then
-      if (self._grid_blank_click_log or 0) < 4 and print then
-        self._grid_blank_click_log = (self._grid_blank_click_log or 0) + 1
-        print("[murdoku] ★ 空白占位项被点到 ⇒ **已忽略** ✓（index=" .. tostring(_idx)
-          .. " < 溢出数 " .. tostring(overflow) .. "）")
-      end
-      return
-    end
-  end
+  -- ★★★★★ 2026-10-10 **「空白占位项的点击忽略」也一并移除** ✗✓
+  --   ★ 理由同上 ✓：探针已证明滚动时引擎会逐个交出后面的项 ✓
+  --     ⇒ ★ 根本没有"永远填不上的项" ✗ ⇒ ★ 也就不需要忽略任何点击 ✓
+  --   ★ 保留它反而会**误伤**：★ 把 pos 6..N 的正常点击也吃掉 ✗
+  --     （★ 真机日志里"后面几张点不动"很可能就包括这一条 ✓）
   -- ★ 官方：「列表项索引以运行时传入和返回的 index 为准」⇒ **只能反查**。
   --   按兄弟序号取是错的：列表项会被复用，兄弟顺序不稳定（用户也专门点了这一条）。
   local idx = nil
@@ -17907,7 +17855,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v116 / 2026-10-09 / 加只读探针:记录引擎交来的pos集合+回调次数+视窗子控件数(n=15却只回调7次,要查清可见范围到底几项) =====")
+        print("[murdoku] ===== 构建标记 v117 / 2026-10-09 / 探针证明引擎滚动时会逐个交出后面的项⇒ListView正常⇒整段移除'空白占位项'与'点击忽略'(它们会误伤正常项) =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
