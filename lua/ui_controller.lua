@@ -5097,8 +5097,13 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
           end
           -- ★ 2026-10-08 **在主路径上按名取 assets**（★ 用户指出：两个客户端容器 ✓ `111` 是屏蔽节点那个 ✓）
           --   ★ 只有 `root`（挂了脚本的那个 ✓）里才有 `assets` ✓ ⇒ ★ 用 `find("root")` + `GetChild("assets")` ✓
-          pcall(function() local _r = self.adapter:find("root"); if _r ~= nil and _as == nil then _as = _r:GetChild("assets") end end)
-          if _as ~= nil and _pal == nil then pcall(function() _pal = _as:GetChild(_nm) end) end
+          -- ★★★★★ 2026-10-10 **改走"按名全树找"** ✗✓ —— ★ `adapter:find("root")` 是**陈旧句柄** ✗
+          --   ★ 真机实证 ✓：★ `★ 按名取：assets=false` ✗ ＋ `★ 调色板搜寻：第1层看到 assets` ✓
+          --     ⇒ ★ **按名取失败、走树成功** ✓（★ 旧项目 H8 记的就是这件事 ✓）
+          --   ⇒ ★ 用 `_find_by_name` ✓（★ 入口 `game.GetClientUIRoots()` ✓ 不用缓存句柄 ✗）
+          pcall(function() _as = self:_find_by_name("assets") end)
+          -- ★ 同样改走"按名全树找" ✓ —— ★ 陈旧句柄下 `assets:GetChild` 也是 nil ✗
+          if _pal == nil then pcall(function() _pal = self:_find_by_name(_nm) end) end
           if (self._g_log or 0) < 4 then
             self._g_log = (self._g_log or 0) + 1
             -- ★★★★★ 2026-10-08 **只读探针：运行时四键 `bg` 的 imageId 是多少** ✗✓（★ 用来分甲/乙 ✓）
@@ -5154,7 +5159,11 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
             self._cache_cleared = true
             if self.adapter.invalidate_lookups ~= nil then pcall(function() self.adapter:invalidate_lookups("调色板查找前") end) else pcall(function() self.adapter._misses = nil; self.adapter.controls = {} end) end
           end
-          pcall(function() local _r = self.adapter:find("root"); if _r ~= nil and _as == nil then _as = _r:GetChild("assets") end end)   -- ★ 按名取 assets ✓
+          -- ★★★★★ 2026-10-10 **改走"按名全树找"** ✗✓ —— ★ `adapter:find("root")` 是**陈旧句柄** ✗
+          --   ★ 真机实证 ✓：★ `★ 按名取：assets=false` ✗ ＋ `★ 调色板搜寻：第1层看到 assets` ✓
+          --     ⇒ ★ **按名取失败、走树成功** ✓（★ 旧项目 H8 记的就是这件事 ✓）
+          --   ⇒ ★ 用 `_find_by_name` ✓（★ 入口 `game.GetClientUIRoots()` ✓ 不用缓存句柄 ✗）
+          pcall(function() _as = self:_find_by_name("assets") end)
 
           -- ★★★★★ 2026-10-09 **【B1】`_search` 必须先【定义】、再【调用】** ✗✓
           --   ★ 原文的错 ✗：调用在 :4377 / :4379，而赋值 `_search = function…` 在 :4381 ✓
@@ -5171,7 +5180,8 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
             local n = 0
             pcall(function() n = #kids end)
             for i = 1, n do
-        if _as ~= nil and _pal == nil then pcall(function() _pal = _as:GetChild(_nm) end) end   -- ★ 按名取 portrait.<id> ✓
+          -- ★ 同样改走"按名全树找" ✓ —— ★ 陈旧句柄下 `assets:GetChild` 也是 nil ✗
+          if _pal == nil then pcall(function() _pal = self:_find_by_name(_nm) end) end
               if _as ~= nil then return end
               local x = kids[i]
               local xn = nil
