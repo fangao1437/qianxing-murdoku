@@ -7198,6 +7198,22 @@ function Controller:_grid_text_payload()
       letter = tostring(wid or ""),
       -- ★ 头像素材名（★ 如 `portrait.A` ✓）★ `nil` 表示这一条没有对应角色 ⇒ **不要写图** ✓
       portrait = wportrait,
+      -- ★★★★★ 2026-10-09 **把【人物 id】也存进快照** ✗✓（★ 这是修我自己造成的一个回归 ✓）
+      --
+      --   ★ 为什么必须有这一项 ✓：填充那边要按 **id**（`A`/`B`/`D`/`V`）去查
+      --     `core.placed[id]` 决定灰白 ✓ 而 `who` / `portrait` **都不保证是 id** ✗：
+      --       · `items.who`  是**显示名**（`医生` ✓ 见 L4131 的拼接 ✓）
+      --       · `items.portrait` 是**素材名**（`portrait.B` ✓）也可能取不到 ✓
+      --     ⇒ ★ **只有视图记录的 `cl.who` 是 id** ✓（`ui_controller.lua:4211` 的老注释就写着这条 ✓
+      --        `诊断CLUE` 也证明过：`值(type=at … who=V)` ✓ 是字母 ✓）
+      --
+      --   ★ 为什么存这里、而不是填充时现取 ✓：**这里本来就有一份 `vm` 在手** ✓
+      --     存下来 ⇒ 填充时**零额外成本** ✓
+      --     （我 2026-10-09 早先那版把填充里的 `core:view()` 删了 —— 动机是每次回调白烧
+      --      14 次整视图重建 ✓ 但**删过头了** ✗：那个 `who` 是**唯一**能拿到 id 的来源 ✓
+      --      于是 id 退化成显示名 ⇒ `core.placed["医生"]` 恒 nil ⇒ **灰白与选中反馈全没了** ✗
+      --      正确修法 = **从这里拿**（已是 0 成本 ✓），而不是**不拿** ✓）
+      id     = (cl.who ~= nil) and tostring(cl.who) or nil,
     }
   end
   p = { level = lv, n = n, items = items }
@@ -7288,12 +7304,34 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   --       · 而 `core:view()` 单次 **0.175 ms**（`[F]` 段实测 ✓）⇒ 一次重进白烧 **≈2.5 ms** ✓
   --       · 更要命的是它**击穿了记忆表** ✗：文案快照本来让重进零成本（`文字写入=0` ✓），
   --         而这两次视图重建让"引擎每帧重进"变成**每帧 2.5ms** ✗（用户第五轮指示：负载最小 ✓）
-  --   ★ 修法 ✓：**只留真正生效的那一步** ✓（行为完全不变 —— 因为原来也只有它生效 ✓）
-  local _pid = nil
-  if t_portrait ~= nil and t_portrait ~= "" then
-    _pid = tostring(t_portrait):gsub("^portrait%.", "")
+  -- ★★★★★ 2026-10-09 **改回来了（我上一步删过头了 ✗）—— 顺序是【id 优先、素材名兜底】** ✗✓
+  --
+  --   ★ 我真机上看到的现象 ✓（用户 2026-10-09 18:03 那份日志）：
+  --       `★ 灰白诊断：pos=1  who=医生  placed=false  找到gray=true  ★ id=医生  portrait=nil`
+  --     ⇒ ★ **`id=医生`（显示名 ✗）** —— 而**之前**同一行是 `★ id=B` ✓
+  --     ⇒ 用户侧表现：★ **「case_001 线索区的所有选中反馈都消失了」** ✗
+  --
+  --   ★ 根因（**是我不对** ✗）：我上一步的推理只对了一半 ✗
+  --     我当时说「第三个 `if` 无条件覆盖 ⇒ 那个 `pcall(core:view())` 是白做的」——
+  --     ★ **只有在 `t_portrait` 非空时才成立** ✗
+  --     ★ 而 `t_portrait` **为空**时，那个 `pcall` 取到的 `cc.who` 会**留下来** ✓
+  --       而它**是唯一的 id 来源**（视图记录的 `who` 是 `V`/`D` 这种**字母 id** ✓
+  --       见 L4211 老注释与 `诊断CLUE` 的 `who=V` ✓）
+  --     ⇒ ★ 我把"唯一能拿到 id 的那条路"删了 ⇒ id 退化成显示名
+  --       ⇒ `core.placed["医生"]` 恒 nil ⇒ ★ **灰白 + 选中反馈全没** ✓
+  --
+  --   ★ 正确修法 ✓：**从 `_grid_text_payload` 的快照里拿 `cl.id`** ✓
+  --     · 那份快照建的时候**本来就有一份 `vm` 在手**（L4114 `local vm = core:view()` ✓）
+  --     · 所以取 `cl.who` 存下来是 **零额外成本** ✓
+  --     ⇒ ★ 既**拿回了 id** ✓ 又**没有**把"每次回调 14 次整视图重建"带回来 ✓✓
+  --   ★ 优先级（与 L4211 老注释一致 ✓）：**id（权威）→ 素材名去前缀 → `cl.who`（显示名，最后兜底）**
+  local _pid = cl.id
+  if _pid == nil or _pid == "" then
+    if t_portrait ~= nil and t_portrait ~= "" then
+      _pid = tostring(t_portrait):gsub("^portrait%.", "")
+    end
   end
-  if _pid == nil or #_pid > 2 then _pid = cl.who end          -- 兜底：万一素材名不是这个格式
+  if _pid == nil or _pid == "" or #_pid > 2 then _pid = cl.id or cl.who end
   if type(_pid) == "string" and _pid:sub(1, 1) == "@" then _pid = nil end   -- 特殊角色（如 @thief）不算人
   local _placed_now = (_pid ~= nil) and self.core ~= nil and self.core.placed ~= nil
     and self.core.placed[_pid] == true
@@ -17246,7 +17284,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v096 / 2026-10-09 / 构建标记递增改成工具做(接手待办 P1)；标记不再是靠人记得 =====")
+        print("[murdoku] ===== 构建标记 v097 / 2026-10-09 / 修回归:id 退化成显示名导致选中反馈全消失(从快照取回 cl.id,零额外 view 成本);grid_cost 补 H 段护栏 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

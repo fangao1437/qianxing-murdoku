@@ -781,6 +781,67 @@ do
     .. "内容正确=%s　%s", GG.recycle_writes, tostring(GG.recycle_ok), GG.recycle_sample))
 end
 
+-- ── 口径 H：★ **灰白层按【人物 id】点亮**（2026-10-09 补 —— 这是补一个**真机回归**的护栏 ✓）
+--
+--   ★ 为什么要补这一段 ✓：`case_001` 真机上「**线索区的选中反馈全消失**」✗
+--     根因（是我自己造成的 ✗）：填充里算人物 id 的那段被"优化"掉了
+--     ⇒ `_pid` 退化成**显示名**（`医生` ✗ 而不是 `B` ✓）
+--     ⇒ `core.placed["医生"]` 恒 nil ⇒ 灰白永远不开 ⇒ **反馈全没** ✓
+--   ★ 而**当时 11 套 Lua 回归全绿** ✗ —— 因为**没有任何一套测过灰白这条路** ✓
+--     ⇒ ★ 这一段就是那个缺口 ✓ 它一旦被改坏就会红 ✓
+--
+--   判据（走的是真机同一条路 ✓）：
+--     · `core.placed[<该条线索的 id>] = true` ⇒ 填充后 `gray` 必须 `visible=true` ✓
+--     · 而且那个 id 必须取自 **`core:view().clues[n].who`（字母 ✓）**，不是显示名 ✓
+--       ⇒ 如果实现退化成按显示名查 ⇒ **这一段会红** ✓
+out("\n== H. 灰白层按【人物 id】点亮（选中反馈的护栏）==")
+-- ⚠️ H 段的总结放在**文件末尾的汇总区** ✓ —— 因为断言函数 `ck` 在那里才定义 ✓
+--   （我第一版把 `ck(...)` 写在 H 段里 ⇒ `attempt to call a nil value (global 'ck')` ✗）
+local HH = {}
+do
+  local pay0 = ctrl:_grid_text_payload()
+  local vm0 = core:view() or {}
+  local idx, letter = nil, nil
+  for i = 1, #(vm0.clues or {}) do
+    local w = vm0.clues[i] and vm0.clues[i].who
+    if type(w) == "string" and #w <= 2 and w:sub(1, 1) ~= "@" then idx, letter = i, w break end
+  end
+  HH.found = (idx ~= nil)
+  HH.letter = letter
+  HH.sample = "第 " .. tostring(idx) .. " 条线索的 id（取自视图 who）= " .. tostring(letter)
+
+  if idx ~= nil then
+    -- ① 先确保**没放置** ⇒ 灰白应当是**关**的 ✓
+    core.placed = core.placed or {}
+    core.placed[letter] = nil
+    ctrl._grid_sig = nil                    -- 强制重填
+    local it0 = grid.__items[1]
+    HH.item = (it0 ~= nil)
+    if it0 ~= nil then
+      ctrl._grid_in_refresh = false
+      it0.__index = idx - 1                 -- 让列表项对上那一条
+      grid.__cb(it0, it0.__index)
+      local g0 = it0:GetChild("clue.1.gray")
+      -- ⚠️ ★ **不能用 `x and y or nil` 这个 Lua 惯用法** ✗ ——
+      --   `visible=false` 时它会把 `false` 变成 `nil` ✓（我第一版就踩了 ✓
+      --   于是"未放置时 visible=nil"看着像"没读到"，其实是读到了 false ✓）
+      HH.before = (g0 ~= nil) and g0.visible or false
+      HH.child = (g0 ~= nil)
+
+      -- ② 标记"这个人已放置" ⇒ 灰白**必须开** ✓ ← ★ 这就是护栏 ✓
+      core.placed[letter] = true
+      ctrl._grid_sig = nil
+      ctrl._grid_in_refresh = false
+      grid.__cb(it0, it0.__index)
+      HH.after = (g0 ~= nil) and g0.visible or false
+      core.placed[letter] = nil             -- 还原，免得影响后面的口径
+    end
+  end
+end
+out(string.format("  [H0] %s", HH.sample))
+out(string.format("  [H1] 未放置时 gray visible=%s（应为 false）", tostring(HH.before)))
+out(string.format("  [H2] **标记该 id 已放置** ⇒ gray visible=%s（★ 必须 true ✓）", tostring(HH.after)))
+
 -- ── 口径 D：老路径（cfg.use_grid=false）做同一个动作，作对照 ──────────────
 out("\n== D. 对照：老路径（手写滚动）一帧的账（cfg.use_grid=false）==")
 adapter.cfg.use_grid = false
@@ -1008,6 +1069,23 @@ local function ck(cond, label, detail)
     out("  [FAIL] " .. label .. (detail and ("   " .. tostring(detail)) or ""))
   end
 end
+-- ★★ H 段（灰白按 id 点亮）的断言 —— 2026-10-09 补，**这是补一个真机回归的护栏** ✓
+--   真机现象：`case_001` 线索区「**选中反馈全消失**」✗
+--   根因：填充里算人物 id 的那段取到的是**显示名**（`医生`）而不是 **id**（`B`）✗
+--     ⇒ `core.placed["医生"]` 恒 nil ⇒ 灰白永远不开 ✓
+--   ★ 而当时**11 套 Lua 回归全绿** ✗ —— 因为**没有一套测过这条路** ✓
+--     ⇒ 下面这 4 条就是那个缺口 ✓ 实现一退化就会红 ✓
+ck(HH.found, "（H 前置）视图里能找到带字母 id 的线索",
+  HH.sample)
+ck(HH.item == true and HH.child == true, "（H 前置）列表项里能找到 `gray` 子控件",
+  "item=" .. tostring(HH.item) .. " gray=" .. tostring(HH.child))
+ck(HH.before ~= true, "★ 未放置时灰白**不该**亮",
+  "实测 visible=" .. tostring(HH.before))
+ck(HH.after == true,
+  "★★ **标记该 id 已放置 ⇒ 灰白必须亮**（按【人物 id】查 `core.placed` ✓ 不是按显示名 ✗）",
+  "实测 visible=" .. tostring(HH.after) .. "；线索 id=" .. tostring(HH.letter)
+  .. " ⇒ 若这里是 false，多半是 id 退化成显示名了"
+  .. "（真机表现正是「线索区选中反馈全消失」✗）")
 ck(A.view <= 1,
   "稳态一次 render 里 view() ≤ 1 次（网格那句「多余的整视图重建」已去掉）",
   "实测 " .. tostring(A.view) .. " 次（改之前是 2：网格 1 + 布局 1）；单次 " ..
