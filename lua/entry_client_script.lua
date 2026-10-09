@@ -184,7 +184,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v142 / 2026-10-10 / 读到write_control_text要求ctrl.text~=nil才写⇒dst没有text就往下找有text的子孙;找不到如实报 =====")
+        print("[murdoku] ===== 构建标记 v143 / 2026-10-10 / 找到差异:项目写入器.text不行会再试SetText,而write_control_text只看.text⇒nil就放弃;两处单射改成双写 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

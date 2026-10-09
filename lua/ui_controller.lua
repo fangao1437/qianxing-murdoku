@@ -4756,7 +4756,21 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                 end
               end
               if type(txt) == "string" then
-                  pcall(function() self:write_control_text(dst, txt) end)
+                  -- ★★★★★★ 2026-10-10 **照抄项目自己的写入器：`.text` 不行就试 `SetText`** ✗✓✓
+                    --
+                    --   ★★★ 用户让我"找和当时算法的差异"✓ —— 找到了 ✓：
+                    --     ★ 项目自己的写入器（`engine_adapter_qianxing.lua:4603-4604` ✓）是这样写的：
+                    --       `if c.text ~= nil then c.text = txt end`
+                    --       `if type(c.SetText) == "function" then pcall(function() c:SetText(txt) end) end`
+                    --     ⇒ ★★ **它会【再试 `SetText`】** ✓
+                    --   ★ 而我用的 `write_control_text`（L3802 ✓）：
+                    --       `if ctrl == nil or ctrl.text == nil then return false end` ✗
+                    --     ⇒ ★★★ **`.text` 是 nil 就【直接放弃】，一个字都不写** ✓✓
+                    --   ⇒ ★★ 这就是"旧路能填、我的路填不进去"的【全部差异】✓
+                    --     ★ 探针也印证 ✓：`写前=` 与 `写后读回=` 都空 ⇒ 写被跳过 ✓
+                    --   ⇒ 修法 ✓：★ **`.text` 与 `SetText` 两条都试** ✓（★ 与项目一致 ✓）
+                    pcall(function() if dst.text ~= nil then dst.text = txt end end)
+                    if type(dst.SetText) == "function" then pcall(function() dst:SetText(txt) end) end
                   wrote = wrote + 1
                 end
                 local iid = nil
@@ -5682,7 +5696,21 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                     local _dn, _before, _after = nil, nil, nil
                     pcall(function() _dn = tostring(dst.name) end)
                     pcall(function() _before = dst.text end)
-                    pcall(function() self:write_control_text(dst, txt) end)
+                    -- ★★★★★★ 2026-10-10 **照抄项目自己的写入器：`.text` 不行就试 `SetText`** ✗✓✓
+                    --
+                    --   ★★★ 用户让我"找和当时算法的差异"✓ —— 找到了 ✓：
+                    --     ★ 项目自己的写入器（`engine_adapter_qianxing.lua:4603-4604` ✓）是这样写的：
+                    --       `if c.text ~= nil then c.text = txt end`
+                    --       `if type(c.SetText) == "function" then pcall(function() c:SetText(txt) end) end`
+                    --     ⇒ ★★ **它会【再试 `SetText`】** ✓
+                    --   ★ 而我用的 `write_control_text`（L3802 ✓）：
+                    --       `if ctrl == nil or ctrl.text == nil then return false end` ✗
+                    --     ⇒ ★★★ **`.text` 是 nil 就【直接放弃】，一个字都不写** ✓✓
+                    --   ⇒ ★★ 这就是"旧路能填、我的路填不进去"的【全部差异】✓
+                    --     ★ 探针也印证 ✓：`写前=` 与 `写后读回=` 都空 ⇒ 写被跳过 ✓
+                    --   ⇒ 修法 ✓：★ **`.text` 与 `SetText` 两条都试** ✓（★ 与项目一致 ✓）
+                    pcall(function() if dst.text ~= nil then dst.text = txt end end)
+                    if type(dst.SetText) == "function" then pcall(function() dst:SetText(txt) end) end
                     pcall(function() _after = dst.text end)
                     if (self._row_probe or 0) < 12 and print then
                       self._row_probe = (self._row_probe or 0) + 1
