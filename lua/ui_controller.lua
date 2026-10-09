@@ -4735,68 +4735,38 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
       --     · 取**当前实际颜色** ✓ ⇒ ★ 它就是"这张卡现在是不是金的"的唯一真相 ✓
       --     · 是金色而**这一项不该高亮** ⇒ ★ **无条件还原** ✓（不再问"记录记没记着"✗）
       --     · 原色从哪来 ✓：★ 先看记录 ✓；记录没有（新记录 ✗）⇒ ★ **回落到模板的原色** ✓✓
+      -- ★★★★★ 2026-10-10 **彻底无状态：每次填充都【显式写】颜色** ✗✓
+      --
+      --   ★★ 用户 A/B 对照（★ 最强证据 ✓）：
+      --     · 较早那版：★ 视觉上两张卡高亮 ✗ 但**点 e 出 e、点 v 出 v** ✓ ⇒ 事件独立 ✓
+      --     · 258 那版：★ **选谁都是 e** ✗ ⇒ ★ 那才真是一张 ✓（那是另一个回归 ✓ 已回退 ✓）
+      --   ⇒ ★★ **"两张高亮"是【纯视觉】问题** ✓
+      --
+      --   ★★ 用户指示 ✓：「**基于 257 修复视觉问题就行了**」✓
+      --   ★ 而 257 的形状是：★ 还原**依赖**"当前颜色 == 金色"这个比对 ✗
+      --     ⇒ ★ 若引擎读回来的颜色 ≠ 写进去的值 ✗（★ 被规范化 / 带 alpha ✓）
+      --       ⇒ ★ **比对永远不成立 ⇒ 永不还原** ✗ ⇒ ★ 高亮留在控件上 ✓
+      --       ⇒ ★ 而它此时已代表**另一条线索** ✓ ⇒ ★ **"两张卡同时高亮"** ✓✓
+      --   ★ 我上一版改成"按控件记我涂过"✗ ⇒ ★ **用户实测更糟（三张同一张 ✗）** ✓
+      --     ⇒ ★ 说明**记状态**这条路本身就不稳 ✓（★ 记的东西总有机会和实际脱节 ✗）
+      --
+      --   ⇒ ★★★ **正解：不记任何状态** ✓ —— ★ **每次填充【无条件】写一次颜色** ✓：
+      --     · 选中 ⇒ 写高亮色 ✓　· 没选中 ⇒ 写原色 ✓
+      --     ★ 写的是"这一项此刻该是什么颜色" ✓ ⇒ **不可能粘 ✓ 不可能漏 ✓**
+      --   ★ 原色从**模板**取一次并缓存 ✓（★ 模板是这一切的源头 ✓ 与 index 无关 ✓）
+      --   ⚠️ 模板读不到 ⇒ 用 **`4294967295`（白）** 兜底 ✓
+      --     （★ 项目老注释说"复原不写白"✗ —— ★ 那是指"别把白色当成某些卡的原色"✓
+      --      而 `backrop1` 是**乘算着色** ✓ 白 = 不着色 = 原样 ✓ ⇒ 兜底安全 ✓）
       local HL = 4294956107          -- ★ 高亮色（暖金 ✓ 乘算着色 ✓）
-      local _cur = nil
-      pcall(function() _cur = _cbp2.imageColor end)
-      if _sel then
-        -- ★ 记原色只在"当前不是金色"时 ✓（★ 免得把金色当成原色记下来 ✗ —— 原注释就强调过 ✓）
-        if _cur ~= HL then
-          if _rg2.tint_orig == nil then
-            pcall(function() _rg2.tint_orig = _cur end)
-          end
-          -- ★ 同时记到**控制器级**的兜底表 ✓（按 item 存 ✓ 不按 index ✗）
-          --   ★ 这样列表项被回收后，即便记录是新的，也能拿回原色 ✓✓
-          self._grid_tint_fallback = self._grid_tint_fallback or {}
-          if self._grid_tint_fallback[item] == nil then
-            self._grid_tint_fallback[item] = _cur
-          end
-          pcall(function() _cbp2.imageColor = HL end)
-          -- ★ 按【控件】记一笔 ✓ —— 复用到别的线索后也要能还原 ✓
-          self._grid_tinted = self._grid_tinted or {}
-          self._grid_tinted[item] = true
-        end
-        _rg2.tint = "sel"
-      elseif (self._grid_tinted or {})[item] == true or _cur == HL then
-        -- ★★★★★ 2026-10-10 **改判据：按【控件】记"我涂过"，不再只靠颜色比对** ✗✓
-        --   ★★ 用户 A/B 对照（★ 最强证据 ✓）：
-        --     · 较早那版：★ 视觉上两张卡高亮 ✗ 但**点 e 出 e、点 v 出 v** ✓ ⇒ 事件独立 ✓
-        --     · 258 那版：★ **选谁都是 e** ✗ ⇒ ★ **那才真是一张** ✓
-        --   ⇒ ★★ **"两张高亮"是【纯视觉】问题** ✓（★ 事件侧本来是好的 ✓）
-        --   ★ 根因（我推断 ✓ 待真机确认 ✗）：
-        --     v114 我把判定从"看 `_rg2.tint`（按 `(item,index)` 缓存 ✗）"
-        --     改成了"**看当前实际颜色**"`_cur == HL` ✓ —— ★ 方向对 ✓
-        --     ★★ 但如果引擎**读回来的颜色 ≠ 写进去的值** ✗（★ 被规范化/带 alpha ✓）
-        --       ⇒ ★ **`_cur == HL` 永远不成立 ⇒ **永不还原** ✗✓
-        --       ⇒ ★ 高亮**永久留在那个控件上** ✓ ⇒ ★ 它现在代表**另一条线索** ✓
-        --       ⇒ ★★ **视觉上"两张卡同时高亮"** ✓✓✓
-        --   ⇒ ★ 修法 ✓：★ **按【控件】记"我涂过"** ✓（`_grid_tinted[item]` ✓）
-        --     ★ 为什么按控件而不按 `(item,index)` ✗：★ **控件被复用后 index 会变** ✓
-        --       ⇒ 按 index 记的状态会**留在旧 index 上** ✗ ⇒ 那正是 v114 之前的病 ✓
-        --     ★ 颜色比对**保留**作为兜底 ✓（两条任一成立就还原 ✓ 更稳 ✓）
-        -- ★★ **只要"现在确实是金色"就还原** ✓ —— ★ 不看 `_rg2.tint` ✗（那正是 bug 的来源 ✓）
-        local _orig = _rg2.tint_orig
-        if _orig == nil then
-          _orig = (self._grid_tint_fallback or {})[item]
-        end
-        if _orig == nil then
-          -- ★ 兜底：从**模板**取原色 ✓（最稳 ✓ 模板是这一切的源头 ✓）
-          if self._clue_tpl_tint == nil then
-            local _tpl = nil
-            pcall(function() _tpl = adapter:find("clue") end)
-            local _tbp = nil
-            if _tpl ~= nil then pcall(function() _tbp = adapter:sub("clue", "backrop1") end) end
-            if _tbp ~= nil then pcall(function() self._clue_tpl_tint = _tbp.imageColor end) end
-          end
-          _orig = self._clue_tpl_tint
-        end
-        if _orig ~= nil then
-          pcall(function() _cbp2.imageColor = _orig end)
-        end
-        _rg2.tint = nil
-        if self._grid_tinted ~= nil then self._grid_tinted[item] = nil end
-        -- ★ 还原后**清掉这一笔** ✓ —— ★ 不清就会【永远涂色】✗（★ 我第一版漏了 ✓）
-        self._grid_tint_fixed = (self._grid_tint_fixed or 0) + 1
+      if self._clue_tpl_tint == nil then
+        local _tpl = nil
+        pcall(function() _tpl = adapter:find("clue") end)
+        local _tbp = nil
+        if _tpl ~= nil then pcall(function() _tbp = adapter:sub("clue", "backrop1") end) end
+        if _tbp ~= nil then pcall(function() self._clue_tpl_tint = _tbp.imageColor end) end
+        if self._clue_tpl_tint == nil then self._clue_tpl_tint = 4294967295 end
       end
+      pcall(function() _cbp2.imageColor = _sel and HL or self._clue_tpl_tint end)
     end
   end
 
@@ -5240,6 +5210,40 @@ function Controller:_on_grid_item_click(adapter, grid, item)
   --     ⇒ ★ 根本没有"永远填不上的项" ✗ ⇒ ★ 也就不需要忽略任何点击 ✓
   --   ★ 保留它反而会**误伤**：★ 把 pos 6..N 的正常点击也吃掉 ✗
   --     （★ 真机日志里"后面几张点不动"很可能就包括这一条 ✓）
+
+  -- ★★★★★ 2026-10-10 **同一次点击只处理一次** ✗✓ —— ★ 这是"选中多张"的治本一步 ✓
+  --
+  --   ★★ 用户怀疑 ✓：「他们本身就是**同一个引用**，只是视觉上被填到了不同位置」
+  --     ★ 方向对 ✓ 机制更狠 ✗：★ **一次点击会串进来【一串】列表项的回调** ✓
+  --   ★ 真机日志（v117 ✓ 原文 ✓）：
+  --       `GetItemIndex=7` ⇒ ★ **紧接着 index=8 也来了** ✗
+  --       ⇒ `index=8` **又一次** ✗ ⇒ `index=9` ⇒ `index=11` ⇒ `index=13` ⇒ `index=14` ✗
+  --     ⇒ ★★ **一次点击触发了五六个不同的列表项** ✓ ⇒ ★ **于是选了好几张** ✓✓
+  --   ★ 根因 ✓：★ **多个列表项控件物理上叠在同一个位置** ✗
+  --     （★ 与"所有项都读到同一个 `y=212`"**完全吻合** ✓ —— 它们都停在模板那个点 ✓）
+  --     ⇒ ★ 一次射线命中**全部** ⇒ ★ 每个都回调一次 ✓
+  --   ⇒ ★★ 修法 ✓：★ **同一次点击只认第一个** ✓（短窗去重 ✓ 不必知道谁在上面 ✗）
+  --     ★ 窗口 0.05 秒 ✓ —— 同一次点击的连发都在内 ✓ 正常两次点击远大于它 ✓
+  --   ⚠️ 这是**止血** ✓；★ 把"叠在一起"从根上解决要靠布局（记在 `接手待办.md` ✓）
+  --     但它**足以让"点一下只选一个人"成立** ✓
+  do
+    local now = nil
+    pcall(function() now = os.clock() end)
+    if now ~= nil then
+      local last = self._grid_click_at
+      if last ~= nil and (now - last) < 0.05 then
+        self._grid_click_dup = (self._grid_click_dup or 0) + 1
+        if (self._grid_click_dup_log or 0) < 3 and print then
+          self._grid_click_dup_log = (self._grid_click_dup_log or 0) + 1
+          print("[murdoku] ★ 同一次点击的**后续项已忽略** ✓（累计 "
+            .. tostring(self._grid_click_dup) .. " 次）"
+            .. "　⇒ ★ 来源：**多个列表项叠在同一位置** ⇒ 一次射线命中全部 ✗")
+        end
+        return
+      end
+      self._grid_click_at = now
+    end
+  end
   -- ★ 官方：「列表项索引以运行时传入和返回的 index 为准」⇒ **只能反查**。
   --   按兄弟序号取是错的：列表项会被复用，兄弟顺序不稳定（用户也专门点了这一条）。
   local idx = nil
