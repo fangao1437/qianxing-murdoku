@@ -4393,33 +4393,32 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
     --       ⇒ ★ **这时布局已完成** ✓ ⇒ **判位置** ✓
     --   ★ 时机上也正好 ✓：引擎**滚动时**必然重进 ✓
     --     ⇒ 滚出可见区的项**当场被关射线** ✓、滚回来的**当场恢复** ✓✓
-    local in_our_refresh = (self._grid_in_refresh == true)
-    local half = self:_grid_band(grid)
-    local y = nil
-    pcall(function() y = item.anchoredPositionY end)
-    if half ~= nil and y ~= nil then
-      local hh = self._grid_item_h or 0
-      local outside = math.abs(y) > half + hh / 2
-      if not in_our_refresh and outside then
-        pcall(function() if item.raycastTarget ~= nil then item.raycastTarget = false end end)
-        pcall(function() if item.interactable ~= nil then item.interactable = false end end)
-        pcall(function() if item.blockRaycast ~= nil then item.blockRaycast = false end end)
-      end
-      -- ★ 诊断：★ **两种时机各打几行** ✓ —— 上一轮就是只打了"我们自己那趟"，白跑一次真机 ✗
-      if in_our_refresh then
-        if (self._grid_pos_log_in or 0) < 3 and print then
-          self._grid_pos_log_in = (self._grid_pos_log_in or 0) + 1
-          print("[murdoku] ★ 列表项位置【我们那趟·布局前，位置不可信 ✗】：pos=" .. tostring(pos)
-            .. "  y=" .. tostring(y) .. "  ⇒ ★ 不据此判定 ✓")
-        end
-      else
-        if (self._grid_pos_log_out or 0) < 12 and print then
-          self._grid_pos_log_out = (self._grid_pos_log_out or 0) + 1
-          print("[murdoku] ★ 列表项位置【引擎重进·布局后 ✓】：pos=" .. tostring(pos)
-            .. "  y=" .. tostring(y) .. "  半径=" .. tostring(half) .. "  项高=" .. tostring(hh)
-            .. "  ⇒ " .. (outside and "**在可见区外 ⇒ 已关射线** ✓" or "在可见区内 ✓"))
-        end
-      end
+    -- ★★★★★ 2026-10-09 **位置判据【已被真机彻底否掉】⇒ 关闭它** ✗✓（只留一条诊断 ✓）
+    --
+    --   ★ 真机实测（v106 ✓ 日志原文 ✓）——★ **布局之后仍然七项同一个值**：
+    --       `★ 列表项位置【引擎重进·布局后 ✓】：pos=1  y=211.99996948242  ⇒ 在可见区内 ✓`
+    --       `pos=2 … pos=7  全部 y=211.99996948242` ✗
+    --     ⇒ ★ **`anchoredPositionY` 在【复用的列表项】上恒等于模板的位置** ✓
+    --       （模板 `clue` 在 `y=212` ✓ 存档实测 ✓）⇒ **它不反映布局** ✗
+    --
+    --   ★★ 于是本轮定下来的**可靠事实**只有三条 ✓：
+    --     ✓ `GetItemIndex(item)` **又准又稳** ✓（真机 `GetItemIndex=1/2/3` ✓ 绝对序号 ✓）
+    --     ✓ 引擎**滚动时会重进回调** ✓（已证实 ✓）
+    --     ✓ **可见数能算**（`GetItemSize`/`Spacing`/`Padding` ＋ 视窗高 ⇒ 4 项 ✓）
+    --   ★★ 而拿不到的：✗ **滚动位置**（`scrollProgress` 恒 `nil` ✓ 只读字段全读不到 ✓）
+    --     ✗ **列表项的真实位置**（恒为模板值 ✗）
+    --     ⇒ ★★ **从脚本【无法】知道"哪一项在可见区内"** ✗ —— **这是硬限制** ✓
+    --
+    --   ⇒ ★ 所以这段"按位置关射线"的逻辑**永远不会生效** ✗（七项永远判为"在可见区内" ✓）
+    --     ⇒ ★ **关掉它** ✓ —— 它每帧白算一遍位置与比较，还占着 `pcall` ✗
+    --     ⇒ ★ **要真正解决"上面还能点到"**，必须走**结构方案**（二选一，见 `接手待办.md` ✓）：
+    --         甲 · **让视窗容得下全部内容**（不滚动 ⇒ 没有"区外" ✓）—— 改存档 ✓
+    --         乙 · **由脚本接管滚动**（`scrollProgress` 是**读写** ✓ ＋ `interactable=false` 关掉引擎自己滚 ✓）
+    --              ⇒ ★ 那时脚本**自己知道**窗口 ✓ ⇒ 能算 ✓ ＋ 顺带就是用户要的**滚动条** ✓
+    if (self._grid_pos_note or 0) < 1 and print then
+      self._grid_pos_note = (self._grid_pos_note or 0) + 1
+      print("[murdoku] ★ 位置判据已关闭：真机实测**布局后**七项仍读同一个 y（=模板位置 ✗）"
+        .. "⇒ **脚本无法知道哪一项在可见区内** ✓ 要靠结构方案解决（见 接手待办 ✓）")
     end
   end
 

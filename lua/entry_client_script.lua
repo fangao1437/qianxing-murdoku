@@ -184,7 +184,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v106 / 2026-10-09 / 按位置判可见区要挑时机:RefreshItems 期间引擎还没布局(七项都读同一个 y=212=容器上边缘);改到引擎重进回调时判 =====")
+        print("[murdoku] ===== 构建标记 v107 / 2026-10-09 / 位置判据被真机彻底否掉(布局后七项仍同值=模板位置)⇒关闭该逻辑,保留可见数计算;定案:脚本无法知可见窗口,须走结构方案(甲装得下/乙脚本接管滚动) =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
