@@ -4813,6 +4813,29 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                     --   ⇒ 修法 ✓：★ **`.text` 与 `SetText` 两条都试** ✓（★ 与项目一致 ✓）
                     pcall(function() if dst.text ~= nil then dst.text = txt end end)
                     if type(dst.SetText) == "function" then pcall(function() dst:SetText(txt) end) end
+                    -- ★★★★★★ 2026-10-10 **目标控件实况探针** ✗✓✓
+                    --   ★★ 用户让我查"`who` 为什么没进去"✓ —— 存档侧查到一条硬差异 ✓：
+                    --     ★ 卡片模板 `clue` 的 `who` **没有 `508`/`509`（水平/垂直对齐）** ✗
+                    --       而 `letter` **有**（`508=1 509=1`✓）；`what` 也没有 ✓
+                    --     ★ `row.1.1` 侧同理 ✓：★ `what.1.1` 有 `508/509` ✓、`who.1.1` **没有** ✗
+                    --   ⇒ ★★ 怀疑 ✓：★ **`who` 的框/对齐不对 ⇒ 引擎不画** ✓
+                    --     （★ 项目注释原话：「**运行时尺寸可能为 0 ⇒ 那时引擎不画**」✓）
+                    --   ★ 本探针 ✅ 把运行时实况打出来 ✓：尺寸 / 位置 / 可见 / 读回 ✓
+                    if (self._who_probe or 0) < 8 and print then
+                      self._who_probe = (self._who_probe or 0) + 1
+                      local _nm2, _sz, _pos2, _vis, _rb = nil, nil, nil, nil, nil
+                      pcall(function() _nm2 = tostring(dst.name) end)
+                      pcall(function() local w, h = dst:GetSizeDelta() _sz = tostring(w) .. "x" .. tostring(h) end)
+                      pcall(function() local x, y = dst:GetAnchoredPosition() _pos2 = tostring(x) .. "," .. tostring(y) end)
+                      pcall(function() _vis = tostring(dst.visible) end)
+                      pcall(function() _rb = tostring(dst.text) end)
+                      print("[murdoku] ★ 目标控件实况：`" .. tostring(_nm2) .. "`"
+                        .. "  尺寸=" .. tostring(_sz)
+                        .. "  位置=" .. tostring(_pos2)
+                        .. "  visible=" .. tostring(_vis)
+                        .. "  写后 text=" .. tostring(_rb)
+                        .. "　（★ 尺寸为 0 / 位置在框外 ⇒ 引擎不画 ✓）")
+                    end
                   wrote = wrote + 1
                 end
                 -- ★★★★★★ 2026-10-10 **图的来源要【往下钻一层】** ✗✓✓（★ 用户推断 ✓）
