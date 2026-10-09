@@ -7069,6 +7069,32 @@ function Controller:sync_clue_grid(adapter)
   end
 
   self._grid_sig = sig
+  -- ★★★★★★ 2026-10-10 **模板实况：把"存档里的位置"和"运行时的位置"对上** ✗✓✓
+  --   ★★ 用户报 ✓：「**第壹周刊卡被画到 −2 这个问题又回来了**」✗
+  --   ★ 我查了存档 ✓：★ `clue` 的 `pos=(0, 0)` ✓、★ `clues.grid` 也是 `(0,0)` ✓
+  --     ⇒ ★★ **存档侧是对的** ✗ ⇒ ★ **那偏移只可能在【运行时】** ✓
+  --   ★ 本行把三个关键控件的**运行时**尺寸/位置打出来 ✓：
+  --     ★ 模板 `clue`（★ 它就是列表项的布局基准 ✓）
+  --     ★ `clues.grid`（★ 视窗 ✓）★ `clues`（★ 容器 ✓）
+  --   ⇒ ★ 一眼能看出：★ **谁在运行时被挪了** ✓（★ 存档说 0 而运行时不是 0 ⇒ 就是它 ✓）
+  if not self._tpl_logged and print then
+    self._tpl_logged = true
+    for _, nm in ipairs({ "clue", "clues.grid", "clues" }) do
+      local c = nil
+      pcall(function() c = self:_find_by_name(nm) end)
+      if c ~= nil then
+        local sz, ps, vis = nil, nil, nil
+        pcall(function() local w, h = c:GetSizeDelta() sz = tostring(w) .. "x" .. tostring(h) end)
+        pcall(function() local x, y = c:GetAnchoredPosition() ps = tostring(x) .. "," .. tostring(y) end)
+        pcall(function() vis = tostring(c.visible) end)
+        print("[murdoku] ★ 模板实况：`" .. nm .. "`  尺寸=" .. tostring(sz)
+          .. "  位置=" .. tostring(ps) .. "  visible=" .. tostring(vis)
+          .. "　（★ 存档里 clue=(0,0) ✓ clues.grid=(0,0) ✓ clues=(-570,-61.1) ✓）")
+      else
+        print("[murdoku] ★ 模板实况：`" .. nm .. "` **运行时找不到** ✗")
+      end
+    end
+  end
   self._grid_state = "on"
 
   -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
@@ -18630,7 +18656,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v147 / 2026-10-10 / 查who:目标控件实况探针(尺寸/位置/visible/读回);存档侧查到who缺508/509对齐而what有 =====")
+        print("[murdoku] ===== 构建标记 v148 / 2026-10-10 / 查-2偏移:存档里clue=(0,0)已确认⇒加模板实况日志,把运行时位置打出来 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
