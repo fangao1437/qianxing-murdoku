@@ -4659,7 +4659,42 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
             --   ⇒ ★ 槽位名 = **第一个点号之前** ✓（★ 我原来写"第一段非空白"✗ ⇒ 取到 `who.1.1` ⇒ 对不上卡片的 `who` ✓）
             if slot ~= nil then slot = string.match(slot, "^[^%.]+") end
             if slot ~= nil and slot ~= "" then
-              local dst = self:_grid_item_child_cached(item, index, pos, slot)
+              -- ★★★★★★ 2026-10-10 **按完整名在【列表项下】找，并验证类型** ✗✓✓
+              --   ★★★ 探针铁证 ✓（真机日志原文 ✓）：
+              --     `★ 单射写入探针：slot=who  目标控件=who  写入=3.1  写前=  写后读回=`
+              --     `⇒ ★★ 控件里【没变】`
+              --   ⇒ ★ 两个结论 ✓：
+              --     ★ ① **目标控件叫 `who`** ✗ —— ★ 不是卡片上的 `clue.<行>.who` ✓
+              --     ★ ② **写前/写后都是空的** ✗ ⇒ ★ **那个控件没有 `text`** ✓
+              --   ⇒ ★★ 所以是"**写对了名字、写错了控件**" ✓ ——
+              --     ★ `_grid_item_child_cached` 按短名找 ⇒ ★ **命中了别处同名控件** ✗
+              --   ⇒ 修法 ✓：
+              --     ★ ① **先按【完整名】`clue.<行>.<槽位>` 在【列表项下】找** ✓
+              --     ★ ② **再验证它确实是对的类型** ✓（★ 文本控件有 `text` ✓ / 图片控件有 `imageId` ✓）
+              --     ★ ③ 短名兜底保留 ✓（★ 兼容老的模板命名 ✓）
+              local dst = nil
+              local full = "clue." .. tostring(pos) .. "." .. tostring(slot)
+              pcall(function() dst = item:FindChild(full) end)
+              if dst == nil then
+                pcall(function() dst = item:FindChild(slot) end)
+              end
+              if dst == nil then
+                dst = self:_grid_item_child_cached(item, index, pos, slot)
+              end
+              -- ★ 类型验证 ✓：不是文本控件、也不是图片控件 ⇒ **不用它** ✗
+              if dst ~= nil then
+                local okT, okI = false, false
+                pcall(function() local _ = dst.text okT = true end)
+                pcall(function() local _ = dst.imageId okI = true end)
+                if not okT and not okI then
+                  if (self._row_bad or 0) < 6 and print then
+                    self._row_bad = (self._row_bad or 0) + 1
+                    print("[murdoku] ★ 单射候选被否：`" .. full .. "` 与 `" .. tostring(slot)
+                      .. "` 都不对 ✗（★ 找到的控件既没有 `text` 也没有 `imageId` ✓ ⇒ 丢弃 ✓）")
+                  end
+                  dst = nil
+                end
+              end
               if dst ~= nil then
                 -- ★ 文本 ⇒ 写文字 ✓；★ 图片 ⇒ 成对写 imageSource + imageId ✓（项目铁律 ✓）
                 local txt = nil
@@ -5488,7 +5523,42 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
               local slot = kn
               if slot ~= nil then slot = string.match(slot, "^[^%.]+") end
               if slot ~= nil and slot ~= "" then
-                local dst = self:_grid_item_child_cached(item, index, pos, slot)
+                -- ★★★★★★ 2026-10-10 **按完整名在【列表项下】找，并验证类型** ✗✓✓
+              --   ★★★ 探针铁证 ✓（真机日志原文 ✓）：
+              --     `★ 单射写入探针：slot=who  目标控件=who  写入=3.1  写前=  写后读回=`
+              --     `⇒ ★★ 控件里【没变】`
+              --   ⇒ ★ 两个结论 ✓：
+              --     ★ ① **目标控件叫 `who`** ✗ —— ★ 不是卡片上的 `clue.<行>.who` ✓
+              --     ★ ② **写前/写后都是空的** ✗ ⇒ ★ **那个控件没有 `text`** ✓
+              --   ⇒ ★★ 所以是"**写对了名字、写错了控件**" ✓ ——
+              --     ★ `_grid_item_child_cached` 按短名找 ⇒ ★ **命中了别处同名控件** ✗
+              --   ⇒ 修法 ✓：
+              --     ★ ① **先按【完整名】`clue.<行>.<槽位>` 在【列表项下】找** ✓
+              --     ★ ② **再验证它确实是对的类型** ✓（★ 文本控件有 `text` ✓ / 图片控件有 `imageId` ✓）
+              --     ★ ③ 短名兜底保留 ✓（★ 兼容老的模板命名 ✓）
+              local dst = nil
+              local full = "clue." .. tostring(pos) .. "." .. tostring(slot)
+              pcall(function() dst = item:FindChild(full) end)
+              if dst == nil then
+                pcall(function() dst = item:FindChild(slot) end)
+              end
+              if dst == nil then
+                dst = self:_grid_item_child_cached(item, index, pos, slot)
+              end
+              -- ★ 类型验证 ✓：不是文本控件、也不是图片控件 ⇒ **不用它** ✗
+              if dst ~= nil then
+                local okT, okI = false, false
+                pcall(function() local _ = dst.text okT = true end)
+                pcall(function() local _ = dst.imageId okI = true end)
+                if not okT and not okI then
+                  if (self._row_bad or 0) < 6 and print then
+                    self._row_bad = (self._row_bad or 0) + 1
+                    print("[murdoku] ★ 单射候选被否：`" .. full .. "` 与 `" .. tostring(slot)
+                      .. "` 都不对 ✗（★ 找到的控件既没有 `text` 也没有 `imageId` ✓ ⇒ 丢弃 ✓）")
+                  end
+                  dst = nil
+                end
+              end
                 if dst ~= nil then
                   local txt = nil
                   pcall(function() txt = k.text end)
