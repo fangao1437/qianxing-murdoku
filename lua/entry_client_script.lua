@@ -184,7 +184,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v117 / 2026-10-09 / 探针证明引擎滚动时会逐个交出后面的项⇒ListView正常⇒整段移除'空白占位项'与'点击忽略'(它们会误伤正常项) =====")
+        print("[murdoku] ===== 构建标记 v118 / 2026-10-09 / 修'点一下选好几张':真机显示一次点击串进来五六个列表项的回调(它们叠在同一位置);加同一次点击只认第一个 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

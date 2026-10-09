@@ -8284,6 +8284,40 @@ function Controller:_on_grid_item_click(adapter, grid, item)
   --     ⇒ ★ 根本没有"永远填不上的项" ✗ ⇒ ★ 也就不需要忽略任何点击 ✓
   --   ★ 保留它反而会**误伤**：★ 把 pos 6..N 的正常点击也吃掉 ✗
   --     （★ 真机日志里"后面几张点不动"很可能就包括这一条 ✓）
+
+  -- ★★★★★ 2026-10-10 **同一次点击只处理一次** ✗✓ —— ★ 这是"选中多张"的治本一步 ✓
+  --
+  --   ★★ 用户怀疑 ✓：「他们本身就是**同一个引用**，只是视觉上被填到了不同位置」
+  --     ★ 方向对 ✓ 机制更狠 ✗：★ **一次点击会串进来【一串】列表项的回调** ✓
+  --   ★ 真机日志（v117 ✓ 原文 ✓）：
+  --       `GetItemIndex=7` ⇒ ★ **紧接着 index=8 也来了** ✗
+  --       ⇒ `index=8` **又一次** ✗ ⇒ `index=9` ⇒ `index=11` ⇒ `index=13` ⇒ `index=14` ✗
+  --     ⇒ ★★ **一次点击触发了五六个不同的列表项** ✓ ⇒ ★ **于是选了好几张** ✓✓
+  --   ★ 根因 ✓：★ **多个列表项控件物理上叠在同一个位置** ✗
+  --     （★ 与"所有项都读到同一个 `y=212`"**完全吻合** ✓ —— 它们都停在模板那个点 ✓）
+  --     ⇒ ★ 一次射线命中**全部** ⇒ ★ 每个都回调一次 ✓
+  --   ⇒ ★★ 修法 ✓：★ **同一次点击只认第一个** ✓（短窗去重 ✓ 不必知道谁在上面 ✗）
+  --     ★ 窗口 0.05 秒 ✓ —— 同一次点击的连发都在内 ✓ 正常两次点击远大于它 ✓
+  --   ⚠️ 这是**止血** ✓；★ 把"叠在一起"从根上解决要靠布局（记在 `接手待办.md` ✓）
+  --     但它**足以让"点一下只选一个人"成立** ✓
+  do
+    local now = nil
+    pcall(function() now = os.clock() end)
+    if now ~= nil then
+      local last = self._grid_click_at
+      if last ~= nil and (now - last) < 0.05 then
+        self._grid_click_dup = (self._grid_click_dup or 0) + 1
+        if (self._grid_click_dup_log or 0) < 3 and print then
+          self._grid_click_dup_log = (self._grid_click_dup_log or 0) + 1
+          print("[murdoku] ★ 同一次点击的**后续项已忽略** ✓（累计 "
+            .. tostring(self._grid_click_dup) .. " 次）"
+            .. "　⇒ ★ 来源：**多个列表项叠在同一位置** ⇒ 一次射线命中全部 ✗")
+        end
+        return
+      end
+      self._grid_click_at = now
+    end
+  end
   -- ★ 官方：「列表项索引以运行时传入和返回的 index 为准」⇒ **只能反查**。
   --   按兄弟序号取是错的：列表项会被复用，兄弟顺序不稳定（用户也专门点了这一条）。
   local idx = nil
@@ -17855,7 +17889,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v117 / 2026-10-09 / 探针证明引擎滚动时会逐个交出后面的项⇒ListView正常⇒整段移除'空白占位项'与'点击忽略'(它们会误伤正常项) =====")
+        print("[murdoku] ===== 构建标记 v118 / 2026-10-09 / 修'点一下选好几张':真机显示一次点击串进来五六个列表项的回调(它们叠在同一位置);加同一次点击只认第一个 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
