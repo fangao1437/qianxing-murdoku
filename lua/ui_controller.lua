@@ -5388,6 +5388,65 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
 
 
   -- 点击 → 聚焦（未验证能力，全程 pcall + 只报一次结论）
+  -- ★★★★★★ 2026-10-10 **末次单射：放在填充的最后** ✗✓✓
+  --
+  --   ★★ 用户判断正确 ✓（原话 ✓）：「**是不是先得把原来那套填入删了，不然新内容进不来**」✓
+  --   ★ 实测 ✓：★ 卡片上还是"原来脚本自动填入的那些内容"✗
+  --   ★ 根因 ✓：★ 原来的单射块在 `pos` 算完后、**算法之前** ✗
+  --     ⇒ ★ **算法随后把 `who`/`what`/`letter`/`face` 又写了一遍** ✓
+  --     ⇒ ★★ **你配的内容被覆盖** ✓✓
+  --   ⇒ ★ 修法 ✓：★ **保留原来的块**（★ 它负责"计数/日志"✓）
+  --     ★ 并**在这里再跑一次** ✓ ⇒ ★ **你配的最终生效** ✓
+  --   ⚠️ 两次都只在**我们那趟**（`_grid_in_refresh == true` ✓）—— ★ 引擎重进时一次都不跑 ✓
+  --   ⚠️ 锚点教训 ✓：★ 我两次想"移动"这个块都没移成 ✗（★ 锚点不匹配 ✓）
+  --     ⇒ ★ 改用"**在确定的位置再跑一次**" ✓ —— ★ 不改动已有代码 ✗ 风险最小 ✓✓
+  do
+    if self._grid_in_refresh == true then
+      local lv_no = self:_level_ordinal()
+      if lv_no ~= nil then
+        local rc = self:_palette_child("row." .. tostring(lv_no) .. "." .. tostring(pos))
+        if rc ~= nil then
+          local wrote2 = 0
+          local kids = nil
+          pcall(function() kids = rc:GetChildren() end)
+          if type(kids) == "table" then
+            for ci = 1, #kids do
+              local k = kids[ci]
+              local kn = nil
+              pcall(function() kn = tostring(k.name) end)
+              local slot = kn
+              if slot ~= nil then slot = string.match(slot, "^[^%.]+") end
+              if slot ~= nil and slot ~= "" then
+                local dst = self:_grid_item_child_cached(item, index, pos, slot)
+                if dst ~= nil then
+                  local txt = nil
+                  pcall(function() txt = k.text end)
+                  if type(txt) == "string" then
+                    pcall(function() self:write_control_text(dst, txt) end)
+                    wrote2 = wrote2 + 1
+                  end
+                  local iid = nil
+                  pcall(function() iid = k.imageId end)
+                  if iid ~= nil then
+                    local src = nil
+                    pcall(function() src = k.imageSource end)
+                    pcall(function() if src ~= nil then dst.imageSource = src end end)
+                    pcall(function() dst.imageId = iid end)
+                    wrote2 = wrote2 + 1
+                  end
+                end
+              end
+            end
+          end
+          if wrote2 > 0 and (self._row_log2 or 0) < 8 and print then
+            self._row_log2 = (self._row_log2 or 0) + 1
+            print("[murdoku] ★ 单射【末次】生效：`row." .. tostring(lv_no) .. "." .. tostring(pos)
+              .. "` ⇒ 覆盖 " .. tostring(wrote2) .. " 个槽位 ✓（★ 你配的最终生效 ✓）")
+          end
+        end
+      end
+    end
+  end
   self:_grid_bind_item_click(adapter, grid, item)
       self._grid_bind_n = (self._grid_bind_n or 0) + 1
       if self._grid_bind_n == 1 then print("[murdoku] ★ 诊断GRID：正在给列表项绑点击（第 1 个）") end
