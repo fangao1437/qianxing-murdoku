@@ -4631,6 +4631,9 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
             local slot = kn
             -- ★★ 修正（用户示例实证 ✓）：子控件名是 `who.1.1` 这种带后缀的 ✗
             --   ⇒ ★ 槽位名 = **第一个点号之前** ✓（★ 我原来写"第一段非空白"✗ ⇒ 取到 `who.1.1` ⇒ 对不上卡片的 `who` ✓）
+            -- ★ 护栏 ✓（★ 地图员提醒 ✓）：★ 每个 `pos` 开始处清掉残值 ✗
+            --   ★ 否则某个 `pos` 没有 `letter` 槽位 ⇒ 会沿用【上一个 pos 的值】✗
+            self._row_letter_txt = nil
             if slot ~= nil then slot = string.match(slot, "^[^%.]+") end
             if slot ~= nil and slot ~= "" then
               -- ★★★★★★ 2026-10-10 **按完整名在【列表项下】找，并验证类型** ✗✓✓
@@ -4669,6 +4672,18 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                 -- ★ 文本 ⇒ 写文字 ✓；★ 图片 ⇒ 成对写 imageSource + imageId ✓（项目铁律 ✓）
                 local txt = nil
                 pcall(function() txt = k.text end)
+                -- ★★★★★★ 2026-10-10 **换源：`letter` 从【控件文本】取** ✗✓✓
+                --   ★★★ 地图员第 5 轮实测 ✓：★ `clue_view[i]`（core L2386-2414）**只有 6 个字段** ✗ ——
+                --     `index`/`type`/`text`/`satisfied`/`who`/`raw` ✓ ★★ **【没有 `letter`】** ✓
+                --     ⇒ ★ `_cl.letter` 恒 nil ✗ ⇒ `_row_letter` 恒空 ✗ ⇒ `letter_of` 恒 nil ✗
+                --     ⇒ ★★★ **落兜底 ⇒ 显示旧铅笔笔记 ⇒ 用户看到"还是旧脚本那套"** ✓✓
+                --   ★ 用户的问题 ✓：「**当时填 `note` 的素材源到底在哪，查到了换源就行了**」✓
+                --     ★ 旧源 = `core.notes[r][c]` 的键（★ 玩家手打的铅笔笔记 ✓）
+                --     ★★ 新源 = ★ **`letter.<关>.<行>` 控件的【文本】** ✓（★ 用户配的那段 ✓）
+                --   ★ 这里就是那个控件 ✓（★ `slot == "letter"` ⇒ `k` 就是它 ✓ `txt = k.text` ✓）
+                if slot == "letter" then
+                  self._row_letter_txt = (txt ~= nil and tostring(txt) ~= "") and tostring(txt) or nil
+                end
                 -- ★★★★★★ 2026-10-10 **`dst` 自己没有 `text` ⇒ 往下找【有 text 的子孙】** ✗✓✓
               --
               --   ★★★ 读到了根 ✓（`write_control_text` 的定义在 L3802 ✓）：
@@ -4774,9 +4789,10 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                     --   ★ `letter` 的【数据侧已经是对的】✓：`_grid_text_payload` 的 `items[i].letter` ✓
                     --     （★ ui L4395 `letter = tostring(wid or "")` ✓ 而 `wid` 从卡片读 ✓ 卡片由单射填 ✓）
                     --   ⇒ ★★ 缺的只是"送到棋盘" ⇒ ★ 和 `face` 一样，在这里把它带出来 ✓✓
-                    if _cl.letter ~= nil and tostring(_cl.letter) ~= "" then
+                    -- ★ 换源（地图员第5轮 ✓）：★ 用【`letter` 槽位的控件文本】✓ 而不是 `_cl.letter`（★ 它恒 nil ✗）
+                    if self._row_letter_txt ~= nil and tostring(self._row_letter_txt) ~= "" then
                       Controller._row_letter = Controller._row_letter or {}
-                      Controller._row_letter[tostring(_cl.who)] = tostring(_cl.letter)
+                      Controller._row_letter[tostring(_cl.who)] = tostring(self._row_letter_txt)
                     end
                   end
                 end
@@ -5182,6 +5198,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
               local kn = nil
               pcall(function() kn = tostring(k.name) end)
               local slot = kn
+              self._row_letter_txt = nil   -- ★ 护栏：清残值 ✓
               if slot ~= nil then slot = string.match(slot, "^[^%.]+") end
               if slot ~= nil and slot ~= "" then
                 -- ★★★★★★ 2026-10-10 **按完整名在【列表项下】找，并验证类型** ✗✓✓
@@ -5219,6 +5236,18 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                 if dst ~= nil then
                   local txt = nil
                   pcall(function() txt = k.text end)
+                  -- ★★★★★★ 2026-10-10 **换源：`letter` 从【控件文本】取** ✗✓✓
+                  --   ★★★ 地图员第 5 轮实测 ✓：★ `clue_view[i]`（core L2386-2414）**只有 6 个字段** ✗ ——
+                  --     `index`/`type`/`text`/`satisfied`/`who`/`raw` ✓ ★★ **【没有 `letter`】** ✓
+                  --     ⇒ ★ `_cl.letter` 恒 nil ✗ ⇒ `_row_letter` 恒空 ✗ ⇒ `letter_of` 恒 nil ✗
+                  --     ⇒ ★★★ **落兜底 ⇒ 显示旧铅笔笔记 ⇒ 用户看到"还是旧脚本那套"** ✓✓
+                  --   ★ 用户的问题 ✓：「**当时填 `note` 的素材源到底在哪，查到了换源就行了**」✓
+                  --     ★ 旧源 = `core.notes[r][c]` 的键（★ 玩家手打的铅笔笔记 ✓）
+                  --     ★★ 新源 = ★ **`letter.<关>.<行>` 控件的【文本】** ✓（★ 用户配的那段 ✓）
+                  --   ★ 这里就是那个控件 ✓（★ `slot == "letter"` ⇒ `k` 就是它 ✓ `txt = k.text` ✓）
+                  if slot == "letter" then
+                    self._row_letter_txt = (txt ~= nil and tostring(txt) ~= "") and tostring(txt) or nil
+                  end
                   -- ★★★★★★ 2026-10-10 **`dst` 自己没有 `text` ⇒ 往下找【有 text 的子孙】** ✗✓✓
               --
               --   ★★★ 读到了根 ✓（`write_control_text` 的定义在 L3802 ✓）：
@@ -5324,9 +5353,10 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                       --   ★ `letter` 的【数据侧已经是对的】✓：`_grid_text_payload` 的 `items[i].letter` ✓
                       --     （★ ui L4395 `letter = tostring(wid or "")` ✓ 而 `wid` 从卡片读 ✓ 卡片由单射填 ✓）
                       --   ⇒ ★★ 缺的只是"送到棋盘" ⇒ ★ 和 `face` 一样，在这里把它带出来 ✓✓
-                      if _cl.letter ~= nil and tostring(_cl.letter) ~= "" then
+                      -- ★ 换源（地图员第5轮 ✓）：★ 用【`letter` 槽位的控件文本】✓ 而不是 `_cl.letter`（★ 它恒 nil ✗）
+                      if self._row_letter_txt ~= nil and tostring(self._row_letter_txt) ~= "" then
                         Controller._row_letter = Controller._row_letter or {}
-                        Controller._row_letter[tostring(_cl.who)] = tostring(_cl.letter)
+                        Controller._row_letter[tostring(_cl.who)] = tostring(self._row_letter_txt)
                       end
                     end
                   end
