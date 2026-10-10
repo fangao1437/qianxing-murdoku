@@ -17099,11 +17099,37 @@ function Murdoku.on_update(dt)
   end
     if scr_now == "level" and ((current.frames or 0) % 30) == 0 then
       local rows, cols = 5, 5
+      -- ★★★★★★ 2026-10-11 **跨关点击 bug 的真因就在这里** ✗✓✓
+      --
+      --   ★★★ 原来这里只读 `cfg.cells.rows/cols` ✗ ——
+      --     ★ 而 `entry_client_script.lua` 里那两个字段是**写死的兜底值 `5, 5`** ✓
+      --       （★ 它自己的注释就写着「**只在读不到父控件尺寸时才用到的兜底**」✓）
+      --   ⇒ ★★ **不管进的是 6×6 还是 7×7 关，这段永远只点 5×5 = 25 格** ✗✓
+      --     ⇒ ★ **第 26 格之后全部没点亮** ✓
+      --       ★ `content` 没被点亮 ⇒ ★ **它的子控件（`face`/`note`/`x`）全看不见** ✓
+      --         （★ 本段上面的注释自己写着：★「父级不可见 ⇒ 子不可见」✓）
+      --       ★ 而 `face` 是**格子底图** ✗ + **射线目标** ✗
+      --         ⇒ ★★ **格子看不见、也点不动** ✓✓
+      --
+      --   ★★★ 真机证据 ✓（★ 用户 2026-10-11 02:41 那份日志 ✓）：
+      --     · ★ 第 3 关 6×6 ✓：`棋盘格子：36 / 36 存在` ✓ **但** `格子底图已点亮：**25** 个 face` ✗
+      --     · ★ 第 1 关 5×5 ✓：`25 / 25` ✓ 且 `25 个 face` ✓ —— ★ **所以"第一关正确"** ✓✓
+      --     · ★ 用户原话 ✓：「★ **除第一关以外的其它关卡的各类点击 bug**」✓
+      --   ★★ 这条**一次解释全部现象** ✓：★ 5×5 关没事 ✓ ★ 6×6 少 11 格 ✗ ★ 7×7 少 24 格 ✗✓
+      --
+      --   ★ 为什么**同一个量**在别处是对的 ✗（★ 这就是它藏了这么久的原因 ✓）：
+      --     · ★ `main.lua:670`  ✓：`adapter.cells_rows or (cfg.cells and cfg.cells.rows) or 5` ✓
+      --     · ★ `engine_adapter_qianxing.lua:3808/3809/3924` ✓：★ **同一个优先级** ✓
+      --     · ★★ **只有这一段** ✗ 漏了最权威的 `adapter.cells_rows` ✓✓
+      --   ★ `adapter.cells_rows` 从哪来 ✓：★ `ensure_cells(rows, cols)` 开头就写 ✓
+      --     （★ 那行注释还写着「**它比 `cfg.cells.rows/cols` 里那个"兜底值"准**」✓✓）
+      --
+      --   ★ 修法 ✓：★ **与那三处对齐** ✓ —— ★ 不是发明新规则 ✓
       pcall(function()
-        local cfg = current.adapter and current.adapter.cfg
-        if cfg and cfg.cells then
-          rows = cfg.cells.rows or rows
-          cols = cfg.cells.cols or cols
+        local a = current.adapter
+        if a ~= nil then
+          rows = a.cells_rows or (a.cfg and a.cfg.cells and a.cfg.cells.rows) or rows
+          cols = a.cells_cols or (a.cfg and a.cfg.cells and a.cfg.cells.cols) or cols
         end
       end)
       local n = 0
@@ -18246,7 +18272,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v170 / 2026-10-11 / 让letter取代铅笔笔记的显示: 格子note改为下发letter_of(标记的人物)而不是人物id; 数据层core.notes一个字没改; 没配letter的人回退id; 新增tests/cell_mark_letter.lua(8断言)钉住; 删掉已无调用点的note_list_of =====")
+        print("[murdoku] ===== 构建标记 v171 / 2026-10-11 / 跨关点击bug真因: main.lua那段每30帧点亮格子的循环只读cfg.cells.rows/cols(写死的兜底5,5),漏了最权威的adapter.cells_rows => 任何关都只点25格,6x6少11格/7x7少24格 => 第26格起content不亮,face(底图+射线目标)不可见 => 格子看不见也点不动; 全工程只有这一段漏了; 新增tests/cell_lightup_size.lua(16断言,含自证窗口+破坏性验证) =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

@@ -184,7 +184,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v170 / 2026-10-11 / 让letter取代铅笔笔记的显示: 格子note改为下发letter_of(标记的人物)而不是人物id; 数据层core.notes一个字没改; 没配letter的人回退id; 新增tests/cell_mark_letter.lua(8断言)钉住; 删掉已无调用点的note_list_of =====")
+        print("[murdoku] ===== 构建标记 v171 / 2026-10-11 / 跨关点击bug真因: main.lua那段每30帧点亮格子的循环只读cfg.cells.rows/cols(写死的兜底5,5),漏了最权威的adapter.cells_rows => 任何关都只点25格,6x6少11格/7x7少24格 => 第26格起content不亮,face(底图+射线目标)不可见 => 格子看不见也点不动; 全工程只有这一段漏了; 新增tests/cell_lightup_size.lua(16断言,含自证窗口+破坏性验证) =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
