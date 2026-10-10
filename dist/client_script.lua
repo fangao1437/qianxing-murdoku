@@ -7303,13 +7303,19 @@ function Controller:sync_clue_grid(adapter)
   end
 
   -- ⑦ 一行**带证据**的结论（用户要的就是这一行，能据此判断链条走到哪一步）
+  -- ★★ 2026-10-11 **把"绑了几个项"也打出来** ✗✓（★ 用户指定要能一眼看断点 ✓）
+  --   ★ 为什么必须 ✗：★ 原来的"列表项点击=支持"**只证方法存在** ✓
+  --     ★ 而 `_grid_bind_n` 是**真的走完绑定那一步的次数** ✓ ⇒ ★ 两者一起看才分得清 ✓✓
+  --   ★ 读法 ✓：★ `绑=N` 且点卡片**没有**「卡片点击进来了」⇒ ★ 事件没到引擎派发那一步 ✓
+  --     ★ `绑=0` ⇒ ★ **绑定根本没跑到**（★ 就是"提前 return"那一类 ✓）
   self:_grid_log("summary", string.format(
     "网格视窗：找到 clues.grid ✓ itemPrefabIndex=%s（回读 %s） n=%d RefreshItems 回调 %d 次；"
-    .. "索引基准=%s；列表项点击=%s",
+    .. "索引基准=%s；列表项点击=%s；★ 绑定次数=%s",
     tostring(prefab), tostring(back), n, calls,
     (self._grid_base == nil) and "?" or tostring(self._grid_base),
     (self._grid_click_ok == true) and "支持（用 GetItemIndex 反查索引）"
-      or "不支持（列表项收不到光标事件 ⇒ 只能用老卡片的点击，聚焦仍可用）"))
+      or "不支持（列表项收不到光标事件 ⇒ 只能用老卡片的点击，聚焦仍可用）",
+    tostring(self._grid_bind_n or 0)))
 end
 
 -- 列表项的子控件：模板里叫 `clue.1.<后缀>`（用户是**照着第 1 张卡**另存的模板）。
@@ -7840,9 +7846,51 @@ function Controller:_grid_refill_now(adapter, grid)
 end
 
 -- 填**一条**列表项。★ 无状态：内容全部由 `index` 现算（官方：滚动会重复进入回调）。
+-- ★★★★★★ 2026-10-11 **把 `gray` 层的射线关掉（★ 与"有没有内容"无关 ✓）** ✗✓✓
+--
+--   ★★★ 为什么必须能【单独】调用 ✗（★ 协作方测绘的直接结论 ✓）：
+--     ★ `gray` 是卡片里**最上层**的图片 ✓ ⇒ ★ **它挡在最上面吃点击** ✗
+--     ★ 原来"关射线"那段写在 `_fill_grid_item` 里、且在 `cl == nil` 那个 `return` **之后** ✗
+--       ⇒ ★★ **一旦 `cl` 为 nil ⇒ 射线没关 ⇒ `gray` 抢点击** ✓
+--       ⇒ ★★★ **表现就是"点了跟没点一样"** ✓✓（★ 正是用户报的症状 ✓）
+--   ⇒ ★ 抽成方法 ✓ ⇒ ★ **在函数最前面就能先关掉它** ✓ ⇒ ★ **与内容解耦** ✓✓
+--   ★ 幂等 ✓：★ 按**列表项实例**记 `gray_noray` ✓ ⇒ ★ 每个实例只写一次字段 ✓
+--     ★（★ 那段的原注释讲得很清楚：全局标志会让"只有第 1 个实例生效" ✗）
+function Controller:_grid_disable_gray_raycast(item, index, pos)
+  local cg = self:_grid_item_child_cached(item, index, pos, "gray")
+  if cg == nil then return false end
+  local rec = self:_grid_item_rec(item, index)
+  if rec ~= nil and rec.gray_noray == true then return true end
+  if rec ~= nil then rec.gray_noray = true end
+  if cg.raycastTarget ~= nil then pcall(function() cg.raycastTarget = false end) end
+  if cg.blockRaycast ~= nil then pcall(function() cg.blockRaycast = false end) end
+  if cg.interactable ~= nil then pcall(function() cg.interactable = false end) end
+  print("[murdoku] 灰白层 `gray`：已关掉射线与交互（点击照常落在卡片上）")
+  return true
+end
+
 function Controller:_fill_grid_item(adapter, grid, item, index)
   self._grid_calls = (self._grid_calls or 0) + 1
   if item == nil then return end
+
+  -- ★★★★★★ 2026-10-11 **先把"能点"这件事做完，再管内容** ✗✓✓
+  --
+  --   ★★★ 用户报 ✓：「★ **目前链路还是断的** ✓ ★ **放置行为等依旧不通**」✓
+  --   ★ 协作方测绘的结论 ✓（`网格视窗-光标事件-实现测绘.md` ✓）：
+  --     ★★ **绑点击原来在函数【最后一行】** ✓ ⇒ ★ **它前面任何一处 `return` 都会把它跳过** ✗✓
+  --     ★ 而前面**确实有一处会真的触发** ✗：★ `cl == nil`（★ 见下面那段长注释 ✓）
+  --   ⇒ ★★★ **修法** ✓：★ **把绑定提到最前面** ✓ ——
+  --     ★ **"能不能点"与"有没有内容"彻底解耦** ✓✓
+  --     ★ 语义 ✓：★ 内容没配好 ⇒ ★ 卡片是**空的** ✓ ★ **但照样能点** ✓✓
+  --   ★ 幂等 ✓：★ `_grid_bind_item_click` 自带**弱键去重** ✓ ⇒ ★ 反复调用只绑一次 ✓
+  --     ★（★ 见它内部的 `self._grid_bound[item]` ✓）
+  --   ★ 成本 ✓：★ 已绑过的项 ⇒ 去重那一步就返回 ✓（★ 不再碰 `ensure_raycast` ✓）
+  pcall(function() self:_grid_bind_item_click(adapter, grid, item) end)
+  -- ★★ 同一条理由 ✓：★ **`gray` 的射线也要在这里就关** ✗✓
+  --   ★ 它在原来那个位置（`cl` 判空之后 ✓）⇒ ★ 同样会被跳过 ✓
+  --   ★★ 不关 ⇒ ★ 它挡在最上层**吃点击** ⇒ ★ **"点了跟没点一样"** ✓✓
+  --   ★ 幂等 ✓：★ 按列表项实例记 `gray_noray` ✓ ⇒ 只写一次字段 ✓
+  pcall(function() self:_grid_disable_gray_raycast(item, index, nil) end)
 
   -- ★★ 官方那句"列表发生滚动时：对列表项内容进行刷新(触发回调)"有**两种读法**
   --    （引擎自己重进 / 得靠脚本再调一次 RefreshItems）—— 这是本项目一个**未验证点**：
@@ -8409,7 +8457,37 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   --   文案只跟关卡数据有关（见 `_grid_text_payload` 的注释）⇒ 算一次就够。
   local pay = self:_grid_text_payload()
   local cl = pay.items[pos]
-  if cl == nil then return end        -- 超出本关线索数（理论上不会来）⇒ 什么都不写
+  -- ★★★★★★ 2026-10-11 **`cl == nil` 不许提前 `return`** ✗✓✓
+  --
+  --   ★★★ 用户报 ✓：「★ **目前链路还是断的** ✓ ★ **放置行为等依旧不通**」✓
+  --     ＋ ★ 他指的路 ✓：「★ **就是网格视窗的光标事件断了** ✓
+  --       ★ **原本的光标事件是通的，损坏必然来自 `clues` 重构**」✓✓
+  --
+  --   ★★★ 协作方把实现逐行测绘出来了 ✓（`网格视窗-光标事件-实现测绘.md` ✓ 结论采信 ✓）：
+  --     ★★ **断点就是这一行** ✗ —— ★ 它下面还有**两件必须做的事** ✓：
+  --       ★ **① 把 `gray` 层的射线关掉** ✓（★ 否则 `gray` 盖在最上层**吃点击** ✓）
+  --       ★ **② `self:_grid_bind_item_click(adapter, grid, item)`** ✓（★ **绑点击就在函数最后** ✓）
+  --     ⇒ ★★★ **这一行一跳过 ⇒ 两件都不跑** ✓ ⇒ ★★ **卡片点不动 ＋ `gray` 抢点击** ✓✓
+  --       ★ 而 `gray` 抢点击这一条**恰好解释了"点了跟没点一样"** ✓✓
+  --
+  --   ★ 为什么"理论上不会来"却真的会来 ✗（★ 这是本行的原注释 ✓ 而它错了 ✓）：
+  --     ★★ `pos` 由 **`_grid_base`** 决定 ✓（`pos = index - _grid_base + 1` ✓）
+  --     ★ 而 `_grid_base` 的判定挂在**一个前提**上 ✗：
+  --       ★「**第一次回调一定是列表顶端**」✗（★ 见 L4884-4890 的注释 ✓）
+  --     ★★ 这个前提**本项目自己后来证伪了** ✗（★ 多项叠在同一位置 ⇒ 一次射线命中全部 ✓）
+  --       而且 **`_grid_base` 永不重置** ✗ ⇒ ★ **错一次 ⇒ 错一辈子** ✓✓
+  --     ⇒ ★★ **`pos` 一整列错位 ⇒ `pay.items[pos]` 越界 ⇒ 本行 `return`** ✓✓
+  --
+  --   ⇒ ★★★ **修法（与协作方的"治标＋治本"两条一致 ✓）**：
+  --     ★ **① 本处：不再提前 `return`** ✗ —— ★ 用**空壳记录**接着往下走 ✓
+  --       　（★ 后面只用到 `cl.who/what/letter/id/portrait` ✓ **全部容得下空串** ✓）
+  --     ★ **② `_grid_bind_item_click` 提到 `cl` 之前** ✓ ⇒ ★ **绑点击【与有没有文案无关】** ✓✓
+  --   ★ 为什么这样最稳 ✓：★ **"能不能点"不该取决于"有没有内容"** ✓ ——
+  --     ★ 内容没配好 ⇒ ★ 该"卡片是空的" ✗ ★ 不该"卡片点不动" ✗✓
+  if cl == nil then
+    -- ★ 空壳 ✓：★ 每个字段都是**中性值** ✓ ⇒ 后面的写入变成"写空串/不写" ✓ 不会报错 ✓
+    cl = { who = "", what = "", letter = "", id = nil, portrait = nil }
+  end
   local t_who, t_what, t_letter = cl.who, cl.what, cl.letter
   -- ★★★★★ 2026-10-07 **已正式放置 ⇒ 卡片盖一层灰白** ✗✓（用户新功能 ✓ 模板侧已加控件 `gray` ✓）
   --   ★ 分工（用户定的 ✓ 也是"能走控件就不走脚本"✓）：
@@ -8519,14 +8597,15 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
     --   ★ 真机证据 ✓：★ 日志里那句"已关掉射线"**只出现一次**（紧跟 `pos=1` ✓）
     --     ⇒ ★ 其余 6 个实例（以及后来复用的）**射线还开着** ✗ ⇒ ★ **放置过的卡上抢点击依旧** ✓✓
     --   ★ 列表项是复用的 ✓ ⇒ 每个实例各记一份 ✓（挂在 `_grid_item_rec` 的缓存表上 ✓）
-    local _rg_pre = self:_grid_item_rec(item, index)
-    if _rg_pre == nil or _rg_pre.gray_noray ~= true then
-      if _rg_pre ~= nil then _rg_pre.gray_noray = true end
-      if _cgray.raycastTarget ~= nil then pcall(function() _cgray.raycastTarget = false end) end
-      if _cgray.blockRaycast ~= nil then pcall(function() _cgray.blockRaycast = false end) end
-      if _cgray.interactable ~= nil then pcall(function() _cgray.interactable = false end) end
-      print("[murdoku] 灰白层 `gray`：已关掉射线与交互（点击照常落在卡片上）")
-    end
+    -- ★★★★★★ 2026-10-11 **"关射线"这段已抽成 `_grid_disable_gray_raycast`** ✗✓✓
+    --   ★ 原来它写在这里 ✗ ⇒ ★ 位置在 `cl == nil` 那个 `return` **之后** ✓
+    --     ⇒ ★★ **跳过一次就永远不关** ⇒ ★ **`gray` 挡在最上层吃点击** ✓✓
+    --   ★ 现在 ✓：★ 统一由函数**最前面**那次调用负责 ✓（★ 与"有没有内容"解耦 ✓）
+    --     ★ 这里**不再重复** ✗ —— ★ 同一件事两处写 ⇒ ★ 又是"两套实现"的老坑 ✓
+    --     ★（★ 用户 v177 日志里那句"已关掉射线"**照样出现** ✓ ⇒ ★ 说明原来那条路
+    --        在他那次会话里**确实跑到了** ✓ —— ★ 所以"点不动"的原因不只在 `cl == nil` ✓
+    --        这一点由新加的「卡片点击进来了」探针去定 ✓✓）
+    --   ⚠️ 下面只留**可见性**那一半 ✓（★ 它依赖 `_placed_now` ✓ 与射线无关 ✓）
     local _rg = self:_grid_item_rec(item, index)
     if _rg ~= nil and _rg.gray ~= _placed_now then
       _rg.gray = _placed_now
@@ -8882,8 +8961,12 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
       end
     end
   end
-  self:_grid_bind_item_click(adapter, grid, item)
-      self._grid_bind_n = (self._grid_bind_n or 0) + 1
+  -- ★★ 2026-10-11 **绑定已提到函数【最前面】** ✗✓（★ 原来就在这一行 ✓ 见开头那段注释 ✓）
+  --   ★ 为什么必须提 ✗：★ 它前面的任何 `return` 都会把"绑点击"一起跳过 ✓
+  --     ⇒ ★★ **卡片点不动** ✓（★ 而这一条恰好是用户报的"链路断了" ✓✓）
+  --   ★ 保留这一行也**无害** ✓：★ `_grid_bind_item_click` 幂等 ✓（弱键去重 ✓）
+  --     ★ 但**不再依赖它** ✗ —— ★ 判据在最前面就已经满足 ✓
+  self._grid_bind_n = (self._grid_bind_n or 0) + 1
   -- ★ 2026-10-10 已删（地图员干跑 PASS ✓）：最后一条内联诊断（★ 地图员：整行可删 ✓）　原 L5277..L5277
 end
 
@@ -8930,6 +9013,33 @@ end
 
 -- 点了某一条列表项 → 聚焦这条线索。
 function Controller:_on_grid_item_click(adapter, grid, item)
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  -- ★★★ 2026-10-11 **入口探针：证明"卡片真的点到了"** ✗✓✓（★ 用户指定 ✓）
+  --
+  --   ★★★ 用户 2026-10-11 的指令 ✓：「★ **查看 project 仓库并修复** ✓
+  --     （★ 注 ✓：★ **原本的光标事件是通的** ✓
+  --      ★ **损坏必然来自 `clues` 重构**）」✓✓
+  --   ★ 为什么必须加这一条 ✗（★ 协作方测绘里点出的关键区分 ✓）：
+  --     ★★ **`列表项点击=支持` 那行只证明 `AddCursorEventListener` 方法存在** ✗
+  --       —— ★ 它**不证明**事件真的会来 ✓（★ 那行由 `_grid_click_ok` 打 ✓
+  --          而 `_grid_click_ok` 在**挂监听成功**时就置 true ✓ ⇒ ★ **不代表收得到** ✓✓）
+  --     ★★ 用户 v177 真机日志里**一条 `收到点击 → 控件 clue.N` 都没有** ✗
+  --       ★ 而 `cell.*` 的点击**都到了** ✓
+  --   ⇒ ★★ 这一行就是**分水岭** ✓ —— ★ 点一下卡片：
+  --     · ★ **出现这行** ⇒ ★ 事件到手 ✓ ★ 断点在它后面（`GetItemIndex` / 越界 / `pid` ✓）
+  --     · ★ **不出现** ⇒ ★ **事件根本没来** ✗ ★ 断点在**绑定或引擎侧** ✓✓
+  --   ★ 最多 6 行 ✓（★ 用户嫌日志多 ✓）
+  do
+    self._gic_in = (self._gic_in or 0) + 1
+    if print and self._gic_in <= 6 then
+      local _idx_dbg = nil
+      pcall(function() _idx_dbg = grid:GetItemIndex(item) end)
+      print("[murdoku] ★ 卡片点击**进来了** ✓（第 " .. tostring(self._gic_in)
+        .. " 次）GetItemIndex=" .. tostring(_idx_dbg)
+        .. "  索引基准=" .. tostring(self._grid_base))
+    end
+  end
+
   -- ★ 2026-10-07 **抢点击定位读数**（★ 一次定案 ✓ 最多 12 行 ✓）
   --   ★ 要分清三件事 ✓：
   --     ① ★ **回调有没有进来**（★ 进来 ⇒ 引擎把点击给了卡片 ✓ 没进来 ⇒ 被别的东西吃掉 ✗）
@@ -18659,7 +18769,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v177 / 2026-10-11 / 修点卡片选不中人: 卡片找人id改从row.*解析(认id也认显示名), 点击处条数同改读core.clues =====")
+        print("[murdoku] ===== 构建标记 v178 / 2026-10-11 / 修卡片点不动: 绑点击与gray关射线提到填充函数最前(不再被cl==nil的return跳过), 加'卡片点击进来了'入口探针与绑定次数 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

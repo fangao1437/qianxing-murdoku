@@ -367,5 +367,71 @@ do
 end
 
 --------------------------------------------------------------------------------
+-- 8. ★★★ 点卡片这条路：★ 内容查不到时也必须【能点】✗✓
+--
+--   ★★★ 用户 2026-10-11 的指令 ✓：「★ **就是网格视窗的光标事件断了** ✓
+--     ★ **原本的光标事件是通的** ✓ ★ **损坏必然来自 `clues` 重构**」✓✓
+--   ★ 协作方测绘的断点 ✓（`网格视窗-光标事件-实现测绘.md` ✓）：
+--     ★★ 绑点击原来在 `_fill_grid_item` 的**最后一行** ✗
+--       ⇒ ★ 它前面的 `if cl == nil then return end` **一跳过就把它一起跳过** ✓
+--     ★★ 而 `gray` 关射线也在那个 `return` **之后** ✗
+--       ⇒ ★ **`gray` 挡在最上层吃点击** ⇒ ★ **"点了跟没点一样"** ✓✓
+--   ⇒ ★ 判据 ✓：★ **让文案查不到**（★ 槽位表里没有这一条 ✓）
+--     ★★ 然后断言 **① 监听照样挂上 ② `gray` 的射线照样关掉** ✓✓
+--------------------------------------------------------------------------------
+do
+  local LV = require("levels.demo_selftest")
+  local core = Core.new(LV)
+  local c = UIC.new(core, { skip_intro = true })
+
+  local function ctrl(name, kids, text)
+    local x = { name = name, _kids = kids or {} }
+    if text ~= nil then x.text = text end
+    x.GetChildren = function() return x._kids end
+    x.FindChild = function(_, n)
+      for _, k in ipairs(x._kids) do if k.name == n then return k end end
+      return nil
+    end
+    x.GetChild = x.FindChild
+    return x
+  end
+
+  local fired = {}
+  local ad = { on_input = function(ev) fired[#fired + 1] = ev end }
+  UIC.Controller._row_text = {}
+
+  -- ★ `gray` 子控件：★ 初始射线是开的 ✓（★ 就是要看脚本会不会把它关掉 ✓）
+  local gray = ctrl("gray")
+  gray.raycastTarget = true
+  gray.blockRaycast = true
+  gray.interactable = true
+
+  local item = ctrl("item", { gray })
+  local bound = 0
+  item.AddCursorEventListener = function() bound = bound + 1 end
+
+  local _saved_enum = _G.Enum
+  _G.Enum = { CursorEventType = { CursorClick = 1 } }
+
+  -- ★★★ **故意让文案查不到** ✗：★ `pos` 用一个**远超槽位数**的值 ✓
+  --   （★ 真机上 `cl == nil` 就是这么来的 ✓ —— ★ `_grid_base` 判错 ⇒ `pos` 整列错位 ✓）
+  local pos_far = core.clue_slots + 50
+  c._grid_in_refresh = true
+  -- ★ 变量名**不能叫 `ok`** ✗ —— ★ 那会遮住本文件顶部的断言函数 `ok(...)` ✓
+  local okc, err = pcall(function() c:_fill_grid_item(ad, nil, item, pos_far - 1) end)
+  _G.Enum = _saved_enum
+
+  ok(okc, "★ 文案查不到时，填充**不抛错**（实测 " .. tostring(err) .. "）")
+  ok(bound >= 1,
+    "★★ **文案查不到时，点击监听照样挂上** ✓（实测 AddCursorEventListener " .. bound .. " 次）")
+  ok(gray.raycastTarget == false,
+    "★★ **文案查不到时，`gray` 的射线照样关掉** ✓（实测 raycastTarget="
+    .. tostring(gray.raycastTarget) .. "）")
+  ok(gray.blockRaycast == false, "★ `gray.blockRaycast` 也关掉（实测 " .. tostring(gray.blockRaycast) .. "）")
+  ok(gray.interactable == false, "★ `gray.interactable` 也关掉（实测 " .. tostring(gray.interactable) .. "）")
+  print("  [PASS] 内容查不到 ⇒ 卡片照样能点、gray 照样不吃点击")
+end
+
+--------------------------------------------------------------------------------
 print(string.format("\nclue_slots: %d passed, %d failed", passed, failed))
 if failed > 0 then os.exit(1) end
