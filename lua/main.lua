@@ -2065,10 +2065,7 @@ function Murdoku.on_update(dt)
               end
               -- ★ 划掉标记 `x`：**别顶满格子**（用户："x 也太大了"）。
               --   模板里它也是 135×135；这里按格子边长的 70% 摆。
-              if kn == "x" then
-                pcall(function() k:SetSizeDelta(cw * 0.7, ch * 0.7) end)
-                pcall(function() k:SetAnchoredPosition(0, 0) end)
-              end
+    -- ★ 2026-10-10 已删（地图员第4轮 ✓ 干跑 PASS ✓）：x 几何·直属子控件层（★ 每 30 帧覆盖 ✓）　原 L2068..L2071
               if face == nil and k.GetChildren ~= nil then
                 local kk = nil
                 pcall(function() kk = k:GetChildren() end)
@@ -2085,9 +2082,7 @@ function Murdoku.on_update(dt)
                     pcall(function() c2:SetSizeDelta(cw, ch) end)
                     pcall(function() c2:SetAnchoredPosition(0, 0) end)
                     face = c2
-                  elseif cn == "x" then
-                    pcall(function() c2:SetSizeDelta(cw * 0.7, ch * 0.7) end)
-                    pcall(function() c2:SetAnchoredPosition(0, 0) end)
+    -- ★ 2026-10-10 已删（地图员第4轮 ✓ 干跑 PASS ✓）：x 几何·孙控件层（★ 每 30 帧覆盖 ✓）　原 L2088..L2090
                   end
                 end
               end

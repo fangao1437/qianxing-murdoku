@@ -11306,17 +11306,7 @@ function Adapter:ensure_cells(rows, cols)
             if k.SetPivot then pcall(function() k:SetPivot(0.5, 0.5) end) end
           end
         end
-        local note = self:sub(id, "note")
-        -- ★★★★★ 2026-10-07 **这里就是"谁把 note 改成 100×30"的元凶** ✗✓（用户怀疑对了 ✓）
-    --   ★ 原式：`math.max(8, cell_size - 8)` × `math.max(8, math.floor(cell_size * 0.28))`
-    --     ⇒ ★ `cell_size = 108` ⇒ **100 × 30** ✓✓ —— ★ 与真机探针读到的 `100.0x30.0` 一字不差 ✓
-    --   ★ 而 24 号字的**行高 ≈ 36** ⇒ ★ **30 高装不下一行 ⇒ 整行被裁 ⇒ 一个字都不画** ✓
-    --     ⇒ ★ 这就是"编辑器改了也不生效、字母时有时无"的**真正机制** ✓（★ 不是引擎默认 ✓）
-    --   ★ 现在：★ 高改成 `max(40, cell_size × 0.40)` ⇒ ★ `108` 时 = **43** ✓ 一行稳稳装下 ✓
-    if note ~= nil and note.SetSizeDelta then
-          pcall(function() note:SetSizeDelta(math.max(8, cell_size - 8), math.max(40, math.floor(cell_size * 0.40))) end)
-          if note.SetAnchoredPosition then pcall(function() note:SetAnchoredPosition(0, 0) end) end
-        end
+    -- ★ 2026-10-10 已删（地图员第4轮 ✓ 干跑 PASS ✓）：note 几何（★ 与 set_property 打架 ✓）　原 L2170..L2180
       end
     end
   end
@@ -16854,10 +16844,7 @@ function Murdoku.on_update(dt)
               end
               -- ★ 划掉标记 `x`：**别顶满格子**（用户："x 也太大了"）。
               --   模板里它也是 135×135；这里按格子边长的 70% 摆。
-              if kn == "x" then
-                pcall(function() k:SetSizeDelta(cw * 0.7, ch * 0.7) end)
-                pcall(function() k:SetAnchoredPosition(0, 0) end)
-              end
+    -- ★ 2026-10-10 已删（地图员第4轮 ✓ 干跑 PASS ✓）：x 几何·直属子控件层（★ 每 30 帧覆盖 ✓）　原 L2068..L2071
               if face == nil and k.GetChildren ~= nil then
                 local kk = nil
                 pcall(function() kk = k:GetChildren() end)
@@ -16874,9 +16861,7 @@ function Murdoku.on_update(dt)
                     pcall(function() c2:SetSizeDelta(cw, ch) end)
                     pcall(function() c2:SetAnchoredPosition(0, 0) end)
                     face = c2
-                  elseif cn == "x" then
-                    pcall(function() c2:SetSizeDelta(cw * 0.7, ch * 0.7) end)
-                    pcall(function() c2:SetAnchoredPosition(0, 0) end)
+    -- ★ 2026-10-10 已删（地图员第4轮 ✓ 干跑 PASS ✓）：x 几何·孙控件层（★ 每 30 帧覆盖 ✓）　原 L2088..L2090
                   end
                 end
               end
@@ -17908,7 +17893,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v160 / 2026-10-10 / 单射把'谁=>那一行的图'记进Controller._row_face(face在控件里,数据层到不了);portrait_of改查表⇒返回数字id⇒resolve_asset直接过 =====")
+        print("[murdoku] ===== 构建标记 v161 / 2026-10-10 / 删掉抢标记的两套旧几何:main.lua每30帧覆盖x几何(7行)+adapter的note几何(11行)⇒只剩adapter一套 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

@@ -184,7 +184,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v160 / 2026-10-10 / 单射把'谁=>那一行的图'记进Controller._row_face(face在控件里,数据层到不了);portrait_of改查表⇒返回数字id⇒resolve_asset直接过 =====")
+        print("[murdoku] ===== 构建标记 v161 / 2026-10-10 / 删掉抢标记的两套旧几何:main.lua每30帧覆盖x几何(7行)+adapter的note几何(11行)⇒只剩adapter一套 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
