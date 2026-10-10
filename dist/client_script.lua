@@ -7920,8 +7920,40 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   --   为什么要判：官方只说"索引以运行时传入/返回的为准"，**没说从 0 还是从 1 起**
   --   （`clue.1` 这些控件名是 1 起，而 Unity 那套列表通常是 0 起）。
   --   判一次就够，之后滚动回调沿用它 —— 这样两种实现都能对上 `vm.clues`（1 起）。
+  --
+  -- ★★★★★★ 2026-10-11 **"第一次回调就是 index 0" ≠ "列表是 0 起"** ✗✓✓（真机日志定案 ✓）
+  --
+  --   ★★★ 用户 v178 真机日志 ✓（★ 原文 ✓ ★ 这是决定性证据 ✓）：
+  --       `★ 卡片点击进来了 ✓（第 1 次）GetItemIndex=0  索引基准=0`
+  --       `★ 卡片点击进来了 ✓（第 2 次）GetItemIndex=1  索引基准=0`
+  --       `★ 卡片点击进来了 ✓（第 3 次）GetItemIndex=2  索引基准=0`
+  --   ★★ 用户点的是**第 1 / 第 2 / 第 3 张卡** ✓ ★ 而引擎回读 `GetItemIndex` = **0 / 1 / 2** ✓✓
+  --     ⇒ ★★★ **引擎的索引就是【本该用的那个序号】，只是 0 起** ✓
+  --       ★ 我们要的 `pos` 是**1 起** ✓ ⇒ ★★ **`pos = index + 1`** ✓ ⇒ ★ **基准应当是 `1`** ✓✓
+  --
+  --   ★★★ 原来那一行的推理错在哪 ✗：
+  --     ★ 它把「**第一次回调交来的 index 是 0**」当成「**列表是 0 起**」✓
+  --     ★★ 而这两件事**不是一回事** ✓ —— ★ 前者只是"第一个交来的项恰好是第 0 号" ✓
+  --     ★ 真正的定义 ✓：★ **基准 = 第 1 项（列表顶端那一项）的 index** ✓
+  --       ★ 顶端那一项**无论怎么编码**，交出来的 index **就是基准** ✓
+  --     ★ 所以判据应当是 `_grid_base = index`（**第一次交来的就是顶端** ✓），
+  --       而**不是** `(index == 0) and 0 or 1` ✗
+  --   ★ 旧判据的后果 ✓：★ 引擎 1 起（index 0 = 第 1 项）时判成基准 0 ✗
+  --     ⇒ ★★ **`pos` 每一张都【错位一张】** ✓ ⇒ ★ **点第 1 张选中的是"位置 1"** ✓
+  --       ⇒ ★★★ **点哪张都选不到那张上的人** ✓✓（★ 这正是"链路还是断的" ✓）
   if self._grid_base == nil then
-    self._grid_base = (tonumber(index) == 0) and 0 or 1
+    -- ★ 第一次回调交来的 index **就是**基准 ✓（★ 那一次一定是列表顶端 ✓）
+    local fi = tonumber(index)
+    if fi ~= nil then
+      self._grid_base = fi
+    else
+      self._grid_base = 0        -- ★ 连 index 都没有（老实现）⇒ ★ 按 0 起 ✓ 与原来一致 ✓
+    end
+    if print then
+      print("[murdoku] 网格视窗：**索引基准定为 " .. tostring(self._grid_base)
+        .. "**（第一次回调交来的 index = " .. tostring(index)
+        .. "）⇒ 之后 `pos = index − " .. tostring(self._grid_base) .. " + 1`")
+    end
   end
   local pos = (tonumber(index) or self._grid_base) - self._grid_base + 1
   -- ★ 2026-10-10 **记下句柄与它当时的 index** ✓ —— ★ 就地重填要用 ✓
@@ -18769,7 +18801,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v178 / 2026-10-11 / 修卡片点不动: 绑点击与gray关射线提到填充函数最前(不再被cl==nil的return跳过), 加'卡片点击进来了'入口探针与绑定次数 =====")
+        print("[murdoku] ===== 构建标记 v179 / 2026-10-11 / 修索引基准: 原来把'第一次回调交来index=0'当成'列表0起', 真机日志证明引擎是1起(点第1/2/3张回读0/1/2) ⇒ 基准改成第一次交来的index本身 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
