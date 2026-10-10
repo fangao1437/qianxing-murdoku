@@ -184,7 +184,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v152 / 2026-10-10 / 删掉旧调色板portrait.*整段266行(含旧头像贴图覆盖段)⇒头像唯一来源=row.*/face.*单射直连 =====")
+        print("[murdoku] ===== 构建标记 v153 / 2026-10-10 / 删ALGO_TEXT的else死分支(else属于内层if⇒三条写每帧都跑)⇒算法真的不再填文案⇒单射是唯一写入者 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

@@ -8499,11 +8499,24 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
         if tv.who    ~= t_who    then if write_control_text(c_who, t_who)       then tv.who    = t_who    end end
         if tv.what   ~= t_what   then if write_control_text(c_what, t_what)     then tv.what   = t_what   end end
         if tv.letter ~= t_letter then if write_control_text(c_letter, t_letter) then tv.letter = t_letter end end
-      else
-        -- 理论上到不了（`_grid_item_rec` 对非 nil 的 item 一定给得出记录）；兜底照旧写。
-        write_control_text(c_who, t_who)
-        write_control_text(c_what, t_what)
-        write_control_text(c_letter, t_letter)
+      -- ★★★★★★ 2026-10-10 **删掉 `else` 死分支 —— 算法从此【真的不再填文案】** ✗✓✓
+      --
+      --   ★★★ 地图员实地测绘发现 ✓（★ 这条解释了"末次单射"为什么必须存在 ✓）：
+      --     ★ 原来这里是 `if ALGO_TEXT then … else 三条无条件写 … end` ✓
+      --     ★★ **而那个 `else` 属于【内层】`if`** ✗ ⇒ ★ `ALGO_TEXT=false` ⇒ **每次走 `else`** ✓
+      --     ⇒ ★★★ **三条 `write_control_text` 每帧都跑** ✓✓
+      --     ⇒ ★★ **"算法不再填文案"那时候是【假的】** ✗ —— ★ 它在和单射抢覆盖 ✓
+      --     ⇒ ★ 所以我才需要"末次单射"去打补丁 ✓（★ 那是症状，不是设计 ✓）
+      --
+      --   ★ 删掉 `else` ＋ 三条写 ✓（★ L5437..5441 ✓）后剩：
+      --     `if ALGO_TEXT then 三条条件写 end` ✓ —— ★ **整个 if 是死的** ✓
+      --     ⇒ ★★ **算法真的不写了 ⇒ 单射是唯一写入者 ⇒ 一对一** ✓✓
+      --
+      --   ★ 判据 ✓：★ `tools/lua_map.mjs --delrange=5437-5441` ⇒ ✅ 可整体删 ✓
+      --     （★ 严判据：★ 模拟栈 ＋ 栈深不低于入口 ＋ 结束时逐层同源 ✓）
+      --   ⚠️ ★ 别用 `lua_blocks.mjs --selfcontained` 下这个结论 ✗ ——
+      --     ★ 它只看"行后深度相等"✗ ⇒ ★ 对"关区间外的块 ＋ 区间内开新块"会【假阳性】✓
+      --     ★（★ 地图员干跑实测：★ 删 5425-5447 ⇒ `luac` 也 PASS ✗ 但**块结构被悄悄改写** ✓✓）
       end
         end   -- ★ if ALGO_TEXT then 收尾 ✓
       end   -- ★ if ALGO_TEXT then 收尾 ✓
@@ -18443,7 +18456,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v152 / 2026-10-10 / 删掉旧调色板portrait.*整段266行(含旧头像贴图覆盖段)⇒头像唯一来源=row.*/face.*单射直连 =====")
+        print("[murdoku] ===== 构建标记 v153 / 2026-10-10 / 删ALGO_TEXT的else死分支(else属于内层if⇒三条写每帧都跑)⇒算法真的不再填文案⇒单射是唯一写入者 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
