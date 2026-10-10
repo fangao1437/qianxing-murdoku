@@ -6537,7 +6537,31 @@ end
 function Controller.portrait_of(vm, id)
   if not vm or not vm.tray then return nil end
   for i = 1, #vm.tray do
-    if vm.tray[i].id == id then return vm.tray[i].portrait end
+    -- ★★★★★★ 2026-10-10 **换素材来源：头像 = 线索行的 `face`** ✗✓✓
+    --
+    --   ★★ 用户原话 ✓（★ 一句定案 ✓）：「**就是按旧逻辑 ✓，`face` 和 `letter` 怎么放是由点击指示的 ✓，
+    --     **等于你只需要换素材来源** ✓，**后面的逻辑一切照旧**」✓✓
+    --
+    --   ★★ 用户对素材来源的说明 ✓：「**一切线索区的素材都来自对应的 `row`**」✓
+    --     ★ `row.i.j` 与它下面的 `face.i.j` / `letter.i.j` **名字不重复** ✓（★ 用户确认 ✓）
+    --     ★ 头像对应 `face` ✓　★ 标记对应 `letter` ✓　★ `who`/`what` 不往棋盘填 ✓
+    --
+    --   ★ 为什么只改这一处就够 ✓：
+    --     ★ `resolve_asset`（adapter L3411 ✓）**本来就收数字 id** ✓：
+    --       `local n = tonumber(value); if n ~= nil then return {…} end` ✓
+    --     ⇒ ★★ **只要这里返回一个【数字 id】✓ ⇒ 后面 SetImage / 规划 / 放置 全部照旧** ✓✓
+    --     ⇒ ★ **不必改 adapter ✗、不必建 portrait.* ✗、不必动点击逻辑 ✗** ✓
+    --
+    --   ★ 取法 ✓：★ 从 `vm.clues` 里找 `who == id` 的那一行 ⇒ ★ 返回它的 `face` ✓
+    --     ★（★ 与单射 L5451/L5458 同一处数据：`cl = (v2.clues or {})[pos]` ✓ `cl.face` ✓）
+    --   ★ 兜底 ✓：★ 旧路保留（`vm.tray[i].portrait` ✓）—— ★ 拿不到 `face` 时不至于全空 ✓
+      for _ci = 1, #(vm.clues or {}) do
+        local _cl = vm.clues[_ci]
+        if _cl ~= nil and _cl.who == id and _cl.face ~= nil then return _cl.face end
+      end
+      for i = 1, #(vm.tray or {}) do
+        if vm.tray[i].id == id then return vm.tray[i].portrait end
+      end
   end
   return nil
 end
@@ -17839,7 +17863,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v158 / 2026-10-10 / 去who=cl.who or cl.a的or cl.a(用户:取消双人线索,一次放置只放一个人)⇒双人线索不参与灰白 =====")
+        print("[murdoku] ===== 构建标记 v159 / 2026-10-10 / 换素材来源:portrait_of改从线索行的face取(resolve_asset本就收数字id)⇒头像接上棋盘;后面逻辑一切照旧 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
