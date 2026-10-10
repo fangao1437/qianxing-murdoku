@@ -5673,8 +5673,15 @@ function Controller:build_layout()
         --   ★ 项目自己早就吃过同一个坑 ✓（`image` 那条注释写着 ✓ `ui_controller.lua:2677~2680` ✓：
         --     「★ 用 `false` 而不是 nil 当"这格没有人"……否则**旧格的头像永远不清**」✓）
         --   ⇒ ★ 这里照办 ✓：★ 没有笔记时下发 **`false`** ✓ ⇒ 适配器 `txt = ""` ⇒ `SetVisible(false)` ✓
-        notes = note_list_of((self.core and self.core.notes and self.core.notes[r]
-          and self.core.notes[r][c]) or cd.notes) or false,
+        -- ★★★★★★ 2026-10-10 **标记 = 那一行的 `letter`** ✗✓✓（★ 用户："把 `letter` 的文本填进 `note` 里" ✓）
+        --   ★★ 原来这里填的是【铅笔笔记】（`core.notes[r][c]` ✗ 那是另一套 ✓）
+        --     ⇒ ★ 所以"标记还是错的"✗ —— ★ 而数据侧的 `letter` 一直是对的 ✓
+        --   ★ 现在 ✓：★ 优先用【那一行的 `letter`】✓（★ 和 `image` 那一行【同构】✓）
+        --     ★ `cd.suspect` = 这一格放的是谁 ✓ ⇒ `letter_of` 查出那一行的 `letter` ✓
+        --   ★ 兜底 ✓：★ 拿不到 `letter` ⇒ ★ 回退旧的铅笔笔记 ✓（★ 行为不变 ✓）
+        notes = (cd.suspect and Controller.letter_of(vm, cd.suspect))
+          or note_list_of((self.core and self.core.notes and self.core.notes[r]
+            and self.core.notes[r][c]) or cd.notes) or false,
         room = cd.room,
         -- ★★ 2026-09-28 新增：**显式告诉适配层"这格有没有物件"**。
         --
@@ -6569,6 +6576,18 @@ function Controller.portrait_of(vm, id)
       end
   end
   return nil
+end
+
+-- ★★★★★★ 2026-10-10 **标记的来源：那一行的 `letter`** ✗✓✓
+--   ★★ 用户指令 ✓：「**像把内容填进 `clue` 的 `what` 一样，把 `letter` 的文本填进 `note` 里** ✓，
+--     **和那个一样的路线**」✓✓
+--   ★★ 一边是 `image`（头像 ✓）：`cd.suspect and Controller.portrait_of(vm, cd.suspect) or false` ✓
+--     ★ 另一边（本函数 ✓）就是它 ✓ —— ★ **同构** ✓✓
+--   ★ 值由单射带出来 ✓（★ `face` 是控件 ✗ 数据层到不了 ✓ ⇒ `letter` 同理 ✓）
+function Controller.letter_of(vm, id)
+  local m = Controller._row_letter
+  if m == nil then return nil end
+  return m[tostring(id)]
 end
 
 ----------------------------------------------------------------------------
@@ -7624,6 +7643,15 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                   if _cl ~= nil and _cl.who ~= nil then
                     Controller._row_face = Controller._row_face or {}
                     Controller._row_face[tostring(_cl.who)] = iid
+                    -- ★★★★★★ 2026-10-10 **同一行也记下 `letter`** ✗✓✓（★ 用户："像把内容填进 `clue` 的 `what` 一样，
+                    --   把 `letter` 的文本填进 `note` 里，和那个一样的路线" ✓✓）
+                    --   ★ `letter` 的【数据侧已经是对的】✓：`_grid_text_payload` 的 `items[i].letter` ✓
+                    --     （★ ui L4395 `letter = tostring(wid or "")` ✓ 而 `wid` 从卡片读 ✓ 卡片由单射填 ✓）
+                    --   ⇒ ★★ 缺的只是"送到棋盘" ⇒ ★ 和 `face` 一样，在这里把它带出来 ✓✓
+                    if _cl.letter ~= nil and tostring(_cl.letter) ~= "" then
+                      Controller._row_letter = Controller._row_letter or {}
+                      Controller._row_letter[tostring(_cl.who)] = tostring(_cl.letter)
+                    end
                   end
                 end
                 if iid ~= nil then
@@ -8165,6 +8193,15 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                     if _cl ~= nil and _cl.who ~= nil then
                       Controller._row_face = Controller._row_face or {}
                       Controller._row_face[tostring(_cl.who)] = iid
+                      -- ★★★★★★ 2026-10-10 **同一行也记下 `letter`** ✗✓✓（★ 用户："像把内容填进 `clue` 的 `what` 一样，
+                      --   把 `letter` 的文本填进 `note` 里，和那个一样的路线" ✓✓）
+                      --   ★ `letter` 的【数据侧已经是对的】✓：`_grid_text_payload` 的 `items[i].letter` ✓
+                      --     （★ ui L4395 `letter = tostring(wid or "")` ✓ 而 `wid` 从卡片读 ✓ 卡片由单射填 ✓）
+                      --   ⇒ ★★ 缺的只是"送到棋盘" ⇒ ★ 和 `face` 一样，在这里把它带出来 ✓✓
+                      if _cl.letter ~= nil and tostring(_cl.letter) ~= "" then
+                        Controller._row_letter = Controller._row_letter or {}
+                        Controller._row_letter[tostring(_cl.who)] = tostring(_cl.letter)
+                      end
                     end
                   end
                   if iid ~= nil then
@@ -17893,7 +17930,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v161 / 2026-10-10 / 删掉抢标记的两套旧几何:main.lua每30帧覆盖x几何(7行)+adapter的note几何(11行)⇒只剩adapter一套 =====")
+        print("[murdoku] ===== 构建标记 v162 / 2026-10-10 / 标记:letter填进note(和image同构)⇒单射记_row_letter+letter_of查表+notes优先用它,兜底回旧笔记 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
