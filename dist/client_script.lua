@@ -3289,6 +3289,13 @@ M.Controller = Controller
 --     ★ 保留它们也无害 ✓（★ 防御性 ✓）★ 但**不许**再依赖"它可能是 nil" ✗
 Controller._row_letter = {}
 Controller._row_face = {}
+-- ★★ 2026-10-11 **`row.<关>.<行>` 的四个槽位文本** ✗✓（★ 卡片四样的来源 ✓）
+--   ★ 键 ✓：★ `[关序][行号][槽位名]` ✓（★ 槽位名 = `who` / `what` / `letter` / `face` ✓）
+--   ★ 与 `_row_letter` 的分工 ✓（★ 别混 ✗）：
+--     ★ `_row_letter[人物id]` ⇒ ★ **棋盘上那一格显示的字母** ✓（★ 按人 ✓）
+--     ★ `_row_text[关][行][槽位]` ⇒ ★ **卡片上那四样文字** ✓（★ 按行 ✓）
+--   ★ 由 `_fill_grid_item` 在读 `row.*` 时落账 ✓（★ 见那里"四个槽位都要落账"那段 ✓）
+Controller._row_text = {}
 
 function M.new(core, opts)
   opts = opts or {}
@@ -3361,6 +3368,12 @@ function Controller:_reset_row_maps_if_level_changed()
     self._row_map_sig = sig
     Controller._row_letter = {}
     Controller._row_face = {}
+    -- ★★ 2026-10-11 **`_row_text` 也要按关清** ✓ —— ★ 否则上一关的卡片文字会带过来 ✓
+    --   （★ 与 `_row_letter` 同一个理由 ✓ 见上面那段 ✓）
+    Controller._row_text = {}
+    -- ★ 顺带作废文字快照 ✓（★ 它按"关卡表身份 + 条数"缓存 ✓ 换关时身份就变了 ✓
+    --   ★ 但**同一关重进**时身份不变 ⇒ 这里清一次更稳 ✓）
+    self._grid_text = nil
   end
 end
 
@@ -3376,6 +3389,7 @@ end
 function Controller:_ensure_row_maps()
   if rawget(Controller, "_row_letter") == nil then Controller._row_letter = {} end
   if rawget(Controller, "_row_face") == nil then Controller._row_face = {} end
+  if rawget(Controller, "_row_text") == nil then Controller._row_text = {} end
 end
 
 -- ★★★★★★ 2026-10-11 **格子的标记：把【人物 id】换成【那一行的 `letter`】** ✗✓✓
@@ -7067,10 +7081,36 @@ function Controller:sync_clue_grid(adapter)
   --   而 `render` 在真机上是**每帧**都跑的（`Controller:tick` 每帧 `self.dirty = true`，
   --   `Murdoku.on_update` 见 dirty 就重绘 —— 离线实测 300 帧 = 300 次 render）。
   --   ⇒ 白白每帧多花 0.235 ms（还要多制造一批垃圾表给 GC）。
-  --   条数与 `#vm.clues` **恒等**（`Core:clue_results()` 对 `level.clues` 一对一映射），
-  --   所以直接数关卡数据即可，一个字节的语义都没变。
-  local lv = self.core and self.core.level
-  local n = #((lv and lv.clues) or {})
+  --   ⚠️ ★ 这段旧注释写着「条数与 `#vm.clues` **恒等**（`clue_results()` 对 `level.clues` 一对一映射）」
+  --      ⇒ ★★ **那条前提在 2026-10-11 被打破了** ✗✓（★ 详见下面那段 ✓）
+  -- ★★★★★★ 2026-10-11 **必须读 `core.clues`，不能读 `lv.clues`** ✗✓✓
+  --
+  --   ★★★ 用户报 ✓：「★ **网格视窗消失了** ✓
+  --     ★ **这个部分不能坏** ✓ ★ **不然整个 `row` → `clues` → 棋盘的路线就断了**」✓✓
+  --
+  --   ★★ 我改出的事故 ✓（★ 本轮 ✓）：
+  --     ★ 用户定「★ **`clues` 条数由棋盘容量决定**」✓ ⇒ ★ **真关卡的 `lv.clues` 就【空了】** ✓
+  --       （★ 条数改由 `Core.new` 按容量生成到 **`self.clues`** ✓）
+  --     ★★ 而这一行**还在读 `lv.clues`** ✗ ⇒ ★ **`n` 恒为 0** ✗✓
+  --       ⇒ ★ `grid:RefreshItems(0, …)` ⇒ ★ **一个列表项都不建** ✓
+  --       ⇒ ★★ **网格视窗整块消失** ✓✓
+  --   ★ 旧注释还写着"条数与 `#vm.clues` **恒等**"✗ —— ★★ 那条**前提被这次改动打破了** ✗✓
+  --     ★（★ 这正是本项目最怕的"注释里的前提悄悄失效" ✓ 而我正是踩它的那个人 ✓）
+  --
+  --   ★ 修法 ✓：★ **读核心那份 `core.clues`** ✓ ——
+  --     ★ 它**永远是"这一关有几条"的权威** ✓（★ 手写的用你的 ✓ 没手写的按容量生成 ✓）
+  --     ★★ 于是"条数与 `#vm.clues` 恒等"这条**重新成立** ✓ ✓
+  local n = 0
+  do
+    local core = self.core
+    if core ~= nil and type(core.clues) == "table" then
+      n = #core.clues
+    else
+      -- ★ 兜底 ✓：★ 核心还没建起来 ⇒ ★ 退回读关卡数据 ✓（★ 老行为 ✓ 不崩 ✓）
+      local lv = core and core.level
+      n = #((lv and lv.clues) or {})
+    end
+  end
   -- ★ 2026-10-10 **记下总条数** ✓ —— 点击处理要用它算"溢出几项"✓
   --   ★ 为什么点击处理需要它 ✗：★ 那里只有 `GetItemIndex`（拿到的是**被点项的索引** ✓）
   --     ⇒ ★ 要判"这一项是不是空白占位项" ✓ 就得知道"一共几条、一屏几条" ✓
@@ -7627,11 +7667,35 @@ end
 function Controller:_grid_text_payload()
   local core = self.core
   local lv = core and core.level
-  local list = lv and lv.clues
+  -- ★★ 2026-10-11 **条数取【核心那份】** ✗✓（★ 与 `sync_clue_grid` 同一处修正 ✓）
+  --   ★ 原来读 `lv.clues` ✗ ⇒ ★ 真关卡**已空** ⇒ ★ `n` 恒 0 ✓
+  --     ⇒ ★ 缓存键里的 `n` **失去意义** ✗（★ 只在"同关内条数变了"时才看得出差别 ✓）
+  --   ★ 现在读 `core.clues` ✓ ⇒ ★ 键值随**真实条数**变 ✓✓
+  local list = core and core.clues
   local n = #(list or {})
   local p = self._grid_text
   if p ~= nil and p.level == lv and p.n == n then return p end
   local vm = core:view() or {}
+  -- ★★★★★★ 2026-10-11 **单射读到的 `row.*` 文本优先** ✗✓✓
+  --
+  --   ★★★ 用户报 ✓：「★ **网格视窗消失了** ✓ ★ **整个 `row` → `clues` → 棋盘的路线
+  --     就断了**」✓✓ —— ★ 这是那条路线上的**第二处断点** ✓（★ 第一处是 `n` 恒 0 ✓）
+  --   ★ 断在哪 ✗：★ 卡片的四样文字**从这里切 `vm.clues[i].text`** ✗
+  --     ★★ 而现在 `clues` 是**槽位**（★ 没有 `who`/`what` ✗ 文案是占位 ✓）
+  --       ⇒ ★ 切出来恒空 ⇒ ★★ **卡片一片空白** ✓（★ 用户的"路线断了"正是它 ✓）
+  --   ⇒ ★ 修法 ✓：★ `_fill_grid_item` 那一趟**已经把 `row.<关>.<行>` 的四个槽位读过了** ✓
+  --     ★ 它把文本按【关序 + 行号 + 槽位】记进 `Controller._row_text` ✓
+  --     ★★ 这里**直接用那份** ✓ ⇒ ★ `who`/`what`/`letter`/`face` 四样全部就位 ✓✓
+  --   ★ 顺序 ✓：★ **单射优先** ✓（★ 与 `_fill_grid_item` 里那条"用户配的优先于算法"同一口径 ✓）
+  --     ★ 没配的行 ⇒ 退回原来的"从文案里切名字" ✓（★ 向后兼容 ✓ 不会更差 ✓）
+  local row_text = nil
+  do
+    local lvno = self:_level_ordinal()
+    if lvno ~= nil then
+      local m = rawget(Controller, "_row_text")
+      row_text = m and m[tostring(lvno)] or nil
+    end
+  end
   local items = {}
   for i = 1, #(vm.clues or {}) do
     local cl = vm.clues[i]
@@ -7647,12 +7711,14 @@ function Controller:_grid_text_payload()
     --   ⚠️ 文案里没有人名时（例如 `selftest_theft_5x5` 的线索）：`who == nil`、`pre` 是整条文案
     --      ⇒ 名字列留空、正文放**整条**（老路径在那种关卡上是整块不发、什么都看不到；
     --         新路这里按"名字为空、正文 = 全文"来填，线索本身必须看得见）。
+    local rt = row_text and row_text[i] or nil
     items[i] = {
-      who    = (who ~= nil) and (tostring(pre or "") .. tostring(who)) or "",
-      what   = (who ~= nil) and tostring(post or "") or tostring(pre or ""),
-      letter = tostring(wid or ""),
+      who    = (rt and rt.who) or ((who ~= nil) and (tostring(pre or "") .. tostring(who)) or ""),
+      what   = (rt and rt.what) or ((who ~= nil) and tostring(post or "") or tostring(pre or "")),
+      letter = (rt and rt.letter) or tostring(wid or ""),
       -- ★ 头像素材名（★ 如 `portrait.A` ✓）★ `nil` 表示这一条没有对应角色 ⇒ **不要写图** ✓
-      portrait = wportrait,
+      --   ★★ 单射侧配的 `face` 是**文本槽位** ✓ ⇒ 它给的是**素材名** ✓ 直接用 ✓
+      portrait = (rt and rt.face) or wportrait,
       -- ★★★★★ 2026-10-09 **把【人物 id】也存进快照** ✗✓（★ 这是修我自己造成的一个回归 ✓）
       --
       --   ★ 为什么必须有这一项 ✓：填充那边要按 **id**（`A`/`B`/`D`/`V`）去查
@@ -7945,11 +8011,39 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                 --     ⇒ ★ `txt = k.text` 取不到 ⇒ 上面记下的是 nil ✗ ⇒ `_row_letter` 恒空 ✓
                 --   ★ 修法 ✓：★ `txt` 取不到 ⇒ **广度优先往下找第一个有 `text` 的子孙** ✓
                 --     ★（★ 与 `dst` 那边"下钻找文本控件"完全一样 ✓）
+                -- ★★★★★★ 2026-10-11 **四个槽位都要落账（不只 `letter`）** ✗✓✓
+                --   ★★★ 用户报 ✓：「★ **网格视窗消失了** ✓
+                --     ★ **这个部分不能坏** ✓ ★ **不然整个 `row` → `clues` → 棋盘的路线就断了**」✓✓
+                --   ★ 断在哪 ✗（★ 我修 `n=0` 之后查出来的第二处 ✓）：
+                --     ★ 卡片的文字（`who`/`what`/`letter`/`face`）走的是
+                --       `_grid_text_payload()` ✓ ★ 而它**从 `vm.clues[i].text` 里切名字** ✗
+                --     ★★ 现在 `clues` 是**槽位**（★ 没有 `who`/`what` ✗ 文案是"待填内容（槽位 N）"✓）
+                --       ⇒ ★ 切出来恒空 ⇒ ★★ **卡片一片空白** ✓✓
+                --     ★ 而这一趟**明明已经把 `row.<关>.<行>` 的四个槽位读到了** ✓
+                --       —— ★★ 但只把 `letter` 落进了 `_row_letter`（★ 那是【按人物】的 ✓
+                --          给棋盘标记用的 ✓）✗ ★ **`who`/`what` 读到手就丢了** ✓
+                --   ⇒ ★★ 修法 ✓：★ **读到的文本按【关序 + 行号】也记一份** ✓
+                --     ★ 于是 `_grid_text_payload()` 可以直接用它 ✓ ⇒ ★ 卡片四样就位 ✓✓
+                --   ★ 为什么两个键都要 ✓（★ 别混 ✗）：
+                --     ★ `_row_letter[人物id]` ⇒ ★ **棋盘上那一格显示的字母** ✓（★ 按人 ✓）
+                --     ★ `_row_text[关][行][槽位]` ⇒ ★ **卡片上四样文字** ✓（★ 按行 ✓）
+                local _slot_txt = self:_read_control_text(k, slot)
+                if _slot_txt ~= nil then
+                  local _lvn = self:_level_ordinal()
+                  if _lvn ~= nil then
+                    Controller._row_text = Controller._row_text or {}
+                    local _by_lv = Controller._row_text[tostring(_lvn)]
+                    if _by_lv == nil then _by_lv = {}; Controller._row_text[tostring(_lvn)] = _by_lv end
+                    local _by_pos = _by_lv[pos]
+                    if _by_pos == nil then _by_pos = {}; _by_lv[pos] = _by_pos end
+                    -- ★ 只填一次 ✓（★ 与"先到先得"同规矩 ✓ 免得每帧被后来的空值冲掉 ✓）
+                    if _by_pos[slot] == nil then _by_pos[slot] = tostring(_slot_txt) end
+                    -- ★★ `_grid_text` 缓存要作废 ✓ —— ★ 它是在读到这些之前建的 ✓
+                    --   （★ 不作废 ⇒ 卡片永远用那份空快照 ✓）
+                    self._grid_text = nil
+                  end
+                end
                 if slot == "letter" then
-                  -- ★★★★★★ 2026-10-11 **读文字换用共用函数（三层判据 ✓ 与图片同形 ✓）** ✗✓✓
-                  --   ★ 原来这里只有 `k.text` ✗ ⇒ ★ 引用控件读不到 ⇒ 记下的恒 nil ✓
-                  --   ★ 现在 ✓：★ 自有 `.text` ⇒ `FindChild("<槽位>")` ⇒ 广度优先兜底 ✓
-                  --     ★ 与 `_find_image_holder` 完全同一套思路 ✓（★ 用户早已指出两者同构 ✓）
                   --   ★ 失败时**如实报一次** ✓（★ 不再静默 ✓）
                   local _lt = self:_read_control_text(k, slot)
                   -- ★★★★★★ 2026-10-11 **读到就【当场落账】** ✗✓✓（★ 这是第二个真因 ✓）
@@ -18455,7 +18549,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v175 / 2026-10-11 / clues条数=棋盘容量min(rows,cols)不是格数(四关5/5/6/7), 与棋子数相等; 控件上限撤回18 =====")
+        print("[murdoku] ===== 构建标记 v176 / 2026-10-11 / 修网格视窗消失: n读lv.clues恒0(改读core.clues); 卡片四样改由row.*供 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

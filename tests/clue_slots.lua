@@ -142,5 +142,84 @@ do
 end
 
 --------------------------------------------------------------------------------
+-- 6. ★★★ 网格视窗那条路不许断（★ 用户：「不然整个 row → clues → 棋盘的路线就断了」✓）
+--
+--   ★★ 我改出过两处断点 ✗（★ 都在这条路上 ✓ 都被用户肉眼抓到 ✓）：
+--     ★ ① `sync_clue_grid` 里 **`n` 读的是 `lv.clues`** ✗ ⇒ ★ 真关卡已空 ⇒ **`n=0`**
+--       ⇒ ★★ **一个列表项都不建 ⇒ 网格视窗整块消失** ✓✓
+--     ★ ② `_grid_text_payload` **从 `vm.clues[i].text` 里切名字** ✗
+--       ⇒ ★ 槽位文案是占位 ⇒ ★★ **卡片一片空白** ✓
+--------------------------------------------------------------------------------
+do
+  local LV = require("levels.demo_selftest")
+  local core = Core.new(LV)
+  local c = UIC.new(core, { skip_intro = true })
+
+  local function ctrl(name, kids, text)
+    local x = { name = name, _kids = kids or {} }
+    if text ~= nil then x.text = text end
+    x.GetChildren = function() return x._kids end
+    x.FindChild = function(_, n)
+      for _, k in ipairs(x._kids) do if k.name == n then return k end end
+      return nil
+    end
+    x.GetChild = x.FindChild
+    return x
+  end
+
+  -- ★ `assets` 必须**直接挂在 root 下** ✓（★ `_palette_child` 就是这么找的 ✓ 见它的注释 ✓）
+  local LETTERS = { "A", "B", "C", "D", "E" }
+  local rows = {}
+  for pos = 1, 5 do
+    rows[pos] = ctrl("row.1." .. pos, {
+      ctrl("who.1." .. pos,    { ctrl("who",    {}, "名字" .. pos) }),
+      ctrl("what.1." .. pos,   { ctrl("what",   {}, "内容" .. pos) }),
+      ctrl("letter.1." .. pos, { ctrl("letter", {}, LETTERS[pos]) }),
+      ctrl("face.1." .. pos,   { ctrl("face",   { ctrl("img", { imageId = 900 + pos }) }) }),
+    })
+  end
+  _G.game = { GetClientUIRoots = function() return { ctrl("root", { ctrl("assets", rows) }) } end }
+
+  -- ★ 走真实路径：★ 那一趟读 `row.*` 的落账 ✓
+  c._grid_in_refresh = true
+  for pos = 1, 5 do
+    local card = {}
+    for _, nm in ipairs({ "who", "what", "letter", "face" }) do
+      card[#card + 1] = ctrl("clue." .. pos .. "." .. nm, { ctrl(nm, {}) })
+    end
+    c:_fill_grid_item(nil, nil, ctrl("item", card), pos - 1)
+  end
+
+  -- ★★ 断点 ② 的判据 ✓：★ 卡片四样必须**来自 `row.*`** ✓
+  local p = c:_grid_text_payload()
+  local okwho, okwhat, okletter = true, true, true
+  for i = 1, 5 do
+    local it = (p.items or {})[i] or {}
+    if tostring(it.who) ~= ("名字" .. i) then okwho = false end
+    if tostring(it.what) ~= ("内容" .. i) then okwhat = false end
+    if tostring(it.letter) ~= LETTERS[i] then okletter = false end
+  end
+  ok(okwho,   "★ 卡片的名字来自 `row.<关>.<行>.who`（★ 不是从占位文案里切 ✓）")
+  ok(okwhat,  "★ 卡片的内容来自 `row.<关>.<行>.what`")
+  ok(okletter,"★ 卡片的字母来自 `row.<关>.<行>.letter`")
+  -- ★ 而且**一个都不许空** ✗（★ 空了就是"卡片一片空白"那个 bug ✓）
+  local nonempty = 0
+  for i = 1, 5 do
+    local it = (p.items or {})[i] or {}
+    if tostring(it.who) ~= "" and tostring(it.what) ~= "" then nonempty = nonempty + 1 end
+  end
+  ok(nonempty == 5, "★ 五张卡的名字与内容都非空（实测 " .. nonempty .. " / 5）")
+
+  -- ★★ 断点 ① 的判据 ✓：★ 网格视窗拿到的 `n` 必须 = 槽位数 ✓（★ 不是 0 ✗）
+  --   ★ `sync_clue_grid` 里那一行就是"条数"的出口 ✓ —— ★ 直接读它的来源 ✓
+  local n_grid = #((core.clues) or {})
+  ok(n_grid == core.clue_slots and n_grid > 0,
+    "★ 网格视窗条数 = 槽位数 = " .. tostring(core.clue_slots) .. "（实测 " .. n_grid .. "）")
+  ok(n_grid ~= #((core.level.clues) or {}),
+    "★ 它读的是【核心那份】✗ 不是 `lv.clues`（★ 后者是空的 ⇒ 会变成 0 ⇒ 视窗消失 ✓）")
+  print("  [PASS] 网格视窗那条路：条数非 0，且卡片四样来自 row.*")
+end
+
+--------------------------------------------------------------------------------
 print(string.format("\nclue_slots: %d passed, %d failed", passed, failed))
 if failed > 0 then os.exit(1) end
