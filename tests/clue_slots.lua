@@ -221,5 +221,151 @@ do
 end
 
 --------------------------------------------------------------------------------
+-- 7. ★★★ "点卡片 ⇒ 选中那个人"（★ 用户：「选中卡片后到棋盘这一层还是断的」✓）
+--
+--   ★★ 这是单人射的**第三条断点** ✗（★ 前两条在 `sync_clue_grid` 与 `_grid_text_payload` ✓）：
+--     ★ 点卡片那条路**从 `clue_view[i].who` 取人物 id** ✗
+--     ★ 而 `Core:view()` 里就是 `who = cl.who` ✓ ★★ **槽位没有 `who`** ✗ ⇒ **恒 nil** ✓
+--     ⇒ ★ 它防御式地"取不到就不动作" ✓ ⇒ ★★ **永远不选中** ✓
+--     ⇒ ★★★ **放置与笔记全被拦在这一步** ✓✓（★ 与用户报的三句逐字相符 ✓）
+--------------------------------------------------------------------------------
+do
+  local LV = require("levels.demo_selftest")
+  local core = Core.new(LV)
+  local c = UIC.new(core, { skip_intro = true })
+
+  local function ctrl(name, kids, text)
+    local x = { name = name, _kids = kids or {} }
+    if text ~= nil then x.text = text end
+    x.GetChildren = function() return x._kids end
+    x.FindChild = function(_, n)
+      for _, k in ipairs(x._kids) do if k.name == n then return k end end
+      return nil
+    end
+    x.GetChild = x.FindChild
+    return x
+  end
+
+  -- ★ 按 id 排好 ✓ ⇒ ★ 位置 → 人 是确定的 ✓（★ 不受 pairs 顺序影响 ✓）
+  local ids = {}
+  for id in pairs(core.names) do ids[#ids + 1] = id end
+  table.sort(ids)
+  local nslot = core.clue_slots
+  ok(#ids >= nslot, "本关人数够填满槽位（" .. #ids .. " ≥ " .. nslot .. "）")
+
+  -- ★★ 两个变体都要过 ✓：★ 一份配 **id** ✓、一份配 **显示名** ✓（★ 用户的两种可能 ✓）
+  --
+  --   ⚠️ ★ **每个变体必须【建完就查】** ✗✓（★ 我第一版先建两个再一起查 ⇒ 假红 ✓）
+  --     ★ 原因 ✓：★ `_row_text` 是**模块级**的 ✓ ⇒ ★ 第二次 build **覆盖了第一次的行** ✓
+  --       ⇒ ★ 再拿第一次的控制器去查 ⇒ ★ **读到的是第二次配的名字** ✓✓
+  --     ★★ 这与"换关要清表"是同一件事的两面 ✓ —— ★ 表只有一份，谁最后写谁就是当前 ✓
+  local function build(use_name)
+    local co = Core.new(LV)
+    local c2 = UIC.new(co, { skip_intro = true })
+    -- ★★ 必须先清空那张模块级表 ✗✓（★ 不清 ⇒ 上一节的行还在 ⇒ 本次**一个字都不落账** ✓）
+    --   ★ 机制 ✓：`_fill_grid_item` 落账时是 **"只填一次"** ✓（`if _by_pos[slot] == nil` ✓）
+    --     ⇒ ★ 表里已经有值 ⇒ ★ **这次的配置被静默忽略** ✓✓
+    --   ★ 真实运行里靠"换关清一次"保证 ✓（`_reset_row_maps_if_level_changed` ✓）
+    --     ★ 而测试里**重复进同一关** ⇒ ★ 得自己清 ✓
+    UIC.Controller._row_text = {}
+    local rows = {}
+    for pos = 1, nslot do
+      local id = ids[pos]
+      -- ★ 名字必须查**这个实例自己的** `co.names` ✗（★ 查外面那个是另一个实例 ✓ 会错 ✓）
+      local who = use_name and tostring(co.names[id]) or tostring(id)
+      rows[pos] = ctrl("row.1." .. pos, {
+        ctrl("who.1." .. pos,    { ctrl("who",    {}, who) }),
+        ctrl("what.1." .. pos,   { ctrl("what",   {}, "文" .. pos) }),
+        ctrl("letter.1." .. pos, { ctrl("letter", {}, string.char(64 + pos)) }),
+        ctrl("face.1." .. pos,   { ctrl("face",   {}) }),
+      })
+    end
+    _G.game = { GetClientUIRoots = function() return { ctrl("root", { ctrl("assets", rows) }) } end }
+    c2._grid_in_refresh = true
+    for pos = 1, nslot do
+      local card = {}
+      for _, nm in ipairs({ "who", "what", "letter", "face" }) do
+        card[#card + 1] = ctrl("clue." .. pos .. "." .. nm, { ctrl(nm, {}) })
+      end
+      c2:_fill_grid_item(nil, nil, ctrl("item", card), pos - 1)
+    end
+    -- ★★ **当场解析、当场判** ✓ —— ★ 再晚一步就会被下一次 build 覆盖 ✓
+    local got = {}
+    for pos = 1, nslot do got[pos] = c2:_person_id_for_pos(pos) end
+    return c2, got
+  end
+
+  for _, use_name in ipairs({ false, true }) do
+    local _, got = build(use_name)
+    local label = use_name and "显示名" or "人物 id"
+    local allok = true
+    for pos = 1, nslot do
+      if got[pos] ~= ids[pos] then allok = false end
+    end
+    ok(allok, "★ 卡上配【" .. label .. "】时，每张卡都能解析出正确的人 ✓")
+  end
+
+  -- ★★ 走真实交互三条 ✓（★ 这正是用户报"断的"那三件事 ✓）
+  local c3 = build(false)
+  local pid = c3:_person_id_for_pos(1)
+  ok(pid ~= nil, "第一张卡解析出人（★ 不是 nil ✓）")
+
+  -- ★★★ **"点卡片"那条路本身也要走一遍** ✗✓（★ 只测解析函数 ⇒ 破坏性验证抓不到 ✓）
+  --   ★ 用户报的原话是「★ **选中卡片后**到棋盘这一层还是断的」✓
+  --     ⇒ ★ 判据必须落在**那条路**上 ✓ ★ 只测"解析得对"不够 ✗
+  --     ★（★ 因为那条路**可能根本没调用解析函数** ✓ —— 我上一版正是这样 ✓✓）
+  --
+  --   ★ 两段都要过 ✓（★ 缺一段就测不全 ✓）：
+  --     ① `_grid_bind_item_click` ⇒ ★ **监听挂上去了** ✓（★ 真机 `Enum` 是有的 ✓
+  --        离线环境没有 ⇒ 它会**静默降级** ✓ ★ 所以这里补一个 `Enum` ✓）
+  --     ② `_on_grid_item_click` ⇒ ★ **真的发出 `suspect` 事件** ✓（★ 这才是"选中" ✓）
+  do
+    local fired = {}
+    -- ★ 只认 `ev` ✓（★ 原来写成 `(_, ev)` = 方法调用形式 ⇒ ★ 拿到的其实是 `self` ✗）
+    local ad = { on_input = function(ev) fired[#fired + 1] = ev end }
+    local it = ctrl("item", {})
+    local bound = 0
+    it.AddCursorEventListener = function() bound = bound + 1 end
+    it.GetChild = function(_, n)
+      for _, k in ipairs(it._kids) do if k.name == n then return k end end
+      return nil
+    end
+    -- ★ 真机有的枚举 ✓（★ 离线缺 ⇒ 绑定那条路会提前 return ✓ 那样就测不到 ✓）
+    local _saved_enum = _G.Enum
+    _G.Enum = { CursorEventType = { CursorClick = 1 } }
+    -- ★ `GetItemIndex` 要能反查 ✓（★ 引擎索引 0 起 ⇒ `pos = 0 - 0 + 1 = 1` ✓）
+    local g = { GetItemIndex = function(_, _item) return 0 end }
+    c3._grid_base = 0
+    c3.adapter = ad
+    c3:_grid_bind_item_click(ad, g, it)
+    ok(bound >= 1, "★ 点卡片：监听挂上去了（实测 AddCursorEventListener " .. bound .. " 次）")
+    -- ★ 直接走"被点到"那一步 ✓（★ 引擎回调里就是它 ✓）
+    c3:_on_grid_item_click(ad, g, it)
+    _G.Enum = _saved_enum
+    local got_suspect = nil
+    for i = 1, #fired do
+      if fired[i].action == "suspect" then got_suspect = fired[i].id end
+    end
+    ok(got_suspect ~= nil,
+      "★ 点卡片 ⇒ 真的发出 `suspect` 事件（★ 不发就永远选不中 ✓ 实测 " .. tostring(got_suspect) .. "）")
+    ok(got_suspect == ids[1],
+      "★ 事件里带的是**第 1 张卡那个人** ✓（实测 " .. tostring(got_suspect)
+      .. " 该是 " .. tostring(ids[1]) .. "）")
+  end
+
+  if pid ~= nil then
+    c3:on_input({ action = "suspect", id = pid })
+    ok(c3.core.selected == pid, "★ 点卡片 ⇒ **选中卡上那个人** ✓（实测 " .. tostring(c3.core.selected) .. "）")
+    local okN = c3.core:tap_cell(2, 3)
+    ok(okN == true and c3.core.notes[2][3] ~= nil and c3.core.notes[2][3][pid] == true,
+      "★ 单击格子 ⇒ **笔记标得上** ✓")
+    local okH = c3.core:hold_cell(3, 4)
+    ok(okH == true and c3.core.grid[3][4] == pid,
+      "★ 长按格子 ⇒ **放置做得到** ✓")
+  end
+  print("  [PASS] 点卡片 ⇒ 选中 ⇒ 笔记 ⇒ 放置（★ 用户报的三件事全通 ✓）")
+end
+
+--------------------------------------------------------------------------------
 print(string.format("\nclue_slots: %d passed, %d failed", passed, failed))
 if failed > 0 then os.exit(1) end

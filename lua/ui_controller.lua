@@ -6026,7 +6026,12 @@ function Controller:_on_grid_item_click(adapter, grid, item)
   --   ⇒ ★ 引擎会把**滚动位置重置到顶部** ✓（用户实测："点第五张卡弹回顶部"✗）
   --   ⇒ ★ 改成置"待刷新"标志 ✓ 由 `sync_clue_grid` **就地重填** ✓ ⇒ 滚动一动都不动 ✓
   self._grid_refill_pending = true
-  local n = #((self.core:view() or {}).clues or {})
+  -- ★★ 2026-10-11 **条数同样取【核心那份】** ✗✓（★ 本文件里第 **三** 处同类漏改 ✓）
+  --   ★ 原来读 `self.core:view().clues` ✗ ⇒ ★ 槽位模型下**形状变了** ✓
+  --     ★ 侥幸还没坏（★ 槽位数 = 容量 ✓ ⇒ `n` 仍等于条数 ✓）
+  --     ★★ 但这是**同一个前提**（"视图的 `clues` 就是条数表"）✓ ⇒ ★ 该一并对齐 ✓
+  --   ★ 用户报的"点卡片选中到棋盘断了"就是这条路 ✓ ⇒ ★ 这里错一位 ⇒ **整条点击作废** ✓
+  local n = #((self.core and self.core.clues) or {})
   if pos < 1 or pos > n then return end
 
   -- ★ 走**和老卡片完全同一条**输入通路：`adapter.on_input` 是 main.lua 接的
@@ -6079,11 +6084,18 @@ function Controller:_on_grid_item_click(adapter, grid, item)
     if cl ~= nil then
       -- ★ 真字段名（真机探针实测 ✓）：★ `who` —— 值形如 `V` / `D` / `@thief`
       --   ⇒ `@` 开头的是【特殊角色】（如盗窃者），不是可选的"人"，跳过 ✓
-      local pid = cl.who or cl.person or cl.who_id or cl.id
-      if type(pid) == "string" and pid:sub(1, 1) == "@" then pid = nil end
+      --
+      -- ★★★★★★ 2026-10-11 **先问新路：单人射配的那个人** ✗✓✓
+      --   ★ 槽位没有 `who` ✗ ⇒ ★ 只走老的取法 ⇒ **恒 nil ⇒ 永远选不中** ✓
+      --   ★ 详见 `_person_id_for_pos` 那段长注释 ✓（★ 用户报的"选中到棋盘这一层断了" ✓）
+      local pid = self:_person_id_for_pos(pos)
       if pid == nil then
-        local pn = cl.portrait or cl.face or cl.asset
-        if pn ~= nil then pid = tostring(pn):gsub("^portrait%.", "") end
+        pid = cl.who or cl.person or cl.who_id or cl.id
+        if type(pid) == "string" and pid:sub(1, 1) == "@" then pid = nil end
+        if pid == nil then
+          local pn = cl.portrait or cl.face or cl.asset
+          if pn ~= nil then pid = tostring(pn):gsub("^portrait%.", "") end
+        end
       end
       if pid ~= nil then
         local ev2 = { action = "suspect", id = pid }
@@ -6101,6 +6113,104 @@ local ev = { action = "focus_clue", index = pos, phase = "click" }
   else
     self:on_input(ev)
   end
+end
+
+-- ★★★★★★ 2026-10-11 **"这一张卡对应哪个人" —— 单人射的第三条断点** ✗✓✓
+--
+--   ★★★ 用户报 ✓：「★ **网格视窗好了** ✓
+--     ★ **但选中卡片后到棋盘这一层还是断的** ✓
+--     ★ **放置也做不到** ✓ ★ **`note` 也标不上**」✓✓
+--   ★ 症状链 ✓：★ 点卡片 ⇒ 应该**选中卡上那个人** ✓ ⇒ 再点格子才放得下 / 才标得上 ✓
+--     ⇒ ★ **一行日志**：「★ 点 (第1行 第2列) 没生效：**先点一个头像**　当前工具=place　已选=nil」✓✓
+--   ★★★ 根因 ✓：★ 点卡片那条路**从 `clue_view[i].who` 取人物 id** ✗
+--     ★ 而 `Core:view()` 里就是 `who = cl.who` ✓ ★★ **槽位没有 `who`** ✗ ⇒ **恒 nil** ✓
+--       ⇒ ★ 它**防御式地"取不到就不动作"** ✓（★ 本来是对的 ✓）
+--       ⇒ ★★ 于是**永远不选中** ⇒ **放置与笔记【三者全被拦在这一步】** ✓✓
+--   ★ 为什么不能直接在核心里写 `who` ✗：★ 核心里**没有 `row.*` 那份数据** ✓
+--     ★ 那是**存档里的控件** ✓ ★ 只有 `ui_controller` 读得到 ✓（★ 见 `_row_text` ✓）
+--   ⇒ ★★ 修法 ✓：★ **在这里把"卡上那个人"解析出来** ✓
+--     ★ 来源 = `Controller._row_text[关][行].who` ✓（★ 那一趟读 `row.*` 时落账的 ✓）
+--     ★★ 解析要**双向都认** ✓（★ 用户配的可能是 id `"B"` ✓ 也可能是显示名「前台姑娘」✓）
+--       ① 先当 **id** 查 `core.names` ✓（★ 命中就用 ✓）
+--       ② 再当**显示名**反查 ✓（★ `core.names[id] == 它` ⇒ 那个 id ✓）
+--     ⇒ ★ **两种配法都能选中** ✓ ★ 都不命中 ⇒ **返 nil 不动作** ✓（★ 绝不误选 ✓）
+--   ★ 没配 `row.*` 时 ✓：★ 退回老的 `cl.who` ✓（★ 手写线索的关卡照旧 ✓ 向后兼容 ✓）
+--
+--   ⚠️ ★★ **必须定义在【函数外面】** ✗✓（★ 我第一版就踩了 ✓）
+--     ★ 我把它插在 `_grid_bind_item_click` 里那个 `local ev = {…}` 的**正上方** ✗
+--     ⇒ ★ Lua 把 `function Controller:_person_id_for_pos(pos)` 解析成
+--       **`local ev = function …`** ✓ ⇒ ★★ **它变成一个局部变量，根本不是方法** ✓✓
+--       ⇒ ★ 表现：★ `Controller._person_id_for_pos == nil` ✓ ★ 调用处**报 nil** ✓
+--     ★ `luac -p` **不报错** ✗（★ 语法完全合法 ✓）—— ★★ 与"编译通过 ≠ 这段在跑"同族 ✓
+--     ★ 判据 ✓：★ **`function 名字` 前面不许有别的东西** ✗
+function Controller:_person_id_for_pos(pos)
+  local core = self.core
+  if core == nil or pos == nil then return nil end
+  -- ★ ① 单人射配的那个人 ✓
+  --
+  --   ⚠️ ★★ **不靠"关序"对齐** ✗✓（★ 我第一版就是那样，结果被自己的测试抓到 ✓）
+  --     ★ 第一版只读 `_row_text[本关关序][pos]` ✗
+  --     ★★ 而"本关关序"与"用户把行配在哪一关"**不一定相等** ✓：
+  --       ★ 关序 = 关卡在 `levels/init.lua` 里的**位置** ✓
+  --       ★ 而 `row.<关>.<行>` 是用户自己填的 ✓ ★ 两者错位时 ⇒ **读不到** ✓
+  --     ★★ 症状 ✓：★ 卡片**看不出人选不中** ✗ ⇒ ★ 又是"选中到棋盘断了" ✓✓
+  --   ★ 修法 ✓：★ **不确定就按行号扫一遍**✓，取**第一个命中的** ✓
+  --     ★ 为什么安全 ✓：★ `pos` 是**当前这一趟正在填的那一行** ✓
+  --       ⇒ ★ 该行的文本**刚刚**落账 ✓ ★ 不同关的同号行**极少同时有值** ✓
+  --     ★ 取舍 ✓：★ 万一两关同号行都有值 ⇒ ★ 取**关序最小**的 ✓（★ 确定 ✓ 不随 pairs 变 ✓）
+  local rt = nil
+  do
+    local m = rawget(Controller, "_row_text")
+    if type(m) == "table" then
+      local lvno = self:_level_ordinal()
+      -- ★ 先试本关关序 ✓（★ 命中就最省 ✓）
+      local direct = (lvno ~= nil) and m[tostring(lvno)] or nil
+      local by_pos = direct and direct[pos] or nil
+      if by_pos ~= nil and by_pos.who ~= nil then
+        rt = by_pos.who
+      else
+        -- ★ 兜底：★ 按关序从小到大扫 ✓ 取第一个有值的 ✓
+        local keys = {}
+        for k in pairs(m) do keys[#keys + 1] = k end
+        table.sort(keys, function(a, b) return tonumber(a) < tonumber(b) end)
+        for i = 1, #keys do
+          local lv = m[keys[i]]
+          local p = lv and lv[pos]
+          if p ~= nil and p.who ~= nil then rt = p.who break end
+        end
+      end
+    end
+  end
+  local names = core.names
+  if rt ~= nil then
+    local s = tostring(rt)
+    -- ★ 去掉可能的前后空白 ✓（★ 用户在编辑器里打字很容易带空格 ✓）
+    s = s:gsub("^%s+", ""):gsub("%s+$", "")
+    if s ~= "" then
+      -- ★ ①-a 它本身就是 id ✓
+      if type(names) == "table" and names[s] ~= nil then return s end
+      -- ★ ①-b 它是显示名 ⇒ 反查 id ✓（★ 取**第一个**命中 ✓ 稳定 ✓）
+      if type(names) == "table" then
+        local best = nil
+        for id, nm in pairs(names) do
+          if tostring(nm) == s then
+            -- ★ 多个同名的取**字典序最小**的 ✓ ⇒ 结果**确定** ✓（★ 不随 pairs 顺序变 ✓）
+            if best == nil or tostring(id) < tostring(best) then best = id end
+          end
+        end
+        if best ~= nil then return tostring(best) end
+      end
+    end
+  end
+  -- ★ ② 退回老的"线索自带 who" ✓（★ 手写线索的关卡走这条 ✓）
+  local vm = core:view() or {}
+  local cl = (vm.clues or {})[pos]
+  if cl ~= nil then
+    local pid = cl.who
+    if type(pid) == "string" and pid:sub(1, 1) == "@" then pid = nil end
+    if pid ~= nil then return tostring(pid) end
+  end
+  return nil
 end
 
 ----------------------------------------------------------------------------
