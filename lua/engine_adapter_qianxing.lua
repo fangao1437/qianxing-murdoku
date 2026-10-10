@@ -4646,9 +4646,25 @@ function Adapter:set_property(id, key, value, nkey)
           --     ★ 与棋盘格那条同一形状 ✓（★ 钉位置 (0,0) ＋ 给一个穿中部的框 ✓）
           --     ★ 宽用 `fw` ✓（★ 卡片侧 `face` 的宽 ✓）；★ 高用 `hbox`（★ fh/3，下限 30 ✓）
           --     ⚠️ ★ 待真机确认 ✓：★ 若太宽/太窄 ⇒ 调 `fw` 的系数即可 ✓（★ 一行 ✓）
-              local hbox = math.max(30, fh / 3)
-              if c.SetSizeDelta then pcall(function() c:SetSizeDelta(fw, hbox) end) end
-              if c.SetAnchoredPosition then pcall(function() c:SetAnchoredPosition(0, 0) end) end
+              -- ★★★★★★ 2026-10-10 **【已撤销】这里补的两行会与 `ensure_cells` 打架** ✗✓✓
+              --
+              --   ★★★ 地图员第 3 轮实证 ✓（★ 两套几何 ✓ 用户说的"旧脚本那套"就是这个 ✓）：
+              --     ★ 路径 1：`Adapter:ensure_cells`（本文件 L2170-2180 ✓）
+              --       `note:SetSizeDelta(math.max(8, cell_size - 8), math.max(40, math.floor(cell_size * 0.40)))`
+              --       `note:SetAnchoredPosition(0, 0)`　⇒ ★ 108 格 ⇒ **100 × 43** ✓
+              --     ★ 路径 2：★ 本处（v156 我加的 ✗）⇒ ★ `hbox = fh/3` ⇒ **108 × 36** ✓
+              --   ⇒ ★★ **同一个 `note`，两处都在设尺寸，值不一样** ✗
+              --     ★ `set_property` 只在【值变化】时跑 ✗；`ensure_cells` 在【几何重排】时跑 ✓
+              --     ⇒ ★ 放笔记那一刻 = 108×36 ✓；★ 之后任何一次重排 ⇒ **被打回 100×43** ✗
+              --     ⇒ ★★ **这就是"标记时有时无 / 编辑器改了不生效"** ✓✓
+              --
+              --   ★ 为什么撤【这里】而留 `ensure_cells` ✓：
+              --     ★ `ensure_cells` 在**每次几何重排**都跑 ✓ ⇒ ★ **它是更权威的那一方** ✓
+              --     ★ 而且它给的是 `cell_size - 8` × `cell_size*0.40` ✓ ⇒ ★ **随格子尺寸自适应** ✓
+              --     ★ 本项目注释 L2171-2175 自己就记着"这里就是'谁把 note 改成 100×30'的元凶"✓
+              --   ⇒ ★★ **删掉本处的两行 ⇒ 只剩一条几何路径 ⇒ 不再打架** ✓✓
+              --     ★ 若真机仍不显示 ⇒ ★ 再回头调 `ensure_cells` 的**系数**（★ 一行 ✓）
+              --       ★ 而不是在这里再加一条 ✗（★ 那只会再造一次"两套打架" ✓）
           -- ★★★★★ 2026-10-07 **二次修正：脚本必须自己把框设回来** ✗✓
           --   ★ 用户的关键观察（★ 一针见血 ✓）：★ 运行时读到的 `100×30`
           --     ★ **和编辑器的任何一版都不一致**（★ 用户说旧值也是 `124×37` ✓）
