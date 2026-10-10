@@ -3202,6 +3202,27 @@ end
 --     ★ **函数体删掉** ✓ —— ★ 用户明确要求过"**删干净 ✓ 一行不留**"✓
 --       ★ 判据 ✓：`node tools/lua_map.mjs --refs=note_list_of` ⇒ ★ 改动后 **0 个调用点** ✓
 
+-- ★★★★★★ 2026-10-11 **进关卡时按【关卡身份】清一次那两张模块级表** ✗✓✓
+--
+--   ★★ 为什么需要 ✗：★ `Controller._row_letter` / `_row_face` 是**模块级**的 ✓
+--     （★ 原因见 `portrait_of` / `letter_of`：★ 静态函数拿不到 `self` ✓）
+--     ⇒ ★★ 它们**跨控制器存活** ✗ —— ★ `start_other` 新建控制器 ✓ ★ 表却是同一个 ✓
+--   ★ 不清的两个后果 ✓（★ 都实测过 ✓）：
+--     ★ ① 某一关的 `row.<关>` 是空的（★ 第 4 关就没有对应行 ✓）⇒ ★ 一个 letter 都不写
+--       　⇒ ★ **表里留着上一关的值** ⇒ ★★ **那一关的人显示【别的关】的字母** ✓
+--     ★ ② 同一个"人"在两关配了不同字母 ⇒ ★ **先到先得** ⇒ ★ 这一关看到的是上一关的 ✓
+--   ★ 判据 ✓：★ 用 `level.id` 当签名 ✓ ⇒ ★ 同一关内只清一次 ✓（★ 每帧清 ⇒ 永远空 ✗）
+--   ★ 只读 ✓ 不碰引擎 ✓ ★ 可离线测 ✓
+function Controller:_reset_row_maps_if_level_changed()
+  local lv = self.core and self.core.level
+  local sig = (lv and lv.id) or "?"
+  if self._row_map_sig ~= sig then
+    self._row_map_sig = sig
+    Controller._row_letter = {}
+    Controller._row_face = {}
+  end
+end
+
 -- ★★★★★★ 2026-10-11 **格子的标记：把【人物 id】换成【那一行的 `letter`】** ✗✓✓
 --
 --   ★★★ 用户更正 ✓（★ 这一句纠正了我前三轮的理解 ✗）：
@@ -6817,6 +6838,25 @@ function Controller:sync_clue_grid(adapter)
   end
   self._grid_last_screen = self.screen  if self.screen ~= nil then return end
 
+  -- ★★★★★★ 2026-10-11 **换关时必须清掉上关带出来的两张表** ✗✓✓
+  --
+  --   ★★ 为什么必须清 ✗：★ `Controller._row_letter` / `_row_face` 是**模块级**的 ✓
+  --     （★ 见 `portrait_of` / `letter_of` 那两段注释：★ 它们要能被静态函数读到 ✓
+  --       ★ 所以**不能**挂在 `self` 上 ✗）
+  --     ⇒ ★★ 而它们**跨控制器存活** ✗ —— ★ `start_other` 新建控制器 ✓
+  --       ★ **这张表却是同一个** ✓✓
+  --   ★ 不清会怎样 ✗（★ 两条都实测过 ✓）：
+  --     ★ ① ★ **某一关的 `row.<关>` 是空的** ✓（例如第 4 关 —— ★ 它没有对应行 ✓）
+  --       　⇒ ★ 那一关**一个 letter 都不写** ✓ ⇒ ★ **表里留着上一关的值** ✗
+  --       　⇒ ★★ **那一关的人会显示【别的关】配的字母** ✓✓
+  --     ★ ② ★ 同一个"人"在不同关配了不同字母 ⇒ ★ **先到先得** ✗
+  --       　⇒ ★ **这一关看到的是上一关先写的那个** ✓（★ 而这一关本来配了别的 ✓）
+  --   ⇒ ★★ 修法 ✓：★ **进关卡时按【关卡身份】清一次** ✓
+  --     ★ 用签名（`level.id`）比对 ✓ ⇒ ★ 同一关内**不会被反复清** ✓（★ 否则每帧都清 ⇒ 永远空 ✗）
+  --   ⚠️ ★ 为什么放在**这里**而不是 `new` ✗：★ `new` 是构造时 ✓ 那时还不知道进的是哪一关 ✓
+  --     ★ 而 `screen` 从非 nil 变 nil 就是"**刚进关卡**"的那一刻 ✓（★ 本段上面就是它 ✓）
+  self:_reset_row_maps_if_level_changed()
+
   -- ③ 已经失败过就不再重试（老路径接管；`_grid_state` 已经是 "off"）
   if self._grid_broken then return end
 
@@ -7780,8 +7820,43 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                       if _it ~= nil then _pid = _it.id end
                     end)
                     if _pid ~= nil then
+                      -- ★★★★★★ 2026-10-11 **一人一行：先到先得，不被覆盖** ✗✓✓
+                      --
+                      --   ★★★ 真机教训 ✓（★ 用户 2026-10-11：★「第一关正确了，第三关仍然不正确」✓）：
+                      --     ★ 自检关（5 条线索点名 6 个人时**每个人只被点到一次** ✓）
+                      --       ⇒ ★ 一人一个字母 ✓ ⇒ **看起来是对的** ✓
+                      --     ★★ 而 `case_002`（15 条线索）里 **4 个人各被两条线索点到** ✗：
+                      --       　★ `V` ← `row.3.1="A"` ＋ `row.3.2="B"` ✓
+                      --       　★ `E` ← `row.3.4="D"` ＋ `row.3.5="E"` ✓
+                      --       　★ `@thief` ← `F` ＋ `G` ✓　★ `@accomplice` ← `H` ＋ `V` ✓
+                      --     ⇒ ★★ 原来这里是**无条件覆盖** ✗ ⇒ ★ **后写的那一行赢** ✓
+                      --       ⇒ ★ 主循环**每帧跑** ⇒ ★★ **显示哪个字母由"最后一次写的顺序"决定** ✗✓
+                      --       ⇒ **不稳定、也不可解释** ✓（★ 这正是"第三关不对"的机制 ✓）
+                      --     ★ 而自检关里 `row.1.4`/`row.1.5` **是空的** ✗ ⇒ 空值**不会**覆盖
+                      --       `row.1.1` 的 `A` ✓ ⇒ ★ 所以它恰好没暴露这个 bug ✓✓
+                      --
+                      --   ★ 修法 ✓：★ **已经有值就不覆盖** ✓（★ 先到先得 ✓ 确定 ✓）
+                      --     ★ 语义 ✓：★ **一个人的字母 = 第一条点到他的线索所在行** ✓
+                      --     ★ 为什么这个语义对 ✓：★ 用户要"按 letter 标记"✗ ★ 而**一个格子
+                      --       只能显示一个字母** ✓ ⇒ ★ **必须定一条规则** ✓ ★ **不定规则就必然
+                      --       出现"同一格显示不同字母"** ✗✓
+                      --   ⚠️ ★ 这**不能**让 `case_002` 变得"完全正确" ✗ —— ★ 它那 4 个人
+                      --     **本来就配了两个不同字母** ✓ ⇒ ★ 数据层冲突 ✓ ★ 得由用户把行
+                      --     改成一地一字母 ✓（★ 他明确说过内容后面改 ✓）
+                      --   ★ 但它保证 ✓：★ **确定 + 可解释 + 不因帧序而变** ✓✓
                       Controller._row_letter = Controller._row_letter or {}
-                      Controller._row_letter[tostring(_pid)] = tostring(_lt)
+                      local _key = tostring(_pid)
+                      if Controller._row_letter[_key] == nil then
+                        Controller._row_letter[_key] = tostring(_lt)
+                      elseif (self._row_letter_dup or 0) < 6 and print then
+                        -- ★ 如实报一次 ✓：★ 同一个人的字母被配了第二次 ★
+                        self._row_letter_dup = (self._row_letter_dup or 0) + 1
+                        print("[murdoku] ★ 同一个人的 `letter` 被配了两次 ✗：who=`" .. _key
+                          .. "` 已记=`" .. tostring(Controller._row_letter[_key])
+                          .. "` 这一行（`row." .. tostring(lv_no) .. "." .. tostring(pos)
+                          .. "`）=`" .. tostring(_lt) .. "` ⇒ ★ **保留先记的那个** ✓"
+                          .. "　⇒ ★ 想要这一行生效，就把那一行清空／改一致 ✓")
+                      end
                       if (self._row_letter_log or 0) < 6 and print then
                         self._row_letter_log = (self._row_letter_log or 0) + 1
                         print("[murdoku] ★ 标记来源记下 ✓：`row." .. tostring(lv_no) .. "."
@@ -8388,8 +8463,15 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                         if _it2 ~= nil then _pid2 = _it2.id end
                       end)
                       if _pid2 ~= nil then
+                        -- ★★★★★★ 2026-10-11 **与【早期单射】同一条规则：先到先得** ✗✓✓
+                        --   ★ 详细推演见早期单射那一处的长注释 ✓（★ 一人一行 ✓ 不覆盖 ✓）
+                        --   ★★ 这两趟写的是同一张表 ✓ ⇒ ★ **两处必须同规则** ✗
+                        --     否则"哪一趟最后跑"又会决定显示哪个字母 ✓（★ 就是本 bug 的翻版 ✓）
                         Controller._row_letter = Controller._row_letter or {}
-                        Controller._row_letter[tostring(_pid2)] = tostring(_lt2)
+                        local _key2 = tostring(_pid2)
+                        if Controller._row_letter[_key2] == nil then
+                          Controller._row_letter[_key2] = tostring(_lt2)
+                        end
                       end
                     end
                   end
@@ -18272,7 +18354,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v171 / 2026-10-11 / 跨关点击bug真因: main.lua那段每30帧点亮格子的循环只读cfg.cells.rows/cols(写死的兜底5,5),漏了最权威的adapter.cells_rows => 任何关都只点25格,6x6少11格/7x7少24格 => 第26格起content不亮,face(底图+射线目标)不可见 => 格子看不见也点不动; 全工程只有这一段漏了; 新增tests/cell_lightup_size.lua(16断言,含自证窗口+破坏性验证) =====")
+        print("[murdoku] ===== 构建标记 v172 / 2026-10-11 / 修两个跨关/稳定性逻辑bug: ①同一个人的letter被两条线索点到时原来无条件覆盖,谁赢取决于每帧写入顺序(自检关每人只被点一次所以看不出,case_002有4人各被两条点到)=>改成先到先得+配重时如实报一行; ②Controller._row_letter/_row_face是模块级,跨控制器存活,row.<关>为空的那关会显示上一关的字母=>进关卡按level.id签名清一次; 新增tests/row_letter_stability.lua(8断言) =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

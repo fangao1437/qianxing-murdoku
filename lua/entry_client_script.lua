@@ -184,7 +184,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v171 / 2026-10-11 / 跨关点击bug真因: main.lua那段每30帧点亮格子的循环只读cfg.cells.rows/cols(写死的兜底5,5),漏了最权威的adapter.cells_rows => 任何关都只点25格,6x6少11格/7x7少24格 => 第26格起content不亮,face(底图+射线目标)不可见 => 格子看不见也点不动; 全工程只有这一段漏了; 新增tests/cell_lightup_size.lua(16断言,含自证窗口+破坏性验证) =====")
+        print("[murdoku] ===== 构建标记 v172 / 2026-10-11 / 修两个跨关/稳定性逻辑bug: ①同一个人的letter被两条线索点到时原来无条件覆盖,谁赢取决于每帧写入顺序(自检关每人只被点一次所以看不出,case_002有4人各被两条点到)=>改成先到先得+配重时如实报一行; ②Controller._row_letter/_row_face是模块级,跨控制器存活,row.<关>为空的那关会显示上一关的字母=>进关卡按level.id签名清一次; 新增tests/row_letter_stability.lua(8断言) =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
