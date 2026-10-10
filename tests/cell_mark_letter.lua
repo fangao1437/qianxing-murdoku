@@ -27,7 +27,7 @@ package.path = root .. "/lua/?.lua;" .. root .. "/lua/?/init.lua;" .. package.pa
 
 local UIC  = require("ui_controller")
 local Core = require("murdoku_core")
-local lv   = require("levels.demo_selftest")
+local lv   = require("tests.fixtures").clue_level_5x5()
 
 -- ★ 关序 1 = 自检关 ✓ 与 `_level_ordinal()` 的 `LIST` 序号一致 ✓
 package.loaded["levels.init"] = {

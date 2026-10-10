@@ -3149,6 +3149,21 @@ local Controller = {}
 Controller.__index = Controller
 M.Controller = Controller
 
+-- ★★★★★★ 2026-10-11 **那两张模块级表【一开始就存在】** ✗✓✓（★ 健壮性 ✓）
+--
+--   ★ 症状 ✓（★ 2026-10-11 删掉线索表之后**当场暴露** ✓）：
+--     ★ `attempt to index a nil value (field '_row_letter')` ✗
+--   ★ 机制 ✓：★ 原来它们**只在 `sync_clue_grid` 里被建** ✓
+--     ⇒ ★★ **不经过网格视窗的调用路径**（★ 只调 `_fill_grid_item` / 只调 `build_layout`
+--       的离线测试与工具 ✓）⇒ ★ **读到 nil** ✗✓
+--   ★ 修法 ✓：★ **在这里先建成空表** ✓ ⇒ ★ 任何路径读到的都是表 ✓
+--     ★ 语义不变 ✓（★ 空表 = "还没配字母" ✓ 与 nil 等价 ✓）
+--     ★ 而 `_reset_row_maps_if_level_changed` 换关时**照旧整体替换** ✓（★ 清空语义不变 ✓）
+--   ★ 顺带把 `letter_of` / `portrait_of` 里那两处 `if m == nil then return nil` 变冗余 ✓
+--     ★ 保留它们也无害 ✓（★ 防御性 ✓）★ 但**不许**再依赖"它可能是 nil" ✗
+Controller._row_letter = {}
+Controller._row_face = {}
+
 function M.new(core, opts)
   opts = opts or {}
   local self = setmetatable({}, Controller)
@@ -3221,6 +3236,20 @@ function Controller:_reset_row_maps_if_level_changed()
     Controller._row_letter = {}
     Controller._row_face = {}
   end
+end
+
+-- ★★★★★★ 2026-10-11 **保证那两张表一定存在** ✗✓✓（★ 健壮性 ✓）
+--
+--   ★ 症状 ✓（★ 2026-10-11 删线索表之后**当场暴露** ✓）：
+--     ★ `attempt to index a nil value (field '_row_letter')` ✗
+--   ★ 机制 ✓：★ 那两张表**只在 `sync_clue_grid` 里被初始化** ✓
+--     ⇒ ★★ **不经过网格视窗的调用路径**（★ 例如只调 `_fill_grid_item` / 只调
+--       `build_layout` 的离线测试与工具 ✓）⇒ ★ **读的时候是 nil** ✗✓
+--   ★ 修法 ✓：★ 读之前**就地补一个空表** ✓ —— ★ 语义不变 ✓（★ 空表 = 没配字母 ✓）
+--     ★ 用 `rawget` 判 ✓ 避免元表干扰 ✓ ★ 只在 nil 时建 ✓（★ 不覆盖已有内容 ✗）
+function Controller:_ensure_row_maps()
+  if rawget(Controller, "_row_letter") == nil then Controller._row_letter = {} end
+  if rawget(Controller, "_row_face") == nil then Controller._row_face = {} end
 end
 
 -- ★★★★★★ 2026-10-11 **格子的标记：把【人物 id】换成【那一行的 `letter`】** ✗✓✓
@@ -17655,7 +17684,16 @@ __M["levels.demo_selftest"] = function()
     · 受害者 V 与 A 同在 R_B → k=2 → 必有同伙
     · 盗窃者 D 与同伙 C 都在 R_A；R_A 无辜人数 1 > R_C 的 0
       → 满足"挑无辜人数最多的相邻区域"
-    · 线索共 7 条，第 7 条是**声明好的那句假话**
+  ★★★ 2026-10-11 **线索表已删** ✗✓（★ 用户原话 ✓）：
+    「★ **原本那套为每关人物发位置和字母的逻辑直接删了** ✓
+     ★ **关卡设计本来就要改** ✓ ★ **不用留着他了**」✓
+  ⇒ ★★ 原来那套"报位置 ＋ 发字母"的线索**整段删掉** ✓
+    ★ **`meta.false_clue` 一并作废** ✓（★ 它按序号指线索 ✓ 线索没了它就没意义 ✓）
+  ⇒ ★★★ **本关现在【没有线索】** ✓ —— ★ **等新设计** ✓
+    ★ 关卡本体（`walls`/`doors`/`objects`/`roles`/`solution`/`size`）**一个字没动** ✓✓
+  ⚠️ ★ 已知后果 ✓（★ 不是 bug ✗）：★ `tools/validate_levels.lua` 的**唯一解**闸门
+    会报「找到 3 个解」✓ —— ★ 那是**内容还没设计** ✓ ★ 不是逻辑坏了 ✓
+
 
   你设计正式关卡时把这个文件删掉即可。
 ----------------------------------------------------------------------------]]--
@@ -17716,7 +17754,7 @@ return {
 
   -- 线索里至多一句假话；这里声明是第 7 条
   meta = {
-    false_clue = 7,
+    false_clue = nil,   -- ★ 线索表已删 ⇒ 假话声明一并作废 ✓
     announce   = "one",   -- none | one | unknown（unknown = 不告诉玩家）
   },
 
@@ -17728,15 +17766,6 @@ return {
     V = { r = 4, c = 1 },   -- R_B（受害者）
   },
 
-  clues = {
-    { type = "at",     who = "B", r = 3, c = 2 },        -- 真
-    { type = "at",     who = "A", r = 5, c = 3 },        -- 真
-    { type = "at",     who = "V", r = 4, c = 1 },        -- 真
-    { type = "at",     who = "D", r = 1, c = 4 },        -- 真
-    { type = "in_row", who = "@thief", r = 1 },          -- 真（角色别名：盗窃者在第 1 行）
-    { type = "in_col", who = "@accomplice", c = 5 },     -- 真（同伙在第 5 列）
-    { type = "in_col", who = "B", c = 1 },               -- ★ 第 7 条：假话（B 实际在第 2 列）
-  },
 }
 
 end
@@ -17773,11 +17802,16 @@ __M["levels.case_001"] = function()
   ── 每行每列恰好一人 ────────────────────────────────────────────────────
     列：R_A 占 1/2/3，R_C 占 4，受害者占 5 → 行 1..5 各一人。
 
-  线索设计（8 条，第 8 条是那句假话）：
-    · 全开线索指向 @thief（角色别名）→ 身份靠推理而不是靠报名字
-    · 第 8 条故意说错的列，玩家要么把它当假话，要么就得推翻别的线索
-  本关只用了 8 条，也不是由 find_clues.lua 生成的（那个工具是暴力搜索，很慢，
-  留给"怎么都想不出来"的时候当兜底用）。
+  ★★★ 2026-10-11 **线索表已删** ✗✓（★ 用户原话 ✓）：
+    「★ **原本那套为每关人物发位置和字母的逻辑直接删了** ✓
+     ★ **关卡设计本来就要改** ✓ ★ **不用留着他了**」✓
+  ⇒ ★★ 原来那套"报位置 ＋ 发字母"的线索**整段删掉** ✓
+    ★ **`meta.false_clue` 一并作废** ✓（★ 它按序号指线索 ✓ 线索没了它就没意义 ✓）
+  ⇒ ★★★ **本关现在【没有线索】** ✓ —— ★ **等新设计** ✓
+    ★ 关卡本体（`walls`/`doors`/`objects`/`roles`/`solution`/`size`）**一个字没动** ✓✓
+  ⚠️ ★ 已知后果 ✓（★ 不是 bug ✗）：★ `tools/validate_levels.lua` 的**唯一解**闸门
+    会报「找到 3 个解」✓ —— ★ 那是**内容还没设计** ✓ ★ 不是逻辑坏了 ✓
+
 ----------------------------------------------------------------------------]]--
 
 return {
@@ -17842,7 +17876,7 @@ return {
 
   -- 至多一句假话；announce = "unknown" → 不告诉玩家本关有没有假话，让他自己推
   meta = {
-    false_clue = 8,
+    false_clue = nil,   -- ★ 线索表已删 ⇒ 假话声明一并作废 ✓
     announce   = "unknown",
   },
 
@@ -17854,16 +17888,6 @@ return {
     V = { r = 4, c = 5 },   -- R_B（受害者，独处一区）
   },
 
-  clues = {
-    { type = "at",         who = "V",       r = 4, c = 5 },   -- 受害者就在保险库内室
-    { type = "in_col",     who = "@thief",  c = 3 },          -- 盗窃者在第 3 列
-    { type = "in_row",     who = "@thief",  r = 1 },          -- 盗窃者在第 1 行
-    { type = "in_row",     who = "C",       r = 5 },          -- 清洁工在第 5 行
-    { type = "in_col",     who = "B",       c = 2 },          -- 前台姑娘在第 2 列
-    { type = "same_room",  a = "A", b = "B" },                -- 保安与前台在同一区
-    { type = "in_row",     who = "A",       r = 3 },          -- 保安在第 3 行
-    { type = "in_col",     who = "A",       c = 4 },          -- ★ 第 8 条：假话（保安实际在第 1 列）
-  },
 }
 
 end
@@ -17897,7 +17921,16 @@ __M["levels.case_002"] = function()
     答案：D(1,1) C(2,4) A(3,3) B(4,2) V(5,6) E(6,5)
           行 1..6 各一次、列 1..6 各一次。
 
-  线索 15 条，第 15 条是那句假话；announce = "one"（告诉玩家本关有一句假话）。
+  ★★★ 2026-10-11 **线索表已删** ✗✓（★ 用户原话 ✓）：
+    「★ **原本那套为每关人物发位置和字母的逻辑直接删了** ✓
+     ★ **关卡设计本来就要改** ✓ ★ **不用留着他了**」✓
+  ⇒ ★★ 原来那套"报位置 ＋ 发字母"的线索**整段删掉** ✓
+    ★ **`meta.false_clue` 一并作废** ✓（★ 它按序号指线索 ✓ 线索没了它就没意义 ✓）
+  ⇒ ★★★ **本关现在【没有线索】** ✓ —— ★ **等新设计** ✓
+    ★ 关卡本体（`walls`/`doors`/`objects`/`roles`/`solution`/`size`）**一个字没动** ✓✓
+  ⚠️ ★ 已知后果 ✓（★ 不是 bug ✗）：★ `tools/validate_levels.lua` 的**唯一解**闸门
+    会报「找到 3 个解」✓ —— ★ 那是**内容还没设计** ✓ ★ 不是逻辑坏了 ✓
+
 ----------------------------------------------------------------------------]]--
 
 return {
@@ -17957,7 +17990,7 @@ return {
   },
 
   meta = {
-    false_clue = 15,
+    false_clue = nil,   -- ★ 线索表已删 ⇒ 假话声明一并作废 ✓
     announce   = "one",
   },
 
@@ -17970,40 +18003,6 @@ return {
     E = { r = 6, c = 5 },   -- R_V（与受害者同区 → k=2 → 必有同伙）
   },
 
-  --[[ 线索全部是**关系型**的（"谁在谁的东边几列 / 南边几行 / 谁和谁独处一室"），
-       而不是直接报坐标 —— 这样玩家是在做空间推理，不是在抄格子。
-
-       用到的原子：abs_col_from（倒数第 N 列）、abs_row_from（倒数第 N 行）、
-                   col_offset / row_offset（在谁东/西边几列、南/北边几行）、
-                   alone_with（与谁独处一室）、not_role（身份排除）。 ]]
-  clues = {
-    { type = "abs_col_from", who = "V",  n = 1, from = "right" },   -- 馆长在倒数第 1 列
-    { type = "abs_row_from", who = "V",  n = 2, from = "bottom" },  -- 馆长在倒数第 2 行
-    { type = "alone_with",   a = "V", b = "E" },                    -- 馆长只和随行记者待在同一间
-
-    { type = "col_offset", who = "E", other = "V", d = -1 },        -- 记者在馆长西边 1 列
-    { type = "row_offset", who = "E", other = "V", d = 1 },         -- 记者在馆长南边 1 行
-
-    { type = "abs_col_from", who = "@thief", n = 1 },               -- 盗窃者在第 1 列
-    { type = "abs_row_from", who = "@thief", n = 1 },               -- 盗窃者在第 1 行
-
-    { type = "col_offset", who = "@accomplice", other = "@thief", d = 3 },  -- 同伙在盗窃者东边 3 列
-    { type = "row_offset", who = "@accomplice", other = "@thief", d = 1 },  -- 同伙在盗窃者南边 1 行
-
-    { type = "col_offset", who = "A", other = "V", d = -3 },        -- 门卫在馆长西边 3 列
-    { type = "row_offset", who = "A", other = "V", d = -2 },        -- 门卫在馆长北边 2 行
-
-    { type = "col_offset", who = "B", other = "A", d = -1 },        -- 助理在门卫西边 1 列
-    { type = "row_offset", who = "B", other = "A", d = 1 },         -- 助理在门卫南边 1 行
-
-    -- ★ 这条是**必需的**，别删：没有它，D 与 C 的**位置和身份可以整体互换**
-    --   （线索 6~9 只说"盗窃者/同伙在哪一格"，没说"谁"），而互换后的解
-    --   只多违反"假话那一条"，仍满足"至多一条假话"。
-    --   实测：少了这条，求解器会找到 2 个解（D/C 与 C/D 互为镜像）。
-    { type = "not_role", who = "D", role = "accomplice" },          -- 鉴定师不是同伙
-
-    { type = "abs_col_from", who = "C", n = 1, from = "right" },    -- ★ 第 15 条：假话（搬运工实际在第 4 列）
-  },
 
   --[[ 设计备注：为什么不用 left_of / right_of / above / below
        这四种线索的判定是「**同一行**且列更小 / **同一列**且行更小」
@@ -18025,7 +18024,16 @@ __M["levels.case_003"] = function()
 
   教学点：把前面两条合起来用 ——
     · k=3（受害者身边有两个人）→ **必有同伙**（R4）
-    · 假话**不告知**（announce="unknown"），玩家连"有没有假话"都要自己判断
+  ★★★ 2026-10-11 **线索表已删** ✗✓（★ 用户原话 ✓）：
+    「★ **原本那套为每关人物发位置和字母的逻辑直接删了** ✓
+     ★ **关卡设计本来就要改** ✓ ★ **不用留着他了**」✓
+  ⇒ ★★ 原来那套"报位置 ＋ 发字母"的线索**整段删掉** ✓
+    ★ **`meta.false_clue` 一并作废** ✓（★ 它按序号指线索 ✓ 线索没了它就没意义 ✓）
+  ⇒ ★★★ **本关现在【没有线索】** ✓ —— ★ **等新设计** ✓
+    ★ 关卡本体（`walls`/`doors`/`objects`/`roles`/`solution`/`size`）**一个字没动** ✓✓
+  ⚠️ ★ 已知后果 ✓（★ 不是 bug ✗）：★ `tools/validate_levels.lua` 的**唯一解**闸门
+    会报「找到 3 个解」✓ —— ★ 那是**内容还没设计** ✓ ★ 不是逻辑坏了 ✓
+
 
   ── 空间结构（三个区域）────────────────────────────────────────────────
     R_T = 第 1-4 行 × 第 1-4 列（16 格，容量 min(4,4)=4）
@@ -18050,7 +18058,6 @@ __M["levels.case_003"] = function()
     答案：D(1,1) C(2,4) A(3,2) B(4,3) V(5,6) E(6,5) F(7,7)
           行 1..7、列 1..7 各一次。
 
-  线索 18 条，第 18 条是那句假话（且**不告诉玩家**本关有假话）。
 ----------------------------------------------------------------------------]]--
 
 return {
@@ -18112,7 +18119,7 @@ return {
 
   -- 不告诉玩家本关有没有假话 —— 让他自己从矛盾里推
   meta = {
-    false_clue = 18,
+    false_clue = nil,   -- ★ 线索表已删 ⇒ 假话声明一并作废 ✓
     announce   = "unknown",
   },
 
@@ -18126,38 +18133,6 @@ return {
     F = { r = 7, c = 7 },   -- R_V
   },
 
-  --[[ 线索：全部关系型。前两条 same_room 是**故意**给玩家算 k 用的 ——
-       它告诉玩家"馆长、记者、赞助人在同一间"，于是 k=3 ≥ 2 → 必有同伙。 ]]
-  clues = {
-    { type = "same_room", a = "V", b = "E" },                        -- 馆长与记者同区
-    { type = "same_room", a = "V", b = "F" },                        -- 馆长与赞助人同区
-
-    { type = "abs_col_from", who = "V", n = 2, from = "right" },     -- 馆长在倒数第 2 列
-    { type = "abs_row_from", who = "V", n = 3, from = "bottom" },    -- 馆长在倒数第 3 行
-
-    { type = "col_offset", who = "E", other = "V", d = -1 },         -- 记者在馆长西边 1 列
-    { type = "row_offset", who = "E", other = "V", d = 1 },          -- 记者在馆长南边 1 行
-
-    { type = "col_offset", who = "F", other = "V", d = 1 },          -- 赞助人在馆长东边 1 列
-    { type = "row_offset", who = "F", other = "V", d = 2 },          -- 赞助人在馆长南边 2 行
-
-    { type = "abs_col_from", who = "@thief", n = 1 },                -- 盗窃者在第 1 列
-    { type = "abs_row_from", who = "@thief", n = 1 },                -- 盗窃者在第 1 行
-
-    { type = "col_offset", who = "@accomplice", other = "@thief", d = 3 },  -- 同伙在盗窃者东边 3 列
-    { type = "row_offset", who = "@accomplice", other = "@thief", d = 1 },  -- 同伙在盗窃者南边 1 行
-
-    { type = "col_offset", who = "A", other = "V", d = -4 },         -- 保安在馆长西边 4 列
-    { type = "row_offset", who = "A", other = "V", d = -2 },         -- 保安在馆长北边 2 行
-
-    { type = "col_offset", who = "B", other = "A", d = 1 },          -- 助理在保安东边 1 列
-    { type = "row_offset", who = "B", other = "A", d = 1 },          -- 助理在保安南边 1 行
-
-    -- ★ 防"身份镜像"：只写"盗窃者/同伙在哪一格"的话，D 与 C 可以对调。
-    { type = "not_role", who = "D", role = "accomplice" },           -- 鉴定师不是同伙
-
-    { type = "abs_row_from", who = "C", n = 1, from = "bottom" },    -- ★ 第 18 条：假话（搬运工实际在第 2 行）
-  },
 
   --[[ 设计备注：为什么不用 left_of / right_of / above / below
        这四种要求"同一行/同一列"才能成立（见 murdoku_core.lua 的 ctx.is_left_of /
@@ -18354,7 +18329,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v172 / 2026-10-11 / 修两个跨关/稳定性逻辑bug: ①同一个人的letter被两条线索点到时原来无条件覆盖,谁赢取决于每帧写入顺序(自检关每人只被点一次所以看不出,case_002有4人各被两条点到)=>改成先到先得+配重时如实报一行; ②Controller._row_letter/_row_face是模块级,跨控制器存活,row.<关>为空的那关会显示上一关的字母=>进关卡按level.id签名清一次; 新增tests/row_letter_stability.lua(8断言) =====")
+        print("[murdoku] ===== 构建标记 v173 / 2026-10-11 / 按用户要求删掉整套'为每关人物发位置和字母'的线索: 四关的clues表与meta.false_clue全删(关卡本体walls/doors/objects/roles/solution/size一字未动); 删tools/find_clues.lua与levels/simple.lua的auto_clues(线索须手写,不写即空); 新增tests/fixtures.lua承载三份带线索的测试关(simple_level/selftest/三个letter套件不再依赖真关卡有线索); validate_levels在线索0条时报'未测'而非FAIL(有线索时判据一字不变); ui_controller把_row_letter/_row_face提到模块初始化(修不经过网格路径时的nil下标崩溃) =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

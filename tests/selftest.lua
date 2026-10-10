@@ -17,7 +17,7 @@ package.path = table.concat({
 local Core     = require("murdoku_core")
 local UIC      = require("ui_controller")
 local Adapters = require("engine_adapter")
-local Level    = require("levels.demo_selftest")
+local Level    = require("tests.fixtures").clue_level_5x5()
 
 local pass, fail = 0, 0
 local function check(name, cond, extra)

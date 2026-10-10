@@ -275,6 +275,21 @@ local Controller = {}
 Controller.__index = Controller
 M.Controller = Controller
 
+-- ★★★★★★ 2026-10-11 **那两张模块级表【一开始就存在】** ✗✓✓（★ 健壮性 ✓）
+--
+--   ★ 症状 ✓（★ 2026-10-11 删掉线索表之后**当场暴露** ✓）：
+--     ★ `attempt to index a nil value (field '_row_letter')` ✗
+--   ★ 机制 ✓：★ 原来它们**只在 `sync_clue_grid` 里被建** ✓
+--     ⇒ ★★ **不经过网格视窗的调用路径**（★ 只调 `_fill_grid_item` / 只调 `build_layout`
+--       的离线测试与工具 ✓）⇒ ★ **读到 nil** ✗✓
+--   ★ 修法 ✓：★ **在这里先建成空表** ✓ ⇒ ★ 任何路径读到的都是表 ✓
+--     ★ 语义不变 ✓（★ 空表 = "还没配字母" ✓ 与 nil 等价 ✓）
+--     ★ 而 `_reset_row_maps_if_level_changed` 换关时**照旧整体替换** ✓（★ 清空语义不变 ✓）
+--   ★ 顺带把 `letter_of` / `portrait_of` 里那两处 `if m == nil then return nil` 变冗余 ✓
+--     ★ 保留它们也无害 ✓（★ 防御性 ✓）★ 但**不许**再依赖"它可能是 nil" ✗
+Controller._row_letter = {}
+Controller._row_face = {}
+
 function M.new(core, opts)
   opts = opts or {}
   local self = setmetatable({}, Controller)
@@ -347,6 +362,20 @@ function Controller:_reset_row_maps_if_level_changed()
     Controller._row_letter = {}
     Controller._row_face = {}
   end
+end
+
+-- ★★★★★★ 2026-10-11 **保证那两张表一定存在** ✗✓✓（★ 健壮性 ✓）
+--
+--   ★ 症状 ✓（★ 2026-10-11 删线索表之后**当场暴露** ✓）：
+--     ★ `attempt to index a nil value (field '_row_letter')` ✗
+--   ★ 机制 ✓：★ 那两张表**只在 `sync_clue_grid` 里被初始化** ✓
+--     ⇒ ★★ **不经过网格视窗的调用路径**（★ 例如只调 `_fill_grid_item` / 只调
+--       `build_layout` 的离线测试与工具 ✓）⇒ ★ **读的时候是 nil** ✗✓
+--   ★ 修法 ✓：★ 读之前**就地补一个空表** ✓ —— ★ 语义不变 ✓（★ 空表 = 没配字母 ✓）
+--     ★ 用 `rawget` 判 ✓ 避免元表干扰 ✓ ★ 只在 nil 时建 ✓（★ 不覆盖已有内容 ✗）
+function Controller:_ensure_row_maps()
+  if rawget(Controller, "_row_letter") == nil then Controller._row_letter = {} end
+  if rawget(Controller, "_row_face") == nil then Controller._row_face = {} end
 end
 
 -- ★★★★★★ 2026-10-11 **格子的标记：把【人物 id】换成【那一行的 `letter`】** ✗✓✓

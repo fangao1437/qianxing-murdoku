@@ -30,7 +30,7 @@ package.path = root .. "/lua/?.lua;" .. root .. "/lua/?/init.lua;" .. package.pa
 
 local UIC  = require("ui_controller")
 local Core = require("murdoku_core")
-local lv   = require("levels.demo_selftest")
+local lv   = require("tests.fixtures").clue_level_5x5()
 
 local passed, failed = 0, 0
 local function ok(cond, msg)

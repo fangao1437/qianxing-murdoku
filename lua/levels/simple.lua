@@ -37,7 +37,7 @@
           V = { name = "收藏家", victim = true },
         },
         thief = "D",
-        clues = { … },                   -- 可选；不写就用 auto_clues 生成的起点
+        clues = { … },                   -- ★ **必须手写** ✓（★ 不再自动生成 ✓ 见下 ✓）
       }
 
   产物 = 引擎认识的完整关卡表 ✓（`init.lua` / `murdoku_core` 不需要改 ✓）
@@ -75,18 +75,12 @@ local function deduce_cols(board, rows, cols)
   end
 end
 
--- ── 自动生成"位置型线索"（只是起点，你可以整段换掉）──────────────────────
---   只产出**必然为真**的两类：`in_row` / `in_col` ✓
---   ⚠️ 假话、区域关系、相对位置**不自动生成** —— 那些是关卡设计的活儿 ✓
-local function auto_clues(board)
-  local out = {}
-  for i = 1, #board do
-    local b = board[i]
-    out[#out + 1] = { type = "in_row", who = b.who, r = b.r }
-    out[#out + 1] = { type = "in_col", who = b.who, c = b.c }
-  end
-  return out
-end
+-- ★★★ 2026-10-11 **`auto_clues` 已删** ✗✓（★ 用户原话 ✓）：
+--   「★ **原本那套为每关人物发位置和字母的逻辑直接删了** ✓
+--    ★ **关卡设计本来就要改** ✓ ★ **不用留着他了**」✓
+-- ★ 删掉的正是这个函数 ✓：★ 它给**每个人**自动发两条 `in_row` / `in_col`
+--   ⇒ 那就是"**为每关人物发位置**" ✓ ★ 也正是那套要被换掉的东西 ✓
+-- ⇒ ★★ 现在：★ `clues` **必须手写** ✓ —— ★ 不写就是**空** ✓ ★ **不再自动编** ✓✓
 
 -- ── 展开 ──────────────────────────────────────────────────────────────────
 function M.expand(spec)
@@ -140,7 +134,11 @@ function M.expand(spec)
   lv.size = lv.size or { rows = rows, cols = cols }
   lv.suspects = lv.suspects or suspects
   lv.solution = lv.solution or solution
-  lv.clues = lv.clues or auto_clues(board)
+  -- ★★★ 2026-10-11 **不再自动生成线索** ✗✓（★ 原来这里是 `lv.clues or auto_clues(board)` ✓）
+  --   ★ 用户明确要求删掉那套"为每关人物发位置和字母"的逻辑 ✓ ⇒ ★ **不写就是空** ✓
+  --   ⚠️ ★ 后果 ✓：★ 线索空 ⇒ `Core.new` 照旧能起来 ✓ ★ 但 `validate_levels` 的**唯一解**
+  --     闸门会报多个解 ✓ —— ★ 那是**内容还没设计** ✓ ★ 不是逻辑坏了 ✓
+  lv.clues = lv.clues or {}
   lv.victim = lv.victim or (function()
     for i = 1, #suspects do if suspects[i].is_victim then return { id = suspects[i].id, name = suspects[i].name } end end
     return nil

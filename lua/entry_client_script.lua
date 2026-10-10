@@ -184,7 +184,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v172 / 2026-10-11 / 修两个跨关/稳定性逻辑bug: ①同一个人的letter被两条线索点到时原来无条件覆盖,谁赢取决于每帧写入顺序(自检关每人只被点一次所以看不出,case_002有4人各被两条点到)=>改成先到先得+配重时如实报一行; ②Controller._row_letter/_row_face是模块级,跨控制器存活,row.<关>为空的那关会显示上一关的字母=>进关卡按level.id签名清一次; 新增tests/row_letter_stability.lua(8断言) =====")
+        print("[murdoku] ===== 构建标记 v173 / 2026-10-11 / 按用户要求删掉整套'为每关人物发位置和字母'的线索: 四关的clues表与meta.false_clue全删(关卡本体walls/doors/objects/roles/solution/size一字未动); 删tools/find_clues.lua与levels/simple.lua的auto_clues(线索须手写,不写即空); 新增tests/fixtures.lua承载三份带线索的测试关(simple_level/selftest/三个letter套件不再依赖真关卡有线索); validate_levels在线索0条时报'未测'而非FAIL(有线索时判据一字不变); ui_controller把_row_letter/_row_face提到模块初始化(修不经过网格路径时的nil下标崩溃) =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

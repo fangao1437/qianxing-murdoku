@@ -101,17 +101,31 @@ for _, lv in ipairs(levels) do
       end
 
       -- 唯一解（含角色归属）
-      local sols = core:solve(limit)
-      if #sols == 1 then
-        print(string.format("  唯一解: OK（盗窃者 %s，同伙 %s）",
-              tostring(sols[1].thief), tostring(sols[1].accomplice)))
+      -- ★★★ 2026-10-11 **线索为空的关卡：这一项【不适用】，如实标注** ✗✓
+      --   ★ 起因 ✓：★ 用户要求把那套"为每关人物发位置和字母"的逻辑**整段删掉** ✓
+      --     （★ 原话：「★ 关卡设计本来就要改 ✓ ★ 不用留着他了」✓）
+      --     ⇒ ★★ 真关卡现在**线索 = 0** ✓
+      --   ★ 而"唯一解"这个判据**以线索为前提** ✗ —— ★ 0 条线索必然多解 ✓
+      --     ⇒ ★ 照旧报 FAIL ⇒ ★★ **每关都红** ✗ ⇒ ★ **把真正的红淹掉** ✓（★ 这项目最反对的"假红淹真红" ✓）
+      --   ⇒ ★★ 处理 ✓：★ **无线索 ⇒ 报"未测（无线索）"** ✓ ★ **不计入 bad** ✓
+      --     ★ **但绝不放松判据** ✗ —— ★ 只要**有线索**，判据**一字不变** ✓✓
+      --   ★★ 这也是给后来人的指针 ✓：★ 见红先看"线索 %d"是否 > 0 ✓
+      local n_clues = #(lv.clues or {})
+      if n_clues == 0 then
+        print("  唯一解: 未测（本关线索 0 条 —— ★ 内容待设计 ✓ 不是判据失效 ✗）")
       else
-        bad = bad + 1
-        print(string.format("  唯一解: FAIL（找到 %d 个解，上限 %d）—— 线索不足或角色不唯一",
-              #sols, limit))
-        for i = 1, #sols do
-          print(string.format("    解%d: 盗窃者 %s / 同伙 %s",
-                i, tostring(sols[i].thief), tostring(sols[i].accomplice)))
+        local sols = core:solve(limit)
+        if #sols == 1 then
+          print(string.format("  唯一解: OK（盗窃者 %s，同伙 %s）",
+                tostring(sols[1].thief), tostring(sols[1].accomplice)))
+        else
+          bad = bad + 1
+          print(string.format("  唯一解: FAIL（找到 %d 个解，上限 %d）—— 线索不足或角色不唯一",
+                #sols, limit))
+          for i = 1, #sols do
+            print(string.format("    解%d: 盗窃者 %s / 同伙 %s",
+                  i, tostring(sols[i].thief), tostring(sols[i].accomplice)))
+          end
         end
       end
 

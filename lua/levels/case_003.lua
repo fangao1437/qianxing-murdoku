@@ -6,7 +6,16 @@
 
   教学点：把前面两条合起来用 ——
     · k=3（受害者身边有两个人）→ **必有同伙**（R4）
-    · 假话**不告知**（announce="unknown"），玩家连"有没有假话"都要自己判断
+  ★★★ 2026-10-11 **线索表已删** ✗✓（★ 用户原话 ✓）：
+    「★ **原本那套为每关人物发位置和字母的逻辑直接删了** ✓
+     ★ **关卡设计本来就要改** ✓ ★ **不用留着他了**」✓
+  ⇒ ★★ 原来那套"报位置 ＋ 发字母"的线索**整段删掉** ✓
+    ★ **`meta.false_clue` 一并作废** ✓（★ 它按序号指线索 ✓ 线索没了它就没意义 ✓）
+  ⇒ ★★★ **本关现在【没有线索】** ✓ —— ★ **等新设计** ✓
+    ★ 关卡本体（`walls`/`doors`/`objects`/`roles`/`solution`/`size`）**一个字没动** ✓✓
+  ⚠️ ★ 已知后果 ✓（★ 不是 bug ✗）：★ `tools/validate_levels.lua` 的**唯一解**闸门
+    会报「找到 3 个解」✓ —— ★ 那是**内容还没设计** ✓ ★ 不是逻辑坏了 ✓
+
 
   ── 空间结构（三个区域）────────────────────────────────────────────────
     R_T = 第 1-4 行 × 第 1-4 列（16 格，容量 min(4,4)=4）
@@ -31,7 +40,6 @@
     答案：D(1,1) C(2,4) A(3,2) B(4,3) V(5,6) E(6,5) F(7,7)
           行 1..7、列 1..7 各一次。
 
-  线索 18 条，第 18 条是那句假话（且**不告诉玩家**本关有假话）。
 ----------------------------------------------------------------------------]]--
 
 return {
@@ -93,7 +101,7 @@ return {
 
   -- 不告诉玩家本关有没有假话 —— 让他自己从矛盾里推
   meta = {
-    false_clue = 18,
+    false_clue = nil,   -- ★ 线索表已删 ⇒ 假话声明一并作废 ✓
     announce   = "unknown",
   },
 
@@ -107,38 +115,6 @@ return {
     F = { r = 7, c = 7 },   -- R_V
   },
 
-  --[[ 线索：全部关系型。前两条 same_room 是**故意**给玩家算 k 用的 ——
-       它告诉玩家"馆长、记者、赞助人在同一间"，于是 k=3 ≥ 2 → 必有同伙。 ]]
-  clues = {
-    { type = "same_room", a = "V", b = "E" },                        -- 馆长与记者同区
-    { type = "same_room", a = "V", b = "F" },                        -- 馆长与赞助人同区
-
-    { type = "abs_col_from", who = "V", n = 2, from = "right" },     -- 馆长在倒数第 2 列
-    { type = "abs_row_from", who = "V", n = 3, from = "bottom" },    -- 馆长在倒数第 3 行
-
-    { type = "col_offset", who = "E", other = "V", d = -1 },         -- 记者在馆长西边 1 列
-    { type = "row_offset", who = "E", other = "V", d = 1 },          -- 记者在馆长南边 1 行
-
-    { type = "col_offset", who = "F", other = "V", d = 1 },          -- 赞助人在馆长东边 1 列
-    { type = "row_offset", who = "F", other = "V", d = 2 },          -- 赞助人在馆长南边 2 行
-
-    { type = "abs_col_from", who = "@thief", n = 1 },                -- 盗窃者在第 1 列
-    { type = "abs_row_from", who = "@thief", n = 1 },                -- 盗窃者在第 1 行
-
-    { type = "col_offset", who = "@accomplice", other = "@thief", d = 3 },  -- 同伙在盗窃者东边 3 列
-    { type = "row_offset", who = "@accomplice", other = "@thief", d = 1 },  -- 同伙在盗窃者南边 1 行
-
-    { type = "col_offset", who = "A", other = "V", d = -4 },         -- 保安在馆长西边 4 列
-    { type = "row_offset", who = "A", other = "V", d = -2 },         -- 保安在馆长北边 2 行
-
-    { type = "col_offset", who = "B", other = "A", d = 1 },          -- 助理在保安东边 1 列
-    { type = "row_offset", who = "B", other = "A", d = 1 },          -- 助理在保安南边 1 行
-
-    -- ★ 防"身份镜像"：只写"盗窃者/同伙在哪一格"的话，D 与 C 可以对调。
-    { type = "not_role", who = "D", role = "accomplice" },           -- 鉴定师不是同伙
-
-    { type = "abs_row_from", who = "C", n = 1, from = "bottom" },    -- ★ 第 18 条：假话（搬运工实际在第 2 行）
-  },
 
   --[[ 设计备注：为什么不用 left_of / right_of / above / below
        这四种要求"同一行/同一列"才能成立（见 murdoku_core.lua 的 ctx.is_left_of /

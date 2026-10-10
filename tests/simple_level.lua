@@ -51,11 +51,27 @@ print("\n== 4. 受害者与盗窃者 ==")
 ok(lv.victim and lv.victim.id == "V", "victim 派生", lv.victim and lv.victim.id)
 ok(lv.roles and lv.roles.thief == "D", "roles.thief 透传", lv.roles and lv.roles.thief)
 
-print("\n== 5. 线索：没写就自动生成位置型（只是起点）==")
-ok(type(lv.clues) == "table" and #lv.clues == 8, "4 人 × 2 条 = 8 条", #lv.clues)
-local kinds = {}
-for i = 1, #lv.clues do kinds[lv.clues[i].type] = true end
-ok(kinds.in_row and kinds.in_col, "只有 in_row / in_col", (kinds.in_row and "in_row " or "") .. (kinds.in_col and "in_col" or ""))
+print("\n== 5. 线索：★ 不再自动生成 ⇒ 不写就是空 ==")
+-- ★★★ 2026-10-11 **本节改了判据** ✗✓（★ 原来是"没写就自动生成位置型" ✓）：
+--   ★ 用户原话 ✓：「★ **原本那套为每关人物发位置和字母的逻辑直接删了** ✓
+--     ★ **关卡设计本来就要改** ✓ ★ **不用留着他了**」✓
+--   ⇒ ★★ `levels/simple` 的 `auto_clues`（★ 每人发 `in_row` ＋ `in_col` ✓）**已删** ✓
+--   ⇒ ★ 新的契约 ✓：★ **`clues` 必须手写** ✓ ★ **不写 ⇒ 空表** ✓ ★ **不替玩家编** ✓✓
+ok(type(lv.clues) == "table" and #lv.clues == 0,
+  "★ 不写 clues ⇒ 空表（★ 不再自动生成 ✓）", tostring(#lv.clues))
+
+-- ★ 写了的必须**原样透传** ✓（★ 手写的那份不能被派生逻辑动过 ✓）
+local lv5 = S.expand {
+  id = "t5", rows = 4, cols = 4,
+  board = { { r = 1, c = 1, who = "A" }, { r = 2, c = 2, who = "B" },
+            { r = 3, c = 3, who = "D" }, { r = 4, c = 4, who = "V" } },
+  people = { V = { victim = true } },
+  thief = "D",
+  clues = { { type = "in_row", who = "A", r = 1 } },   -- ★ 只给一条 ✓
+}
+ok(type(lv5.clues) == "table" and #lv5.clues == 1 and lv5.clues[1].type == "in_row",
+  "★ 手写的 clues 原样透传（★ 一条都不多不少 ✓）",
+  tostring(lv5.clues and #lv5.clues))
 
 print("\n== 6. 只给行、且只剩一个空列 ⇒ 自动推（真能推的情形）==")
 -- ⚠️ 我第一版这里写错了 ✗：只给一个人一行、而 4 列全空 ⇒ **本就该报错** ✓
@@ -100,7 +116,7 @@ ok(okd == false, "重复的人 ⇒ 报错", tostring(errd):sub(1, 50))
 print("\n== 10. 引擎那边的接口没变（旧写法不受影响）==")
 local core = require("murdoku_core")
 ok(type(core) == "table", "murdoku_core 仍能加载")
-local c1 = require("levels.case_001")
+local c1 = require("tests.fixtures").clue_level_case001()
 ok(c1.solution and c1.solution.D and c1.solution.D.r == 1, "旧写法 case_001 一个字没动",
   c1.solution and (c1.solution.D.r .. "," .. c1.solution.D.c))
 

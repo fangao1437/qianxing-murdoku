@@ -74,7 +74,7 @@ end
 
 local UIC = require("ui_controller")
 local Core = require("murdoku_core")
-local lv = require("levels.case_001")
+local lv = require("tests.fixtures").clue_level_case001()
 
 -- ★★★ 注意 ✓：`Controller._row_letter` / `_row_face` 挂在
 --   **`M.Controller`**（`ui_controller.lua:276` ✓）上，**不是**模块表自己 ✗

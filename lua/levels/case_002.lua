@@ -26,7 +26,16 @@
     答案：D(1,1) C(2,4) A(3,3) B(4,2) V(5,6) E(6,5)
           行 1..6 各一次、列 1..6 各一次。
 
-  线索 15 条，第 15 条是那句假话；announce = "one"（告诉玩家本关有一句假话）。
+  ★★★ 2026-10-11 **线索表已删** ✗✓（★ 用户原话 ✓）：
+    「★ **原本那套为每关人物发位置和字母的逻辑直接删了** ✓
+     ★ **关卡设计本来就要改** ✓ ★ **不用留着他了**」✓
+  ⇒ ★★ 原来那套"报位置 ＋ 发字母"的线索**整段删掉** ✓
+    ★ **`meta.false_clue` 一并作废** ✓（★ 它按序号指线索 ✓ 线索没了它就没意义 ✓）
+  ⇒ ★★★ **本关现在【没有线索】** ✓ —— ★ **等新设计** ✓
+    ★ 关卡本体（`walls`/`doors`/`objects`/`roles`/`solution`/`size`）**一个字没动** ✓✓
+  ⚠️ ★ 已知后果 ✓（★ 不是 bug ✗）：★ `tools/validate_levels.lua` 的**唯一解**闸门
+    会报「找到 3 个解」✓ —— ★ 那是**内容还没设计** ✓ ★ 不是逻辑坏了 ✓
+
 ----------------------------------------------------------------------------]]--
 
 return {
@@ -86,7 +95,7 @@ return {
   },
 
   meta = {
-    false_clue = 15,
+    false_clue = nil,   -- ★ 线索表已删 ⇒ 假话声明一并作废 ✓
     announce   = "one",
   },
 
@@ -99,40 +108,6 @@ return {
     E = { r = 6, c = 5 },   -- R_V（与受害者同区 → k=2 → 必有同伙）
   },
 
-  --[[ 线索全部是**关系型**的（"谁在谁的东边几列 / 南边几行 / 谁和谁独处一室"），
-       而不是直接报坐标 —— 这样玩家是在做空间推理，不是在抄格子。
-
-       用到的原子：abs_col_from（倒数第 N 列）、abs_row_from（倒数第 N 行）、
-                   col_offset / row_offset（在谁东/西边几列、南/北边几行）、
-                   alone_with（与谁独处一室）、not_role（身份排除）。 ]]
-  clues = {
-    { type = "abs_col_from", who = "V",  n = 1, from = "right" },   -- 馆长在倒数第 1 列
-    { type = "abs_row_from", who = "V",  n = 2, from = "bottom" },  -- 馆长在倒数第 2 行
-    { type = "alone_with",   a = "V", b = "E" },                    -- 馆长只和随行记者待在同一间
-
-    { type = "col_offset", who = "E", other = "V", d = -1 },        -- 记者在馆长西边 1 列
-    { type = "row_offset", who = "E", other = "V", d = 1 },         -- 记者在馆长南边 1 行
-
-    { type = "abs_col_from", who = "@thief", n = 1 },               -- 盗窃者在第 1 列
-    { type = "abs_row_from", who = "@thief", n = 1 },               -- 盗窃者在第 1 行
-
-    { type = "col_offset", who = "@accomplice", other = "@thief", d = 3 },  -- 同伙在盗窃者东边 3 列
-    { type = "row_offset", who = "@accomplice", other = "@thief", d = 1 },  -- 同伙在盗窃者南边 1 行
-
-    { type = "col_offset", who = "A", other = "V", d = -3 },        -- 门卫在馆长西边 3 列
-    { type = "row_offset", who = "A", other = "V", d = -2 },        -- 门卫在馆长北边 2 行
-
-    { type = "col_offset", who = "B", other = "A", d = -1 },        -- 助理在门卫西边 1 列
-    { type = "row_offset", who = "B", other = "A", d = 1 },         -- 助理在门卫南边 1 行
-
-    -- ★ 这条是**必需的**，别删：没有它，D 与 C 的**位置和身份可以整体互换**
-    --   （线索 6~9 只说"盗窃者/同伙在哪一格"，没说"谁"），而互换后的解
-    --   只多违反"假话那一条"，仍满足"至多一条假话"。
-    --   实测：少了这条，求解器会找到 2 个解（D/C 与 C/D 互为镜像）。
-    { type = "not_role", who = "D", role = "accomplice" },          -- 鉴定师不是同伙
-
-    { type = "abs_col_from", who = "C", n = 1, from = "right" },    -- ★ 第 15 条：假话（搬运工实际在第 4 列）
-  },
 
   --[[ 设计备注：为什么不用 left_of / right_of / above / below
        这四种线索的判定是「**同一行**且列更小 / **同一列**且行更小」
