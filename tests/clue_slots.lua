@@ -17,12 +17,20 @@
      ★★ **而是让这套流程代替原本的流程、赋予 `clues` 的一切内容** ✓
      ★ **直接从逻辑上替换掉原先那套模式**」✓✓
 
-  ⇒ ★ 所以本文件钉**三件事** ✓：
-    ★ ① **条数 = `rows × cols`** ✓ ★ **四关分别是 25 / 25 / 36 / 49** ✓
-    ★ ② ★ **不再靠"手写线索表"** ✗ —— ★ 真关卡里 `level.clues` **是空的** ✓
-      ★ 而**引擎照旧补满槽位** ✓（★ 这就是"替换掉原先那套模式" ✓）
-    ★ ③ ★ **槽位是"待填"的** ✓ —— ★ 没有 `type` ✓ ★ 不编内容 ✓
-      ★★ 而且 ★ **控件上限必须够装最大的棋盘** ✓（★ 49 ✓ 否则第 19 条起**点不着** ✗）
+  ★★★★ 2026-10-11 **"几乘几就是几条"我第一版理解错了** ✗✓（★ 用户当场纠正 ✓）：
+    ★ 我按 **`rows × cols`（格数）** 做 ✗ ⇒ ★ 7×7 = **49 条** ✗
+    ★★★ 用户原话 ✓：「★ **不是 7 乘 7 写 49 条** ✓
+      ★ **而是因为按规则 7 乘 7 只放得下 7 人** ✓
+      ★ **所以只写七条**」✓✓
+    ⇒ ★★ 正解 ✓：★ **条数 = `min(rows, cols)`** ✓（★ = 棋盘装得下几人 ✓）
+      ★ 依据 ✓：★ `one_per_row` ＋ `one_per_col` ⇒ ★ **每行每列至多一人** ✓
+    ⇒ ★★★ 所以本文件钉**四件事** ✓：
+      ★ ① ★ **条数 = `min(rows, cols)`** ✓ ★ **且与棋子数相等** ✓（★ 四关 5/5/6/7 ✓）
+      ★ ② ★ **不再靠"手写线索表"** ✗ —— ★ 真关卡里 `level.clues` **是空的** ✓
+        ★ 而**引擎照旧补满槽位** ✓（★ 这就是"替换掉原先那套模式" ✓）
+      ★ ③ ★ **槽位是"待填"的** ✓ —— ★ 没有 `type` ✓ ★ 不编内容 ✓
+      ★ ④ ★ **控件上限够装最大棋盘** ✓ ＋ ★ **端到端建出 7 张卡** ✓
+    ★★ **多解问题不归这里管** ✗ —— ★ 用户原话 ✓：「★ **多解问题是内容问题，我来解决**」✓✓
 
   跑法：lua tests/clue_slots.lua
 ----------------------------------------------------------------------------]]--
@@ -43,7 +51,7 @@ local function ok(cond, msg)
 end
 
 --------------------------------------------------------------------------------
--- 1. ★★★ 条数 = 棋盘格数（★ 逐关 ✓）
+-- 1. ★★★ 条数 = 棋盘【容量】= `min(rows, cols)`（★ 不是格数 ✗）
 --------------------------------------------------------------------------------
 do
   local all = init.all()
@@ -53,17 +61,24 @@ do
     local core = Core.new(lv)
     ok(core ~= nil, "关卡 " .. tostring(lv.id) .. " 能构造")
     if core ~= nil then
-      local want = core.rows * core.cols
+      -- ★★★ 用户口径 ✓：「★ 不是 7×7 写 49 条 ✓
+      --   ★ 而是因为按规则 7×7 **只放得下 7 人** ✓ ⇒ ★ **只写七条**」✓
+      --   ★ 依据 ✓：★ `one_per_row` ＋ `one_per_col` ⇒ ★ **每行每列至多一人** ✓
+      local want = math.min(core.rows, core.cols)
       ok(core.clue_slots == want,
         string.format("%s：%d×%d ⇒ 槽位应为 %d（实测 %s）",
           tostring(lv.id), core.rows, core.cols, want, tostring(core.clue_slots)))
+      -- ★★ 与棋子数**必须相等** ✓ —— ★ "一人一条"的直接推论 ✓
+      ok(core.clue_slots == core:piece_count(),
+        string.format("%s：槽位应与棋子数相等（槽位 %s / 棋子 %d）",
+          tostring(lv.id), tostring(core.clue_slots), core:piece_count()))
       local vm = core:view() or {}
       ok(#(vm.clues or {}) == want,
         string.format("%s：视图里也应有 %d 张卡（实测 %d）",
           tostring(lv.id), want, #(vm.clues or {})))
     end
   end
-  print("  [PASS] 条数 = rows × cols（逐关）")
+  print("  [PASS] 条数 = min(rows, cols) = 棋子数（逐关）")
 end
 
 --------------------------------------------------------------------------------
@@ -99,17 +114,18 @@ end
 --------------------------------------------------------------------------------
 do
   local L = UIC.LAYOUT
-  ok(type(L.clue_max_visible) == "number" and L.clue_max_visible >= 49,
-    "clue_max_visible 必须 ≥ 49（7×7 的格数）—— 实测 " .. tostring(L.clue_max_visible))
+  -- ★ 最大关卡 7×7 ⇒ 容量 7 ⇒ ★ 上限至少 7 ✓（★ 多解/内容问题不归这里管 ✓）
+  ok(type(L.clue_max_visible) == "number" and L.clue_max_visible >= 7,
+    "clue_max_visible 必须 ≥ 7（7×7 的容量）—— 实测 " .. tostring(L.clue_max_visible))
   -- ★ 窗口行数 × 行高 必须 ≤ 线索区高度 ✓（★ 否则滚动按钮会被推到画布外 ✓ 项目踩过 ✓）
   ok(L.clue_rows * L.clue_row_h <= L.clues.h + 1,
     string.format("clue_rows×clue_row_h 不该超过线索区高度（%s×%s vs %s）",
       tostring(L.clue_rows), tostring(L.clue_row_h), tostring(L.clues.h)))
-  print("  [PASS] 控件上限 ≥ 49，且窗口行数没超出线索区")
+  print("  [PASS] 控件上限够用，且窗口行数没超出线索区")
 end
 
 --------------------------------------------------------------------------------
--- 5. ★★ 7×7 建出来的卡片数 = 49（★ 端到端 ✓ 不是读常量 ✓）
+-- 5. ★★ 7×7 建出来的卡片数 = 7（★ 端到端 ✓ 不是读常量 ✓）
 --------------------------------------------------------------------------------
 do
   local lv = require("levels.case_003")
@@ -121,8 +137,8 @@ do
     local id = plan[i].id
     if type(id) == "string" and id:match("^clue%.%d+$") then n = n + 1 end
   end
-  ok(n == 49, "7×7 关卡应建出 49 张线索卡（实测 " .. n .. "）")
-  print("  [PASS] 7×7 ⇒ 49 张卡（端到端）")
+  ok(n == 7, "7×7 关卡应建出 7 张线索卡（实测 " .. n .. "）")
+  print("  [PASS] 7×7 ⇒ 7 张卡（端到端）")
 end
 
 --------------------------------------------------------------------------------
