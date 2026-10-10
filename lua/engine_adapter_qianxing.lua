@@ -4629,7 +4629,26 @@ function Adapter:set_property(id, key, value, nkey)
           if f ~= nil then fw, fh = f:GetSizeDelta() end
         end)
         if fw ~= nil and fh ~= nil and fw > 1 and fh > 1 then
-          local hbox = math.max(30, fh / 3)
+          -- ★★★★★★ 2026-10-10 **补上"设框"那两行 —— 这才是「标记还是错的」的元凶** ✗✓✓
+          --
+          --   ★★★ 地图员实地测绘发现 ✓（★ 硬证据 ✓）：
+          --     ★ ① `hbox` 在【整个 adapter 里只出现这一次】✗ ⇒ ★ **算出来、从未被读** ✓
+          --     ★ ② 这一段里【没有 `SetSizeDelta`、也没有 `SetAnchoredPosition`】** ✗
+          --        ★ 而【同类功能在棋盘格上有】✓（★ L2177-2179 ✓）
+          --     ★ ③ **同一段注释里，项目自己记着实测结论** ✓：
+          --        ★「存档里 `note` 的框在运行时【位置上不被沿用】⇒ 飘到格子外 ⇒ **引擎不画**」✓
+          --        ★「**只钉位置、不设尺寸 ⇒ 不画**」✓
+          --        ★「**这个控件必须由脚本给出"够大、穿过格子中部"的框，引擎才画**」✓
+          --   ⇒ ★★ **注释说"脚本每次都把框设回来"，而代码里那两行【不存在】** ✓✓
+          --   ⇒ ★★★ **⇒ 笔记字母不被绘制 ⇒「标记还是错的」** ✓✓
+          --
+          --   ★ 修法 ✓：★ 用【已算好】的 `hbox` ＋ 从 `face` 读到的 `fw` ✓
+          --     ★ 与棋盘格那条同一形状 ✓（★ 钉位置 (0,0) ＋ 给一个穿中部的框 ✓）
+          --     ★ 宽用 `fw` ✓（★ 卡片侧 `face` 的宽 ✓）；★ 高用 `hbox`（★ fh/3，下限 30 ✓）
+          --     ⚠️ ★ 待真机确认 ✓：★ 若太宽/太窄 ⇒ 调 `fw` 的系数即可 ✓（★ 一行 ✓）
+              local hbox = math.max(30, fh / 3)
+              if c.SetSizeDelta then pcall(function() c:SetSizeDelta(fw, hbox) end) end
+              if c.SetAnchoredPosition then pcall(function() c:SetAnchoredPosition(0, 0) end) end
           -- ★★★★★ 2026-10-07 **二次修正：脚本必须自己把框设回来** ✗✓
           --   ★ 用户的关键观察（★ 一针见血 ✓）：★ 运行时读到的 `100×30`
           --     ★ **和编辑器的任何一版都不一致**（★ 用户说旧值也是 `124×37` ✓）

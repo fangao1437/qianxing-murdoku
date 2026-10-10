@@ -111,6 +111,7 @@ function analyze(codeLines) {
   const stack = [], perLine = [], closerOf = new Map();
   codeLines.forEach((text, i) => {
     const lineNo = i + 1;
+    const stackBefore = stack.map((x) => ({ ...x }));   // ★ 本行【之前】的块栈 ✓ 找"外层守卫"要用 ✓
     const ev = []; let m;
     KW_OPEN.lastIndex = 0;
     while ((m = KW_OPEN.exec(text))) {
@@ -140,7 +141,7 @@ function analyze(codeLines) {
         if (depth < 0 && !broken) broken = '深度变负 @L' + lineNo;
       }
     }
-    perLine.push({ line: lineNo, openers, closers, depthAfter: depth });
+    perLine.push({ line: lineNo, openers, closers, depthAfter: depth, stackBefore });
   });
   return { depth, broken, perLine, closerOf };
 }
@@ -381,11 +382,43 @@ if (OUTLINE) {
   }
 }
 
-if (!DO_FUNCS && !REFS && !DO_ORPHAN && !CODE && !DELRANGE && !OUTLINE) {
+// ── ⑦ --prints：★ 每条 `print(` ＋ 它的【外层守卫区间】✓（清诊断日志用 ✓）──────
+//   ★ 用途：真机日志里那些"诊断X / 探针X / 实况X" ⇒ ★ 要删就得连**守卫**一起删 ✗
+//     ⇒ ★ 只删 `print` 那一行 ⇒ 留下空的 `if (self._x_log or 0) < N then end` ✗
+//   ★ 输出：`L守卫起..L守卫止（守卫关键字）` ＋ `print` 所在行 ＋ 原始文本片段 ✓
+const PRINTS = argv.includes('--prints');
+if (PRINTS) {
+  const MARK = argVal('marker');      // ★ 只列原始文本里含这些字的 ✓（逗号分隔 ✓）
+  const marks = MARK ? MARK.split(',') : null;
+  for (const p of files) {
+    const { code, lines, an } = load(p);
+    say('══ ' + rel(p) + '（' + (lines.length - 1) + ' 行）所有 `print(` ＋ 外层守卫 ══');
+    let n = 0;
+    for (let i = 0; i < code.length; i++) {
+      if (!/\bprint\s*\(/.test(code[i])) continue;
+      const raw = lines[i];
+      if (marks && !marks.some((m) => raw.includes(m))) continue;
+      // ★ 最内层的 `if` 守卫 ✓
+      const sb = an.perLine[i].stackBefore;
+      let guard = null;
+      for (let k = sb.length - 1; k >= 0; k--) if (sb[k].kind === 'if') { guard = sb[k]; break; }
+      const gEnd = guard ? (an.closerOf.get(guard.line + ':' + guard.at) ?? null) : null;
+      n++;
+      say('  print@L' + String(i + 1).padStart(5) + '　守卫：'
+        + (guard ? ('L' + guard.line + '..L' + gEnd) : '（无 ✓ 顶层裸 print ✗）'));
+      say('        ' + raw.trim().slice(0, 96));
+    }
+    say('  ★ 共 ' + n + ' 条' + (marks ? '（筛 "' + MARK + '" ✓）' : ''));
+    say('');
+  }
+}
+
+if (!DO_FUNCS && !REFS && !DO_ORPHAN && !CODE && !DELRANGE && !OUTLINE && !PRINTS) {
   say('用法：node tools/lua_map.mjs --funcs [--file=<f>] [--grep=<s>]');
   say('      node tools/lua_map.mjs --refs=<名字>');
   say('      node tools/lua_map.mjs --orphan [--file=<f>]');
   say('      node tools/lua_map.mjs --code=<正则> [--file=<f>] [--range=a-b]');
   say('      node tools/lua_map.mjs --delrange=<起>-<至少到> [--file=<f>]   # ★ 栈安全判据 ✓ 比 --selfcontained 严 ✓');
   say('      node tools/lua_map.mjs --outline=<起>-<止> [--level=1] [--file=<f>]  # ★ 只列该层的直接子块 ✓');
+  say('      node tools/lua_map.mjs --prints [--marker=诊断,探针,实况] [--file=<f>]  # ★ print ＋ 外层守卫区间 ✓');
 }

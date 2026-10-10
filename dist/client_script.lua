@@ -3582,25 +3582,7 @@ function Controller:on_cell_click(r, c)
   --   核心 `tap_cell` 在 **place 模式**就已经是：★ 已有人 ⇒ 拿起 ✓ 没选人 ⇒ 切 ✗ ✓
   --     ★ **选了人 + 空格 ⇒ `toggle_note(selected)` = 铅笔笔记** ✓（`murdoku_core.lua:1910` ✓）
   --   ⇒ **不需要切模式** ✓ 所以这一段只做观测 ✓
-  if (self._diag_tap2 or 0) < 6 then
-    self._diag_tap2 = (self._diag_tap2 or 0) + 1
-    local nt, sel = "?", "?"
-    pcall(function()
-      sel = tostring(core.selected)
-      local row = core.notes and core.notes[r]
-      local celln = row and row[c]
-      if type(celln) == "table" then
-        local ks = {}
-        for k, v in pairs(celln) do if v then ks[#ks + 1] = tostring(k) end end
-        nt = "{" .. table.concat(ks, ",") .. "}"
-      else
-        nt = tostring(celln)
-      end
-    end)
-    print("[murdoku] ★ 诊断NOTE2：单击(" .. tostring(r) .. "," .. tostring(c) .. ")  occupied="
-      .. tostring(occupied) .. "  selected=" .. sel .. "  返回 ok=" .. tostring(ok)
-      .. " why=" .. tostring(why) .. "  该格笔记=" .. nt)
-  end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：诊断NOTE2　原 L732..L750
   if ok then
     if had then
       -- ★ 2026-09-27 修（用户报"双击格子有时会导致其消失"）：
@@ -5869,36 +5851,17 @@ function Controller:build_layout()
       --   素材 ★ **107179**（760×152 · 两端全圆角米白）= 用户选定 ✓ 沿用控件自己的官方图集 ✓
       -- ★ 2026-10-08 **守卫【外面】的探针** ✓（★ 真机：里面那两条一行没打 ✗ ⇒ 根本没进来 ✓）
       --   ★ 要分清两种可能 ✓：★ ① `self.adapter` 此刻是 nil ✗ ★ ② `_exit_menu_art` 已被置真 ✗
-      if (self._art_gate_log or 0) < 6 then
-        self._art_gate_log = (self._art_gate_log or 0) + 1
-        -- ★★★★★ 2026-10-08 **渲染分支置标记** ✗✓（★ 本行已证"弹窗开着时每帧都跑" ✓ 真机日志可证 ✓）
-        --   ★ 为什么只置标记 ✓：★ 这里的 `self.adapter` **是 nil** ✗（★ 真机连打 6 次全 false ✓）
-        --     ⇒ ★ 本处**只报告"弹窗此刻开着"** ✓ ★ 读 `bg` 的活儿交给"拿得到 adapter"的那一侧 ✓
-        --   ★ 标记 = 一个递增计数 ＋ 最近一次的时间戳 ✓（★ 两侧靠它对齐 ✓）
-        self._modal_seen = (self._modal_seen or 0) + 1
-        print("[murdoku] ★ 胶囊底图：到守卫  adapter=" .. tostring(self.adapter ~= nil)
-          .. "  闩锁=" .. tostring(self._exit_menu_art))
-      end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：胶囊底图a　原 L3019..L3028
       if (not self._exit_menu_art) and self.adapter ~= nil then
         self._exit_menu_art = true
         for _, bid in ipairs({ "modal.exit", "modal.save", "modal.settle", "modal.cancel" }) do
           local bg = nil
           pcall(function() bg = self.adapter:sub(bid, "bg") end)
           -- ★ 2026-10-08 探针：★ `bg` 取到没 ✓（★ 取不到 ⇒ 与 `assets` 同源 ✗ 按名取子控件 ✓）
-          if (self._art_log or 0) < 8 then
-            self._art_log = (self._art_log or 0) + 1
-            local _sz = "?"
-            pcall(function() _sz = tostring(bg and (bg.sizeDelta and (bg.sizeDelta.x .. "x" .. bg.sizeDelta.y) or "无sizeDelta")) end)
-            print("[murdoku] ★ 胶囊底图：bid=" .. tostring(bid) .. "  bg=" .. tostring(bg ~= nil) .. "  size=" .. _sz)
-          end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：胶囊底图b　原 L3035..L3040
           if bg ~= nil and self.adapter.set_image_deep ~= nil then
             pcall(function() self.adapter:set_image_deep(bg, 107179, nil, nil, "弹窗胶囊") end)
-          if (self._art_log2 or 0) < 8 then
-            self._art_log2 = (self._art_log2 or 0) + 1
-            local _rb = nil
-            pcall(function() _rb = tostring(bg and bg.imageId) end)
-            print("[murdoku] ★ 胶囊底图：设图后回读 imageId=" .. tostring(_rb))
-          end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：胶囊底图c　原 L3043..L3048
           end
         end
       end
@@ -6763,11 +6726,7 @@ function Controller:sync_clue_grid(adapter)
     local _rn = self:_grid_refill_now(adapter, grid)
     if _rn > 0 then
       self._grid_refill_n = (self._grid_refill_n or 0) + 1
-      if (self._grid_refill_log or 0) < 3 and print then
-        self._grid_refill_log = (self._grid_refill_log or 0) + 1
-        print("[murdoku] ★ 就地重填：" .. tostring(_rn) .. " 个列表项（★ **不碰 RefreshItems** ✓ "
-          .. "⇒ 滚动位置不动 ✓）")
-      end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：就地重填　原 L3913..L3917
     end
   end
   if self._grid_state == "on" and self._grid_sig == sig then return end
@@ -6800,14 +6759,7 @@ function Controller:sync_clue_grid(adapter)
   self._grid_in_refresh = false
 
   -- ★ 只读探针 ✓：数"视窗里物理上挂了多少个子控件"✗（= 引擎真的建了几个列表项 ✓）
-  if print then
-    local nk = nil
-    pcall(function() local kids = grid:GetChildren() if type(kids) == "table" then nk = #kids end end)
-    print("[murdoku] ★ 探针·本次 RefreshItems：传了 **n=" .. tostring(n) .. "** 条；"
-      .. "回调进来 **" .. tostring(self._grid_calls or 0) .. "** 次；"
-      .. "视窗子控件 **" .. tostring(nk) .. "** 个"
-      .. "　⇒ ★ 三者不等就是线索所在 ✓（★ 官方：只为**可见范围内**的项回调 ✓）")
-  end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：探针·RefreshItems　原 L3950..L3957
   local calls = self._grid_calls or 0
   if (not ok_ref) or (calls == 0 and n > 0) then
     self:_grid_fail("RefreshItems " .. ((not ok_ref) and ("抛错：" .. tostring(ref_err))
@@ -6829,17 +6781,7 @@ function Controller:sync_clue_grid(adapter)
     for _, nm in ipairs({ "clue", "clues.grid", "clues" }) do
       local c = nil
       pcall(function() c = self:_find_by_name(nm) end)
-      if c ~= nil then
-        local sz, ps, vis = nil, nil, nil
-        pcall(function() local w, h = c:GetSizeDelta() sz = tostring(w) .. "x" .. tostring(h) end)
-        pcall(function() local x, y = c:GetAnchoredPosition() ps = tostring(x) .. "," .. tostring(y) end)
-        pcall(function() vis = tostring(c.visible) end)
-        print("[murdoku] ★ 模板实况：`" .. nm .. "`  尺寸=" .. tostring(sz)
-          .. "  位置=" .. tostring(ps) .. "  visible=" .. tostring(vis)
-          .. "　（★ 存档里 clue=(0,0) ✓ clues.grid=(0,0) ✓ clues=(-570,-61.1) ✓）")
-      else
-        print("[murdoku] ★ 模板实况：`" .. nm .. "` **运行时找不到** ✗")
-      end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：模板实况　原 L3979..L3989
     end
   end
   self._grid_state = "on"
@@ -6910,24 +6852,7 @@ function Controller:sync_clue_grid(adapter)
     end
     local _cg2 = grid
     if _cg2 == nil then pcall(function() _cg2 = adapter:find("clues.grid") end) end
-    if _cg2 ~= nil then
-      local _sz = "读不到"
-      pcall(function() _sz = tostring(_cg2.sizeDeltaX) .. "×" .. tostring(_cg2.sizeDeltaY) end)
-      print("[murdoku] ★ 网格几何1（引擎自己算的）: "
-        .. "itemCount=" .. _one("itemCount")
-        .. "  **scrollProgress=" .. _one("scrollProgress") .. "**"
-        .. "  itemSize=" .. _f(function() return _cg2:GetItemSize() end)
-        .. "  spacing=" .. _f(function() return _cg2:GetItemSpacing() end)
-        .. "  padding=" .. _f(function() return _cg2:GetPadding() end))
-      print("[murdoku] ★ 网格几何2: **GetContentLength=" .. _f(function() return _cg2:GetContentLength() end)
-        .. "**  视窗自身 sizeDelta=" .. _sz
-        .. "  scrollDirection=" .. _one("scrollDirection")
-        .. "  layoutConstraint=" .. _one("layoutConstraint")
-        .. "  fixedCount=" .. _one("layoutConstraintFixedCount"))
-      print("[murdoku] ★ 网格几何3（读法）: 内容长度 > 视窗尺寸 ⇒ 有得滚 ✓；"
-        .. "**scrollProgress ≠ 0 ⇒ 列表已上移 ⇒ 你看到的「第一行」不是第一项** ✗；"
-        .. "itemSize 与存档里的 360×96 不一致 ⇒ 引擎用的不是存档那个尺寸")
-    end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：网格几何1/2/3　原 L4060..L4077
   end
 
   -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
@@ -6954,12 +6879,7 @@ function Controller:sync_clue_grid(adapter)
       local ok_a, r_a = pcall(function() cg:SetActive(true) end)
       local back = nil
       pcall(function() back = cg.visible end)
-      if print ~= nil then
-        print("[murdoku] ★ 诊断3：直接点 `clues.grid` ⇒ SetVisible=" .. tostring(ok_v)
-          .. " SetActive=" .. tostring(ok_a)
-          .. "　**回读 visible=" .. tostring(back) .. "**"
-          .. "　⇒ 回读 true 就说明规划那条路是多余的；回读仍 false ⇒ 引擎不接受，要换招 ✗")
-      end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：诊断3　原 L4104..L4109
     end
   end
 
@@ -7206,10 +7126,7 @@ function Controller:_palette_child(name)
     if r0 ~= nil then search(r0, 0) end
   end
   if assets == nil then
-    if (self._pc_log or 0) < 3 and print then
-      self._pc_log = (self._pc_log or 0) + 1
-      print("[murdoku] ★ 单射取不到：**走树没找到 `assets`** ✗（★ 不是按名取的问题 ✓）")
-    end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：单射取不到a　原 L4356..L4359
     return nil
   end
   -- ★ 在 assets 的子控件里按名精确找 ✓（★ 并打一份实际名字清单 ✓ 便于核对后缀 ✓）
@@ -7228,11 +7145,7 @@ function Controller:_palette_child(name)
       if nm == name then hit = ks[i] end
     end
   end
-  if hit == nil and (self._pc_miss or 0) < 4 and print then
-    self._pc_miss = (self._pc_miss or 0) + 1
-    print("[murdoku] ★ 单射取不到：想要 `" .. tostring(name) .. "` ✗，assets 下实际是："
-      .. table.concat(seen, " , ") .. "　（★ 对照看是不是**后缀/大小写**不一样 ✓）")
-  end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：单射取不到b　原 L4378..L4382
   return hit
 end
 
@@ -7380,14 +7293,7 @@ function Controller:_grid_visible_count(grid)
   self._grid_vis_why = "项高=" .. tostring(ih) .. " 纵间距=" .. tostring(sy)
     .. " 上边距=" .. tostring(pt) .. " 下边距=" .. tostring(pb)
     .. " 视窗高=" .. tostring(vh)
-  if print then
-    print("[murdoku] ★ 网格可见数：一屏放得下 **" .. tostring(n) .. " 项**（"
-      .. tostring(self._grid_vis_why) .. "）"
-      .. "　⇒ ★ 可见区【之外】的项会被关掉射线 ✓（官方**没有**裁剪承诺 ✗）")
-    print("[murdoku] ★ 网格可见带：**|y| ≤ " .. tostring(vh / 2 + ih / 2)
-      .. "** 才算在可见区（视窗半高 " .. tostring(vh / 2) .. " ＋ 半个项高 " .. tostring(ih / 2)
-      .. "）⇒ 超出就关射线 ✓　（★ 按**位置**判，不按序号 ✗ —— 因为 `scrollProgress` 读不到 ✓）")
-  end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：网格可见数/可见带　原 L4530..L4537
   return n
 end
 
@@ -7459,10 +7365,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
     --     · 一行都不出现 ⇒ 引擎根本不重进 ⇒ 滚动后列表项会留着上一条的内容，
     --       下一轮得改成"跟着 scrollProgress 变化再调一次 RefreshItems"
     local hits = self._grid_scroll_cbs
-    if (hits == 60 or hits == 600 or hits == 3600) and print then
-      print("[murdoku] 网格视窗：引擎重进回调累计 " .. tostring(hits)
-        .. " 次（60 ≈ 每帧重进时的一秒）—— 仅用于确认重进频率，每帧成本已为 0")
-    end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：网格视窗·重进累计　原 L4609..L4612
   end
 
   -- 索引基准：**第一次回调 = 列表最上面那一项** ⇒ 它的 index 就是基准（0 或 1）。
@@ -7563,11 +7466,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                 pcall(function() local _ = dst.text okT = true end)
                 pcall(function() local _ = dst.imageId okI = true end)
                 if not okT and not okI then
-                  if (self._row_bad or 0) < 6 and print then
-                    self._row_bad = (self._row_bad or 0) + 1
-                    print("[murdoku] ★ 单射候选被否：`" .. full .. "` 与 `" .. tostring(slot)
-                      .. "` 都不对 ✗（★ 找到的控件既没有 `text` 也没有 `imageId` ✓ ⇒ 丢弃 ✓）")
-                  end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：单射候选被否(早)　原 L4713..L4717
                   dst = nil
                 end
               end
@@ -7615,19 +7514,9 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                   end
                   if _found ~= nil then
                     dst = _found
-                    if (self._row_deep or 0) < 6 and print then
-                      self._row_deep = (self._row_deep or 0) + 1
-                      local _fn = nil
-                      pcall(function() _fn = tostring(_found.name) end)
-                      print("[murdoku] ★ 单射下钻：`" .. tostring(slot)
-                        .. "` 本身没有 `text` ✗ ⇒ 用它下面的 `" .. tostring(_fn) .. "` ✓")
-                    end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：单射下钻失败(早)　原 L4765..L4771
                   else
-                    if (self._row_notext or 0) < 4 and print then
-                      self._row_notext = (self._row_notext or 0) + 1
-                      print("[murdoku] ★ 单射下钻失败：`" .. tostring(slot)
-                        .. "` 及其子孙【都没有 `text`】✗ ⇒ 写不进去 ✓（★ 这一条要报给你 ✓）")
-                    end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：单射下钻失败(早2)　原 L4773..L4777
                   end
                 end
               end
@@ -7655,21 +7544,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                     --   ⇒ ★★ 怀疑 ✓：★ **`who` 的框/对齐不对 ⇒ 引擎不画** ✓
                     --     （★ 项目注释原话：「**运行时尺寸可能为 0 ⇒ 那时引擎不画**」✓）
                     --   ★ 本探针 ✅ 把运行时实况打出来 ✓：尺寸 / 位置 / 可见 / 读回 ✓
-                    if (self._who_probe or 0) < 8 and print then
-                      self._who_probe = (self._who_probe or 0) + 1
-                      local _nm2, _sz, _pos2, _vis, _rb = nil, nil, nil, nil, nil
-                      pcall(function() _nm2 = tostring(dst.name) end)
-                      pcall(function() local w, h = dst:GetSizeDelta() _sz = tostring(w) .. "x" .. tostring(h) end)
-                      pcall(function() local x, y = dst:GetAnchoredPosition() _pos2 = tostring(x) .. "," .. tostring(y) end)
-                      pcall(function() _vis = tostring(dst.visible) end)
-                      pcall(function() _rb = tostring(dst.text) end)
-                      print("[murdoku] ★ 目标控件实况：`" .. tostring(_nm2) .. "`"
-                        .. "  尺寸=" .. tostring(_sz)
-                        .. "  位置=" .. tostring(_pos2)
-                        .. "  visible=" .. tostring(_vis)
-                        .. "  写后 text=" .. tostring(_rb)
-                        .. "　（★ 尺寸为 0 / 位置在框外 ⇒ 引擎不画 ✓）")
-                    end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：目标控件实况　原 L4805..L4819
                   wrote = wrote + 1
                 end
                 -- ★★★★★★ 2026-10-10 **图的来源要【往下钻一层】** ✗✓✓（★ 用户推断 ✓）
@@ -7744,30 +7619,12 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
     self._grid_idx_seen[pos] = 0
     self._grid_idx_n = (self._grid_idx_n or 0) + 1
     -- ★ 集合每变大一次就报一行 ✓ —— 这样能看到"引擎是逐步交出更多项，还是永远只有那几个"✓
-    if print then
-      local ks = {}
-      for k in pairs(self._grid_idx_seen) do ks[#ks + 1] = k end
-      table.sort(ks)
-      local lo, hi = ks[1], ks[#ks]
-      print("[murdoku] ★ 探针·引擎交来的项：**新增 pos=" .. tostring(pos) .. "** "
-        .. "⇒ 累计见过 **" .. tostring(self._grid_idx_n) .. " 项**（范围 " .. tostring(lo)
-        .. "~" .. tostring(hi) .. "）"
-        .. "　总条数=" .. tostring(self._grid_blank_total or "?")
-        .. "　★ 若这里**一直不涨** ⇒ 引擎只为固定的几项回调 ✗ ⇒ 多出的线索永远填不上 ✓")
-    end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：探针·引擎交来的项　原 L4894..L4904
   end
   self._grid_idx_seen[pos] = self._grid_idx_seen[pos] + 1
   -- ★ 一次性汇总 ✓：每 600 次回调报一行"各项被回调的次数分布"✓
   self._grid_cb_total = (self._grid_cb_total or 0) + 1
-  if self._grid_cb_total % 600 == 0 and print then
-    local ks = {}
-    for k in pairs(self._grid_idx_seen) do ks[#ks + 1] = k end
-    table.sort(ks)
-    local parts = {}
-    for i = 1, #ks do parts[i] = tostring(ks[i]) .. "×" .. tostring(self._grid_idx_seen[ks[i]]) end
-    print("[murdoku] ★ 探针·回调分布（累计 " .. tostring(self._grid_cb_total) .. " 次）："
-      .. table.concat(parts, " ") .. "　★ 总条数=" .. tostring(self._grid_blank_total or "?"))
-  end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：探针·回调分布　原 L4909..L4917
 
   -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
   -- ★★ 2026-10-09 **可见区外的列表项必须关掉射线 —— 而且要按【位置】判，不能按【序号】判** ✗✓
@@ -7935,12 +7792,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   local _cgray = self:_grid_item_child_cached(item, index, pos, "gray")
   -- ★ 2026-10-07 一次性诊断：★ "灰白没出现"到底是【没找到 `gray`】还是【placed 判错】✓
   --   ★ 真机反馈 ✓：★ 颜色在编辑器里都对 ✓ 但**没有卡变灰** ⇒ ★ 说明**脚本这侧没生效** ✓
-  if (self._gray_log or 0) < 4 then
-    self._gray_log = (self._gray_log or 0) + 1
-    print("[murdoku] ★ 灰白诊断：pos=" .. tostring(pos) .. "  who=" .. tostring(cl.who)
-      .. "  placed=" .. tostring(_placed_now) .. "  找到gray=" .. tostring(_cgray ~= nil)
-      .. "  ★ id=" .. tostring(_pid) .. "  portrait=" .. tostring(t_portrait))
-  end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：灰白诊断　原 L5085..L5090
   -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：旧调色板残余 109 行 do（_pal 恒 nil）　原 L5183..L5291
 
   -- ★★★★★★ 2026-10-10 **旧调色板 `portrait.*` 全套【已删除，266 行】** ✗✓✓
@@ -8027,24 +7879,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   --        ★（`tv.idx ~= index` ✓）⇒ ★ 稳态零成本 ✓
   --   ★ 失败一律 `pcall` ✓ ⇒ ★ 图没设上只失去"头像不同" ✗ ★ 不会把引擎的滚动打断 ✓
   -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-  if c_face ~= nil and t_portrait ~= nil and t_portrait ~= "" then
-    -- ★ 自己取一次记录表 ✓ —— ★ 不依赖下面文字那段的 `rec` ✓（★ 那段在这之后才定义 ✓）
-    local rec_f = self:_grid_item_rec(item, index)
-    local fv = rec_f and rec_f.face
-    if fv == nil or fv.idx ~= index or fv.name ~= t_portrait then
-      local want = t_portrait
-      local id = nil
-      pcall(function()
-        if adapter ~= nil and adapter.resolve_asset ~= nil then id = adapter:resolve_asset(want) end
-      end)
-      if id ~= nil then
-        local ok_img = false
-        pcall(function() ok_img = c_face:SetImage(c_face.imageSource, id) end)
-        if not ok_img then pcall(function() ok_img = c_face:SetImage(id) end) end
-        if rec_f ~= nil then rec_f.face = { idx = index, name = want, ok = ok_img } end
-      end
-    end
-  end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：旧 cl.portrait 写 face（★ 非 bug ✓ 只是删干净 ✓）　原 L5177..L5194
 
   -- ★★★★★ 2026-10-05 **文字只在"真的不一样"时才写**（写一次 = 引擎重排一次文本）。
   --
@@ -8157,11 +7992,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                 pcall(function() local _ = dst.text okT = true end)
                 pcall(function() local _ = dst.imageId okI = true end)
                 if not okT and not okI then
-                  if (self._row_bad or 0) < 6 and print then
-                    self._row_bad = (self._row_bad or 0) + 1
-                    print("[murdoku] ★ 单射候选被否：`" .. full .. "` 与 `" .. tostring(slot)
-                      .. "` 都不对 ✗（★ 找到的控件既没有 `text` 也没有 `imageId` ✓ ⇒ 丢弃 ✓）")
-                  end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：单射候选被否(末)　原 L5307..L5311
                   dst = nil
                 end
               end
@@ -8208,19 +8039,9 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                   end
                   if _found ~= nil then
                     dst = _found
-                    if (self._row_deep or 0) < 6 and print then
-                      self._row_deep = (self._row_deep or 0) + 1
-                      local _fn = nil
-                      pcall(function() _fn = tostring(_found.name) end)
-                      print("[murdoku] ★ 单射下钻：`" .. tostring(slot)
-                        .. "` 本身没有 `text` ✗ ⇒ 用它下面的 `" .. tostring(_fn) .. "` ✓")
-                    end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：单射下钻失败(末)　原 L5358..L5364
                   else
-                    if (self._row_notext or 0) < 4 and print then
-                      self._row_notext = (self._row_notext or 0) + 1
-                      print("[murdoku] ★ 单射下钻失败：`" .. tostring(slot)
-                        .. "` 及其子孙【都没有 `text`】✗ ⇒ 写不进去 ✓（★ 这一条要报给你 ✓）")
-                    end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：单射下钻失败(末2)　原 L5366..L5370
                   end
                 end
               end
@@ -8248,16 +8069,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                     pcall(function() if dst.text ~= nil then dst.text = txt end end)
                     if type(dst.SetText) == "function" then pcall(function() dst:SetText(txt) end) end
                     pcall(function() _after = dst.text end)
-                    if (self._row_probe or 0) < 12 and print then
-                      self._row_probe = (self._row_probe or 0) + 1
-                      print("[murdoku] ★ 单射写入探针：slot=" .. tostring(slot)
-                        .. "  目标控件=" .. tostring(_dn)
-                        .. "  写入=" .. tostring(txt)
-                        .. "  写前=" .. tostring(_before)
-                        .. "  写后读回=" .. tostring(_after)
-                        .. (tostring(_after) == tostring(txt) and "  ⇒ ★ 控件里【确实变了】✓（那问题在渲染层 ✓）"
-                            or "  ⇒ ★★ 控件里【没变】**（写没进去 ✓ 或写错控件 ✓）"))
-                    end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：单射写入探针　原 L5398..L5407
                     wrote2 = wrote2 + 1
                   end
                   -- ★★★★★★ 2026-10-10 **图的来源要【往下钻一层】** ✗✓✓（★ 用户推断 ✓）
@@ -8323,12 +8135,7 @@ end
 --   重复挂监听会一次点击触发多遍 ⇒ 用一个**弱键表**按控件身份去重（控件回收后自动释放）。
 function Controller:_grid_bind_item_click(adapter, grid, item)
   if item == nil or item.AddCursorEventListener == nil then
-    if self._grid_bind_n == nil then
-      self._grid_bind_n = 0
-      local nm2 = "?"
-      pcall(function() nm2 = tostring(item.name) end)
-      print("[murdoku] ★ 诊断GRID：列表项【不支持光标事件】⇒ 点击绑不上！item=" .. nm2 .. "（AddCursorEventListener=" .. tostring(item ~= nil and item.AddCursorEventListener ~= nil) .. "）")
-    end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：诊断GRID·光标　原 L5473..L5478
     return
   end
   -- ★★★★★ 2026-10-05 **列表项是"引擎运行时克隆出来的按钮"，它的 `raycastTarget` 必须就地开**
@@ -8371,22 +8178,7 @@ function Controller:_on_grid_item_click(adapter, grid, item)
   --     ① ★ **回调有没有进来**（★ 进来 ⇒ 引擎把点击给了卡片 ✓ 没进来 ⇒ 被别的东西吃掉 ✗）
   --     ② ★ **该卡是不是"已放置"**（★ `gray` 是否可见 ✓）—— 你说的现象**只在放置过的卡上** ✓
   --     ③ ★ 读回 `gray` 的 `raycastTarget` / 可见性 ✓ ⇒ 看"关射线"到底生效没有 ✓
-  if (self._clk_log or 0) < 12 then
-    self._clk_log = (self._clk_log or 0) + 1
-    local _i, _rt, _vis = "?", "?", "?"
-    -- ★ 2026-10-07 修读数：★ `GetItemIndex` 是**网格**的方法（★ 不是列表项自己的 ✓）
-    --   ★ 真机证据 ✓：★ 上一版打出 `index=?` ✓ ⇒ ★ 我调错对象了 ✓
-    pcall(function() _i = tostring(grid:GetItemIndex(item)) end)
-    if _i == "?" then pcall(function() _i = tostring(item:GetItemIndex()) end) end
-    local _g = nil
-    pcall(function() _g = self:_grid_item_child_cached(item, nil, 0, "gray") end)
-    if _g ~= nil then
-      pcall(function() _rt = tostring(_g.raycastTarget) end)
-      pcall(function() _vis = tostring(_g.visible) end)
-    end
-    print("[murdoku] ★ 抢点击诊断：回调进来了 ✓ 列表项index=" .. _i
-      .. "  gray存在=" .. tostring(_g ~= nil) .. " gray可见=" .. _vis .. " gray射线=" .. _rt)
-  end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：抢点击诊断　原 L5521..L5536
 
   -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
   -- ★★ 2026-10-10 **"空白占位项"的点击 ⇒ 直接忽略** ✗✓
@@ -8447,10 +8239,7 @@ function Controller:_on_grid_item_click(adapter, grid, item)
   local idx = nil
   pcall(function() idx = grid:GetItemIndex(item) end)
     if not self._grid_idx_log then self._grid_idx_log = 0 end
-    if self._grid_idx_log < 5 then
-      self._grid_idx_log = self._grid_idx_log + 1
-      print("[murdoku] ★ 诊断GRID：列表项被点到了 ✓ GetItemIndex=" .. tostring(idx))
-    end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：诊断GRID·被点到　原 L5597..L5600
   if type(idx) ~= "number" then
     -- 反查失败 ⇒ 这一次点击**宁可丢掉**，也不要聚焦到错误的一条（聚焦错了会误导推理）
     self:_grid_log("noindex", "网格视窗：GetItemIndex 读不到索引 ⇒ 这一次点击忽略（不改焦点）")
@@ -8504,22 +8293,7 @@ function Controller:_on_grid_item_click(adapter, grid, item)
     end
   end
   -- ★ 2026-10-07 一次性诊断：把该线索记录的【真实字段名】打出来（方案 A 取值失败 ⇒ 不猜了）
-  if (self._diag_clue or 0) < 3 then
-    self._diag_clue = (self._diag_clue or 0) + 1
-    local ks, vs = {}, {}
-    pcall(function()
-      local v3 = self.core:view() or {}
-      local c3 = (v3.clues or {})[pos]
-      if c3 ~= nil then
-        for k, v in pairs(c3) do
-          ks[#ks + 1] = tostring(k)
-          if type(v) ~= "table" then vs[#vs + 1] = tostring(k) .. "=" .. tostring(v) end
-        end
-      end
-    end)
-    print("[murdoku] ★ 诊断CLUE：pos=" .. tostring(pos) .. "  字段名=[" .. table.concat(ks, ",")
-      .. "]  值(" .. table.concat(vs, " ") .. ")")
-  end
+  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：诊断CLUE　原 L5654..L5669
   -- ★★★★★ 2026-10-07 **方案 A：点线索卡 = 高亮这条 + 选中卡上那个人** ✗✓（用户确认走 A ✓）
   --
   --   为什么必须有：真机日志「★ **点 (第1行 第2列) 没生效：先点一个头像　当前工具=place　已选=nil**」✓
@@ -13908,7 +13682,26 @@ function Adapter:set_property(id, key, value, nkey)
           if f ~= nil then fw, fh = f:GetSizeDelta() end
         end)
         if fw ~= nil and fh ~= nil and fw > 1 and fh > 1 then
-          local hbox = math.max(30, fh / 3)
+          -- ★★★★★★ 2026-10-10 **补上"设框"那两行 —— 这才是「标记还是错的」的元凶** ✗✓✓
+          --
+          --   ★★★ 地图员实地测绘发现 ✓（★ 硬证据 ✓）：
+          --     ★ ① `hbox` 在【整个 adapter 里只出现这一次】✗ ⇒ ★ **算出来、从未被读** ✓
+          --     ★ ② 这一段里【没有 `SetSizeDelta`、也没有 `SetAnchoredPosition`】** ✗
+          --        ★ 而【同类功能在棋盘格上有】✓（★ L2177-2179 ✓）
+          --     ★ ③ **同一段注释里，项目自己记着实测结论** ✓：
+          --        ★「存档里 `note` 的框在运行时【位置上不被沿用】⇒ 飘到格子外 ⇒ **引擎不画**」✓
+          --        ★「**只钉位置、不设尺寸 ⇒ 不画**」✓
+          --        ★「**这个控件必须由脚本给出"够大、穿过格子中部"的框，引擎才画**」✓
+          --   ⇒ ★★ **注释说"脚本每次都把框设回来"，而代码里那两行【不存在】** ✓✓
+          --   ⇒ ★★★ **⇒ 笔记字母不被绘制 ⇒「标记还是错的」** ✓✓
+          --
+          --   ★ 修法 ✓：★ 用【已算好】的 `hbox` ＋ 从 `face` 读到的 `fw` ✓
+          --     ★ 与棋盘格那条同一形状 ✓（★ 钉位置 (0,0) ＋ 给一个穿中部的框 ✓）
+          --     ★ 宽用 `fw` ✓（★ 卡片侧 `face` 的宽 ✓）；★ 高用 `hbox`（★ fh/3，下限 30 ✓）
+          --     ⚠️ ★ 待真机确认 ✓：★ 若太宽/太窄 ⇒ 调 `fw` 的系数即可 ✓（★ 一行 ✓）
+              local hbox = math.max(30, fh / 3)
+              if c.SetSizeDelta then pcall(function() c:SetSizeDelta(fw, hbox) end) end
+              if c.SetAnchoredPosition then pcall(function() c:SetAnchoredPosition(0, 0) end) end
           -- ★★★★★ 2026-10-07 **二次修正：脚本必须自己把框设回来** ✗✓
           --   ★ 用户的关键观察（★ 一针见血 ✓）：★ 运行时读到的 `100×30`
           --     ★ **和编辑器的任何一版都不一致**（★ 用户说旧值也是 `124×37` ✓）
@@ -18013,7 +17806,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v154 / 2026-10-10 / 按地图员19段精确区间删死代码462行(core 224+ui 238):旧调色板残余/ALGO_TEXT死块/关射线空壳/4个旧函数 =====")
+        print("[murdoku] ===== 构建标记 v155 / 2026-10-10 / 删29段旧诊断print(255行)+修adapter的hbox(算出来没用⇒笔记字母不绘制⇒标记错)⇒补SetSizeDelta+SetAnchoredPosition =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
