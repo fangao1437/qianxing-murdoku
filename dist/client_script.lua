@@ -7555,8 +7555,35 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                 --     ★ 旧源 = `core.notes[r][c]` 的键（★ 玩家手打的铅笔笔记 ✓）
                 --     ★★ 新源 = ★ **`letter.<关>.<行>` 控件的【文本】** ✓（★ 用户配的那段 ✓）
                 --   ★ 这里就是那个控件 ✓（★ `slot == "letter"` ⇒ `k` 就是它 ✓ `txt = k.text` ✓）
+                -- ★★★★★★ 2026-10-10 **`k` 没有 `text` ⇒ 往下钻**（★ 与 `dst` 那套同因 ✓）✗✓✓
+                --   ★★★ 用户实测 ✓：「**选中 `letter` 为 `a` 的卡，会填 `b`、`v`、`e`，也可能填 `a`**」✓
+                --     ⇒ ★★ 填的是【人物 id】⇒ ★ **那正是 `core.notes` 的键** ✓
+                --     ⇒ ★★★ **【旧 `note` 还在生效】** ✓✓ —— ★ 即 `letter_of` 返回 nil ⇒ 落兜底 ✓
+                --   ★ 根因 ✓（★ 与当初"`who` 控件没有 `text`"同一个坑 ✓）：
+                --     ★ `k` 是【row 侧】的槽位控件 ✗ ★ **它自己没有 `text`** ✗
+                --     ⇒ ★ `txt = k.text` 取不到 ⇒ 上面记下的是 nil ✗ ⇒ `_row_letter` 恒空 ✓
+                --   ★ 修法 ✓：★ `txt` 取不到 ⇒ **广度优先往下找第一个有 `text` 的子孙** ✓
+                --     ★（★ 与 `dst` 那边"下钻找文本控件"完全一样 ✓）
                 if slot == "letter" then
-                  self._row_letter_txt = (txt ~= nil and tostring(txt) ~= "") and tostring(txt) or nil
+                  local _lt = (txt ~= nil and tostring(txt) ~= "") and tostring(txt) or nil
+                  if _lt == nil and k ~= nil then
+                    local _q = { k }
+                    for _qi = 1, #_q do
+                      local _ks = nil
+                      pcall(function() _ks = _q[_qi]:GetChildren() end)
+                      if type(_ks) == "table" then
+                        for _ki = 1, #_ks do
+                          local _kk = _ks[_ki]
+                          local _t = nil
+                          pcall(function() _t = _kk.text end)
+                          if _t ~= nil and tostring(_t) ~= "" then _lt = tostring(_t) break end
+                          _q[#_q + 1] = _kk
+                        end
+                      end
+                      if _lt ~= nil then break end
+                    end
+                  end
+                  self._row_letter_txt = _lt
                 end
                 -- ★★★★★★ 2026-10-10 **`dst` 自己没有 `text` ⇒ 往下找【有 text 的子孙】** ✗✓✓
               --
@@ -17960,7 +17987,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v163 / 2026-10-10 / 换源:letter从控件文本取(clue_view没有letter字段⇒恒nil⇒落旧笔记);两处单射+护栏清残值 =====")
+        print("[murdoku] ===== 构建标记 v165 / 2026-10-11 / letter取值:k没有text就下钻(与who那个坑同因)⇒_row_letter不再恒空⇒不再落旧笔记 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
