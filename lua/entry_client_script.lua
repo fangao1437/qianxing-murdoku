@@ -184,7 +184,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v179 / 2026-10-11 / 修索引基准: 原来把'第一次回调交来index=0'当成'列表0起', 真机日志证明引擎是1起(点第1/2/3张回读0/1/2) ⇒ 基准改成第一次交来的index本身 =====")
+        print("[murdoku] ===== 构建标记 v180 / 2026-10-11 / 点卡片定位改用填充时引擎交来的index(不再问GetItemIndex, 真机四次都回0); 加填充定位与选人两步探针 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

@@ -7962,6 +7962,20 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   self._grid_seen = self._grid_seen or {}
   self._grid_seen[item] = index
 
+  -- ★★★ 2026-10-11 **填充侧的定位探针** ✗✓（★ 用户 v179 那次的"同一张"到底是不是真的 ✓）
+  --   ★ 要分清两种可能 ✗：
+  --     ★ ① 引擎**只交来同一个 index**（★ 列表项全叠在一处 ✓ 本项目早有旁证 ✓）
+  --       ⇒ ★ 那么"每次都算成 `pos=1`"**就是引擎的真实报告** ✓
+  --         ★ 得靠**别的**办法定位（★ 比如按可见顺序自己排 ✓）
+  --     ★ ② 引擎交来的 index 各不相同 ✓ ★ 而**点击时**反查坏了 ✓
+  --       ⇒ ★ 用填充记录就能修好 ✓（★ 已改 ✓）
+  --   ⇒ ★★ 这一行就是分水岭 ✓ ★ 最多 6 行 ✓
+  if print and (self._grid_fill_pos_log or 0) < 6 then
+    self._grid_fill_pos_log = (self._grid_fill_pos_log or 0) + 1
+    print("[murdoku] ★ 填充定位 ✓：引擎交来 index=" .. tostring(index)
+      .. "（基准 " .. tostring(self._grid_base) .. "）⇒ 填到 pos=" .. tostring(pos))
+  end
+
   -- ★★★★★ 2026-10-10 **单射优先：用户在 `assets/row.<关>.<行>` 里指定的内容，优先于算法** ✗✓
   --   ★ 用户要求 ✓（原话 ✓）：「我需要一个区域让我**指定第几关第几行填什么**」✓
   --     「现在**第几关第几行怎么填是没有定式的**」✗
@@ -9043,6 +9057,48 @@ function Controller:_grid_bind_item_click(adapter, grid, item)
   end
 end
 
+-- ★★★★★★ 2026-10-11 **"这一项是哪一条" —— 用【填充时记下的 index】✓ 不问引擎** ✗✓✓
+--
+--   ★★★ 用户 v179 真机日志 ✓（★ 决定性证据 ✓ 原文 ✓）：
+--       `★ 卡片点击进来了 ✓（第 1 次）GetItemIndex=0  索引基准=0`
+--       `★ 卡片点击进来了 ✓（第 2 次）GetItemIndex=0  索引基准=0`
+--       `★ 卡片点击进来了 ✓（第 3 次）GetItemIndex=0  索引基准=0`
+--       `★ 卡片点击进来了 ✓（第 4 次）GetItemIndex=0  索引基准=0`
+--   ★★ 用户点的是**不同的卡** ✓ ★ 而 `GetItemIndex` **四次都回 0** ✗✓
+--     ⇒ ★★★ **`grid:GetItemIndex(item)` 在这台引擎上不可靠** ✓✓
+--
+--   ★★ 为什么不可靠 ✗（★ 本项目早有旁证 ✓）：
+--     ★ ui L5969 那段注释写着 ✓：「★ **多个列表项控件物理上叠在同一个位置**」✓
+--       （★ 与"所有项都读到同一个 `y=212`"吻合 ✓）
+--     ★ 而列表项是**同一个引用被填到不同位置** ✓（★ 用户 2026-10-10 就怀疑过 ✓）
+--     ⇒ ★ 反查要么拿不到、要么**拿到同一个值** ✗✓（★ 实测正是后者 ✓）
+--
+--   ★★★ 修法 ✓：★ **填充时引擎【亲手】把 index 交给了我们** ✓
+--     ★ 那一次是**权威**的 ✓（★ 我们就是按它算 `pos` 去填内容的 ✓）
+--     ★★ 记在 `self._grid_seen[item]` 里 ✓（★ 本来就有这张表 ✓ 就地重用 ✓）
+--     ⇒ ★ **点击时直接查它** ✓ ★ **不再问引擎** ✗✓
+--   ★ 兜底 ✓：★ 表里没有（★ 还没填过 ✓）⇒ ★ 才退回 `GetItemIndex` ✓
+--     ★ 两个都拿不到 ⇒ ★ 返 nil ✓ ★ 调用方**宁可丢掉这次点击** ✓（★ 不聚焦错的那条 ✓）
+function Controller:_grid_pos_of_item(grid, item)
+  if item == nil then return nil end
+  local raw = nil
+  local seen = self._grid_seen
+  if type(seen) == "table" then
+    raw = seen[item]
+    if raw ~= nil then
+      -- ★ 表里存的是**引擎交来的原始 index** ✓ ⇒ 与填充时**同一个数** ✓
+      local base = self._grid_base or 0
+      local pos = tonumber(raw)
+      if pos ~= nil then return pos - base + 1 end
+    end
+  end
+  -- ★ 兜底：问引擎 ✓（★ 不可靠 ✓ 但总比没有好 ✓）
+  local idx = nil
+  pcall(function() idx = grid:GetItemIndex(item) end)
+  if type(idx) == "number" then return idx - (self._grid_base or 0) + 1 end
+  return nil
+end
+
 -- 点了某一条列表项 → 聚焦这条线索。
 function Controller:_on_grid_item_click(adapter, grid, item)
   -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
@@ -9133,18 +9189,28 @@ function Controller:_on_grid_item_click(adapter, grid, item)
       self._grid_click_at = now
     end
   end
-  -- ★ 官方：「列表项索引以运行时传入和返回的 index 为准」⇒ **只能反查**。
-  --   按兄弟序号取是错的：列表项会被复用，兄弟顺序不稳定（用户也专门点了这一条）。
-  local idx = nil
-  pcall(function() idx = grid:GetItemIndex(item) end)
-    if not self._grid_idx_log then self._grid_idx_log = 0 end
-  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：诊断GRID·被点到　原 L5597..L5600
-  if type(idx) ~= "number" then
-    -- 反查失败 ⇒ 这一次点击**宁可丢掉**，也不要聚焦到错误的一条（聚焦错了会误导推理）
-    self:_grid_log("noindex", "网格视窗：GetItemIndex 读不到索引 ⇒ 这一次点击忽略（不改焦点）")
+  -- ★★★★★★ 2026-10-11 **不再问引擎"这一项是第几条"** ✗✓✓
+  --
+  --   ★ 原来这里 `idx = grid:GetItemIndex(item)` ✗
+  --   ★★ 而用户 v179 真机日志证明它**四次都回 0**（★ 点的是不同的卡 ✓）
+  --     ⇒ ★ **这台引擎上它不可靠** ✓ ⇒ ★ **于是每次点击都算成 `pos = 1`** ✓✓
+  --       ⇒ ★ **高亮与选人都落在第 1 条上** ✓（★ 用户看到的"链路还是断的" ✓）
+  --   ⇒ ★★ 改用 `_grid_pos_of_item` ✓ —— ★ **用填充时引擎亲手交来的那个 index** ✓✓
+  --     ★（★ 那一次是权威的 ✓ ★ 我们就是按它算 `pos` 填内容的 ✓）
+  local pos = self:_grid_pos_of_item(grid, item)
+  if type(pos) ~= "number" then
+    -- 两个来源都拿不到 ⇒ 这一次点击**宁可丢掉**，也不要聚焦到错误的一条 ✓
+    self:_grid_log("noindex", "网格视窗：这一项属于哪一条读不到（填充记录与 GetItemIndex 都空）"
+      .. " ⇒ 这一次点击忽略（不改焦点）")
     return
   end
-  local pos = idx - (self._grid_base or 1) + 1
+  if print and (self._grid_pos_log or 0) < 6 then
+    self._grid_pos_log = (self._grid_pos_log or 0) + 1
+    local raw = nil
+    pcall(function() raw = self._grid_seen and self._grid_seen[item] end)
+    print("[murdoku] ★ 点卡片定位 ✓：填充时 index=" .. tostring(raw)
+      .. "（基准 " .. tostring(self._grid_base) .. "）⇒ pos=" .. tostring(pos))
+  end
   -- ★★★★★ 2026-10-07 **点卡片后强制重填一次** ✗✓（治"取消选中后高亮还在" ✓）
   --   ★ 真机反馈 ✓：★「★ **预放置的卡，取消选中后高亮还在**」✗
   --   ★ 机制 ✓：★ 高亮由**填充**按 `core.selected` 画 ✓（提交 371 ✓）
@@ -9210,6 +9276,19 @@ function Controller:_on_grid_item_click(adapter, grid, item)
   pcall(function()
     local v2 = self.core:view() or {}
     local cl = (v2.clues or {})[pos]
+    -- ★★★ 2026-10-11 **选人这一步也要探针** ✗✓（★ 否则"选中了没有"看不出来 ✓）
+    --   ★ 用户 v179 日志里 ✓：★ 卡片点击**进来了** ✓ ★ 可格子仍报"先点一个头像" ✓
+    --     ⇒ ★★ **说明 `suspect` 那一步没成功** ✓ —— ★ 而它是**静默**的 ✗（★ `pcall` 包着 ✓）
+    --   ⇒ ★ 把三个值打出来 ✓：★ `pos` ✓ ★ `cl 是否为 nil` ✓ ★ 解析出的人 ✓✓
+    if print and (self._grid_pick_log or 0) < 6 then
+      self._grid_pick_log = (self._grid_pick_log or 0) + 1
+      local _dbg_pid = nil
+      pcall(function() _dbg_pid = self:_person_id_for_pos(pos) end)
+      print("[murdoku] ★ 选人这一步：pos=" .. tostring(pos)
+        .. "  cl=" .. (cl ~= nil and "有" or "**nil**")
+        .. "  解析出的人=" .. tostring(_dbg_pid)
+        .. "  （nil ⇒ 不会发 suspect ⇒ 格子会报「先点一个头像」）")
+    end
     if cl ~= nil then
       -- ★ 真字段名（真机探针实测 ✓）：★ `who` —— 值形如 `V` / `D` / `@thief`
       --   ⇒ `@` 开头的是【特殊角色】（如盗窃者），不是可选的"人"，跳过 ✓
@@ -18801,7 +18880,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v179 / 2026-10-11 / 修索引基准: 原来把'第一次回调交来index=0'当成'列表0起', 真机日志证明引擎是1起(点第1/2/3张回读0/1/2) ⇒ 基准改成第一次交来的index本身 =====")
+        print("[murdoku] ===== 构建标记 v180 / 2026-10-11 / 点卡片定位改用填充时引擎交来的index(不再问GetItemIndex, 真机四次都回0); 加填充定位与选人两步探针 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

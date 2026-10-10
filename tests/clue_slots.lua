@@ -473,5 +473,72 @@ do
 end
 
 --------------------------------------------------------------------------------
+-- 10. ★★★ 点卡片定位：★ 引擎的 `GetItemIndex` 不可靠时也必须定得对 ✗✓
+--
+--   ★★★ 用户 v179 真机日志 ✓（★ 决定性证据 ✓ 原文 ✓）：
+--       `★ 卡片点击进来了 ✓（第 1 次）GetItemIndex=0  索引基准=0`
+--       `★ 卡片点击进来了 ✓（第 2 次）GetItemIndex=0  索引基准=0`
+--       `★ 卡片点击进来了 ✓（第 3 次）GetItemIndex=0  索引基准=0`
+--       `★ 卡片点击进来了 ✓（第 4 次）GetItemIndex=0  索引基准=0`
+--   ★★ 用户点的是**不同的卡** ✓ ★ 而 `GetItemIndex` **四次都回 0** ✗
+--     ⇒ ★★★ **这台引擎上 `grid:GetItemIndex(item)` 不可靠** ✓✓
+--     ⇒ ★ 于是每次都算成 `pos = 1` ⇒ ★ **高亮与选人全落在第 1 条上** ✓
+--
+--   ★★ 修法 ✓：★ **用【填充时引擎亲手交来的那个 index】** ✓（★ 那一次是权威的 ✓）
+--     ★ 记在 `self._grid_seen[item]` ✓ ⇒ ★ 点击时直接查 ✓ ★ **不问引擎** ✗✓
+--------------------------------------------------------------------------------
+do
+  local LV = require("levels.demo_selftest")
+  local core = Core.new(LV)
+  local c = UIC.new(core, { skip_intro = true })
+  c._grid_base = 0
+
+  local function ctrl(name, kids, text)
+    local x = { name = name, _kids = kids or {} }
+    if text ~= nil then x.text = text end
+    x.GetChildren = function() return x._kids end
+    x.FindChild = function(_, n)
+      for _, k in ipairs(x._kids) do if k.name == n then return k end end
+      return nil
+    end
+    x.GetChild = x.FindChild
+    return x
+  end
+
+  -- ★★ **故意做一个坏掉的 `GetItemIndex`** ✗：★ 永远回 0 ✓（★ 真机实测就是这样 ✓）
+  local g = { GetItemIndex = function() return 0 end }
+
+  -- ★ 5 个项各拿一个 index ✓ ⇒ 引擎亲手交来的那些 ✓
+  local items = {}
+  for k = 1, 5 do
+    items[k] = ctrl("item", {})
+    c._grid_seen = c._grid_seen or {}
+    c._grid_seen[items[k]] = k - 1                 -- ★ 引擎 0 起 ✓
+  end
+
+  -- ★ 逐个点 ⇒ `pos` 必须是 k ✓（★ 而不是恒 1 ✗）
+  local allok = true
+  local got = {}
+  for k = 1, 5 do
+    got[k] = c:_grid_pos_of_item(g, items[k])
+    if got[k] ~= k then allok = false end
+  end
+  ok(allok, "★ 坏掉的 GetItemIndex 下，点第 k 项仍得到 pos = k（实测 "
+    .. table.concat({ tostring(got[1]), tostring(got[2]), tostring(got[3]),
+                      tostring(got[4]), tostring(got[5]) }, ",") .. "）")
+
+  -- ★ 表里没有的项 ⇒ 才退回问引擎 ✓（★ 坏引擎回 0 ⇒ `pos = 1` ✓ 有兜底不崩 ✓）
+  local fresh = ctrl("item", {})
+  ok(c:_grid_pos_of_item(g, fresh) == 1,
+    "★ 填充记录里没有的项 ⇒ 退回 GetItemIndex ✓（坏引擎给 0 ⇒ pos=1 ✓ 不崩 ✓）")
+
+  -- ★ 两个来源都拿不到 ⇒ 返 nil ✓（★ 调用方宁可丢掉这次点击 ✓）
+  local g2 = { GetItemIndex = function() return nil end }
+  ok(c:_grid_pos_of_item(g2, ctrl("item", {})) == nil,
+    "★ 两个来源都拿不到 ⇒ 返 nil ✓（★ 不聚焦到错的那条 ✓）")
+  print("  [PASS] 坏掉的 GetItemIndex 下，定位改用填充时记下的 index")
+end
+
+--------------------------------------------------------------------------------
 print(string.format("\nclue_slots: %d passed, %d failed", passed, failed))
 if failed > 0 then os.exit(1) end
