@@ -6297,10 +6297,36 @@ function Controller:_on_grid_item_click(adapter, grid, item)
       self._grid_pick_log = (self._grid_pick_log or 0) + 1
       local _dbg_pid = nil
       pcall(function() _dbg_pid = self:_person_id_for_pos(pos) end)
+      -- ★★★ 2026-10-11 **把解析器的【输入】也打出来** ✗✓（★ 用户 v180 日志的下一问 ✓）
+      --   ★ 用户 v180 日志 ✓：★ `pos=1/2/3  cl=有  解析出的人=nil` ✓
+      --     ⇒ ★★ **定位已经全对了** ✓ ★ 而**解析这一步是空的** ✓
+      --   ★ 而解析有**两个输入** ✗：★ ① `_row_text[关][行].who`（★ 那一趟读到的 ✓）
+      --     ★ ② `core.names`（★ id ⇄ 显示名 ✓）
+      --   ⇒ ★★ 不打出来就分不清是"**没读到**"还是"**读到了但对不上名字**" ✓✓
+      local _rt, _names_n = nil, 0
+      pcall(function()
+        local m = rawget(Controller, "_row_text")
+        if type(m) == "table" then
+          local lvno = self:_level_ordinal()
+          local by = (lvno ~= nil) and m[tostring(lvno)] or nil
+          local slot = by and by[pos] or nil
+          _rt = slot and slot.who or nil
+          if _rt == nil then
+            for _, v in pairs(m) do
+              local s2 = v[pos]
+              if s2 ~= nil and s2.who ~= nil then _rt = s2.who break end
+            end
+          end
+        end
+        if type(self.core.names) == "table" then
+          for _ in pairs(self.core.names) do _names_n = _names_n + 1 end
+        end
+      end)
       print("[murdoku] ★ 选人这一步：pos=" .. tostring(pos)
         .. "  cl=" .. (cl ~= nil and "有" or "**nil**")
         .. "  解析出的人=" .. tostring(_dbg_pid)
-        .. "  （nil ⇒ 不会发 suspect ⇒ 格子会报「先点一个头像」）")
+        .. "　★ 读到的 who=「" .. tostring(_rt) .. "」"
+        .. "  names 表 " .. tostring(_names_n) .. " 条")
     end
     if cl ~= nil then
       -- ★ 真字段名（真机探针实测 ✓）：★ `who` —— 值形如 `V` / `D` / `@thief`
