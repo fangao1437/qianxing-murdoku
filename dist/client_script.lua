@@ -5571,14 +5571,35 @@ function Controller:build_layout()
           and self.core.notes[r][c]) or cd.notes)
         if _note_val ~= nil then _note_src = "兜底(旧铅笔笔记)" end
       end
-      if cd.suspect ~= nil and (self._note_src_log or 0) < 8 and print then
+      -- ★★★★★★ 2026-10-11 **探针要"每次棋盘变化"重新武装** ✗✓✓
+      --
+      --   ★ 为什么 ✗：★ 第一版是"每个控制器实例最多 12 行" ✓
+      --     ⇒ ★★ **开局那一刻就把额度用光** ✗ ⇒ ★ **之后落子一行都不打** ✓✓
+      --     　（★ 这正是"我只看到开局、看不到落子"的机制 ✓）
+      --   ★ 修法 ✓：★ 用"**有标记的格子数**"当签名 ✓ —— ★ 一变就**重新计数** ✓
+      --     ⇒ ★ 落子/拿起/擦笔记都会重新开一段 ✓ ＋ ★ 每段仍有 12 行上限 ✓（★ 不刷屏 ✓）
+      local _cnt = (cd.suspect ~= nil and 1 or 0) + (_note_val ~= nil and 1 or 0)
+      self._note_src_sum = (self._note_src_sum or 0) + _cnt
+      if (cd.suspect ~= nil or _note_val ~= nil) and (self._note_src_log or 0) < 12 and print then
         self._note_src_log = (self._note_src_log or 0) + 1
         local _shown = ""
         if type(_note_val) == "table" then _shown = table.concat(_note_val, " ")
         elseif _note_val ~= nil then _shown = tostring(_note_val) end
-        print("[murdoku] ★ 棋盘格下发：cell(" .. tostring(r) .. "," .. tostring(c)
-          .. ") suspect=" .. tostring(cd.suspect)
-          .. " src=" .. tostring(_note_src or "无") .. " 值=" .. _shown)
+        -- ★★★ 2026-10-11 **三种情况给三种话** ✗✓✓（★ 一次就分得清 ✓）
+        --   ★ 为什么必须分开 ✗：★ v168 那版**只在"有棋子"时打** ✓
+        --     ⇒ ★ 用户那局【一行都没打】✓ ⇒ ★ 我只能推断"没有棋子" ✗ 不能确认 ✓
+        --   ⇒ ★ 现在：★ ① 有棋子 ⇒ 打 ✓ ② 空格子但有旧笔记 ⇒ **也打** ✓
+        --     ⇒ ★★ 于是"格子上那个 `bav` 到底是棋子还是旧笔记"**当场分开** ✓✓
+        if cd.suspect == nil then
+          print("[murdoku] ★ 棋盘格下发：cell(" .. tostring(r) .. "," .. tostring(c)
+            .. ") 【空格子】但 note 下发=" .. _shown
+            .. "（★ 这是 core.notes 里的【旧铅笔笔记】✗ 不是 letter 标记 ✓"
+            .. "　⇒ ★ 要清掉它：点这格用橡皮／或者在记事模式再点一次 ✓）")
+        else
+          print("[murdoku] ★ 棋盘格下发：cell(" .. tostring(r) .. "," .. tostring(c)
+            .. ") suspect=" .. tostring(cd.suspect)
+            .. " src=" .. tostring(_note_src or "无") .. " 值=" .. _shown)
+        end
       end
       local style = "cell"
       if cd.state == "blocked" then style = "cell.blocked"
@@ -18189,7 +18210,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v168 / 2026-10-11 / 加探针: 棋盘格下发(cell/suspect/src=letter或兜底/值) —— 补上'格子最后收到什么'那一格日志; 实机证明_row_letter已建对, 没生效的真因是row.<关>对齐错(设备跑selftest=demo_selftest, row.1只有5行/7条线索, 且letter.1.1=A却写在who=B那一行) =====")
+        print("[murdoku] ===== 构建标记 v169 / 2026-10-11 / 探针细分: ①有棋子→打 suspect+src+值 ②空格子但有旧笔记→也打(点明那是core.notes不是letter) ③每次棋盘变化重新武装(原来开局就把12行额度用光) —— 实机v168那局一行没打⇒整局没有棋子, 格子上的bav是旧铅笔笔记 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
