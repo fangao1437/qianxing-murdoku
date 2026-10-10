@@ -4927,11 +4927,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   --     ⇒ ★ 既**拿回了 id** ✓ 又**没有**把"每次回调 14 次整视图重建"带回来 ✓✓
   --   ★ 优先级（与 L4211 老注释一致 ✓）：**id（权威）→ 素材名去前缀 → `cl.who`（显示名，最后兜底）**
   local _pid = cl.id
-  if _pid == nil or _pid == "" then
-    if t_portrait ~= nil and t_portrait ~= "" then
-      _pid = tostring(t_portrait):gsub("^portrait%.", "")
-    end
-  end
+  -- ★ 2026-10-10 已删（地图员干跑 PASS ✓）：用 t_portrait 反推 _pid 的死兜底（★ 恒 nil ⇒ 永不生效 ✓）　原 L4930..L4934
   if _pid == nil or _pid == "" or #_pid > 2 then _pid = cl.id or cl.who end
   if type(_pid) == "string" and _pid:sub(1, 1) == "@" then _pid = nil end   -- 特殊角色（如 @thief）不算人
   local _placed_now = (_pid ~= nil) and self.core ~= nil and self.core.placed ~= nil
@@ -5000,13 +4996,13 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
       if _cgray.SetActive then pcall(function() _cgray:SetActive(_placed_now) end) end
     end
   end
-  local t_portrait = cl.portrait        -- ★ 头像素材名（★ 如 `portrait.A` ✓；★ nil ⇒ 不写图 ✓）
+  -- ★ 2026-10-10 已删（地图员干跑 PASS ✓）：local t_portrait 声明（★ 位置在使用之后 ✗ ⇒ 已删 ✓）　原 L5003..L5003
 
   -- ★ 子控件句柄走记忆表（改之前：一次回调 54 次 `item:GetChild`，滚动时每帧 54 次）
   local c_who    = self:_grid_item_child_cached(item, index, pos, "who")
   local c_what   = self:_grid_item_child_cached(item, index, pos, "what")
   local c_letter = self:_grid_item_child_cached(item, index, pos, "letter")
-  local c_face   = self:_grid_item_child_cached(item, index, pos, "face")
+  -- ★ 2026-10-10 已删（地图员干跑 PASS ✓）：死变量 c_face（★ 单射不走它 ✓ 按槽位名自己取 ✓）　原 L5009..L5009
 
   -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
   -- ★★ 2026-10-06 **头像：每个列表项实例要【各写各的 `imageId`】** ✗✓
@@ -5274,7 +5270,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   end
   self:_grid_bind_item_click(adapter, grid, item)
       self._grid_bind_n = (self._grid_bind_n or 0) + 1
-      if self._grid_bind_n == 1 then print("[murdoku] ★ 诊断GRID：正在给列表项绑点击（第 1 个）") end
+  -- ★ 2026-10-10 已删（地图员干跑 PASS ✓）：最后一条内联诊断（★ 地图员：整行可删 ✓）　原 L5277..L5277
 end
 
 -- 给列表项挂点击。★ 列表项是**复用**的：同一个控件会先后代表不同线索 ⇒
