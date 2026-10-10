@@ -5549,6 +5549,37 @@ function Controller:build_layout()
   for r = 1, vm.rows do
     for c = 1, vm.cols do
       local cd = vm.cells[r][c]
+      -- ★★★★★★ 2026-10-11 **这一格最终下发哪个 `note` 值 —— 计算并如实打一行** ✗✓✓
+      --
+      --   ★ 为什么必须加 ✗：★ 用户报"修复没生效"✓ 而**设备日志只证明了两件事** ✓：
+      --     · ★ 单射在跑 ✓（`写了 4 个槽位` ✓）
+      --     · ★ `_row_letter` 在建 ✓（`标记来源记下 … who=B letter=A` ✓）
+      --   ⇒ ★★ 中间【一格都没打】**"格子最后收到哪个值"** ✗
+      --     ⇒ ★ 分不清三种情况 ✓：★ ① 值对但引擎没画 ✗ ★ ② 值错 ✗ ★ ③ 落了兜底 ✗
+      --   ★ 这一行把三者一次分开 ✓：`cell(r,c)` ＋ `suspect` ＋ `src=letter/兜底` ＋ 值 ✓
+      --   ★ 只在**有人的格子**打 ✓ ＋ ★ 每次填充最多 8 行 ✓（★ 稳态不刷屏 ✓）
+      --   ⚠️ ★ 必须放在**这里**（循环体顶部 ✓）—— ★ 表构造器里不能写 `local` ✗
+      --     （★ 我第一版放进 `push({…})` 里面 ✓ 症状：`unexpected symbol near 'local'` ✓）
+      local _note_val = nil
+      local _note_src = nil
+      if cd.suspect ~= nil then
+        _note_val = Controller.letter_of(vm, cd.suspect)
+        if _note_val ~= nil then _note_src = "letter" end
+      end
+      if _note_val == nil then
+        _note_val = note_list_of((self.core and self.core.notes and self.core.notes[r]
+          and self.core.notes[r][c]) or cd.notes)
+        if _note_val ~= nil then _note_src = "兜底(旧铅笔笔记)" end
+      end
+      if cd.suspect ~= nil and (self._note_src_log or 0) < 8 and print then
+        self._note_src_log = (self._note_src_log or 0) + 1
+        local _shown = ""
+        if type(_note_val) == "table" then _shown = table.concat(_note_val, " ")
+        elseif _note_val ~= nil then _shown = tostring(_note_val) end
+        print("[murdoku] ★ 棋盘格下发：cell(" .. tostring(r) .. "," .. tostring(c)
+          .. ") suspect=" .. tostring(cd.suspect)
+          .. " src=" .. tostring(_note_src or "无") .. " 值=" .. _shown)
+      end
       local style = "cell"
       if cd.state == "blocked" then style = "cell.blocked"
       elseif cd.state == "victim" then style = "cell.victim"
@@ -5679,9 +5710,18 @@ function Controller:build_layout()
         --   ★ 现在 ✓：★ 优先用【那一行的 `letter`】✓（★ 和 `image` 那一行【同构】✓）
         --     ★ `cd.suspect` = 这一格放的是谁 ✓ ⇒ `letter_of` 查出那一行的 `letter` ✓
         --   ★ 兜底 ✓：★ 拿不到 `letter` ⇒ ★ 回退旧的铅笔笔记 ✓（★ 行为不变 ✓）
-        notes = (cd.suspect and Controller.letter_of(vm, cd.suspect))
-          or note_list_of((self.core and self.core.notes and self.core.notes[r]
-            and self.core.notes[r][c]) or cd.notes) or false,
+        -- ★★★★★★ 2026-10-11 **把"这一格最终下发什么"打出来** ✗✓✓（★ 一次定案 ✓）
+        --
+        --   ★ 为什么必须加 ✗：★ 用户报"修复没生效"✓ 而**设备日志只证明了两件事** ✓：
+        --     · ★ 单射在跑 ✓（`写了 4 个槽位` ✓）
+        --     · ★ `_row_letter` 在建 ✓（`标记来源记下 … who=B letter=A` ✓）
+        --   ⇒ ★★ 中间【一格都没打】**"格子最后收到哪个值"** ✗
+        --     ⇒ ★ 于是分不清三种情况 ✓：★ ① 值对但没画 ✗ ★ ② 值错 ✗ ★ ③ 落了兜底 ✗
+        --   ★ 本行把三者一次分开 ✓：`cell(r,c)` ＋ `suspect` ＋ `src=letter/兜底` ＋ 值 ✓
+        --   ★ 只在**有人的格子**打 ✓ ＋ ★ 每次填充最多 8 行 ✓（★ 稳态不刷屏 ✓）
+        --   ⚠️ ★ `local` **不能写在表构造器里** ✗（★ 实测：`unexpected symbol near 'local'` ✓）
+        --     ⇒ ★ 计算放在**循环顶部**（`local cd = vm.cells[r][c]` 那一处 ✓）✓
+        notes = _note_val or false,
         room = cd.room,
         -- ★★ 2026-09-28 新增：**显式告诉适配层"这格有没有物件"**。
         --
@@ -18149,7 +18189,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v167 / 2026-10-11 / letter标记真因: 子控件循环里那句清理把刚读到的letter冲掉(20行里19行letter不在最后)+引用控件k.text读不到; 读到就当场落账到Controller._row_letter[who]; 顺手修_find_image_holder假BFS(for qi=1,#q上界冻结) =====")
+        print("[murdoku] ===== 构建标记 v168 / 2026-10-11 / 加探针: 棋盘格下发(cell/suspect/src=letter或兜底/值) —— 补上'格子最后收到什么'那一格日志; 实机证明_row_letter已建对, 没生效的真因是row.<关>对齐错(设备跑selftest=demo_selftest, row.1只有5行/7条线索, 且letter.1.1=A却写在who=B那一行) =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
