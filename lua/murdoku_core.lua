@@ -122,74 +122,13 @@ function M.build_walls(level, rows, cols)
   return RoomMap.build_walls(level, rows, cols)
 end
 
-function M.build_walls_OLD(level, rows, cols)
-  local set = {}
-  local walls = level.walls
-  if type(walls) ~= "table" then return set end
-
-  -- 写法 A：数组 { {"v", r, c}, ... }
-  for i = 1, #walls do
-    local w = walls[i]
-    if type(w) == "table" and type(w[1]) == "string" and (w[1] == "v" or w[1] == "h") then
-      set[wall_key(w[1], tonumber(w[2]), tonumber(w[3]))] = true
-    end
-  end
-  -- 写法 B/C：{ v = {...}, h = {...} }
-  for _, kind in ipairs({ "v", "h" }) do
-    local list = walls[kind]
-    if type(list) == "table" then
-      for i = 1, #list do
-        local w = list[i]
-        if type(w) == "string" then
-          local a, b = w:match("^(%d+):(%d+)$")
-          if a then set[wall_key(kind, tonumber(a), tonumber(b))] = true end
-        elseif type(w) == "table" then
-          set[wall_key(kind, tonumber(w[1]), tonumber(w[2]))] = true
-        end
-      end
-    end
-  end
-  return set
-end
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：build_walls_OLD　原 L125..L153
 
 function M.compute_rooms(rows, cols, wall_set)
   return RoomMap.compute_rooms(rows, cols, wall_set)
 end
 
-function M.compute_rooms_OLD(rows, cols, wall_set)
-  local room = {}
-  for r = 1, rows do
-    room[r] = {}
-    for c = 1, cols do room[r][c] = 0 end
-  end
-  local index = 0
-  for sr = 1, rows do
-    for sc = 1, cols do
-      if room[sr][sc] == 0 then
-        index = index + 1
-        local stack = { { sr, sc } }
-        room[sr][sc] = index
-        while #stack > 0 do
-          local cur = table.remove(stack)
-          local r, c = cur[1], cur[2]
-          if c < cols and not wall_set[wall_key("v", r, c)] and room[r][c + 1] == 0 then
-            room[r][c + 1] = index; stack[#stack + 1] = { r, c + 1 }
-          end
-          if c > 1 and not wall_set[wall_key("v", r, c - 1)] and room[r][c - 1] == 0 then
-            room[r][c - 1] = index; stack[#stack + 1] = { r, c - 1 }
-          end
-          if r < rows and not wall_set[wall_key("h", r, c)] and room[r + 1][c] == 0 then
-            room[r + 1][c] = index; stack[#stack + 1] = { r + 1, c }
-          end
-          if r > 1 and not wall_set[wall_key("h", r - 1, c)] and room[r - 1][c] == 0 then
-            room[r - 1][c] = index; stack[#stack + 1] = { r - 1, c }
-          end
-        end
-      end
-    end
-  end
-  return room, index
-end
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：compute_rooms_OLD　原 L159..L192
 
 ----------------------------------------------------------------------------
 -- 门径与区域相邻（偷窃版规则 2.2 / 2.3）
@@ -279,16 +218,10 @@ local function make_context(core, roles)
     return who
   end
   -- 某个角色 id 扮演的角色名（thief / accomplice / victim / nil）
-  function ctx.role_of(id)
-    for role, rid in pairs(roles) do
-      if rid == id then return role end
-    end
-    if core.victim_id and id == core.victim_id then return "victim" end
-    return nil
-  end
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：ctx.role_of　原 L282..L288
 
   function ctx.pos(who) return core.pos[ctx.resolve(who)] end
-  function ctx.solution_pos(who) return core.solution[ctx.resolve(who)] end
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：ctx.solution_pos　原 L291..L291
   -- 角色别名要渲染成「盗窃者 / 同伙 / 受害者」，**绝不能泄露角色真名**，
   -- 否则线索文案直接把身份送给玩家，整个推理就没了
   local ROLE_WORDS = { thief = "盗窃者", accomplice = "同伙", victim = "受害者" }
@@ -335,9 +268,7 @@ local function make_context(core, roles)
   end
 
   -- ===== 门径 / 区域相邻 =====
-  function ctx.is_door(kind, r, c)
-    return core.door_set[wall_key(kind, r, c)] == true
-  end
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：ctx.is_door　原 L338..L340
   -- “门窗正对的两格”：a、b 正交相邻，且这条边上有门
   function ctx.is_front_of(a, b)
     if not a or not b then return false end
@@ -349,15 +280,8 @@ local function make_context(core, roles)
     end
     return false
   end
-  function ctx.adjacent_rooms(room_id)
-    local out = {}
-    for other in pairs(core.adjacency[room_id] or {}) do out[#out + 1] = other end
-    table.sort(out)
-    return out
-  end
-  function ctx.rooms_adjacent(x, y)
-    return (core.adjacency[x] or {})[y] == true
-  end
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：ctx.adjacent_rooms　原 L352..L357
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：ctx.rooms_adjacent　原 L358..L360
   function ctx.is_water(r, c)
     for i = 1, #core.water do
       if core.water[i].r == r and core.water[i].c == c then return true end
@@ -437,7 +361,7 @@ local function make_context(core, roles)
     return (row and row[c] ~= nil) or false
   end
   function ctx.count_in_row(r) return core.row_count[r] or 0 end
-  function ctx.count_in_col(c) return core.col_count[c] or 0 end
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：ctx.count_in_col　原 L440..L440
 
   -- 物体（家具）：level.objects[name] = {cells={{r,c},...}} 或 {r=,c=} 或 坐标数组
   function ctx.object_cells(name)
@@ -2307,35 +2231,7 @@ function Core:accuse(id)
 end
 
 -- 旧版（v0.2「凶手=与受害者单独同室」）保留备用，不参与偷窃版判定
-function Core:accuse_legacy_murderer(id)
-  local real = self.level.murderer
-  if real == nil then
-    -- 关卡没写 murderer，就用“与受害者单独共处一室”推导
-    real = self:who_is_alone_with_victim()
-  end
-  local pre = self:submit()
-  if not pre.ok then
-    return { solved = false, correct = false, message = "摆位还没成立，先解决：" .. pre.message }
-  end
-  self.accused = id
-  local correct = (real ~= nil and id == real)
-  if correct then
-    self.status = M.STATUS_SOLVED
-    local vname = "受害者"
-    if self.victim_id then
-      vname = self.names[self.victim_id] or vname
-    elseif type(self.level.victim) == "table" and self.level.victim.name then
-      vname = self.level.victim.name
-    end
-    return { solved = true, correct = true,
-             message = string.format("破案！%s 杀害了 %s", self.names[id] or id, vname) }
-  end
-  self.status = M.STATUS_FAILED
-  self.failed_accusations = self.failed_accusations + 1
-  local got, total = self:score()
-  return { solved = false, correct = false,
-           message = string.format("%s 不是凶手（%d/%d 位置正确），再想想", self.names[id] or id, got, total) }
-end
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：accuse_legacy_murderer　原 L2310..L2338
 
 function Core:check()
   local wrong = {}
@@ -2354,90 +2250,7 @@ function Core:check()
 end
 
 -- 只按「摆位」搜索（不考虑角色归属、结构约束与假话），保留作底层参考
-function Core:solve_placements_only(limit)
-  limit = limit or 2
-  local ids = {}
-  for i = 1, #self.pieces do ids[i] = self.pieces[i].id end
-  local solutions = {}
-  local rules = self:rules()
-  local grid = {}
-  for r = 1, self.rows do grid[r] = {} end
-
-  local function ok(r, c, id)
-    if self:is_blocked(r, c) then return false end
-    if rules.one_per_row then
-      for cc = 1, self.cols do if grid[r][cc] then return false end end
-    end
-    if rules.one_per_col then
-      for rr = 1, self.rows do if grid[rr][c] then return false end end
-    end
-    if rules.one_per_room then
-      for rr = 1, self.rows do
-        for cc = 1, self.cols do
-          if grid[rr][cc] and self.room[rr][cc] == self.room[r][c] then return false end
-        end
-      end
-    end
-    return true
-  end
-
-  local function clues_ok()
-    local ctx = make_context(self)
-    local saved_grid, saved_pos = self.grid, self.pos
-    self.grid, self.pos = grid, {}
-    for r = 1, self.rows do
-      for c = 1, self.cols do
-        if grid[r][c] then self.pos[grid[r][c]] = { r = r, c = c } end
-      end
-    end
-    local all = true
-    local list = self.level.clues or {}
-    for i = 1, #list do
-      local def = M.clues[list[i].type]
-      if not def or not def.validate(ctx, list[i]) then all = false break end
-    end
-    self.grid, self.pos = saved_grid, saved_pos
-    return all
-  end
-
-  local function place_at(k)
-    if #solutions >= limit then return end
-    if k > #ids then
-      if clues_ok() then
-        local snap = {}
-        for r = 1, self.rows do
-          snap[r] = {}
-          for c = 1, self.cols do snap[r][c] = grid[r][c] end
-        end
-        solutions[#solutions + 1] = snap
-      end
-      return
-    end
-    local id = ids[k]
-    local preferred = self.solution[id]
-    local order = {}
-    if preferred then order[#order + 1] = preferred end
-    for r = 1, self.rows do
-      for c = 1, self.cols do
-        if not (preferred and preferred.r == r and preferred.c == c) then
-          order[#order + 1] = { r = r, c = c }
-        end
-      end
-    end
-    for i = 1, #order do
-      local p = order[i]
-      if not grid[p.r][p.c] and ok(p.r, p.c, id) then
-        grid[p.r][p.c] = id
-        place_at(k + 1)
-        grid[p.r][p.c] = nil
-        if #solutions >= limit then return end
-      end
-    end
-  end
-
-  place_at(1)
-  return solutions
-end
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：solve_placements_only　原 L2357..L2440
 
 ----------------------------------------------------------------------------
 -- 存档
@@ -2664,36 +2477,11 @@ function M.parse_grid_literal(text)
   return out
 end
 
-function M.solution_from_grid_literal(text)
-  local g = M.parse_grid_literal(text)
-  local sol = {}
-  for r = 1, #g do
-    for c = 1, #g[r] do
-      local id = g[r][c]
-      if id then sol[id] = { r = r, c = c } end
-    end
-  end
-  return sol
-end
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：solution_from_grid_literal　原 L2667..L2677
 
 -- 从字面量生成 walls：用 | 和 - 在网格里画墙
 --   例： {"A|B", "A B"} 之类；这里提供更直白的生成器：cells 里用 "v"/"h" 标记
-function M.walls_from_ascii(rows_text)
-  -- rows_text 里每个字符代表“该格右侧是否有墙(v)/下方是否有墙(h)”，
-  -- 用 'v' 与 'h' 标出，其它字符忽略。
-  local walls = {}
-  local r = 0
-  for line in tostring(rows_text):gmatch("[^\n]+") do
-    r = r + 1
-    local c = 0
-    for ch in line:gmatch(".") do
-      c = c + 1
-      if ch == "v" then walls[#walls + 1] = { "v", r, c }
-      elseif ch == "h" then walls[#walls + 1] = { "h", r, c } end
-    end
-  end
-  return walls
-end
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：walls_from_ascii　原 L2681..L2696
 
 ----------------------------------------------------------------------------
 -- 求解器（偷窃版）：在 (摆位 × 角色归属) 空间里搜索

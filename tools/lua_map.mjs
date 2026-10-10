@@ -240,24 +240,40 @@ if (REFS) {
 }
 
 if (DO_ORPHAN) {
+  // ★★ 必须**跨文件**统计 ✗ —— ★ 否则会把 `Core:tap_cell`（被 ui_controller 调 ✓）
+  //   这种**活函数**报成死代码 ✗✓（★ 我第一版就是这么错的 ✓ 幸好复核时抓到 ✓）
+  const corpus = [];      // {file, line, text}
+  for (const p of luaFiles()) {
+    const { code } = load(p);
+    code.forEach((t, i) => corpus.push({ file: rel(p), line: i + 1, text: t }));
+  }
+  const globalText = corpus.map((c) => c.text).join('\n');
   for (const p of files) {
     const { code, an, lines } = load(p);
     const funcs = findFuncs(code, an);
-    const all = code.join('\n');
-    say('══ ' + rel(p) + ' —— 定义了但**别处无引用**的函数（★ 死代码候选 ✓ 需再 grep 确认 ✓）══');
+    say('══ ' + rel(p) + ' —— 定义了但**全 `lua/` 无引用**的函数（★ 已跨文件查 ✓ 仍需再 grep 确认 ✓）══');
+    let n = 0;
     for (const f of funcs) {
-      if (f.name.includes('.') || f.name.includes(':')) continue;    // ★ 方法名太通用，跳过 ✗
-      const short = f.name.replace(/^_+/, '');
-      const re = new RegExp('\\b' + f.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'g');
-      // ★ 统计：全文出现次数 vs 本函数体内出现次数 ✓ —— 差值 0 ⇒ 别处没人用 ✓
-      const inAll = (all.match(re) || []).length;
+      // ★ 用**最后一段名字**搜 ✓（`M.build_walls_OLD` ⇒ `build_walls_OLD` ✓）
+      //   ⚠️ 太短/太通用的段（`new` / `fx` / `push`）会满屏假阳性 ✗ ⇒ 跳过 ✓
+      const refName = f.name.split(/[.:]/).pop();
+      if (refName.length < 5) continue;
+      const re = new RegExp('\\b' + refName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'g');
+      const inAll = (globalText.match(re) || []).length;
       let inBody = 0;
       const lo = f.line, hi = f.endLine || f.line;
       for (let i = lo - 1; i < hi && i < code.length; i++) inBody += (code[i].match(re) || []).length;
       if (inAll - inBody <= 0) {
-        say('  L' + f.line + '..L' + (f.endLine || '?') + '  ' + f.name + '   ★ 全文只出现 ' + inAll + ' 次（全在自己体内）⇒ 无外部引用 ✗');
+        n++;
+        // ★ 顺带把"只出现在注释里"的旁证给出来 ✓（★ 决定权不在本工具 ✓）
+        const rawHits = [];
+        for (let i = 0; i < lines.length; i++) if (lines[i].includes(refName)) rawHits.push(i + 1);
+        say('  L' + f.line + '..L' + (f.endLine || '?') + '  ' + f.name.padEnd(40)
+          + ' ★ 全 `lua/` 只出现 ' + inAll + ' 次（全在自己体内）⇒ 无外部引用 ✗'
+          + (rawHits.length - inAll > 0 ? '　（★ 另有 ' + (rawHits.length - inAll) + ' 处只在注释/字符串里 ✓）' : ''));
       }
     }
+    if (!n) say('  （无 ✓ —— 每个函数都至少有一处外部引用 ✓）');
     say('');
   }
 }

@@ -280,74 +280,13 @@ function M.build_walls(level, rows, cols)
   return RoomMap.build_walls(level, rows, cols)
 end
 
-function M.build_walls_OLD(level, rows, cols)
-  local set = {}
-  local walls = level.walls
-  if type(walls) ~= "table" then return set end
-
-  -- 写法 A：数组 { {"v", r, c}, ... }
-  for i = 1, #walls do
-    local w = walls[i]
-    if type(w) == "table" and type(w[1]) == "string" and (w[1] == "v" or w[1] == "h") then
-      set[wall_key(w[1], tonumber(w[2]), tonumber(w[3]))] = true
-    end
-  end
-  -- 写法 B/C：{ v = {...}, h = {...} }
-  for _, kind in ipairs({ "v", "h" }) do
-    local list = walls[kind]
-    if type(list) == "table" then
-      for i = 1, #list do
-        local w = list[i]
-        if type(w) == "string" then
-          local a, b = w:match("^(%d+):(%d+)$")
-          if a then set[wall_key(kind, tonumber(a), tonumber(b))] = true end
-        elseif type(w) == "table" then
-          set[wall_key(kind, tonumber(w[1]), tonumber(w[2]))] = true
-        end
-      end
-    end
-  end
-  return set
-end
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：build_walls_OLD　原 L125..L153
 
 function M.compute_rooms(rows, cols, wall_set)
   return RoomMap.compute_rooms(rows, cols, wall_set)
 end
 
-function M.compute_rooms_OLD(rows, cols, wall_set)
-  local room = {}
-  for r = 1, rows do
-    room[r] = {}
-    for c = 1, cols do room[r][c] = 0 end
-  end
-  local index = 0
-  for sr = 1, rows do
-    for sc = 1, cols do
-      if room[sr][sc] == 0 then
-        index = index + 1
-        local stack = { { sr, sc } }
-        room[sr][sc] = index
-        while #stack > 0 do
-          local cur = table.remove(stack)
-          local r, c = cur[1], cur[2]
-          if c < cols and not wall_set[wall_key("v", r, c)] and room[r][c + 1] == 0 then
-            room[r][c + 1] = index; stack[#stack + 1] = { r, c + 1 }
-          end
-          if c > 1 and not wall_set[wall_key("v", r, c - 1)] and room[r][c - 1] == 0 then
-            room[r][c - 1] = index; stack[#stack + 1] = { r, c - 1 }
-          end
-          if r < rows and not wall_set[wall_key("h", r, c)] and room[r + 1][c] == 0 then
-            room[r + 1][c] = index; stack[#stack + 1] = { r + 1, c }
-          end
-          if r > 1 and not wall_set[wall_key("h", r - 1, c)] and room[r - 1][c] == 0 then
-            room[r - 1][c] = index; stack[#stack + 1] = { r - 1, c }
-          end
-        end
-      end
-    end
-  end
-  return room, index
-end
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：compute_rooms_OLD　原 L159..L192
 
 ----------------------------------------------------------------------------
 -- 门径与区域相邻（偷窃版规则 2.2 / 2.3）
@@ -437,16 +376,10 @@ local function make_context(core, roles)
     return who
   end
   -- 某个角色 id 扮演的角色名（thief / accomplice / victim / nil）
-  function ctx.role_of(id)
-    for role, rid in pairs(roles) do
-      if rid == id then return role end
-    end
-    if core.victim_id and id == core.victim_id then return "victim" end
-    return nil
-  end
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：ctx.role_of　原 L282..L288
 
   function ctx.pos(who) return core.pos[ctx.resolve(who)] end
-  function ctx.solution_pos(who) return core.solution[ctx.resolve(who)] end
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：ctx.solution_pos　原 L291..L291
   -- 角色别名要渲染成「盗窃者 / 同伙 / 受害者」，**绝不能泄露角色真名**，
   -- 否则线索文案直接把身份送给玩家，整个推理就没了
   local ROLE_WORDS = { thief = "盗窃者", accomplice = "同伙", victim = "受害者" }
@@ -493,9 +426,7 @@ local function make_context(core, roles)
   end
 
   -- ===== 门径 / 区域相邻 =====
-  function ctx.is_door(kind, r, c)
-    return core.door_set[wall_key(kind, r, c)] == true
-  end
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：ctx.is_door　原 L338..L340
   -- “门窗正对的两格”：a、b 正交相邻，且这条边上有门
   function ctx.is_front_of(a, b)
     if not a or not b then return false end
@@ -507,15 +438,8 @@ local function make_context(core, roles)
     end
     return false
   end
-  function ctx.adjacent_rooms(room_id)
-    local out = {}
-    for other in pairs(core.adjacency[room_id] or {}) do out[#out + 1] = other end
-    table.sort(out)
-    return out
-  end
-  function ctx.rooms_adjacent(x, y)
-    return (core.adjacency[x] or {})[y] == true
-  end
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：ctx.adjacent_rooms　原 L352..L357
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：ctx.rooms_adjacent　原 L358..L360
   function ctx.is_water(r, c)
     for i = 1, #core.water do
       if core.water[i].r == r and core.water[i].c == c then return true end
@@ -595,7 +519,7 @@ local function make_context(core, roles)
     return (row and row[c] ~= nil) or false
   end
   function ctx.count_in_row(r) return core.row_count[r] or 0 end
-  function ctx.count_in_col(c) return core.col_count[c] or 0 end
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：ctx.count_in_col　原 L440..L440
 
   -- 物体（家具）：level.objects[name] = {cells={{r,c},...}} 或 {r=,c=} 或 坐标数组
   function ctx.object_cells(name)
@@ -2465,35 +2389,7 @@ function Core:accuse(id)
 end
 
 -- 旧版（v0.2「凶手=与受害者单独同室」）保留备用，不参与偷窃版判定
-function Core:accuse_legacy_murderer(id)
-  local real = self.level.murderer
-  if real == nil then
-    -- 关卡没写 murderer，就用“与受害者单独共处一室”推导
-    real = self:who_is_alone_with_victim()
-  end
-  local pre = self:submit()
-  if not pre.ok then
-    return { solved = false, correct = false, message = "摆位还没成立，先解决：" .. pre.message }
-  end
-  self.accused = id
-  local correct = (real ~= nil and id == real)
-  if correct then
-    self.status = M.STATUS_SOLVED
-    local vname = "受害者"
-    if self.victim_id then
-      vname = self.names[self.victim_id] or vname
-    elseif type(self.level.victim) == "table" and self.level.victim.name then
-      vname = self.level.victim.name
-    end
-    return { solved = true, correct = true,
-             message = string.format("破案！%s 杀害了 %s", self.names[id] or id, vname) }
-  end
-  self.status = M.STATUS_FAILED
-  self.failed_accusations = self.failed_accusations + 1
-  local got, total = self:score()
-  return { solved = false, correct = false,
-           message = string.format("%s 不是凶手（%d/%d 位置正确），再想想", self.names[id] or id, got, total) }
-end
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：accuse_legacy_murderer　原 L2310..L2338
 
 function Core:check()
   local wrong = {}
@@ -2512,90 +2408,7 @@ function Core:check()
 end
 
 -- 只按「摆位」搜索（不考虑角色归属、结构约束与假话），保留作底层参考
-function Core:solve_placements_only(limit)
-  limit = limit or 2
-  local ids = {}
-  for i = 1, #self.pieces do ids[i] = self.pieces[i].id end
-  local solutions = {}
-  local rules = self:rules()
-  local grid = {}
-  for r = 1, self.rows do grid[r] = {} end
-
-  local function ok(r, c, id)
-    if self:is_blocked(r, c) then return false end
-    if rules.one_per_row then
-      for cc = 1, self.cols do if grid[r][cc] then return false end end
-    end
-    if rules.one_per_col then
-      for rr = 1, self.rows do if grid[rr][c] then return false end end
-    end
-    if rules.one_per_room then
-      for rr = 1, self.rows do
-        for cc = 1, self.cols do
-          if grid[rr][cc] and self.room[rr][cc] == self.room[r][c] then return false end
-        end
-      end
-    end
-    return true
-  end
-
-  local function clues_ok()
-    local ctx = make_context(self)
-    local saved_grid, saved_pos = self.grid, self.pos
-    self.grid, self.pos = grid, {}
-    for r = 1, self.rows do
-      for c = 1, self.cols do
-        if grid[r][c] then self.pos[grid[r][c]] = { r = r, c = c } end
-      end
-    end
-    local all = true
-    local list = self.level.clues or {}
-    for i = 1, #list do
-      local def = M.clues[list[i].type]
-      if not def or not def.validate(ctx, list[i]) then all = false break end
-    end
-    self.grid, self.pos = saved_grid, saved_pos
-    return all
-  end
-
-  local function place_at(k)
-    if #solutions >= limit then return end
-    if k > #ids then
-      if clues_ok() then
-        local snap = {}
-        for r = 1, self.rows do
-          snap[r] = {}
-          for c = 1, self.cols do snap[r][c] = grid[r][c] end
-        end
-        solutions[#solutions + 1] = snap
-      end
-      return
-    end
-    local id = ids[k]
-    local preferred = self.solution[id]
-    local order = {}
-    if preferred then order[#order + 1] = preferred end
-    for r = 1, self.rows do
-      for c = 1, self.cols do
-        if not (preferred and preferred.r == r and preferred.c == c) then
-          order[#order + 1] = { r = r, c = c }
-        end
-      end
-    end
-    for i = 1, #order do
-      local p = order[i]
-      if not grid[p.r][p.c] and ok(p.r, p.c, id) then
-        grid[p.r][p.c] = id
-        place_at(k + 1)
-        grid[p.r][p.c] = nil
-        if #solutions >= limit then return end
-      end
-    end
-  end
-
-  place_at(1)
-  return solutions
-end
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：solve_placements_only　原 L2357..L2440
 
 ----------------------------------------------------------------------------
 -- 存档
@@ -2822,36 +2635,11 @@ function M.parse_grid_literal(text)
   return out
 end
 
-function M.solution_from_grid_literal(text)
-  local g = M.parse_grid_literal(text)
-  local sol = {}
-  for r = 1, #g do
-    for c = 1, #g[r] do
-      local id = g[r][c]
-      if id then sol[id] = { r = r, c = c } end
-    end
-  end
-  return sol
-end
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：solution_from_grid_literal　原 L2667..L2677
 
 -- 从字面量生成 walls：用 | 和 - 在网格里画墙
 --   例： {"A|B", "A B"} 之类；这里提供更直白的生成器：cells 里用 "v"/"h" 标记
-function M.walls_from_ascii(rows_text)
-  -- rows_text 里每个字符代表“该格右侧是否有墙(v)/下方是否有墙(h)”，
-  -- 用 'v' 与 'h' 标出，其它字符忽略。
-  local walls = {}
-  local r = 0
-  for line in tostring(rows_text):gmatch("[^\n]+") do
-    r = r + 1
-    local c = 0
-    for ch in line:gmatch(".") do
-      c = c + 1
-      if ch == "v" then walls[#walls + 1] = { "v", r, c }
-      elseif ch == "h" then walls[#walls + 1] = { "h", r, c } end
-    end
-  end
-  return walls
-end
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：walls_from_ascii　原 L2681..L2696
 
 ----------------------------------------------------------------------------
 -- 求解器（偷窃版）：在 (摆位 × 角色归属) 空间里搜索
@@ -3525,16 +3313,7 @@ function Controller:snapshot()
 end
 
 -- 记录一次"某个键"的点击，返回这次是否构成双击
-function Controller:is_double(key)
-  self.now = self.now or 0
-  local last = self.last_key
-  if last and last.key == key and (self.now - last.t) <= DOUBLE_CLICK_SECONDS then
-    self.last_key = nil
-    return true
-  end
-  self.last_key = { key = key, t = self.now }
-  return false
-end
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：is_double（双击判定已迁走）　原 L463..L472
 
 -- ★★ 「为什么点了没反应」必须说出来。
 --
@@ -6566,34 +6345,7 @@ function Controller.object_key_of(vm, cd)
   return "obj." .. name
 end
 
-function Controller:level_card_text(it)
-  local name = tostring(it.name or it.id)
-  local lines = { name }
-
-  -- 第二行：网格尺寸 + 人数（都能读到才写）
-  local sz = it.size
-  local rows = type(sz) == "table" and tonumber(sz.rows) or nil
-  local cols = type(sz) == "table" and tonumber(sz.cols) or nil
-  local total = type(it.suspects) == "table" and #it.suspects or nil
-  if rows and cols and total and total >= 2 then
-    -- `suspects` 里**含受害人**（case_001 是 A/B/C/D + V）⇒ 嫌疑人数 = total − 1
-    lines[#lines + 1] = string.format("%dx%d　%d名嫌疑人+1名受害人", cols, rows, total - 1)
-  elseif rows and cols then
-    lines[#lines + 1] = string.format("%dx%d", cols, rows)
-  end
-
-  -- 第三行：进度（只有真的查得到记录才写）
-  local p = self.opts.progress and self.opts.progress(it.id) or nil
-  if type(p) == "table" then
-    local mark = "未开始"
-    if p.cleared then mark = "★ 已破案"
-    elseif p.started then mark = "· 进行中" end
-    if type(p.best) == "string" and p.best ~= "" then mark = mark .. "　" .. p.best end
-    lines[#lines + 1] = mark
-  end
-
-  return table.concat(lines, "\n")
-end
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：level_card_text　原 L3504..L3531
 
 function Controller:layout_plan()
   local saved_intro, saved_modal = self.intro_page, self.modal
@@ -6770,12 +6522,7 @@ function Controller:placed_count(vm)
   return n
 end
 
-function Controller:violations_text(vm)
-  if #vm.violations == 0 then return "当前没有硬性冲突" end
-  local lines = {}
-  for i = 1, #vm.violations do lines[#lines + 1] = "· " .. vm.violations[i].text end
-  return table.concat(lines, "\n")
-end
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：violations_text　原 L3708..L3713
 
 -- 房间染色表：同一张底图 + 不同 imageColor 就能区分房间 —— **零额外素材**。
 --
@@ -7645,11 +7392,7 @@ function Controller:_grid_visible_count(grid)
 end
 
 -- 可见带半径（视窗高的一半）—— `_grid_visible_count` 里顺便算好的 ✓
-function Controller:_grid_band(grid)
-  if self._grid_band_h ~= nil then return self._grid_band_h end
-  self:_grid_visible_count(grid)
-  return self._grid_band_h
-end
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：_grid_band　原 L4583..L4587
 
 -- ★★★★★ 2026-10-10 **就地重填：不碰 `RefreshItems`，滚动位置完全不动** ✗✓
 --
@@ -8066,54 +7809,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   --   ⚠️ 读不到位置就**什么都不做** ✓（宁可不修，也不能误关可见项 ✗）
   --   ★ 每次回调按**当前**位置现算 ✓ ⇒ 将来上了滚动，被滚进来的项**自动恢复** ✓
   --     （所以**不缓存"关过谁"** ✓ —— 与 `_fill_grid_item` 的无状态约定一致 ✓）
-  do
-    -- ★★★★★ 2026-10-09 **只在【引擎重进回调】时判位置** ✗✓ —— 这一轮的真正修法 ✓
-    --
-    --   ★ 真机实测（v105 ✓ 日志原文 ✓）：
-    --       `★ 列表项位置：pos=1  y=211.99996948242` … `pos=7  y=211.99996948242`
-    --     ★ **七项读出【同一个值】** ✗ ⇒ 我的位置判据**当场失效** ✓
-    --   ★ 而那个 212 不是巧合 ✓：
-    --       `clues` 容器 y=-61.1 高=544 ⇒ 上边 = **+210.90** ✓
-    --     ⇒ ★ `212` ≈ **容器的上边缘** ✓ ⇒ 它其实是**第一格该在的地方** ✓
-    --   ★★ 结论 ✓：★ **`RefreshItems` 期间引擎【还没布局】**
-    --     ⇒ 那时每个列表项都还停在**模板/上一帧**的位置 ✗ ⇒ **读位置毫无意义** ✓✓
-    --     ⇒ ★ 我上一轮那个探针上限 **8 行** ✗ ⇒ **八行全被"我们自己那趟"占满** ✓
-    --       ⇒ ★ **从没打印过布局之后的位置** ✓（所以一直看不出问题在哪 ✓）
-    --
-    --   ★ 修法 ✓：★ **用 `_grid_in_refresh` 分开两种时机** ✓ —— 项目里早就有这个标志 ✓
-    --     · `_grid_in_refresh == true`  ⇒ 是**我们**在调 `RefreshItems` ⇒ ★ **不判** ✗（位置是旧的）
-    --     · `_grid_in_refresh == false` ⇒ 是**引擎**重进（官方：滚动时会重进 ✓ 日志已证实 ✓）
-    --       ⇒ ★ **这时布局已完成** ✓ ⇒ **判位置** ✓
-    --   ★ 时机上也正好 ✓：引擎**滚动时**必然重进 ✓
-    --     ⇒ 滚出可见区的项**当场被关射线** ✓、滚回来的**当场恢复** ✓✓
-    -- ★★★★★ 2026-10-09 **位置判据【已被真机彻底否掉】⇒ 关闭它** ✗✓（只留一条诊断 ✓）
-    --
-    --   ★ 真机实测（v106 ✓ 日志原文 ✓）——★ **布局之后仍然七项同一个值**：
-    --       `★ 列表项位置【引擎重进·布局后 ✓】：pos=1  y=211.99996948242  ⇒ 在可见区内 ✓`
-    --       `pos=2 … pos=7  全部 y=211.99996948242` ✗
-    --     ⇒ ★ **`anchoredPositionY` 在【复用的列表项】上恒等于模板的位置** ✓
-    --       （模板 `clue` 在 `y=212` ✓ 存档实测 ✓）⇒ **它不反映布局** ✗
-    --
-    --   ★★ 于是本轮定下来的**可靠事实**只有三条 ✓：
-    --     ✓ `GetItemIndex(item)` **又准又稳** ✓（真机 `GetItemIndex=1/2/3` ✓ 绝对序号 ✓）
-    --     ✓ 引擎**滚动时会重进回调** ✓（已证实 ✓）
-    --     ✓ **可见数能算**（`GetItemSize`/`Spacing`/`Padding` ＋ 视窗高 ⇒ 4 项 ✓）
-    --   ★★ 而拿不到的：✗ **滚动位置**（`scrollProgress` 恒 `nil` ✓ 只读字段全读不到 ✓）
-    --     ✗ **列表项的真实位置**（恒为模板值 ✗）
-    --     ⇒ ★★ **从脚本【无法】知道"哪一项在可见区内"** ✗ —— **这是硬限制** ✓
-    --
-    --   ⇒ ★ 所以这段"按位置关射线"的逻辑**永远不会生效** ✗（七项永远判为"在可见区内" ✓）
-    --     ⇒ ★ **关掉它** ✓ —— 它每帧白算一遍位置与比较，还占着 `pcall` ✗
-    --     ⇒ ★ **要真正解决"上面还能点到"**，必须走**结构方案**（二选一，见 `接手待办.md` ✓）：
-    --         甲 · **让视窗容得下全部内容**（不滚动 ⇒ 没有"区外" ✓）—— 改存档 ✓
-    --         乙 · **由脚本接管滚动**（`scrollProgress` 是**读写** ✓ ＋ `interactable=false` 关掉引擎自己滚 ✓）
-    --              ⇒ ★ 那时脚本**自己知道**窗口 ✓ ⇒ 能算 ✓ ＋ 顺带就是用户要的**滚动条** ✓
-    if (self._grid_pos_note or 0) < 1 and print then
-      self._grid_pos_note = (self._grid_pos_note or 0) + 1
-      print("[murdoku] ★ 位置判据已关闭：真机实测**布局后**七项仍读同一个 y（=模板位置 ✗）"
-        .. "⇒ **脚本无法知道哪一项在可见区内** ✓ 改用【超出容量的项做成空白且不可点】✓")
-    end
-  end
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：「按位置关射线」空壳（真机已否掉）　原 L5004..L5051
 
   -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
   -- ★★ 2026-10-10 **超出容量的项 ⇒ 做成「空白 ＋ 不能点」** ✗✓ —— ★ 用户想的方案 ✓
@@ -8245,115 +7941,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
       .. "  placed=" .. tostring(_placed_now) .. "  找到gray=" .. tostring(_cgray ~= nil)
       .. "  ★ id=" .. tostring(_pid) .. "  portrait=" .. tostring(t_portrait))
   end
-  do
-    -- ★★★★★ 2026-10-07 **高亮跟【选中】走，且只染"被选中的那张"** ✗✓（用户两条反馈 ✓）
-    --   ★ 反馈① ✓：★「★ **描边又变亮了**」✗ —— ★ 我上一版在"未聚焦"时**写死了白色** ✗
-    --     ⇒ ★ 等于给每一张卡提亮描边 ✓（★ 项目注释 `ui_controller.lua:4325` 早记过这个坑 ✓）
-    --   ★ 反馈② ✓：★「★ **再次单击取消选中后高亮还在**」✗
-    --     ⇒ ★ 因为我按 **`focused_clue`（聚焦）** 染色 ✓ 而 **聚焦 ≠ 选中** ✗
-    --   ★ 修法 ✓：★ **① 只在被选中时染** ✓ **② 其余情况复原"原来读到的颜色"** ✓（★ 不写白 ✓）
-    --     ★ ③ ★ 原色**只在第一次**记 ✓（★ 免得把金色当原色 ✓）
-    local _cbp2 = self:_grid_item_child_cached(item, index, pos, "backrop1")
-    local _rg2 = self:_grid_item_rec(item, index)
-    if _cbp2 ~= nil and _rg2 ~= nil then
-      -- ★★★ 2026-10-07 **比的是【人物 id】不是 `cl.who`（那是显示名 ✗）** ✓
-      --   ★ 真机教训 ✓：★ 填充里 `cl.who = 老宅主` ✗（显示名 ✓）而 `core.selected = "V"` ✓
-      --     ⇒ ★ 拿它比永远不等 ⇒ ★ **重填后高亮不再画 ⇒ 预放置丢高亮** ✗（用户回报 ✓）
-      --   ★ id 的权威来源 ✓：★ **视图记录 `self.core:view().clues[pos].who`** ✓（★ 与 `诊断CLUE` 一致 ✓）
-      -- ★ 2026-10-09 **不再为这一处单独取视图** ✗✓ —— 上面 `_pid` **已经算好了同一个值** ✓
-      --   （原来这里又 `self.core:view()` 一次 ⇒ **每项第 2 次整视图重建** ✗ 实测 `view=14/7 项` ✓）
-      --   ★ 语义不变 ✓：`_pid` 与这里原来取的 `v.clues[pos].who` **等价** ✓
-      --     （而且 `_pid` 还多做了"去掉 `portrait.` 前缀"和"跳过 `@` 特殊角色"两步 ✓ 更稳 ✓）
-      local _pid2 = _pid
-      local _sel = (_pid2 ~= nil) and self.core ~= nil and self.core.selected == _pid2
-      -- ★★★★★ 2026-10-10 **改成【看当前颜色】的无状态判定** ✗✓
-      --   ★★ 真机 bug（用户回报 ✓）：「**点一个人选两张**」✗ —— ★ 实为「**两张卡同时高亮**」✓
-      --     ★ 触发条件 ✓：★ **线索条数 > 5 的关卡** ✓（⇒ 列表会滚动 ✓）
-      --   ★★ 根因（我读代码读出来的 ✓ 不是猜 ✓）：
-      --     原写法是 ★ `elseif _rg2.tint == "sel" then 还原` ✗
-      --     ★ 而 `_rg2 = self:_grid_item_rec(item, index)` ✓ —— ★ **它是按 `(item, index)` 缓存的** ✗
-      --     ⇒ ★ 列表项被**回收给另一条线索**时 `index` 变了 ✓
-      --       ⇒ ★ **拿到一份【全新的记录】** ✓ ⇒ `_rg2.tint == nil` ✗
-      --       ⇒ ★★ **`elseif` 进不去 ⇒ 【还原永远不执行】** ✗✓
-      --       ⇒ ★ **那张卡就一直留着金色** ✓ ⇒ ★ **两张卡同时高亮** ✓✓
-      --   ★ 为什么"条数 > 5"才会出现 ✓：★ 条数少时列表**不滚动** ⇒ 列表项**不被回收** ⇒ 记录不会错位 ✓
-      --
-      --   ⇒ ★★ 修法 ✓：★ **判定不再依赖任何"按 index 缓存"的状态** ✗
-      --     · 取**当前实际颜色** ✓ ⇒ ★ 它就是"这张卡现在是不是金的"的唯一真相 ✓
-      --     · 是金色而**这一项不该高亮** ⇒ ★ **无条件还原** ✓（不再问"记录记没记着"✗）
-      --     · 原色从哪来 ✓：★ 先看记录 ✓；记录没有（新记录 ✗）⇒ ★ **回落到模板的原色** ✓✓
-      -- ★★★★★ 2026-10-10 **彻底无状态：每次填充都【显式写】颜色** ✗✓
-      --
-      --   ★★ 用户 A/B 对照（★ 最强证据 ✓）：
-      --     · 较早那版：★ 视觉上两张卡高亮 ✗ 但**点 e 出 e、点 v 出 v** ✓ ⇒ 事件独立 ✓
-      --     · 258 那版：★ **选谁都是 e** ✗ ⇒ ★ 那才真是一张 ✓（那是另一个回归 ✓ 已回退 ✓）
-      --   ⇒ ★★ **"两张高亮"是【纯视觉】问题** ✓
-      --
-      --   ★★ 用户指示 ✓：「**基于 257 修复视觉问题就行了**」✓
-      --   ★ 而 257 的形状是：★ 还原**依赖**"当前颜色 == 金色"这个比对 ✗
-      --     ⇒ ★ 若引擎读回来的颜色 ≠ 写进去的值 ✗（★ 被规范化 / 带 alpha ✓）
-      --       ⇒ ★ **比对永远不成立 ⇒ 永不还原** ✗ ⇒ ★ 高亮留在控件上 ✓
-      --       ⇒ ★ 而它此时已代表**另一条线索** ✓ ⇒ ★ **"两张卡同时高亮"** ✓✓
-      --   ★ 我上一版改成"按控件记我涂过"✗ ⇒ ★ **用户实测更糟（三张同一张 ✗）** ✓
-      --     ⇒ ★ 说明**记状态**这条路本身就不稳 ✓（★ 记的东西总有机会和实际脱节 ✗）
-      --
-      --   ⇒ ★★★ **正解：不记任何状态** ✓ —— ★ **每次填充【无条件】写一次颜色** ✓：
-      --     · 选中 ⇒ 写高亮色 ✓　· 没选中 ⇒ 写原色 ✓
-      --     ★ 写的是"这一项此刻该是什么颜色" ✓ ⇒ **不可能粘 ✓ 不可能漏 ✓**
-      --   ★ 原色从**模板**取一次并缓存 ✓（★ 模板是这一切的源头 ✓ 与 index 无关 ✓）
-      --   ⚠️ 模板读不到 ⇒ 用 **`4294967295`（白）** 兜底 ✓
-      --     （★ 项目老注释说"复原不写白"✗ —— ★ 那是指"别把白色当成某些卡的原色"✓
-      --      而 `backrop1` 是**乘算着色** ✓ 白 = 不着色 = 原样 ✓ ⇒ 兜底安全 ✓）
-      local HL = 4294956107          -- ★ 高亮色（暖金 ✓ 乘算着色 ✓）
-      if self._clue_tpl_tint == nil then
-        local _tpl = nil
-        -- ★★★★★ 2026-10-10 **改走"按名全树找"** ✗✓ —— `adapter:find` 是陈旧句柄 ✓
-        --   ★ 真机实证 ✓：★ 所有 `backrop1` 被刷成白色 ✗ 而不是 `26262E` ✓
-        --     ⇒ ★ 就是这里取不到 ⇒ 用白兜底 ⇒ 把原色盖掉 ✓✓
-        pcall(function() _tpl = self:_find_by_name("clue") end)
-        local _tbp = nil
-        -- ★★★★★★ 2026-10-10 **这里原来还是 `adapter:sub`** ✗✓✓ —— ★ 这就是"描边变亮"的根 ✓
-        --   ★★★ 症状 ✓（用户报 ✓）：「**描边颜色 131 还正常，134 就变亮了**」✗
-        --   ★ 上一步 `_tpl` 已经改走"按名全树找"了 ✓ —— ★ **而紧接着这一行【又用陈旧句柄】** ✗
-        --     ⇒ ★★ `adapter:sub("clue","backrop1")` **必然取不到** ✓
-        --     ⇒ `_tbp` = nil ⇒ `_clue_tpl_tint` = nil ⇒ ★ **不还原** ✓
-        --     ⇒ ★★★ **而高亮金 `4294956107` 已经写上去了 ⇒ 【永久残留】** ✓✓
-        --   ⇒ ★★ **"变亮" = 高亮金残留** ✓ —— ★ 不是颜色被改坏 ✓，是**没被还原** ✓
-        --   ★ 修法 ✓：★ **改成"按名全树找 `backrop1`"** ✓（★ 与 `_tpl` 同一条路 ✓）
-        --     ★ 卡片模板的子控件名就是 `backrop1` ✓（★ 不带 `clue.1.` 前缀 ✓ —— 实测过 ✓）
-        if _tpl ~= nil then pcall(function() _tbp = self:_find_by_name("backrop1") end) end
-        if _tbp ~= nil then pcall(function() self._clue_tpl_tint = _tbp.imageColor end) end
-        -- ★★★★★ 2026-10-10 **取不到就【什么都不写】** ✗✓✓
-        --   ★ 这里原来写的是「`self._clue_tpl_tint = 4294967295`」（★ 白 ✓）✗
-        --     ⇒ ★ **把编辑器里的原色（如 `26262E`）整个盖成白** ✓✓
-        --   ⇒ ★ 现在**不兜底** ✗ —— ★ 拿不到原色 ⇒ 后面那步不写 ✓ ⇒ 原色保持 ✓
-        --   ⚠️ 代价 ✓：★ 万一某次取不到模板 ⇒ 高亮**不会**被还原 ✓
-        --     ★ 但**宁可留着高亮，也不该把底图刷白** ✗（★ 白是可见的破坏 ✓）
-      end
-      -- ★★★★★ 2026-10-10 **只在【确实拿到原色】时才写** ✗✓✓
-      --   ★ `_sel` ⇒ 写高亮 ✓（★ 高亮色是常量 ✓ 不依赖取到什么 ✓）
-      --   ★ 非 `_sel` ⇒ ★ **只有 `_clue_tpl_tint` 有值才写** ✓
-      --     ★ 没有值 ⇒ **一个字都不写** ✗ ⇒ ★ 编辑器里的原色保持 ✓✓
-      --   ★ 这条是"所有 backrop1 变白"的直接修复 ✓
-      -- ★★★★★★ 2026-10-10 **写色三步：高亮 ✓ / 还原 ✓ / 都没有 ⇒ 不写** ✗✓✓
-      --   ★ 现在 `_clue_tpl_tint` 走树了 ✓ ⇒ 正常情况下【一定拿得到】✓ ⇒ 高亮会被正常还原 ✓
-      --   ⚠️ 万一还是拿不到（★ 例：模板还没实例化 ✓）⇒ ★ **不写** ✗：
-      --     ★ **宁可这一次不点亮** ✓，★ **也不要把金色永久留在卡上** ✗✓
-      --     ★（★ 这是"变亮"那一类问题的**兜底原则** ✓ 与"别拿白色顶替"同一条 ✓）
-      if _sel and self._clue_tpl_tint ~= nil then
-        pcall(function() _cbp2.imageColor = HL end)
-      elseif (not _sel) and self._clue_tpl_tint ~= nil then
-        pcall(function() _cbp2.imageColor = self._clue_tpl_tint end)
-      else
-        -- ★ 没拿到原色 ⇒ 高亮也不点 ✗（★ 免得留下不可还原的金色 ✓）
-        if (self._tint_skip or 0) < 3 and print then
-          self._tint_skip = (self._tint_skip or 0) + 1
-          print("[murdoku] ★ 染色跳过：取不到模板原色 ✗ ⇒ 这一次【不点亮】"
-            .. "（★ 免得留下不可还原的金色 ✓ 这是\"变亮\"的兜底 ✓）")
-        end
-      end
-    end
-  end
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：旧调色板残余 109 行 do（_pal 恒 nil）　原 L5183..L5291
 
   -- ★★★★★★ 2026-10-10 **旧调色板 `portrait.*` 全套【已删除，266 行】** ✗✓✓
   --
@@ -8487,38 +8075,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
     --   ★ 保留的部分 ✓（★ 这些不冲突 ✓）：
     --     ★ **`gray` 灰白层** ✓　★ **高亮** ✓　★ **列表项点击** ✓　★ **格子/棋盘** ✓
     --   ★ 想恢复 ✗：★ 把下面 `ALGO_TEXT` 改成 `true` 即可 ✓（一行 ✓）
-      local ALGO_TEXT = false
-      if ALGO_TEXT then
-      -- ★★★★★★ 2026-10-10 **算法不再填文案** ✗✓✓ —— ★ 用户要求 ✓
-      --   ★★ 用户原话 ✓：「**与其和它竞争覆盖，不如让这一堆吃性能还干扰功能的废弃脚本直接消失**」✓
-      --   ⇒ 它现在：★ 功能冗余 ✗ ＋ **每帧跑 60 次** ✗ ＋ **和单射抢覆盖** ✗ ⇒ ★ 关掉 ✓
-      --   ★ 保留 ✓：★ `gray` 灰白 ✓　★ 高亮 ✓　★ 点击 ✓　★ 格子/棋盘 ✓
-      --   ★ 想恢复 ✗：★ `ALGO_TEXT` 改 `true` ✓（一行 ✓）
-        local ALGO_TEXT = false
-        if ALGO_TEXT then
-        if tv.who    ~= t_who    then if write_control_text(c_who, t_who)       then tv.who    = t_who    end end
-        if tv.what   ~= t_what   then if write_control_text(c_what, t_what)     then tv.what   = t_what   end end
-        if tv.letter ~= t_letter then if write_control_text(c_letter, t_letter) then tv.letter = t_letter end end
-      -- ★★★★★★ 2026-10-10 **删掉 `else` 死分支 —— 算法从此【真的不再填文案】** ✗✓✓
-      --
-      --   ★★★ 地图员实地测绘发现 ✓（★ 这条解释了"末次单射"为什么必须存在 ✓）：
-      --     ★ 原来这里是 `if ALGO_TEXT then … else 三条无条件写 … end` ✓
-      --     ★★ **而那个 `else` 属于【内层】`if`** ✗ ⇒ ★ `ALGO_TEXT=false` ⇒ **每次走 `else`** ✓
-      --     ⇒ ★★★ **三条 `write_control_text` 每帧都跑** ✓✓
-      --     ⇒ ★★ **"算法不再填文案"那时候是【假的】** ✗ —— ★ 它在和单射抢覆盖 ✓
-      --     ⇒ ★ 所以我才需要"末次单射"去打补丁 ✓（★ 那是症状，不是设计 ✓）
-      --
-      --   ★ 删掉 `else` ＋ 三条写 ✓（★ L5437..5441 ✓）后剩：
-      --     `if ALGO_TEXT then 三条条件写 end` ✓ —— ★ **整个 if 是死的** ✓
-      --     ⇒ ★★ **算法真的不写了 ⇒ 单射是唯一写入者 ⇒ 一对一** ✓✓
-      --
-      --   ★ 判据 ✓：★ `tools/lua_map.mjs --delrange=5437-5441` ⇒ ✅ 可整体删 ✓
-      --     （★ 严判据：★ 模拟栈 ＋ 栈深不低于入口 ＋ 结束时逐层同源 ✓）
-      --   ⚠️ ★ 别用 `lua_blocks.mjs --selfcontained` 下这个结论 ✗ ——
-      --     ★ 它只看"行后深度相等"✗ ⇒ ★ 对"关区间外的块 ＋ 区间内开新块"会【假阳性】✓
-      --     ★（★ 地图员干跑实测：★ 删 5425-5447 ⇒ `luac` 也 PASS ✗ 但**块结构被悄悄改写** ✓✓）
-      end
-        end   -- ★ if ALGO_TEXT then 收尾 ✓
+  -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：ALGO_TEXT 剩余死块　原 L5425..L5456
       end   -- ★ if ALGO_TEXT then 收尾 ✓
 
   -- 子控件找不到时**只报一次**（这条日志直接告诉你要在模板里补哪个名字）
@@ -18456,7 +18013,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v153 / 2026-10-10 / 删ALGO_TEXT的else死分支(else属于内层if⇒三条写每帧都跑)⇒算法真的不再填文案⇒单射是唯一写入者 =====")
+        print("[murdoku] ===== 构建标记 v154 / 2026-10-10 / 按地图员19段精确区间删死代码462行(core 224+ui 238):旧调色板残余/ALGO_TEXT死块/关射线空壳/4个旧函数 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
