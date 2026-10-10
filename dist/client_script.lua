@@ -2546,7 +2546,28 @@ function Core:view()
       type = cl.type,
       text = clues[i].text,
       satisfied = clues[i].satisfied,
-      who = cl.who or cl.a,
+      -- ★★★★★★ 2026-10-10 **去掉 `or cl.a`** ✗✓✓ —— ★ 用户定夺 ✓
+      --
+      --   ★★ 用户原话 ✓（★ 说得比"甲/乙/丙"三个选项都本质 ✓）：
+      --     ★「**取消双人线索这一说** ✓ —— **一次放置只放一个人** ✓，
+      --       **通过线索绑定一次变灰两个人没有合理性**」✓✓
+      --
+      --   ★ 症状 ✓：★ **放上 A ⇒ 三张线索卡一起变灰** ✗
+      --   ★ 根因 ✓（★ 地图员实测 ✓）：★ `same_room {a="A", b="B"}` 这类线索**没有 `who`** ✗
+      --     ⇒ ★ **`or cl.a` 把它退化成 `"A"`** ✗
+      --     ⇒ ★ `case_001` 里有效 `who == "A"` 的线索【正好 3 条】** ⇒ 三张一起灰 ✓✓
+      --   ⇒ ★★ **不是 `_placed_now` 算错了** ✗ ——
+      --     ★ **是"这条线索属于谁"本身有歧义** ✓（★ `{A,B}` 涉及两人 ✓）
+      --
+      --   ★ 判据 ✓（★ 按用户的话落成规则 ✓）：
+      --     ★ **只有【明确属于某一个人】的线索才参与灰白** ✓
+      --     ★ `cl.who` 有值 ⇒ 用它 ✓（★ `@` 开头的别名由下游置 nil ✓ 本来就不灰 ✓）
+      --     ★★ **`cl.who` 没有（双人线索）⇒ `who = nil`** ✗
+      --       ⇒ ★ **下游 `cl.id = nil` ⇒ `_pid = nil` ⇒ `_placed_now = false` ⇒ 【永不灰】** ✓✓
+      --
+      --   ★ 为什么对 ✓：★ **一次放置只放一个人** ✓ ⇒
+      --     ★ **"涉及两人的线索因为其中一人就位而变灰"没有合理性** ✓（★ 用户原话 ✓）
+        who = cl.who,
       raw = cl,
     }
   end
@@ -17818,7 +17839,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v157 / 2026-10-10 / 撤掉v156在adapter补的note几何(与ensure_cells打架⇒时有时无)⇒note几何只剩ensure_cells一条 =====")
+        print("[murdoku] ===== 构建标记 v158 / 2026-10-10 / 去who=cl.who or cl.a的or cl.a(用户:取消双人线索,一次放置只放一个人)⇒双人线索不参与灰白 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
