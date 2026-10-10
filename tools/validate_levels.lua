@@ -77,40 +77,48 @@ for _, lv in ipairs(levels) do
       end
 
       -- 假话
-      local cres = core:clue_results()
-      local failed = {}
-      for i = 1, #cres do
-        if not cres[i].satisfied then failed[#failed + 1] = i end
+      -- ★★★ 2026-10-11 **槽位（没有 `type`）不是"内容"** ✗✓
+      --   ★ 槽位由**棋盘规格**生成 ✓（★ `rows × cols` ✓）★ 内容待 `assets/row.*` 填 ✓
+      --   ⇒ ★ 它们**还不能判真假** ✗ ⇒ ★ 拿"不成立"去数它们 ⇒ ★★ **会把 49 个空槽位
+      --     全报成假话** ✗✓（★ 我第一版就是这样 ✓ 一屏 49 个数字 ✓）
+      --   ⇒ ★ 本项判据**只看有内容的那些** ✓ ★★ 一个都没有 ⇒ ★ **报"未测"** ✓（★ 与唯一解同口径 ✓）
+      local was = core:clue_results()
+      local n_content, failed = 0, {}
+      for i = 1, #was do
+        if was[i].type ~= nil then
+          n_content = n_content + 1
+          if not was[i].satisfied then failed[#failed + 1] = i end
+        end
       end
       local declared = (lv.meta or {}).false_clue
-      local lie_ok
-      if declared then
-        lie_ok = (#failed == 1 and failed[1] == declared)
+      if n_content == 0 then
+        print("  假话: 未测（本关线索 0 条有内容 —— ★ 内容待设计 ✓ 不是判据失效 ✗）")
       else
-        lie_ok = (#failed == 0)
-      end
-      if lie_ok then
-        print(string.format("  假话: OK（声明 %s，实际不成立 %d 条）",
-              declared and ("第" .. tostring(declared) .. "条") or "无", #failed))
-      else
-        bad = bad + 1
-        local list = {}
-        for i = 1, #failed do list[#list + 1] = tostring(failed[i]) end
-        print(string.format("  假话: FAIL（声明 %s，实际不成立 [%s]）",
-              tostring(declared), table.concat(list, ",")))
+        local lie_ok
+        if declared then
+          lie_ok = (#failed == 1 and failed[1] == declared)
+        else
+          lie_ok = (#failed == 0)
+        end
+        if lie_ok then
+          print(string.format("  假话: OK（声明 %s，实际不成立 %d 条）",
+                declared and ("第" .. tostring(declared) .. "条") or "无", #failed))
+        else
+          bad = bad + 1
+          local list = {}
+          for i = 1, #failed do list[#list + 1] = tostring(failed[i]) end
+          print(string.format("  假话: FAIL（声明 %s，实际不成立 [%s]）",
+                tostring(declared), table.concat(list, ",")))
+        end
       end
 
       -- 唯一解（含角色归属）
-      -- ★★★ 2026-10-11 **线索为空的关卡：这一项【不适用】，如实标注** ✗✓
-      --   ★ 起因 ✓：★ 用户要求把那套"为每关人物发位置和字母"的逻辑**整段删掉** ✓
-      --     （★ 原话：「★ 关卡设计本来就要改 ✓ ★ 不用留着他了」✓）
-      --     ⇒ ★★ 真关卡现在**线索 = 0** ✓
-      --   ★ 而"唯一解"这个判据**以线索为前提** ✗ —— ★ 0 条线索必然多解 ✓
-      --     ⇒ ★ 照旧报 FAIL ⇒ ★★ **每关都红** ✗ ⇒ ★ **把真正的红淹掉** ✓（★ 这项目最反对的"假红淹真红" ✓）
-      --   ⇒ ★★ 处理 ✓：★ **无线索 ⇒ 报"未测（无线索）"** ✓ ★ **不计入 bad** ✓
-      --     ★ **但绝不放松判据** ✗ —— ★ 只要**有线索**，判据**一字不变** ✓✓
-      --   ★★ 这也是给后来人的指针 ✓：★ 见红先看"线索 %d"是否 > 0 ✓
-      local n_clues = #(lv.clues or {})
+      -- ★★★ 2026-10-11 **是否"未测"的判据 = 有没有【有内容的】线索** ✗✓
+      --   ★ 槽位（★ 按棋盘规格生成 ✓ 没有 `type` ✓）不算内容 ✓
+      --     ⇒ ★ 它们必然"多解" ✗ ★ 照旧报 FAIL ⇒ ★★ **每关都红** ✓ ⇒ **假红淹真红** ✗
+      --   ⇒ ★★ 判据改用 `n_content` ✓（★ 上一段已经数好了 ✓）
+      --     ★ **只要有内容，判据一字不变** ✓✓
+      local n_clues = n_content
       if n_clues == 0 then
         print("  唯一解: 未测（本关线索 0 条 —— ★ 内容待设计 ✓ 不是判据失效 ✗）")
       else

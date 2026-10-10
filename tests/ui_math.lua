@@ -241,18 +241,32 @@ do
   else
     local ctl = UIC.new(core, {})
     local plan = ctl:layout_plan()
-    local outside, worst = 0, nil
+    local outside, worst, checked, skipped = 0, nil, 0, 0
     for i = 1, #plan do
       local nd = plan[i]
-      -- 弹窗/教程允许覆盖整屏；只查明显越界的
-      local l, r = nd.cx - nd.w / 2, nd.cx + nd.w / 2
-      local b, t = nd.cy - nd.h / 2, nd.cy + nd.h / 2
-      if l < -60 or r > 1660 or b < -60 or t > 960 then
-        outside = outside + 1
-        worst = worst or string.format("%s 中心(%d,%d) 尺寸%d×%d", nd.id, nd.cx, nd.cy, nd.w, nd.h)
+      -- ★★★ 2026-10-11 **只查【可见】的控件** ✗✓✓（★ 判据修正 ✓）
+      --   ★ 起因 ✓：★ 用户定的规则是"**clues 条数 = 棋盘格数**" ✓
+      --     ⇒ ★ 6×6 = 36 条、7×7 = 49 条 ✓
+      --   ★ 而线索区是**可滚动窗口** ✗ —— ★ 屏上只有 `clue_rows`=5 行 ✓
+      --     ★ 其余**建了但 `visible=false`** ✓ ★ 它们**故意摆在窗口外** ✓（★ 滚到才进来 ✓）
+      --   ⇒ ★★ 拿"可见控件"的判据去要求"窗口外的卡片也在画布内" ⇒ ★ **必然假红** ✗✓
+      --     （★ 实测：`clue.7 中心(224,-26)` ★ 它 `visible=false` ✓）
+      --   ⇒ ★ 判据改成 ✓：★ **不可见的跳过** ✓ ★ 可见的一个都不许出界 ✓
+      --     ★ 这条**不放松** ✗ —— ★ 它管的是"玩家看得见的东西别跑出屏幕" ✓
+      --       ★ 而"看不见的东西在哪"**本来就该由窗口管** ✓✓
+      if nd.visible == false then skipped = skipped + 1 else
+        checked = checked + 1
+        -- 弹窗/教程允许覆盖整屏；只查明显越界的
+        local l, r = nd.cx - nd.w / 2, nd.cx + nd.w / 2
+        local b, t = nd.cy - nd.h / 2, nd.cy + nd.h / 2
+        if l < -60 or r > 1660 or b < -60 or t > 960 then
+          outside = outside + 1
+          worst = worst or string.format("%s 中心(%d,%d) 尺寸%d×%d", nd.id, nd.cx, nd.cy, nd.w, nd.h)
+        end
       end
     end
-    ok(outside == 0, "没有控件明显跑出画布", worst or ("检查了 " .. #plan .. " 个控件"))
+    ok(outside == 0, "没有【可见】控件明显跑出画布",
+      worst or ("检查了 " .. checked .. " 个可见控件，跳过 " .. skipped .. " 个不可见的"))
   end
 end
 

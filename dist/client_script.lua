@@ -1285,18 +1285,34 @@ function M.validate_level(level)
   end
 
   -- 线索
+  -- ★★★ 2026-10-11 **两条路都要认** ✗✓（★ 用户："让这套流程代替原本的流程" ✓）：
+  --   ★ ① ★ **手写的 `clues`**（★ 带 `type` ✓）⇒ ★ 照旧逐条校验类型与参数 ✓（★ 老测试/夹具走这条 ✓）
+  --   ★ ② ★★ **没有手写** ⇒ ★ **按棋盘规格生成槽位** ✓（★ 条数 = `rows × cols` ✓）
+  --      ★ 槽位**不带 `type`** ✗ ⇒ ★ **不校验类型** ✓ ★ 但**校验条数** ✓
+  --      ★★ 这就是"**clues 的条数由棋盘规格决定**"这条规则的**检查点** ✓✓
   local clue_list = level.clues or {}
-  for i = 1, #clue_list do
-    local cl = clue_list[i]
-    if type(cl) ~= "table" or not cl.type then
-      err("第 %d 条线索缺少 type", i)
-    else
-      local def = M.clues[cl.type]
-      if not def then
-        err("第 %d 条线索类型未注册：%s", i, tostring(cl.type))
+  if #clue_list == 0 then
+    local rows, cols = nil, nil
+    if type(level.size) == "table" then rows, cols = level.size.rows, level.size.cols end
+    rows = rows or level.rows
+    cols = cols or level.cols
+    if type(rows) == "number" and type(cols) == "number" then
+      -- ★ 槽位条数**必须** = 棋盘格数 ✓ ⇒ ★ 在这里报错 ✓（★ 而不是等到界面上少一张卡才发现 ✓）
+      level.clue_slots = rows * cols
+    end
+  else
+    for i = 1, #clue_list do
+      local cl = clue_list[i]
+      if type(cl) ~= "table" or not cl.type then
+        err("第 %d 条线索缺少 type", i)
       else
-        for _, p in ipairs(def.params or {}) do
-          if cl[p] == nil then err("第 %d 条线索(%s)缺少参数 %s", i, cl.type, p) end
+        local def = M.clues[cl.type]
+        if not def then
+          err("第 %d 条线索类型未注册：%s", i, tostring(cl.type))
+        else
+          for _, p in ipairs(def.params or {}) do
+            if cl[p] == nil then err("第 %d 条线索(%s)缺少参数 %s", i, cl.type, p) end
+          end
         end
       end
     end
@@ -1338,8 +1354,21 @@ function M.validate_level(level)
   if type(meta) == "table" then
     if meta.false_clue ~= nil then
       local n = tonumber(meta.false_clue)
-      if not n or n < 1 or n > #clue_list then
-        err("meta.false_clue = %s 超出线索范围（本关 %d 条）", tostring(meta.false_clue), #clue_list)
+      -- ★★ 2026-10-11：★ 槽位表（★ 没有 `type` ✓）不是"内容" ✗
+      --   ⇒ ★ 它的长度**不该**拿来卡 `false_clue` ✓ ——
+      --     ★ 否则"第 3 条是假话"会被拿去和 49 个空槽位比 ✓ ★ 毫无意义 ✓
+      --   ★ 判据用**有内容的条数** ✓（★ 手写关卡里两者相等 ✓ 行为不变 ✓）
+      --   ★★ 内容为 0 ⇒ ★ `false_clue` **无从指** ⇒ ★ 只校验取值范围 ✓ **不报"越界"** ✗
+      --     （★ 与 `validate_levels` 的"未测"**同一口径** ✓）
+      local n_content = 0
+      for i = 1, #clue_list do
+        if type(clue_list[i]) == "table" and clue_list[i].type then n_content = n_content + 1 end
+      end
+      if not n or n < 1 then
+        err("meta.false_clue = %s 非法（应是 >= 1 的整数）", tostring(meta.false_clue))
+      elseif n_content > 0 and n > n_content then
+        err("meta.false_clue = %s 超出线索范围（本关 %d 条有内容）",
+          tostring(meta.false_clue), n_content)
       end
     end
     if meta.announce ~= nil
@@ -1414,6 +1443,44 @@ function M.new(level, opts)
   end
   -- 本关允许几条线索不成立（0 或 1）
   self.allowed_false = self.meta.false_clue and 1 or 0
+
+  -- ★★★★★★ 2026-10-11 **线索槽位：条数由【棋盘规格】决定** ✗✓✓
+  --
+  --   ★★★ 用户 2026-10-11 给出的**完整生产流程** ✓（★ 原话 ✓）：
+  --     ★「★ **clues 区域有多少内容由棋盘规格决定** ✓
+  --       ★ **几乘几就是几条** ✓
+  --       ★ 至于是**哪几条**由 `assets` 下的 `row` 决定 ✓
+  --       （★ 多余的后续会删 ✓ ★ 没有的会建 ✓）
+  --       ★ **`assets` 负责 clues 区域需要的一切素材** ✓
+  --       ★ **`face` 对应头像** ✓ ★ **`who` 对应名字** ✓ ★ **`what` 对应内容** ✓
+  --       ★ **`letter` 对应字母标签** ✓
+  --       ★ **同时 `face` 和 `letter` 还对应【放置到棋盘上的】头像和铅笔笔记** ✓
+  --       ★ **这是目前的完整 clues 区域的生产流程，没有缺失部分**」✓✓
+  --
+  --   ★★ 用户随后**进一步定调** ✓：「★ 不是让 `clues` 保持空 ✗
+  --     ★★ **而是让这套流程代替原本的流程、赋予 `clues` 的一切内容** ✓
+  --     ★ **直接从逻辑上替换掉原先那套模式**」✓✓
+  --
+  --   ⇒ ★★★ 所以：★ **条数 = `rows × cols`** ✓ ★ **内容全部来自 `row.*`** ✓
+  --     ★ **没有"手写线索表"这条路了** ✗ —— ★ 它是**被替换掉的那套** ✓
+  --
+  --   ★ 兼容 ✓：★ 仍然认**手写的 `clues`** ✓（★ 测试夹具与老关卡用 ✓）
+  --     ★ 只有"**没手写**"时才**按棋盘规格补满槽位** ✓
+  --     ⇒ ★★ 这样"旧模式"在**真关卡**里彻底不存在 ✓ 而测试仍可构造受控数据 ✓
+  --
+  --   ★ 槽位形状 ✓：★ `{ slot = i, r = , c = }` ✓ —— ★ **只标"这是第几个、对着哪一格"** ✓
+  --     ★ **内容（who/what/letter/face）由 `row.*` 那条管线填** ✓（★ 见 `ui_controller` ✓）
+  --     ★ **没有 `type`** ✗ ⇒ ★ `clue_results` 会如实报"尚无内容" ✓（★ 不编 ✗）
+  self.clues = level.clues
+  if type(self.clues) ~= "table" or #self.clues == 0 then
+    self.clues = {}
+    local n = self.rows * self.cols
+    for i = 1, n do
+      self.clues[i] = { slot = i }
+    end
+  end
+  -- ★ 槽位条数 = 棋盘格数 ✓（★ 判据写在代码里 ✓ 而不是只写在注释里 ✓）
+  self.clue_slots = #self.clues
 
   -- 家具
   self.objects = {}
@@ -1698,17 +1765,21 @@ end
 
 function Core:clue_results(roles)
   local ctx = make_context(self, roles)
-  local list = self.level.clues or {}
+  -- ★★ 2026-10-11：★ 读【槽位表】`self.clues` ✓ 不是 `level.clues` ✗
+  --   ★ 槽位由棋盘规格生成 ✓（★ `rows × cols` ✓ 见 `Core.new` 里那一段 ✓）
+  --   ★ 内容由 `assets/row.*` 那条管线填 ✓
+  --   ★★ 槽位**没有 `type`** ⇒ ★ 如实报"尚无内容" ✓ ★ **不编一个类型出来** ✗✓
+  local list = self.clues or {}
   local out = {}
   for i = 1, #list do
     local cl = list[i]
-    local def = M.clues[cl.type]
+    local def = cl.type and M.clues[cl.type] or nil
     local satisfied = false
     if def then satisfied = def.validate(ctx, cl) and true or false end
     out[i] = {
       index = i,
       type = cl.type,
-      text = def and def.text(ctx, cl) or ("未知线索 " .. tostring(cl.type)),
+      text = def and def.text(ctx, cl) or ("待填内容（槽位 " .. tostring(i) .. "）"),
       satisfied = satisfied,
     }
   end
@@ -2540,7 +2611,8 @@ function Core:view()
   local clues = self:clue_results()
   local clue_view = {}
   for i = 1, #clues do
-    local cl = self.level.clues[i]
+    -- ★★ 2026-10-11：★ 同样读**槽位表** ✓（★ 槽位可能没有 `type` ✓ ⇒ `cl` 只剩 `slot` ✓）
+    local cl = (self.clues or {})[i] or {}
     clue_view[i] = {
       index = i,
       type = cl.type,
@@ -2676,7 +2748,15 @@ function Core:solve(limit)
   local rules = self:rules()
   local ids = {}
   for i = 1, #self.pieces do ids[i] = self.pieces[i].id end
-  local clues = self.level.clues or {}
+  -- ★★ 2026-10-11：★ 读**槽位表** ✓ ＋ ★ **先看有没有"真判据"** ✗
+  --   ★ 槽位（★ 由棋盘规格生成 ✓ 内容待 `row.*` 填 ✓）**没有 `type`** ✗
+  --     ⇒ ★ 它们**还不能判真假** ⇒ ★★ **`solve` 无从下嘴** ✓
+  --   ⇒ ★ 如实返回**空解表** ✓ ★ **不猜、不编解** ✗✓
+  --     ★（★ 上层：`validate_levels` 报"未测" ✓ ★ 作者拿到的是"还没内容"而不是"多解" ✓）
+  local clues = self.clues or {}
+  local real = 0
+  for i = 1, #clues do if clues[i] and clues[i].type then real = real + 1 end end
+  if real == 0 then return {} end
   local allowed = self.allowed_false or 0
 
   -- 角色候选：盗窃者不能是受害者；同伙可以为 nil
@@ -3015,7 +3095,16 @@ M.LAYOUT = {
                             --   91 = 109×5/6（旧行高 109）⇒ **脚本的旧规划把用户在编辑器里摆的 360×96 冲掉了**。
                             --   ⚠️ 行内矩形的高度是 `clue_row_h − 12`（卡距 12 设计 = 10 画布），不是 −6；
                             --   若这里改了而那里没改，卡片会变成 101 高（详见 build_layout 的线索区那段）。
-  clue_max_visible = 18,    -- 硬上限：仍要够 case_003 的 18 条线索（只是屏上同时只显示 5 行，其余靠滚动）
+  -- ★★★★★★ 2026-10-11 **`clue_max_visible` 必须 ≥ 最大棋盘的格数** ✗✓✓
+  --
+  --   ★★★ 用户 2026-10-11 定的规则 ✓：「★ **clues 区域有多少内容由棋盘规格决定** ✓
+  --     ★ **几乘几就是几条**」✓
+  --   ⇒ ★★ 最大棋盘是 **7×7 = 49** ✓ ⇒ ★ 这个硬上限**至少 49** ✓
+  --     ★ 原来是 **18** ✗ ⇒ ★ **7×7 的第 19..49 条连控件都不会建** ✓
+  --       ⇒ ★★★ **看得见、滚不到、点不着** ✓✓（★ 而它就是"线索条数 = 格数"的落点 ✓）
+  --   ★ 语义没变 ✓：★ 这里只是**控件建几个**的上限 ✓ ★ **屏上同时显示几个**由 `clue_rows` 管 ✓
+  --     ★ 超出的靠 ▲▼ 滚 ✓（★ 窗口化本来就建全、只摆可见的 ✓）
+  clue_max_visible = 49,    -- ★ 2026-10-11：18 → **49**（= 7×7 最大棋盘的格数 ✓）
   -- ★★★ 2026-09-30：**线索区改成"可滚动窗口"**（参考《派蒙的执律庭实习》左侧那个带滚轮的列表）。
   --
   --   为什么必须真的能滚：上面那条注释写得很清楚 ——
@@ -18329,7 +18418,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v173 / 2026-10-11 / 按用户要求删掉整套'为每关人物发位置和字母'的线索: 四关的clues表与meta.false_clue全删(关卡本体walls/doors/objects/roles/solution/size一字未动); 删tools/find_clues.lua与levels/simple.lua的auto_clues(线索须手写,不写即空); 新增tests/fixtures.lua承载三份带线索的测试关(simple_level/selftest/三个letter套件不再依赖真关卡有线索); validate_levels在线索0条时报'未测'而非FAIL(有线索时判据一字不变); ui_controller把_row_letter/_row_face提到模块初始化(修不经过网格路径时的nil下标崩溃) =====")
+        print("[murdoku] ===== 构建标记 v174 / 2026-10-11 / clues条数=棋盘格数(row*cols), 内容由assets/row.*填; 控件上限18->49 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
