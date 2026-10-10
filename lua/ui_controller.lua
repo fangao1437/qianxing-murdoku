@@ -5290,272 +5290,38 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
     end
   end
 
-  -- ★★★★★ 2026-10-08 **把调色板里的头像【成对】写到卡片 `face` 上** ✗✓（"百四方块"的治本一步 ✓）
-  --   ★ 依据 ✓：★ 日志里 `调色板里没有素材「portrait.X」` **已经消失** ⇒ ★ **调色板找得到** ✓
-  --     ⇒ ★ 剩下的就是"**找到之后没贴到卡片上**" ✓（用户看到的仍是占位方块 ✓）
-  --   ★ 项目铁律 ✓：★ **图片要【成对写】`imageSource` + `imageId`** ✗
-  --     （★ 只写 id ⇒ "属性变了、画面没变" ✓ 本项目多处注释反复强调 ✓）
-  --   ★ 写法 ✓：★ 直接写字段 ✓（★ 与既有的 `imageColor`/`raycastTarget` 同一手法 ✓ 全程 pcall ✓）
-  --   ★ 去重 ✓：★ 记住上次写的 id ✓ ⇒ 值没变不重复写 ✓（★ 稳态零成本 ✓）
-  do
-    -- ★★★★★ 2026-10-08 **调色板查找改成"遍历 `assets` 子控件按名匹配"** ✗✓
-    --   ★ 真机证据 ✓：★ `★ 头像分件：id=V  pal=false(nil)  face=true` ✓
-    --     ⇒ ★ **`adapter:find("portrait.V")` 找不到** ✗（★ 而卡片的 `face` 找得到 ✓ 说明不是"控件系统坏了"✓）
-    --   ★ 原因 ✓：★ `find` 的搜索范围不覆盖 `assets` 那一层（★ 或名字与预期不同 ✓）
-    --   ★ 改法 ✓：★ **先试 `find`** ✓ **不行就取 `assets` 容器、遍历它的子控件按名比** ✓
-    --     ★ 顺手**打印候选名**（★ 最多 12 行 ✓）⇒ 万一名字不同，一眼就能看见 ✓✓
-    --   ★ 缓存 ✓：★ 找到就记住 ✓ ⇒ 稳态零成本 ✓
-  -- ★★★★★★ 2026-10-10 **调色板 portrait.* 已停用 —— 头像改由 row 下的 face 提供** ✗✓✓
+  -- ★★★★★★ 2026-10-10 **旧调色板 `portrait.*` 全套【已删除，266 行】** ✗✓✓
   --
-  --   ★★ 用户原话 ✓：「portrait 提供头像素材的功能已经被 face 代替了，
-  --     相关功能也该由 row 下的 face 取代」
-  --   ⇒ ★ 所以不再查 assets/portrait.<id> ✗
-  --     ★ 头像由 row.<关>.<行>/face.<关>.<行> 的图提供 ✓
-  --     ⇒ ★ 那条已在"单射"里写好 ✓（face 是四个槽位之一 ✓）
-  --       ★ 而且由 **末次单射** 最后写 ✓ ⇒ ★ 一定压过这里 ✓
-  --   ★ 为什么必须显式停掉 ✗：
-  --     ★ ① 它每帧刷「调色板里没有素材 portrait.X」✗（日志噪音）
-  --     ★ ② 万一 assets 下又出现同名控件 ⇒ ★ 它会反过来盖掉 row 的图 ✗
-  --   ⚠️ 只停"按名找头像素材"这一步 ✗：
-  --     ★ 不动 assets 本身的查找 ✓（单射还要用）
-  --     ★ 不动 _pal_cache 结构 ✓（留着不影响）
-  --   ★ 想恢复 ✗：把 _pal_disabled 改成 false 即可 ✓（一行）
-  local _pal_disabled = true
+  --   ★★ 用户指令 ✓：「**旧的那套东西不要只是关掉，直接把它们从脚本里删干净，一行都不要留**」✓
+  --
+  --   ★ 删了什么 ✓（★ L5293..L5558 ✓）：
+  --     ★ ① 调色板查找 `assets/portrait.<id>`（★ 190 行 ✓）
+  --     ★ ② **旧的"头像贴图"覆盖段 45 行** ✗ ← ★★ 这就是"头像不上"的直接原因 ✓
+  --        ★ 它拿【调色板的图】写卡片 `face` ✓，★ 而调色板已空 ⇒
+  --        ★★ **它把单射写好的头像【盖掉】** ✗✓
+  --
+  --   ★★ 为什么以前删不掉 ✗（★ 两次失败的确切数据 ✓）：
+  --     ★ 第 1 次删 L5308..L5512 ⇒ `luac: 5730: <eof> expected near end` ✗
+  --     ★ 第 2 次删 L5293..L5513 ⇒ `luac: 5720: <eof> expected near end` ✗
+  --     ★★★ 真因 ✓：★ **`do`(L5300) 的配对 `end` 在 L5558** ✗，
+  --       ★ 而 **L5513 的 `end` 关的是 `if`(L5325)** ✓ ⇒ ★ 删到 5513 必然少关一个 `do` ✓✓
+  --     ★ 由 `tools/lua_blocks.mjs` 机械判定 ✓（★ 先"去注释去字符串"再配对 ✓，
+  --       自检"全文深度回到 0"✓），★ 并**干跑编译验证**过 ✓（★ 删 5293-5558 ⇒ luac 通过 ✓）
+  --
+  --   ★ 头像现在【唯一来源】✓：★ `assets/row.<关>.<行>/face.<关>.<行>` 的图 ✓
+  --     ⇒ ★ 单射直连到卡片的 `face` ✓（★ 一对一 ✓）
+  --     ★ 用户已换好控件 ✓：真机存档 `row.1.1/face.1.1` 的图片 id = `112042` ✓
+  --
+  --   ★ 存档侧已确认 ✓：★ `portrait.*` 记录 **0 个** ✓ ⇒ ★ 删除**不丢任何控件** ✓
+  --
+  --   ⚠️ ★ 地图员/工具负责人另发现一个**活 bug** ✗（★ 与被删段无关 ✓ 见 L5166 ✓）：
+  --     ★ `t_portrait` 在 L5166 被使用，★ 而它的 `local` 声明在 L5585 ✗
+  --     ⇒ ★ **词法作用域 ⇒ 5166 处解析成全局 ⇒ 恒为 nil** ✓
+  --     ⇒ ★ 那个分支**永不执行** ✓ ⇒ ★ **"灰白层对不上"很可能有这一半原因** ✓
+  --     ★（★ 待修 ✓ 不在本次删除范围 ✓）
+  --
+  --   ★ `_pal` 保留为 `nil` ✓ —— ★ 后面仍在读它的地方不会报错 ✓
   local _pal = nil
-  if not _pal_disabled then
-      self._pal_cache = self._pal_cache or {}
-      if _pid ~= nil then
-        _pal = self._pal_cache[_pid]
-        local _nm = "portrait." .. tostring(_pid)
-        if _pal == nil then
-          -- ★★★★★ 2026-10-08 **一层层走、每步单独 pcall** ✗✓（三个真机教训一起修 ✓）
-          --   ① ★ `Adapter:find` 有**负缓存** ✗：★ 一旦某名字被判定"不在树上" ⇒ **这一代直接返回 nil** ✓
-          --      ⇒ ★ 开局树空时查过的名字**永远查不到** ✓ ⇒ **不能依赖 `find` 找 `assets`** ✓
-          --   ② ★ 上一版把整段递归包在一个大 pcall 里 ✗ ⇒ 中间出错就**整体静默失败** ✓（表现就是"找不到" ✓）
-          --      ⇒ ★ 现在**每一步各自 pcall** ✓ ⇒ 哪一步失败日志里都看得见 ✓
-          --   ③ ★ 已知结构（gil 侧实证 ✓）：★ `assets` 是 **`root` 的第 1 个子控件** ✓
-          --      ⇒ ★ **只需走两层**：`root` → 子控件里找 `assets` → 它子控件里找 `portrait.<id>` ✓ 不必深递归 ✓
-          -- ★★★★★ 2026-10-08 **限深递归搜 `assets`** ✗✓（真机证据：它不是 `root` 的直接子控件 ✗）
-          --   ★ 上一版只扫 `root` 一层 ⇒ 真机报「root 的直接子控件里没有 assets」✗
-          --     （★ 而 gil 记录里它的父【是】`root` ✓ ⇒ **真机树与存档结构不同** ✓）
-          --   ★ 现在：★ 从 `root` 起**限深 4 层**递归搜名字 ✓ ★ **每步单独 pcall** ✓（★ 哪步失败看得见 ✓）
-          --   ★ 并**打印沿途看到的名字**（★ 最多 16 条 ✓）⇒ 下次一眼知道它挂在哪 ✓
-          local _as = nil
-          local _seen = 0
-          pcall(function()
-            -- ★★★★★ 2026-10-08 **改用引擎自己的入口** ✗✓（用户点出：编辑器里 assets 明确与 home 平级 ✓）
-            --   ★ 怀疑 ✓：★ 我上一版从 `self.adapter:find("root")` 起走 ⇒ ★ 它可能返回**不是 UI 根**的那个 root ✗
-            --     （★ 与"读 218.1 时按字段号下钻"是同一类错误：★ **拿一个"看起来像"的入口当权威** ✗）
-            --   ★ 权威入口 ✓：★ **`game.GetClientUIRoots()`** ✓ —— ★ 适配器文档第 14 条写的就是它 ✓
-            --   ⇒ ★ 从这里起遍历 ✓ ★ 并把**根的名字**打出来 ✓（★ 一眼确认走对了没有 ✓）
-            -- ★★★★★ 2026-10-08 **前向声明** ✗✓（真机：一行"第N层看到"都没有 ⇒ 递归根本没跑 ✓）
-            --   ★ 元凶 ✓：★ 我把 `_search(...)` 的**调用写在了它的 `local function` 定义之前** ✗
-            --     ⇒ ★ Lua 里此刻 `_search` 还是 nil ⇒ ★ 调用即报错 ⇒ ★ **被外层 pcall 吞掉** ✓
-            --       ⇒ ★ 表现就是"什么都没发生"（★ 与"大 pcall 掩盖错误"是同一个坑 ✓ 我又踩了一次 ✓）
-            --   ★ 修法 ✓：★ **先声明再赋值**（`local _search` 在前 ✓ `_search = function` 在后 ✓）✓
-            local _search = nil
-            local _roots = nil
-            pcall(function() _roots = game.GetClientUIRoots() end)
-            local _rn = 0
-            if _roots ~= nil then pcall(function() _rn = #_roots end) end
-            if (self._roots_log or 0) < 2 then
-              self._roots_log = (self._roots_log or 0) + 1
-              local _nm = {}
-              for i = 1, math.min(_rn, 8) do
-                local x = _roots[i]
-                local xn = nil
-                pcall(function() xn = tostring(x.name) end)
-                _nm[#_nm + 1] = tostring(xn)
-              end
-              print("[murdoku] ★ 调色板搜寻：客户端根 " .. tostring(_rn) .. " 个 = " .. table.concat(_nm, " , "))
-            end
-            -- ★ 2026-10-08 **在主路径上按名取 assets**（★ 用户指出：两个客户端容器 ✓ `111` 是屏蔽节点那个 ✓）
-            --   ★ 只有 `root`（挂了脚本的那个 ✓）里才有 `assets` ✓ ⇒ ★ 用 `find("root")` + `GetChild("assets")` ✓
-            -- ★★★★★ 2026-10-10 **改走"按名全树找"** ✗✓ —— ★ `adapter:find("root")` 是**陈旧句柄** ✗
-            --   ★ 真机实证 ✓：★ `★ 按名取：assets=false` ✗ ＋ `★ 调色板搜寻：第1层看到 assets` ✓
-            --     ⇒ ★ **按名取失败、走树成功** ✓（★ 旧项目 H8 记的就是这件事 ✓）
-            --   ⇒ ★ 用 `_find_by_name` ✓（★ 入口 `game.GetClientUIRoots()` ✓ 不用缓存句柄 ✗）
-            pcall(function() _as = self:_find_by_name("assets") end)
-            -- ★ 同样改走"按名全树找" ✓ —— ★ 陈旧句柄下 `assets:GetChild` 也是 nil ✗
-            if _pal == nil then pcall(function() _pal = self:_find_by_name(_nm) end) end
-            if (self._g_log or 0) < 4 then
-              self._g_log = (self._g_log or 0) + 1
-              -- ★★★★★ 2026-10-08 **只读探针：运行时四键 `bg` 的 imageId 是多少** ✗✓（★ 用来分甲/乙 ✓）
-              --   ★ 甲：★ 脚本画的不是编辑器那个实例 ⇒ ★ `bg.imageId` 应为 `100001`（或取不到）✗
-              --   ★ 乙：★ 图设上了但没渲染 ⇒ ★ 应读到 `107179` ✓
-              --   ★ 本处放在"调色板查找"同一个函数里 ✓ —— ★ 真机已证它在跑（★ 下面那句 `★ 按名取` 每帧可见 ✓）
-              if self.modal ~= nil and (self._exit_probe or 0) < 12 then   -- ★ 只在弹窗开着时才打 ✓（上一版在弹窗关着时打完了 8 次 ✗）
-                self._exit_probe = (self._exit_probe or 0) + 1
-                local _m = nil
-                pcall(function() _m = self.adapter:sub("modal", "modal.exit") end)
-                if _m == nil then pcall(function() _m = self.adapter:find("modal.exit") end) end
-                local _b = nil
-                if _m ~= nil then pcall(function() _b = self.adapter:sub("modal.exit", "bg") end) end
-                local _id, _src, _vis = "?", "?", "?"
-                if _b ~= nil then
-                  pcall(function() _id = tostring(_b.imageId) end)
-                  pcall(function() _src = tostring(_b.imageSource) end)
-                  pcall(function() _vis = tostring(_b.visible) end)
-                end
-                print("[murdoku] ★ 四键探针：exit=" .. tostring(_m ~= nil) .. "  bg=" .. tostring(_b ~= nil)
-                  .. "  imageId=" .. _id .. "  source=" .. _src .. "  visible=" .. _vis
-                  .. "  弹窗开着=" .. tostring(self.modal ~= nil))
-              end
-              print("[murdoku] ★ 按名取：assets=" .. tostring(_as ~= nil) .. "  portrait.<id>=" .. tostring(_pal ~= nil))
-            end
-            -- ★ 2026-10-08 **按名取清单**（★ 真机 `assets=false` ✗ ⇒ 先看清"哪些名字取得"✓）
-            --   ★ 项目里早有过提醒 ✓：★「脚本是精确匹配的：大小写、空格、**自动后缀**都算不一样」✓
-            --     ⇒ ★ 引擎可能给 `assets` 加了后缀（如 `assets(1)` ✓）★ 或名字其实不同 ✓
-            if (self._g_log or 0) < 4 then
-              self._g_log = (self._g_log or 0) + 1
-              local _cands = { "assets", "assets(1)", "assets1", "home", "topbar", "clues", "row.1.1", "row.1.2", "portrait.V", "portrait.A" }
-              local _parts = {}
-              local _r1 = self.adapter:find("root")
-              local _rn1 = "?"
-              pcall(function() _rn1 = tostring(_r1 and _r1.name) end)
-              if _r1 ~= nil then
-                for _i1 = 1, #_cands do
-                  local _got = nil
-                  pcall(function() _got = _r1:GetChild(_cands[_i1]) end)
-                  _parts[#_parts + 1] = _cands[_i1] .. "=" .. tostring(_got ~= nil)
-                end
-              end
-              print("[murdoku] ★ 按名取清单：root 名=" .. _rn1 .. "   " .. table.concat(_parts, "  "))
-            end
-            -- ★★★★★ 2026-10-09 **【B2】清缓存与「按名取 assets」必须【无条件】执行** ✗✓
-            --   ★ 原文的错 ✗：这两件事被关在 `if _rn == 0 then` 里（★ 只有"引擎一个根都拿不到"时才跑 ✓）
-            --     ⇒ ★ 真机 `_rn = 2`（`111` + `root` 两个客户端容器 ✓）⇒ **走 else 分支 ⇒ 两件事从未执行** ✗✗
-            --     ⇒ ★ 于是「`assets` 按名取」从来没试过 ✓ ★ 「负缓存清一代」也从来没做过 ✓
-            --     ⇒ ★ `docs/assets取不到-追查.md` 里"已排除负缓存"的**前提不成立** ✓（要重判 ✓）
-            --   ★ 为什么本来就该无条件 ✓：★ 清缓存是**幂等的一次性动作** ✓（`_cache_cleared` 把关 ✓）
-            --     ★ 按名取是**主路径** ✓（★ 与 `_rn` 毫无关系 ✓）⇒ 两者都不该依赖根的数量 ✓
-            if self.adapter ~= nil and not self._cache_cleared then
-              self._cache_cleared = true
-              if self.adapter.invalidate_lookups ~= nil then pcall(function() self.adapter:invalidate_lookups("调色板查找前") end) else pcall(function() self.adapter._misses = nil; self.adapter.controls = {} end) end
-            end
-            -- ★★★★★ 2026-10-10 **改走"按名全树找"** ✗✓ —— ★ `adapter:find("root")` 是**陈旧句柄** ✗
-            --   ★ 真机实证 ✓：★ `★ 按名取：assets=false` ✗ ＋ `★ 调色板搜寻：第1层看到 assets` ✓
-            --     ⇒ ★ **按名取失败、走树成功** ✓（★ 旧项目 H8 记的就是这件事 ✓）
-            --   ⇒ ★ 用 `_find_by_name` ✓（★ 入口 `game.GetClientUIRoots()` ✓ 不用缓存句柄 ✗）
-            pcall(function() _as = self:_find_by_name("assets") end)
-
-            -- ★★★★★ 2026-10-09 **【B1】`_search` 必须先【定义】、再【调用】** ✗✓
-            --   ★ 原文的错 ✗：调用在 :4377 / :4379，而赋值 `_search = function…` 在 :4381 ✓
-            --     ⇒ ★ `attempt to call a nil value` ✓ ★ 被本函数最外层的**大 pcall 吞掉** ✗
-            --     ⇒ ★ 静默失效：**调用点之后的整段都不执行**（连那行赋值本身也不执行 ✓）
-            --     ⇒ ★ 所以真机日志里「调色板搜寻：第N层看到」**一行都没有** ✓✓
-            --   ★ `:4298` 那条注释以为"先 `local _search = nil` 声明就修好了" ✗
-            --     —— ★ **声明成 nil 并不能防止调用 nil** ✓ 必须先赋值 ✓（本项目第 N 次同形状 ✓）
-            _search = function(node, depth)
-              if node == nil or depth > 4 or _as ~= nil then return end
-              local kids = nil
-              pcall(function() kids = node:GetChildren() end)
-              if kids == nil then return end
-              local n = 0
-              pcall(function() n = #kids end)
-              for i = 1, n do
-            -- ★ 同样改走"按名全树找" ✓ —— ★ 陈旧句柄下 `assets:GetChild` 也是 nil ✗
-            if _pal == nil then pcall(function() _pal = self:_find_by_name(_nm) end) end
-                if _as ~= nil then return end
-                local x = kids[i]
-                local xn = nil
-                pcall(function() xn = tostring(x.name) end)
-                if _seen < 16 then
-                  _seen = _seen + 1
-                  print("[murdoku] ★ 调色板搜寻：第" .. tostring(depth + 1) .. "层看到 " .. tostring(xn))
-                end
-                if xn == "assets" then _as = x return end
-                _search(x, depth + 1)
-              end
-            end
-
-            -- ★ 只有在"按名取"没拿到时，才值得退回去递归搜（省掉稳态的整树遍历 ✓）
-            --   ⚠️ 原文这里还有一句 `if r0 == nil then return end` ✗ —— 那个 `return` 会
-            --      **中断整个大 pcall 的函数体**（★ 连后面的赋值一起跳过 ✓）⇒ 已去掉 ✓
-            if _as == nil then
-              if _rn == 0 then
-                local r0 = self.adapter:find("root")     -- 兜底：引擎入口拿不到时，退回按名找
-                if r0 ~= nil then _search(r0, 0) end
-              else
-                for i = 1, _rn do _search(_roots[i], 0) end
-              end
-            end
-          end)        if _as ~= nil then
-            local k1 = nil
-            pcall(function() k1 = _as:GetChildren() end)
-            if k1 ~= nil then
-              local n1 = 0
-              pcall(function() n1 = #k1 end)
-              for i = 1, n1 do
-                local x = k1[i]
-                local xn = nil
-                pcall(function() xn = tostring(x.name) end)
-                if xn == _nm then _pal = x end
-                if (self._pn_log or 0) < 12 then
-                  self._pn_log = (self._pn_log or 0) + 1
-                  print("[murdoku] ★ 调色板候选：assets 下有 " .. tostring(xn))
-                end
-              end
-            else
-              if (self._as_log or 0) < 2 then
-                self._as_log = (self._as_log or 0) + 1
-                print("[murdoku] ★ 调色板候选：找到 assets，但取不到它的子控件（GetChildren 失败）")
-              end
-            end
-          else
-            if (self._as_log or 0) < 2 then
-              self._as_log = (self._as_log or 0) + 1
-              print("[murdoku] ★ 调色板候选：root 的直接子控件里没有 assets")
-            end
-          end
-        end      if _pal ~= nil then self._pal_cache[_pid] = _pal end
-  end   -- ★ if not _pal_disabled then 收尾 ✓（停用时不查调色板 ✓）
-    end
-    local _cf = self:_grid_item_child_cached(item, index, pos, "face")
-    -- ★ 2026-10-08 **分件诊断**（真机：`头像贴图` 一行都没出现 ⇒ 说明取不到 ✓ 那就分别打出来 ✓）
-    --   ① `_pid`（人物 id ✓ 应为 V/D/A/B ✓）② `_pal`（调色板控件找到没 ✓）③ `_cf`（卡片 face 找到没 ✓）
-    if (self._pd_log or 0) < 8 then
-      self._pd_log = (self._pd_log or 0) + 1
-      local _pn = "?"
-      pcall(function() _pn = tostring(_pal and _pal.name) end)
-      print("[murdoku] ★ 头像分件：id=" .. tostring(_pid) .. "  pal=" .. tostring(_pal ~= nil)
-        .. "(" .. _pn .. ")  face=" .. tostring(_cf ~= nil))
-    end
-    if _pal ~= nil and _cf ~= nil then
-      local _ps, _pi = nil, nil
-      pcall(function() _ps = _pal.imageSource end)
-      pcall(function() _pi = _pal.imageId end)
-      local _rg3 = self:_grid_item_rec(item, index)
-      if _pi ~= nil and (_rg3 == nil or _rg3.pimg ~= _pi) then
-        if _rg3 ~= nil then _rg3.pimg = _pi end
-        if _ps ~= nil then pcall(function() _cf.imageSource = _ps end) end
-        -- ★★★★★ 2026-10-08 **头像 id 直接写死（甲案）** ✓✓（★ 用户拍板 ✓）
-        --   ★ 为什么 ✓：★ `assets` 容器在运行时**取不到** ✗（★ 已排除负缓存/可见性/画布位置 ✓）
-        --     ⇒ ★ 而 4 个头像 id **早已确证** ✓（★ 四种独立指标交叉验证 ✓ 有证据图 ✓）
-        --   ★ 写法 ✓：★ 调色板取不到时 ⇒ ★ **用写死的表兜底** ✓（★ `_ps` 用素材库哨兵 `4294967295` ✓
-        --     与存档里 `portrait.*` 的 `imageSource` 一致 ✓）
-        --   ★ 以后要"可配置"✓ ⇒ ★ 等 `assets` 的事查清，把这张表换回"从容器读"即可 ✓（★ 一处 ✓）
-        if _pi == nil and _pid ~= nil then
-          local _IDS = { A = 112042, B = 105104, V = 112031, D = 105105 }
-          local _hit = _IDS[tostring(_pid)]
-          if _hit ~= nil then _ps = 4294967295; _pi = _hit end
-          if (self._ids_log or 0) < 6 then
-            self._ids_log = (self._ids_log or 0) + 1
-            print("[murdoku] ★ 写死表：id=" .. tostring(_pid) .. "  imageId=" .. tostring(_hit))
-          end
-        end
-        pcall(function() if _cf.SetImage ~= nil then _cf:SetImage(_ps or _cf.imageSource, _pi) end end)   -- ★ 官方贴图接口 ✓
-        pcall(function() _cf.imageId = _pi end)
-        pcall(function() _cf:SetVisible(true) end)
-        pcall(function() if _cf.SetActive then _cf:SetActive(true) end end)
-        if (self._pt_log or 0) < 8 then
-          self._pt_log = (self._pt_log or 0) + 1
-          print("[murdoku] ★ 头像贴图：face ← portrait." .. tostring(_pid)
-            .. "  src=" .. tostring(_ps) .. "  id=" .. tostring(_pi))
-        end
-      end
-    end
-  end
   if _cgray ~= nil then
     -- ★★★★★ 2026-10-07 **灰白图必须【不参与射线】** ✗✓（"预放置也像被取消选中"的真因 ✓）
     --   ★ 真机反馈 ✓：★ 灰白出来之后 ⇒ ★「★ **预放置也会取消选中，且要双击才能重新选中**」✗
