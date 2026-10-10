@@ -3197,10 +3197,44 @@ end
 --   ⇒ ★★ **笔记一直是"写进去了、也一直没画出来"** ✓ 与用户看到的现象完全一致 ✓
 --   ★ 转换后：★ **id 本身就是徽章字母**（真机日志 `who=V` / `who=D` ✓）⇒ 直接当字母用 ✓
 --     （★ 排序只为稳定 ✓ 集合遍历顺序不定，不排的话文字每帧可能抖动 ✓）
-local function note_list_of(set)
+--   ★★★★★★ 2026-10-11 **本函数已被 `mark_list_of` 取代** ✗✓（★ 用户："让 `letter` 取代铅笔笔记" ✓）
+--     ★ 保留**这段注释** ✓（★ 它记着"适配器只要数组"这个坑 ✓）
+--     ★ **函数体删掉** ✓ —— ★ 用户明确要求过"**删干净 ✓ 一行不留**"✓
+--       ★ 判据 ✓：`node tools/lua_map.mjs --refs=note_list_of` ⇒ ★ 改动后 **0 个调用点** ✓
+
+-- ★★★★★★ 2026-10-11 **格子的标记：把【人物 id】换成【那一行的 `letter`】** ✗✓✓
+--
+--   ★★★ 用户更正 ✓（★ 这一句纠正了我前三轮的理解 ✗）：
+--     「**我要的就是铅笔笔记用 `letter` 的标记** ✓
+--      ★ **不是增加一个 `letter` 功能** ✗
+--      ★★ **而是让 `letter` 取代铅笔笔记的功能** ✓」
+--
+--   ⇒ ★★ 即 ✓：★ **铅笔笔记这套交互【保留】✓**（★ 选人 ＋ 单击格子 ⇒ 打/取消一个标记 ✓）
+--     ★ **但格子上显示的字要换成 `letter`** ✓ —— ★ **不是继续显示人物 id** ✗✓
+--
+--   ★ 前三轮我错在哪 ✗（★ 记下来免得再犯 ✓）：
+--     ★ 我以为"标记"要**另开一条路**（★ 放棋子 ⇒ 显示那个人的 `letter` ✓）
+--     ★ 而用户要的是**把现成那条路的【显示】换掉** ✓
+--     ⇒ ★★ 所以数据层**一个字都不用改** ✗ —— ★ `core.notes[r][c] = { [人物id]=true }` 照旧 ✓
+--       ★ **只换"下发到 `note` 控件的那串字"** ✓✓
+--
+--   ★ 为什么这样正好"取代"而不是"增加" ✓：
+--     · ★ 打标记 = `toggle_note(人)` ✓（★ 语义仍是"我猜这个人在这一格" ✓）
+--     · ★ 显示  = `letter_of(人)` ✓（★ 你想看的那个字母 ✓）
+--     · ★ 没配 `letter` 的人 ⇒ **回退人物 id** ✓ ⇒ ★ 不会突然空白 ✓（★ 与你"后面补"一致 ✓）
+--   ★ 落子那一格 ✓：★ `do_place` 本来就会**清掉该格笔记** ✓ ⇒ ★ 显示自然变成
+--     `letter_of(落子的人)` ✓ ⇒ ★ **"放人"和"打标记"两条路在显示上【自动统一】** ✓✓
+local function mark_list_of(set, vm, resolve)
   if type(set) ~= "table" then return nil end
   local out = {}
-  for kk, vv in pairs(set) do if vv then out[#out + 1] = tostring(kk) end end
+  for kk, vv in pairs(set) do
+    if vv then
+      local id = tostring(kk)
+      local letter = nil
+      if resolve ~= nil then letter = resolve(vm, id) end
+      out[#out + 1] = (letter ~= nil and tostring(letter) ~= "") and tostring(letter) or id
+    end
+  end
   if #out == 0 then return nil end
   table.sort(out)
   return out
@@ -5562,14 +5596,18 @@ function Controller:build_layout()
       --     （★ 我第一版放进 `push({…})` 里面 ✓ 症状：`unexpected symbol near 'local'` ✓）
       local _note_val = nil
       local _note_src = nil
+      local _resolve = Controller.letter_of
       if cd.suspect ~= nil then
         _note_val = Controller.letter_of(vm, cd.suspect)
-        if _note_val ~= nil then _note_src = "letter" end
+        if _note_val ~= nil then _note_src = "letter(棋子)" end
       end
       if _note_val == nil then
-        _note_val = note_list_of((self.core and self.core.notes and self.core.notes[r]
-          and self.core.notes[r][c]) or cd.notes)
-        if _note_val ~= nil then _note_src = "兜底(旧铅笔笔记)" end
+        -- ★★★★★★ 2026-10-11 **标记列表也走 `letter`** ✗✓✓（★ 这就是"取代" ✓）
+        --   ★ `core.notes[r][c]` 是 **`{ [人物id]=true }`** ✓ ⇒ ★ 这里把 id **换成 `letter`** ✓
+        --     ★ 没配 `letter` 的人 ⇒ `mark_list_of` 内部**回退 id** ✓（★ 不会突然空白 ✓）
+        _note_val = mark_list_of((self.core and self.core.notes and self.core.notes[r]
+          and self.core.notes[r][c]) or cd.notes, vm, _resolve)
+        if _note_val ~= nil then _note_src = "标记(letter)" end
       end
       -- ★★★★★★ 2026-10-11 **探针要"每次棋盘变化"重新武装** ✗✓✓
       --
@@ -5588,13 +5626,17 @@ function Controller:build_layout()
         -- ★★★ 2026-10-11 **三种情况给三种话** ✗✓✓（★ 一次就分得清 ✓）
         --   ★ 为什么必须分开 ✗：★ v168 那版**只在"有棋子"时打** ✓
         --     ⇒ ★ 用户那局【一行都没打】✓ ⇒ ★ 我只能推断"没有棋子" ✗ 不能确认 ✓
-        --   ⇒ ★ 现在：★ ① 有棋子 ⇒ 打 ✓ ② 空格子但有旧笔记 ⇒ **也打** ✓
-        --     ⇒ ★★ 于是"格子上那个 `bav` 到底是棋子还是旧笔记"**当场分开** ✓✓
+        --   ⇒ ★ 现在：★ ① 有棋子 ⇒ 打 ✓ ② 空格子但有标记 ⇒ **也打** ✓
+        --     ⇒ ★★ 于是"格子上那个 `bav` 到底是棋子还是标记"**当场分开** ✓✓
+        --   ★★★★★★ 2026-10-11 **措辞更正** ✗✓（★ 因为 `letter` 已经【取代】了铅笔笔记 ✓）
+        --     ★ 旧措辞写着"这是旧笔记 ✗ **不是** letter 标记"✓
+        --       ⇒ ★ **现在不对了** ✗ —— ★ 标记**就是**走 `letter` 显示的 ✓
+        --       ⇒ ★★ 照旧写下去会**把人误导回"两套东西"** ✗✓（★ 这正是我前三轮犯的错 ✓）
         if cd.suspect == nil then
           print("[murdoku] ★ 棋盘格下发：cell(" .. tostring(r) .. "," .. tostring(c)
-            .. ") 【空格子】但 note 下发=" .. _shown
-            .. "（★ 这是 core.notes 里的【旧铅笔笔记】✗ 不是 letter 标记 ✓"
-            .. "　⇒ ★ 要清掉它：点这格用橡皮／或者在记事模式再点一次 ✓）")
+            .. ") 【空格子·标记】note=" .. _shown
+            .. "（★ 标记列表 = " .. tostring(_note_src or "无")
+            .. " ✓ —— ★ 打的是人 ✓ 显示的是那个人的 `letter` ✓）")
         else
           print("[murdoku] ★ 棋盘格下发：cell(" .. tostring(r) .. "," .. tostring(c)
             .. ") suspect=" .. tostring(cd.suspect)
@@ -5725,23 +5767,17 @@ function Controller:build_layout()
         --   ★ 项目自己早就吃过同一个坑 ✓（`image` 那条注释写着 ✓ `ui_controller.lua:2677~2680` ✓：
         --     「★ 用 `false` 而不是 nil 当"这格没有人"……否则**旧格的头像永远不清**」✓）
         --   ⇒ ★ 这里照办 ✓：★ 没有笔记时下发 **`false`** ✓ ⇒ 适配器 `txt = ""` ⇒ `SetVisible(false)` ✓
-        -- ★★★★★★ 2026-10-10 **标记 = 那一行的 `letter`** ✗✓✓（★ 用户："把 `letter` 的文本填进 `note` 里" ✓）
-        --   ★★ 原来这里填的是【铅笔笔记】（`core.notes[r][c]` ✗ 那是另一套 ✓）
-        --     ⇒ ★ 所以"标记还是错的"✗ —— ★ 而数据侧的 `letter` 一直是对的 ✓
-        --   ★ 现在 ✓：★ 优先用【那一行的 `letter`】✓（★ 和 `image` 那一行【同构】✓）
-        --     ★ `cd.suspect` = 这一格放的是谁 ✓ ⇒ `letter_of` 查出那一行的 `letter` ✓
-        --   ★ 兜底 ✓：★ 拿不到 `letter` ⇒ ★ 回退旧的铅笔笔记 ✓（★ 行为不变 ✓）
-        -- ★★★★★★ 2026-10-11 **把"这一格最终下发什么"打出来** ✗✓✓（★ 一次定案 ✓）
-        --
-        --   ★ 为什么必须加 ✗：★ 用户报"修复没生效"✓ 而**设备日志只证明了两件事** ✓：
-        --     · ★ 单射在跑 ✓（`写了 4 个槽位` ✓）
-        --     · ★ `_row_letter` 在建 ✓（`标记来源记下 … who=B letter=A` ✓）
-        --   ⇒ ★★ 中间【一格都没打】**"格子最后收到哪个值"** ✗
-        --     ⇒ ★ 于是分不清三种情况 ✓：★ ① 值对但没画 ✗ ★ ② 值错 ✗ ★ ③ 落了兜底 ✗
-        --   ★ 本行把三者一次分开 ✓：`cell(r,c)` ＋ `suspect` ＋ `src=letter/兜底` ＋ 值 ✓
-        --   ★ 只在**有人的格子**打 ✓ ＋ ★ 每次填充最多 8 行 ✓（★ 稳态不刷屏 ✓）
-        --   ⚠️ ★ `local` **不能写在表构造器里** ✗（★ 实测：`unexpected symbol near 'local'` ✓）
-        --     ⇒ ★ 计算放在**循环顶部**（`local cd = vm.cells[r][c]` 那一处 ✓）✓
+        -- ★★★★★★ 2026-10-11 **标记 = 那一行的 `letter`（★ 这就是"取代铅笔笔记" ✓）** ✗✓✓
+        --   ★★★ 用户更正 ✓：「**我要的就是铅笔笔记用 `letter` 的标记** ✓
+        --     ★ **不是增加一个 `letter` 功能** ✗ ★★ **而是让 `letter` 取代铅笔笔记的功能** ✓」
+        --   ⇒ ★★ 所以这里**不是"多一条路"** ✗ —— ★ **是把笔记那条路的【显示】换掉** ✓：
+        --     ★ 数据照旧是 `{ [人物id]=true }` ✓（★ 打标记的交互一个字没动 ✓）
+        --     ★ **下发的字**改由 `letter_of(人物)` 决定 ✓（★ 在循环顶部算好 `_note_val` ✓）
+        --   ★ 优先级（★ 两条路在显示上**自动统一** ✓）：
+        --     ★ ① 这格有棋子 ⇒ **那个人的 `letter`** ✓（★ `do_place` 会清掉该格笔记 ✓）
+        --     ★ ② 没有棋子但有标记 ⇒ **被标记那几个人各自的 `letter`** ✓
+        --     ★ ③ 都没有 ⇒ `false` ✓（★ 明确"要清空" ✓ 不是 nil ✗ —— 见上面那段注释 ✓）
+        --   ★ 没配 `letter` 的人 ⇒ `mark_list_of` 内部**回退人物 id** ✓（★ 与你"后面补"一致 ✓）
         notes = _note_val or false,
         room = cd.room,
         -- ★★ 2026-09-28 新增：**显式告诉适配层"这格有没有物件"**。
@@ -18210,7 +18246,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v169 / 2026-10-11 / 探针细分: ①有棋子→打 suspect+src+值 ②空格子但有旧笔记→也打(点明那是core.notes不是letter) ③每次棋盘变化重新武装(原来开局就把12行额度用光) —— 实机v168那局一行没打⇒整局没有棋子, 格子上的bav是旧铅笔笔记 =====")
+        print("[murdoku] ===== 构建标记 v170 / 2026-10-11 / 让letter取代铅笔笔记的显示: 格子note改为下发letter_of(标记的人物)而不是人物id; 数据层core.notes一个字没改; 没配letter的人回退id; 新增tests/cell_mark_letter.lua(8断言)钉住; 删掉已无调用点的note_list_of =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

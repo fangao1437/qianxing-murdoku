@@ -184,7 +184,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v169 / 2026-10-11 / 探针细分: ①有棋子→打 suspect+src+值 ②空格子但有旧笔记→也打(点明那是core.notes不是letter) ③每次棋盘变化重新武装(原来开局就把12行额度用光) —— 实机v168那局一行没打⇒整局没有棋子, 格子上的bav是旧铅笔笔记 =====")
+        print("[murdoku] ===== 构建标记 v170 / 2026-10-11 / 让letter取代铅笔笔记的显示: 格子note改为下发letter_of(标记的人物)而不是人物id; 数据层core.notes一个字没改; 没配letter的人回退id; 新增tests/cell_mark_letter.lua(8断言)钉住; 删掉已无调用点的note_list_of =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
