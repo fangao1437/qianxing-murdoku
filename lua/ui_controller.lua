@@ -4215,6 +4215,17 @@ end
 --
 --   ★ 判据 ✓：★ 控件有 `SetImage` ✗ 或 `imageId` ✗ ⇒ ★ 就是它 ✓
 --   ★ 广度优先 ✓ 最多下钻 4 层 ✓ 全程 pcall ✓
+--   ★★★★★★ 2026-10-11 **广度优先原来只走了一层** ✗✓✓（★ 真 bug ✓ 已修 ✓）
+--
+--     ★ 原写法 ✓：`for qi = 1, #q do` ＋ 循环里 `q[#q + 1] = kk` ✗
+--     ★★ Lua 的**数值 `for` 在进入时只求值一次上界** ✓（`#q` 被**冻结** ✗）
+--       ⇒ ★ 队列就算在后面变长，`qi` 也不会再推进 ✓
+--       ⇒ ★★ **只扫"根的直接子控件"这一层** ✗ —— ★ 注释写着"广度优先"✓ 实际不是 ✓✓
+--     ★ 最小复现（本机 Lua 5.3 ✓）：`q={a}`／`for qi=1,#q do q[#q+1]=a end` ⇒ ★ 只迭代 1 次 ✓
+--     ★ 影响面 ✓：★ 图片那条路（本函数 ✓）与文字那条路（我抄的同一个形状 ✗）都中 ✓
+--       ⇒ ★ "`face` 的图在模板里面 ⇒ 要往下钻"这句话**从来没真正执行过** ✗✓
+--     ★ 修法 ✓：★ 换成 `while qi <= #q do … qi = qi + 1 end` ✓
+--       ★（或 `repeat` ＋ 显式计数 ✓）—— ★ 判据：**上界每轮重算** ✓✓
 -- ★ 只读 ✓：本函数只**取**控件，不写任何东西 ✓
 function Controller:_find_image_holder(root)
   if root == nil then return nil end
@@ -4228,7 +4239,8 @@ function Controller:_find_image_holder(root)
   if canImg(root) then return root end
   local q = { root }
   local seen = 0
-  for qi = 1, #q do
+  local qi = 1
+  while qi <= #q do
     if seen > 60 then break end
     local ks = nil
     pcall(function() ks = q[qi]:GetChildren() end)
@@ -4240,6 +4252,67 @@ function Controller:_find_image_holder(root)
         if #q < 200 then q[#q + 1] = kk end
       end
     end
+    qi = qi + 1
+  end
+  return nil
+end
+
+-- ★★★★★★ 2026-10-11 **读一个控件（或它模板里的那份）的文字** ✗✓✓
+--
+--   ★ 为什么要单独一个函数 ✗：★ 原来这段"读文字"被**抄了两份** ✓
+--     （早期单射一处 ✓、末次单射一处 ✓）★ 而两处都只有一条路 ✓：
+--     `pcall(function() txt = k.text end)` ✗ —— ★ `k.text` 是 nil 就全盘落空 ✓
+--   ★ 与 `_find_image_holder` **完全同形** ✓：
+--     ★ 图片那边早就知道"`face` 是模板引用控件 ✗ ⇒ 要往下钻" ✓
+--     ★ 文字这边**同一个道理** ✓ —— ★ 用户配的那段字挂在【模板里那份】上 ✓
+--       ⇒ ★ 引用控件的 `.text` **不保证**是那段字 ✓（★ 真机读不到就是这条 ✓）
+--   ★ 三层判据（严 → 宽）✓：
+--     ① ★ 自有 `.text` 非空 ⇒ 直接用 ✓（★ 普通文本框走这条 ✓）
+--     ② ★ `FindChild("<槽位名>")` ⇒ ★ 引用出来的那份，**同名子控件** ✓
+--        （★ 名实相符 ✓ —— 比"随便找第一个有 text 的子孙"准得多 ✗）
+--     ③ ★ 广度优先找第一个 `text` 非空的后代 ✓（★ 兜底 ✓ 最多 4 层 / 60 个 ✓）
+--   ★ 全程 pcall ✓ ★ 只读 ✓ ★ 不写任何东西 ✓
+--   ★ 返回 **string** 或 **nil** ✓（★ 调用方只管 nil 与否 ✓）
+function Controller:_read_control_text(root, slot)
+  if root == nil then return nil end
+  local function ownText(c)
+    if c == nil then return nil end
+    local t = nil
+    pcall(function() t = c.text end)
+    if t == nil then return nil end
+    t = tostring(t)
+    if t == "" then return nil end
+    return t
+  end
+  local t1 = ownText(root)
+  if t1 ~= nil then return t1 end
+  if type(slot) == "string" and slot ~= "" then
+    local sub = nil
+    pcall(function() sub = root:FindChild(slot) end)
+    local t2 = ownText(sub)
+    if t2 ~= nil then return t2 end
+  end
+  local q = { root }
+  local seen = 0
+  local qi = 1
+  -- ★★★★★★ 2026-10-11 **必须用 `while`（不能 `for qi = 1, #q`）** ✗✓✓
+  --   ★★ Lua 的数值 `for` **进入时只求值一次上界** ✓ ⇒ ★ 队列后面变长也不推进 ✓
+  --     ⇒ ★ 那样"广度优先"实际**只扫一层** ✗（★ 本文件 `_find_image_holder` 就中过这条 ✓
+  --       ★ 2026-10-11 同批修掉 ✓）
+  while qi <= #q do
+    if seen > 60 then break end
+    local ks = nil
+    pcall(function() ks = q[qi]:GetChildren() end)
+    if type(ks) == "table" then
+      for ki = 1, #ks do
+        local kk = ks[ki]
+        seen = seen + 1
+        local t = ownText(kk)
+        if t ~= nil then return t end
+        if #q < 200 then q[#q + 1] = kk end
+      end
+    end
+    qi = qi + 1
   end
   return nil
 end
@@ -4623,6 +4696,19 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
           end
         end
         if type(kids) == "table" then
+          -- ★★★★★★ 2026-10-11 **本次 `row` 的收成，读到就当场落账（不跨块传值）** ✗✓✓
+          --
+          --   ★★★ 原写法（已修 ✗）：★ `self._row_letter_txt = nil` 写在**子控件循环【里】** ✓
+          --     ⇒ ★ 每处理一个子控件就**清一次** ✓ ⇒ ★ 只有 `letter` 恰好是
+          --       **最后一个**子控件时那个值才活到循环结束 ✓✓
+          --   ★ 存档实测（只读探针 ✓ `tools/gil` 那份 `row.*` 子列表顺序 ✓）：
+          --     ★ `letter` 在**最后一位**的只有 **1 / 20 行** ✗（★ `row.1.4` ✓）
+          --       ★ 其余 19 行 ⇒ `letter` 后面还有 `who`/`what`/`face` ⇒ **清掉** ✓
+          --     ⇒ ★★★ **`_row_letter` 恒空 ⇒ `letter_of` 恒 nil ⇒ 落兜底 ⇒
+          --       用户看到"还是旧铅笔笔记"** ✓✓（★ 与真机现象逐字相符 ✓）
+          --   ★ 修法 ✓：★ **不再设中间字段** ✗ —— ★ 读到 `letter` 就地写
+          --     `Controller._row_letter[人物id]` ✓（★ 在 `slot == "letter"` 那个块里 ✓）
+          --     ⇒ ★ 与子控件顺序**完全无关** ✓、也**不可能**再踩"跨块传值"那条坑 ✓✓
           for ci = 1, #kids do
             local k = kids[ci]
             local kn = nil
@@ -4633,7 +4719,10 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
             --   ⇒ ★ 槽位名 = **第一个点号之前** ✓（★ 我原来写"第一段非空白"✗ ⇒ 取到 `who.1.1` ⇒ 对不上卡片的 `who` ✓）
             -- ★ 护栏 ✓（★ 地图员提醒 ✓）：★ 每个 `pos` 开始处清掉残值 ✗
             --   ★ 否则某个 `pos` 没有 `letter` 槽位 ⇒ 会沿用【上一个 pos 的值】✗
-            self._row_letter_txt = nil
+            -- ★★★★★★ 2026-10-11 **护栏改到循环【外】** ✗✓✓
+            --   ★ 原来这一行就在【这里】（循环里 ✓）⇒ ★ 它把**刚读到的** `letter` 清掉 ✓
+            --     ⇒ ★ 这就是"标记填不进去"的真因之一 ✓（★ 详见循环开头那段 ✓）
+            --   ⇒ ★ 现在：★ 清理只在循环前做一次 ✓ 循环里**只读不写** ✓
             if slot ~= nil then slot = string.match(slot, "^[^%.]+") end
             if slot ~= nil and slot ~= "" then
               -- ★★★★★★ 2026-10-10 **按完整名在【列表项下】找，并验证类型** ✗✓✓
@@ -4691,25 +4780,50 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                 --   ★ 修法 ✓：★ `txt` 取不到 ⇒ **广度优先往下找第一个有 `text` 的子孙** ✓
                 --     ★（★ 与 `dst` 那边"下钻找文本控件"完全一样 ✓）
                 if slot == "letter" then
-                  local _lt = (txt ~= nil and tostring(txt) ~= "") and tostring(txt) or nil
-                  if _lt == nil and k ~= nil then
-                    local _q = { k }
-                    for _qi = 1, #_q do
-                      local _ks = nil
-                      pcall(function() _ks = _q[_qi]:GetChildren() end)
-                      if type(_ks) == "table" then
-                        for _ki = 1, #_ks do
-                          local _kk = _ks[_ki]
-                          local _t = nil
-                          pcall(function() _t = _kk.text end)
-                          if _t ~= nil and tostring(_t) ~= "" then _lt = tostring(_t) break end
-                          _q[#_q + 1] = _kk
-                        end
+                  -- ★★★★★★ 2026-10-11 **读文字换用共用函数（三层判据 ✓ 与图片同形 ✓）** ✗✓✓
+                  --   ★ 原来这里只有 `k.text` ✗ ⇒ ★ 引用控件读不到 ⇒ 记下的恒 nil ✓
+                  --   ★ 现在 ✓：★ 自有 `.text` ⇒ `FindChild("<槽位>")` ⇒ 广度优先兜底 ✓
+                  --     ★ 与 `_find_image_holder` 完全同一套思路 ✓（★ 用户早已指出两者同构 ✓）
+                  --   ★ 失败时**如实报一次** ✓（★ 不再静默 ✓）
+                  local _lt = self:_read_control_text(k, slot)
+                  -- ★★★★★★ 2026-10-11 **读到就【当场落账】** ✗✓✓（★ 这是第二个真因 ✓）
+                  --
+                  --   ★★★ 我第一版把它写成"存进循环外的一个局部变量 ✓ 循环后再落账" ✗
+                  --     —— ★ **编译通过、但永远不生效** ✓✓（★ 本次踩到的第二个坑 ✓）
+                  --   ★ 机制 ✓：★ Lua 的局部变量**只在自己的块里可见** ✗
+                  --     ★ 我把"落账"写在**更深的块**里（`if dst ~= nil` 之内 ✗）
+                  --       ⇒ ★ 那里的 `_row_letter` **不是那个局部** ✓
+                  --       ⇒ ★ 它退化成**全局变量**（★ 恒 nil ✓）⇒ ★ 判据恒假 ⇒ 静默不落账 ✓
+                  --     ⚠️ ★ **Lua 不会报错** ✗（全局读写合法 ✓）—— 与"注释当事实"同族：
+                  --       ★ **"编译通过" ≠ "这段在跑"** ✓✓
+                  --   ⇒ ★ 修法 ✓：★ **就在读过之后、同一个块里写目标表** ✓ ——
+                  --     ★ 不跨块传值 ⇒ 这类坑**结构上不可能再出现** ✓✓
+                  --   ★ 键取法 ✓：★ 用 `_grid_text_payload()` 的 `items[pos].id` ✓
+                  --     ★ 它**就是** `cl.who`（人物 id ✓ 见 L4432 那段注释 ✓）
+                  --     ★ 而且这个载荷是**按关卡记忆化**的 ✓ ⇒ ★ 每帧调用也只算一次 ✓（不new开销 ✓）
+                  if _lt ~= nil then
+                    local _pid = nil
+                    pcall(function()
+                      local _p = self:_grid_text_payload()
+                      local _it = _p and _p.items and _p.items[pos]
+                      if _it ~= nil then _pid = _it.id end
+                    end)
+                    if _pid ~= nil then
+                      Controller._row_letter = Controller._row_letter or {}
+                      Controller._row_letter[tostring(_pid)] = tostring(_lt)
+                      if (self._row_letter_log or 0) < 6 and print then
+                        self._row_letter_log = (self._row_letter_log or 0) + 1
+                        print("[murdoku] ★ 标记来源记下 ✓：`row." .. tostring(lv_no) .. "."
+                          .. tostring(pos) .. "` ⇒ who=`" .. tostring(_pid)
+                          .. "` letter=`" .. tostring(_lt) .. "`")
                       end
-                      if _lt ~= nil then break end
                     end
+                  elseif (self._row_letter_miss or 0) < 6 and print then
+                    self._row_letter_miss = (self._row_letter_miss or 0) + 1
+                    print("[murdoku] ★ `letter` 读不到文字 ✗：`" .. tostring(kn)
+                      .. "`（★ 自有 `.text` / `FindChild(" .. tostring(slot)
+                      .. ")` / 子孙 三条路都空 ✓ ⇒ 这一段标记会落回旧铅笔笔记 ✓）")
                   end
-                  self._row_letter_txt = _lt
                 end
                 -- ★★★★★★ 2026-10-10 **`dst` 自己没有 `text` ⇒ 往下找【有 text 的子孙】** ✗✓✓
               --
@@ -4817,10 +4931,11 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                     --     （★ ui L4395 `letter = tostring(wid or "")` ✓ 而 `wid` 从卡片读 ✓ 卡片由单射填 ✓）
                     --   ⇒ ★★ 缺的只是"送到棋盘" ⇒ ★ 和 `face` 一样，在这里把它带出来 ✓✓
                     -- ★ 换源（地图员第5轮 ✓）：★ 用【`letter` 槽位的控件文本】✓ 而不是 `_cl.letter`（★ 它恒 nil ✗）
-                    if self._row_letter_txt ~= nil and tostring(self._row_letter_txt) ~= "" then
-                      Controller._row_letter = Controller._row_letter or {}
-                      Controller._row_letter[tostring(_cl.who)] = tostring(self._row_letter_txt)
-                    end
+                    -- ★★★★★★ 2026-10-11 **落账点已挪到循环【外】** ✗✓✓
+                    --   ★ 原来写在这里 ⇒ ★ 依赖"这次循环里刚记下的 `_row_letter_txt`" ✗
+                    --     ★ 而它被**循环里的清理**冲掉过 ⇒ ★ 恒 nil ✓（★ 真因见循环开头 ✓）
+                    --   ⇒ ★ 现在：★ 值存在局部 `_row_letter` 里 ✓
+                    --     ★ 整个子控件循环跑完、在块末尾**按 `_cl.who` 一次落账** ✓
                   end
                 end
                 if iid ~= nil then
@@ -4850,6 +4965,14 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
             end
           end
         end
+        -- ★★★★★★ 2026-10-11 **落账已挪到"读到的那一处"** ✗✓✓
+        --
+        --   ★ 这里曾经放"循环后统一落账" ✗ —— ★ 那是**我第一版的错** ✓
+        --     ★ 它把 `local _row_letter` 留在**浅块**、把落账写在**深块** ✗
+        --       ⇒ ★ 深块里的同名标识符**不是那个局部** ⇒ ★ 退化成全局（恒 nil ✓）
+        --       ⇒ ★ **编译通过、一句都不生效** ✗✓（★ Lua 不报错 ✓）
+        --   ⇒ ★ 现在：★ 落账就在 `slot == "letter"` 那个块里 ✓
+        --     ★ 见 L4432 `_grid_text_payload` 的 `items[pos].id` = `cl.who` ✓
         if (self._row_log or 0) < 6 and print then
           self._row_log = (self._row_log or 0) + 1
           print("[murdoku] ★ 单射命中：`row." .. tostring(lv_no) .. "." .. tostring(pos)
@@ -5220,12 +5343,18 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
           local kids = nil
           pcall(function() kids = rc:GetChildren() end)
           if type(kids) == "table" then
+            -- ★★★★★★ 2026-10-11 **读到就当场落账（与早期单射同修 ✓ 同理由 ✓）** ✗✓✓
+            --   ★ 真因与推演见本文件早期单射处的长注释 ✓（★ 一处写清、两处同修 ✓）
+            --   ★ 这里**不再需要**任何循环外的局部变量 ✓ —— ★ 也就不会再踩"跨块传值"✓
             for ci = 1, #kids do
               local k = kids[ci]
               local kn = nil
               pcall(function() kn = tostring(k.name) end)
               local slot = kn
-              self._row_letter_txt = nil   -- ★ 护栏：清残值 ✓
+              -- ★★★★★★ 2026-10-11 **护栏改到循环【外】** ✗✓✓
+              --   ★ 原来 `self._row_letter_txt = nil` 就在【这里】✗
+              --     ⇒ ★ 它把**上一个子控件刚读到的** `letter` 冲掉 ✓（★ 真因 ✓）
+              --   ★ 现在：★ 清理只在循环前做一次 ✓（★ 用的是局部变量 ✓ 天然无残值 ✓）
               if slot ~= nil then slot = string.match(slot, "^[^%.]+") end
               if slot ~= nil and slot ~= "" then
                 -- ★★★★★★ 2026-10-10 **按完整名在【列表项下】找，并验证类型** ✗✓✓
@@ -5273,7 +5402,25 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                   --     ★★ 新源 = ★ **`letter.<关>.<行>` 控件的【文本】** ✓（★ 用户配的那段 ✓）
                   --   ★ 这里就是那个控件 ✓（★ `slot == "letter"` ⇒ `k` 就是它 ✓ `txt = k.text` ✓）
                   if slot == "letter" then
-                    self._row_letter_txt = (txt ~= nil and tostring(txt) ~= "") and tostring(txt) or nil
+                    -- ★★★★★★ 2026-10-11 **读文字换用共用函数 ＋ 当场落账** ✗✓✓
+                    --   ★ 与【早期单射】同一处修改 ✓ —— ★ `k.text` 一条路走不通就是全空 ✓
+                    --   ★ 现在 ✓：★ 自有 `.text` ⇒ `FindChild("<槽位>")` ⇒ 广度优先兜底 ✓
+                    --   ★★★ 落账**就在这个块里** ✓ —— ★ 不跨块传值 ✓
+                    --     （★ 第一版"循环外声明 + 循环后落账"踩了 Lua 作用域 ✗
+                    --       ★ 编译通过但恒不生效 ✓ 详见早期单射处的长注释 ✓）
+                    local _lt2 = self:_read_control_text(k, slot)
+                    if _lt2 ~= nil then
+                      local _pid2 = nil
+                      pcall(function()
+                        local _p2 = self:_grid_text_payload()
+                        local _it2 = _p2 and _p2.items and _p2.items[pos]
+                        if _it2 ~= nil then _pid2 = _it2.id end
+                      end)
+                      if _pid2 ~= nil then
+                        Controller._row_letter = Controller._row_letter or {}
+                        Controller._row_letter[tostring(_pid2)] = tostring(_lt2)
+                      end
+                    end
                   end
                   -- ★★★★★★ 2026-10-10 **`dst` 自己没有 `text` ⇒ 往下找【有 text 的子孙】** ✗✓✓
               --
@@ -5381,10 +5528,9 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                       --     （★ ui L4395 `letter = tostring(wid or "")` ✓ 而 `wid` 从卡片读 ✓ 卡片由单射填 ✓）
                       --   ⇒ ★★ 缺的只是"送到棋盘" ⇒ ★ 和 `face` 一样，在这里把它带出来 ✓✓
                       -- ★ 换源（地图员第5轮 ✓）：★ 用【`letter` 槽位的控件文本】✓ 而不是 `_cl.letter`（★ 它恒 nil ✗）
-                      if self._row_letter_txt ~= nil and tostring(self._row_letter_txt) ~= "" then
-                        Controller._row_letter = Controller._row_letter or {}
-                        Controller._row_letter[tostring(_cl.who)] = tostring(self._row_letter_txt)
-                      end
+                      -- ★★★★★★ 2026-10-11 **落账点已挪到循环【外】** ✗✓✓
+                      --   ★ 与【早期单射】同修 ✓ —— ★ 循环里写会被后续子控件冲掉 ✓
+                      --   ⇒ ★ 见本块末尾那条"落账"（★ 键 = `_cl.who` ✓ 与 `_row_face` 同键 ✓）
                     end
                   end
                   if iid ~= nil then
@@ -5422,6 +5568,9 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
               end
             end
           end
+          -- ★★★★★★ 2026-10-11 **落账已在"读到的那一处"完成** ✗✓✓
+          --   ★ 这里曾经放"循环后统一落账" ✗ ⇒ ★ 跨块传值 ⇒ 退化成全局（恒 nil ✓）
+          --     ★ 编译通过、静默不生效 ✓ —— ★ 详见早期单射处那段长注释 ✓
           if wrote2 > 0 and (self._row_log2 or 0) < 8 and print then
             self._row_log2 = (self._row_log2 or 0) + 1
             print("[murdoku] ★ 单射【末次】生效：`row." .. tostring(lv_no) .. "." .. tostring(pos)

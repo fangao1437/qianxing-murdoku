@@ -184,7 +184,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v166 / 2026-10-11 / 恢复main.lua的x几何(70%⇒别顶满格子,用户当年要求的);我第4轮删反了 =====")
+        print("[murdoku] ===== 构建标记 v167 / 2026-10-11 / letter标记真因: 子控件循环里那句清理把刚读到的letter冲掉(20行里19行letter不在最后)+引用控件k.text读不到; 读到就当场落账到Controller._row_letter[who]; 顺手修_find_image_holder假BFS(for qi=1,#q上界冻结) =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
