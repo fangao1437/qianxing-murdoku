@@ -3681,10 +3681,15 @@ function Controller.portrait_of(vm, id)
     --   ★ 取法 ✓：★ 从 `vm.clues` 里找 `who == id` 的那一行 ⇒ ★ 返回它的 `face` ✓
     --     ★（★ 与单射 L5451/L5458 同一处数据：`cl = (v2.clues or {})[pos]` ✓ `cl.face` ✓）
     --   ★ 兜底 ✓：★ 旧路保留（`vm.tray[i].portrait` ✓）—— ★ 拿不到 `face` 时不至于全空 ✓
-      for _ci = 1, #(vm.clues or {}) do
-        local _cl = vm.clues[_ci]
-        if _cl ~= nil and _cl.who == id and _cl.face ~= nil then return _cl.face end
-      end
+  -- ★★★★★★ 2026-10-10 **先查单射带出来的表** ✗✓✓
+  --   ★★★ `view.clues[i].face` **永远是 nil** ✗（★ `face` 在控件里 ✗ 数据层到不了 ✓）
+  --     ⇒ ★ 改查【单射读到控件后记下的那张表】✓（★ 键 = `who` ✓ 值 = 数字 imageId ✓）
+  --   ★ 与用户"只换素材来源"一致 ✓ —— ★ 后面的 SetImage / 规划 / 放置【一切照旧】✓
+  local _m = Controller._row_face
+  if _m ~= nil then
+    local _hit = _m[tostring(id)]
+    if _hit ~= nil then return _hit end
+  end
       for i = 1, #(vm.tray or {}) do
         if vm.tray[i].id == id then return vm.tray[i].portrait end
       end
@@ -4727,6 +4732,26 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                 if _kimg == nil then _kimg = k end
                 local iid = nil
                 pcall(function() iid = _kimg.imageId end)
+                -- ★★★★★★ 2026-10-10 **把"谁 ⇒ 那一行的图"记下来** ✗✓✓
+                --   ★★★ 为什么必须在这里记 ✓（★ 单射是【唯一摸到控件】的地方 ✓）：
+                --     ★ `face` 是【控件】✗ —— 而 `Core:view`（数据层 ✓）**到不了控件** ✓
+                --     ⇒ ★★ `view.clues[i].face` **永远是 nil** ✗（★ 实测：落兜底 ⇒ 报 `portrait.B` ✓）
+                --     ⇒ ★★★ **只能由"已经读到控件"的单射把值【带出来】** ✓✓
+                --   ★ 用户的设计 ✓：「**一切线索区的素材都来自对应的 `row`**」✓
+                --     ★ 头像对应 `face` ✓　★ "谁" = 这一行线索的 `who` ✓（★ 棋子 id `A`/`B`/`V`/`D` ✓）
+                --     ★ 取法 ✓：★ `self.core:view().clues[pos]`（★ `pos` = 线索序号 ✓）
+                --   ★ 存模块级表 ✓（★ `portrait_of` 是静态函数 ✗ 拿不到 `self` ✓）
+                --   ★ 下游 ✓：★ `portrait_of` 先查表 ⇒ 返回**数字 id** ✓
+                --     ★ `resolve_asset`（adapter L3411 ✓）`tonumber` 直接过 ✓ ⇒ 后面【一切照旧】✓✓
+                if iid ~= nil then
+                  local _v = nil
+                  pcall(function() _v = self.core:view() end)
+                  local _cl = _v and (_v.clues or {})[pos]
+                  if _cl ~= nil and _cl.who ~= nil then
+                    Controller._row_face = Controller._row_face or {}
+                    Controller._row_face[tostring(_cl.who)] = iid
+                  end
+                end
                 if iid ~= nil then
                   local src = nil
                   pcall(function() src = k.imageSource end)
@@ -5248,6 +5273,26 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                   if _kimg == nil then _kimg = k end
                   local iid = nil
                   pcall(function() iid = _kimg.imageId end)
+                  -- ★★★★★★ 2026-10-10 **把"谁 ⇒ 那一行的图"记下来** ✗✓✓
+                  --   ★★★ 为什么必须在这里记 ✓（★ 单射是【唯一摸到控件】的地方 ✓）：
+                  --     ★ `face` 是【控件】✗ —— 而 `Core:view`（数据层 ✓）**到不了控件** ✓
+                  --     ⇒ ★★ `view.clues[i].face` **永远是 nil** ✗（★ 实测：落兜底 ⇒ 报 `portrait.B` ✓）
+                  --     ⇒ ★★★ **只能由"已经读到控件"的单射把值【带出来】** ✓✓
+                  --   ★ 用户的设计 ✓：「**一切线索区的素材都来自对应的 `row`**」✓
+                  --     ★ 头像对应 `face` ✓　★ "谁" = 这一行线索的 `who` ✓（★ 棋子 id `A`/`B`/`V`/`D` ✓）
+                  --     ★ 取法 ✓：★ `self.core:view().clues[pos]`（★ `pos` = 线索序号 ✓）
+                  --   ★ 存模块级表 ✓（★ `portrait_of` 是静态函数 ✗ 拿不到 `self` ✓）
+                  --   ★ 下游 ✓：★ `portrait_of` 先查表 ⇒ 返回**数字 id** ✓
+                  --     ★ `resolve_asset`（adapter L3411 ✓）`tonumber` 直接过 ✓ ⇒ 后面【一切照旧】✓✓
+                  if iid ~= nil then
+                    local _v = nil
+                    pcall(function() _v = self.core:view() end)
+                    local _cl = _v and (_v.clues or {})[pos]
+                    if _cl ~= nil and _cl.who ~= nil then
+                      Controller._row_face = Controller._row_face or {}
+                      Controller._row_face[tostring(_cl.who)] = iid
+                    end
+                  end
                   if iid ~= nil then
                     local src = nil
                     pcall(function() src = k.imageSource end)
