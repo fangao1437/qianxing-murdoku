@@ -125,11 +125,25 @@ do
 end
 
 --------------------------------------------------------------------------------
--- 5. ★★ 7×7 建出来的卡片数 = 7（★ 端到端 ✓ 不是读常量 ✓）
+-- 5. ★★ 最大那一关建出来的卡片数 = 它的棋子数（★ 端到端 ✓ 不是读常量 ✓）
+--
+--   ★★★ 2026-10-11 **改成【跟着关卡走】** ✗✓（★ 原来写死 7 ✗）
+--     ★ 起因 ✓：★ 用户要求把 `case_003` 的棋子从 **7 改成 6** ✓
+--       （★ "12 是 ABCDV，3 是 ABCDEV" ✓）⇒ ★ 那一关**同时缩成 6×6** ✓
+--         ★（★ 必须缩 ✗ —— ★ 槽位数 = `min(rows,cols)` 必须 = 棋子数 ✓
+--          ★ 而上面第 2 节那条判据就钉着它 ✓）
+--     ★★ 所以"最大关卡"**不再是 7×7** ✗ ⇒ ★ 写死 7 的断言**会红** ✓
+--   ★ 判据改成 ✓：★ **卡片数 == 这一关的棋子数** ✓（★ "一人一条" ✓）
+--     ★★ 并且**取棋子最多的那一关** ✗ —— ★ 这样以后哪一关变大/变小都跟着走 ✓✓
 --------------------------------------------------------------------------------
 do
-  local lv = require("levels.case_003")
-  local core = Core.new(lv)
+  local Levels = require("levels.init")
+  local best_lv, best_n = nil, -1
+  for _, lv in ipairs(Levels.all()) do
+    local n = #(lv.suspects or {}) + 1        -- ★ +1 = 受害者 ✓
+    if n > best_n then best_lv, best_n = lv, n end
+  end
+  local core = Core.new(best_lv)
   local ctl = UIC.new(core, {})
   local plan = ctl:layout_plan()
   local n = 0
@@ -137,8 +151,11 @@ do
     local id = plan[i].id
     if type(id) == "string" and id:match("^clue%.%d+$") then n = n + 1 end
   end
-  ok(n == 7, "7×7 关卡应建出 7 张线索卡（实测 " .. n .. "）")
-  print("  [PASS] 7×7 ⇒ 7 张卡（端到端）")
+  local want = core:piece_count()
+  ok(n == want, string.format("最大关卡（%s，%d×%d，%d 棋子）应建出 %d 张线索卡（实测 %d）",
+    tostring(best_lv.id), core.rows, core.cols, want, want, n))
+  print(string.format("  [PASS] 最大关卡 %s（%d×%d）⇒ %d 张卡（端到端）",
+    tostring(best_lv.id), core.rows, core.cols, n))
 end
 
 --------------------------------------------------------------------------------

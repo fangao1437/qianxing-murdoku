@@ -76,7 +76,15 @@ local function build_rows(nrow, mk_letter)
   return root
 end
 
-local NROW = 7
+-- ★★★ 2026-10-11 **行数跟着关卡走** ✗✓（★ 原来写死 7 ✗）
+--   ★ 起因 ✓：★ 用户把 `case_003` 的棋子从 7 改成 6 ✓ ⇒ ★ 那一关缩成 6×6 ✓
+--     ⇒ ★ 写死 7 ⇒ ★ "第 7 个棋子" 不存在（nil）⇒ ★ 这条**假红** ✓✓（★ 实测过 ✓）
+--   ★★ 判据 ✓：★ **取这一关真实的棋子数** ✓ —— ★ 以后哪一关变大/变小都跟着走 ✓
+--   ⚠️ ★ 不能写 `#lv.suspects + 1` ✗ —— ★ 我又踩了一次 ✓：
+--     ★ `suspects` 表里**本来就含受害者 `V`** ✓（★ 见 `case_003.lua` ✓）
+--       ⇒ ★ `#suspects` = 6 ✓ ★ 再 `+1` = **7** ⇒ ★ 还是假红 ✓✓
+--   ⇒ ★ 权威来源只有一个 ✓：★ **`core:piece_count()`** ✓（★ 与适配层同一个数 ✓）
+local NROW = Core.new(lv):piece_count()
 local function L(pos) return "L" .. pos end
 
 local function boot()
@@ -106,7 +114,7 @@ local function cell_notes(c, r, cc)
 end
 
 --------------------------------------------------------------------------------
-print("\n== 1. ★ 7 行都读到了（★ 不是只读前 5 行）==")
+print(string.format("\n== 1. ★ %d 行都读到了（★ 不是只读前几行）==", NROW))
 --------------------------------------------------------------------------------
 do
   build_rows(NROW, L)
@@ -114,12 +122,12 @@ do
   local RL = UIC.Controller._row_letter or {}
   local n = 0
   for _ in pairs(RL) do n = n + 1 end
-  ok(n == NROW, string.format("★ `_row_letter` 落了 %d 行（★ 期望 %d ✓ 第 7 行也要在 ✓）", n, NROW))
+  ok(n == NROW, string.format("★ `_row_letter` 落了 %d 行（★ 期望 %d ✓ 最后一行也要在 ✓）", n, NROW))
   local allok = true
   for pos = 1, NROW do
     if tostring(RL[pos]) ~= L(pos) then allok = false end
   end
-  ok(allok, "★ 每一行落的都是【那一行】的字母（★ 7/7 ✓）")
+  ok(allok, string.format("★ 每一行落的都是【那一行】的字母（★ %d/%d ✓）", NROW, NROW))
 end
 
 --------------------------------------------------------------------------------
@@ -139,7 +147,7 @@ do
         k, tostring(pid), k, k, got, L(k))
     end
   end
-  ok(#bad == 0, "★ 第三关 7 个棋子：标记都显示【自己那一行】的字母 ✓"
+  ok(#bad == 0, string.format("★ 第三关 %d 个棋子：标记都显示【自己那一行】的字母 ✓", NROW)
     .. (#bad > 0 and ("　✗ " .. table.concat(bad, " ｜ ")) or ""))
   local t = {}
   for k = 1, NROW do
