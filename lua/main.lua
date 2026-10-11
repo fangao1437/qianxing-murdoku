@@ -956,7 +956,8 @@ function Murdoku.on_update(dt)
       "topbar", "toolbar", "right",
       "clues", "clues.bg", "clues.grid",
       "hud.title", "hud.subtitle", "hud.timer", "hud.progress",
-      "action.back",
+      -- ★ 2026-10-11 `"action.back"` 已去掉 ✓（★ 用户要求整颗删除 ✓
+      --   ⇒ ★ 它不再存在于规划里 ⇒ ★ 列在这里只会每次报"树里没有这个名字"✗）
     }
     for i = 1, #ids do
       local id = ids[i]
@@ -1258,8 +1259,9 @@ function Murdoku.on_update(dt)
       -- ★★★★★ 2026-10-06 **名单按真机实测修正** ✗✓（旧名单里 3 个名字不存在 ✗：
       --   `select.card.1` `select.back` `board` ⇒ ★ 每次都刷 3 行"树里没有这个名字" ✓
       --   ⇒ ★ 这一段是「能点 vs 不能点」的对照组 ✗ ⇒ ★ 拿不存在的名字对照毫无意义 ✓）
+      -- ★ 2026-10-11 `"action.back"` 已从这个对照样本里去 ✓（★ 整颗控件已删 ✓）
       local samples = { "home.select", "cell.1.1", "selbtn.1", "selbtn.2",
-                        "action.back", "hex.submit", "hit.submit",
+                        "hex.submit", "hit.submit",
                         "clues.bg", "clues.grid", "tpl-container", "board.bg", "home" }
       for s = 1, #samples do
         local id = samples[s]

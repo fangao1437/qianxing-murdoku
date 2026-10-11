@@ -4729,7 +4729,8 @@ local function apply_screen_hide(nodes, screen)
     HIDE = {
       topbar = true, toolbar = true, left = true, board = true, right = true,
       toast = true, modal = true, intro = true, clues = true,
-      ["action.back"] = true, ["action.redo"] = true, ["action.hint"] = true,
+      -- ★ 2026-10-11 `["action.back"] = true` 已去掉 ✓（★ 控件整颗删除 ⇒ 藏它没有意义 ✓）
+      ["action.redo"] = true, ["action.hint"] = true,
       ["action.undo"] = true, ["action.submit"] = true, ["action.reveal"] = true,
     }
     -- ★ 2026-10-03 **图标（hex.*）只在关卡内显示**：
@@ -5325,19 +5326,22 @@ function Controller:build_layout()
     -- ★ 2026-10-04：只留 `action.back` —— `action.redo` / `action.hint` **已从存档里删掉**
     --   （它们与 `hex.redo` / `hex.hint` 重叠且动作重复，用户已批准清理旧控件）。
     --   父控件没了，这两枚底图节点也就没有意义，一并去掉。
-    local btns = {
-      { "action.back" },
-    }
-    for i = 1, #btns do
-      local b = btns[i]
-      push({
-        id = b[1] .. ".hexbg", kind = "button", parent = b[1], visible = true,
-        rect = { x = 0, y = 0, w = 110, h = 110 },
-        pos_runtime = true,          -- 位置跟着父控件（按钮）走
-      })
-    end
-  else
-    hex_bg("action.back", sk_x + 55, sk_y[1] + 55, SK.size)
+    -- ★★★★★★ 2026-10-11 **`action.back` 的六边形底图整块删除** ✗✓✓
+    --
+    --   ★★ 用户指令 ✓：「**那个返回菜单也不要，一起删**」✓（★ 控件已删 ⇒ 底图无意义 ✓）
+    --
+    --   ★★★ 理由与本文件 L2354 附近那段【完全同源】✓（★ 当年的先例 ✓）：
+    --     `hex_bg(parent, …)` / `push({ id = parent..".hexbg" })` 都是给**父控件**挂底图 ✓
+    --     ⇒ ★ **父控件没了 ⇒ 底图节点就没有意义** ✓✓
+    --     ★ 当年就是按这条删掉了 `action.redo` / `action.hint` 的底图 ✓
+    --     ★★ 而现在 `action.back` 也走同一条路 ✓ —— ★ 它的功能由 `hex.back` 承担 ✓
+    --
+    --   ★ 删掉的原文（★ 备查 ✓）：
+    --     `local btns = {`
+    --       `{ "action.back" },`
+    --     `}`
+    --     `for i = 1, #btns do … push({ id = b[1] .. ".hexbg", parent = b[1], … }) … end`
+    --     `hex_bg("action.back", sk_x + 55, sk_y[1] + 55, SK.size)`
     -- ★★★★★ 2026-10-05 **删掉这两行：`action.redo` / `action.hint` 的六边形底图** ✗
     --
     --   为什么删（真 bug ✓）：
@@ -5353,9 +5357,17 @@ function Controller:build_layout()
     --   ⇒ 这**不改变**任何一条断言的通过/失败条数 ✓，但它**持续污染**所有几何类、
     --     "多余控件"类的断言 ✗（例如 `verify_art.mjs` 的「棋盘区域没有多余控件」✓）
     --
-    --   ⚠️ **`action.back` 那一行必须保留** ✓ —— 它是**确实存在于计划里**的父节点
-    --     （`layout-plan.json` 实测有 `action.back` 与 `action.back.hex1..6` ✓✓）。
-    --   依据：`docs/计划与脚本漂移-根因调查.md` 的 **T3** 条 ✓（提交 `73dd2d8` ✓）
+    --   ★★★★★★ 2026-10-11 **上面那条"必须保留 `action.back`"已作废** ✗✓（★ 原文备查 ✓）：
+    --     · 原文 ✓：「⚠️ `action.back` 那一行必须保留 —— 它是确实存在于计划里的父节点
+    --         （`layout-plan.json` 实测有 `action.back` 与 `action.back.hex1..6`）✓
+    --         依据：`docs/计划与脚本漂移-根因调查.md` 的 T3 条（提交 73dd2d8 ✓）」
+    --     · ★★ **它作废的原因** ✓：★ **T3 的结论是"父控件存在 ⇒ 底图节点不算悬空"** ✓
+    --        ★ 而现在**用户要求把 `action.back` 整颗删掉** ✓
+    --        ⇒ ★★ **父控件不存在了 ⇒ 再给它挂底图就【正是 T3 要避免的那种悬空节点】** ✗✓
+    --        ⇒ ★★★ **⇒ 所以底图跟着父控件一起删，才符合 T3 的原意** ✓✓
+    --     · ★ 这与上面 `action.redo` / `action.hint` 的处置【完全一致】✓（同一套理由 ✓）
+    --   ⇒ ★★ **这一段 if/else 现在【两条分支都不再建任何节点】** ✓
+    --      ★ 保留外壳是为了让注释与历史可查 ✓；★ 将来若清理，可整段合并 ✓
   end
 
   -- ★★★★★ 2026-10-04 **右上三键（提交 / 重置关卡 / 撤销）的旧文字按钮 —— 已删。**
@@ -5414,10 +5426,33 @@ function Controller:build_layout()
   --     ⇒ 旧 `action.back` 正好压在同一片区域上，✓/✗ 会被它挡住点不到。
   --   ⇒ 按图上文字的实际范围收窄：画布 x 134..347、y 64..84
   --     ⇒ 设计空间 x 161..416、y 77..101 ⇒ 取 {x=161, y=77, w=255, h=28}。
-  local BK = L.back_btn
-  push({ id = "action.back", kind = "button", parent = "topbar", visible = true,
-         rect = { x = BK.x, y = BK.y, w = BK.w, h = BK.h },
-         text = "返回菜单", event = { action = "back_confirm" }, style = "stamp.sm" })
+  -- ★★★★★★ 2026-10-11 **`action.back` 整颗删除** ✗✓✓
+  --
+  --   ★★ 用户指令 ✓（★ 分两步 ✓）：
+  --     ①「**右下角有一个返回列表按键，它和左上角的返回箭头功能一模一样，
+  --         都是连接弹窗，这是重复的东西，你把它删掉**」✓（★ 已删 `right` 那份 ✓）
+  --     ②「**那个返回菜单也不要，一起删**」✓（★ 本次 ✓）
+  --
+  --   ★★★ 为什么可以整颗删 ✓：
+  --     ★ **左上角的「返回箭头」是 `hex.back`** ✓ —— ★ 它是【图标】✓
+  --        ★ 声明的事件是 `back_confirm` ✓ ⇒ ★ **点它先弹 ✓/✗ 确认条** ✓
+  --        ★ 而确认条由 `main.lua` 的 `confirm_show()/confirm_hide()` 负责 ✓
+  --     ★★ **⇒ 返回功能【完全由 `hex.back` 承担】✗ ⇒ `action.back` 是纯多余的文字块** ✓✓
+  --
+  --   ★★ 删掉的原文（★ 备查 ✓）：
+  --     `local BK = L.back_btn`
+  --     `push({ id = "action.back", kind = "button", parent = "topbar", visible = true,`
+  --            `rect = { x = BK.x, y = BK.y, w = BK.w, h = BK.h },`
+  --            `text = "返回菜单", event = { action = "back_confirm" }, style = "stamp.sm" })`
+  --
+  --   ★★★ 连带清理 ✓（★ 否则会变成"写不存在的控件"✗）：
+  --     · `main.lua` L959 附近的【体检名单】里的 `"action.back"` ✓ 已去掉 ✓
+  --     · `main.lua` L1262 附近的【对照组样本】里的 `"action.back"` ✓ 已去掉 ✓
+  --     · `tests/prop_ledger.lua` 里"它有两个节点"那几条断言 ✓ 已按新意图更新 ✓
+  --
+  --   ⚠️ ★ 注意 ✓：★ **`hex.back` 才是返回箭头，别把它一起删了** ✗✓
+  --      （★ 它的 id 在 `ICON_ASSETS` 里 ✓ 由脚本从模板建出来 ✓）
+
 
   -- ✓ / ✗ 确认条：**默认隐藏**（visible=false）。真正的显隐由 main.lua 的
   --   `confirm_show()/confirm_hide()` 每帧按 `pending_action` 决定 ——
@@ -16971,7 +17006,8 @@ function Murdoku.on_update(dt)
       "topbar", "toolbar", "right",
       "clues", "clues.bg", "clues.grid",
       "hud.title", "hud.subtitle", "hud.timer", "hud.progress",
-      "action.back",
+      -- ★ 2026-10-11 `"action.back"` 已去掉 ✓（★ 用户要求整颗删除 ✓
+      --   ⇒ ★ 它不再存在于规划里 ⇒ ★ 列在这里只会每次报"树里没有这个名字"✗）
     }
     for i = 1, #ids do
       local id = ids[i]
@@ -17273,8 +17309,9 @@ function Murdoku.on_update(dt)
       -- ★★★★★ 2026-10-06 **名单按真机实测修正** ✗✓（旧名单里 3 个名字不存在 ✗：
       --   `select.card.1` `select.back` `board` ⇒ ★ 每次都刷 3 行"树里没有这个名字" ✓
       --   ⇒ ★ 这一段是「能点 vs 不能点」的对照组 ✗ ⇒ ★ 拿不存在的名字对照毫无意义 ✓）
+      -- ★ 2026-10-11 `"action.back"` 已从这个对照样本里去 ✓（★ 整颗控件已删 ✓）
       local samples = { "home.select", "cell.1.1", "selbtn.1", "selbtn.2",
-                        "action.back", "hex.submit", "hit.submit",
+                        "hex.submit", "hit.submit",
                         "clues.bg", "clues.grid", "tpl-container", "board.bg", "home" }
       for s = 1, #samples do
         local id = samples[s]
@@ -19145,7 +19182,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v191 / 2026-10-11 / 删掉右下角分叉的action.back克隆(与左上返回箭头重复);规划里同一id被声明两次⇒两个节点 =====")
+        print("[murdoku] ===== 构建标记 v192 / 2026-10-11 / action.back整颗删除(含topbar的返回菜单+六边形底图+两处main.lua引用);返回功能由hex.back承担 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

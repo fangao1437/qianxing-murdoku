@@ -105,7 +105,11 @@ local function make_text(name)
   })
 end
 
--- ★ 树里**故意放一个真的 `action.back`**（挂在 `right` 下）。
+-- ★★★★★★ 2026-10-11 `action.back` 已【整颗删除】（★ 用户：那个返回菜单也不要，一起删）
+--   ⇒ 本段从"验证它有两个节点"改成"验证它彻底不再被下发" ✓
+--   ★ 下面的历史注释全部保留 ✓ —— 它们解释了"为什么曾经有两个节点"✓ 是可查的来路 ✓
+--
+-- -- ★ 树里**故意放一个真的 `action.back`**（挂在 `right` 下）。
 --   为什么：规划里那个 id 有两个节点（`topbar` / `right`），只有"控件真的在树上"
 --   才能验"两个节点的属性都真的下发过"；而 grid_cost 的树里没有它（那里量的是"搜空"）。
 local tree, back_ctrl, topbar_ctrl, right_ctrl
@@ -221,8 +225,8 @@ out("\n== 1. 进关并稳定 ==")
 ctrl.screen = nil
 ctrl.dirty = true
 pcall(function() for _ = 1, 5 do OnUpdate(1 / 60) end end)
-ok(C.setprop_back > 0,
-  "① 进关这一帧：`action.back` 收到了属性（两个计划节点各自下发一次）",
+ok(C.setprop_back == 0,
+  "① 进关这一帧：`action.back` 一次属性都没收到（★ 它已整颗删除）",
   "set_property=action.back 共 " .. tostring(C.setprop_back) .. " 次")
 do
   local seen_menu, seen_list = false, false
@@ -230,8 +234,8 @@ do
     if C.back_text[i] == "返回菜单" then seen_menu = true end
     if C.back_text[i] == "返回列表" then seen_list = true end
   end
-  ok(seen_menu and not seen_list,
-    "★ ② `action.back` 只剩 `topbar` 那一颗（★ 用户 2026-10-11：右下角那个和左上角功能一模一样，是重复的，删掉）",
+  ok(not seen_menu and not seen_list,
+    "★ ② `action.back` 的两种文案都不再下发（★ 整颗已删 ⇒ 左上角的返回箭头由 hex.back 承担）",
     "返回菜单=" .. tostring(seen_menu) .. " 返回列表=" .. tostring(seen_list))
   -- ★★★★★ 2026-10-05 **事件表也按「规划节点」记了**（`Adapter:set_property` 的
   --   `key == "event"` 分支）—— 键就是上面那把 `node_key`（`id \1 父容器 \1 序号`）。
@@ -288,8 +292,8 @@ do
   local la, lk = live_action("action.back")
   local last_k = (adapter.event_latest or {})["action.back"]
   local last_a = (last_k ~= nil) and (adapter.events or {})[last_k] or nil
-  ok(la == "back_confirm",
-    "★ ② **B2：派发 = 认领这颗控件的节点（`topbar` 先写 ⇒ back_confirm，先弹 ✓/✗）**"
+  ok(la == nil,
+    "★ ② `action.back` 没有派发（★ 控件已删 ⇒ 无认领 ⇒ nil）—— 原 B2 那条已不适用"
     .. "（B2 之前 = 最后写的 `right` = back，鼠标点它直接跳列表）",
     "实际 action=" .. tostring(la) .. "（认领键=" .. tostring(lk) .. "）"
       .. "；诊断 event_latest=" .. tostring(last_a and last_a.action))
@@ -300,8 +304,8 @@ do
   local after_rows = event_map_of("action.back")
   local same = (before_rows["topbar"] == after_rows["topbar"])
     and (after_rows["right"] == nil)
-  ok(same and after_rows["topbar"] == "back_confirm" and after_rows["right"] == nil,
-    "★ ② 稳态里 topbar 事件在位且不再被每帧改写（★ right 已随克隆删除 ⇒ 应为 nil）"
+  ok(after_rows["topbar"] == nil and after_rows["right"] == nil,
+    "★ ② 稳态里 action.back 名下没有任何规划节点（★ topbar 与 right 都应缺席）"
     .. "（老代码：同一个 id 上两个节点互相覆盖 ⇒ 表里只剩最后一份）",
     "topbar=" .. tostring(after_rows["topbar"]) .. " / right=" .. tostring(after_rows["right"]))
 end
