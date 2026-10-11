@@ -149,6 +149,61 @@ do
 end
 
 --------------------------------------------------------------------------------
+print("\n== 2b. ★★★★ 换关之后再读一遍：**表里有旧值时也必须覆盖**（★ 真机那个 bug ✓）==")
+--
+--   ★★★ 为什么要这一条 ✗（★ 前几条**都测不出来** ✓ —— 这是我漏掉的一整类 ✓）：
+--     ★ 前面每一条都在**空表**上跑 ✓ ⇒ ★ 表里没有旧值 ⇒ ★ **覆盖不覆盖根本看不出差别** ✓✓
+--   ★★ 而真机是**连着走两关**的 ✓：
+--     ★ 第 1 关先把 `_row_letter[1..4]` 写成 `A`/`B`/`C`/`D` ✓
+--     ★ 第 3 关再读时，若实现是"**已经有值就不覆盖**"✗ ⇒
+--       ★★ **第 4 行读到的 `D` 会被丢掉** ⇒ ★ 留下 `A` ✓✓
+--   ★★★ 真机日志原文 ✓（★ 用户 2026-10-11 20:24 ✓）：
+--     `★ 同一个人的 letter 被配了两次 ✗：who=`4` 已记=`A`
+--      这一行（`row.3.4`）=`D` ⇒ ★ 保留先记的那个 ✓` ✗
+--     ⇒ ★★ **棋盘上就是 `A`、`A`、`F`** ✓（★ 用户报的原文 ✓）
+--
+--   ★ 判据 ✓：★ **先把表写脏**（模拟上一关残留 ✓）⇒ ★ 再走这一关 ⇒
+--     ★★ **每一行的字母必须变成【本关这一行的】** ✓（★ 而不是保住脏值 ✓）
+--------------------------------------------------------------------------------
+do
+  build_rows(NROW, L)
+  local core, c = boot()
+  -- ★ 把表写脏：★ 每一行都塞一个**错的**字母 ✓（★ 形状与"上一关留下"等价 ✓）
+  UIC.Controller._row_letter = {}
+  for pos = 1, NROW do UIC.Controller._row_letter[pos] = "脏" .. pos end
+  -- ★ 再走一遍这一关的读那一趟（★ 表里已经有值了 ✓ —— 正是真机的处境 ✓）
+  c._grid_in_refresh = true
+  for pos = 1, NROW do
+    local it = ctrl("item")
+    for _, nm in ipairs({ "who", "what", "letter" }) do attach(it, ctrl("clue." .. pos .. "." .. nm)) end
+    attach(it, ctrl("clue." .. pos .. ".gray"))
+    it.__index = pos - 1
+    c:_fill_grid_item(nil, nil, it, pos - 1)
+  end
+  c._grid_in_refresh = false
+  local bad = {}
+  for pos = 1, NROW do
+    if tostring(UIC.Controller._row_letter[pos]) ~= L(pos) then
+      bad[#bad + 1] = string.format("第%d行 得到 %s 想要 %s", pos,
+        tostring(UIC.Controller._row_letter[pos]), L(pos))
+    end
+  end
+  ok(#bad == 0, "★★ 表里有旧值 ⇒ **必须被本关这一行覆盖**（★ 不许保住脏值 ✗）"
+    .. (#bad > 0 and ("　✗ " .. table.concat(bad, " ｜ ")) or ""))
+  -- ★ 再确认"棋盘上真的用上了" ✓（★ 不只是表对了 ✓）
+  core:select_suspect(UIC.Controller._piece_at_row(core, 4))
+  core:tap_cell(4, 4)
+  ok(joined(cell_notes(c, 4, 4)) == L(4),
+    "★ 第 4 个棋子打标记 ⇒ 显示第 4 行的 `" .. L(4) .. "`（★ 真机就是这一格出的 A ✗ 实测 "
+    .. joined(cell_notes(c, 4, 4)) .. "）")
+  core:select_suspect(UIC.Controller._piece_at_row(core, 5))
+  core:tap_cell(5, 5)
+  ok(joined(cell_notes(c, 5, 5)) == L(5),
+    "★ 第 5 个棋子打标记 ⇒ 显示第 5 行的 `" .. L(5) .. "`（★ 真机就是这一格出的 A ✗ 实测 "
+    .. joined(cell_notes(c, 5, 5)) .. "）")
+end
+
+--------------------------------------------------------------------------------
 print("\n== 3. ★★★ 行与棋子【故意错开】⇒ 必须跟着【行】走（★ 用户定的键 ✓）==")
 --
 --   ★ 为什么必须测 ✗：★ 若实现"偷偷按棋子 id 去猜行"✗ ⇒ 这时会给出**另一个答案** ✓
