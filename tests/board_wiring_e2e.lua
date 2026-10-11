@@ -111,7 +111,14 @@ local function joined(t)
 end
 
 --------------------------------------------------------------------------------
--- 1. ★★★ 放棋子 ⇒ 那一格显示**那一行的 `letter`**（★ 不是棋子 id ✗ 不是 `who` ✗）
+-- 1. ★★★ 放棋子 ⇒ **只出头像，不出字母**（★ 用户 2026-10-11 明确要求 ✓）
+--
+--   ★★★ 用户原话 ✓：「★ **放置头像的时候把 `letter` 也放下了，这个不用**」✓✓
+--   ★★ 判据 ✓：★ **放人那一格的 `notes` 必须是 `false`** ✓
+--     ★ `false` = "明确要清空" ✓ ⇒ ★ 适配器 `SetVisible(false)` ⇒ ★ **note 不显示** ✓✓
+--   ★ 字母**只在"打标记"那条路出现** ✓ —— ★ 见判据④ ✓
+--   ⚠️ ★ 别把它改回 `LETTERS[k]` ✗ —— ★ 那是 2026-10-10 的旧口径 ✓
+--     ★（★ "让 `letter` 取代铅笔笔记" 说的是**标记** ✓ 不是"放人也发字母" ✗）
 --------------------------------------------------------------------------------
 do
   local core, c = boot()
@@ -119,16 +126,25 @@ do
   for k = 1, NROWS do
     local pid = core.pieces[k].id
     core:select_suspect(pid)
-    core:hold_cell(k, k)                  -- ★ 第 k 行第 k 列（避开自动 X 的干扰 ✓）
+    core:hold_cell(k, k)                  -- ★ 第 k 行第 k 列（避开家具格 ✓）
     local node = cell_of(c, k, k)
-    local got = node and joined(node.notes) or "<没有这一格>"
-    if got ~= LETTERS[k] then
+    -- ⚠️ ★★ **不能用 `node and node.notes or "…"`** ✗✓（★ 我第一版就踩了 ✓）
+    --   ★ 因为"放人 ⇒ 不发字母"之后 `notes` 是 **`false`** ✓
+    --     ⇒ ★ `node and false or "<没有这一格>"` ⇒ ★ **求出那个字符串** ✗✓
+    --       ⇒ ★ 判据看到的是"没有这一格" ⇒ ★ **把"正确"报成"错"** ✓
+    --   ★★ 本项目已经吃过同一个坑 ✓（★ 见 `grid_cost` 里 `visible=false` 那条注释 ✓）
+    --     ⇒ ★ **`false` 必须原样取出** ✗
+    local got = nil
+    if node == nil then got = "<没有这一格>" else got = node.notes end
+    -- ★ 必须是 false ✗；★ 若它**等于那一行的 letter** ⇒ ★ 说明"又给放人加字母了" ✗
+    if got ~= false then
       allok = false
-      detail[#detail + 1] = string.format("棋%s@(%d,%d) 得到 %s 想要 %s", tostring(pid), k, k, got, LETTERS[k])
+      detail[#detail + 1] = string.format("棋%s@(%d,%d) notes=%s（★ 应当是 false ✗；★ 若=%s 就是又发了字母 ✗）",
+        tostring(pid), k, k, tostring(got), tostring(LETTERS[k]))
     end
   end
-  ok(allok, "★ 放棋子 ⇒ `note` == 那一行的 `letter` ✗ " .. table.concat(detail, " ｜ "))
-  print("  [判据①] 棋子 → 行号 → `letter`：" .. (allok and "5/5 ✓" or "有错 ✗"))
+  ok(allok, "★ 放棋子 ⇒ `notes == false`（★ 只要头像 ✓ 不要字母 ✓）" .. table.concat(detail, " ｜ "))
+  print("  [判据①] 放棋子 ⇒ 只有头像、没有字母：" .. (allok and "5/5 ✓" or "有错 ✗"))
 end
 
 --------------------------------------------------------------------------------
@@ -160,9 +176,13 @@ end
 
 --------------------------------------------------------------------------------
 -- 3. ★★★ `who` 是**乱码**，上面两条照样全过 ⇒ ★ 结构性证明它不参与棋盘线
+--
+--   ★★ 用**打标记**来验 ✗（★ 不是放人 ✓）—— ★ 因为"放人只出头像"之后
+--     ★ 字母只在标记那条路上出现 ✓（★ 见判据④ ✓）
 --------------------------------------------------------------------------------
 do
   local core, c = boot()
+  -- ★① 头像那条：★ 放人 ⇒ 头像必须对 ✓（★ 而 `who` 是乱码 ✗）
   core:select_suspect(core.pieces[2].id)
   core:hold_cell(1, 5)
   local node = cell_of(c, 1, 5)
@@ -171,11 +191,19 @@ do
   local who_read = rt and rt["1"] and rt["1"][2] and rt["1"][2].who or nil
   ok(who_read == WHO_JUNK[2],
     "前提：`who` 的乱码**确实被读进来了**（实测 " .. tostring(who_read) .. "）⇒ 它只是不被棋盘线用 ✓")
-  ok(node ~= nil and joined(node.notes) == LETTERS[2],
-    "★ `who` 是乱码也不影响 `note`（实测 " .. (node and joined(node.notes) or "?") .. "）")
   ok(node ~= nil and node.image == FACES[2],
-    "★ `who` 是乱码也不影响头像（实测 " .. tostring(node and node.image) .. "）")
-  print("  [判据③] `who` 乱码 ⇒ 棋盘线照样通 ✓（它已被移出棋盘线）")
+    "★ `who` 是乱码也不影响**头像**（实测 " .. tostring(node and node.image) .. "）")
+  ok(node ~= nil and node.notes == false,
+    "★ 放人 ⇒ 只有头像、没有字母（实测 notes=" .. tostring(node and node.notes) .. "）")
+  -- ★② 字母那条：★ 打标记 ⇒ 必须显示那一行的 `letter` ✓（★ 而 `who` 仍是乱码 ✗）
+  local core2, c2 = boot()
+  core2:select_suspect(core2.pieces[2].id)
+  core2:tap_cell(3, 3)
+  local n2 = cell_of(c2, 3, 3)
+  ok(n2 ~= nil and joined(n2.notes) == LETTERS[2],
+    "★ `who` 是乱码也不影响**标记的字母**（实测 "
+    .. tostring(n2 and joined(n2.notes)) .. " 想要 " .. LETTERS[2] .. "）")
+  print("  [判据③] `who` 乱码 ⇒ 头像与标记字母都照常 ✓（它已被移出棋盘线）")
 end
 
 --------------------------------------------------------------------------------
@@ -196,10 +224,12 @@ end
 --------------------------------------------------------------------------------
 do
   local core, c = boot()
+  -- ★★ 用**打标记**验"表里有东西" ✗ —— ★ 放人已经不发字母了 ✓（★ 见判据① ✓）
   core:select_suspect(core.pieces[1].id)
-  core:hold_cell(1, 1)
+  core:tap_cell(1, 1)
   local n1 = cell_of(c, 1, 1)
-  ok(n1 ~= nil and joined(n1.notes) == LETTERS[1], "前提：第一关已经就位")
+  ok(n1 ~= nil and joined(n1.notes) == LETTERS[1], "前提：第一关的表已经建好（标记显示 " ..
+    tostring(n1 and joined(n1.notes)) .. "）")
   -- ★ 换关 ⇒ 清表 ✓
   c._row_map_sig = nil
   c:_reset_row_maps_if_level_changed()
@@ -271,16 +301,17 @@ do
   end
   package.loaded["levels.case_001"] = nil          -- ★ 立刻还原 ✓
 
-  -- ★★ 判据 ✓：★ **第 2 个棋子必须拿到第 2 行的 `letter`** ✓
-  --   ★ 若还拿上一关的顺序 ⇒ 第 2 个棋子会被算成第 4 行 ⇒ 拿到 `丁` ✗
+  -- ★★ 判据 ✓：★ **第 2 个棋子打标记 ⇒ 必须拿到第 2 行的 `letter`** ✓
+  --   ★ 若还拿上一关的顺序 ⇒ ★ 第 2 个棋子会被算成别的行 ⇒ ★ 拿到别的字母 ✗
+  --   ★（★ 用**打标记**验 ✗ —— ★ 放人已经不发字母了 ✓ 见判据① ✓）
   local node = nil
   core:select_suspect(flipped_second)
-  core:hold_cell(2, 2)
+  core:tap_cell(2, 2)
   local nodes = c:build_layout()
   for i = 1, #(nodes or {}) do
     if nodes[i] ~= nil and nodes[i].id == "cell.2.2" then node = nodes[i] break end
   end
-  local got = node and joined(node.notes) or "<nil>"
+  local got = (node ~= nil) and joined(node.notes) or "<没有这一格>"
   ok(got == LETTERS[2],
     "★ 换关后棋子顺序变了 ⇒ 仍然按**本关**的顺序取（第 1 个=" .. tostring(flipped_first) ..
     " 第 2 个=" .. tostring(flipped_second) .. "）实测 " .. got .. " 想要 " .. LETTERS[2])

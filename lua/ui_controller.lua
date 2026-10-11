@@ -2860,32 +2860,26 @@ function Controller:build_layout()
       local _note_val = nil
       local _note_src = nil
       local _resolve = Controller.letter_of
-      if cd.suspect ~= nil then
-        local _lt = Controller.letter_of(vm, cd.suspect)
-        -- ★★★★★★★★ 2026-10-11 **必须包成【表】** ✗✓✓（★ 真机红字抓出来的 ✓）
-        --
-        --   ★★★ 症状 ✓（★ 用户 v183 真机日志原文 ✓）：
-        --     `属性下发失败：`cell.3.4.notes` ← bad argument #1 to 'concat' (table expected)` ✗
-        --     `属性补发 3 次仍未送达，已停止补发：`cell.3.4.notes`` ✗
-        --   ★ 根因 ✓：★ 适配层那条路是 **`table.concat(value or {}, " ")`** ✓
-        --     （★ `engine_adapter_qianxing.lua` 的 `key == "notes"` 分支 ✓）
-        --     ★★ 而 `letter_of` 返回的是**一个字符串** ✗（★ `_row_letter[行]` 存的就是字符串 ✓）
-        --       ⇒ ★ `table.concat("D")` ⇒ **抛错** ⇒ ★ **这一格的字一个都没下去** ✓✓
-        --   ★★ 对照 ✓：★ 同一段的**标记**那条路走 `mark_list_of` ✓ ⇒ ★ 它返回的是**表** ✓
-        --     ⇒ ★ **两条路类型不一致** ✗ —— ★ 而它们写进的是**同一个 `notes` 字段** ✓✓
-        --   ★ 修法 ✓：★ **统一成表** ✓（★ 一条一个字母 ✓）
-        --     ★ 与 `mark_list_of` 的形状对齐 ✓ ⇒ ★ 适配层【一个字都不用改】✓
-        --   ⚠️ 为什么以前没暴露 ✗：★ 落子那一刻 `do_place` 会**清掉该格笔记** ✓
-        --     ⇒ ★ 上一版这里多半取到 nil ⇒ 走了"清空"那条 ✓
-        --     ★★ 而 v183 把 `letter` 接上之后 ⇒ ★ 这里**第一次真的返回了字符串** ✓✓
-        --       ⇒ ★ **新接的这条线把老类型错暴露出来了** ✓
-        if _lt ~= nil and tostring(_lt) ~= "" then
-          _note_val = { tostring(_lt) }
-          _note_src = "letter(棋子)"
-        end
-      end
+      -- ★★★★★★★★ 2026-10-11 **放头像时【不再下发 `letter`】** ✗✓✓（★ 用户明确要求 ✓）
+      --
+      --   ★★★ 用户原话 ✓：「★ **放置头像的时候把 `letter` 也放下了，这个不用**」✓✓
+      --   ★★ 也就是：★ **放人 = 只出头像 ✓ 不出字母** ✓✓
+      --     ★ 格子上那三个子控件是 `face` / `note` / `x` ✓ ⇒ ★ **放人只动 `face`** ✓
+      --   ★ 历史沿革（★ 说清楚，免得下一个人又把它加回来 ✗）：
+      --     ★ 2026-10-10 用户要的是「★ **让 `letter` 取代铅笔笔记**」✓
+      --       ⇒ ★ 那时把"放人也显示 `letter`"当成了同一件事 ✓
+      --     ★★ 而 2026-10-11 的真机反馈把两件事**分开了** ✓：
+      --       ★ **铅笔标记** ⇒ 显示那一行的 `letter` ✓（★ 要 ✓）
+      --       ★ **正式放人** ⇒ **只要头像** ✗（★ 不要字母 ✓）
+      --   ★★ 所以这一支**整段删掉** ✗ —— ★ 只留"打标记"那一条 ✓
+      --     ★ 机制 ✓：★ `do_place` 本来就会把该格 `notes` 清空 ✓
+      --       ⇒ ★ 下面 `mark_list_of` 拿到空集合 ⇒ 返 nil ⇒ ★ 下发 `false` ⇒
+      --         ★ 适配器 `SetVisible(false)` ⇒ ★ **note 控件不显示** ✓✓
+      --     ★（★ 这就是要的效果 ✓ —— ★ 不需要在这里额外写什么 ✓）
+      --
+      --   ⚠️ 别把 `letter_of` 一起删了 ✗：★ **打标记那条路还要它** ✓（见下面 ✓）
       if _note_val == nil then
-        -- ★★★★★★ 2026-10-11 **标记列表也走 `letter`** ✗✓✓（★ 这就是"取代" ✓）
+        -- ★★★★★★ 2026-10-11 **标记列表走 `letter`** ✗✓✓（★ 这就是"取代铅笔笔记" ✓）
         --   ★ `core.notes[r][c]` 是 **`{ [人物id]=true }`** ✓ ⇒ ★ 这里把 id **换成 `letter`** ✓
         --     ★ 没配 `letter` 的人 ⇒ `mark_list_of` 内部**回退 id** ✓（★ 不会突然空白 ✓）
         _note_val = mark_list_of((self.core and self.core.notes and self.core.notes[r]
@@ -4105,6 +4099,58 @@ function Controller:_grid_log(key, msg)
   if print then print("[murdoku] " .. tostring(msg)) end
 end
 
+-- ★★★★★★★★ 2026-10-11 **把「第几行 → 哪个棋子 → 哪个字母」一次打全** ✗✓✓
+--
+--   ★★★ 为什么要它 ✗（★ 用户 2026-10-11 报"第三关 DEF 的 note 是 AAF" ✓）：
+--     ★ 我离线复现过**第三关 7 行 7 棋子**那条链 ✓ ⇒ ★ 取的是**行号对应的行** ✓
+--       （★ 探针：第4张卡 ⇒ D ⇒ `cell` note = 第4行配的那个字母 ✓）
+--     ★★ 所以"字母不对"只剩下**一种**可能 ✗：
+--       ★ **用户配的那一行的 `letter` 就不是他以为的那个** ✓✓
+--         （★ 例如把第 1 关的行复制到第 3 关，只改了后面几行 ✓）
+--     ★★★ 而脚本**只能照他配的显示** ✗ —— ★ 它**没有**办法知道"他想要 D" ✓
+--   ⇒ ★ 所以正确的做法不是改代码 ✗ ★ 而是**把真相打出来** ✓：
+--     ★ 一行一行列：★ `行号 / 棋子 / 字母`
+--   ★ 他一看就能发现"第 4 行的 letter 写的是 A" ✓ ⇒ ★ **去编辑器改一个字** ✓✓
+--   ★★ 只在**进关卡后第一次**打 ✓ ★ 每次填充最多打一次 ✓（★ 不刷屏 ✓）
+--   ★ 读法 ✓：★ 若某行的 `棋子` 是 `?` ⇒ ★ 那一行的 **`who` 填的值既不等于棋子 id、
+--     ★ 它也换不出棋子** ⇒ ★ **那一定是编辑器的配置问题** ✓（★ 脚本这时是诚实的 ✓）
+function Controller:_dump_row_letter_map(lv_no, n)
+  -- ★★ 判据必须是"`print` 在不在" ✗ —— ★ 不能写 `print ~= true` ✗✓
+  --   ★ 我第一版就写成 `if print ~= true then return end` ✗
+  --     ⇒ ★ 而 `print` 是**函数** ⇒ ★ **恒不等 true** ⇒ ★ **整段直接 return** ✓✓
+  --       ⇒ ★ **一次都没打出来** ✓（★ 我实测过：输出里一行都没有 ✓）
+  --   ★★ 教训 ✓：★ **"在线"和"能用"是两件事** ✗ —— ★ 要判的是"能不能调用" ✓
+  if type(print) ~= "function" then return false end
+  if self._row_map_dumped == true then return true end
+  -- ★★★ 顺序很讲究 ✗（★ 我踩了两次 ✓）：★ **先确认有数据，再上闩锁** ✓
+  --   ★ 我第一版先 `_row_map_dumped = true` ✗ ⇒ ★ 第一次调用时表还没建好 ⇒
+  --     ★★ **闩锁上了、却什么都没打** ✗ ⇒ ★ **永远看不到那张表** ✓✓
+  --   ★ 现在 ✓：★ 拿不到数据就**不闩** ✓ ⇒ ★ 下一次填充会**再试** ✓（★ 自带重试 ✓）
+  local RT = rawget(Controller, "_row_text")
+  local by = (type(RT) == "table") and RT[tostring(lv_no)] or nil
+  if type(by) ~= "table" then return false end
+  -- ★ 至少要有一行带 `letter` 才算"建好了" ✓（★ 否则等下一趟 ✓）
+  local ready = false
+  for _, slot in pairs(by) do
+    if type(slot) == "table" and slot.letter ~= nil and tostring(slot.letter) ~= "" then ready = true break end
+  end
+  if not ready then return false end
+  self._row_map_dumped = true
+  print("[murdoku] ★ 行 → 棋子 → 字母 对照表（★ 关卡 " .. tostring(lv_no)
+    .. "；★ 棋盘上每一格显示的就是它那一行的 `letter` ✓）：")
+  local nrow = tonumber(n) or 0
+  for pos = 1, math.max(nrow, 1) do
+    local slot = by[pos]
+    local pid = Controller._piece_at_row(self.core, pos)
+    print("    ★ 第 " .. tostring(pos) .. " 行  ⇒  棋子=" .. tostring(pid)
+      .. "    letter=`" .. tostring(slot and slot.letter) .. "`"
+      .. "    who=`" .. tostring(slot and slot.who) .. "`")
+  end
+  print("[murdoku] ★ 若某行的 `letter` 不是你想让它显示的那个字 ⇒ ★ **去编辑器改那一行** ✓"
+    .. "（★ 脚本只照你配的显示 ✓ ★ 它没法知道「你想要哪个」✗）")
+  return true
+end
+
 -- 网格视窗这条路上的**任何一步失败**都走这里：退回老路径（手写滚动），并且只报一次。
 function Controller:_grid_fail(why)
   if self._grid_broken then return end
@@ -4332,6 +4378,16 @@ function Controller:sync_clue_grid(adapter)
     end)
   end)
   self._grid_in_refresh = false
+  -- ★★ 把"行 → 棋子 → 字母"对照表打一次 ✓（★ 见 `_dump_row_letter_map` ✓）
+  --
+  --   ★★★ 为什么放在**这里** ✗（★ 我放错过两处，都实测过 ✓）：
+  --     ★ ① 放进 `if wrote > 0 then` 里 ⇒ ★ 真机上 `wrote` 常常是 0 ⇒ **一次都不打** ✓
+  --     ★ ② 放进单射那个 `if _row_need then … end` 块里 ⇒ ★ 同理可能整块不跑 ✓
+  --     ★ ③ 放进 `_fill_grid_item` 主干 ⇒ ★ 那时 `_row_text` 可能才建到第 1 行 ✓
+  --   ⇒ ★ 放在**这里** ✓：★ `RefreshItems` **刚把 n 项全回调完** ✓
+  --     ⇒ ★ 7 行的表**已经建齐了** ✓ ⇒ ★ 一打就是完整的 7 行 ✓✓
+  --   ★★ 自带"有数据才上闩锁"的重试 ✓ ⇒ ★ 第一趟没齐就等下一趟 ✓（★ 不刷屏 ✓）
+  pcall(function() self:_dump_row_letter_map(self:_level_ordinal(), n) end)
 
   -- ★ 只读探针 ✓：数"视窗里物理上挂了多少个子控件"✗（= 引擎真的建了几个列表项 ✓）
   -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：探针·RefreshItems　原 L3950..L3957
