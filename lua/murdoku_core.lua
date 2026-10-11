@@ -1661,20 +1661,12 @@ function Core:clue_results(roles)
   return out
 end
 
--- 谁与受害者单独共处一室（真正的凶手判定）
-function Core:who_is_alone_with_victim()
-  local ctx = make_context(self)
-  local v = ctx.victim_pos()
-  if not v then return nil end
-  local room_id = ctx.room_of(v.r, v.c)
-  if ctx.count_in_room(room_id) ~= 2 then return nil end
-  for id, p in pairs(self.pos) do
-    if id ~= self.victim_id and p and ctx.room_of(p.r, p.c) == room_id then
-      return id
-    end
-  end
-  return nil
-end
+-- ★ 2026-10-12 已删（优化组 P1 死代码清单 ✓ ＋ 本轮复验 ✓）：
+--   `function Core:who_is_alone_with_victim()`　原 L1664..L1677
+--   ★ 复验判据 ✓：`node tools/lua_map.mjs --refs=who_is_alone_with_victim`
+--     ⇒ ★ **全文只有定义那一处，0 个调用点** ✓（★ 连测试都没引用 ✓）
+--   ★ 为什么它没用了 ✓：★ 凶手判定走的是 `level.murderer` ＋ 结算那套 ✓
+--     （★ 见 `view()` 的 `murderer_hint_available` ✓）—— 这个"同室推定"是早期版本的路 ✓
 
 function Core:is_full()
   local n = 0
@@ -2591,19 +2583,13 @@ end
 -- 紧凑字面量工具
 ----------------------------------------------------------------------------
 
-function M.parse_grid_literal(text)
-  local out = {}
-  for line in tostring(text):gmatch("[^\n]+") do
-    local row = {}
-    for ch in line:gmatch(".") do
-      if ch == "." or ch == "_" then row[#row + 1] = nil else row[#row + 1] = ch end
-    end
-    out[#out + 1] = row
-  end
-  return out
-end
-
   -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：solution_from_grid_literal　原 L2667..L2677
+  -- ★ 2026-10-12 已删（优化组 P1 死代码清单 ✓ ＋ 本轮复验 ✓）：parse_grid_literal　原 L2594..L2604
+  --   ★ 复验判据 ✓：`node tools/lua_map.mjs --refs=parse_grid_literal`
+  --     ⇒ ★ **全文只有定义那一处，0 个调用点** ✓
+  --   ★ 它当年被删的理由与上面的 `solution_from_grid_literal` **是同一件事** ✗：
+  --     ★ 关卡已改由**程序生成**（`tools/make_level_from_grid.lua` ✓）＋ 编辑器内容 ✓
+  --       ⇒ ★ "紧凑字面量"这套入口**整体不再需要** ✓（★ 上一批就是只删了一半 ✗）
 
 -- 从字面量生成 walls：用 | 和 - 在网格里画墙
 --   例： {"A|B", "A B"} 之类；这里提供更直白的生成器：cells 里用 "v"/"h" 标记

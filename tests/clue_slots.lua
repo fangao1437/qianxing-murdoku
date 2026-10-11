@@ -29,7 +29,7 @@
       ★ ② ★ **不再靠"手写线索表"** ✗ —— ★ 真关卡里 `level.clues` **是空的** ✓
         ★ 而**引擎照旧补满槽位** ✓（★ 这就是"替换掉原先那套模式" ✓）
       ★ ③ ★ **槽位是"待填"的** ✓ —— ★ 没有 `type` ✓ ★ 不编内容 ✓
-      ★ ④ ★ **控件上限够装最大棋盘** ✓ ＋ ★ **端到端建出 7 张卡** ✓
+      ★ ④ ★ **控件上限够装最大棋盘** ✓ ＋ ★ **端到端条数 = 棋子数** ✓
     ★★ **多解问题不归这里管** ✗ —— ★ 用户原话 ✓：「★ **多解问题是内容问题，我来解决**」✓✓
 
   跑法：lua tests/clue_slots.lua
@@ -125,7 +125,27 @@ do
 end
 
 --------------------------------------------------------------------------------
--- 5. ★★ 最大那一关建出来的卡片数 = 它的棋子数（★ 端到端 ✓ 不是读常量 ✓）
+-- 5. ★★★ 最大那一关的线索条数 = 它的棋子数（★ 端到端 ✓ 不是读常量 ✓）
+--
+--   ★★★★★ 2026-10-12 **改口径：不再数规划里的 `clue.N`** ✗✓（★ v205 已整段删除 ✓）
+--     ★ 起因 ✓：★ 用户 2026-10-12 定案
+--       「★ **网格视窗路线已经成功了，不需要后路了**」✓
+--       ⇒ ★ 「老一套线索控件」整段（`clues.bar` / `clue.N` 四槽 / 滚动条 / 入场动效，
+--         约 210 行）连同 `is_legacy_clue_id` 一起删掉了 ✓
+--     ★★ 所以**规划里再也不会有 `^clue%.%d+$` 这个形状的节点** ✗ ——
+--        ★ 旧断言按这个形状数 ⇒ ★ **恒 0** ✗ ⇒ ★ 每次必红 ✓
+--        （★ 这正是本项目最怕的"**注释里/断言里的前提悄悄失效**"✓ ——
+--         ★ 与 2026-10-11 那次"条数改读 `core.clues`、断言还在读 `lv.clues`"同型 ✓）
+--   ★★★ 新口径 ✓：★ **数"这一关有几条"的【权威来源】`core.clues`** ✓ ——
+--     ★ 它同时就是网格视窗发 `RefreshItems(n, …)` 用的那个 `n` ✓
+--       （★ 见 `ui_controller.lua:4331-4341` ✓ —— 那里明确写着"必须读 `core.clues`"✓）
+--     ⇒ ★ 于是这条断言**仍然钉着用户要的那件事** ✓：
+--       ★ 「**clues 条数 = 棋盘装得下几人 = 棋子数**」✓（★ 一人一条 ✓）
+--   ★★ 并且**加一条"网格这条路的落点还在"** ✗✓ ——
+--     ★ 用户原话 ✓：「★ **这个部分不能坏** ✓
+--       ★ **不然整个 row → clues → 棋盘的路线就断了**」✓
+--     ⇒ ★ 所以除了条数，还要确认规划里**确实有 `clues.grid`** ✓
+--       （★ 老路删干净之后，网格视窗是唯一那条路 ✓ 它一没了就整块消失 ✓）
 --
 --   ★★★ 2026-10-11 **改成【跟着关卡走】** ✗✓（★ 原来写死 7 ✗）
 --     ★ 起因 ✓：★ 用户要求把 `case_003` 的棋子从 **7 改成 6** ✓
@@ -146,15 +166,26 @@ do
   local core = Core.new(best_lv)
   local ctl = UIC.new(core, {})
   local plan = ctl:layout_plan()
-  local n = 0
+
+  -- ★ ① 条数 = 棋子数 ✓（★ 读的是网格视窗发 RefreshItems 用的那个同一个来源 ✓）
+  local n = #((core.clues) or {})
+  local want = core:piece_count()
+  ok(n == want, string.format("最大关卡（%s，%d×%d，%d 棋子）线索条数应 = %d（实测 %d）",
+    tostring(best_lv.id), core.rows, core.cols, want, want, n))
+
+  -- ★ ② 网格视窗这个落点必须在规划里 ✓（★ 老路删净之后它是唯一那条路 ✓）
+  local grid_node = nil
+  local legacy = 0
   for i = 1, #plan do
     local id = plan[i].id
-    if type(id) == "string" and id:match("^clue%.%d+$") then n = n + 1 end
+    if id == "clues.grid" then grid_node = plan[i] end
+    -- ★★ 反向对照 ✓：★ 老 `clue.N` 一个都不许再出现 ✗（★ v205 已整段删除 ✓）
+    if type(id) == "string" and id:match("^clue%.%d+") then legacy = legacy + 1 end
   end
-  local want = core:piece_count()
-  ok(n == want, string.format("最大关卡（%s，%d×%d，%d 棋子）应建出 %d 张线索卡（实测 %d）",
-    tostring(best_lv.id), core.rows, core.cols, want, want, n))
-  print(string.format("  [PASS] 最大关卡 %s（%d×%d）⇒ %d 张卡（端到端）",
+  ok(grid_node ~= nil, "规划里有 `clues.grid`（★ 网格视窗是唯一那条路，不能断 ✓）")
+  ok(legacy == 0, "规划里没有老 `clue.N.*`（★ v205 已整段删除 ✓）—— 实测 " .. tostring(legacy))
+
+  print(string.format("  [PASS] 最大关卡 %s（%d×%d）⇒ %d 条线索 ＋ `clues.grid` 在（端到端）",
     tostring(best_lv.id), core.rows, core.cols, n))
 end
 

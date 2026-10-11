@@ -191,6 +191,9 @@ function M.new(cfg)
   --   ★ **任何人都不许再拿它做派发** ✗ —— 那正是 B2 要修掉的行为（"最后写的赢"）。
   self.event_latest = {}
   self.subs = {}           -- "id.child" -> 子控件（或 false）
+  -- ★ 2026-10-12：`"id.child" -> 代数戳` —— "这一代里确认取不到"的记忆 ✓
+  --   （★ **不是**负缓存 ✗：它带代数戳 ✓ ⇒ `_lookup_gen` 一变全部失效 ✓ 见 `sub` 的长注释 ✓）
+  self._sub_miss = {}
   self.timers = {}
   self.clock = 0
   self.state = {}          -- 脚本内本地状态（跨场景要靠信号+服务器）
@@ -244,12 +247,12 @@ function Adapter:_note_missing(id)
 end
 
 -- 把一个控件 id 归到"类"：cell.1.2 → cell.* ／ clue.7 → clue.N ／ hud.title → hud.*
+--   ★ 2026-10-12：`ruler.*` 那一行**已删** ✓（行标/列标功能废弃 ⇒ 不会再"缺"这些控件 ✓）
 local function missing_group(id)
   local s = tostring(id)
   if s:match("^cell%.[%d]+%.[%d]+$")  then return "cell.*"  end
   if s:match("^clue%.[%d]+$")         then return "clue.N"  end
   if s:match("^tray%.[%w_]+$")        then return "tray.*"  end
-  if s:match("^ruler%.[cr]%.[%d]+$")  then return "ruler.*" end
   if s:match("^modal%.")              then return "modal.*" end
   if s:match("^intro%.")              then return "intro.*" end
   if s:match("^action%.")             then return "action.*"
@@ -409,7 +412,31 @@ end
 
 -- 把"这一代的名字缓存"整代扔掉（含负缓存），并让兜底隐藏重跑一次。
 -- 触发时机全都是**控件树真的变了**的事件，不是每帧。
-function Adapter:invalidate_lookups(why)
+--
+-- ★★★★★ 2026-10-12 **新增第二个参数 `opts.keep_bindings`** ✗✓
+--   （★ 补回 2026-10-11 那次"陈旧句柄修复"里被丢掉的一半 ✓
+--    ★ 原实现只存在于**没有提交的**工作区快照里 ⇒ 被一次 reset 冲掉 ⇒ 本轮按记录重建 ✓
+--    ★ 记录来源：`murdoku-project` 仓《待办与交接-优化组-v205.md》§一 P0 ／
+--      探针 `tests/_wip/bound_rearm_count.lua` ① ② ／
+--      旧产物 `_backup/sandbox-scripts/1073741826__v194__2026-10-12_005834.lua` ✓）
+--
+--   ★ 为什么需要它 ✓：本函数**同时**被两件相反的事调用 ✗
+--     · **`create_control`**（新建控件 ✓）：刚 `InstantiateClientUIControl` 出来的控件
+--       **下一段就要 `bind_input`** ✓ ⇒ ★ 这时候**绝不能**清 `bound` ✗
+--       （清了也白清 ✓ 而且万一 `create_control` 对同一个 id 再走一次 ⇒
+--        **同一个控件绑两遍监听器** ✗ ⇒ 点一下派发两次 ✓ 本项目最怕的那一类 ✓）
+--     · **切屏 / 换关 / 销毁**（引擎按官方文档"传送/断线重连时**所有客户端控件都会被销毁**" ✓）：
+--       ⇒ ★ 这时**必须**清 `bound` ✗ 否则新控件**永远绑不上** ✓（见下面的长注释 ✓）
+--   ⇒ ★ 所以默认**清** ✓ 只让 `create_control` 那一处**显式跳过** ✓
+--     ★ 默认值取"清"是安全的 ✓：漏清 ⇒ 点不动（严重 ✓）；多清 ⇒ 多绑一次监听（也严重 ✓）
+--       而两者都由**调用点语义**决定 ✓ —— `create_control` 是唯一的例外 ✓
+--
+--   ⚠️ `ui_controller.lua:4534` 那次（`grid_refresh:`）**不带** opts ⇒ 会清 `bound` ✓
+--     ★ 这是刻意的 ✓（见那一处的长注释：`RefreshItems` 会重建列表项 ✓）
+--     ★ 而列表项自己的闩锁是**另一张表** `_grid_bound[item]`（按项身份 ✓）⇒ 不受影响 ✓
+--   ⚠️ `ui_controller.lua:6555` 那次（`screen=`）也**不带** opts ⇒ 会清 ✓
+--     ★ 那正是"换代"的权威事件 ✓ —— 本函数存在的**主要**理由就是它 ✓
+function Adapter:invalidate_lookups(why, opts)
   self._misses = nil
   -- ★★★★★ 2026-10-08 **命中缓存也要一起清** ✗✓（★ 成员第 4 轮 H8：陈旧句柄 ✓ 机制已逐行核对 ✓）
   --   ★ 依据（官方）✓：★「玩家传送、断线重连时，**所有客户端控件都会被销毁**然后回到初始状态」✓
@@ -419,6 +446,47 @@ function Adapter:invalidate_lookups(why)
   --       ★ **`GetChildren()`=空** ✗ —— ★ **两个症状一次解释** ✓✓（★ 且编辑器侧无需任何异常 ✓）
   --   ★ 所以 ✓：★ **作废时连命中缓存一起清** ✓ ⇒ ★ 下次 `find` 会真的重新深搜 ✓
   self.controls = {}
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  -- ★★ 2026-10-12 **`bound` 也必须一起清** ✗✓（★ P0 ✓ 本轮最高价值的一条 ✓）
+  --
+  --   ★ 症状（官方文档写得很清楚 ✓，而本项目一直没接上这一步 ✗）：
+  --     ★「玩家传送、断线重连时，**所有客户端控件都会被销毁**然后回到初始状态」✓
+  --     ⇒ 引擎重建全部客户端控件 ⇒ `find(id)` 会拿到**新的**控件对象 ✓
+  --     ★★ 而 `bind_input` 的第一句是 ✗：
+  --          `self.bound = self.bound or {}`
+  --          `if self.bound[id] then return end          -- 防重复绑定`
+  --        ⇒ ★ `bound[id]` 还是 **true**（旧的 ✓）
+  --        ⇒ ★★★ **新的控件【一个监听器都没有】** ✓✓
+  --        ⇒ ★ 表现 = 「**界面看得见、点哪儿都没反应**」✗ ——
+  --          ★ **正是本项目反复发作的头号病** ✓（门控②/射线/陈旧句柄都指向同一个症状 ✓）
+  --     ★ 而 `bound` 全项目**只有一个清除点** ✗：`destroy_control` 里针对
+  --       `self.instantiated[id]` 那一支 ✓（见 L3402 ✓）
+  --       ⇒ ★ 编辑器手摆的控件（**绝大多数** ✓）**永远不会被清** ✓✓
+  --
+  --   ★ 为什么以前"看不出来"✗：那一步只在**传送 / 断线重连 / 容器隐藏再显示**时才会触发 ✓
+  --     平时（进关、切屏、点来点去）控件并不会全量销毁 ✓ ⇒ 复现门槛高 ✓
+  --     但它一旦发生就是**整个界面点不动** ✓ ⇒ 值得现在就补上 ✓
+  --
+  --   ★★ 但 `keymap` **【不清】** ✗✓ —— 这是一个**刻意的例外**，理由是实测出来的 ✓：
+  --     · `keymap` 存的是**按键描述符**（`key_name -> event` ✓）★ **不是控件句柄** ✗
+  --       ⇒ ★ 它本身**不会变陈旧** ✓（陈旧的是"监听器挂在哪个控件上"✗）
+  --     · ★★★ 而**清了的后果是【键盘彻底哑掉】** ✗✓ ——
+  --       `bind_keys` 全项目**只有一个调用点**：`entry_client_script.lua`
+  --       而它的门是 `bind_keyboard_once` 里的 `keyboard_bound` 闩锁
+  --       ⇒ ★ 一旦绑上过，`keyboard_bound = true` **再也不会重绑** ✓
+  --       ⇒ ★ 清掉 `keymap` ⇒ 下一次 `bind_keys` 永远不会到来 ⇒
+  --         **键盘 24 键永久失效**（只能等断线重连）✗✓
+  --       ★ 而【不清】的后果只是"重连后键盘可能不灵"—— **与现状一致** ✓ 不会更差 ✓
+  --     ⇒ ★★★ 结论 ✓：**不清 `keymap`** ✓（保持现状 ✓ 不引入新回归 ✓）
+  --   ⚠️ `bound` 之所以**可以**清 ✓：`bind_input` 有**真实的重复调用点** ——
+  --      `create_control`（每建一个控件调一次 ✓）⇒ 清了之后确实会被重新绑上 ✓
+  --      而 `keymap` **没有**这样的调用点 ✗ ⇒ 两者**不能同等对待** ✓✓
+  --   ⇒ ★ 修法 ✓：换代时清 `bound`（控件句柄）✓ 不清 `keymap`（按键描述符）✓
+  --   ⚠️ `create_control` 那条路**显式跳过**（`keep_bindings = true` ✓ 见那里 ✓）
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  if not (opts ~= nil and opts.keep_bindings == true) then
+    self.bound = {}
+  end
   self._subtree_dirty = true
   self._lookup_gen = (self._lookup_gen or 0) + 1
   if self.cfg and self.cfg.debug_lookup and print then
@@ -502,7 +570,43 @@ end
 --   旧实现在查不到时写 self.subs[key] = false，于是"UI 就绪前查过一次"就会
 --   让这个子控件**永远取不到** —— 直接导致 image / notes / x_mark 这些表现层
 --   静默失效（我们为此排查了一整天）。现在未命中只返回 nil，下次还会重试。
+--
+-- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+-- ★★ 2026-10-12 **性能优化（大鱼 2）：未命中改成"按代记忆"，仍然【不跨代】永久缓存** ✗✓
+--
+--   ★ 实测（`tests/_wip/render_cost.lua`，包装**产线自己那棵树** ✓ 数引擎调用 ✓）：
+--     ★ **一次 render = 972 次引擎调用 / 约 1.8~2.2 ms 纯 Lua** ✗
+--     ★ 其中 **`GetChild` 840 次** ✓ —— ★ 调用点聚合后**全部落在本函数** ✓✓
+--     ★★ 而 **`sub` 每次 render 被调 168 次，命中缓存【0】次** ✗
+--       （键是 `cell.R.C.wall.up/down/left/right` 这类 ✓ —— **模板里根本没配这些子控件** ✓）
+--   ★ 机制 ✓：本函数未命中**故意不落缓存**（上面那段的老决定 ✓ 有充分理由 ✓）
+--     ⇒ 于是**每帧 168 次**都从零走三级尝试：`GetChild(名)` ⇒ 3 个 sub_root 各一次
+--       `GetChild(root)` ＋ `GetChild(名)` ⇒ 约 **6 笔 `GetChild` / 次** ⇒ **≈840 笔/render** ✓
+--     ★ 而它们**全都注定失败**（控件不存在 ✓）⇒ ★★ **纯白烧** ✓
+--
+--   ★★ 修法 ✓：**留住老决定（不跨代永久缓存）＋ 补上它缺的那一半** ✗✓
+--     · 未命中仍然**返回 nil** ✓（★ 所以"下次还会重试"这条语义**不变** ✓
+--       `_apply_edges` 的 `missing_sub` 重试逻辑照旧能补上 ✓）
+--     · 但把"这一代里已经确认取不到"的键记下来 ✓ ⇒ **同一代内不再重复三级尝试** ✓
+--   ★★ 为什么这次**不会**重演当年那个 bug ✗：
+--     ★ 当年是 `subs[key] = false` ⇒ **跨代永久** ✗ ⇒ UI 就绪后就再也拿不到 ✓
+--     ★ 现在记忆带**代数戳** ✓：`self._lookup_gen` 一变 ⇒ **立刻全部失效** ✓
+--       （`invalidate_lookups` 的触发点 = 切屏 / 换关 / 新建 / 销毁 / RefreshItems ✓
+--         ★ 正是"控件树真的变了"的权威事件 ✓）
+--     ★ 且**只记"取不到"、不记"取到了"** ✓ —— 命中该走 `self.subs` ✓ 两套各管一半 ✓
+--   ★ 收益 ✓：稳态下一次 render 的 `GetChild` 从 **840 次 → 0 次** ✓（首帧仍走一遍 ✓）
+--   ⚠️ 只影响"重复查同一个不存在的子控件"这一种情形 ✗ ——
+--     子控件**真的存在**时走 `self.subs` 命中 ✓ 与改前完全一致 ✓
+-- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 function Adapter:sub(parent_id, child_name)
+  -- ★ 同一代里已经确认过"这个子控件取不到" ⇒ 直接返回 nil ✓（省掉三级尝试 ✓ 语义不变 ✓）
+  do
+    local miss = self._sub_miss
+    if miss ~= nil then
+      local mk = parent_id .. "." .. child_name
+      if miss[mk] == self._lookup_gen then return nil end
+    end
+  end
   -- ★ 2026-09-26 扩展：支持「子控件装在一个中间容器里」的配法。
   --
   -- 为什么需要：官方《预设按钮的功能》写着
@@ -560,7 +664,17 @@ function Adapter:sub(parent_id, child_name)
     end
   end
 
-  if hit ~= nil then self.subs[key] = hit end
+  if hit ~= nil then
+    self.subs[key] = hit
+  else
+    -- ★ 2026-10-12：这一代里确认取不到 ⇒ 记下代数戳 ✓（★ 只影响"重复查同一个 ✗ 存在的子控件" ✓）
+    --   ⚠️ **不能**写进 `self.subs`（那会变成跨代永久负缓存 ✗ 就是当年那个 bug ✓）
+    --   ⚠️ 只在**代数戳有效**时记 ✓（取不到代数就退回"每次都重试"的旧行为 ✓ 安全侧 ✓）
+    if self._lookup_gen ~= nil then
+      self._sub_miss = self._sub_miss or {}
+      self._sub_miss[key] = self._lookup_gen
+    end
+  end
   return hit
 end
 
@@ -653,7 +767,14 @@ function Adapter:create_control(node)
           --     · 兜底隐藏：新控件挂在**被隐藏的容器**下面时，它自己是 visible=true 的
           --       （模板带的），必须靠 enforce_hidden_subtrees 压下去 ——
           --       原来靠每帧扫一遍才发现，现在靠这个事件。
-          self:invalidate_lookups("create:" .. tostring(node.id))
+          -- ★★★★★ 2026-10-12 **这里必须 `keep_bindings = true`** ✗✓（★ 与 `invalidate_lookups` 成对 ✓）
+          --   ★ 刚实例化出来的 `ctrl` **下一段就要 `bind_input`** ✓ ⇒ 现在清 `bound` 毫无意义 ✓
+          --     而且有真风险 ✗：万一这条路对同一个 id 再走一次 ⇒
+          --     **同一个控件绑两遍监听器** ✓ ⇒ 点一下派发两次（本项目最怕的一类 ✓）
+          --   ★ 该清 `bound` 的是**切屏 / 换关 / 销毁**那几处 ✓
+          --     （`ui_controller.lua:6555` 的 `screen=` ✓ ／ `destroy_control` ✓）
+          --   ★ 反面证据（本探针就是为了钉住它 ✓）：`tests/_wip/bound_rearm_count.lua` 第 [4] 组 ✓
+          self:invalidate_lookups("create:" .. tostring(node.id), { keep_bindings = true })
           -- ★★★★★ 2026-10-05 **新控件 = 重新武装射线开关那一趟**（每帧成本第 (3) 条）。
           --
           --   为什么必须补这一条：`enable_raycast` 收敛/放弃之后**不再整树重扫**了，
@@ -875,17 +996,44 @@ function Adapter:cell_id(r, c) return string.format("cell.%d.%d", r, c) end
 -- 拿不到实际尺寸时退回 cfg.cells 里的固定值（老行为，保持兼容）。
 --
 -- 返回 size, pitch, margin, pw, ph
+--
+-- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+-- ★★ 2026-10-12 **性能优化（大鱼 2 的第 2 刀）：父控件尺寸按【代】缓存** ✗✓
+--
+--   ★ 实测（`tests/_wip/render_cost.lua` 的按调用点栈聚合 ✓）：
+--     ★ **`GetSizeDelta` 一次 render 21 次** ✓ —— ★ 全部落在**本函数的 `parent:GetSizeDelta()`** ✓
+--     ★ 它被 `_apply_edges` 每个格子调一次 ✓ ⇒ 168 笔 `sub` 之外**又多 21 次棋盘尺寸读** ✓
+--   ★ 为什么可以缓存 ✓：★ **父控件（`board` / `stage`）的尺寸在一关之内不变** ✗
+--     ⇒ ★ 一关里读一次就够 ✓（★ 而它在一关内被读 21 次／render × 每秒 1 次 ✗）
+--   ★★ 判据与 `sub` 的"按代记忆"**同一套** ✓（复用 `_lookup_gen` ✓ 不发明第二根时间轴 ✓）：
+--     · 代变了（切屏 / 换关 / 新建 / 销毁 / RefreshItems）⇒ **重新读一次** ✓
+--     · 另外**尺寸值也一起记** ✓ —— ★ 万一同代内棋盘被改尺寸 ⇒ 值不同 ⇒ 照样重算 ✓✓
+--       （★ 这是"值＋代"双判据 ✓ 比只判代更稳 ✓）
+--   ⚠️ 读不到尺寸时 ⇒ 退回 `cfg` 固定值（老行为 ✓）★ **并且不落缓存** ✓
+--     —— 免得把"这一代读不到"钉死 ✓（与 `sub` 同一条安全边界 ✓）
+-- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 function Adapter:cell_geometry(n)
   local g = self.cfg.cells or {}
   n = math.max(1, tonumber(n) or 5)
 
   local pw = g.parent_w or 733
   local ph = g.parent_h or 733
-  local parent = self:find(g.parent or "board")
-  if parent ~= nil and parent.GetSizeDelta ~= nil then
-    local ok, w, h = pcall(function() return parent:GetSizeDelta() end)
-    if ok and type(w) == "number" and type(h) == "number" and w > 0 and h > 0 then
-      pw, ph = w, h
+  -- ★ 先看缓存（代 ＋ 上次读到的尺寸都对得上才用 ✓）
+  local cg = self._geo_cache
+  local gen = self._lookup_gen
+  if cg ~= nil and gen ~= nil and cg.gen == gen and cg.pw ~= nil then
+    pw, ph = cg.pw, cg.ph
+  else
+    local parent = self:find(g.parent or "board")
+    if parent ~= nil and parent.GetSizeDelta ~= nil then
+      local ok, w, h = pcall(function() return parent:GetSizeDelta() end)
+      if ok and type(w) == "number" and type(h) == "number" and w > 0 and h > 0 then
+        pw, ph = w, h
+        -- ★ 读到了才落缓存 ✓（读不到 ⇒ 不落 ✓ 见上）
+        if gen ~= nil then
+          self._geo_cache = { gen = gen, pw = pw, ph = ph }
+        end
+      end
     end
   end
 
@@ -1764,113 +1912,19 @@ end
 --     · 记进 `self.instantiated`（只有脚本生成的才允许销毁）
 --
 --   按钮 id：`selbtn.1` … `selbtn.N`（N = 关卡数，由调用方传）
--- ★★★★★★ 2026-10-12 **`ensure_ruler`：把行标/列标【脚本建出来】** ✗✓✓
+-- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+-- ★★ 2026-10-12 **【已删除】`Adapter:ensure_ruler` 整段** ✗✓（用户要求：ruler 功能废弃 ✓）
 --
---   ★★ 背景 ✓（★ 用户：「优化中挖出来一个我都忘记了的东西，它叫 `ruler`，也就是行标和列标」✓）：
---     · ★ **`Adapter:apply_ruler_layout`（本文件 L2653 起）实现【完整存在】✓**
---        —— ★ 它按格子**实际位置**把 `ruler.c.j` / `ruler.r.i` 贴到中心 ✓
---        —— ★ 还会 `SetPivot(0.5,0.5)` 归中 ✓（★ 不归中会剩 ~25px 恒定偏移 ✓）
---     · ★★ **但它【只对齐 ✗ 不创建 ✗】** ⇒ `find("ruler")` = nil ⇒ **`return 0`** ✗
---     · ★★★ **⇒ 存档里从来没有 `ruler.*`** ✗（★ 日志「这些控件还没建 … `ruler.*` ×10 …」✓）
---     · ★★★★ **⇒ 功能是【哑的】** ✓✓
---
---   ★★★ 为什么【脚本自建】而不是【编辑器摆】✓（★ 用户给的关键证据 ✓）：
---     ★ `main.lua` L551-553 原文 ✓：
---       「★ **用"脚本创建"重做选关按钮**（用户指定的路线）✓
---         ★★ **真机证明只有脚本创建的控件能收到点击**（★ 关卡里的格子 ✅、编辑器摆的卡片 ❌）」
---     ★★ 而且**对齐逻辑已经写好** ✓ ⇒ 这里只缺"把控件造出来"这一步 ✓✓
---
---   ★★ 模板 ✓：★ **用户 2026-10-12 新建了【文本模板】`1073742712`** ✓
---     ★（★ 存档 `340ruler.gil` ✓ —— ★ 模板索引【不在存档记录里】✓ 与 `cfg.cells.prefab` 同理 ✓）
---
---   ★ 文字约定 ✓：★ **列标 = 大写字母（`A`/`B`/… ✓）★ 行标 = 数字（`1`/`2`/… ✓）**
---     ★ 与常规棋盘一致 ✓；★ 若用户要换，改 `ruler_text_of` 一处即可 ✓
-function Adapter:ensure_ruler(rows, cols)
-  rows = tonumber(rows) or 5
-  cols = tonumber(cols) or 5
-  -- ★★★★★★ 2026-10-12 **无条件探针** ✗✓ —— ★ "ruler 没有出现"时先分清卡在哪一步 ✓
-  if print then print("[murdoku] ★ ensure_ruler 进入：rows=" .. tostring(rows) .. " cols=" .. tostring(cols)) end
-  if game == nil or game.InstantiateClientUIControl == nil then
-    if print then print("[murdoku] ★ ensure_ruler 退出：环境没有 game.InstantiateClientUIControl") end
-    return 0, 0, "环境没有 game.InstantiateClientUIControl"
-  end
-
-  -- ★ 容器模板：复用 `selbar` 那套（`cfg.stage.prefab` ✓ 已被真机验证能实例化 ✓）
-  local cprefab = self.cfg.stage and self.cfg.stage.prefab
-  if cprefab == nil then return 0, 0, "没有 cfg.stage.prefab（没有容器模板）" end
-  -- ★ 文本模板：优先 cfg，回落用户给的索引 ✓
-  local tprefab = (self.cfg.ruler and self.cfg.ruler.prefab) or 1073742712
-
-  local function instantiate(prefab, parent, id, tag)
-    local ok, obj = pcall(game.InstantiateClientUIControl, prefab, parent)
-    if not ok or obj == nil then
-      -- ★★★★★★ 2026-10-12 **逐项失败日志** ✗✓ —— ★ 用户日志显示"新建 1 个"
-      --   ⇒ ★ 容器成了 ✓ 而 14 个标签【全失败】✗ ⇒ ★ 必须知道失败的是【哪一项】✓
-      if print then
-        print("[murdoku] ★ ensure_ruler：`" .. tostring(id) .. "` 实例化失败 ✗（模板="
-          .. tostring(prefab) .. "，ok=" .. tostring(ok) .. "，obj=" .. tostring(obj)
-          .. "）" .. (tag and ("　" .. tag) or ""))
-      end
-      return nil
-    end
-    pcall(function() obj.name = id end)
-    local got = nil
-    pcall(function() got = tostring(obj.name) end)
-    if got ~= id then
-      self:warn_once("ruler:name:" .. id,
-        "行标/列标改名字没生效：想要 `" .. id .. "`，读回来是 `" .. tostring(got) .. "`。")
-    end
-    self.controls[id] = obj
-    self.instantiated = self.instantiated or {}
-    self.instantiated[id] = true
-    -- ★ 2026-10-12：`find` 的**负缓存**在 `self._misses`（★ 本文件 L441 ✓ 真名 ✓）
-    --   ⇒ 我们刚建出来 ⇒ 把这个 id 的负缓存清掉 ✓（保险 ✓ 虽然 `self.controls` 会先命中 ✓）
-    if type(self._misses) == "table" then self._misses[id] = nil end
-    return obj
-  end
-
-  -- ★ ① 容器 `ruler`
-  local made, existed = 0, 0
-  local ruler = self:find("ruler")
-  if ruler ~= nil then
-    existed = existed + 1
-  else
-    local parent = self:find("root") or self:find("stage")
-    if parent == nil then return 0, 0, "找不到 `ruler` 的父容器（root / stage 都没有）" end
-    ruler = instantiate(cprefab, parent, "ruler")
-    if ruler == nil then return 0, 0, "容器模板 " .. tostring(cprefab) .. " 实例化失败" end
-    made = made + 1
-  end
-
-  -- ★ ② 列标 `ruler.c.j` ／ 行标 `ruler.r.i`
-  local function letter(n)
-    local s = ""
-    while n > 0 do
-      local d = (n - 1) % 26
-      s = string.char(65 + d) .. s
-      n = math.floor((n - 1) / 26)
-    end
-    return s
-  end
-  local function ensure_label(id, txt)
-    -- ★★★★★★ 2026-10-12 **不再先 `self:find`** ✗✓
-    --   ★★★ 为什么 ✓：★ `find` 未命中会**永久缓存 false**（本文件早写明 ✓）
-    --     ⇒ ★ 建之前查一次 ⇒ 缓存 false ✗ ⇒ 建完再查还是 false ✗
-    --     ⇒ ★★ **必须直接用【刚建出来的对象】** ✓（★ `ensure_widgets` 建 `selbtn` 就是这么做的 ✓）
-    local c = instantiate(tprefab, ruler, id)
-    if c == nil then return false end
-    made = made + 1
-    -- ★ 写文字：★ 两个都试 ✓（★ 项目铁律：`.text` 为 nil 时 `SetText` 才有效 ✓）
-    pcall(function() c.text = txt end)
-    pcall(function() c:SetText(txt) end)
-    pcall(function() c:SetVisible(true) end)
-    return true
-  end
-  for j = 1, cols do ensure_label("ruler.c." .. j, letter(j)) end
-  for i = 1, rows do ensure_label("ruler.r." .. i, tostring(i)) end
-
-  return made, existed
-end
+--   ★ 删掉的是 2026-10-12 早些时候那几轮"抢救"加的东西 ✓：
+--     `ensure_ruler`（用模板引用控件把 `ruler` 容器 + `ruler.c.*` + `ruler.r.*` 建出来 ✓）
+--     连同它前面的长注释、逐项失败日志、`letter()` 与 `ensure_label()` 全删 ✓
+--   ★ 一并删除的还有：`Adapter:apply_ruler_layout`（只对齐不创建 ✓）
+--     ＋ `main.lua` 里的两处调用 ＋ `ui_controller` 里那三个 `push`（容器 / 列标 / 行标）✓
+--   ⚠️ **`cfg.cells.ruler`（边框厚度）不在删除范围** ✗ ——
+--     那是**棋盘几何**的一部分（`avail = board.w - 2*ruler` ✓），格子边长靠它 ✓ 保留 ✓
+--   ⚠️ 存档里那个 `340ruler.gil` / 模板 `1073742712` 是**编辑器侧的资源** ✗，
+--     本脚本已不再引用 ✓（不影响加载 ✓）
+-- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 
 function Adapter:ensure_widgets(count)
   count = count or 8
@@ -2358,6 +2412,16 @@ function Adapter:ensure_cells(rows, cols)
         cleared = cleared + 1
       end
     end
+    -- ★ 2026-10-12：`cell.*` 的子控件记忆**也要一起清** ✗✓
+    --   理由与上面那段**完全一样** ✓：建格/改名之后，"这个名字取不到"的结论可能不再成立 ✓
+    --   ★ 只清 `cell.` 前缀 ✓（与 `subs` 同一口径 ✓）—— 别的父级不受建格影响 ✓
+    if self._sub_miss ~= nil then
+      for k in pairs(self._sub_miss) do
+        if type(k) == "string" and k:sub(1, 5) == "cell." then
+          self._sub_miss[k] = nil
+        end
+      end
+    end
   end
 
   -- ★★★★★ 2026-10-05 **图层顺序这一趟的实测结果 —— 每关一行**。
@@ -2754,105 +2818,19 @@ function Adapter:apply_tray_layout(layout)
   return moved_final
 end
 
--- 行标 / 列标按**格子的实际位置**对齐（顶层方法，加载时即存在）。
+-- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+-- ★★ 2026-10-12 **【已删除】`Adapter:apply_ruler_layout` 整段** ✗✓（用户要求：ruler 功能废弃 ✓）
 --
--- ⚠️ 曾被吞进 `apply_tray_layout` 体内 ⇒ `main.lua` 的守卫恒假 ⇒ **从未运行过**。
---    挪出来后 `main.lua:75/532` 的守卫才成立：`render()` 每次都调（见「新开销」说明）。
-function Adapter:apply_ruler_layout(rows, cols)
-  local g = self.cfg.cells or {}
-  local ruler = self:find("ruler")
-  if ruler == nil then return 0 end
-  local rx, ry = nil, nil
-  pcall(function() rx, ry = ruler:GetAnchoredPosition() end)
-  if type(rx) ~= "number" or type(ry) ~= "number" then
-    pcall(function() local p = ruler:GetUIPos() if p then rx, ry = p.x, p.y end end)
-  end
-  if type(rx) ~= "number" or type(ry) ~= "number" then rx, ry = 0, 0 end
-
-  local moved = 0
-  local function cellPos(i, j)
-    local c = self:find(string.format("cell.%d.%d", i, j))
-    if c == nil then return nil, nil end
-    local x, y = nil, nil
-    pcall(function() x, y = c:GetAnchoredPosition() end)
-    if type(x) ~= "number" then
-      pcall(function() local p = c:GetUIPos() if p then x, y = p.x, p.y end end)
-    end
-    return x, y
-  end
-
-  -- 列标：贴着第 1 行格子的横向中心
-  for j = 1, math.min(cols or 5, 7) do
-    local lbl = self:find("ruler.c." .. j)
-    local cx, _ = cellPos(1, j)
-    if lbl ~= nil and type(cx) == "number" then
-      local lx, ly = nil, nil
-      pcall(function() lx, ly = lbl:GetAnchoredPosition() end)
-      if type(lx) ~= "number" then pcall(function() local p = lbl:GetUIPos() if p then lx, ly = p.x, p.y end end) end
-      if type(lx) == "number" and lbl.SetAnchoredPosition then
-        -- ★ 2026-09-28：**先把 pivot 归中**再定位。
-        --   上一版只 SetAnchoredPosition，结果还剩 ~25px 的**恒定偏移** ——
-        --   那是标签自身 pivot 与格子 pivot 不一致造成的（SetAnchoredPosition 定的是
-        --   **锚点**的位置，pivot 不同则视觉中心不同）。
-        --   与格子保持同一套 pivot（0.5,0.5），偏移就没了。
-        if lbl.SetPivot then pcall(function() lbl:SetPivot(0.5, 0.5) end) end
-        pcall(function() lbl:SetAnchoredPosition(cx - rx, ly) end)
-        moved = moved + 1
-      end
-    end
-  end
-  -- 行标：贴着第 1 列格子的纵向中心
-  for i = 1, math.min(rows or 5, 7) do
-    local lbl = self:find("ruler.r." .. i)
-    local _, cy = cellPos(i, 1)
-    if lbl ~= nil and type(cy) == "number" then
-      local lx, ly = nil, nil
-      pcall(function() lx, ly = lbl:GetAnchoredPosition() end)
-      if type(lx) ~= "number" then pcall(function() local p = lbl:GetUIPos() if p then lx, ly = p.x, p.y end end) end
-      if type(ly) == "number" and lbl.SetAnchoredPosition then
-        if lbl.SetPivot then pcall(function() lbl:SetPivot(0.5, 0.5) end) end
-        pcall(function() lbl:SetAnchoredPosition(lx, cy - ry) end)
-        moved = moved + 1
-      end
-    end
-  end
-  if print then
-    -- ★★★★★ 2026-10-05 Round 49 **日志节流：只在"对齐结论真的变了"时才打** ✓
-    --
-    --   起因：本方法刚被修好（它以前被吞在 `apply_tray_layout` 里、**从未运行过** ✗），
-    --   于是这段"无条件打印"第一次真的跑起来 ✗ ⇒ 实测 **2 行/次**，
-    --   而调用频率是 **1.10 次/秒**（`main.lua:709` 的 `Murdoku.render` 被
-    --   `sec ~= last_tick or controller.dirty` 门控）⇒ **≈2.2 行/秒 ≈ 7900 行/小时** ✗
-    --   ⇒ 移动端日志洪水（也会拖慢真机）。**修好一个功能反而引入了负担** ✓ 所以要节流。
-    --
-    --   做法：把**会被打印出来的那些数**拼成结论串；与上次相同 ⇒ **整段跳过**（连日志都不打）✓
-    --   ⚠️ 两个坑（都是踩过的 ✗）：
-    --     ① **签名里不能塞"没被打印的数"** ✗ —— 例如 `ly1` / `rx1`（读了但没打），
-    --        它们会随引擎抖动 ⇒ 误判"结论变了" ⇒ 白打一遍，节流被击穿 ✓
-    --     ② `string.format` 的**占位符不能比参数多** ✗ —— 否则报
-    --        `bad argument #N to 'format'`，而它若发生在 `on_start` 的 pcall 里会被**静默吞掉** ✗
-    --   反向对照（防"静默阉割"）：把 `cell.1.1` 横移 ⇒ **正好打 2 行** ✓；再连调 20 次 ⇒ **0 行** ✓
-    local cx1, cy1 = cellPos(1, 1)
-    local l1, r1 = self:find("ruler.c.1"), self:find("ruler.r.1")
-    local lx1, ly1 = nil, nil
-    if l1 then pcall(function() lx1, ly1 = l1:GetAnchoredPosition() end) end
-    local rx1, ry1 = nil, nil
-    if r1 then pcall(function() rx1, ry1 = r1:GetAnchoredPosition() end) end
-    -- 签名 = **只由下面两行 print 用到的数**构成 ✓（`ly1` / `rx1` 不进来 ✓）
-    local sig = string.format("%d|%.1f|%.1f|%.1f|%.1f|%.1f|%.1f",
-      moved, rx, ry, cx1 or 0, cy1 or 0, lx1 or 0, ry1 or 0)
-    if self._ruler_align_sig ~= sig then
-      self._ruler_align_sig = sig
-      print(string.format("[murdoku] 行标/列标已按格子实际位置对齐：%d 个（ruler 容器偏移 %.1f, %.1f）",
-        moved, rx, ry))
-      -- 顺手把"格子位置 vs 标签位置"打出来 —— 下次若还有偏差，
-      -- 这两个数一比就知道差在哪一维，不用再靠截图量像素。
-      print(string.format("  核对：cell.1.1=(%.1f, %.1f)  ruler.c.1.x=%.1f（应≈%.1f）  ruler.r.1.y=%.1f（应≈%.1f）",
-        cx1 or 0, cy1 or 0, lx1 or 0, (cx1 or 0) - rx, ry1 or 0, (cy1 or 0) - ry))
-    end
-  end
-  return moved
-end
+--   ★ 它做的是：把 `ruler.c.j` / `ruler.r.i` 按**格子的实际位置**贴到中心 ✓
+--     （还有 `SetPivot(0.5,0.5)` 归中 ✓、以及"结论变了才打"的日志节流 ✓）
+--   ★ 删除理由 ✓：★ 它**从来就是哑的** ✗ —— 它只**对齐**、不**创建** ✗
+--     ⇒ `find("ruler")` 恒 nil ⇒ **一进门就 `return 0`** ✓
+--     ⇒ 存档里从来没有 `ruler.*` ✓（历年日志一直是「这些控件还没建 … `ruler.*` ×10」✓）
+--   ⚠️ **它下面那个 `diagnose_overlap` 是另一个方法** ✗ —— 与 ruler 无关 ✓ 保留 ✓
+--   ⚠️ 删它**不影响**"两个方法曾被 `apply_tray_layout` 吞掉"那个已修 bug 的结论 ✓
+--     （那个 bug 的判据是"顶层方法必须真的存在"✓ —— 现在只剩 `diagnose_overlap` ✓）
+--   ⚠️ `main.lua` 里两处 `adapter.apply_ruler_layout` 调用与 `cfg.ruler` 开关**也已一并删除** ✓
+-- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 -- ★★ 2026-09-28 新增：**列出"与棋盘区域相交、且处于显示中"的控件**。
 --
 -- 为什么需要：用户反复报「棋盘上有白色/紫色方块」「R3/R4 之间粘连」。
@@ -2862,7 +2840,27 @@ end
 --
 -- 用法：开机自动跑一次（cfg.overlap_diag = false 可关），
 --       列出的每一条都值得怀疑；空列表 = 棋盘区域是干净的。
+--
+-- ★★★★★ 2026-10-12 **P2：拿不到绝对坐标 ⇒「探一次就记住结论」，不再白跑** ✗✓
+--
+--   ★ 起因（优化组 v205 交接 §一 P2 ✓）：
+--     ★ 真机日志实证 —— 这条每次进关卡都白跑一趟，永远走到下面那个 `return 0` ✓：
+--       「`本环境拿不到控件的绝对坐标（GetUIPos 不可用）`，跳过」✓
+--     ⇒ ★ **既然这个环境永远拿不到** ✗ ⇒ ★ 要么去掉它 ✗ 要么改成"探一次就记住结论" ✓
+--   ★ 选后者 ✓（★ 不是删 ✗）：★ 删了就**再也发现不了**「换到一个 `GetUIPos` 可用的
+--     实现/版本之后这条诊断本来能用」✓ —— 而那正是它存在的意义 ✓
+--     ★★ 而且 `GetUIPos` **是官方 API** ✓（★ `CursorEventData:GetUIPos` 与之同名，
+--       控件那个在**本环境**拿不到 ✓ —— ★ "本环境拿不到" ≠ "接口不存在" ✗✓）
+--   ★★ 判据与全项目其它缓存**同一套** ✓：★ **代 ＋ 结论双记** ✓ ＋ **读不到代 ⇒ 照跑** ✓
+--     （★ 安全侧 ✓ —— 与 `sub` 的按代记忆 / `cell_geometry` 的按代缓存同一条口径 ✓）
+--   ⚠️ 它**不是**每帧函数 ✓（★ 调用点只有 `main.lua` 进关卡一次 ✓）⇒ 收益只有"每次进关卡一趟" ✗
+--     ★ 但那一趟是**纯浪费** ✓ 且它会在真机日志里混进一行误导性的"跳过"，掩盖真正的诊断 ✓
 function Adapter:diagnose_overlap()
+  -- ★ 同一代里已经确认过"这个环境拿不到绝对坐标" ⇒ 直接 return，不再重跑 ✓
+  do
+    local g = self._overlap_diag_no_abs_gen
+    if g ~= nil and g == self._lookup_gen then return 0 end
+  end
   -- ⚠️ 必须用**绝对坐标**（`GetUIPos`），不能用 `GetAnchoredPosition`！
   --   后者返回的是"**相对各自父控件**"的偏移 —— 拿它去和棋盘的坐标比，
   --   等于拿两套不同原点的数相减。真机日志因此报过 **100 个控件压在棋盘上**（全是误报），
@@ -2874,8 +2872,13 @@ function Adapter:diagnose_overlap()
   pcall(function() local p = board:GetUIPos() if p then bx, by = p.x, p.y end end)
   pcall(function() bw, bh = board:GetSizeDelta() end)
   if type(bx) ~= "number" or type(bw) ~= "number" then
+    -- ★ 记住这个结论（带代数戳 ✓）⇒ 同一代里不再重跑 ✓（见函数头那段注释 ✓）
+    if self._lookup_gen ~= nil then
+      self._overlap_diag_no_abs_gen = self._lookup_gen
+    end
     print("[murdoku] 相交诊断：**本环境拿不到控件的绝对坐标（GetUIPos 不可用）**，跳过 —— "
-      .. "不再用相对坐标硬比（那会报出一堆假阳性）。")
+      .. "不再用相对坐标硬比（那会报出一堆假阳性）。"
+      .. "（★ 本代内不再重跑 ✓ 换代后会再探一次 ✓）")
     return 0
   end
   local x0, x1 = bx - bw / 2, bx + bw / 2
@@ -4624,8 +4627,8 @@ function Adapter:set_property(id, key, value, nkey)
     --     · **存档里已有的控件** → 保持编辑器里的几何，脚本不碰。
     --   `cfg.respect_editor_rect = false` 可关掉此行为（回到"布局全由代码说了算"）。
     --
-    --   注意：行标/列标、头像卡另有 `apply_ruler_layout` / `apply_tray_layout`
-    --   直接写位置，不受这里影响（那两条本来就是运行时重排）。
+    --   注意：头像卡另有 `apply_tray_layout` 直接写位置，不受这里影响 ✓
+    --   （★ 2026-10-12：行标/列标那套连同 `apply_ruler_layout` 已**整体删除** ✓ 不再列在这里 ✓）
     --
     -- ★★★ 2026-09-30：`runtime_rect` 是**只影响这一处**的独立标记。
     --
@@ -4698,10 +4701,79 @@ function Adapter:set_property(id, key, value, nkey)
 
     if ctrl.SetAnchorMin then pcall(function() ctrl:SetAnchorMin(0.5, 0.5) end) end
     if ctrl.SetAnchorMax then pcall(function() ctrl:SetAnchorMax(0.5, 0.5) end) end
-    if ctrl.SetPivot     then pcall(function() ctrl:SetPivot(0.5, 0.5) end) end
-    if ctrl.SetSizeDelta then pcall(function() ctrl:SetSizeDelta(w, h) end) end
+    -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+    -- ★★ 2026-10-12 **性能优化（大鱼 2 的第 3 刀）：尺寸与 pivot 加"读回再写"守卫** ✗✓
+    --
+    --   ★ 实测（`tests/_wip/render_geom_writes.lua` ✓ 只包一层 ✓ 干净启动 ✓）：
+    --     ★ **一次 render 有 111 笔几何写** ✓ ＝ `SetPivot` 37 ＋ `SetSizeDelta` 37
+    --       ＋ `SetAnchoredPosition` 37 ✓ —— ★ 而界面层的 `_props` 账本**没挡住它们** ✓
+    --       （★ 账本管的是"属性值变没变"✓ 而这三笔是**每次都执行**的几何动作 ✓）
+    --   ★ 口径与 `murdoku_set_vis` / `apply_tray_layout` / 本文件别的守卫**完全一致** ✓：
+    --     读得到且**已等于目标** ⇒ 不写 ✓；**读不到 ⇒ 照旧写** ✓（不许因为读不到就不摆 ✓）
+    --   ★★ **只给这两笔下守卫 ✓，`SetAnchoredPosition` 我【故意不碰】✗**：
+    --     ★ `pivot` 与 `sizeDelta` 的读回语义**没有歧义** ✓（就是那两个数 ✓）
+    --     ★★ 而 `SetAnchoredPosition` 写的是**相对父级中心**的值 ✗ ——
+    --       ★ 它的读回到底给"锚点值"还是"绝对坐标"，**本环境没有实测证据** ✗
+    --       （★ 我在 ruler 那轮就是栽在这种"坐标语义没坐实"的读回上 ✓ 白绕三圈 ✓）
+    --     ⇒ ★ 按本项目规矩：**没有实测证据的读回守卫，宁可不加** ✓
+    --       （★ 加错的方向是"该对齐却不写" ✗ ⇒ 控件停在错位置 ✓ 比多写 37 笔严重得多 ✓）
+    --   ⚠️ 收益 ✓：111 笔/次 render ⇒ **74 笔**（省 33% ✓）；★ 剩下 37 笔要坐实语义后再动 ✓
+    -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+    if ctrl.SetPivot then
+      local pvx, pvy = nil, nil
+      pcall(function() pvx, pvy = ctrl.pivotX, ctrl.pivotY end)
+      if not (pvx == 0.5 and pvy == 0.5) then
+        pcall(function() ctrl:SetPivot(0.5, 0.5) end)
+      end
+    end
+    if ctrl.SetSizeDelta then
+      local sw0, sh0 = nil, nil
+      pcall(function() sw0, sh0 = ctrl:GetSizeDelta() end)
+      if not (sw0 == w and sh0 == h) then
+        pcall(function() ctrl:SetSizeDelta(w, h) end)
+      end
+    end
     if ctrl.SetAnchoredPosition then
-      pcall(function() ctrl:SetAnchoredPosition(cx - pcx, cy - pcy) end)
+      -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+      -- ★★ 2026-10-12 **第三笔也补上读回守卫** ✗✓（★ 上一轮**故意留白**的那一笔 ✓）
+      --
+      --   ★ 上一轮为什么留白 ✗（★ 优化组 v204 §1.2 的原话 ✓）：
+      --     ★「`SetAnchoredPosition` 写的是**相对父级中心**的值 ✗ ——
+      --       ★ 它读回到底给"锚点值"还是"绝对坐标"，**本环境没有实测证据** ✗
+      --       ⇒ ★ 按本项目规矩：**没有实测证据的读回守卫，宁可不加** ✓
+      --       ★ 加错的方向是"**该对齐却不写**"✗ ⇒ 控件停在错位置 ✓ 比多写 37 笔严重得多 ✓」
+      --   ★★★ 2026-10-12 **官方原文把这三件事一次答完了** ✗✓
+      --     ★ 来源：《客户端控件API文档》（`mhtakr07vej4` ✓）§13(3)「布局与变换」✓
+      --     ★ 原文逐字 ✓：
+      --       · `GetAnchoredPosition()` —— 「**无父层级时，以画布左下为原点**获取位置；
+      --          **存在父层级时，获取与父层级中心的相对偏移**。」✓
+      --       · `SetAnchoredPosition(x, y)` —— 「**无父层级时，以画布左下为原点**设置位置；
+      --          **存在父层级时，设置与父层级中心的相对偏移**。」✓
+      --     ⇒ ★ **读与写是【同一个坐标系】** ✓✓ —— ★ 歧义消失 ✓
+      --       · ① 问"是锚点值还是绝对坐标" ✓ ⇒ ★ **两个都不是** ✗：
+      --          ★ 它是**相对父级中心**的偏移 ✓（★ 而本函数的 `cx - pcx` 正是这个量 ✓）
+      --       · ② 问"父级 pivot 不同时它怎么变" ✓ ⇒ ★ 文档说的是**父级中心** ✓
+      --          ★ 而**没有**任何"父级 pivot 参与"的条件 ✓ ⇒ ★ 与父级 pivot 无关 ✓
+      --          ★（★ `pivot` 是控件**自己**的中心，不是父级给的坐标系原点 ✓）
+      --       · ③ 问"与 `SetAnchoredPosition` 的入参是不是同一坐标系" ✓
+      --          ⇒ ★ **是** ✓ —— ★ 两条的措辞逐字同构 ✓
+      --   ★★ 口径与上面两笔**完全一致** ✓：读得到且**已等于目标** ⇒ 不写 ✓；读不到 ⇒ 照旧写 ✓
+      --     ⚠️ 比较前必须 `R()` **取整** ✗ —— ★ `cx - pcx` 是浮点差 ✓
+      --       （★ 本文件上面就记着"我第一版直接留浮点（676.666…）"那个坑 ✓）
+      --       ★ 而写进去的就是 `R()` 之后那个整数 ⇒ ★ 读回来与它**逐位相等** ✓
+      --     ⚠️ 有父级时回读给的是"与父级中心的偏移"✓ ⇒ ★ 与入参直接比 ✓ 不用换算 ✓
+      --   ⚠️ 收益 ✓：几何写 **74 → 37 笔/render** ✓（★ `position` 分支这三笔全部收敛 ✓）
+      --     ★ 判据：`tests/_wip/render_geom_writes.lua` ✓
+      --   ⚠️ 反向风险（★ 必须说清 ✗）：★ 若某个平台**真的**返回绝对坐标 ⇒
+      --     ★ 它会与目标不等 ⇒ ★ **照旧写** ✓ ⇒ ★ 退化成"多写一笔" ✓ **不会不写** ✓
+      --     ⇒ ★★ 这个守卫**在两种语义下都给对的方向** ✓（★ 与"读回守卫本身是对的"同一条 ✓）
+      -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+      local want_x, want_y = R(cx - pcx), R(cy - pcy)
+      local cur_x, cur_y = nil, nil
+      pcall(function() cur_x, cur_y = ctrl:GetAnchoredPosition() end)
+      if not (cur_x == want_x and cur_y == want_y) then
+        pcall(function() ctrl:SetAnchoredPosition(want_x, want_y) end)
+      end
     end
   elseif key == "style" then
     -- 语义化样式：只做最小可感知反馈；正式外观请在编辑器里配控件视觉状态
