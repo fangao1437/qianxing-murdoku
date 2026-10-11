@@ -42,6 +42,9 @@ const VERIFIED = {
   'tools/gil/inspect_gil.mjs': { date: '2026-10-10', cmd: 'node tools/gil/inspect_gil.mjs "296-模板归零+脚本v148.gil"  → clue 4 块逐个 / assets 20 项 / row.* 20 个 / 标记 v148' },
   'tools/gil/embed_script.mjs': { date: '2026-10-10', cmd: 'node tools/gil/embed_script.mjs --in="295-模板clue归零-v149.gil" --out=… --expect-marker=v148  → 产出与 296 SHA256 相同 ✓；假源码 v999 ⇒ 拒绝运行 ✓' },
   'tools/gil/gen_palette.mjs': { date: '2026-10-10', cmd: 'node tools/gil/gen_palette.mjs --in="290.gil" --out=…  → 记录 300 ✓、4 个壳都在 assets 下 ✓、roundtrip 逐字节一致 ✓' },
+  'tools/repo_bridge.mjs': { date: '2026-10-12', cmd: 'node tools/repo_bridge.mjs selfcheck  → 6695/6708 size 一致 ✓（解析 .git/index ✓）；export --only=lua,tests → 54 文件/1.8MB ✓；apply 演练后工作区哈希未变 ✓' },
+  'tools/lua_audit.mjs': { date: '2026-10-12', cmd: 'node tools/lua_audit.mjs  → 语法过 ✓ / 残留 83 处（代码 23＋注释 60）/ 无定义调用 115 / 4 槽位接上 ✓' },
+  'tools/lua_blocks.mjs': { date: '2026-10-12', cmd: 'node tools/lua_blocks.mjs lua/ui_controller.lua --verify-delete=5293-5558  → luac 通过 ✓（同区间删到 5513 则失败 ✗，复现 lead 的报错 ✓）' },
 };
 
 // ── 已知坏 / 存疑（★ 有实证才写 ✓）────────────────────────────────────────

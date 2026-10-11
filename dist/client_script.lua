@@ -19361,7 +19361,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v205 / 2026-10-12 / 清理旧路(用户批准:网格路线已成功不需后路):删'老一套线索控件'整段约210行(clues.bar/clue.N四槽/滚动条/入场动效)+is_legacy_clue_id+收口第二闸+render里stale_legacy及4处调用;规划214->189控件;保留_grid_text_payload(网格自己在用)与giveway日志 =====")
+        print("[murdoku] ===== 构建标记 v206 / 2026-10-12 / 固定换代重绑(复原被reset冲掉的修复:换代清bound/create_control不清)+SetAnchoredPosition第三笔读回守卫(官方文档§13(3)坐实读写同一坐标系:有父级时相对父级中心,与父级pivot无关)+相交诊断探一次记住结论+删3个0调用点死代码+修2处陈旧断言(clue_slots数core.clues/play_test改跳环境边界)+模拟器12条既有红分诊成3真红9环境边界 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

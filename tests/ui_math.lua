@@ -148,14 +148,21 @@ local function check_board(n)
   -- 格子不能互相重叠
   ok(c1.w > 0 and c1.w < 200, string.format("%d×%d：格子边长合理（%d px）", n, n, c1.w))
 
-  -- 标尺数量
+  -- ★ 2026-10-12 **标尺数量那两条断言已删** ✗✓（用户定案：ruler 功能废弃 ✓）
+  --   原来这里断言 `ruler.c.1..n` 与 `ruler.r.1..n` 都在规划里 ✓
+  --   ⇒ 现在它们**按设计不存在** ✓ ⇒ 留着就是"拿旧设计当判据"（本项目栽过 ✓）
+  --   ⚠️ 反面留个哨兵 ✓：**如果 ruler 又冒出来** ⇒ 说明有人把已删功能加回来了 ✗
   for c = 1, n do
-    if byId["ruler.c." .. c] == nil then ok(false, "缺 ruler.c." .. c) return end
+    if byId["ruler.c." .. c] ~= nil then
+      ok(false, "ruler.c." .. c .. " 不该存在（ruler 功能已废弃）") return
+    end
   end
   for r = 1, n do
-    if byId["ruler.r." .. r] == nil then ok(false, "缺 ruler.r." .. r) return end
+    if byId["ruler.r." .. r] ~= nil then
+      ok(false, "ruler.r." .. r .. " 不该存在（ruler 功能已废弃）") return
+    end
   end
-  ok(true, string.format("%d×%d：行列标尺齐全（各 %d 个）", n, n, n))
+  ok(true, string.format("%d×%d：确认没有 ruler.* 残留（已废弃 ✓）", n, n))
 end
 
 check_board(5)

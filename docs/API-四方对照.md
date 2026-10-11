@@ -132,6 +132,9 @@
 | `GetClientUIRoots` | game 函数 | ✅ | 一致 |
 | `GetDevice` | game 函数 | ✅ | 一致 |
 | `GetItemIndex` | 控件方法 | ✅ | 一致 |
+| `GetItemSize` | 控件方法 | ✅ | 一致 |
+| `GetItemSpacing` | 控件方法 | ✅ | 一致 |
+| `GetPadding` | 控件方法 | ✅ | 一致 |
 | `GetParam` | 控件方法 | ✅ | 一致 |
 | `GetSiblingIndex` | 控件方法 | ✅ | 一致 |
 | `GetSizeDelta` | 控件方法 | ✅ | 一致 |

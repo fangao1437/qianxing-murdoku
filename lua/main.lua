@@ -229,24 +229,19 @@ end
 
 function Murdoku.current() return current end
 
--- ★★ 2026-09-28 新增：**统一渲染入口** —— 渲染完必然重做一次"行标/列标对齐"。
+-- ★ 统一渲染入口。
 --
--- 为什么不能只在开机做一次：
---   `controller:render()` 会把 ruler 标签按**规划里的静态坐标**推下去
---   （那是设计期算的，和运行时 `cell_geometry` 算出的格子位置本来就对不上）。
---   所以每次渲染都会**把我对齐好的位置覆盖回去** ——
---   开机那一次对齐只在一瞬间有效，下一次状态变化就白做了。
---   ⇒ 把"渲染 + 对齐"绑成一个动作，就不会漏。
---
--- 证据：真机日志里开机那次 `核对：Δ=0` 是对的，而模拟器在若干次渲染后测出 Δ=16。
+-- ★★★★★ 2026-10-12 **已简化** ✗✓（用户要求：ruler 功能废弃 ✓）：
+--   这里原来在每次 render 之后**再调一次 `Adapter:apply_ruler_layout`** ✓
+--   （2026-09-28 加的：为的是"render 会把 ruler 标签按规划静态坐标推回去"✓）
+--   ★ 现在 ruler（行标/列标）**整套已删** ✓ ⇒ 这一趟**不再需要** ✓
+--   ⚠️ 顺带说明它为什么本来就该删 ✗：那个方法**只对齐、不创建** ✓
+--     ⇒ `find("ruler")` 恒 nil ⇒ **它每次都在第一行就 `return 0`** ✗
+--     ⇒ ★ 这么多年它一直是**纯空转**（每 render 一次函数调用 + 一次 find ✓）
+--   ★ 所以删掉它是**净收益**：每次 render 少 1 次跨模块调用 + 1 次 `find` ✓
 function Murdoku.render(force)
   if current == nil then return end
   current.controller:render(current.adapter, force)
-  local a = current.adapter
-  if a ~= nil and a.apply_ruler_layout ~= nil then
-    local core = current.controller.core
-    a:apply_ruler_layout((core and core.rows) or 5, (core and core.cols) or 5)
-  end
 end
 
 ----------------------------------------------------------------------------
@@ -584,44 +579,15 @@ function Murdoku.start(level_id, opts)
       end
     end
   end
-  -- ★★★★★★ 2026-10-12 **行标/列标（`ruler`）：脚本建出来** ✗✓✓
-  --
-  --   ★★ 背景 ✓（★ 用户：「优化中挖出来一个我都忘记了的东西，它叫 `ruler`，
-  --     也就是行标和列标」✓）：
-  --     · ★ **`apply_ruler_layout` 实现【完整存在】✓** —— ★ 它按格子实际位置贴中心 ✓
-  --     · ★★ **但它【只对齐 ✗ 不创建 ✗】** ⇒ `find("ruler")` = nil ⇒ **`return 0`** ✗
-  --     · ★★★ **⇒ 存档里从来没有 `ruler.*`** ✗ ⇒ ★ **功能一直是哑的** ✓✓
-  --
-  --   ★★★ 为什么【脚本建】而不是【编辑器摆】✓（★ 用户给的证据 ✓）：
-  --     ★ 本文件 L551-553 原文 ✓：「★ **真机证明只有脚本创建的控件能收到点击**
-  --       （★ 关卡里的格子 ✅、编辑器摆的卡片 ❌）」
-  --     ★★ 而且**对齐逻辑已经写好** ✓ ⇒ ★ 这里只缺"把控件造出来" ✓✓
-  --
-  --   ★ 模板 ✓：★ **用户 2026-10-12 新建的【文本模板】`1073742712`** ✓
-  --     ★（★ 存档 `340ruler.gil` ✓ —— ★ 索引【不在存档记录里】✓ 与 `cfg.cells.prefab` 同理 ✓）
-  --
-  --   ⚠️ ★ **建完立刻定位** ✓ —— ★ 接着就在下面 L746 那块调 `apply_ruler_layout` ✓
-  --      （★ 那里按【格子的实际位置】贴中心 ✓ 只信一份数据 ✓）
-  do
-    -- ★★★★★★ 2026-10-12 **无条件探针** ✗✓ —— ★ 用户报"ruler 没有出现"✗
-    --   而 ★ **日志里连这一段的 print 都没有** ✗ ⇒ ★ 分不清是【没跑到】✗ 还是【跑了但失败】✗
-    --   ⇒ ★★ 所以先打一行"到了" ✓ 不设任何条件 ✓
-    if print then
-      print("[murdoku] ★ ruler 段：到了（ensure_ruler 类型="
-        .. type(adapter.ensure_ruler) .. "，rows=" .. tostring(core and core.rows)
-        .. " cols=" .. tostring(core and core.cols) .. "）")
-    end
-    if adapter.ensure_ruler and not (adapter.cfg and adapter.cfg.ruler == false) then
-      local r_made, r_exist, r_err = adapter:ensure_ruler(core.rows, core.cols)
-      if print then
-        print("[murdoku] 行标/列标（脚本创建）：新建 " .. tostring(r_made)
-          .. " 个，已存在 " .. tostring(r_exist or 0) .. " 个"
-          .. (r_err and ("　⚠️ " .. tostring(r_err)) or ""))
-      end
-    elseif print then
-      print("[murdoku] ★ ruler 段：**被跳过**（ensure_ruler 不存在 ✗ 或 cfg.ruler == false ✗）")
-    end
-  end
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  -- ★★ 2026-10-12 **【已删除】"行标/列标（`ruler`）：脚本建出来"整段** ✗✓
+  --   ★ 用户定案：**ruler 功能废弃** ✓
+  --   ★ 这一段是 2026-10-12 早些时候加的"抢救"✓：把 `ensure_ruler` 建出来的
+  --     `ruler` 容器 ＋ `ruler.c.*` ＋ `ruler.r.*` 补进棋盘 ✓（连无条件探针一起 ✓）
+  --   ★ 与之配套的 `Adapter:ensure_ruler` / `Adapter:apply_ruler_layout`
+  --     与 `ui_controller` 里那三个 `push` **已一并删除** ✓
+  --   ⚠️ **`cfg.cells.ruler`（边框厚度）不删** ✗ —— 那是棋盘几何 ✓（格子边长靠它 ✓）
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 
   -- ② 用模板批量补齐棋盘格子（编辑器里已摆好的不会被动；没配 cfg.cells 就什么都不做）
   if adapter.ensure_cells then
@@ -777,18 +743,16 @@ function Murdoku.start(level_id, opts)
     end
   end
 
-  -- ★ 2026-09-28 新增：**行标 / 列标按格子的实际位置对齐**。
-  --
-  -- 用户报"列标和行标没与棋盘对齐"。根因是 ruler 标签的位置在**规划时**用设计空间几何算过一遍，
-  -- 而格子是**运行时**用 `cell_geometry` 算的 —— 两套数必然对不上。
-  -- 这里用格子的真实锚点位置反推标签位置，只信一份数据。
-  if adapter.apply_ruler_layout then
-    -- ⚠️ 行列数在 `controller.core` 里（控制器自己没有 rows/cols 字段）——
-    --    第一版写成 `controller.rows`，取到 nil，靠 `or 5` 兜住了，5×5 恰好蒙对、
-    --    但 6×6 / 7×7 就会少摆几个标签。取真实值，别用兜底。
-    local core = controller.core
-    adapter:apply_ruler_layout((core and core.rows) or 5, (core and core.cols) or 5)
-  end
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  -- ★★ 2026-10-12 **【已删除】"行标 / 列标按格子的实际位置对齐"这一段** ✗✓
+  --   ★ 用户定案：**ruler 功能废弃** ✓
+  --   ★ 原来这里调 `adapter:apply_ruler_layout(core.rows, core.cols)` ✓
+  --     —— 而那个方法**只对齐、不创建** ⇒ `find("ruler")` 恒 nil ⇒ 一进门就 `return 0` ✓
+  --     ⇒ ★ 这一段**从来没有任何效果** ✗（连它当年的"列标与棋盘没对齐"那个现象，
+  --        也不是它解决的 —— 因为存档里压根没有 `ruler.*` 控件 ✓）
+  --   ★ 方法与两处调用、以及 `ui_controller` 的三个 `push` **已一并删除** ✓
+  --   ⚠️ **`cfg.cells.ruler`（边框厚度）保留** ✗ —— 它是棋盘几何 ✓（格子边长靠它 ✓）
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 
   -- ★ 相交诊断：把"与棋盘相交且显示中"的控件列出来。
   --   用户反复报棋盘上有方块，而我从规划数据分不清"此刻屏幕上是谁" —— 让日志直接说。

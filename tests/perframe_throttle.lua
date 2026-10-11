@@ -217,15 +217,20 @@ local ctrl, adapter = cur.controller, cur.adapter
 -- ── 0. 适配器方法"到底在不在"──────────────────────────────────────────────
 out("\n== 0. 适配器方法存在性（守卫型调用点）==")
 do
+  -- ★ 2026-10-12：`apply_ruler_layout` **已从这个名单里删掉** ✗✓
+  --   （用户定案 ruler 功能废弃 ⇒ 那个方法按设计不存在了 ✓
+  --    ⇒ 留在这里会变成"拿旧设计当判据"，本项目栽过多次 ✓）
+  --   ⚠️ 反向哨兵在 §C：**如果它又出现**，说明有人把已删功能加回来了 ✓
   local names = {
     "_cells_beacon_button", "_cells_signal", "count_names", "dump_names", "near_names",
     "invalidate_lookups", "ensure_raycast", "rearm_raycast", "input_profile", "hide_unlisted",
-    "apply_ruler_layout", "ensure_widgets", "ensure_cells", "apply_tray_layout",
+    "ensure_widgets", "ensure_cells", "apply_tray_layout",
     "diagnose_overlap", "diagnose_cell", "diagnose_grid", "diagnose_template",
     "seal_containers", "seal_container", "enable_cursor", "enable_raycast", "report_missing",
     "find", "sub", "set_property", "create_control", "destroy_control", "play_effect",
     "on_tick", "signal_emit", "set_image_deep", "cell_geometry", "enforce_hidden_subtrees",
     "bind_input", "bind_keys", "open_click_passthrough",
+    "rearm_cursor",
   }
   local miss = {}
   for i = 1, #names do
@@ -238,19 +243,13 @@ do
 end
 
 -- ── 挂钩子 ────────────────────────────────────────────────────────────────
-local C2 = { render = 0, ruler = 0, ruler_ret = nil, err = nil }
+--   ★ 2026-10-12：原来还给 `apply_ruler_layout` 包了一层计数器 ✗
+--     ⇒ 用户定案 ruler 功能废弃、那个方法已删 ✓ ⇒ 这层钩子**一并删掉** ✓
+--     （`C2.ruler` / `C2.ruler_ret` 也随之删 ✓ 见 §C 的反向哨兵 ✓）
+local C2 = { render = 0, err = nil }
 do
   local orr = ctrl.render
   ctrl.render = function(self, ...) C2.render = C2.render + 1 return orr(self, ...) end
-  if type(adapter.apply_ruler_layout) == "function" then
-    local oar = adapter.apply_ruler_layout
-    adapter.apply_ruler_layout = function(self, ...)
-      C2.ruler = C2.ruler + 1
-      local n = oar(self, ...)
-      C2.ruler_ret = n
-      return n
-    end
-  end
 end
 local function step(n)
   for _ = 1, n do
@@ -401,36 +400,44 @@ do
 end
 
 ----------------------------------------------------------------------------
-out("\n== C. `apply_ruler_layout` 的重复打印（每次 render 都调）==")
-local n_ruler = count_log("行标/列标已按格子实际位置对齐")
-local n_check = count_log("核对：cell.1.1=")
-out(string.format("  render 调用 = %d 次，apply_ruler_layout 调用 = %d 次（最后一次返回 %s）",
-  C2.render, C2.ruler, tostring(C2.ruler_ret)))
-out(string.format("  「行标/列标已按格子实际位置对齐」打了 %d 次，「核对：cell.1.1=」打了 %d 次",
-  n_ruler, n_check))
--- ★★★★★ 2026-10-09 **改判（依据，不是放宽）** ✗✓
---   ★ 原来的断言 ✗：`ok(n_ruler <= 1, …)` —— 要求 6 帧里**最多打 1 次** ✓
---   ★ 实测为什么是 2 次 ✓（我插了临时探针把签名打出来，看完就撤 ✓）：
---       sig=10|0.0|0.0|**-224.0**|224.0|-224.0|224.0   上一次=nil
---       sig=10|0.0|0.0|**-223.0**|223.0|-223.0|223.0   上一次=…-224.0…
---     ⇒ ★ **`cell.1.1` 在第 2 帧挪了【1 个单位】**（且 `ruler.c.1.x` 同步挪了 1 ⇒ **始终对齐** ✓）
---       —— 也就是**首帧几何与次帧差 1，次帧之后稳定** ✓（`moved` 恒为 10 ✓）
---   ⇒ ★ 节流本身**是对的** ✓：它只在**签名变了**才打 ✓（同一份内容**没有**重复打 ✓）
---     ⇒ 红的真因是**断言测错了东西** ✗：它测的是"6 帧里总打印次数"，
---       而真正的契约是"**内容没变就不打**" ✓ —— 两者在有 settle 的帧上必然不一致 ✓
---   ★ 改成测**真契约** ✓（而且比原来更强 ✓）：
---     几何稳定之后再跑若干帧 ⇒ **这期间打印数必须是 0 增长** ✓
---     （原断言最多只能发现"打了很多次"，本断言能钉住"稳定后一个字都不再打" ✓）
-local ruler_before_more = count_log("行标/列标已按格子实际位置对齐")
-local renders_before_more = C2.render
-for _ = 1, 30 do pcall(OnUpdate, 0.2) end
-local ruler_after_more = count_log("行标/列标已按格子实际位置对齐")
-out(string.format("  稳定后又跑 %d 帧：打印 %d → %d 次",
-  C2.render - renders_before_more, ruler_before_more, ruler_after_more))
-ok(ruler_after_more == ruler_before_more,
-  "★ 几何稳定之后**不再重复打**（真契约：内容没变就没有新信息）",
-  "又跑 " .. tostring(C2.render - renders_before_more) .. " 帧；打印仍为 "
-  .. tostring(ruler_after_more) .. " 次（稳定前共 " .. tostring(ruler_before_more) .. " 次，含首帧 settle 那一次）")
+out("\n== C. ruler（行标/列标）已废弃 —— 反向哨兵 ==")
+-- ★★★★★ 2026-10-12 **改判（依据，不是放宽）** ✗✓
+--   ★ 本节原来测的是 ✗：`apply_ruler_layout` 每次 render 被调时，
+--     「行标/列标已按格子实际位置对齐」那两行日志**只在签名变了才打** ✓
+--     （曾经的判据：几何稳定后再跑 30 帧 ⇒ 打印数必须 0 增长 ✓）
+--   ★★ 用户 2026-10-12 定案：**ruler 功能废弃** ✓
+--     ⇒ `apply_ruler_layout` / `ensure_ruler` / `ui_controller` 的三个 `push` **全删** ✓
+--     ⇒ ★ 本节原来那两条断言已经没有被测对象了 ✗ ⇒ 换成**反向哨兵** ✓
+--   ★ 反向哨兵要防两件事 ✗（本项目最怕"删了又悄悄长回来"）：
+--     ① **方法又出现** ⇒ 有人把已删功能加回来了 ✓
+--     ② **规划里又冒出 `ruler.*`** ⇒ 同上 ✓
+--   ⚠️ 与 §0 的存在性断言**方向相反** ✓：那一条管"该在的都在"✓，
+--      这一条管"**不该在的确实不在**"✓ —— 两条都要有 ✓
+do
+  ok(adapter.apply_ruler_layout == nil,
+    "★ `Adapter:apply_ruler_layout` **确实不存在**了（ruler 功能已废弃 ✓）",
+    "type = " .. type(adapter.apply_ruler_layout))
+  ok(adapter.ensure_ruler == nil,
+    "★ `Adapter:ensure_ruler` **确实不存在**了（那是 2026-10-12 的抢救代码 ✓ 已一并删 ✓）",
+    "type = " .. type(adapter.ensure_ruler))
+  -- 规划里也不许再有 ruler.*
+  do
+    local leaked = nil
+    local nodes = nil
+    pcall(function() nodes = ctrl:build_layout() end)
+    if type(nodes) == "table" then
+      for i = 1, #nodes do
+        local id = nodes[i] and nodes[i].id
+        if type(id) == "string" and id:sub(1, 6) == "ruler." then leaked = id break end
+        if id == "ruler" then leaked = id break end
+      end
+    end
+    ok(leaked == nil,
+      "★ 本帧布局里**没有 `ruler` / `ruler.*` 残留**（废弃功能的控件不该再被 push ✓）",
+      leaked and ("发现 " .. leaked) or "干净 ✓")
+  end
+  out(string.format("  （render 调用 = %d 次；本节不再计量 ruler 日志，因为它已不存在 ✓）", C2.render))
+end
 
 ----------------------------------------------------------------------------
 ---------------------------------------------------------------------------
