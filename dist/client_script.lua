@@ -3606,6 +3606,42 @@ local function gesture_now(self)
   return (self and rawget(self, "now")) or 0
 end
 
+-- ★★★★★★★★ 2026-10-11 **长按改成【按帧累加】测时长** ✗✓✓（★ 这是把它修好的那一步 ✓）
+--
+--   ★★★ 用户第二次报 ✓（★ 原话 ✓）：
+--     「★ **放置要求的长按时间依旧越来越长** ✓
+--      ★ **n+1 次放置要按的比第 n 次更久**」✓✓
+--   ★★ 说明 v184 换的那根时钟**还是不对** ✗ —— ★ 用户报的是**单调增长** ✓
+--
+--   ★★★ 根因 ✓：★ **`os.clock` 是【CPU 时间】，不是墙上时间** ✗✓
+--     ★ 它是"这个进程用掉的处理器时间" ✓ ★ 而游戏大半时间在**等垂直同步/等帧** ✓
+--       ⇒ ★ `os.clock` 走得**比真实时间慢** ✓ 而且**慢多少取决于当帧忙不忙** ✓
+--     ★★ 棋盘越填越满 ⇒ 每帧的活儿越多 ⇒ ★ `os.clock` 与真实时间的**比值一路变化** ✓
+--       ⇒ ★★ 表现就是**"放得越多、要按得越久"** ✓✓（★ 与用户的描述逐字相符 ✓）
+--
+--   ★ 我为什么没在上一次就想到 ✗：★ 我当时的判据是"**它单调**就够用"✗
+--     ★★ 而"单调"只保证**不会倒退** ✗ ★ **不保证"1 秒 = 1 秒"** ✓✓
+--       ⇒ ★ 手感判定要的不是"单调" ✗ ★ 而是"**与真实时间同速**" ✓
+--
+--   ⇒ ★★★ 真正的修法 ✓：★ **不问任何时钟** ✗ ——
+--     ★ 引擎每帧交给我们 `dt` ✓（★ `Controller:tick(dt)` ✓）
+--     ★★ 按住期间**把 `dt` 一个个加起来** ✓ ⇒ ★ 得到的就是"**这个手按了几秒**" ✓✓
+--     ★ 这正是**游戏引擎里做长按的标准做法** ✓（★ Unity 的 `Time.time` 就是这么来的 ✓）
+--   ★ 为什么它**不会**重蹈"累加时钟漂移"的覆辙 ✗（★ 关键 ✓）：
+--     ★ 累加是**从按下那一刻开始的** ✓ ★ 而且**只在一段手势之内** ✓
+--       ⇒ ★ 不存在"锚点越飘越远" ✓ —— ★ 一段手势最长也就一两秒 ✓✓
+--     ★（★ 上一版的 `self.now` 之所以坏 ✗：★ 它是**从开局累加到现在的总数** ✓
+--        ★ 而两边取值时刻不同、帧数不同 ⇒ ★ 差值被帧数放大 ✓）
+--   ★ `os.clock` 保留为**兜底** ✓：★ 万一 `tick` 没跑（比如按住期间暂停 ✓）
+--     ★ 也不会算出荒谬的数 ✓
+local function press_seconds(self)
+  local p = rawget(self, "_press")
+  if p ~= nil and type(p.dt) == "number" then return p.dt end
+  -- 兜底：没有帧累加（异常路径）⇒ 退回时钟差值 ✓（★ 仍同源 ✓ 不会一边真一边假 ✓）
+  if p ~= nil and type(p.t) == "number" then return gesture_now(self) - p.t end
+  return nil
+end
+
 function Controller:snapshot()
   self._gesture_snapshot = self.core:serialize()
 end
@@ -3767,18 +3803,24 @@ end
 -- ── 按下 / 抬起：自己合成"长按" ──────────────────────────────────────────
 -- 返回 true = 这次抬起已经被当成"长按"处理掉了（后续那个 CursorClick 要忽略）
 function Controller:on_cell_down(r, c, x, y)
-  -- ★ 按下时刻用**手势时钟**记 ✓（★ 见 `gesture_now` 那段：★ 真实时钟 ✓）
-  self._press = { r = r, c = c, t = gesture_now(self), x = x, y = y }
+  -- ★★ 按下时**同时**记两样 ✓：
+  --   ★ `dt = 0` ⇒ ★ 按住期间由 `tick` 一帧一帧加上去 ✓（★ 主判据 ✓ 与真实时间同速 ✓）
+  --   ★ `t`      ⇒ ★ 只作兜底 ✓（★ 万一 `tick` 没跑 ✓）
+  self._press = { r = r, c = c, dt = 0, t = gesture_now(self), x = x, y = y }
   return false
 end
 
 function Controller:on_cell_up(r, c, x, y)
   local p = self._press
+  -- ⚠️ ★★★ **先量时长，再清 `_press`** ✗✓（★ 我第一版把两行写反了 ✓）
+  --   ★ 症状 ✓：★ 时长恒 nil ⇒ ★ **长按一次都不成立** ✓（★ 实测 7 条红 ✓）
+  --   ★★ 机制 ✓：★ `press_seconds` 是**从 `self._press` 里读**的 ✓
+  --     ⇒ ★ 先 `self._press = nil` ⇒ ★ 它读到的永远是"没有按下" ✓✓
+  local dt = press_seconds(self)
   self._press = nil
   if p == nil then return false end
   if p.r ~= r or p.c ~= c then return false end          -- 按在别处，不算
-  -- ★★★ 与按下**同一个时钟** ✓ —— ★ 两边混用 ⇒ 时长会算出荒谬的数 ✓
-  local dt = gesture_now(self) - p.t
+  if dt == nil then return false end
   if dt < LONG_PRESS_SECONDS then return false end         -- 还不够长
   -- 位移太大 = 划动，不算长按
   if p.x ~= nil and x ~= nil then
@@ -4440,6 +4482,22 @@ end
 --      render 结束会把 `effects` 清空 ⇒ **不会退化成每帧重绘**。
 function Controller:tick(dt)
   self.now = (self.now or 0) + (dt or 0)
+
+  -- ★★★★★★★★ 2026-10-11 **按住期间把 `dt` 一帧帧累加** ✗✓✓（★ 长按时长的真来源 ✓）
+  --
+  --   ★★★ 为什么必须这样 ✗（★ 用户第二次报"越按越久" ✓ 见 `press_seconds` 那段 ✓）：
+  --     ★ 任何"取两个时钟读数相减"的做法都要求 ★ **那根时钟与真实时间同速** ✓
+  --       ★ `self.now` ⇒ ★ 是**从开局累加的总数** ✗ ⇒ 两边取值时刻不同就被帧数放大 ✓
+  --       ★ `os.clock` ⇒ ★ 是 **CPU 时间** ✗ ⇒ 忙的时候快、闲的时候慢 ✓✓
+  --     ★★ 而 `dt` **就是引擎说的"这一帧过了多久"** ✓
+  --       ⇒ ★ 加起来 = ★ **这段时间真的过了多久** ✓✓
+  --   ★ 只在一段手势之内累加 ✓ ⇒ ★ 不会越飘越远 ✓（★ 一段最多一两秒 ✓）
+  --   ⚠️ ★ 必须放在 `tick` 的**最前面附近** ✗ —— ★ 别夹在那些 `return` 之间 ✓
+  --     （★ 本函数后面有若干提前 `return` ✓ ★ 放后面会漏帧 ✓）
+  do
+    local p = rawget(self, "_press")
+    if p ~= nil then p.dt = (p.dt or 0) + (dt or 0) end
+  end
 
   -- ★★★★★ 2026-10-05 **A8：提示语到点就撤**（用户批准的方案甲 —— 只补读者/超时，不动写入点）。
   --
@@ -18959,7 +19017,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v187 / 2026-10-11 / 第三关棋子改 ABCDEV(删F)＋棋盘缩成 6×6 =====")
+        print("[murdoku] ===== 构建标记 v188 / 2026-10-11 / 长按改按【引擎每帧 dt 累加】测时长(不再问任何时钟) =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
