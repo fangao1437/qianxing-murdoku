@@ -47,11 +47,22 @@ end
 
 -- ── 造假树：root → assets → row.<关>.<行> → 四个槽位 ─────────────────────
 --   ★ 顺序是**自变量** ✓ —— 真机存档里 20 行有 19 行 `letter` 不在最后 ✓
-local function make_world(order, letters)
+--
+-- ★★★★★★ 2026-10-11 **键改成"那一行的 `who` 文本"了** ✗✓✓（★ 用户定案 ✓）
+--   ★★★ 用户原话 ✓：「★ **前面的模式不是已经说明了 `who` 不参与棋盘线吗** ✓
+--     ★ **怎么又开始纠结这个无关量了**」✓✓
+--   ★★ 真实契约 ✓（★ 他 2026-10-10 就定过 ✓）：
+--     ★「★ **就是按旧逻辑** ✓ ★ **`face` 和 `letter` 怎么放是由点击指示的** ✓
+--       ★ **等于你只需要换素材来源** ✓ ★ **后面的逻辑一切照旧**」✓
+--     ★ 旧逻辑的键 = `cl.who` ✓ ★ 新模型下 = ★ **那一行 `who` 槽里的文本** ✓
+--     ★★ 两张表**同一个键** ✓ ⇒ ★ 棋盘要的 `letter` / `face` 天然同键 ✓✓
+--   ⇒ ★ 所以假树**必须带 `who` 槽** ✗（★ 原来的假树没带 ⇒ 三套件假红 ✓）
+local function make_world(order, letters, whos)
   local rows = {}
   for pos = 1, #order do
     local slot = order[pos]
     local letter_txt = letters[pos]
+    local who_txt = whos and whos[pos] or nil
     local kids = {}
     for _, nm in ipairs(slot) do
       -- ★ 槽位控件自己【不带】`.text` ✗ —— 复现"引用控件读不到"那条真机现象 ✓
@@ -60,6 +71,9 @@ local function make_world(order, letters)
       local inner = {}
       if nm == "letter" then
         if letter_txt ~= nil and letter_txt ~= "" then inner = { ctrl(nm, { text = letter_txt }) } end
+      elseif nm == "who" then
+        -- ★★ `who` 槽 ✓ —— ★ **它就是键** ✓ ★ 真机上它一定有值 ✓
+        if who_txt ~= nil and who_txt ~= "" then inner = { ctrl(nm, { text = who_txt }) } end
       else
         inner = { ctrl(nm, { text = "x" }) }
       end
@@ -124,8 +138,12 @@ local function run(order, letters, expected_pos)
   local core = Core.new(lv)
   local c = UIC.new(core, { skip_intro = true })
   local n = #order
+  -- ★★★ 2026-10-11 **`who` 槽里要填【真正的键】** ✗✓（★ 用户定案 ✓）
+  --   ★ 原来这里填 `true` ✗ —— 那是按**旧模型**（键 = 视图里的 `cl.who` = 人物 id ✓）写的 ✓
+  --     ★ 而槽位模型下 `cl.who` 恒 nil ✓ ⇒ ★ 键改由 `row.*.who` 提供 ✓✓
+  --   ⇒ ★ 用**这一行自己的 `who` 文本** ✓ ★ 保证每行唯一 ✓ ⇒ ★ 断言可以逐行做 ✓
   local want = {}
-  for pos = 1, n do want[pos] = true end
+  for pos = 1, n do want[pos] = "w" .. pos end
   c._grid_in_refresh = true
   c._grid_base = 1
   -- ★ 每轮从**空表**开始 ✓ —— 落账的表是模块级的 ✓ 不清就会串轮 ✓
@@ -146,13 +164,13 @@ local function run(order, letters, expected_pos)
     c:_fill_grid_item(nil, nil, ctrl("item", { kids = card }), pos)
   end
   Ctl._row_letter = Ctl._row_letter or {}
+  -- ★ 键 = 这一行填的 `who` 文本 ✓（★ 不再从 `core` 反查人物 id ✗）
   local got = {}
-  local ws = whos(core)
   for pos = 1, n do
-    if ws[pos] ~= nil then got[tostring(ws[pos])] = Ctl._row_letter[tostring(ws[pos])] end
+    got[tostring(want[pos])] = Ctl._row_letter[tostring(want[pos])]
   end
   _G.game = nil
-  return got, ws
+  return got, want
 end
 --------------------------------------------------------------------------------
 -- 1. ★ 三种顺序都要成立（这就是本次 bug 的判据）

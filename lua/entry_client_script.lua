@@ -184,7 +184,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v181 / 2026-10-11 / 定位已通(pos对); 选人解析出nil ⇒ 探针再打解析器的输入(读到的who + names表条数) =====")
+        print("[murdoku] ===== 构建标记 v182 / 2026-10-11 / 棋盘线的键改回row.who文本(旧逻辑); 两张表键统一; 去掉core.names过滤 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

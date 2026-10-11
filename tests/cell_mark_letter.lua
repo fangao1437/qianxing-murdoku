@@ -55,13 +55,23 @@ end
 -- ── 假 `assets/row.1.*` ──────────────────────────────────────────────────
 --   ★ `letters` 里写什么，那一行就配什么 ✓（★ nil = 没配 ✓）
 --   ★ 槽位控件自己**不带 `.text`** ✗ —— 复现"引用控件读不到"那条真机现象 ✓
-local function make_world(letters)
+--
+-- ★★★★★★ 2026-10-11 **键 = 那一行的 `who` 文本** ✗✓✓（★ 用户定案 ✓）
+--   ★★★ 用户原话 ✓：「★ **前面的模式不是已经说明了 `who` 不参与棋盘线吗** ✓
+--     ★ **怎么又开始纠结这个无关量了**」✓✓
+--   ★★ 真实契约 ✓：★「★ **就是按旧逻辑** ✓ ★ **只需要换素材来源** ✓
+--     ★ **后面的逻辑一切照旧**」✓ ⇒ ★ 旧逻辑的键 = `cl.who` ✓
+--     ★★ 新模型下 = ★ **那一行的 `who` 槽文本** ✓✓
+--   ⇒ ★ 所以这里**必须给每一行填一个真的 `who`** ✗（★ 原来一律填 `"x"` ⇒ 全行同键 ⇒ 假红 ✓）
+--     ★★ 而且键**必须各不相同** ✓（★ 否则后面按行点格子会互相覆盖 ✓）
+local function make_world(letters, whos)
   local rows = {}
   for pos = 1, #letters do
     local inner = {}
     if letters[pos] ~= nil then inner = { ctrl("letter", { text = letters[pos] }) } end
+    local w = (whos and whos[pos]) or ("w" .. pos)
     rows[#rows + 1] = ctrl("row.1." .. pos, { kids = {
-      ctrl("who.1." .. pos,    { kids = { ctrl("who",    { text = "x" }) } }),
+      ctrl("who.1." .. pos,    { kids = { ctrl("who",    { text = w }) } }),
       ctrl("letter.1." .. pos, { kids = inner }),
       ctrl("what.1." .. pos,   { kids = { ctrl("what",   { text = "x" }) } }),
       ctrl("face.1." .. pos,   { kids = { ctrl("face",   { kids = { ctrl("img", { imageId = 111 }) } }) } }),
@@ -71,20 +81,31 @@ local function make_world(letters)
 end
 
 -- ── 建控制器 ＋ 跑单射（把 `_row_letter` 建起来）────────────────────────
-local function boot(letters)
+--   ★ 返回的三样里多一个 `whos` ✓ —— ★ 它就是"每行的键" ✓ 后面打标记要用它 ✓
+local function boot(letters, whos)
   local core = Core.new(lv)
   local c = UIC.new(core, { skip_intro = true })
-  _G.game = { GetClientUIRoots = function() return make_world(letters) end }
+  -- ★★★ 2026-10-11 **键必须是【核心真实棋子 id】** ✗✓（★ 实测约束 ✓ 不是我的选择 ✓）
+  --   ★ `Core:select_suspect`（core L1694 ✓）：`if not self.piece_by_id[id] then return false end`
+  --     ★★ 而 `tap_cell` 要"先选中"才打标记 ✓ ⇒ ★ **键不是真实棋子 ⇒ 标记根本打不上** ✓✓
+  --   ★ 实测 ✓：★ `select_suspect("乙")` / `("管家")` / `("w1")` **全 false** ✓
+  --     ★ 只有 `("A")`/`("B")`… 才 true ✓
+  --   ⇒ ★ 所以测试用**真实棋子 id** ✓ ★ 而"行 → 棋子"的对应就用第 pos 个棋子 ✓
+  local keys = {}
+  for pos = 1, #letters do
+    keys[pos] = (whos and whos[pos]) or (core.pieces[pos] and core.pieces[pos].id) or ("w" .. pos)
+  end
+  _G.game = { GetClientUIRoots = function() return make_world(letters, keys) end }
   c._grid_in_refresh = true
   for pos = 1, #letters do
     local card = {}
     for _, nm in ipairs({ "who", "letter", "what", "face" }) do
-      local txt = (nm == "letter") and letters[pos] or "x"
+      local txt = (nm == "letter") and letters[pos] or ((nm == "who") and keys[pos] or "x")
       card[#card + 1] = ctrl("clue." .. pos .. "." .. nm, { kids = { ctrl(nm, { text = txt }) } })
     end
     c:_fill_grid_item(nil, nil, ctrl("item", { kids = card }), pos)
   end
-  return core, c
+  return core, c, keys
 end
 
 -- ── 把 render 下发的 `note` 抠出来（★ 只读 ✓ 不碰引擎 ✓）──────────────
@@ -107,21 +128,28 @@ local function plan_notes(c, r, cc)
 end
 
 --------------------------------------------------------------------------------
--- 1. ★★★ 核心判据：打标记 ⇒ 格子显示【letter】而不是人物 id
+-- 1. ★★★ 核心判据：打标记 ⇒ 格子显示【letter】而不是那个键
+--
+--   ★★★ 2026-10-11 **标记的键改成"那一行的 `who`"了** ✗✓（★ 用户定案 ✓）
+--     ★ 用户原话 ✓：「★ **`who` 不参与棋盘线** ✓ ★ **别纠结这个无关量**」✓
+--     ★ 真实契约 ✓：★「★ **就是按旧逻辑** ✓ ★ **只需要换素材来源** ✓
+--       ★ **后面的逻辑一切照旧**」✓
+--     ★★ 旧逻辑的键 = `cl.who` ✓ ⇒ ★ 新模型下 = ★ **那一行 `who` 槽的文本** ✓✓
+--   ⇒ ★ 所以本节的"人"不再是 `B`/`A`/`V` ✗ ⇒ ★ 改成**第 1/2/3 行的键** ✓
 --------------------------------------------------------------------------------
 do
-  -- ★ 故意用**小写**字母 ⇒ ★ 一眼分得出"显示的是 letter 还是 id" ✓✓
+  -- ★ 故意用**小写**字母 ⇒ ★ 一眼分得出"显示的是 letter 还是那个键" ✓✓
   local letters = { "a", "b", "c" }
-  local core, c = boot(letters)
-  -- ★ 用户的手势 ✓：选人 ⇒ 单击格子 ⇒ 打一个标记 ✓
-  core:select_suspect("B"); core:tap_cell(1, 1)
-  core:select_suspect("A"); core:tap_cell(2, 1)
-  core:select_suspect("V"); core:tap_cell(3, 1)
+  local core, c, keys = boot(letters)
+  -- ★ 用户的手势 ✓：选那一行 ⇒ 单击格子 ⇒ 打一个标记 ✓
+  core:select_suspect(keys[1]); core:tap_cell(1, 1)
+  core:select_suspect(keys[2]); core:tap_cell(2, 1)
+  core:select_suspect(keys[3]); core:tap_cell(3, 1)
 
-  -- ★ 数据层必须是**【人物 id】** ✓ —— ★ 这一条不许被改掉 ✗
+  -- ★ 数据层必须是**【那个键】** ✓ —— ★ 这一条不许被改掉 ✗
   local ids = {}
   for k in pairs(core.notes[1][1] or {}) do ids[#ids + 1] = tostring(k) end
-  ok(#ids == 1 and ids[1] == "B", "数据层存的仍然是人物 id（★ 不许改成存 letter ✗）")
+  ok(#ids == 1 and ids[1] == keys[1], "数据层存的仍然是那个键（★ 不许改成存 letter ✗）")
 
   local n1 = plan_notes(c, 1, 1)
   local n2 = plan_notes(c, 2, 1)
@@ -130,24 +158,28 @@ do
     if type(t) ~= "table" then return tostring(t) end
     return table.concat(t, " ")
   end
-  ok(joined(n1) == "a", "格子(1,1) 打的是人物 B ⇒ 显示 B 那一行的 letter = a（实测：" .. joined(n1) .. "）")
-  ok(joined(n2) == "b", "格子(2,1) 打的是人物 A ⇒ 显示 A 那一行的 letter = b（实测：" .. joined(n2) .. "）")
-  ok(joined(n3) == "c", "格子(3,1) 打的是人物 V ⇒ 显示 V 那一行的 letter = c（实测：" .. joined(n3) .. "）")
-  print("  [PASS] 打标记 ⇒ 显示 letter（★ 不是人物 id ✓）")
+  ok(joined(n1) == "a", "格子(1,1) 打的是第 1 行 ⇒ 显示那一行的 letter = a（实测：" .. joined(n1) .. "）")
+  ok(joined(n2) == "b", "格子(2,1) 打的是第 2 行 ⇒ 显示 = b（实测：" .. joined(n2) .. "）")
+  ok(joined(n3) == "c", "格子(3,1) 打的是第 3 行 ⇒ 显示 = c（实测：" .. joined(n3) .. "）")
+  print("  [PASS] 打标记 ⇒ 显示 letter（★ 不是那个键 ✓）")
 end
 
 --------------------------------------------------------------------------------
--- 2. ★ 没配 `letter` 的人 ⇒ 回退人物 id（★ 不许突然空白 ✓）
+-- 2. ★ 没配 `letter` 的行 ⇒ 回退那个键（★ 不许突然空白 ✓）
 --------------------------------------------------------------------------------
 do
-  local letters = { "a", "b", "c" }        -- ★ 人物 D 在第 4..7 行没有 letter ✓
-  local core, c = boot(letters)
-  ok(UIC.Controller._row_letter["D"] == nil, "前提：人物 D 没有配 letter")
-  core:select_suspect("D"); core:tap_cell(4, 2)
+  -- ★ 只给 3 行配 letter ✓ ★ 而键取**前 3 个真实棋子** ✓ ⇒ 第 4 个棋子天然没配 ✓
+  local letters = { "a", "b", "c" }
+  local core, c, keys = boot(letters)
+  local k4 = nil
+  for i = 1, #core.pieces do if keys[i] == nil then k4 = core.pieces[i].id break end end
+  ok(k4 ~= nil, "前提：找得到一个【没配 letter】的真实棋子")
+  ok(UIC.Controller._row_letter[k4] == nil, "前提：那个棋子没有配 letter")
+  core:select_suspect(k4); core:tap_cell(4, 2)
   local n = plan_notes(c, 4, 2)
   local s = (type(n) == "table") and table.concat(n, " ") or tostring(n)
-  ok(s == "D", "没配 letter ⇒ 回退人物 id = D（实测：" .. s .. "）")
-  print("  [PASS] 没配 letter 时回退人物 id（★ 不会空白 ✓）")
+  ok(s == k4, "没配 letter ⇒ 回退那个键（实测：" .. tostring(s) .. " 该是 " .. tostring(k4) .. "）")
+  print("  [PASS] 没配 letter 时回退那个键（★ 不会空白 ✓）")
 end
 
 --------------------------------------------------------------------------------
@@ -155,9 +187,9 @@ end
 --------------------------------------------------------------------------------
 do
   local letters = { "a", "b", "c" }
-  local core, c = boot(letters)
-  core:select_suspect("A"); core:tap_cell(2, 3)   -- 人物 A ⇒ letter b
-  core:select_suspect("V"); core:tap_cell(2, 3)   -- 人物 V ⇒ letter c
+  local core, c, keys = boot(letters)
+  core:select_suspect(keys[2]); core:tap_cell(2, 3)   -- 第 2 行 ⇒ letter b
+  core:select_suspect(keys[3]); core:tap_cell(2, 3)   -- 第 3 行 ⇒ letter c
   local n = plan_notes(c, 2, 3)
   local s = (type(n) == "table") and table.concat(n, " ") or tostring(n)
   ok(s == "b c", "两个标记 ⇒ 两个 letter 并列且有序（实测：" .. s .. "）")
@@ -169,8 +201,8 @@ end
 --------------------------------------------------------------------------------
 do
   local letters = { "a", "b", "c" }
-  local core, c = boot(letters)
-  core:select_suspect("B"); core:tap_cell(1, 1)
+  local core, c, keys = boot(letters)
+  core:select_suspect(keys[1]); core:tap_cell(1, 1)
   core:tap_cell(1, 1)                              -- ★ 第二次 = 取消 ✓
   local n = plan_notes(c, 1, 1)
   ok(n == false, "取消标记后该格下发 false（★ 适配器才会 SetVisible(false) ✓）实测：" .. tostring(n))

@@ -295,14 +295,31 @@ do
     return c2, got
   end
 
+  -- ★★★ 2026-10-11 **判据改了：键 = `row` 里填的 `who` 文本本身** ✗✓（★ 用户点破 ✓）
+  --
+  --   ★★★ 用户原话 ✓：「★ **前面的模式不是已经说明了 `who` 不参与棋盘线吗** ✓
+  --     ★ **怎么又开始纠结这个无关量了**」✓✓
+  --   ★★ 我上一版**多此一举**：★ 拿 `who` 去查 `core.names`（★ 先当 id ✓ 再当显示名反查 ✓）✗
+  --     ★ 那等于给 `who` 加了一个**用户从没说过**的前提 ✗
+  --       ——「它必须是游戏里的人物 id」✓ ⇒ ★ **永远解析不出来** ✓✓
+  --   ★★★ 真实契约 ✓（★ 用户 2026-10-10 就定过 ✓）：
+  --     ★「★ **就是按旧逻辑** ✓ ★ **`face` 和 `letter` 怎么放是由点击指示的** ✓
+  --       ★ **等于你只需要换素材来源** ✓ ★ **后面的逻辑一切照旧**」✓
+  --     ★ 旧逻辑里的键就是 `cl.who` ✓ ★ 新模型下它= **那一行 `who` 的文本** ✓
+  --     ★ 棋盘要的 `letter` / `face` **都出自同一行** ✓ ⇒ ★ **天然同键** ✓✓
+  --   ⇒ ★ 判据 ✓：★ **配什么就返回什么** ✓（★ 不查任何人物表 ✗）
   for _, use_name in ipairs({ false, true }) do
     local _, got = build(use_name)
     local label = use_name and "显示名" or "人物 id"
+    local want = {}
+    for k = 1, nslot do
+      want[k] = use_name and tostring(core.names[ids[k]]) or tostring(ids[k])
+    end
     local allok = true
     for pos = 1, nslot do
-      if got[pos] ~= ids[pos] then allok = false end
+      if got[pos] ~= want[pos] then allok = false end
     end
-    ok(allok, "★ 卡上配【" .. label .. "】时，每张卡都能解析出正确的人 ✓")
+    ok(allok, "★ 卡上配【" .. label .. "】⇒ 原样返回它（★ 不查人物表 ✓）")
   end
 
   -- ★★ 走真实交互三条 ✓（★ 这正是用户报"断的"那三件事 ✓）

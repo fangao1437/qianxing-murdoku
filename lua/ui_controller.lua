@@ -4753,7 +4753,31 @@ function Controller:_grid_text_payload()
       --      14 次整视图重建 ✓ 但**删过头了** ✗：那个 `who` 是**唯一**能拿到 id 的来源 ✓
       --      于是 id 退化成显示名 ⇒ `core.placed["医生"]` 恒 nil ⇒ **灰白与选中反馈全没了** ✗
       --      正确修法 = **从这里拿**（已是 0 成本 ✓），而不是**不拿** ✓）
-      id     = (cl.who ~= nil) and tostring(cl.who) or nil,
+      --
+      -- ★★★★★★ 2026-10-11 **`cl.who` 在槽位模型下恒 nil ⇒ 改用【那一行的 `who` 文本】** ✗✓✓
+      --
+      --   ★★★ 用户 2026-10-11 点破 ✓（★ 原话 ✓）：
+      --     「★ **前面的模式不是已经说明了 `who` 不参与棋盘线吗** ✓
+      --       ★ **怎么又开始纠结这个无关量了**」✓✓
+      --   ★★ 对 ✓ —— 而且更关键的是他早就定过案 ✓：
+      --     ★「★ **就是按旧逻辑** ✓ ★ **`face` 和 `letter` 怎么放是由点击指示的** ✓
+      --       ★ **等于你只需要换素材来源** ✓ ★ **后面的逻辑一切照旧**」✓
+      --     ★「★ **一切线索区的素材都来自对应的 `row`**」✓
+      --     ★「★ 头像对应 `face` ✓ ★ 标记对应 `letter` ✓ ★ **`who`/`what` 不往棋盘填**」✓✓
+      --   ★★★ 所以"旧逻辑"里的那个键 ✓ = ★ **`cl.who`** ✓
+      --     ★ 它在**旧模型**下是"**人的 id**"（`A`/`B`/`V`/`D` ✓ 视图里就是这么记的 ✓）
+      --     ★★ 而在**新模型**下 ★ **`cl.who` 恒 nil** ✗（★ 槽位没有 `who` ✓）✓
+      --       ⇒ ★★★ **于是【三处都用不上它】** ✗✓：
+      --         ★ ① `_row_letter[键]` ⇒ **一个键都没写进去** ✓
+      --         ★ ② `_row_face[键]` ⇒ **同上** ✓
+      --         ★ ③ 卡片点击 ⇒ 解析出的人 = **nil** ✓（★ 用户 v180 日志正是它 ✓）
+      --       ⇒ ★★ **三处症状同源** ✓✓（★ 而我一直在追第 ③ 处 ✗）
+      --   ⇒ ★★★ 修法 ✓：★ **键 = 那一行的 `who` 文本** ✓（★ `rt.who` ✓）
+      --     ★ 为什么它才是对的 ✗：★ 用户在 `row` 里填的 `who` **就是他自己定义的键** ✓
+      --       ★ 棋盘上要显示的 `letter` / `face` **都来自同一行** ✓ ⇒ ★ **它们天然同键** ✓✓
+      --     ★★ **不能拿它去查 `core.names`** ✗ —— ★ 那是我上一版加的过滤 ✓
+      --       ★ 它把"用户自己配的键"当成了"必须是游戏里的人物 id" ✗ ⇒ **永远对不上** ✓✓
+      id     = (rt and rt.who) or ((cl.who ~= nil) and tostring(cl.who) or nil),
     }
   end
   p = { level = lv, n = n, items = items }
@@ -5321,12 +5345,29 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                 --   ★ 下游 ✓：★ `portrait_of` 先查表 ⇒ 返回**数字 id** ✓
                 --     ★ `resolve_asset`（adapter L3411 ✓）`tonumber` 直接过 ✓ ⇒ 后面【一切照旧】✓✓
                 if iid ~= nil then
-                  local _v = nil
-                  pcall(function() _v = self.core:view() end)
-                  local _cl = _v and (_v.clues or {})[pos]
-                  if _cl ~= nil and _cl.who ~= nil then
+                  -- ★★★★★★ 2026-10-11 **键改用【`_row_text` 里那一行的 `who`】** ✗✓✓
+                  --   ★ 原来这里取 `_cl.who` ✗（★ 视图里的槽位**恒 nil** ✓）
+                  --     ⇒ ★★ **`_row_face` 一个键都没写成** ✓（★ 实测：表是空的 ✓）
+                  --       ⇒ ★ `portrait_of` 恒 nil ⇒ ★ **棋盘放不上头像** ✓✓
+                  --   ★ 而与它**配对**的 `_row_letter` 早就改用 `items[pos].id` 了 ✓
+                  --     ⇒ ★★ **两张表键不同 ⇒ 一个有一个空** ✗✓（★ 实测正是这样 ✓）
+                  --   ⇒ ★ 统一 ✓：★ **都用 `_grid_text_payload().items[pos].id`** ✓
+                  --     ★ 那一个键 = 用户填的 `who` ✓ ★ 也正是 `_row_letter` 用的那个 ✓✓
+                  local _key_face = nil
+                  pcall(function()
+                    local _pp = self:_grid_text_payload()
+                    local _pi = _pp and _pp.items and _pp.items[pos]
+                    if _pi ~= nil then _key_face = _pi.id end
+                  end)
+                  if _key_face == nil then
+                    local _v = nil
+                    pcall(function() _v = self.core:view() end)
+                    local _cl = _v and (_v.clues or {})[pos]
+                    _key_face = _cl and _cl.who or nil      -- ★ 兜底：老手写线索的关卡 ✓
+                  end
+                  if _key_face ~= nil then
                     Controller._row_face = Controller._row_face or {}
-                    Controller._row_face[tostring(_cl.who)] = iid
+                    Controller._row_face[tostring(_key_face)] = iid
                     -- ★★★★★★ 2026-10-10 **同一行也记下 `letter`** ✗✓✓（★ 用户："像把内容填进 `clue` 的 `what` 一样，
                     --   把 `letter` 的文本填进 `note` 里，和那个一样的路线" ✓✓）
                     --   ★ `letter` 的【数据侧已经是对的】✓：`_grid_text_payload` 的 `items[i].letter` ✓
@@ -5337,7 +5378,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                     --   ★ 原来写在这里 ⇒ ★ 依赖"这次循环里刚记下的 `_row_letter_txt`" ✗
                     --     ★ 而它被**循环里的清理**冲掉过 ⇒ ★ 恒 nil ✓（★ 真因见循环开头 ✓）
                     --   ⇒ ★ 现在：★ 值存在局部 `_row_letter` 里 ✓
-                    --     ★ 整个子控件循环跑完、在块末尾**按 `_cl.who` 一次落账** ✓
+                    --     ★ 整个子控件循环跑完、在块末尾**按同一个键一次落账** ✓
                   end
                 end
                 if iid ~= nil then
@@ -5956,12 +5997,24 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                   --   ★ 下游 ✓：★ `portrait_of` 先查表 ⇒ 返回**数字 id** ✓
                   --     ★ `resolve_asset`（adapter L3411 ✓）`tonumber` 直接过 ✓ ⇒ 后面【一切照旧】✓✓
                   if iid ~= nil then
-                    local _v = nil
-                    pcall(function() _v = self.core:view() end)
-                    local _cl = _v and (_v.clues or {})[pos]
-                    if _cl ~= nil and _cl.who ~= nil then
+                    -- ★★ 2026-10-11 **键统一：用 `items[pos].id`（= 那一行的 `who`）** ✗✓
+                    --   ★ 与【早期单射】那一处**同一个修法** ✓（★ 详见那里的长注释 ✓）
+                    --   ★ 原来取 `_cl.who` ✗ ⇒ ★ 槽位恒 nil ⇒ **`_row_face` 空表** ✓✓
+                    local _key_face2 = nil
+                    pcall(function()
+                      local _pp2 = self:_grid_text_payload()
+                      local _pi2 = _pp2 and _pp2.items and _pp2.items[pos]
+                      if _pi2 ~= nil then _key_face2 = _pi2.id end
+                    end)
+                    if _key_face2 == nil then
+                      local _v = nil
+                      pcall(function() _v = self.core:view() end)
+                      local _cl0 = _v and (_v.clues or {})[pos]
+                      _key_face2 = _cl0 and _cl0.who or nil   -- ★ 兜底：老手写线索的关卡 ✓
+                    end
+                    if _key_face2 ~= nil then
                       Controller._row_face = Controller._row_face or {}
-                      Controller._row_face[tostring(_cl.who)] = iid
+                      Controller._row_face[tostring(_key_face2)] = iid
                       -- ★★★★★★ 2026-10-10 **同一行也记下 `letter`** ✗✓✓（★ 用户："像把内容填进 `clue` 的 `what` 一样，
                       --   把 `letter` 的文本填进 `note` 里，和那个一样的路线" ✓✓）
                       --   ★ `letter` 的【数据侧已经是对的】✓：`_grid_text_payload` 的 `items[i].letter` ✓
@@ -5970,7 +6023,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                       -- ★ 换源（地图员第5轮 ✓）：★ 用【`letter` 槽位的控件文本】✓ 而不是 `_cl.letter`（★ 它恒 nil ✗）
                       -- ★★★★★★ 2026-10-11 **落账点已挪到循环【外】** ✗✓✓
                       --   ★ 与【早期单射】同修 ✓ —— ★ 循环里写会被后续子控件冲掉 ✓
-                      --   ⇒ ★ 见本块末尾那条"落账"（★ 键 = `_cl.who` ✓ 与 `_row_face` 同键 ✓）
+                      --   ⇒ ★ 见本块末尾那条"落账"（★ 键 = `items[pos].id` ✓ 与 `_row_face` 同键 ✓）
                     end
                   end
                   if iid ~= nil then
@@ -6428,26 +6481,25 @@ function Controller:_person_id_for_pos(pos)
       end
     end
   end
-  local names = core.names
   if rt ~= nil then
     local s = tostring(rt)
     -- ★ 去掉可能的前后空白 ✓（★ 用户在编辑器里打字很容易带空格 ✓）
     s = s:gsub("^%s+", ""):gsub("%s+$", "")
-    if s ~= "" then
-      -- ★ ①-a 它本身就是 id ✓
-      if type(names) == "table" and names[s] ~= nil then return s end
-      -- ★ ①-b 它是显示名 ⇒ 反查 id ✓（★ 取**第一个**命中 ✓ 稳定 ✓）
-      if type(names) == "table" then
-        local best = nil
-        for id, nm in pairs(names) do
-          if tostring(nm) == s then
-            -- ★ 多个同名的取**字典序最小**的 ✓ ⇒ 结果**确定** ✓（★ 不随 pairs 顺序变 ✓）
-            if best == nil or tostring(id) < tostring(best) then best = id end
-          end
-        end
-        if best ~= nil then return tostring(best) end
-      end
-    end
+    -- ★★★★★★ 2026-10-11 **直接用它，【不查 `core.names`】** ✗✓✓（★ 用户点破 ✓）
+    --
+    --   ★★★ 用户原话 ✓：「★ **前面的模式不是已经说明了 `who` 不参与棋盘线吗** ✓
+    --     ★ **怎么又开始纠结这个无关量了**」✓✓
+    --   ★★ 我上一版加的过滤 ✗：★「先当 id 查 `core.names` ✓ 再当显示名反查 ✓」
+    --     ★ 它的**隐含前提**是"这个键必须是游戏里的人物 id" ✗
+    --     ★★ 而**那个前提是我凭空加的** ✗ —— ★ 用户从来没这么说 ✓✓
+    --   ★★★ 真实契约 ✓（★ 用户 2026-10-10 定的 ✓）：
+    --     ★ **这个键 = 他在 `row` 里填的 `who`** ✓
+    --     ★ 棋盘要的 `letter` / `face` **都出自同一行** ✓ ⇒ ★ **只要键一致就够** ✓✓
+    --     ★ `core.names` **与这条链毫无关系** ✗（★ 它就是用户说的"无关量" ✓）
+    --   ⚠️ ★ 代价 ✓（★ 如实说 ✓）：★ 若他填的名字**不是**游戏里的人物 ✓
+    --     ★ 那么"灰白"（`core.placed[键]`）与"选中高亮"会**对不上人** ✓
+    --     ★★ 但**标记与头像两条路会通** ✓ —— ★ 而那两条才是他报的"断了"的 ✓✓
+    if s ~= "" then return s end
   end
   -- ★ ② 退回老的"线索自带 who" ✓（★ 手写线索的关卡走这条 ✓）
   local vm = core:view() or {}

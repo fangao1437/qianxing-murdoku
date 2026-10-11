@@ -50,13 +50,14 @@ local function ctrl(name, opts)
 end
 
 -- ★ `letters[pos]` = 第 pos 行配的 letter ✓（★ nil = 那一行没配 ✓）
-local function make_world(letters)
+local function make_world(letters, whos)
   local rows = {}
   for pos = 1, #letters do
     local inner = {}
     if letters[pos] ~= nil then inner = { ctrl("letter", { text = letters[pos] }) } end
     rows[#rows + 1] = ctrl("row.1." .. pos, { kids = {
-      ctrl("who.1." .. pos,    { kids = { ctrl("who",  { text = "x" }) } }),
+      -- ★★ 2026-10-11 **`who` 槽就是键** ✗✓（★ 用户定案 ✓ ★ 详见 `cell_mark_letter` 那段 ✓）
+      ctrl("who.1." .. pos,    { kids = { ctrl("who",  { text = (whos and whos[pos]) or ("w" .. pos) }) } }),
       ctrl("letter.1." .. pos, { kids = inner }),
       ctrl("what.1." .. pos,   { kids = { ctrl("what", { text = "x" }) } }),
       ctrl("face.1." .. pos,   { kids = { ctrl("face", { kids = { ctrl("img", { imageId = 111 }) } }) } }),
@@ -65,37 +66,41 @@ local function make_world(letters)
   return { ctrl("root", { kids = { ctrl("assets", { kids = rows }) } }) }
 end
 
--- ★ 用**自检关**当舞台 ✓ —— ★ 但**故意让两条线索点到同一个人** ✓（★ 复现 case_002 的形状 ✓）
---   自检关线索的 who（实测）✓：1=B 2=A 3=V 4=D 5=@thief 6=@accomplice 7=B
---   ⇒ ★ `B` 被 pos 1 和 pos 7 点到 ✓ ⇒ ★ 正好是我们要的形状 ✓✓
-local function boot(letters, in_refresh)
+-- ★★ 2026-10-11 **冲突的判据改成"同一行的键被配了两次"** ✗✓（★ 用户定案 ✓）
+--   ★ 老判据 ✓：★"同一个人被两条线索点到"（★ 键 = 视图里的 `cl.who` ✓）
+--   ★★ 新判据 ✓：★ **键 = 那一行的 `who` 文本** ✓ ⇒ ★ 冲突 = **两个 `pos` 填了同一个 `who`** ✓
+--     ★ 那正是"**一处一人只留一个字母**"这条数据规矩的代码侧对应 ✓✓
+local function boot(letters, in_refresh, whos)
   local core = Core.new(lv)
   local c = UIC.new(core, { skip_intro = true })
-  _G.game = { GetClientUIRoots = function() return make_world(letters) end }
+  local keys = {}
+  for pos = 1, #letters do keys[pos] = (whos and whos[pos]) or ("w" .. pos) end
+  _G.game = { GetClientUIRoots = function() return make_world(letters, keys) end }
   c._grid_in_refresh = (in_refresh ~= false)
   for pos = 1, #letters do
     local card = {}
     for _, nm in ipairs({ "who", "letter", "what", "face" }) do
-      local txt = (nm == "letter") and letters[pos] or "x"
+      local txt = (nm == "letter") and letters[pos] or ((nm == "who") and keys[pos] or "x")
       card[#card + 1] = ctrl("clue." .. pos .. "." .. nm, { kids = { ctrl(nm, { text = txt }) } })
     end
     c:_fill_grid_item(nil, nil, ctrl("item", { kids = card }), pos)
   end
-  return core, c
+  return core, c, keys
 end
 
 local Ctl = UIC.Controller
 
 --------------------------------------------------------------------------------
--- 1. ★★★ 同一个人被两条线索点到 ⇒ 【先到先得】，且再写一次也不变
+-- 1. ★★★ 同一个键被两条行配到 ⇒ 【先到先得】，且再写一次也不变
 --------------------------------------------------------------------------------
 do
   Ctl._row_letter = {}
-  -- ★ pos1 = 人物 B ⇒ "A" ✓　pos7 = 人物 B ⇒ "Z" ✓（★ 冲突 ✓）
+  -- ★ pos1 与 pos7 **填同一个 `who`** ✓ ⇒ ★ 键冲突 ✓（★ 第 1 行 letter=`A` ✓ 第 7 行=`Z` ✓）
   local letters = { "A", "b", "c", "d", "e", "f", "Z" }
-  local _, c = boot(letters)
-  ok(Ctl._row_letter["B"] == "A",
-    "人物 B 被 pos1(A) 与 pos7(Z) 同时点到 ⇒ 应保留先到的 A（实测 " .. tostring(Ctl._row_letter["B"]) .. "）")
+  local whos = { "K", "w2", "w3", "w4", "w5", "w6", "K" }
+  local _, c = boot(letters, true, whos)
+  ok(Ctl._row_letter["K"] == "A",
+    "键 K 被 pos1(A) 与 pos7(Z) 同时配到 ⇒ 应保留先到的 A（实测 " .. tostring(Ctl._row_letter["K"]) .. "）")
 
   -- ★★ 再跑一遍（★ 顺序反过来 ✓）⇒ ★ **不许改变** ✓
   local core2 = Core.new(lv)
@@ -104,14 +109,14 @@ do
   for pos = #letters, 1, -1 do
     local card = {}
     for _, nm in ipairs({ "who", "letter", "what", "face" }) do
-      local txt = (nm == "letter") and letters[pos] or "x"
+      local txt = (nm == "letter") and letters[pos] or ((nm == "who") and whos[pos] or "x")
       card[#card + 1] = ctrl("clue." .. pos .. "." .. nm, { kids = { ctrl(nm, { text = txt }) } })
     end
     c2:_fill_grid_item(nil, nil, ctrl("item", { kids = card }), pos)
   end
-  ok(Ctl._row_letter["B"] == "A",
-    "★ 换个写入顺序再跑 ⇒ 仍然是 A（★ 这就是「确定」✓ 实测 " .. tostring(Ctl._row_letter["B"]) .. "）")
-  print("  [PASS] 同一人两条线索 ⇒ 先到先得，且与写入顺序无关")
+  ok(Ctl._row_letter["K"] == "A",
+    "★ 换个写入顺序再跑 ⇒ 仍然是 A（★ 这就是「确定」✓ 实测 " .. tostring(Ctl._row_letter["K"]) .. "）")
+  print("  [PASS] 同一个键被两行配到 ⇒ 先到先得，且与写入顺序无关")
 end
 
 --------------------------------------------------------------------------------
@@ -119,12 +124,13 @@ end
 --------------------------------------------------------------------------------
 do
   Ctl._row_letter = {}
-  -- ★ 让 pos1 与 pos7 都指 B，且**只有末次那一趟跑** ✓
+  -- ★ 让 pos1 与 pos7 填同一个键，且**只有末次那一趟跑** ✓
   local letters = { "A", "b", "c", "d", "e", "f", "Z" }
-  local _, c = boot(letters, false)     -- ★ _grid_in_refresh = false ⇒ 早期那趟不跑 ✓
+  local whos = { "K", "w2", "w3", "w4", "w5", "w6", "K" }
+  local _, c = boot(letters, false, whos)   -- ★ _grid_in_refresh = false ⇒ 早期那趟不跑 ✓
   ok(c._grid_in_refresh == false, "前提：这次只让末次单射跑")
-  ok(Ctl._row_letter["B"] == "A",
-    "只跑末次时，人物 B 仍应是先到的 A（实测 " .. tostring(Ctl._row_letter["B"]) .. "）")
+  ok(Ctl._row_letter["K"] == "A",
+    "只跑末次时，键 K 仍应是先到的 A（实测 " .. tostring(Ctl._row_letter["K"]) .. "）")
   print("  [PASS] 两趟同规则（★ 末次不会把早期记下的覆盖掉 ✓）")
 end
 
