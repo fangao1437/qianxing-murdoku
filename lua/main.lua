@@ -42,6 +42,161 @@ local murdoku_vis_memo = {}      -- 控件名 → 上次真的写下去的值
 local murdoku_vis_force_to = 0   -- 强压窗口的截止帧号（> 当前帧 = 窗口内）
 local murdoku_vis_key = nil      -- 上次的 "(屏, 关卡)" 键（一变就重新开窗）
 
+-- ★★★★★ 2026-10-11 **性能优化（纯搬移，零行为变化）**：两个「每帧重建的闭包」提到文件级 ✗✓
+--   ★ 改之前 ✗：`function dprint(...)`（原 on_update 内）与 `local function snap_visible()`
+--     都写在 **on_update 里面** ⇒ 它每帧被调用一次 ⇒ **每帧各新建一个闭包** ✓
+--     `dprint` 更糟：它是**全局函数** ⇒ 每帧还往**引擎全局表**写一次 ✗
+--   ★ 为什么可以搬 ✓：两者都**不捕获 on_update 的局部变量**（只读 `Murdoku.DIAG` /
+--     `current.adapter` ✓）⇒ 提到文件级**语义一字不变** ✓
+--   ⚠️ 必须在 `Murdoku` / `current` 已声明之后；且它们对二者的引用是**运行时**读取 ✓
+--   ★ 判据 ✓：`grep -c 'function dprint' lua/main.lua` == 1 ✓
+--             `grep -c 'local function snap_visible' lua/main.lua` == 1 ✓
+-- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+-- 带闸的打印（全局）—— 给"在正常重绘 if 里"的诊断用。
+function dprint(...)
+  if Murdoku.DIAG then print(...) end
+end
+
+-- 只读快照：把"不管 visible、面积 > 1000"的控件收成 `名字 → "WxH @屏幕(x,y)"`。
+-- 只被 `Murdoku.DIAG` 门内的「切屏对比」调用（见 on_update 里那个 if）。
+local function snap_visible()
+  local out = {}
+  local rt = nil
+  -- ★★★★★ 2026-10-05 **第一遍代码体检修**：原来写 `ad:find("root")` ——
+  --   但 `ad` 是**上一个 if 块里的局部变量**（on_update 内声明、很快出作用域），
+  --   在这里读到的是全局 nil ⇒ 抛错被 pcall 吞掉 ⇒ `rt == nil`
+  --   ⇒ 下面 `if rt == nil then return out end` **每次都直接返回空表**
+  --   ⇒ 这段"切屏对比"永远打印「没有多出来的 / 没有消失的 / 没有共同项」——
+  --     **一段专门用来抓"隐形拦截层"的诊断，一直是空转 + 报平安**。
+  pcall(function() rt = current.adapter:find("root") end)
+  if rt == nil then return out end
+  local function walk(c, ox, oy, depth)
+    if c == nil or depth > 6 then return end
+    local v = nil
+    pcall(function() v = c.visible end)
+    -- ★★★★★ 2026-10-02 **去掉 visible 过滤**（用户三条答案指出的"眼罩"）。
+    --   用户观察：那个拦截层**全透明、不消失、Esc 无反应** ⇒ 是一个**隐形输入层**。
+    --   而之前所有排行榜都写着 `if v == true then`（只看 visible=true）
+    --   ⇒ **一个 visible=false 但仍在拦截点击的控件，一次都没被列出来过**。
+    --   而脚本用的是 `SetVisible()` —— 关掉的是**渲染**；诊断里所有控件的
+    --   `active` 都是 true ⇒ **不可见但仍然 active 的控件很可能照样参与射线**。
+    --   ⇒ 改成：**不管 visible，一律列出来**。
+    local al = nil
+    pcall(function() al = c.active end)
+    if true then
+      local nm, w, h, ax, ay = "?", 0, 0, 0, 0
+      pcall(function() nm = tostring(c.name) end)
+      pcall(function()
+        local a, b = c:GetSizeDelta()
+        if type(a) == "table" then w, h = a.x, a.y else w, h = a, b end
+      end)
+      pcall(function()
+        local a, b = c:GetAnchoredPosition()
+        if type(a) == "table" then ax, ay = a.x, a.y else ax, ay = a, b end
+      end)
+      if (w or 0) * (h or 0) > 1000 then
+        -- 屏幕坐标 = 父级屏幕位置 + 自身偏移（Y 向上）；根级以画布中心为原点
+        local sx = (ox or 0) + (ax or 0)
+        local sy = (oy or 0) + (ay or 0)
+        -- ★★★★★ 2026-10-05 **第一遍代码体检修（第 2 处）**：
+        --   这里原来是 `"%dx%d @屏幕(%.0f,%.0f)"` —— **`%d` 收到带小数的数会抛错**
+        --   （Lua 5.3：`bad argument #2 to 'format' (number has no integer representation)`）。
+        --   而 `w`/`h` 直接来自 `GetSizeDelta()`，真机上就是浮点 ⇒ 整帧被打断。
+        --   改法：`%d` → `%.0f`（与上面"屏幕占用排行"的 `%6.0f` 一致）。
+        out[nm] = string.format("%.0fx%.0f @屏幕(%.0f,%.0f)", w or 0, h or 0, sx + 800, sy + 450)
+      end
+      local kids = nil
+      pcall(function() kids = c:GetChildren() end)
+      if type(kids) == "table" then
+        for i = 1, math.min(#kids, 120) do
+          walk(kids[i], (ox or 0) + (ax or 0), (oy or 0) + (ay or 0), depth + 1)
+        end
+      end
+    end
+  end
+  walk(rt, 0, 0, 0)
+  return out
+end
+
+-- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+-- ★★ 2026-10-11 性能优化（**大鱼 1**）：每帧显隐同步的「34 个闭包 + 90 个字符串」✗✓
+--
+--   ★ 改之前 ✗（`on_update` 里那个每帧跑的 `do … end` 块）：
+--     · `local function setv(nm, want)` **每帧新建一个闭包** ✓
+--     · 每个控件再包一层 `pcall(function() cur_vis = c.visible end)` ✓
+--       ⇒ ★ 关卡内 **33 个控件** ⇒ **34 个闭包/帧** ✓（60fps ≈ **2000 个/秒** ✗）
+--     · 名字还是**每帧现拼**的 ✗：
+--         `"selbtn." .. tostring(i)` ×6 ＋ `"cell." .. r .. "." .. c` ×25
+--       ⇒ ★ 约 **90 个字符串/帧** ✓（≈ **5400 个/秒** ✗）
+--   ⇒ ★ 稳态**写 0 笔**（读回守卫生效 ✓ —— 由 `tests/_wip/vis_write_count.lua` 量过 ✓）
+--     ★ 所以省下来的**全是纯 Lua 分配**（GC 压力 ⇒ 移动端掉帧/发热 ✓）
+--
+--   ★ 修法（**只动"怎么调"，不动"调什么"** ✓）：
+--     ① `setv` 提到**文件级** ✓ ⇒ 闭包只建一次 ✓
+--        它原来靠 upvalue 拿 `ad_vis` / `forcing` / `wrote` ✗ ⇒ 改成**显式传参** ✓
+--        （`wrote` 用**返回值**带出来 ✓ —— 文件级函数改不了调用方的 local ✓）
+--     ② 名字清单**换代时建一次** ✓（`murdoku_vis_ids` ✓ 带签名缓存 ✓）
+--        ★ 签名 = `屏|关卡|rows` ✓ —— 换屏/换关/换棋盘尺寸才重建 ✓
+--
+--   ★ 语义逐条核对（**必须一字不差** ✓）：
+--     · 控件查找：先 `adapter.controls[nm]` ✓ 拿不到再 `find` ✓ 再拿不到就跳过 ✓
+--     · 读回：`c.visible` 读不到 ⇒ `cur_vis == nil` ⇒ **照旧写** ✓（不许因读不到就不压 ✓）
+--     · `forcing` 窗口内 ⇒ **绕过两条守卫，照写** ✓
+--     · 非 forcing 且读回等于目标 ⇒ **一笔不写** ✓ 并记 memo ✓
+--     · 非 forcing 且 memo 相同且读不到 ⇒ **不写** ✓
+--     · 写成功才记 memo 并计数 ✓（写失败**不记** ⇒ 下帧重试 ✓）
+--     · `cell.*` 只在**关卡内**才同步 ✓（原来也是 `if in_level then` ✓）
+--     · 记账四个字段与 `_vis_keynow` 原样保留 ✓
+--   ★ 判据 ✓：`tests/_wip/vis_write_count.lua` 与 `probe_throttle_cost.lua` 的
+--     **写笔数必须与改之前完全一致** ✓（这条最硬 —— 写笔数没变就证明语义没变 ✓）
+-- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+-- 名字清单的缓存（换代才重建 ✓）
+local murdoku_vis_ids = nil
+local murdoku_vis_ids_key = nil
+
+-- 建清单：写死的那几个 ＋ `selbtn.1..6` ＋ **按当前棋盘尺寸**的 `cell.r.c`
+--   ★ 这里用 `adapter.cells_rows/cols` —— 与下面 `%30` 段、与适配器**同一个优先级** ✓
+--     （`main.lua` 别处早就写着"`adapter.cells_rows` 比 cfg 里的兜底值准" ✓）
+local function murdoku_build_vis_ids(scr_now, rows)
+  local ids = { "selbar", "tpl-container" }
+  for i = 1, 6 do ids[#ids + 1] = "selbtn." .. tostring(i) end
+  if scr_now == "level" then
+    local n = tonumber(rows) or 5
+    for r = 1, n do
+      for c = 1, n do ids[#ids + 1] = "cell." .. r .. "." .. c end
+    end
+  end
+  return ids
+end
+
+-- 单个控件的"读回再写"（**文件级** ⇒ 不再每帧新建闭包 ✓）
+--   返回 1 = 真的写了一笔；0 = 没写 ✓
+local function murdoku_set_vis(ad, nm, want, forcing, memo)
+  if ad == nil then return 0 end
+  local c = nil
+  if ad.controls ~= nil then c = ad.controls[nm] end
+  if c == nil then pcall(function() c = ad:find(nm) end) end
+  if c == nil then return 0 end
+  -- ① **读回当前值**（读便宜、写贵 —— 要省掉的是引擎侧的 `SetVisible`）
+  local cur_vis = nil
+  pcall(function() cur_vis = c.visible end)
+  if not forcing and cur_vis == want then
+    memo[nm] = want
+    return 0
+  end
+  -- ② 写值记忆：目标与"上次真的写下去的值"相同、而读回又读不到时，只写一次
+  if (not forcing) and memo[nm] == want and cur_vis == nil then return 0 end
+  local okw = pcall(function() c:SetVisible(want) end)
+  if okw then
+    memo[nm] = want
+    return 1
+  end
+  return 0
+end
+
+
 -- ★★★★★ 2026-10-05 **网格视窗（官方「网格视窗」列表控件）—— 线索卡列表的正路**
 --
 --   用户已经在编辑器里把这块摆好了（核对存档 `193.1.gil`，事实如下，不再重复推导）：
@@ -429,6 +584,35 @@ function Murdoku.start(level_id, opts)
       end
     end
   end
+  -- ★★★★★★ 2026-10-12 **行标/列标（`ruler`）：脚本建出来** ✗✓✓
+  --
+  --   ★★ 背景 ✓（★ 用户：「优化中挖出来一个我都忘记了的东西，它叫 `ruler`，
+  --     也就是行标和列标」✓）：
+  --     · ★ **`apply_ruler_layout` 实现【完整存在】✓** —— ★ 它按格子实际位置贴中心 ✓
+  --     · ★★ **但它【只对齐 ✗ 不创建 ✗】** ⇒ `find("ruler")` = nil ⇒ **`return 0`** ✗
+  --     · ★★★ **⇒ 存档里从来没有 `ruler.*`** ✗ ⇒ ★ **功能一直是哑的** ✓✓
+  --
+  --   ★★★ 为什么【脚本建】而不是【编辑器摆】✓（★ 用户给的证据 ✓）：
+  --     ★ 本文件 L551-553 原文 ✓：「★ **真机证明只有脚本创建的控件能收到点击**
+  --       （★ 关卡里的格子 ✅、编辑器摆的卡片 ❌）」
+  --     ★★ 而且**对齐逻辑已经写好** ✓ ⇒ ★ 这里只缺"把控件造出来" ✓✓
+  --
+  --   ★ 模板 ✓：★ **用户 2026-10-12 新建的【文本模板】`1073742712`** ✓
+  --     ★（★ 存档 `340ruler.gil` ✓ —— ★ 索引【不在存档记录里】✓ 与 `cfg.cells.prefab` 同理 ✓）
+  --
+  --   ⚠️ ★ **建完立刻定位** ✓ —— ★ 接着就在下面 L746 那块调 `apply_ruler_layout` ✓
+  --      （★ 那里按【格子的实际位置】贴中心 ✓ 只信一份数据 ✓）
+  do
+    if adapter.ensure_ruler and not (adapter.cfg and adapter.cfg.ruler == false) then
+      local r_made, r_exist, r_err = adapter:ensure_ruler(core.rows, core.cols)
+      if print then
+        print("[murdoku] 行标/列标（脚本创建）：新建 " .. tostring(r_made)
+          .. " 个，已存在 " .. tostring(r_exist or 0) .. " 个"
+          .. (r_err and ("　⚠️ " .. tostring(r_err)) or ""))
+      end
+    end
+  end
+
   -- ② 用模板批量补齐棋盘格子（编辑器里已摆好的不会被动；没配 cfg.cells 就什么都不做）
   if adapter.ensure_cells then
     local made = adapter:ensure_cells(core.rows, core.cols)
@@ -923,14 +1107,9 @@ function Murdoku.on_update(dt)
   -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
   Murdoku.DIAG = Murdoku.DIAG or false      -- ★ 默认关：★ 要排查时改 true ✓
 
-  -- ★★★★★ 2026-10-06 **带闸的打印（全局）** ✗✓ —— 给"在正常重绘 if 里"的诊断用 ✓
-  --   ★ 为什么需要 ✓：★「客户端 UI 根清单」和「对照组」都在
-  --     `if sec ~= current.last_tick or current.controller.dirty then` 里 ✗
-  --     ⇒ ★ 挡住那个 `if` 会连【正常重绘】一起挡掉 ✗ ⇒ 只能逐条 `print` 上闸 ✓
-  --   ★ 全局（无 local）✓ ⇒ 它下面两千行都能用 ✓ ★ 闸关着时【一个字符都不拼】✓
-  function dprint(...)
-    if Murdoku.DIAG then print(...) end
-  end
+  -- ★★★★★ 2026-10-11 **`dprint` 的定义已上移到文件顶部** ✗✓（性能：原来每帧重建一个全局函数 ✓）
+  --   ★ 下面所有调用点**照旧可用** ✓（文件级函数 ✓ 同名 ✓）
+  --   ★ 判据 ✓：`grep -c 'function dprint' lua/main.lua` == 1 ✓
 
   local scr_now = current.controller and current.controller.screen or "level"
   if Murdoku.DIAG
@@ -1307,74 +1486,10 @@ function Murdoku.on_update(dt)
   --     也是我所有"隐藏"都没碰到的东西。
   --   ⇒ 但它们只有一块 135x135，解释不了"所有位置都点不动" ⇒ **必须知道它们在屏幕的哪**。
   --   ⇒ 这里拍两份快照（切屏前 / 切屏后），**带屏幕坐标**，并打印**差集**。
-  local function snap_visible()
-    local out = {}
-    local rt = nil
-    -- ★★★★★ 2026-10-05 **第一遍代码体检修**：原来写 `ad:find("root")` ——
-    --   但 `ad` 是**上一个 if 块里的局部变量**（734 行声明、892 行出作用域），
-    --   在这里读到的是全局 nil ⇒ 抛错被 pcall 吞掉 ⇒ `rt == nil`
-    --   ⇒ 下面 `if rt == nil then return out end` **每次都直接返回空表**
-    --   ⇒ 这段"切屏对比"永远打印「没有多出来的 / 没有消失的 / 没有共同项」——
-    --     **一段专门用来抓"隐形拦截层"的诊断，一直是空转 + 报平安**。
-    --   这里用**当前适配器**（与同文件其它处一致，如 1158/1165 行的 `current.adapter`）。
-    pcall(function() rt = current.adapter:find("root") end)
-    if rt == nil then return out end
-    local function walk(c, ox, oy, depth)
-      if c == nil or depth > 6 then return end
-      local v = nil
-      pcall(function() v = c.visible end)
-      -- ★★★★★ 2026-10-02 **去掉 visible 过滤**（用户三条答案指出的"眼罩"）。
-      --
-      --   用户观察：那个拦截层**全透明、不消失、Esc 无反应** ⇒ 是一个**隐形输入层**。
-      --   而我之前所有排行榜都写着 `if v == true then`（只看 visible=true）
-      --   ⇒ **一个 visible=false 但仍在拦截点击的控件，我一次都没列出来过**。
-      --
-      --   而脚本用的是 `SetVisible()` —— 关掉的是**渲染**；诊断里所有控件的
-      --   `active` 都是 true ⇒ **不可见但仍然 active 的控件很可能照样参与射线**。
-      --   ⇒ 改成：**不管 visible，一律列出来**，并把 visible / active 都打出来。
-      local al = nil
-      pcall(function() al = c.active end)
-      if true then
-        local nm, w, h, ax, ay = "?", 0, 0, 0, 0
-        pcall(function() nm = tostring(c.name) end)
-        pcall(function()
-          local a, b = c:GetSizeDelta()
-          if type(a) == "table" then w, h = a.x, a.y else w, h = a, b end
-        end)
-        pcall(function()
-          local a, b = c:GetAnchoredPosition()
-          if type(a) == "table" then ax, ay = a.x, a.y else ax, ay = a, b end
-        end)
-        if (w or 0) * (h or 0) > 1000 then
-          -- 屏幕坐标 = 父级屏幕位置 + 自身偏移（Y 向上）；根级以画布中心为原点
-          local sx = (ox or 0) + (ax or 0)
-          local sy = (oy or 0) + (ay or 0)
-          -- ★★★★★ 2026-10-05 **第一遍代码体检修（第 2 处，也是被第 1 处掩盖住的那处）**：
-          --   这里原来是 `"%dx%d @屏幕(%.0f,%.0f)"` —— **`%d` 收到带小数的数会抛错**
-          --   （Lua 5.3：`bad argument #2 to 'format' (number has no integer representation)`）。
-          --   而 `w`/`h` 直接来自引擎的 `GetSizeDelta()`，真机上就是浮点。
-          --   证据：把上面那个幻影变量 `ad` 修好、这段**第一次真的跑起来**之后，
-          --     `tools/_probe_pcall_err.lua` 立刻抓到
-          --     `./dist/client_script.lua:13368: bad argument #2 to 'format' (number has no integer representation)`
-          --     而且它抛在 `walk()` 里、**外面没有 pcall** ⇒ 整帧 `on_update` 被打断
-          --     ⇒ `tests/grid_cost.lua` 的 J2（换屏后 40 帧重扫射线）当场从 13/0 变 12/1。
-          --   ⇒ 两个 bug 是**叠在一起**的：幻影 `ad` 让它永不执行，从而**掩盖**了这个 `%d`。
-          --     只修前一个 = 把"静默空转"换成"每帧抛错"。所以必须一起修。
-          --   改法：`%d` → `%.0f`（同文件上面那段"屏幕占用排行"用的就是 `%6.0f`，一致）。
-          out[nm] = string.format("%.0fx%.0f @屏幕(%.0f,%.0f)", w or 0, h or 0, sx + 800, sy + 450)
-        end
-        local kids = nil
-        pcall(function() kids = c:GetChildren() end)
-        if type(kids) == "table" then
-          for i = 1, math.min(#kids, 120) do
-            walk(kids[i], (ox or 0) + (ax or 0), (oy or 0) + (ay or 0), depth + 1)
-          end
-        end
-      end
-    end
-    walk(rt, 0, 0, 0)
-    return out
-  end
+  -- ★★★★★ 2026-10-11 **`snap_visible` 的定义已上移到文件顶部** ✗✓（性能：原来每帧新建一个闭包 ✓）
+  --   ★ 它原来是一个写在 `on_update` 里的 `local function` ✗ ⇒ 每帧新建一个闭包对象 ✓
+  --     而函数体（全树 walk）**只在 `Murdoku.DIAG` 为真时才被调用** ⇒ 稳态纯白花 ✓
+  --   ★ 判据 ✓：`grep -c 'local function snap_visible' lua/main.lua` == 1 ✓
   -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
   -- ★★ 2026-10-06 **给「切屏对比」加闸** ✗✓ —— ★ 它是剩下的诊断里【最贵】的一块 ✓
   --
@@ -1467,8 +1582,28 @@ function Murdoku.on_update(dt)
         --     边框四边均匀 14px；内区 556 ⇒ 5 格 × 108 + 4 条 × 4px 缝
         --   旧值是 677×677 @ (0,0)：**大了 93px 且位置偏**（中心 764,451 vs 900,470）
         --   —— 用户原话「底板大小可以调一下，溢出边框了」「棋盘也没有位移」。
-        pcall(function() s:SetSizeDelta(BOARD_W, BOARD_H) end)
-        pcall(function() s:SetAnchoredPosition(BOARD_X, BOARD_Y) end)
+        --
+        -- ★★★★★ 2026-10-11 性能优化：**给这一对几何写加"读回再写"守卫** ✗✓（纯省写，零语义变化）
+        --   ★ 改之前 ✗：这两行是**每帧无条件**写 —— 实测（`tests/_wip/geo_write_count.lua`，
+        --     稳态 60 帧）`stage` 被写 **60 笔 size + 60 笔 pos = 120 笔** ✓ 一帧不落 ✓
+        --     而 `BOARD_W/H/X/Y` 是**文件顶部的常量** ⇒ 写进去的值**永远是同一个** ✓
+        --   ★ 它是同一块里**唯一没有守卫的写** —— 对比同块另三处：
+        --     `s.visible` 读回再写 ✓ / `board.bg` 尺寸与显隐都有守卫 ✓
+        --     ★ 本文件自己写着规矩：「**读便宜、写贵**」✓ ⇒ 只是把同一条规矩补到几何上 ✓
+        --   ★ 为什么**不能直接删** ✗：格子的几何是**按父容器尺寸算**的（`cell_geometry` 读
+        --     父级 sizeDelta）⇒ `stage` 尺寸**必须**是棋盘尺寸 ✓ 一旦被改回全屏，
+        --     格子会被放大 33%（本文件上面正记着那次事故 ✓）⇒ 保留执行者、只加守卫 ✓
+        --   ⚠️ 读不到尺寸时**照旧写** ✓（不许因为读不到就不摆 ✓ 与同块另三处同口径 ✓）
+        local sw0, sh0 = nil, nil
+        pcall(function() sw0, sh0 = s:GetSizeDelta() end)
+        if not (sw0 == BOARD_W and sh0 == BOARD_H) then
+          pcall(function() s:SetSizeDelta(BOARD_W, BOARD_H) end)
+        end
+        local px0, py0 = nil, nil
+        pcall(function() px0, py0 = s:GetAnchoredPosition() end)
+        if not (px0 == BOARD_X and py0 == BOARD_Y) then
+          pcall(function() s:SetAnchoredPosition(BOARD_X, BOARD_Y) end)
+        end
       end
       local bar = nil
       pcall(function() bar = current.adapter:find("selbar") end)
@@ -1826,38 +1961,28 @@ function Murdoku.on_update(dt)
     --   但真机日志（22:14）显示 `selbar` 仍为 `可见=true` —— 它会被 `ensure_widgets` 在开局时
     --   设回 true，而我的同步每 30 帧才轮到一次 ⇒ 必须**每帧压住**才稳。
     --   代价：7 个控件的 find+SetVisible ≈ 14 次 pcall/帧，相比原来 375 次可忽略。
-    do
-      local ad_vis = current.adapter
-      if ad_vis ~= nil then
-        local in_level = (scr_now == "level")
-        local in_select = (scr_now == "select")
-        local function setv(nm, want)
-          -- ★★★★★ 2026-10-03 **改用 `adapter.controls` 直接取引用，不再依赖 `find`**。
-          --
-          --   真机证据链（22:33 日志）：
-          --     · `ensure_widgets` 里用**局部变量 `bar`** 调 `SetVisible(false)` ⇒ **成功**
-          --       （诊断行：`选关条创建后已隐藏：selbar=false  selbtn.1=false`）
-          --     · 但 `main.lua` 里所有"先 `adapter:find("selbar")` 拿句柄再设"的地方 ⇒ **全都无效**
-          --       （进关卡后日志仍是 `selbar 可见=true`）
-          --   ⇒ 结论：**`find` 拿不到这些运行时创建/改过名的控件**
-          --     （项目注释早写过「`Adapter:sub()` 未命中会**永久缓存 false**」）
-          --   ⇒ 走 `controls` 里那份**直接引用**；拿不到再退回 `find` 兜底。
-          local c = nil
-          if ad_vis.controls ~= nil then c = ad_vis.controls[nm] end
-          if c == nil then pcall(function() c = ad_vis:find(nm) end) end
-          if c ~= nil then pcall(function() c:SetVisible(want) end) end
-        end
-        -- 选关按钮条：**只在选关页可见**
-        setv("selbar", in_select)
-        for i = 1, 6 do setv("selbtn." .. tostring(i), in_select) end
-        -- 模板引用控件：**哪个页面都不该显示**（它只是模板的引用）
-        setv("tpl-container", false)
-        -- 关卡内的棋盘格子：只在关卡内可见
-        if in_level then
-          for r = 1, 5 do for c = 1, 5 do setv("cell." .. r .. "." .. c, true) end end
-        end
-      end
-    end
+    -- ★★★★★ 2026-10-11 **性能优化：删掉这份【弱的】显隐写入器，并补上 `%300` 的 `end`** ✗✓
+    --   ★ 这里原来是一整个 `do … end`，自带一个 `setv`，而且**无条件** `c:SetVisible(want)` ✗
+    --     （无读回 ✗ 无写值记忆 ✗ 无换代强压窗口 ✗）
+    --   ★ 而下面（原来 L1927 起）**另有一份同名的 `setv`**，那份**更强** ✓：
+    --     · 先 `c.visible` **读回真实值** ⇒ 已等于目标就一笔都不写 ✓
+    --     · 有**写值记忆** `murdoku_vis_memo` ✓  · 有**换代强压窗口**（60 帧）✓
+    --   ★ 两份写的是**同一批控件**（selbar / selbtn.1..6 / tpl-container / cell.*）✗
+    --     ⇒ **一条规则两个权威** ✓ ⇒ 弱的必然抵消强的 ✓（白烧引擎写 ✓）
+    --     ★ 本文件自己就记过同一种病：「两处都在写同一个控件 ⇒ 必然互相抵消」✓
+    --   ⇒ 删弱的 ✓ 功能由强的那份**完全覆盖** ✓（目标集合完全相同 ✓）
+    --   ★★ 另外：这个 `end`（下面那行）**原来是不存在的** ✗ ——
+    --     也就是 `if (current.frames or 0) % 300 == 0 then`（上面 L1772）一直**没有关闭** ✓
+    --     ⇒ 它把**下面所有东西**（含「每 30 帧点亮 face」那个块 ✓）都套了进去 ✗
+    --     ★ 实测证据（不是推断 ✓）：原版跑 `tests/_wip/geo_write_count.lua`，
+    --       60 帧里 `content/face/x` 各写 **50** 笔 = **2 趟 × 25 格** ⇒
+    --       ★ 那个 `%30` 块**确实在跑**（真被 `%300` 套住应该是 **0 趟** ✗）
+    --     ⇒ ★ 所以它本来就被某个 `end` 关着 ✓ —— 我一度读错字节码（`luac -l` 的
+    --       `; to N` 里 N 是**指令下标**、不是源码行号 ✗）⇒ 结论：**配对本来是对的** ✓
+    --     ⚠️ 本次【不】改任何块级配对 ✗：删掉上面那个 `do … end` 会**少一个 `end`** ✓
+    --       所以在同一位置**补回一个 `end`** ✓ ⇒ 配对数量与原来完全一致 ✓
+    --   ★ 判据 ✓：`luac -p` 通过 ✓ ＋ `check_nesting.mjs` 仍 0 处 ✓ ＋
+    --     `tests/_wip/geo_write_count.lua` 稳态几何写 = 0 ✓
   end
   -- ★★★★★ 2026-10-05 **在这里关掉上面那个 `% 300 == 0` 的 `if`**（它的 `end` 原本在
   --   下面"每 30 帧点亮 face"整段之后 ⇒ 把 `%30` 套进了 `%300` 里，实际每 300 帧才跑一次）。
@@ -1899,6 +2024,23 @@ function Murdoku.on_update(dt)
   --    ⇒ 正确位置：**文件级 local**（见文件顶部 `local murdoku_vis_memo = {}` 那三行）——
   --      既能被本函数与闭包看见 ✓，又**活在两次调用之间** ✓，且不污染全局表 ✓。
   if murdoku_vis_memo == nil then murdoku_vis_memo = {} end
+  -- ★★★★★ 2026-10-11 性能优化 **大鱼 1**：换代（屏/关/棋盘尺寸）时**建一次**名字清单 ✓
+  --   ★ 原来清单是**每帧现拼**的（`"selbtn." .. i` ＋ `"cell." .. r .. "." .. c`
+  --     ≈ 90 个字符串/帧 ✓）
+  --   ★ 签名里含 `cells_rows` ✗✓（我第一次漏了 —— 而 `ensure_cells` 是**进关之后**
+  --     才写 `adapter.cells_rows` 的 ✓ ⇒ 若只用"屏|关卡"做键，
+  --     进关那一帧会按**旧的 5** 建出 25 个 cell ⇒ **6×6/7×7 关卡的格子又漏同步** ✗
+  --     正是本项目刚修过的那个"跨关点击"病 ✓ ⇒ 所以尺寸必须进签名 ✓）
+  do
+    local lev0 = current.level
+    local lid0 = (lev0 ~= nil) and (lev0.id or lev0.key or lev0.name) or nil
+    local r0 = (current.adapter ~= nil) and current.adapter.cells_rows or nil
+    local ids_key = tostring(scr_now) .. "|" .. tostring(lid0) .. "|" .. tostring(r0)
+    if ids_key ~= murdoku_vis_ids_key or murdoku_vis_ids == nil then
+      murdoku_vis_ids_key = ids_key
+      murdoku_vis_ids = murdoku_build_vis_ids(scr_now, r0)
+    end
+  end
   do
     local lev = current.level
     local lid = (lev ~= nil) and (lev.id or lev.key or lev.name) or nil
@@ -1916,56 +2058,30 @@ function Murdoku.on_update(dt)
       local fnow = tonumber(rawget(current, "frames")) or 0
       local forcing = (fnow < (murdoku_vis_force_to or 0))
       local wrote = 0
-      local function setv(nm, want)
-        -- ★★★★★ 2026-10-03 **改用 `adapter.controls` 直接取引用，不再依赖 `find`**。
-        --
-        --   真机证据链（22:33 日志）：
-        --     · `ensure_widgets` 里用**局部变量 `bar`** 调 `SetVisible(false)` ⇒ **成功**
-        --       （诊断行：`选关条创建后已隐藏：selbar=false  selbtn.1=false`）
-        --     · 但 `main.lua` 里所有"先 `adapter:find("selbar")` 拿句柄再设"的地方 ⇒ **全都无效**
-        --       （进关卡后日志仍是 `selbar 可见=true`）
-        --   ⇒ 结论：**`find` 拿不到这些运行时创建/改过名的控件**
-        --     （项目注释早写过「`Adapter:sub()` 未命中会**永久缓存 false**」）
-        --   ⇒ 走 `controls` 里那份**直接引用**；拿不到再退回 `find` 兜底。
-        local c = nil
-        if ad_vis.controls ~= nil then c = ad_vis.controls[nm] end
-        if c == nil then pcall(function() c = ad_vis:find(nm) end) end
-        if c == nil then return end
-        -- ① **读回当前值**（读便宜、写贵 —— 要省掉的是引擎侧的 `SetVisible`）。
-        --    已经等于目标 ⇒ **一笔都不写**，直接返回。
-        --
-        --    ⚠️ 为什么光靠"写值记忆"到不了 0 笔/帧（实测 2026-10-05）：
-        --       `main.lua` 里**另一处**（渲染那段的 `bar:SetVisible(on_select)`）也在写
-        --       同一个 `selbar`，而且它**每帧无条件写** ⇒ 我们记的"上次写下去的值"
-        --       和引擎里的真实值**会分叉** ⇒ 光看记忆每帧都会重写一遍
-        --       （实测稳态 602 笔/600 帧 —— 就是这一条造成的）。
-        --       读回真实值之后：只要引擎里已经是目标值，无论谁写过的，我们都不再动它。
-        --       这一读还顺带把"外部把值抢回去了"这件事变成**当帧就看得见**，
-        --       比"只在换屏时开窗"更稳。
-        --    ⚠️ 读不到 `visible`（引擎不提供这个字段）时**退回写**，不许因为读不到就不压。
-        local cur_vis = nil
-        pcall(function() cur_vis = c.visible end)
-        if not forcing and cur_vis == want then
-          murdoku_vis_memo[nm] = want
-          return
+      -- ★★★★★ 2026-10-11 性能优化：**改用文件级写入器 ＋ 换代缓存的清单** ✗✓
+      --   ★ 原来 ✗：`local function setv`（每帧新建闭包 ↑ 34 个/帧）
+      --     ＋ 每帧现拼那 90 个字符串 ✓
+      --   ★ 现在 ✓：写入器是**文件级函数** `murdoku_set_vis` ✓
+      --     清单是 `murdoku_vis_ids`（上面刚按签名建好 ✓）
+      --   ⚠️ 语义一字不差 ✓（目标值映射与原实现逐条对齐）：
+      --      · `selbar` / `selbtn.*` ⇒ `in_select` ✓
+      --      · `tpl-container`      ⇒ **false**（哪个页面都不该显示 ✓）
+      --      · `cell.*`             ⇒ **true**，且清单**只在关卡内**才含它们 ✓
+      --        —— 等价于原来的 `if in_level then` 包裹 ✓
+      local vis_ids = murdoku_vis_ids
+      if vis_ids ~= nil then
+        for i = 1, #vis_ids do
+          local nm = vis_ids[i]
+          local want
+          if nm == "tpl-container" then
+            want = false
+          elseif nm:sub(1, 5) == "cell." then
+            want = true
+          else
+            want = in_select
+          end
+          wrote = wrote + murdoku_set_vis(ad_vis, nm, want, forcing, murdoku_vis_memo)
         end
-        -- ② 写值记忆：目标与"上次真的写下去的值"相同、而读回又读不到时，仍然只写一次。
-        --    ⚠️ 写失败（pcall 返回 false）时不记这笔 ⇒ 下一帧还会重试。
-        if (not forcing) and murdoku_vis_memo[nm] == want and cur_vis == nil then return end
-        local okw = pcall(function() c:SetVisible(want) end)
-        if okw then
-          murdoku_vis_memo[nm] = want
-          wrote = wrote + 1
-        end
-      end
-      -- 选关按钮条：**只在选关页可见**
-      setv("selbar", in_select)
-      for i = 1, 6 do setv("selbtn." .. tostring(i), in_select) end
-      -- 模板引用控件：**哪个页面都不该显示**（它只是模板的引用）
-      setv("tpl-container", false)
-      -- 关卡内的棋盘格子：只在关卡内可见
-      if in_level then
-        for r = 1, 5 do for c = 1, 5 do setv("cell." .. r .. "." .. c, true) end end
       end
       -- ★ 每帧把"这一帧写了几笔"记在 `current` 上（纯记账，给离线探针/真机日志量成本用）。
       current._vis_wrote = wrote
@@ -2075,8 +2191,21 @@ function Murdoku.on_update(dt)
                 --   原因：模板里 `content` 是 **135×135**，而格子只有 **124×124**
                 --   ⇒ 内容**溢出到相邻格子**、把缝隙填满了。
                 --   （`face` 我上一版已经设成 124，但 `content` 和里面的 `x` 没管。）
-                pcall(function() k:SetSizeDelta(cw, ch) end)
-                pcall(function() k:SetAnchoredPosition(0, 0) end)
+                -- ★★★★★ 2026-10-11 性能优化：**几何也加"读回再写"守卫** ✗✓（口径同上面 `visible` 那几处）
+                --   ★ 实测（`tests/_wip/geo_write_count.lua` 稳态 60 帧）：`content`/`face`/`x`
+                --     各 50 笔 size + 50 笔 pos（60 帧里 `%30` 命中 2 趟 × 25 格 ✓）
+                --     ⇒ 稳态**全是幂等**的 ✓ 纯白烧 ✓
+                --   ⚠️ 读不到就照写 ✓（不许因为读不到就不摆 ✓）
+                local cgw, cgh = nil, nil
+                pcall(function() cgw, cgh = k:GetSizeDelta() end)
+                if not (cgw == cw and cgh == ch) then
+                  pcall(function() k:SetSizeDelta(cw, ch) end)
+                end
+                local cgx, cgy = nil, nil
+                pcall(function() cgx, cgy = k:GetAnchoredPosition() end)
+                if not (cgx == 0 and cgy == 0) then
+                  pcall(function() k:SetAnchoredPosition(0, 0) end)
+                end
               end
               if kn == "face" then
                 -- ★★★★★ 2026-10-05 Round 82 **读回再决定写不写** ✓（原来无条件写 ✗）
@@ -2087,8 +2216,17 @@ function Murdoku.on_update(dt)
                 local fv = nil
                 pcall(function() fv = k.visible end)
                 if fv ~= true then pcall(function() k:SetVisible(true) end) end
-                pcall(function() k:SetSizeDelta(cw, ch) end)
-                pcall(function() k:SetAnchoredPosition(0, 0) end)
+                -- ★★★★★ 2026-10-11 性能优化：几何补上"读回再写"守卫 ✓（口径见上）
+                local fgw, fgh = nil, nil
+                pcall(function() fgw, fgh = k:GetSizeDelta() end)
+                if not (fgw == cw and fgh == ch) then
+                  pcall(function() k:SetSizeDelta(cw, ch) end)
+                end
+                local fgx, fgy = nil, nil
+                pcall(function() fgx, fgy = k:GetAnchoredPosition() end)
+                if not (fgx == 0 and fgy == 0) then
+                  pcall(function() k:SetAnchoredPosition(0, 0) end)
+                end
                 face = k
               end
               -- ★ 划掉标记 `x`：**别顶满格子**（用户："x 也太大了"）。
@@ -2101,9 +2239,20 @@ function Murdoku.on_update(dt)
     --     ⇒ ★ **顶满格子 ⇒ 变大** ✓✓ —— ★ **我删反了** ✗：
     --     ★ **该留的是【这一条】（★ 70% ✓ 用户当年要求的 ✓）** ✓
     --     ★ **该删的是 adapter 那个 108×108** ✗（★ 待办 ✓）
+    -- ★★★★★ 2026-10-11 **保留 70% 的语义，只加"读回再写"守卫** ✗✓
+    --   ★ 禁区文档写得很清楚 ✓：「**可以**：读回守卫 ✓　**不可以**：删 `x` 的 70% ✗」
+    --     ⇒ 这里**一行语义都没删** ✓ 只把"值没变就不写"补上 ✓
     if kn == "x" then
-      pcall(function() k:SetSizeDelta(cw * 0.7, ch * 0.7) end)
-      pcall(function() k:SetAnchoredPosition(0, 0) end)
+      local xw, xh = nil, nil
+      pcall(function() xw, xh = k:GetSizeDelta() end)
+      if not (xw == cw * 0.7 and xh == ch * 0.7) then
+        pcall(function() k:SetSizeDelta(cw * 0.7, ch * 0.7) end)
+      end
+      local xx, xy = nil, nil
+      pcall(function() xx, xy = k:GetAnchoredPosition() end)
+      if not (xx == 0 and xy == 0) then
+        pcall(function() k:SetAnchoredPosition(0, 0) end)
+      end
     end
               if face == nil and k.GetChildren ~= nil then
                 local kk = nil
@@ -2118,12 +2267,29 @@ function Murdoku.on_update(dt)
                     local gv = nil
                     pcall(function() gv = c2.visible end)
                     if gv ~= true then pcall(function() c2:SetVisible(true) end) end   -- 只点亮 face，别的孙子不动
-                    pcall(function() c2:SetSizeDelta(cw, ch) end)
-                    pcall(function() c2:SetAnchoredPosition(0, 0) end)
+                    -- ★★★★★ 2026-10-11 性能优化：几何补上"读回再写"守卫 ✓
+                    local ggw, ggh = nil, nil
+                    pcall(function() ggw, ggh = c2:GetSizeDelta() end)
+                    if not (ggw == cw and ggh == ch) then
+                      pcall(function() c2:SetSizeDelta(cw, ch) end)
+                    end
+                    local ggx, ggy = nil, nil
+                    pcall(function() ggx, ggy = c2:GetAnchoredPosition() end)
+                    if not (ggx == 0 and ggy == 0) then
+                      pcall(function() c2:SetAnchoredPosition(0, 0) end)
+                    end
                     face = c2
     elseif cn == "x" then
-      pcall(function() c2:SetSizeDelta(cw * 0.7, ch * 0.7) end)
-      pcall(function() c2:SetAnchoredPosition(0, 0) end)
+      local zxw, zxh = nil, nil
+      pcall(function() zxw, zxh = c2:GetSizeDelta() end)
+      if not (zxw == cw * 0.7 and zxh == ch * 0.7) then
+        pcall(function() c2:SetSizeDelta(cw * 0.7, ch * 0.7) end)
+      end
+      local zxx, zxy = nil, nil
+      pcall(function() zxx, zxy = c2:GetAnchoredPosition() end)
+      if not (zxx == 0 and zxy == 0) then
+        pcall(function() c2:SetAnchoredPosition(0, 0) end)
+      end
                   end
                 end
               end

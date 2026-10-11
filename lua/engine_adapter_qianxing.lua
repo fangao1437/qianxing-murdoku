@@ -1764,6 +1764,99 @@ end
 --     · 记进 `self.instantiated`（只有脚本生成的才允许销毁）
 --
 --   按钮 id：`selbtn.1` … `selbtn.N`（N = 关卡数，由调用方传）
+-- ★★★★★★ 2026-10-12 **`ensure_ruler`：把行标/列标【脚本建出来】** ✗✓✓
+--
+--   ★★ 背景 ✓（★ 用户：「优化中挖出来一个我都忘记了的东西，它叫 `ruler`，也就是行标和列标」✓）：
+--     · ★ **`Adapter:apply_ruler_layout`（本文件 L2653 起）实现【完整存在】✓**
+--        —— ★ 它按格子**实际位置**把 `ruler.c.j` / `ruler.r.i` 贴到中心 ✓
+--        —— ★ 还会 `SetPivot(0.5,0.5)` 归中 ✓（★ 不归中会剩 ~25px 恒定偏移 ✓）
+--     · ★★ **但它【只对齐 ✗ 不创建 ✗】** ⇒ `find("ruler")` = nil ⇒ **`return 0`** ✗
+--     · ★★★ **⇒ 存档里从来没有 `ruler.*`** ✗（★ 日志「这些控件还没建 … `ruler.*` ×10 …」✓）
+--     · ★★★★ **⇒ 功能是【哑的】** ✓✓
+--
+--   ★★★ 为什么【脚本自建】而不是【编辑器摆】✓（★ 用户给的关键证据 ✓）：
+--     ★ `main.lua` L551-553 原文 ✓：
+--       「★ **用"脚本创建"重做选关按钮**（用户指定的路线）✓
+--         ★★ **真机证明只有脚本创建的控件能收到点击**（★ 关卡里的格子 ✅、编辑器摆的卡片 ❌）」
+--     ★★ 而且**对齐逻辑已经写好** ✓ ⇒ 这里只缺"把控件造出来"这一步 ✓✓
+--
+--   ★★ 模板 ✓：★ **用户 2026-10-12 新建了【文本模板】`1073742712`** ✓
+--     ★（★ 存档 `340ruler.gil` ✓ —— ★ 模板索引【不在存档记录里】✓ 与 `cfg.cells.prefab` 同理 ✓）
+--
+--   ★ 文字约定 ✓：★ **列标 = 大写字母（`A`/`B`/… ✓）★ 行标 = 数字（`1`/`2`/… ✓）**
+--     ★ 与常规棋盘一致 ✓；★ 若用户要换，改 `ruler_text_of` 一处即可 ✓
+function Adapter:ensure_ruler(rows, cols)
+  rows = tonumber(rows) or 5
+  cols = tonumber(cols) or 5
+  if game == nil or game.InstantiateClientUIControl == nil then
+    return 0, 0, "环境没有 game.InstantiateClientUIControl"
+  end
+
+  -- ★ 容器模板：复用 `selbar` 那套（`cfg.stage.prefab` ✓ 已被真机验证能实例化 ✓）
+  local cprefab = self.cfg.stage and self.cfg.stage.prefab
+  if cprefab == nil then return 0, 0, "没有 cfg.stage.prefab（没有容器模板）" end
+  -- ★ 文本模板：优先 cfg，回落用户给的索引 ✓
+  local tprefab = (self.cfg.ruler and self.cfg.ruler.prefab) or 1073742712
+
+  local function instantiate(prefab, parent, id)
+    local ok, obj = pcall(game.InstantiateClientUIControl, prefab, parent)
+    if not ok or obj == nil then return nil end
+    pcall(function() obj.name = id end)
+    local got = nil
+    pcall(function() got = tostring(obj.name) end)
+    if got ~= id then
+      self:warn_once("ruler:name:" .. id,
+        "行标/列标改名字没生效：想要 `" .. id .. "`，读回来是 `" .. tostring(got) .. "`。")
+    end
+    self.controls[id] = obj
+    self.instantiated = self.instantiated or {}
+    self.instantiated[id] = true
+    return obj
+  end
+
+  -- ★ ① 容器 `ruler`
+  local made, existed = 0, 0
+  local ruler = self:find("ruler")
+  if ruler ~= nil then
+    existed = existed + 1
+  else
+    local parent = self:find("root") or self:find("stage")
+    if parent == nil then return 0, 0, "找不到 `ruler` 的父容器（root / stage 都没有）" end
+    ruler = instantiate(cprefab, parent, "ruler")
+    if ruler == nil then return 0, 0, "容器模板 " .. tostring(cprefab) .. " 实例化失败" end
+    made = made + 1
+  end
+
+  -- ★ ② 列标 `ruler.c.j` ／ 行标 `ruler.r.i`
+  local function letter(n)
+    local s = ""
+    while n > 0 do
+      local d = (n - 1) % 26
+      s = string.char(65 + d) .. s
+      n = math.floor((n - 1) / 26)
+    end
+    return s
+  end
+  local function ensure_label(id, txt)
+    local c = self:find(id)
+    if c ~= nil then
+      existed = existed + 1
+    else
+      c = instantiate(tprefab, ruler, id)
+      if c == nil then return end
+      made = made + 1
+    end
+    -- ★ 写文字：★ 两个都试 ✓（★ 项目铁律：`.text` 为 nil 时 `SetText` 才有效 ✓）
+    pcall(function() c.text = txt end)
+    pcall(function() c:SetText(txt) end)
+    pcall(function() c:SetVisible(true) end)
+  end
+  for j = 1, cols do ensure_label("ruler.c." .. j, letter(j)) end
+  for i = 1, rows do ensure_label("ruler.r." .. i, tostring(i)) end
+
+  return made, existed
+end
+
 function Adapter:ensure_widgets(count)
   count = count or 8
   if game == nil or game.InstantiateClientUIControl == nil then
@@ -2826,6 +2919,31 @@ end
 -- 真机若不开放该字段，pcall 会失败 → 返回 0 → 上层只记一条提示，不影响运行。
 function Adapter:enable_cursor()
   local n = 0
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  -- ★★ 2026-10-11 性能优化：**加"收敛即停"闩锁**（照抄 `enable_raycast` 那套已验证的权衡 ✓）
+  --
+  --   ★ 改之前 ✗：本函数被 `main.lua` 的 `% 20 == 0` **每 20 帧调一次，永不停止** ✓
+  --     每趟成本 ✓：12 次 `find` ＋ **12 笔无条件 `ctrl.showCursor = true` 引擎写** ✗
+  --       ＋ 回读那段 12 次 `find` ＋ 每容器最多 4 次 `pcall` 属性读 ＋ `table.concat` ✓
+  --       ⇒ 约 **3 趟/秒，一直烧到关服** ✗✓
+  --   ★ 而它做的事是**幂等**的 ⇒ 一旦**全都读回 true**，往后每一趟都是纯白跑 ✓
+  --   ★ 姊妹函数 `enable_raycast` 早有这套（`st.done` 早停 ＋ `rearm_raycast` ✓）
+  --     —— 这一条**只是把同一套补上** ✓ 不是新发明 ✓
+  --   ★ 安全判据 ✓：只有**12 个容器全找到、且 showCursor 全读回 true**才认定收敛 ✓
+  --     （有一个找不到 / 读回不是 true ⇒ `idle` 清零 ⇒ 下一趟照跑 ✓ 绝不提前停 ✓）
+  --   ★★ 换屏 / 换关必须**重新武装** ✓（`Adapter:rearm_cursor` ✓）——
+  --     `home` / `select` 是**第一次渲染时才 create_control** 的 ✓
+  --     ⇒ 那正是本函数当初"只在开局调一次 ⇒ 永远开不上"那个 bug 的成因 ✓
+  --   ⚠️ 本改动**不动**控件集合、不动写入值、不动回读口径 ✓ 只让"做完之后别再重复做" ✓
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  if self._cursor ~= nil and self._cursor.done then
+    return self._cursor.n or 0          -- ★ 收敛后：一次树都不走 ✓
+  end
+  local st = self._cursor
+  if st == nil then
+    st = { idle = 0, done = false, n = 0 }
+    self._cursor = st
+  end
   for i = 1, #CURSOR_CONTAINERS do
     -- ⚠️⚠️ 2026-10-02 **这里原来写的是 `MANAGED[i]`** —— 边界用 CURSOR_CONTAINERS（12 项），
     --   取名字却用 MANAGED（只有 10 项）⇒ i=11/12 时 `MANAGED[i]` 是 **nil**
@@ -2850,11 +2968,14 @@ function Adapter:enable_cursor()
   --   如果 `root`/`home`/`select` 的 `kind` 不是 `"container"`（比如是别的名字），
   --   门控②**永远不满足** ⇒ 点不动 —— 而且能解释探针那句"所有容器都不支持光标事件"。
   local parts = {}
+  local found, all_true = 0, true          -- ★ 收敛判据的两个量（见函数头注释 ✓）
   for i = 1, #CURSOR_CONTAINERS do
     local ctrl = self:find(CURSOR_CONTAINERS[i])
     if ctrl ~= nil then
+      found = found + 1
       local sc, kd = "?", "?"
       pcall(function() sc = tostring(ctrl.showCursor) end)
+      if sc ~= "true" then all_true = false end
       -- `kind` 可能叫别的名字，多试几个写法，读不到就留 "?"
       pcall(function() kd = tostring(ctrl.kind) end)
       if kd == "nil" then pcall(function() kd = tostring(ctrl.Kind) end) end
@@ -2863,6 +2984,7 @@ function Adapter:enable_cursor()
       parts[#parts + 1] = CURSOR_CONTAINERS[i] .. "(kind=" .. kd .. ",cur=" .. sc .. ")"
       -- （类型探测已撤：它每 20 帧打一次，刷屏；结论已记录在 enable_cursor 上方）
     else
+      all_true = false
       parts[#parts + 1] = CURSOR_CONTAINERS[i] .. "=**找不到**"
     end
   end
@@ -2872,7 +2994,39 @@ function Adapter:enable_cursor()
     self._cursor_line = line
     print("[murdoku] 常驻光标回读（门控②）：" .. line)
   end
+  -- ── 收敛账：全找到 ＋ 全读回 true ⇒ 连记 3 趟 ⇒ 认定收敛，之后一次树都不走 ──
+  --    ⚠️ 与 `enable_raycast` 同一套：**不赌单趟**（防某一帧读回抖动）✓
+  st.n = n
+  if found >= #CURSOR_CONTAINERS and all_true then
+    st.idle = st.idle + 1
+    if st.idle >= 3 then
+      st.done = true
+      if print and not self._cursor_done_logged then
+        self._cursor_done_logged = true
+        print(PREFIX .. "常驻光标：已收敛（" .. tostring(found) .. " 个容器 showCursor 全为 true）"
+          .. " ⇒ 不再每 20 帧重扫；换屏/换关会重新武装")
+      end
+    end
+  else
+    st.idle = 0                            -- ★ 有一个不满足 ⇒ 重新计数，绝不提前停 ✓
+  end
   return n
+end
+
+-- ★★★★★ 2026-10-11 **换屏 / 换关时重新武装常驻光标那一趟** ✗✓
+--   为什么必须有它（这是"能不能早停"的**唯一保险** ✓）：
+--     `home` / `select` 这两个屏幕容器是**第一次渲染时才 `create_control`** 的 ✓
+--     ⇒ 收敛发生在主页时，它们可能**还没被建** ⇒ 若就此永久早停，
+--       进关卡后新建的容器**永远开不上 showCursor** ✗ ⇒ 回到"看得见、点哪儿都没反应" ✓
+--   判据用**换代事件**（screen / level_id 变了 ✓）—— 与 `rearm_raycast` 同一个触发点 ✓
+function Adapter:rearm_cursor(why)
+  local st = self._cursor
+  if st == nil then return end
+  if not st.done and st.idle == 0 and st.n == 0 then return end   -- 本来就没跑过 ⇒ 没什么可武装
+  st.idle, st.done = 0, false
+  if self.cfg and self.cfg.debug_raycast and print then
+    print(PREFIX .. "常驻光标：重新开始扫描（" .. tostring(why) .. "）")
+  end
 end
 
 -- 把「脚本能看到的客户端控件名字」打出来。

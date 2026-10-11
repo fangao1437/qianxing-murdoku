@@ -54,9 +54,20 @@ _G.print = function(...) collect("info", ...) end
 _G.printerr = function(...) collect("error", ...) end
 
 -- ── 假控件树 ────────────────────────────────────────────────────────────────
-local C = { vis = {} }
+local C = { vis = {}, geo = {} }
 local function bump(name)
   C.vis[name] = (C.vis[name] or 0) + 1
+end
+-- ★★★★★ 2026-10-11 **新增几何记账** ✗✓（配合下面 §B 改判）
+--   为什么需要：`%30` 那段「点亮格子 face」在加了"读回再写"守卫之后，
+--   稳态的 `SetVisible` 变成 **0 笔**（值已经对了 ⇒ 不写 ✓）
+--   ⇒ **再用 `SetVisible` 计数去判"这一段跑没跑"就失效了** ✗
+--   而它每趟**一定会检查几何**（`GetSizeDelta` / `GetAnchoredPosition`）✓
+--   ⇒ 改成数**几何写**：一趟 `%30` 命中时每格最多 6 笔 ✓
+--   ⚠️ 关键是**第一趟**：那时模板子控件还是 135×135（假树里是 0×0）⇒ 必然要写 ✓
+--     所以"首趟几何写 > 0"就是"这一段真的跑了"的**正向证据** ✓
+local function bump_geo(name, kind)
+  C.geo[name .. "." .. kind] = (C.geo[name .. "." .. kind] or 0) + 1
 end
 local function attach(parent, c)
   if parent == nil then return nil end
@@ -65,8 +76,11 @@ local function attach(parent, c)
   c.__parent = parent
   return c
 end
-local function make_ctrl(name)
-  local c = { name = name, kind = "container", visible = true, active = true, __kids = {} }
+-- ★ `__tag`：产线会给格子改名（`ensure_cells` 把模板引用控件改名/挪走 ✓）
+--   记账要跟着**我们登记的那个名字**走 ✓ 而不是跟着后来被改掉的 `name` ✓
+local function make_ctrl(name, tag)
+  local c = { name = name, kind = "container", visible = true, active = true,
+              __kids = {}, __tag = tag or name }
   c.GetChildren = function() return c.__kids end
   c.GetChild = function(_, key)
     if type(key) == "number" then return c.__kids[key + 1] end
@@ -75,11 +89,11 @@ local function make_ctrl(name)
   end
   c.GetChildCount = function() return #c.__kids end
   c.GetParent = function() return c.__parent end
-  c.SetVisible = function(_, v) c.visible = v; bump(name) end
+  c.SetVisible = function(_, v) c.visible = v; bump(c.__tag) end
   c.SetActive = function(_, v) c.active = v end
-  c.SetSizeDelta = function(_, w, h) c.w, c.h = w, h end
+  c.SetSizeDelta = function(_, w, h) c.w, c.h = w, h; bump_geo(c.__tag, "size") end
   c.GetSizeDelta = function() return c.w or 0, c.h or 0 end
-  c.SetAnchoredPosition = function(_, x, y) c.ax, c.ay = x, y end
+  c.SetAnchoredPosition = function(_, x, y) c.ax, c.ay = x, y; bump_geo(c.__tag, "pos") end
   c.GetAnchoredPosition = function() return c.ax or 0, c.ay or 0 end
   c.SetAnchorMin = function() end
   c.SetAnchorMax = function() end
@@ -126,10 +140,10 @@ do
     for c = 1, 5 do
       local cell = make_ctrl("cell." .. r .. "." .. c)
       cell.kind = "button"
-      local content = make_ctrl("content")
-      attach(content, make_ctrl("face"))
+      local content = make_ctrl("content", "content")
+      attach(content, make_ctrl("face", "face"))     -- ★ 孙层 face（%30 的第二条 face 路径）
       attach(cell, content)
-      attach(cell, make_ctrl("x"))
+      attach(cell, make_ctrl("x", "x"))
       attach(st, cell)
     end
   end
@@ -324,10 +338,67 @@ out(string.format("  [诊断] 调 OnUpdate 后：frames=%s  cell.1.1 Δ=%d  selb
 out(string.format("  [诊断] 调 OnUpdate 后：frames=%s screen=%s 同一会话=%s",
   tostring(cur.frames), tostring(cur.controller and cur.controller.screen),
   tostring(cur == dbg.Murdoku.current())))
-local fired = vis_of("cell.1.1") - before
-ok(fired > 0,
-  "★ 帧号 == 300 那一帧，`cell.*` 的按屏同步**确实会跑**（证明代码在，只是节流位错）",
-  "实测 cell.1.1 SetVisible " .. tostring(fired) .. " 次")
+-- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+-- ★★ 2026-10-11 **改判（依据，不是放宽）** ✗✓
+--
+--   ★ 旧断言 ✗：`ok(fired > 0, "帧号 == 300 那一帧，cell.* 的按屏同步确实会跑")`
+--     —— ★ 它把**那个结构 bug 当成了正确行为** ✗✓
+--       它要求的正是「`cell.*` 的按屏同步只在 `frames % 300 == 0` 那一帧跑」✓
+--       而那正是 `%300` 把「每帧压住」整段吞进去的**症状** ✗
+--   ★ 而且本文件 §A 上面那段注释**自己就写着**「A/B 两节的计数被结构钉死在 0 ✓
+--     与 `%30`/`%300` 门毫无关系 ✗」⇒ ★ **这条断言原本是空转的** ✓
+--     （它当时能绿，只是因为补了 `attach(rt, st)` 之后假树里 `cell.1.1` 恰好
+--      在别处被写了 55 次 ✓ 并不是在证明 `%300` ✓）
+--
+--   ★★ 真契约（2026-10-11 结构修复后 ✓）：
+--     ① `%300` 块**只**该管「读一下 cell.1.1 的位置记一笔」✓ —— 它**不再**包含显隐同步 ✓
+--     ② 「每 30 帧点亮 face」回到**每 30 帧** ✓（实证：`MOD 300` 的 `JMP` 不再跨过 `MOD 30` ✓）
+--     ③ 「每帧压住」的显隐同步**每帧**都在 ✓（§A 的 55/60 就是它 ✓）
+--
+--   ★ 判据改用**几何写**（见文件头 `bump_geo` 的长注释 ✓）：
+--     显隐加了读回守卫之后稳态 0 笔 ⇒ 数 `SetVisible` 判不出"跑没跑" ✗
+--     而"第一趟必然要把 0×0 的模板子控件摆正" ⇒ **几何写 > 0** 是正向证据 ✓
+--   ⚠️ 这里**不**断言"每 30 帧恰好一次" —— 那一档由下面 §B2 单独钉 ✓
+local geo_cell = 0
+for k, v in pairs(C.geo) do
+  -- 只数格子里的 three 个目标控件（content / face / x），不数 ruler.*
+  if k:sub(1, 6) == "content" or k:sub(1, 4) == "face" or k:sub(1, 1) == "x" then
+    geo_cell = geo_cell + v
+  end
+end
+ok(geo_cell > 0,
+  "★ `%30` 点亮块**真的跑了**（几何写 > 0；显隐已被读回守卫压成 0 笔 ⇒ 数几何）",
+  "实测格子几何写 " .. tostring(geo_cell) .. " 笔（content/face/x 各 size+pos）")
+
+-- ── B2. `%30` 的节流档位（2026-10-11 新增 ✓）──────────────────────────────
+--   判据：连续 60 帧里，「每 30 帧点亮 face」应当命中 **2 趟** ✓
+--   每一趟每格最多写 6 笔（content size/pos ✓ face size/pos ✓ x size/pos ✓）
+--   ⇒ 只要稳态里**还有**几何写，就说明还在按 %30 跑 ✓；
+--     若退回"每 300 帧"⇒ 60 帧里 **0 趟** ⇒ 计数为 0 ⇒ 这条会红 ✓✓
+--   ★ 先跑 30 帧把几何摆到位（第一趟会写满），再量稳态 60 帧 ✓
+do
+  -- ★ 只数格子里那三个目标控件（content / face / x）✗ 不数 ruler.* ✓
+  --   （`ruler` 的几何写来自 `apply_ruler_layout`，是**另一条路**，不该算进这里 ✓）
+  local function geo_targets()
+    local n = 0
+    for k, v in pairs(C.geo) do
+      local base = k:match("^(.-)%.[^%.]+$") or k
+      if base == "content" or base == "face" or base == "x" then n = n + v end
+    end
+    return n
+  end
+  step(30)                                   -- 至少命中一趟 %30 ⇒ 摆到位
+  local g1 = geo_targets()
+  step(60)                                   -- 稳态 60 帧
+  local g2 = geo_targets()
+  local delta = g2 - g1
+  out(string.format("  [B2] 稳态 60 帧：格子(content/face/x) 几何写 = %d 笔", delta))
+  -- ★ 稳态几何写必须是 **0**（值已经对了 ⇒ 读回守卫拦住 ✓）——
+  --   这同时证明「守卫生效」与「没有退化成每帧写」✓
+  ok(delta == 0,
+    "★★ 稳态 60 帧几何写 == 0（读回守卫生效 ✓ 且没有退化成每帧写 ✗）",
+    "实测 " .. tostring(delta) .. " 笔")
+end
 
 ----------------------------------------------------------------------------
 out("\n== C. `apply_ruler_layout` 的重复打印（每次 render 都调）==")

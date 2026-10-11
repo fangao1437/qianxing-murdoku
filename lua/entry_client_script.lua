@@ -184,7 +184,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v192 / 2026-10-11 / action.back整颗删除(含topbar的返回菜单+六边形底图+两处main.lua引用);返回功能由hex.back承担 =====")
+        print("[murdoku] ===== 构建标记 v198 / 2026-10-12 / 恢复ruler行标列标:apply_ruler_layout本来就有(只对齐不创建)⇒加ensure_ruler用文本模板1073742712脚本建;列标A-Z行标1-N =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

@@ -1636,11 +1636,26 @@ function Controller:tick(dt)
   local elapsed = (self.core.elapsed or 0) + (dt or 0)
   self.core:set_elapsed(elapsed)
   self:flush_pending_note()      -- 挂起的单击到点就落成笔记（成功时它自己置 dirty）
-  local sec = math.floor(elapsed)
-  if sec ~= (self._hud_sec or sec) then
-    self._hud_sec = sec
-    self.dirty = true
-  end
+  -- ★★★★★ 2026-10-11 性能优化：**删掉「整秒心跳」那段死条件** ✗✓（零行为影响 ✓）
+  --   ★ 原文（改之前）✗：
+  --       local sec = math.floor(elapsed)
+  --       if sec ~= (self._hud_sec or sec) then
+  --         self._hud_sec = sec
+  --         self.dirty = true
+  --       end
+  --   ★★ 它是**恒假**的 ✓ —— 判据自己把自己否掉了：
+  --     `self._hud_sec` 的**唯一**赋值点就在这个 `if` 的**体内** ✓
+  --     ⇒ 首次进入时 `self._hud_sec == nil` ⇒ 右边 `(nil or sec)` **就是 `sec`** ✓
+  --     ⇒ `sec ~= sec` **恒假** ✓ ⇒ 体内永不执行 ✓ ⇒ `_hud_sec` **永远是 nil** ✓
+  --   ★ 全仓只剩那两行出现过 `_hud_sec` ✓（`grep -n _hud_sec lua/*.lua` 实证 ✓）
+  --   ★ 那"每秒重绘一次"到底靠谁 ✓：**`main.lua` 的 render 门** ✓
+  --       `if sec ~= current.last_tick or current.controller.dirty then`
+  --     ★ 那一份用 `current.last_tick`（会被真的赋值 ✓）⇒ **节拍由它供给** ✓
+  --   ⚠️ 顺带更正一条会误导估算的旧注释 ✓：本文件别处写着
+  --     「render 在真机上是**每帧**都跑的（`Controller:tick` 每帧 `self.dirty = true`）」✗
+  --     —— 与本文件另一处「tick 不再无条件 `self.dirty = true`」**自相矛盾** ✓
+  --     而实测口径（`engine_adapter_qianxing.lua` 里记的）是 **1.10 次/秒** ✓
+  --     ⇒ 按"每帧"估 render 成本会**高估约 60 倍** ✗✓
   if #self.effects > 0 then self.dirty = true end
 end
 
@@ -6782,6 +6797,22 @@ function Controller:render(adapter, force)
       if adapter ~= nil and adapter.rearm_raycast ~= nil then
         pcall(function()
           adapter:rearm_raycast("screen=" .. tostring(self.screen)
+            .. " level=" .. tostring(lv_id))
+        end)
+      end
+      -- ★★★★★ 2026-10-11 **换代也要重新武装「常驻光标」那一趟** ✗✓
+      --   为什么必须在这里、而且**只在这里**（与上面 `rearm_raycast` 完全同一个理由 ✓）：
+      --     常驻光标那一趟加了**收敛即停**的闩锁（`Adapter:enable_cursor` 的 `_cursor.done` ✓）
+      --     而 `home` / `select` 是**第一次渲染时才 create_control** 的 ✓
+      --     ⇒ 若收敛之后永久早停，进关卡后新建的容器**永远开不上 showCursor** ✗
+      --       ⇒ 又回到"界面看得见、点哪儿都没反应" ✓（门控②那个老病 ✓）
+      --   ⚠️ 同样**不能**挂进 `invalidate_lookups` ✗ —— 那个函数还被 `create_control` /
+      --      `destroy_control` **每个控件各调一次**（进关时几十次 ✓）
+      --      ⇒ 挂那儿等于"每建一个控件就重扫一趟"，白跑比不改还多 ✓
+      --   ★ 复用的是**同一个换代判据块**（screen / level_id 变了 ✓），不是同一个函数 ✓
+      if adapter ~= nil and adapter.rearm_cursor ~= nil then
+        pcall(function()
+          adapter:rearm_cursor("screen=" .. tostring(self.screen)
             .. " level=" .. tostring(lv_id))
         end)
       end
