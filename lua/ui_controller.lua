@@ -842,6 +842,36 @@ function Controller:on_cell_up(r, c, x, y)
   end
   local ok = self:do_place(r, c)
   print("[murdoku] ★ 放置分辨：抬起被判定为【长按】✓ 时长=" .. string.format("%.2f", dt))
+  -- ★★★★★★★★ 2026-10-11 **长按时长的一次性统计** ✗✓✓（★ 把"漂移"与"手抖"分开 ✓）
+  --
+  --   ★★★ 为什么要它 ✗（★ 用户报过两次"越按越久" ✓ 而最新日志是 0.50~1.00 **不再单调** ✓）：
+  --     ★ 单看一串数字**分不清**两种情形 ✗：
+  --       ★ ① ★ **还在漂移** ⇒ ★ **越往后越大** ✓（★ 真 bug ✓）
+  --       ★ ② ★ **真的回归了** ⇒ ★ 数字围着 0.45~0.6 **随机抖** ✓（★ 那是**人的手** ✓）
+  --     ★★ 所以打一句**分布** ✓：★ 最小 / 最大 / 平均 ✓ ＋ ★ **前半 vs 后半**
+  --       ⇒ ★★ "后半明显大于前半" ⇒ ①（继续查 ✗）
+  --         ★ "前后差不多" ⇒ ②（已经好了 ✓ ★ 浮动是人手 ✓）
+  --   ★ 只打一次 ✓（★ 攒够 8 次长按才打 ✓）★ 之后**永不再打** ✓ ⇒ ★ 不刷屏 ✓
+  do
+    local _s = rawget(self, "_lp_stat")
+    if _s == nil then _s = { n = 0, sum = 0, min = nil, max = nil, half = {} }; self._lp_stat = _s end
+    _s.n = _s.n + 1
+    _s.sum = _s.sum + dt
+    if _s.min == nil or dt < _s.min then _s.min = dt end
+    if _s.max == nil or dt > _s.max then _s.max = dt end
+    -- ★ 前一半 / 后一半分开攒 ✓ ⇒ ★ 用"两边均值"看趋势 ✓（★ 比看单个数可靠 ✓）
+    if _s.n <= 4 then _s.half[1] = (_s.half[1] or 0) + dt else _s.half[2] = (_s.half[2] or 0) + dt end
+    if _s.n == 8 and type(print) == "function" then
+      local h1 = (_s.half[1] or 0) / 4
+      local h2 = (_s.half[2] or 0) / 4
+      print(string.format(
+        "[murdoku] ★ 长按时长统计（前 8 次）：最小=%.2f 最大=%.2f 平均=%.2f"
+        .. "　★ 前 4 次均=%.2f / 后 4 次均=%.2f ⇒ ★ %s",
+        _s.min, _s.max, _s.sum / _s.n, h1, h2,
+        (h2 > h1 * 1.5) and "**后一半明显更大 ⇒ 还在漂移** ✗（把这两行发我）"
+          or "前后差不多 ⇒ ★ 已经好了 ✓（剩下的浮动是【手的时长】✓ 不是漂移 ✓）"))
+    end
+  end
   if ok then
     self._suppress_click = true     -- 紧跟着的那个 CursorClick 不要重复处理
   end
@@ -947,6 +977,19 @@ function Controller:on_cell_click(r, c)
       --   （适配器另有"动完还原姿态"的兜底。）
       self:fx(self:cell_id(r, c) .. ".face", M.EFFECTS.ERASE)
       if self.opts.on_clear then self.opts.on_clear(had) end
+      -- ★★★★★★★★ 2026-10-11 **拿起棋子后【必须重填线索卡】** ✗✓✓（★ 用户报的"灰白不恢复" ✓）
+      --
+      --   ★★★ 用户原话 ✓：「★ **现在取消放置之后 `gray` 不会恢复**」✗✓
+      --   ★★ 根因 ✓：★ **"放置"那条路会置 `_grid_refill_pending`** ✗✓
+      --     （★ 见 `do_place` 里那段长注释 ✓ —— ★ 当初就是为了让灰白**亮起来** ✓）
+      --     ★★★ 而**"拿起"这条路人漏了** ✗ —— ★ 于是：
+      --       ★ 灰白**亮得起来** ✓ ★ 却**灭不掉** ✗ ⇒ ★ 那张卡**永远是灰的** ✓✓
+      --         （★ 表现：★ 人已经拿下来了，卡还灰着 ✓ ★ 看着像"还放着" ✓）
+      --   ★ 为什么以前没暴露 ✗：★★ 上一次修的是"**登记**"那一半 ✓
+      --     ★ 而"**注销**"这一半**从来没人管过** ✓ —— ★ 典型的"只补了一半" ✓
+      --   ★★ 修法 ✓：★ 与 `do_place` **同一处信号** ✓（★ 就地重填 ⇒ ★ 不重置滚动 ✓）
+      --     ★ 不重发 `RefreshItems` ✗ ⇒ ★ 滚动位置一动都不动 ✓（★ 与放人那条路一致 ✓）
+      self._grid_refill_pending = true
     else
       self:fx(self:cell_id(r, c), core.mode == "x" and M.EFFECTS.XMARK or M.EFFECTS.NOTE)
     end
@@ -1257,10 +1300,22 @@ function Controller:on_input(event)
     --     同一帧两次 fx 打在同一个控件上时**后写的赢**，所以：
     --       有事可撤 → 看到 undo_flash；没事可撤 → 看到 sel_pop_glow。两种都有反馈 ✅
     self:fx("hex.undo", M.EFFECTS.SELECT)
-    if core:undo() then self:fx("hex.undo", M.EFFECTS.UNDO) end
+    if core:undo() then
+      self:fx("hex.undo", M.EFFECTS.UNDO)
+      -- ★★ 撤销之后**也要重填线索卡** ✗✓（★ 与"拿起"同一条理由 ✓）
+      --   ★ 撤销会把棋子拿回去 ✓ ⇒ ★ `core.placed` 少一个 ✓ ⇒ ★ 灰白该灭 ✓
+      --   ★★ 不置这个标志 ⇒ ★ 灰白留在"撤销前"的状态 ⇒ ★ **又一张永远灰着的卡** ✓✓
+      self._grid_refill_pending = true
+      self.dirty = true
+    end
 
   elseif a == "redo" then
-    if core:redo() then self:fx("hex.redo", M.EFFECTS.UNDO) end
+    if core:redo() then
+      self:fx("hex.redo", M.EFFECTS.UNDO)
+      -- ★ 重做同样要重填 ✓（★ 重做会把棋子放回来 ⇒ ★ 灰白该亮 ✓）
+      self._grid_refill_pending = true
+      self.dirty = true
+    end
 
   elseif a == "hint" then
     local ok, msg = core:hint()

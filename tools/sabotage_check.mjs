@@ -31,9 +31,14 @@ const origSha = sha(SRC);
 
 // 每一类破坏：{ 名字, 找什么, 换成什么 }
 const sabotages = [
+  // ★★ 2026-10-11 锚点更新 ✗✓ —— ★ 原来指的是 `local _key = tonumber(_pid) or _pid` ✓
+  //   ★ 而**那一行在 v186 已经删掉了** ✗（★ 它正是"先到先得"那段"吃掉 D/E"的元凶 ✓）
+  //   ★★ 于是这条破坏**静默失效** ✓ ⇒ ★ 报"破坏未生效" ✓
+  //     ⇒ ★ 这个工具**自己发现了自己过期** ✓（★ 值得表扬的设计 ✓ 不是静默放过 ✓）
+  //   ⇒ ★ 改成钉**现在那一行写入** ✓（★ 行号才是键 ✓）
   ['A 写侧 letter 键改错（行号 +100）',
-    'local _key = tonumber(_pid) or _pid',
-    'local _key = (tonumber(_pid) or 0) + 100'],
+    'Controller._row_letter[_pid] = tostring(_lt)',
+    'Controller._row_letter[(_pid or 0) + 100] = tostring(_lt)'],
   ['B 写侧 face 键改错（行号 +100）',
     'local _key_face = _rowno',
     'local _key_face = (_rowno or 0) + 100'],

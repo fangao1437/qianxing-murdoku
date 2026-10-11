@@ -71,7 +71,7 @@ local function hold(c, seconds)
   while left > 1e-9 do
     local d = (left > step) and step or left
     left = left - d
-    CLK = CLK + d
+    CLK = CLK + d * 0.25          -- ★★ 破坏：造出「钟比真实慢 4 倍」✗
     UIC.TEST_CLOCK = CLK          -- ★ 假时钟也走同样多 ✓ ⇒ 两条路同速 ✓
     c:tick(d)                     -- ★★ 关键：按住期间真的过帧 ✓✓
   end
