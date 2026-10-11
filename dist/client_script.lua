@@ -12210,7 +12210,10 @@ end
 function Adapter:ensure_ruler(rows, cols)
   rows = tonumber(rows) or 5
   cols = tonumber(cols) or 5
+  -- ★★★★★★ 2026-10-12 **无条件探针** ✗✓ —— ★ "ruler 没有出现"时先分清卡在哪一步 ✓
+  if print then print("[murdoku] ★ ensure_ruler 进入：rows=" .. tostring(rows) .. " cols=" .. tostring(cols)) end
   if game == nil or game.InstantiateClientUIControl == nil then
+    if print then print("[murdoku] ★ ensure_ruler 退出：环境没有 game.InstantiateClientUIControl") end
     return 0, 0, "环境没有 game.InstantiateClientUIControl"
   end
 
@@ -12220,9 +12223,18 @@ function Adapter:ensure_ruler(rows, cols)
   -- ★ 文本模板：优先 cfg，回落用户给的索引 ✓
   local tprefab = (self.cfg.ruler and self.cfg.ruler.prefab) or 1073742712
 
-  local function instantiate(prefab, parent, id)
+  local function instantiate(prefab, parent, id, tag)
     local ok, obj = pcall(game.InstantiateClientUIControl, prefab, parent)
-    if not ok or obj == nil then return nil end
+    if not ok or obj == nil then
+      -- ★★★★★★ 2026-10-12 **逐项失败日志** ✗✓ —— ★ 用户日志显示"新建 1 个"
+      --   ⇒ ★ 容器成了 ✓ 而 14 个标签【全失败】✗ ⇒ ★ 必须知道失败的是【哪一项】✓
+      if print then
+        print("[murdoku] ★ ensure_ruler：`" .. tostring(id) .. "` 实例化失败 ✗（模板="
+          .. tostring(prefab) .. "，ok=" .. tostring(ok) .. "，obj=" .. tostring(obj)
+          .. "）" .. (tag and ("　" .. tag) or ""))
+      end
+      return nil
+    end
     pcall(function() obj.name = id end)
     local got = nil
     pcall(function() got = tostring(obj.name) end)
@@ -12233,6 +12245,9 @@ function Adapter:ensure_ruler(rows, cols)
     self.controls[id] = obj
     self.instantiated = self.instantiated or {}
     self.instantiated[id] = true
+    -- ★ 2026-10-12：`find` 的**负缓存**在 `self._misses`（★ 本文件 L441 ✓ 真名 ✓）
+    --   ⇒ 我们刚建出来 ⇒ 把这个 id 的负缓存清掉 ✓（保险 ✓ 虽然 `self.controls` 会先命中 ✓）
+    if type(self._misses) == "table" then self._misses[id] = nil end
     return obj
   end
 
@@ -12260,18 +12275,18 @@ function Adapter:ensure_ruler(rows, cols)
     return s
   end
   local function ensure_label(id, txt)
-    local c = self:find(id)
-    if c ~= nil then
-      existed = existed + 1
-    else
-      c = instantiate(tprefab, ruler, id)
-      if c == nil then return end
-      made = made + 1
-    end
+    -- ★★★★★★ 2026-10-12 **不再先 `self:find`** ✗✓
+    --   ★★★ 为什么 ✓：★ `find` 未命中会**永久缓存 false**（本文件早写明 ✓）
+    --     ⇒ ★ 建之前查一次 ⇒ 缓存 false ✗ ⇒ 建完再查还是 false ✗
+    --     ⇒ ★★ **必须直接用【刚建出来的对象】** ✓（★ `ensure_widgets` 建 `selbtn` 就是这么做的 ✓）
+    local c = instantiate(tprefab, ruler, id)
+    if c == nil then return false end
+    made = made + 1
     -- ★ 写文字：★ 两个都试 ✓（★ 项目铁律：`.text` 为 nil 时 `SetText` 才有效 ✓）
     pcall(function() c.text = txt end)
     pcall(function() c:SetText(txt) end)
     pcall(function() c:SetVisible(true) end)
+    return true
   end
   for j = 1, cols do ensure_label("ruler.c." .. j, letter(j)) end
   for i = 1, rows do ensure_label("ruler.r." .. i, tostring(i)) end
@@ -16838,6 +16853,14 @@ function Murdoku.start(level_id, opts)
   --   ⚠️ ★ **建完立刻定位** ✓ —— ★ 接着就在下面 L746 那块调 `apply_ruler_layout` ✓
   --      （★ 那里按【格子的实际位置】贴中心 ✓ 只信一份数据 ✓）
   do
+    -- ★★★★★★ 2026-10-12 **无条件探针** ✗✓ —— ★ 用户报"ruler 没有出现"✗
+    --   而 ★ **日志里连这一段的 print 都没有** ✗ ⇒ ★ 分不清是【没跑到】✗ 还是【跑了但失败】✗
+    --   ⇒ ★★ 所以先打一行"到了" ✓ 不设任何条件 ✓
+    if print then
+      print("[murdoku] ★ ruler 段：到了（ensure_ruler 类型="
+        .. type(adapter.ensure_ruler) .. "，rows=" .. tostring(core and core.rows)
+        .. " cols=" .. tostring(core and core.cols) .. "）")
+    end
     if adapter.ensure_ruler and not (adapter.cfg and adapter.cfg.ruler == false) then
       local r_made, r_exist, r_err = adapter:ensure_ruler(core.rows, core.cols)
       if print then
@@ -16845,6 +16868,8 @@ function Murdoku.start(level_id, opts)
           .. " 个，已存在 " .. tostring(r_exist or 0) .. " 个"
           .. (r_err and ("　⚠️ " .. tostring(r_err)) or ""))
       end
+    elseif print then
+      print("[murdoku] ★ ruler 段：**被跳过**（ensure_ruler 不存在 ✗ 或 cfg.ruler == false ✗）")
     end
   end
 
@@ -19533,7 +19558,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v198 / 2026-10-12 / 恢复ruler行标列标:apply_ruler_layout本来就有(只对齐不创建)⇒加ensure_ruler用文本模板1073742712脚本建;列标A-Z行标1-N =====")
+        print("[murdoku] ===== 构建标记 v201 / 2026-10-12 / ruler:基线改用含tpl.ruler的340ruler.gil(281条);模板引用控件是实例化前提 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

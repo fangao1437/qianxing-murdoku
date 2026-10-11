@@ -603,6 +603,14 @@ function Murdoku.start(level_id, opts)
   --   ⚠️ ★ **建完立刻定位** ✓ —— ★ 接着就在下面 L746 那块调 `apply_ruler_layout` ✓
   --      （★ 那里按【格子的实际位置】贴中心 ✓ 只信一份数据 ✓）
   do
+    -- ★★★★★★ 2026-10-12 **无条件探针** ✗✓ —— ★ 用户报"ruler 没有出现"✗
+    --   而 ★ **日志里连这一段的 print 都没有** ✗ ⇒ ★ 分不清是【没跑到】✗ 还是【跑了但失败】✗
+    --   ⇒ ★★ 所以先打一行"到了" ✓ 不设任何条件 ✓
+    if print then
+      print("[murdoku] ★ ruler 段：到了（ensure_ruler 类型="
+        .. type(adapter.ensure_ruler) .. "，rows=" .. tostring(core and core.rows)
+        .. " cols=" .. tostring(core and core.cols) .. "）")
+    end
     if adapter.ensure_ruler and not (adapter.cfg and adapter.cfg.ruler == false) then
       local r_made, r_exist, r_err = adapter:ensure_ruler(core.rows, core.cols)
       if print then
@@ -610,6 +618,8 @@ function Murdoku.start(level_id, opts)
           .. " 个，已存在 " .. tostring(r_exist or 0) .. " 个"
           .. (r_err and ("　⚠️ " .. tostring(r_err)) or ""))
       end
+    elseif print then
+      print("[murdoku] ★ ruler 段：**被跳过**（ensure_ruler 不存在 ✗ 或 cfg.ruler == false ✗）")
     end
   end
 
