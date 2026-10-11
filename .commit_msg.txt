@@ -1,0 +1,45 @@
+fix: wire the board by row number, and take `who` out of the board line entirely.
+
+The user's ruling settles the identity question: use the letter, or `row.i.j`; drop
+the mechanism if it is not necessary; `who` has interfered too many times. Data
+decided between the two: the piece ids already are the letters (A/B/C/D/E/F/V,
+measured in all three level files), so there is nothing to add -- and the row is the
+key that `letter.<lvl>.<row>` and `face.<lvl>.<row>` already share, so the two tables
+are keyed alike by construction. Row numbering also survives a level whose clue count
+differs from its piece count, where indexing by piece would drop rows.
+
+What changed. `_row_letter` and `_row_face` are keyed by row number, written from the
+single read pass over `assets/row.<lvl>.<row>` and read back through one shared
+translation from a cell's piece id to its row (`_pos_of_piece`, driven only by
+`core.pieces`). `letter_of` and `portrait_of` both go through it, and
+`_person_id_for_pos` is its exact inverse, so clicking a card selects precisely the
+piece the board is showing. `who` is no longer read anywhere on the board line: the
+acceptance test fills `who` with junk and the letters and portraits still land, which
+is the structural proof.
+
+What was deleted. The second, unconditional copy of the fill pass inside
+`_fill_grid_item` (289 lines) repeated the first one verbatim; the first pass already
+does everything it did, and the competition it was written to defend against (the
+algorithm rewriting card text each frame) had already been removed. `_row_who_of_piece`
+and the `who` fallback key went with it. Net 578 lines removed from the controller.
+
+Three fixes an independent reviewer found, in the same commit because they are part of
+wiring this line correctly. The module-level `_piece_core` that the static lookups read
+was never cleared on a level change, so it could keep pointing at the previous level's
+core and return a wrong letter rather than nil; it is now cleared with the tables. The
+level-change reset sat behind early returns, so turning the grid off meant the previous
+level's letters and portraits carried over; it now runs first. The read pass is gated
+per row rather than on the table being empty, which restores the coverage the deleted
+second pass used to provide on the in-place refill path at no steady-state cost.
+
+Verification. Fifteen suites green plus a new end-to-end acceptance file with thirteen
+assertions covering both directions the user asked for: the row's `letter` reaching the
+cell's `note`, and the row's `face` reaching the cell's `image`. Two suites now guard
+the portrait chain rather than one, since the reviewer showed the other suites were
+blind to it. Seven deliberate mutations of the key, the translation, the level cache
+and the fill gate were each caught by the suite and each restored byte-for-byte, which
+is how the two open gaps above were found rather than assumed. The pre-existing
+`grid_cost` failures are unchanged and byte-identical to the baseline at 37c6dca, which
+is where that regression entered; it is a stale fixture, not this change.
+
+Delivered as `331-棋盘接线-行号-v183.gil`, script marker v183, roundtrip verified.

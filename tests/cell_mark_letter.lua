@@ -41,10 +41,16 @@ local function ok(cond, msg)
 end
 
 -- ── 假控件（只实现这条链用得到的成员）────────────────────────────────────
+--   ★★ 2026-10-11 **补上 `imageId`** ✗✓（★ 复核者建议的"第二哨兵"逼出来的 ✓）
+--     ★ 原来这个假控件**只认 `text`** ✗ ⇒ ★ 任何 `{ imageId = … }` 都被**静默丢掉** ✓
+--     ★★ 后果 ✓：★ `_find_image_holder` 找不到图 ⇒ `_row_face` 恒空 ✓
+--       ⇒ ★ "头像链"在这一套件里**根本测不了** ✗（★ 会假红 ✓ —— 我第一版就踩了 ✓）
 local function ctrl(name, opts)
   opts = opts or {}
   local c = { name = name }
   if opts.text ~= nil then c.text = opts.text end
+  if opts.imageId ~= nil then c.imageId = opts.imageId end
+  if opts.imageSource ~= nil then c.imageSource = opts.imageSource end
   local kids = opts.kids or {}
   c.GetChildren = function() return kids end
   c.GetChild = function(_, n) for i = 1, #kids do if kids[i].name == n then return kids[i] end end return nil end
@@ -207,6 +213,78 @@ do
   local n = plan_notes(c, 1, 1)
   ok(n == false, "取消标记后该格下发 false（★ 适配器才会 SetVisible(false) ✓）实测：" .. tostring(n))
   print("  [PASS] 取消标记 ⇒ 下发 false")
+end
+
+--------------------------------------------------------------------------------
+-- 5. ★★★ **头像那条链**（`face` ⇒ 计划的 `image`）★ 第二个哨兵 ✗✓
+--
+--   ★★★ 为什么必须在这里也钉一份 ✗（★ 独立复核者的发现 ✓）：
+--     ★ 复核者做了五类破坏实验 ✓ ★ 结论是：
+--       ★★ **只有 `tests/board_wiring_e2e.lua` 能抓到 `face` / `portrait_of` 的错** ✗
+--         ★ 而 `clue_slots`（54 条断言）对这条链**全盲** ✓
+--     ⇒ ★★ **一条链只挂在一个哨兵上**是脆的 ✓ —— ★ 将来谁动了那个文件就没人拦 ✓
+--   ⇒ ★ 这一节把 `face` 这条链**再钉一遍** ✓ ——
+--     ★ 复用本文件已有的 `boot()`（★ 它直接驱动 `_fill_grid_item` ✓
+--       ★ **不依赖网格视窗** ✓ ⇒ 与 `board_wiring_e2e` 的路径**不同源** ✓✓）
+--------------------------------------------------------------------------------
+do
+  -- ★ 本文件的老夹具把 `face` 造成 `{ kids = { img{imageId=111} } }` ✓
+  --   ★ 但那条链**读不到**图号 ✓（实测落兜底 ⇒ 报 `portrait.A` ✗）
+  --   ★★ 所以这一节**自己搭一个最小世界** ✗ —— ★ 不依赖老夹具的形状 ✓
+  --     ★ 而且正好与 `board_wiring_e2e` 的搭法**各自独立** ✓（★ 两个哨兵不同源 ✓）
+  local core = Core.new(lv)
+  local c = UIC.new(core, { skip_intro = true })
+  local FACE_ID = 901
+  local rows = {}
+  for pos = 1, 3 do
+    rows[#rows + 1] = ctrl("row.1." .. pos, { kids = {
+      ctrl("who.1." .. pos,    { kids = { ctrl("who",    { text = "乱码" .. pos }) } }),
+      ctrl("what.1." .. pos,   { kids = { ctrl("what",   { text = "正文" .. pos }) } }),
+      ctrl("letter.1." .. pos, { kids = { ctrl("letter", { text = "字" .. pos }) } }),
+      ctrl("face.1." .. pos,   { kids = { ctrl("face",   { kids = { ctrl("img", { imageId = FACE_ID }) } }) } }),
+    } })
+  end
+  _G.game = {
+    GetClientUIRoots = function()
+      local rt = ctrl("root", { kids = { ctrl("assets", { kids = rows }) } })
+      return { rt }
+    end,
+  }
+  c._grid_in_refresh = true
+  c._grid_base = 1
+  for pos = 1, 3 do
+    local card = {}
+    for _, nm in ipairs({ "who", "letter", "what", "face" }) do
+      card[#card + 1] = ctrl("clue." .. pos .. "." .. nm, { kids = { ctrl(nm, {}) } })
+    end
+    c:_fill_grid_item(nil, nil, ctrl("item", { kids = card }), pos)
+  end
+  -- ★ 关序要能对上（`boot` 里设过一次 ✓ 这里再设一次免得依赖顺序 ✓）
+  package.loaded["levels.init"] = {
+    index_of = function(id) if id == lv.id then return 1 end return nil end,
+  }
+  local keys2 = {}
+  for i = 1, #core.pieces do keys2[i] = core.pieces[i].id end
+  core:select_suspect(keys2[1])
+  core:hold_cell(1, 1)
+  local nodes = c:build_layout()
+  local node = nil
+  for i = 1, #(nodes or {}) do
+    if nodes[i] ~= nil and nodes[i].id == "cell.1.1" then node = nodes[i] break end
+  end
+  ok(node ~= nil, "★ 找得到 cell.1.1 的规划节点")
+  ok(node ~= nil and node.image == FACE_ID,
+    "★ 放棋子 ⇒ 格子 `image` == 那一行 `face` 的图号（实测 " .. tostring(node and node.image) .. "）")
+  -- ★★ 反向 ✓：★ **没人的格子必须是 `false`** ✗（★ 不是 nil ✗ ——
+  --   ★ 本项目踩过：`nil` 等于"这个键不存在" ⇒ **旧头像永远不清** ✓）
+  local empty = nil
+  for i = 1, #(nodes or {}) do
+    if nodes[i] ~= nil and nodes[i].id == "cell.5.5" then empty = nodes[i] break end
+  end
+  ok(empty ~= nil and empty.image == false,
+    "★ 空格子 ⇒ `image == false`（★ 明确「清空」✓ 不是 nil ✗）实测：" ..
+      tostring(empty and empty.image))
+  print("  [PASS] 头像链（`face` → 计划 `image`）第二哨兵")
 end
 
 --------------------------------------------------------------------------------

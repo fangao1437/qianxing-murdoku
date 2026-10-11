@@ -91,21 +91,60 @@ end
 local Ctl = UIC.Controller
 
 --------------------------------------------------------------------------------
--- 1. ★★★ 同一个键被两条行配到 ⇒ 【先到先得】，且再写一次也不变
+-- 1. ★★★ **每一行的字母就是那一行**（★ 键 = 行号 ✓）
+--
+--   ★★★ 用户 2026-10-11 定稿 ✓（★ 原话 ✓）：
+--     「★ **如果非要这个机制，就把 `id` 设为 `letter`，或者 `row.i.j`** ✓
+--      ★ **如果不是必要机制就删了** ✓
+--      ★ **`who` 已经干扰了很多次了** ✓ ★ **你不要再陷进去了**」✓✓
+--   ⇒ ★ 键 = **行号** ✓ ⇒ ★ 老判据（"同一个 `who` 被两行配到"）**作废** ✗
+--     ★ 因为 `who` **已经不在棋盘线上了** ✓ ⇒ ★ 两行填同一个 `who` 也不冲突 ✓
+--   ⇒ ★ 新判据 ✓：★ **`_row_letter[i]` 必须等于第 i 行配的那个字母** ✓
+local function boot(letters, in_refresh, whos)
+  local core = Core.new(lv)
+  local c = UIC.new(core, { skip_intro = true })
+  local keys = {}
+  for pos = 1, #letters do keys[pos] = (whos and whos[pos]) or ("w" .. pos) end
+  _G.game = { GetClientUIRoots = function() return make_world(letters, keys) end }
+  c._grid_in_refresh = (in_refresh ~= false)
+  for pos = 1, #letters do
+    local card = {}
+    for _, nm in ipairs({ "who", "letter", "what", "face" }) do
+      local txt = (nm == "letter") and letters[pos] or ((nm == "who") and keys[pos] or "x")
+      card[#card + 1] = ctrl("clue." .. pos .. "." .. nm, { kids = { ctrl(nm, { text = txt }) } })
+    end
+    c:_fill_grid_item(nil, nil, ctrl("item", { kids = card }), pos)
+  end
+  return core, c, keys
+end
+
+--------------------------------------------------------------------------------
+-- 1. ★★★ 每一行都要按**行号**落账，而且与写入顺序无关
 --------------------------------------------------------------------------------
 do
   Ctl._row_letter = {}
-  -- ★ pos1 与 pos7 **填同一个 `who`** ✓ ⇒ ★ 键冲突 ✓（★ 第 1 行 letter=`A` ✓ 第 7 行=`Z` ✓）
+  -- ★ 故意让第 1 行与第 7 行填**同一个 `who`** ✓ ⇒ ★ 老模型下这会"冲突" ✗
+  --   ★★ 新模型下**不该冲突** ✓：★ `who` 不参与 ✓，键是行号 ✓
   local letters = { "A", "b", "c", "d", "e", "f", "Z" }
   local whos = { "K", "w2", "w3", "w4", "w5", "w6", "K" }
   local _, c = boot(letters, true, whos)
-  ok(Ctl._row_letter["K"] == "A",
-    "键 K 被 pos1(A) 与 pos7(Z) 同时配到 ⇒ 应保留先到的 A（实测 " .. tostring(Ctl._row_letter["K"]) .. "）")
+  local allok, detail = true, {}
+  for pos = 1, #letters do
+    if Ctl._row_letter[pos] ~= letters[pos] then
+      allok = false
+      detail[#detail + 1] = pos .. "=" .. tostring(Ctl._row_letter[pos]) .. "(want " .. letters[pos] .. ")"
+    end
+  end
+  ok(allok, "★ 每一行按【行号】落账 ✗ " .. table.concat(detail, " "))
 
-  -- ★★ 再跑一遍（★ 顺序反过来 ✓）⇒ ★ **不许改变** ✓
+  -- ★★ 再跑一遍（★ 顺序反过来 ✓）⇒ ★ **结果必须一模一样** ✓
+  Ctl._row_letter = {}
   local core2 = Core.new(lv)
   local c2 = UIC.new(core2, { skip_intro = true })
   c2._grid_in_refresh = true
+  -- ★ 索引基准要钉住 ✓ —— ★ 否则第一趟进来的是 `index = #letters` ⇒ 基准被定成 7
+  --   ★ ⇒ `pos` 算成 0 / −3 …… ✗ ★ 那是**假环境**的问题，不是落账的问题 ✓
+  c2._grid_base = 1
   for pos = #letters, 1, -1 do
     local card = {}
     for _, nm in ipairs({ "who", "letter", "what", "face" }) do
@@ -114,24 +153,26 @@ do
     end
     c2:_fill_grid_item(nil, nil, ctrl("item", { kids = card }), pos)
   end
-  ok(Ctl._row_letter["K"] == "A",
-    "★ 换个写入顺序再跑 ⇒ 仍然是 A（★ 这就是「确定」✓ 实测 " .. tostring(Ctl._row_letter["K"]) .. "）")
-  print("  [PASS] 同一个键被两行配到 ⇒ 先到先得，且与写入顺序无关")
+  local allok2 = true
+  for pos = 1, #letters do
+    if Ctl._row_letter[pos] ~= letters[pos] then allok2 = false end
+  end
+  ok(allok2, "★ 换个写入顺序再跑 ⇒ 每一行仍然是它自己的字母（★ 这就是「确定」✓）")
+  print("  [PASS] 每一行按行号落账，且与写入顺序无关")
 end
 
 --------------------------------------------------------------------------------
--- 2. ★ 两趟（早期 / 末次）必须同规则
+-- 2. ★ 空 `letter` 的行**不许落账**（★ 残值护栏 ✓）
 --------------------------------------------------------------------------------
 do
   Ctl._row_letter = {}
-  -- ★ 让 pos1 与 pos7 填同一个键，且**只有末次那一趟跑** ✓
-  local letters = { "A", "b", "c", "d", "e", "f", "Z" }
-  local whos = { "K", "w2", "w3", "w4", "w5", "w6", "K" }
-  local _, c = boot(letters, false, whos)   -- ★ _grid_in_refresh = false ⇒ 早期那趟不跑 ✓
-  ok(c._grid_in_refresh == false, "前提：这次只让末次单射跑")
-  ok(Ctl._row_letter["K"] == "A",
-    "只跑末次时，键 K 仍应是先到的 A（实测 " .. tostring(Ctl._row_letter["K"]) .. "）")
-  print("  [PASS] 两趟同规则（★ 末次不会把早期记下的覆盖掉 ✓）")
+  -- ★ 第 1 行配空（★ 真机里"空文字"= 那个文本框没有 `text` ✓）
+  local letters = { "", "b", "c", "d", "e", "f", "g" }
+  boot(letters, true)
+  ok(Ctl._row_letter[1] == nil, "空 `letter` 的行不许落账（实测 " .. tostring(Ctl._row_letter[1]) .. "）")
+  ok(Ctl._row_letter[2] == "b", "后面的行仍然要落账（★ 不是被清空就断了 ✓ 实测 " ..
+    tostring(Ctl._row_letter[2]) .. "）")
+  print("  [PASS] 空行不落账 ＋ 后面的行照常落账")
 end
 
 --------------------------------------------------------------------------------
@@ -140,8 +181,9 @@ end
 do
   local core = Core.new(lv)
   local c = UIC.new(core, { skip_intro = true })
-  Ctl._row_letter = { B = "AAAA", V = "VVVV" }
-  Ctl._row_face = { B = 1 }
+  -- ★ 键现在是**行号**（★ 用户定稿 ✓）—— 清空判据与键长什么样无关 ✓
+  Ctl._row_letter = { [1] = "AAAA", [5] = "VVVV" }
+  Ctl._row_face = { [1] = 1 }
   c._row_map_sig = nil                       -- ★ 当作"还没进过关" ✓
   c:_reset_row_maps_if_level_changed()
   ok(Ctl._row_letter ~= nil and next(Ctl._row_letter) == nil,
@@ -149,10 +191,10 @@ do
   ok(Ctl._row_face ~= nil and next(Ctl._row_face) == nil, "★ `_row_face` 也被清空")
 
   -- ★ 同一关内**再调一次不许清** ✗（★ 否则每帧清 ⇒ 永远空 ✓）
-  Ctl._row_letter = { B = "keep" }
+  Ctl._row_letter = { [1] = "keep" }
   c:_reset_row_maps_if_level_changed()
-  ok(Ctl._row_letter["B"] == "keep",
-    "★ 同一关内重复调用**不许清**（实测 " .. tostring(Ctl._row_letter["B"]) .. "）")
+  ok(Ctl._row_letter[1] == "keep",
+    "★ 同一关内重复调用**不许清**（实测 " .. tostring(Ctl._row_letter[1]) .. "）")
 
   -- ★ 换一关 ⇒ 必须清 ✓
   c.core = { level = { id = "another_level" } }

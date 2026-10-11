@@ -3374,6 +3374,25 @@ function Controller:_reset_row_maps_if_level_changed()
     -- ★ 顺带作废文字快照 ✓（★ 它按"关卡表身份 + 条数"缓存 ✓ 换关时身份就变了 ✓
     --   ★ 但**同一关重进**时身份不变 ⇒ 这里清一次更稳 ✓）
     self._grid_text = nil
+    -- ★★★★★★★★ 2026-10-11 **【棋子表】也要一起清** ✗✓✓
+    --
+    --   ★★★ 为什么必须清 ✗（★ 独立复核查出来的 ✓ ★ 这条很要紧 ✓）：
+    --     ★ `Controller._piece_core` 是**模块级**的 ✓（★ 静态函数 `letter_of` /
+    --       `portrait_of` 拿不到 `self` ⇒ 只能挂在这里 ✓ 见 `_grid_text_payload` ✓）
+    --     ★★ 而它**原来不在这个清理名单里** ✗ ⇒ ★ 换关后仍然指着**上一关的 core** ✓
+    --       ⇒ ★ 于是"棋子 → 行号"用的是**上一关的顺序** ✓
+    --   ★ 症状的**形状**很毒 ✗：★ 它**不报错、也不返 nil** ✓ —— ★ 它**给一个错的答案** ✓✓
+    --     ★ 实测（复核者探针 ✓）：★ `_piece_core` 是别的关 ⇒ `letter_of` 返回**错的字母** ✓
+    --       ★ 而如果它是 nil ⇒ 返回 nil ⇒ **退回显示人物 id** ✓（★ 那个至少看得出来不对 ✓）
+    --   ★ 今天为什么不发作 ✗（★ 如实说 ✓）：
+    --     ★ 四关的 `pieces` 顺序**都是** `A,B,C,D(,E)(,F),V` ✓（★ 实测 ✓）
+    --       ⇒ ★ 同一个 id 在每一关的行号**处处相同** ✓ ⇒ 拿错了也看不出差别 ✓
+    --     ★★ 但这只是**巧合** ✗ —— ★ 只要有一关调整了 `suspects` 的顺序，
+    --       就会**静默错位** ✓✓
+    --   ⇒ ★ 修法 ✓：★ **换关就清掉** ✓（★ 下一次 `_grid_text_payload` 会重新记上 ✓）
+    --     ★ 顺带把那张 id 缓存也清 ✓（★ 它按 `c.core ~= core` 自校验 ✓ 但清掉更干净 ✓）
+    Controller._piece_core = nil
+    Controller._piece_id_cache = nil
   end
 end
 
@@ -6826,41 +6845,97 @@ function Controller.room_color(room)
   return t[((room - 1) % #t) + 1]
 end
 
+-- ★★★★★★★★ 2026-10-11 **棋盘线的身份 = 行号（`row.<关>.<行>`）** ✗✓✓
+--
+--   ★★★ 用户 2026-10-11 拍板（★ 原话）：
+--     「★ **如果非要这个机制，就把 `id` 设为 `letter`，或者 `row.i.j`**
+--      ★ **如果不是必要机制就删了**
+--      ★ **`who` 已经干扰了很多次了** ★ **你不要再陷进去了**」✓✓
+--
+--   ⇒ ★ 两条路里**选 `row.i.j`** ✓ —— ★ 理由是用户点名了它 ✓（★ 下面如实记代价 ✓）：
+--     ★ `id` 那条路要求"第 i 行 ↔ 第 i 个棋子"**严格对齐** ✓
+--       ★ 真关卡今天**恰好**对齐 ✓（★ 复核者实测：四关都是 `#clues == #pieces` ✓ 5/5/6/7 ✓）
+--       ★★ 但它**不保证**以后还对 ✗：★ 夹具 `tests/fixtures.clue_level_case001()`
+--         就是 **8 条线索 / 5 个棋子** ✓ ⇒ ★ 那种形状下行号 7、8 **没有对应棋子** ✓
+--         ⇒ ★ 按「第 i 个棋子」落账会**丢掉两行** ✗
+--     ★★ 按「行号」落账：★ **几行就几行，一个都不丢** ✓✓
+--     ★ 而且 `letter.<关>.<行>` 与 `face.<关>.<行>` **本来就同行**
+--       ⇒ ★ **两张表天然同键** ✓（★ 前几轮就栽在「两张表键不同」上）
+--   ⚠️ ★ 如实记一笔 ✗（★ 复核者指出、我接受 ✓）：★ **"今天真关卡被迫这样"是不成立的** ✓
+--     ★ 真关卡行数**正好等于**棋子数 ✓ ⇒ ★ 换那条路今天也能过 ✓
+--     ★★ 所以这里的真正依据是**用户点名 `row.i.j`** ＋ **行号在数据上更稳** ✓
+--       ★ **不是**"实测逼出来的" ✗ —— ★ 别再拿夹具那条当"实测"用 ✓
+--
+--   ★★ 于是整条链只剩一次换算 ✗：★ **棋子 → 行号** ✓
+--     ★ 棋盘那一格给的是 `cd.suspect` = **棋子 id**
+--       ★ 而 `row.<关>.<行>` 是按**行号**摆的 ⇒ ★ 必须换一下 ✓
+--     ★ 依据 = ★ **`core.pieces` 自己的顺序**
+--       （★ 不查 `who` ✗、不查卡片文字 ✗、不猜 ✗）
+--     ★ 用户的口径：「★ **一人一条**」 ⇒ ★ 棋子 ↔ 线索 ↔ 行 一一对应 ✓
+--     ★ 查不到 ⇒ **返 nil**（★ 宁可这一格不显示，也**不许瞎猜**）
+
+-- 第 n 行（1 起）配的是哪个棋子 —— ★ 与 `row.<关>.<行>` 同一口径；查不到返 nil
+--   ★ 缓存：★ 这条链**每帧**要跑（列表项填充）
+--     ★ 而 `core:view()` 是一次**整视图重建**（本项目实测 ~0.2ms）
+--     ★★ 每帧每张卡调一次 ⇒ 白烧 ⇒ ★ 按**关卡表身份**缓存一份
+function Controller._piece_at_row(core, n)
+  if core == nil or n == nil then return nil end
+  n = tonumber(n)
+  if n == nil then return nil end
+  local pcs = core.pieces
+  if type(pcs) ~= "table" then return nil end
+  local c = Controller._piece_id_cache
+  if c == nil or c.core ~= core then
+    c = { core = core, ids = {} }
+    for i = 1, #pcs do
+      if pcs[i] ~= nil and pcs[i].id ~= nil then c.ids[i] = tostring(pcs[i].id) end
+    end
+    Controller._piece_id_cache = c
+  end
+  return c.ids[n]
+end
+
+-- 棋子 id → 它配在第几行（1 起）—— ★ 棋盘读 `_row_letter` / `_row_face` 就走它
+--   ★ 与 `_piece_at_row` 同一张缓存 ⇒ ★ 双向一致 ✓
+function Controller._pos_of_piece(core, id)
+  if core == nil or id == nil then return nil end
+  local want = tostring(id)
+  local pcs = core.pieces
+  if type(pcs) ~= "table" then return nil end
+  local c = Controller._piece_id_cache
+  if c == nil or c.core ~= core then
+    c = { core = core, ids = {} }
+    for i = 1, #pcs do
+      if pcs[i] ~= nil and pcs[i].id ~= nil then c.ids[i] = tostring(pcs[i].id) end
+    end
+    Controller._piece_id_cache = c
+  end
+  for i = 1, #pcs do
+    if c.ids[i] == want then return i end
+  end
+  return nil
+end
+
 -- 注意：这是**普通函数**不是方法，所以不能用 self:portrait_of(vm, id) 调用
 -- （冒号调用会把 self 当第一个参数，vm 就变成控制器了 —— 这个坑已经踩过一次）
 function Controller.portrait_of(vm, id)
-  if not vm or not vm.tray then return nil end
-  for i = 1, #vm.tray do
-    -- ★★★★★★ 2026-10-10 **换素材来源：头像 = 线索行的 `face`** ✗✓✓
-    --
-    --   ★★ 用户原话 ✓（★ 一句定案 ✓）：「**就是按旧逻辑 ✓，`face` 和 `letter` 怎么放是由点击指示的 ✓，
-    --     **等于你只需要换素材来源** ✓，**后面的逻辑一切照旧**」✓✓
-    --
-    --   ★★ 用户对素材来源的说明 ✓：「**一切线索区的素材都来自对应的 `row`**」✓
-    --     ★ `row.i.j` 与它下面的 `face.i.j` / `letter.i.j` **名字不重复** ✓（★ 用户确认 ✓）
-    --     ★ 头像对应 `face` ✓　★ 标记对应 `letter` ✓　★ `who`/`what` 不往棋盘填 ✓
-    --
-    --   ★ 为什么只改这一处就够 ✓：
-    --     ★ `resolve_asset`（adapter L3411 ✓）**本来就收数字 id** ✓：
-    --       `local n = tonumber(value); if n ~= nil then return {…} end` ✓
-    --     ⇒ ★★ **只要这里返回一个【数字 id】✓ ⇒ 后面 SetImage / 规划 / 放置 全部照旧** ✓✓
-    --     ⇒ ★ **不必改 adapter ✗、不必建 portrait.* ✗、不必动点击逻辑 ✗** ✓
-    --
-    --   ★ 取法 ✓：★ 从 `vm.clues` 里找 `who == id` 的那一行 ⇒ ★ 返回它的 `face` ✓
-    --     ★（★ 与单射 L5451/L5458 同一处数据：`cl = (v2.clues or {})[pos]` ✓ `cl.face` ✓）
-    --   ★ 兜底 ✓：★ 旧路保留（`vm.tray[i].portrait` ✓）—— ★ 拿不到 `face` 时不至于全空 ✓
-  -- ★★★★★★ 2026-10-10 **先查单射带出来的表** ✗✓✓
-  --   ★★★ `view.clues[i].face` **永远是 nil** ✗（★ `face` 在控件里 ✗ 数据层到不了 ✓）
-  --     ⇒ ★ 改查【单射读到控件后记下的那张表】✓（★ 键 = `who` ✓ 值 = 数字 imageId ✓）
-  --   ★ 与用户"只换素材来源"一致 ✓ —— ★ 后面的 SetImage / 规划 / 放置【一切照旧】✓
   local _m = Controller._row_face
   if _m ~= nil then
+    -- ★ 直查（★ 兼容"键就是 id"的老调用）
     local _hit = _m[tostring(id)]
     if _hit ~= nil then return _hit end
+    -- ★★ 主路：★ **棋子 → 行号 → 那一行的 `face`**（★ `row.i.j` 那条）
+    local n = Controller._pos_of_piece(Controller._piece_core, id)
+    if n ~= nil then
+      local _h2 = _m[n] or _m[tostring(n)]
+      if _h2 ~= nil then return _h2 end
+    end
   end
-      for i = 1, #(vm.tray or {}) do
-        if vm.tray[i].id == id then return vm.tray[i].portrait end
-      end
+  -- ★ 旧路兜底：★ 关卡自己配的 `portrait`（★ 没有 `row.*` 的关卡走这条）
+  if vm ~= nil and type(vm.tray) == "table" then
+    for i = 1, #vm.tray do
+      if vm.tray[i].id == id then return vm.tray[i].portrait end
+    end
   end
   return nil
 end
@@ -6871,10 +6946,22 @@ end
 --   ★★ 一边是 `image`（头像 ✓）：`cd.suspect and Controller.portrait_of(vm, cd.suspect) or false` ✓
 --     ★ 另一边（本函数 ✓）就是它 ✓ —— ★ **同构** ✓✓
 --   ★ 值由单射带出来 ✓（★ `face` 是控件 ✗ 数据层到不了 ✓ ⇒ `letter` 同理 ✓）
+-- ★★★★★★★★ 2026-10-11 **键 = 行号** ✗✓✓
+--   ★ 入参 `id` 只有一个来源：★ `cd.suspect`（★ = `core.grid[r][c]` = 棋子 id）
+--   ★★ 表里存的是 **行号**（★ `row.<关>.<行>` 那条线）
+--     ⇒ ★ 这里先 **棋子 → 行号**（`_pos_of_piece`）再查 ✓
+--   ★ 前几轮在这里翻车，全都是因为**擅自换了键**（`who` 文本）⇒ ★ 查表恒 miss
+--   ★ 现在键与「用户配的那一行」**字面同一**（★ 就是他说的 `row.i.j`）✓
 function Controller.letter_of(vm, id)
   local m = Controller._row_letter
   if m == nil then return nil end
-  return m[tostring(id)]
+  -- ★ 直查（★ 兼容"键就是 id"的老调用 ✓）
+  local hit = m[tostring(id)]
+  if hit ~= nil then return hit end
+  -- ★★ 主路 ✓：★ **棋子 → 行号 → 那一行的 `letter`**（★ `row.i.j` 那条 ✓）
+  local n = Controller._pos_of_piece(Controller._piece_core, id)
+  if n == nil then return nil end
+  return m[n] or m[tostring(n)]
 end
 
 ----------------------------------------------------------------------------
@@ -6975,6 +7062,19 @@ end
 -- 只有"这一步真的成了"才会把 `_grid_state` 置成 "on"，`build_layout` 据此让老的一套让位。
 function Controller:sync_clue_grid(adapter)
   if adapter == nil or adapter.find == nil then return end
+
+  -- ★★★★★★★★ 2026-10-11 **换关清表必须在【所有 early-return 之前】** ✗✓✓
+  --
+  --   ★★★ 为什么 ✗（★ 独立复核查出来的 ✓）：
+  --     ★ 原来这一句在**后面**（`use_grid` 判断、`screen` 判断之后 ✓）
+  --     ★★ 而下面 `cfg.use_grid == false` 那条路**直接 `return`** ✗
+  --       ⇒ ★ 走老路径时**一次都不清表** ✓ ⇒ ★ 上一关的 `letter`/`face`/`row_text`
+  --         会**带进新关卡** ✓✓（★ 那正是注释里说要防的那件事 ✓）
+  --   ★ 今天为什么不发作 ✗：★ 默认 `use_grid = true` ✓（★ `main.lua` 的 `USE_GRID` ✓）
+  --     ★★ 但"关掉网格回老路径"是这个项目**留着的一根退路** ✓
+  --       ⇒ ★ 那条路上的坑不该留着 ✓
+  --   ★ 开销 ✓：★ 一次字符串比较 ✓（★ 同一关内直接跳过 ✓ 本项目本来就是每帧调 ✓）
+  self:_reset_row_maps_if_level_changed()
 
   -- ① 开关：默认**开**；只有显式 `false` 才完全不碰网格视窗
   local cfg = adapter.cfg
@@ -7672,6 +7772,9 @@ end
 --   缓存键 = **关卡表身份 + 条数**（不拼字符串：`level` 是同一个 Lua 表对象，直接比引用）。
 function Controller:_grid_text_payload()
   local core = self.core
+  -- ★★ 静态函数（`letter_of` / `portrait_of`）拿不到 `self` ⇒ 这里把 core 挂到模块表上 ✓
+  --   ★ 它们只读 `core.pieces`（★ 不建视图、不查控件 ✓）⇒ 这个引用是安全的 ✓
+  Controller._piece_core = core
   local lv = core and core.level
   -- ★★ 2026-10-11 **条数取【核心那份】** ✗✓（★ 与 `sync_clue_grid` 同一处修正 ✓）
   --   ★ 原来读 `lv.clues` ✗ ⇒ ★ 真关卡**已空** ⇒ ★ `n` 恒 0 ✓
@@ -8008,7 +8111,28 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   --   ★ 有配 ⇒ **完全按你配的来** ✓（★ 算法一个字都不写 ✓）
   --   ★ 没配 ⇒ **回落到现有算法** ✓（★ 向后兼容 ✓ 没配的行不会空着 ✓）
   --   ★ 只在**我们那趟**做 ✓ —— ★ 引擎重进时不动内容 ✗（★ 那会覆盖引擎的刷新 ✓）
-  if self._grid_in_refresh == true then
+  --
+  -- ★★★★★★★★ 2026-10-11 **门放宽一次：本关还没建快照时也补一趟** ✗✓✓
+  --
+  --   ★★★ 为什么 ✗（★ 独立复核查出来的 ✓）：★ 删掉"第二趟单射"之后 ✓
+  --     ★★ `_grid_refill_now`（就地重填 ✓）那条路上 `_grid_in_refresh == false` ✗
+  --       ⇒ ★ 它**不再跑这一趟** ✓ ⇒ ★ 那是删除带来的**唯一行为收窄** ✓✓
+  --   ★ 今天为什么不发作 ✗：★ `row.*` 是**静态内容** ✓ ⇒ ★ 进关那次 `RefreshItems`
+  --     已经把两张表建好了 ✓（★ 而 `do_place` 只改棋盘、不改 `row.*` ✓）
+  --   ★★ 但它是个**真实收窄** ✗ ⇒ ★ 而且零覆盖 ✓（★ 复核者的破坏实验里，
+  --      `clue_slots` 的 54 条断言对这条链**全盲** ✓）
+  --   ★ 修法 ✓：★ **门加一条** ✗ —— ★ `或者【本关还没建快照】` ✓
+  --     ★ 判据 ✓：★ `_row_letter[next(...)] == nil` ＝ 这一关**一条都没落账** ✓
+  --       ★ 那说明"我们那趟"从没跑过（★ 或者这一关真的没配 ✓ 两者都该补一趟 ✓）
+  --   ★★ 稳态成本 ✓：★ **零** ✗ —— ★ 只要**这一行**已经落过账，判据就假 ✓
+  --     ★（★ 原来我写的是"**整张表**非空"✗ ⇒ ★ 一行落了账就**再也不会补别的行** ✓
+  --        ★★ 复核者指出：那样"行 1 已落、行 2 缺"时补不上 ✓ —— 改成**按行**判 ✓✓）
+  local _row_need = (self._grid_in_refresh == true)
+  if not _row_need then
+    local m0 = rawget(Controller, "_row_letter")
+    _row_need = (type(m0) ~= "table") or (m0[pos] == nil)
+  end
+  if _row_need then
     local lv_no = self:_level_ordinal()
     if lv_no ~= nil then
       local rc = self:_palette_child("row." .. tostring(lv_no) .. "." .. tostring(pos))
@@ -8074,6 +8198,8 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
             --     ⇒ ★ 这就是"标记填不进去"的真因之一 ✓（★ 详见循环开头那段 ✓）
             --   ⇒ ★ 现在：★ 清理只在循环前做一次 ✓ 循环里**只读不写** ✓
             if slot ~= nil then slot = string.match(slot, "^[^%.]+") end
+            -- ★★ 本趟这一行 = `row.<关>.<行>` 的**行号**（★ 落账的键就是它）
+            local _rowno = pos
             if slot ~= nil and slot ~= "" then
               -- ★★★★★★ 2026-10-10 **按完整名在【列表项下】找，并验证类型** ✗✓✓
               --   ★★★ 探针铁证 ✓（真机日志原文 ✓）：
@@ -8180,12 +8306,12 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                   --     ★ 它**就是** `cl.who`（人物 id ✓ 见 L4432 那段注释 ✓）
                   --     ★ 而且这个载荷是**按关卡记忆化**的 ✓ ⇒ ★ 每帧调用也只算一次 ✓（不new开销 ✓）
                   if _lt ~= nil then
-                    local _pid = nil
-                    pcall(function()
-                      local _p = self:_grid_text_payload()
-                      local _it = _p and _p.items and _p.items[pos]
-                      if _it ~= nil then _pid = _it.id end
-                    end)
+                    -- ★★★★★★★★ 2026-10-11 **键 = 行号** ✗✓✓
+                    --   ★ `row.<关>.<行>` 的 `<行>` 就是唯一身份 ✓
+                    --     ★ 不查 `who` ★ 不查卡片文字 ★ 不猜（★ 用户的定稿）
+                    --   ★ 与 `_row_face` **同一个键**（★ 两样本来就同行）
+                    --   ★ 好处：★ **行数 ≠ 棋子数也不丢行** ✓（★ 实测 8 行 / 5 棋子）
+                    local _pid = _rowno
                     if _pid ~= nil then
                       -- ★★★★★★ 2026-10-11 **一人一行：先到先得，不被覆盖** ✗✓✓
                       --
@@ -8212,7 +8338,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                       --     改成一地一字母 ✓（★ 他明确说过内容后面改 ✓）
                       --   ★ 但它保证 ✓：★ **确定 + 可解释 + 不因帧序而变** ✓✓
                       Controller._row_letter = Controller._row_letter or {}
-                      local _key = tostring(_pid)
+                      local _key = tonumber(_pid) or _pid
                       if Controller._row_letter[_key] == nil then
                         Controller._row_letter[_key] = tostring(_lt)
                       elseif (self._row_letter_dup or 0) < 6 and print then
@@ -8332,29 +8458,13 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                 --   ★ 下游 ✓：★ `portrait_of` 先查表 ⇒ 返回**数字 id** ✓
                 --     ★ `resolve_asset`（adapter L3411 ✓）`tonumber` 直接过 ✓ ⇒ 后面【一切照旧】✓✓
                 if iid ~= nil then
-                  -- ★★★★★★ 2026-10-11 **键改用【`_row_text` 里那一行的 `who`】** ✗✓✓
-                  --   ★ 原来这里取 `_cl.who` ✗（★ 视图里的槽位**恒 nil** ✓）
-                  --     ⇒ ★★ **`_row_face` 一个键都没写成** ✓（★ 实测：表是空的 ✓）
-                  --       ⇒ ★ `portrait_of` 恒 nil ⇒ ★ **棋盘放不上头像** ✓✓
-                  --   ★ 而与它**配对**的 `_row_letter` 早就改用 `items[pos].id` 了 ✓
-                  --     ⇒ ★★ **两张表键不同 ⇒ 一个有一个空** ✗✓（★ 实测正是这样 ✓）
-                  --   ⇒ ★ 统一 ✓：★ **都用 `_grid_text_payload().items[pos].id`** ✓
-                  --     ★ 那一个键 = 用户填的 `who` ✓ ★ 也正是 `_row_letter` 用的那个 ✓✓
-                  local _key_face = nil
-                  pcall(function()
-                    local _pp = self:_grid_text_payload()
-                    local _pi = _pp and _pp.items and _pp.items[pos]
-                    if _pi ~= nil then _key_face = _pi.id end
-                  end)
-                  if _key_face == nil then
-                    local _v = nil
-                    pcall(function() _v = self.core:view() end)
-                    local _cl = _v and (_v.clues or {})[pos]
-                    _key_face = _cl and _cl.who or nil      -- ★ 兜底：老手写线索的关卡 ✓
-                  end
+                  -- ★★★★★★★★ 2026-10-11 **键 = 行号（与 `letter` 同一把钥匙）** ✗✓✓
+                  --   ★ 与本函数上方 `_row_letter` 的取法**完全一致**
+                  --     ⇒ ★ **两张表不可能再不一致**（★ 前几轮就栽在这一条）
+                  local _key_face = _rowno
                   if _key_face ~= nil then
                     Controller._row_face = Controller._row_face or {}
-                    Controller._row_face[tostring(_key_face)] = iid
+                    Controller._row_face[_key_face] = iid
                     -- ★★★★★★ 2026-10-10 **同一行也记下 `letter`** ✗✓✓（★ 用户："像把内容填进 `clue` 的 `what` 一样，
                     --   把 `letter` 的文本填进 `note` 里，和那个一样的路线" ✓✓）
                     --   ★ `letter` 的【数据侧已经是对的】✓：`_grid_text_payload` 的 `items[i].letter` ✓
@@ -8771,295 +8881,6 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
 
 
   -- 点击 → 聚焦（未验证能力，全程 pcall + 只报一次结论）
-  -- ★★★★★★ 2026-10-10 **末次单射：放在填充的最后** ✗✓✓
-  --
-  --   ★★ 用户判断正确 ✓（原话 ✓）：「**是不是先得把原来那套填入删了，不然新内容进不来**」✓
-  --   ★ 实测 ✓：★ 卡片上还是"原来脚本自动填入的那些内容"✗
-  --   ★ 根因 ✓：★ 原来的单射块在 `pos` 算完后、**算法之前** ✗
-  --     ⇒ ★ **算法随后把 `who`/`what`/`letter`/`face` 又写了一遍** ✓
-  --     ⇒ ★★ **你配的内容被覆盖** ✓✓
-  --   ⇒ ★ 修法 ✓：★ **保留原来的块**（★ 它负责"计数/日志"✓）
-  --     ★ 并**在这里再跑一次** ✓ ⇒ ★ **你配的最终生效** ✓
-  --   ⚠️ 两次都只在**我们那趟**（`_grid_in_refresh == true` ✓）—— ★ 引擎重进时一次都不跑 ✓
-  --   ⚠️ 锚点教训 ✓：★ 我两次想"移动"这个块都没移成 ✗（★ 锚点不匹配 ✓）
-  --     ⇒ ★ 改用"**在确定的位置再跑一次**" ✓ —— ★ 不改动已有代码 ✗ 风险最小 ✓✓
-  do
-    if true then   -- ★★★★★ 2026-10-10 **去掉了 `_grid_in_refresh == true` 限定** ✗✓✓
-      --   ★★★ 这是"内容依旧没变化"的最后一道坎 ✓
-      --     ★ 真机日志 ✓：`★ 网格视窗：引擎重进回调累计 60 次（≈ 每秒 60 次）`
-      --     ⇒ ★★ **引擎【每帧】重进 `RefreshItems`** ✓
-      --       ★ 而重进时 `_grid_in_refresh == false` ✗ ⇒ ★ **我的末次单射不跑** ✓
-      --       ★ 但**算法每帧都在跑** ✗ ⇒ ★ **它每帧把卡片刷回算法的文字** ✓✓✓
-      --     ⇒ ★★ 所以末次单射**只在第一帧有效**，第二帧就被盖掉 ✓
-      --   ⇒ ★ 修法 ✓：★ **末次单射【不限定哪一趟】** ✓ —— ★ 每次填充都跑 ✓
-      --     ★ 为什么安全 ✗：它**只读 `assets/row.*`** ✓、**只写卡片子控件** ✓
-      --       ★ **不碰引擎的列表项** ✗ ✓、**不碰滚动** ✗ ✓、**不调 `RefreshItems`** ✗ ✓
-      --     ⚠️ 而**前面那个"早期"块仍保留 `_grid_in_refresh` 限定** ✓
-      --       （★ 它只负责计数/日志 ✓ 每帧跑会刷屏 ✓）
-      local lv_no = self:_level_ordinal()
-      if lv_no ~= nil then
-        local rc = self:_palette_child("row." .. tostring(lv_no) .. "." .. tostring(pos))
-        if rc ~= nil then
-          local wrote2 = 0
-          local kids = nil
-          pcall(function() kids = rc:GetChildren() end)
-          if type(kids) == "table" then
-            -- ★★★★★★ 2026-10-11 **读到就当场落账（与早期单射同修 ✓ 同理由 ✓）** ✗✓✓
-            --   ★ 真因与推演见本文件早期单射处的长注释 ✓（★ 一处写清、两处同修 ✓）
-            --   ★ 这里**不再需要**任何循环外的局部变量 ✓ —— ★ 也就不会再踩"跨块传值"✓
-            for ci = 1, #kids do
-              local k = kids[ci]
-              local kn = nil
-              pcall(function() kn = tostring(k.name) end)
-              local slot = kn
-              -- ★★★★★★ 2026-10-11 **护栏改到循环【外】** ✗✓✓
-              --   ★ 原来 `self._row_letter_txt = nil` 就在【这里】✗
-              --     ⇒ ★ 它把**上一个子控件刚读到的** `letter` 冲掉 ✓（★ 真因 ✓）
-              --   ★ 现在：★ 清理只在循环前做一次 ✓（★ 用的是局部变量 ✓ 天然无残值 ✓）
-              if slot ~= nil then slot = string.match(slot, "^[^%.]+") end
-              if slot ~= nil and slot ~= "" then
-                -- ★★★★★★ 2026-10-10 **按完整名在【列表项下】找，并验证类型** ✗✓✓
-              --   ★★★ 探针铁证 ✓（真机日志原文 ✓）：
-              --     `★ 单射写入探针：slot=who  目标控件=who  写入=3.1  写前=  写后读回=`
-              --     `⇒ ★★ 控件里【没变】`
-              --   ⇒ ★ 两个结论 ✓：
-              --     ★ ① **目标控件叫 `who`** ✗ —— ★ 不是卡片上的 `clue.<行>.who` ✓
-              --     ★ ② **写前/写后都是空的** ✗ ⇒ ★ **那个控件没有 `text`** ✓
-              --   ⇒ ★★ 所以是"**写对了名字、写错了控件**" ✓ ——
-              --     ★ `_grid_item_child_cached` 按短名找 ⇒ ★ **命中了别处同名控件** ✗
-              --   ⇒ 修法 ✓：
-              --     ★ ① **先按【完整名】`clue.<行>.<槽位>` 在【列表项下】找** ✓
-              --     ★ ② **再验证它确实是对的类型** ✓（★ 文本控件有 `text` ✓ / 图片控件有 `imageId` ✓）
-              --     ★ ③ 短名兜底保留 ✓（★ 兼容老的模板命名 ✓）
-              local dst = nil
-              local full = "clue." .. tostring(pos) .. "." .. tostring(slot)
-              pcall(function() dst = item:FindChild(full) end)
-              if dst == nil then
-                pcall(function() dst = item:FindChild(slot) end)
-              end
-              if dst == nil then
-                dst = self:_grid_item_child_cached(item, index, pos, slot)
-              end
-              -- ★ 类型验证 ✓：不是文本控件、也不是图片控件 ⇒ **不用它** ✗
-              if dst ~= nil then
-                local okT, okI = false, false
-                pcall(function() local _ = dst.text okT = true end)
-                pcall(function() local _ = dst.imageId okI = true end)
-                if not okT and not okI then
-  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：单射候选被否(末)　原 L5307..L5311
-                  dst = nil
-                end
-              end
-                if dst ~= nil then
-                  local txt = nil
-                  pcall(function() txt = k.text end)
-                  -- ★★★★★★ 2026-10-10 **换源：`letter` 从【控件文本】取** ✗✓✓
-                  --   ★★★ 地图员第 5 轮实测 ✓：★ `clue_view[i]`（core L2386-2414）**只有 6 个字段** ✗ ——
-                  --     `index`/`type`/`text`/`satisfied`/`who`/`raw` ✓ ★★ **【没有 `letter`】** ✓
-                  --     ⇒ ★ `_cl.letter` 恒 nil ✗ ⇒ `_row_letter` 恒空 ✗ ⇒ `letter_of` 恒 nil ✗
-                  --     ⇒ ★★★ **落兜底 ⇒ 显示旧铅笔笔记 ⇒ 用户看到"还是旧脚本那套"** ✓✓
-                  --   ★ 用户的问题 ✓：「**当时填 `note` 的素材源到底在哪，查到了换源就行了**」✓
-                  --     ★ 旧源 = `core.notes[r][c]` 的键（★ 玩家手打的铅笔笔记 ✓）
-                  --     ★★ 新源 = ★ **`letter.<关>.<行>` 控件的【文本】** ✓（★ 用户配的那段 ✓）
-                  --   ★ 这里就是那个控件 ✓（★ `slot == "letter"` ⇒ `k` 就是它 ✓ `txt = k.text` ✓）
-                  if slot == "letter" then
-                    -- ★★★★★★ 2026-10-11 **读文字换用共用函数 ＋ 当场落账** ✗✓✓
-                    --   ★ 与【早期单射】同一处修改 ✓ —— ★ `k.text` 一条路走不通就是全空 ✓
-                    --   ★ 现在 ✓：★ 自有 `.text` ⇒ `FindChild("<槽位>")` ⇒ 广度优先兜底 ✓
-                    --   ★★★ 落账**就在这个块里** ✓ —— ★ 不跨块传值 ✓
-                    --     （★ 第一版"循环外声明 + 循环后落账"踩了 Lua 作用域 ✗
-                    --       ★ 编译通过但恒不生效 ✓ 详见早期单射处的长注释 ✓）
-                    local _lt2 = self:_read_control_text(k, slot)
-                    if _lt2 ~= nil then
-                      local _pid2 = nil
-                      pcall(function()
-                        local _p2 = self:_grid_text_payload()
-                        local _it2 = _p2 and _p2.items and _p2.items[pos]
-                        if _it2 ~= nil then _pid2 = _it2.id end
-                      end)
-                      if _pid2 ~= nil then
-                        -- ★★★★★★ 2026-10-11 **与【早期单射】同一条规则：先到先得** ✗✓✓
-                        --   ★ 详细推演见早期单射那一处的长注释 ✓（★ 一人一行 ✓ 不覆盖 ✓）
-                        --   ★★ 这两趟写的是同一张表 ✓ ⇒ ★ **两处必须同规则** ✗
-                        --     否则"哪一趟最后跑"又会决定显示哪个字母 ✓（★ 就是本 bug 的翻版 ✓）
-                        Controller._row_letter = Controller._row_letter or {}
-                        local _key2 = tostring(_pid2)
-                        if Controller._row_letter[_key2] == nil then
-                          Controller._row_letter[_key2] = tostring(_lt2)
-                        end
-                      end
-                    end
-                  end
-                  -- ★★★★★★ 2026-10-10 **`dst` 自己没有 `text` ⇒ 往下找【有 text 的子孙】** ✗✓✓
-              --
-              --   ★★★ 读到了根 ✓（`write_control_text` 的定义在 L3802 ✓）：
-              --     `if ctrl == nil or ctrl.text == nil then return false end` ✗
-              --   ⇒ ★★ **它要求 `ctrl.text ~= nil`，否则【静默返回 false，一个字都不写】** ✓
-              --   ★ 而探针实测 ✓：★ `slot=who  目标控件=who  写前=  写后读回=`
-              --     ⇒ ★ **`dst.text` 是空的** ✗ ⇒ ★ **`ctrl.text == nil` ⇒ 被挡住** ✓✓
-              --   ⇒ ★★★ **所以 `who` 这个控件【不是文本控件】** ✓
-              --     （★ 很可能是**容器** ✓ 文字在它的**子控件**里 ✓）
-              --   ★★ 而这也解释了"当年算法也填不进去"✗ —— ★ **它同样被这一行挡住** ✓
-              --
-              --   ★ 用户提示 ✓（很准 ✓）：「**你没必要去猜往哪填** ✓
-              --     **那套被删掉的填入方式确实把东西填进去了，你直接去读它的路径**」✓
-              --   ⇒ ★ 读完发现：★ **它用的路径和我【一样】** ✓（`_grid_item_child_cached` ✓）
-              --     ⇒ ★★ **所以问题不在"找哪个控件"** ✗ —— ★ **在那个控件【没有 text】** ✓
-              --
-              --   ⇒ 修法 ✓：★ **`dst` 没有 `text` ⇒ 广度优先找它下面第一个有 `text` 的** ✓
-              --     ★ 找到就用它 ✓；找不到 ⇒ 如实报一次 ✓（★ 不再静默 ✓）
-              if dst ~= nil then
-                local _hasT = false
-                pcall(function() if dst.text ~= nil then _hasT = true end end)
-                if not _hasT then
-                  local _q = { dst }
-                  local _found = nil
-                  for _qi = 1, #_q do
-                    local _ks = nil
-                    pcall(function() _ks = _q[_qi]:GetChildren() end)
-                    if type(_ks) == "table" then
-                      for _ki = 1, #_ks do
-                        local _kk = _ks[_ki]
-                        local _ht = false
-                        pcall(function() if _kk.text ~= nil then _ht = true end end)
-                        if _ht then _found = _kk break end
-                        _q[#_q + 1] = _kk
-                      end
-                    end
-                    if _found ~= nil then break end
-                  end
-                  if _found ~= nil then
-                    dst = _found
-  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：单射下钻失败(末)　原 L5358..L5364
-                  else
-  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：单射下钻失败(末2)　原 L5366..L5370
-                  end
-                end
-              end
-              if type(txt) == "string" then
-                    -- ★★★★★ 2026-10-10 **探针：写入前后各读一次** ✗✓（★ 一次定案 ✓）
-                    --   ★ 现象 ✓：日志说"写了 2 个槽位"✓ 但画面上看不到 ✗
-                    --   ⇒ ★ 三种可能 ✓：① 写到错的控件 ✗ ② 写了但被属性挡住 ✗ ③ 引擎重画 ✗
-                    --   ★ 本探针把三者分开 ✓：★ 目标控件名 / 写入值 / 写后读回 ✓
-                    local _dn, _before, _after = nil, nil, nil
-                    pcall(function() _dn = tostring(dst.name) end)
-                    pcall(function() _before = dst.text end)
-                    -- ★★★★★★ 2026-10-10 **照抄项目自己的写入器：`.text` 不行就试 `SetText`** ✗✓✓
-                    --
-                    --   ★★★ 用户让我"找和当时算法的差异"✓ —— 找到了 ✓：
-                    --     ★ 项目自己的写入器（`engine_adapter_qianxing.lua:4603-4604` ✓）是这样写的：
-                    --       `if c.text ~= nil then c.text = txt end`
-                    --       `if type(c.SetText) == "function" then pcall(function() c:SetText(txt) end) end`
-                    --     ⇒ ★★ **它会【再试 `SetText`】** ✓
-                    --   ★ 而我用的 `write_control_text`（L3802 ✓）：
-                    --       `if ctrl == nil or ctrl.text == nil then return false end` ✗
-                    --     ⇒ ★★★ **`.text` 是 nil 就【直接放弃】，一个字都不写** ✓✓
-                    --   ⇒ ★★ 这就是"旧路能填、我的路填不进去"的【全部差异】✓
-                    --     ★ 探针也印证 ✓：`写前=` 与 `写后读回=` 都空 ⇒ 写被跳过 ✓
-                    --   ⇒ 修法 ✓：★ **`.text` 与 `SetText` 两条都试** ✓（★ 与项目一致 ✓）
-                    pcall(function() if dst.text ~= nil then dst.text = txt end end)
-                    if type(dst.SetText) == "function" then pcall(function() dst:SetText(txt) end) end
-                    pcall(function() _after = dst.text end)
-  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：单射写入探针　原 L5398..L5407
-                    wrote2 = wrote2 + 1
-                  end
-                  -- ★★★★★★ 2026-10-10 **图的来源要【往下钻一层】** ✗✓✓（★ 用户推断 ✓）
-                  --   ★ `face.*` 是**模板引用控件** ✗ ⇒ ★ 它自己没有 `imageId` ✓
-                  --     ⇒ ★ 真正的图在它引用的模板【里面】** ✓
-                  --   ★ 所以：★ 先把 `k` 钻到"能设图的那个控件"，再读它的 `imageId`/`imageSource` ✓
-                  --   ★ 钻不到 ⇒ 退回读 `k` 自己 ✓（★ 兼容"直接是图片控件"的老做法 ✓）
-                  local _kimg = self:_find_image_holder(k)
-                  if _kimg == nil then _kimg = k end
-                  local iid = nil
-                  pcall(function() iid = _kimg.imageId end)
-                  -- ★★★★★★ 2026-10-10 **把"谁 ⇒ 那一行的图"记下来** ✗✓✓
-                  --   ★★★ 为什么必须在这里记 ✓（★ 单射是【唯一摸到控件】的地方 ✓）：
-                  --     ★ `face` 是【控件】✗ —— 而 `Core:view`（数据层 ✓）**到不了控件** ✓
-                  --     ⇒ ★★ `view.clues[i].face` **永远是 nil** ✗（★ 实测：落兜底 ⇒ 报 `portrait.B` ✓）
-                  --     ⇒ ★★★ **只能由"已经读到控件"的单射把值【带出来】** ✓✓
-                  --   ★ 用户的设计 ✓：「**一切线索区的素材都来自对应的 `row`**」✓
-                  --     ★ 头像对应 `face` ✓　★ "谁" = 这一行线索的 `who` ✓（★ 棋子 id `A`/`B`/`V`/`D` ✓）
-                  --     ★ 取法 ✓：★ `self.core:view().clues[pos]`（★ `pos` = 线索序号 ✓）
-                  --   ★ 存模块级表 ✓（★ `portrait_of` 是静态函数 ✗ 拿不到 `self` ✓）
-                  --   ★ 下游 ✓：★ `portrait_of` 先查表 ⇒ 返回**数字 id** ✓
-                  --     ★ `resolve_asset`（adapter L3411 ✓）`tonumber` 直接过 ✓ ⇒ 后面【一切照旧】✓✓
-                  if iid ~= nil then
-                    -- ★★ 2026-10-11 **键统一：用 `items[pos].id`（= 那一行的 `who`）** ✗✓
-                    --   ★ 与【早期单射】那一处**同一个修法** ✓（★ 详见那里的长注释 ✓）
-                    --   ★ 原来取 `_cl.who` ✗ ⇒ ★ 槽位恒 nil ⇒ **`_row_face` 空表** ✓✓
-                    local _key_face2 = nil
-                    pcall(function()
-                      local _pp2 = self:_grid_text_payload()
-                      local _pi2 = _pp2 and _pp2.items and _pp2.items[pos]
-                      if _pi2 ~= nil then _key_face2 = _pi2.id end
-                    end)
-                    if _key_face2 == nil then
-                      local _v = nil
-                      pcall(function() _v = self.core:view() end)
-                      local _cl0 = _v and (_v.clues or {})[pos]
-                      _key_face2 = _cl0 and _cl0.who or nil   -- ★ 兜底：老手写线索的关卡 ✓
-                    end
-                    if _key_face2 ~= nil then
-                      Controller._row_face = Controller._row_face or {}
-                      Controller._row_face[tostring(_key_face2)] = iid
-                      -- ★★★★★★ 2026-10-10 **同一行也记下 `letter`** ✗✓✓（★ 用户："像把内容填进 `clue` 的 `what` 一样，
-                      --   把 `letter` 的文本填进 `note` 里，和那个一样的路线" ✓✓）
-                      --   ★ `letter` 的【数据侧已经是对的】✓：`_grid_text_payload` 的 `items[i].letter` ✓
-                      --     （★ ui L4395 `letter = tostring(wid or "")` ✓ 而 `wid` 从卡片读 ✓ 卡片由单射填 ✓）
-                      --   ⇒ ★★ 缺的只是"送到棋盘" ⇒ ★ 和 `face` 一样，在这里把它带出来 ✓✓
-                      -- ★ 换源（地图员第5轮 ✓）：★ 用【`letter` 槽位的控件文本】✓ 而不是 `_cl.letter`（★ 它恒 nil ✗）
-                      -- ★★★★★★ 2026-10-11 **落账点已挪到循环【外】** ✗✓✓
-                      --   ★ 与【早期单射】同修 ✓ —— ★ 循环里写会被后续子控件冲掉 ✓
-                      --   ⇒ ★ 见本块末尾那条"落账"（★ 键 = `items[pos].id` ✓ 与 `_row_face` 同键 ✓）
-                    end
-                  end
-                  if iid ~= nil then
-                    local src = nil
-                    pcall(function() src = k.imageSource end)
--- ★★★★★★ 2026-10-10 **图片用 `SetImage`，不用属性赋值** ✗✓✓
-                    --
-                    --   ★★★ 与文字那次【同一个模式】✓（★ 用户再次指对 ✓）：
-                    --     ★ 项目自己的图片写入器（`engine_adapter_qianxing.lua:730-732` ✓）：
-                    --       `pcall(function() src = target.imageSource end)`
-                    --       `local ok2 = pcall(function() target:SetImage(src, node.image_id) end)`
-                    --       `if not ok2 then pcall(function() target:SetImage(node.image_id) end) end`
-                    --     ⇒ ★★ **它用【专用方法 `SetImage`】** ✓
-                    --   ★ 而我写的是 ★ `dst.imageSource = src` ＋ `dst.imageId = iid` ✗
-                    --     ⇒ ★★ **属性赋值对图片【不通】** ✓
-                    --   ★ 项目注释也写着 ✓（L936-937 ✓）：
-                    --     「**运行时新建的客户端控件，在"根节点"上 `SetImage` 直接返回 false、
-                    --       `imageId` 一直是 0**」✓
-                    --   ⇒ 修法 ✓：★ **`SetImage(src, id)` ⇒ 不行试 `SetImage(id)` ⇒
-                    --     最后才退回属性赋值** ✓（★ 与项目一致 ✓ 且留了退路 ✓）
-                    -- ★ 写入端同样要钻 ✓：★ 卡片的 `face` 也是**模板引用控件** ✗
-                    --   ⇒ ★ 把 `dst` 钻到"能设图的那个" ✓；钻不到就用 `dst` 自己 ✓
-                    local _dimg = self:_find_image_holder(dst)
-                    if _dimg ~= nil then dst = _dimg end
-                    local _okImg = false
-                    if src ~= nil then pcall(function() dst:SetImage(src, iid) _okImg = true end) end
-                    if not _okImg then pcall(function() dst:SetImage(iid) _okImg = true end) end
-                    if not _okImg then
-                      pcall(function() if src ~= nil then dst.imageSource = src end end)
-                      pcall(function() dst.imageId = iid end)
-                    end
-                    wrote2 = wrote2 + 1
-                  end
-                end
-              end
-            end
-          end
-          -- ★★★★★★ 2026-10-11 **落账已在"读到的那一处"完成** ✗✓✓
-          --   ★ 这里曾经放"循环后统一落账" ✗ ⇒ ★ 跨块传值 ⇒ 退化成全局（恒 nil ✓）
-          --     ★ 编译通过、静默不生效 ✓ —— ★ 详见早期单射处那段长注释 ✓
-          if wrote2 > 0 and (self._row_log2 or 0) < 8 and print then
-            self._row_log2 = (self._row_log2 or 0) + 1
-            print("[murdoku] ★ 单射【末次】生效：`row." .. tostring(lv_no) .. "." .. tostring(pos)
-              .. "` ⇒ 覆盖 " .. tostring(wrote2) .. " 个槽位 ✓（★ 你配的最终生效 ✓）")
-          end
-        end
-      end
-    end
-  end
   -- ★★ 2026-10-11 **绑定已提到函数【最前面】** ✗✓（★ 原来就在这一行 ✓ 见开头那段注释 ✓）
   --   ★ 为什么必须提 ✗：★ 它前面的任何 `return` 都会把"绑点击"一起跳过 ✓
   --     ⇒ ★★ **卡片点不动** ✓（★ 而这一条恰好是用户报的"链路断了" ✓✓）
@@ -9433,64 +9254,15 @@ end
 function Controller:_person_id_for_pos(pos)
   local core = self.core
   if core == nil or pos == nil then return nil end
-  -- ★ ① 单人射配的那个人 ✓
-  --
-  --   ⚠️ ★★ **不靠"关序"对齐** ✗✓（★ 我第一版就是那样，结果被自己的测试抓到 ✓）
-  --     ★ 第一版只读 `_row_text[本关关序][pos]` ✗
-  --     ★★ 而"本关关序"与"用户把行配在哪一关"**不一定相等** ✓：
-  --       ★ 关序 = 关卡在 `levels/init.lua` 里的**位置** ✓
-  --       ★ 而 `row.<关>.<行>` 是用户自己填的 ✓ ★ 两者错位时 ⇒ **读不到** ✓
-  --     ★★ 症状 ✓：★ 卡片**看不出人选不中** ✗ ⇒ ★ 又是"选中到棋盘断了" ✓✓
-  --   ★ 修法 ✓：★ **不确定就按行号扫一遍**✓，取**第一个命中的** ✓
-  --     ★ 为什么安全 ✓：★ `pos` 是**当前这一趟正在填的那一行** ✓
-  --       ⇒ ★ 该行的文本**刚刚**落账 ✓ ★ 不同关的同号行**极少同时有值** ✓
-  --     ★ 取舍 ✓：★ 万一两关同号行都有值 ⇒ ★ 取**关序最小**的 ✓（★ 确定 ✓ 不随 pairs 变 ✓）
-  local rt = nil
-  do
-    local m = rawget(Controller, "_row_text")
-    if type(m) == "table" then
-      local lvno = self:_level_ordinal()
-      -- ★ 先试本关关序 ✓（★ 命中就最省 ✓）
-      local direct = (lvno ~= nil) and m[tostring(lvno)] or nil
-      local by_pos = direct and direct[pos] or nil
-      if by_pos ~= nil and by_pos.who ~= nil then
-        rt = by_pos.who
-      else
-        -- ★ 兜底：★ 按关序从小到大扫 ✓ 取第一个有值的 ✓
-        local keys = {}
-        for k in pairs(m) do keys[#keys + 1] = k end
-        table.sort(keys, function(a, b) return tonumber(a) < tonumber(b) end)
-        for i = 1, #keys do
-          local lv = m[keys[i]]
-          local p = lv and lv[pos]
-          if p ~= nil and p.who ~= nil then rt = p.who break end
-        end
-      end
-    end
-  end
-  if rt ~= nil then
-    local s = tostring(rt)
-    -- ★ 去掉可能的前后空白 ✓（★ 用户在编辑器里打字很容易带空格 ✓）
-    s = s:gsub("^%s+", ""):gsub("%s+$", "")
-    -- ★★★★★★ 2026-10-11 **直接用它，【不查 `core.names`】** ✗✓✓（★ 用户点破 ✓）
-    --
-    --   ★★★ 用户原话 ✓：「★ **前面的模式不是已经说明了 `who` 不参与棋盘线吗** ✓
-    --     ★ **怎么又开始纠结这个无关量了**」✓✓
-    --   ★★ 我上一版加的过滤 ✗：★「先当 id 查 `core.names` ✓ 再当显示名反查 ✓」
-    --     ★ 它的**隐含前提**是"这个键必须是游戏里的人物 id" ✗
-    --     ★★ 而**那个前提是我凭空加的** ✗ —— ★ 用户从来没这么说 ✓✓
-    --   ★★★ 真实契约 ✓（★ 用户 2026-10-10 定的 ✓）：
-    --     ★ **这个键 = 他在 `row` 里填的 `who`** ✓
-    --     ★ 棋盘要的 `letter` / `face` **都出自同一行** ✓ ⇒ ★ **只要键一致就够** ✓✓
-    --     ★ `core.names` **与这条链毫无关系** ✗（★ 它就是用户说的"无关量" ✓）
-    --   ⚠️ ★ 代价 ✓（★ 如实说 ✓）：★ 若他填的名字**不是**游戏里的人物 ✓
-    --     ★ 那么"灰白"（`core.placed[键]`）与"选中高亮"会**对不上人** ✓
-    --     ★★ 但**标记与头像两条路会通** ✓ —— ★ 而那两条才是他报的"断了"的 ✓✓
-    if s ~= "" then return s end
-  end
-  -- ★ ② 退回老的"线索自带 who" ✓（★ 手写线索的关卡走这条 ✓）
-  local vm = core:view() or {}
-  local cl = (vm.clues or {})[pos]
+  -- ★★ 【棋盘线同一条路】★ 第 `pos` 行 ↔ 第 `pos` 个棋子 ✓
+  --   ★ 与 `letter_of` / `portrait_of` 的换算**严格互逆**
+  --     ⇒ ★ 「选了 A 却显示 B」结构上不可能 ✓
+  local id = Controller._piece_at_row(core, pos)
+  if id ~= nil then return id end
+  -- ★ 退回老的「线索自带 who」（★ 手写线索的关卡走这条）
+  local vm = nil
+  pcall(function() vm = core:view() end)
+  local cl = (vm and vm.clues or {})[pos]
   if cl ~= nil then
     local pid = cl.who
     if type(pid) == "string" and pid:sub(1, 1) == "@" then pid = nil end
@@ -18958,7 +18730,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v182 / 2026-10-11 / 棋盘线的键改回row.who文本(旧逻辑); 两张表键统一; 去掉core.names过滤 =====")
+        print("[murdoku] ===== 构建标记 v183 / 2026-10-11 / 棋盘接线：键=行号(row.i.j)，who彻底退出棋盘线；删掉重复的第二趟单射 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

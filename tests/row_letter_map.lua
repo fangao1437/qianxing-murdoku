@@ -164,11 +164,14 @@ local function run(order, letters, expected_pos)
     c:_fill_grid_item(nil, nil, ctrl("item", { kids = card }), pos)
   end
   Ctl._row_letter = Ctl._row_letter or {}
-  -- ★ 键 = 这一行填的 `who` 文本 ✓（★ 不再从 `core` 反查人物 id ✗）
+  -- ★★★★★★★★ 2026-10-11 **键 = 行号** ✗✓✓（★ 用户定稿 ✓）
+  --   ★★★ 用户原话 ✓：「★ **如果非要这个机制，就把 `id` 设为 `letter`，或者 `row.i.j`** ✓
+  --     ★ **如果不是必要机制就删了** ✓ ★ **`who` 已经干扰了很多次了**」✓✓
+  --   ⇒ ★ 选 `row.i.j` ✓ —— ★ 因为 **行数 ≠ 棋子数** 也会成立 ✓
+  --     （★ 本夹具实测：★ **8 条线索 / 5 个棋子** ⇒ ★ 按"第 i 个棋子"会丢 2 行 ✓）
+  --   ⇒ ★★ 于是断言直接看 **`_row_letter[pos]`** ✓ —— ★ 不再经过 `who` ✗（它已退出棋盘线 ✓）
   local got = {}
-  for pos = 1, n do
-    got[tostring(want[pos])] = Ctl._row_letter[tostring(want[pos])]
-  end
+  for pos = 1, n do got[pos] = Ctl._row_letter[pos] end
   _G.game = nil
   return got, want
 end
@@ -198,17 +201,16 @@ do
   end
   for _, cs in ipairs(cases) do
     local got, ws = run(cs.order, letters)
-    local want = unique_want(ws, letters)
     local allok, detail, n = true, {}, 0
-    for k, v in pairs(want) do
+    for pos = 1, #letters do
       n = n + 1
-      if got[k] ~= v then
+      if got[pos] ~= letters[pos] then
         allok = false
-        detail[#detail + 1] = k .. "=" .. tostring(got[k]) .. "(want " .. v .. ")"
+        detail[#detail + 1] = pos .. "=" .. tostring(got[pos]) .. "(want " .. tostring(letters[pos]) .. ")"
       end
     end
     ok(allok and n > 0, cs.name .. " ⇒ 落账不完整 ✗ " .. table.concat(detail, " "))
-    print(string.format("  [%s] %s（断言 %d 个 who）", allok and "PASS" or "FAIL", cs.name, n))
+    print(string.format("  [%s] %s（断言 %d 行）", allok and "PASS" or "FAIL", cs.name, n))
   end
 end
 
@@ -224,10 +226,8 @@ do
   --     （★ `@thief` 那两条本来就该互相覆盖 ✓ 拿它当判据是判据错 ✗）
   local letters = { "", "b", "c", "s", "t" }
   local _, ws = run(order, letters)
-  local w1 = ws[1] and tostring(ws[1]) or nil
-  ok(w1 ~= nil and Ctl._row_letter[w1] == nil, "空 `letter` 的行不许落账（防残值）")
-  local w4 = ws[4] and tostring(ws[4]) or nil
-  ok(w4 ~= nil and Ctl._row_letter[w4] == "s", "后面的行仍然要落账（不是被清空就断了）")
+  ok(Ctl._row_letter[1] == nil, "空 `letter` 的行不许落账（防残值）")
+  ok(Ctl._row_letter[4] == "s", "后面的行仍然要落账（不是被清空就断了）")
   print("  [PASS] 读不到就不写（残值护栏）")
 end
 
