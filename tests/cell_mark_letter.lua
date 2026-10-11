@@ -167,7 +167,27 @@ do
   ok(joined(n1) == "a", "格子(1,1) 打的是第 1 行 ⇒ 显示那一行的 letter = a（实测：" .. joined(n1) .. "）")
   ok(joined(n2) == "b", "格子(2,1) 打的是第 2 行 ⇒ 显示 = b（实测：" .. joined(n2) .. "）")
   ok(joined(n3) == "c", "格子(3,1) 打的是第 3 行 ⇒ 显示 = c（实测：" .. joined(n3) .. "）")
-  print("  [PASS] 打标记 ⇒ 显示 letter（★ 不是那个键 ✓）")
+  -- ★★★★★★★★ 2026-10-11 **下发的 `notes` 必须是【表】** ✗✓✓（★ 真机红字的哨兵 ✓）
+  --
+  --   ★★★ 真机日志 ✓（★ 用户 v183 原文 ✓）：
+  --     `属性下发失败：`cell.3.4.notes` ← bad argument #1 to 'concat' (table expected)` ✗
+  --     `属性补发 3 次仍未送达，已停止补发：`cell.3.4.notes`` ✗
+  --     ⇒ ★★ **那一格的字一个都没下去** ✓✓
+  --   ★ 根因 ✓：★ 适配层那条路是 **`table.concat(value or {}, " ")`** ✓
+  --     ★★ 而"放棋子"那条路传的是 **一个字符串** ✗ ⇒ ★ `concat("D")` **抛错** ✓
+  --       ★ 而"打标记"那条路传的是**表** ✓ ⇒ ★ **两条路类型不一致** ✓✓
+  --   ★ 判据 ✓：★ **两条路都必须给表** ✓ —— ★ 因为写进的是**同一个 `notes` 字段** ✓
+  --   ★★ 这一条同时钉住"以后别再改回字符串" ✗（★ 那是**两个模块之间的契约** ✓）
+  ok(type(n1) == "table", "★ `notes` 必须是【表】（适配层 table.concat 要求 ✓）实测：" .. type(n1))
+  -- ★ 放棋子那条路也要给表 ✓（★ 它才是真机报错的那一条 ✓）
+  local core2 = Core.new(lv)
+  local c2 = UIC.new(core2, { skip_intro = true })
+  core2:select_suspect(core2.pieces[1].id)
+  core2:hold_cell(5, 5)
+  local nn = plan_notes(c2, 5, 5)
+  ok(type(nn) == "table",
+    "★ 【放棋子】那条路的 `notes` 也必须是表（★ 真机报错就是它 ✗）实测：" .. type(nn))
+  print("  [PASS] 打标记 ⇒ 显示 letter（★ 不是那个键 ✓）＋ `notes` 类型是表 ✓")
 end
 
 --------------------------------------------------------------------------------

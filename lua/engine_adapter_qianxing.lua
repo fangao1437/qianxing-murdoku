@@ -4589,7 +4589,26 @@ function Adapter:set_property(id, key, value, nkey)
     --        （★ 现已由**编辑器存档**给好尺寸/对齐/字号 ✓ 脚本**不再插手几何** ✓）
     local c = self:sub(id, "note")
     if c ~= nil then
-      local txt = table.concat(value or {}, " ")
+      -- ★★★★★★★★ 2026-10-11 **`notes` 收【两种形状】：表 ✓ 或 字符串 ✓** ✗✓✓
+      --
+      --   ★★★ 真机红字 ✓（★ 用户 v183 日志原文 ✓）：
+      --     `属性下发失败：`cell.3.4.notes` ← bad argument #1 to 'concat' (table expected)` ✗
+      --     ⇒ ★ 补发 3 次仍未送达 ⇒ ★ **那一格的字一个都没下去** ✓✓
+      --   ★ 根因 ✓：★ 这条边界上**两种形状都出现过** ✗ ——
+      --     ★ 界面层"**放棋子**"那条路给的是**一个字母**（字符串 ✓）
+      --     ★ 界面层"**打标记**"那条路给的是**一串字母**（数组 ✓）
+      --   ★★ 为什么不能只认一种 ✗：★ 这是**两个模块之间的契约** ✓
+      --     谁改另一头都不会报错 ✗ ⇒ ★ 只会**静默丢字** ✓（★ 正是这次的形状 ✓）
+      --   ⇒ ★ 修法 ✓：★ **在这一层收口** ✓ —— ★ 表就 `concat` ✓、字符串直接用 ✓
+      --     ★ 顺带保住老调用（★ 历史上有传过字符串的 ✓）
+      local txt = nil
+      if type(value) == "table" then
+        txt = table.concat(value, " ")
+      elseif value == false or value == nil then
+        txt = ""
+      else
+        txt = tostring(value)
+      end
       if c.text ~= nil then c.text = txt end
       if type(c.SetText) == "function" then pcall(function() c:SetText(txt) end) end
       if c.SetVisible then pcall(function() c:SetVisible(txt ~= "") end) end

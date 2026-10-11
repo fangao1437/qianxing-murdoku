@@ -3572,6 +3572,40 @@ local LONG_PRESS_SECONDS = 0.45
 -- 按下到抬起之间允许的位移（画布像素）。超过就当成"划动"，不算点/长按。
 local TAP_MOVE_TOLERANCE = 24
 
+-- ★★★★★★★★ 2026-10-11 **手势计时统一走【真实时钟】** ✗✓✓
+--
+--   ★★★ 用户报的原话 ✓：「**行数越靠后，长按放置需要的长按时间越长**」✗
+--     真机日志 ✓（★ 同一局的实测值 ✓）：
+--       `抬起被判定为【长按】✓ 时长=0.59` / `0.50` / `0.90`
+--       → `1.07` → `1.35` → `1.63` → **`2.70`** ✗
+--     ⇒ ★★ **判定时长单调增大** ✓ —— ★ 而玩家的手不可能越按越久 ✓
+--
+--   ★★ 根因 ✓：★ 原来长短按比的是 **`self.now`** ✓
+--     ★ 而 `self.now` 是**把每帧的 `dt` 累加**起来的 ✓（`Controller:tick` ✓）
+--     ⇒ ★★ **`dt` 一旦不可信，它就整体漂移** ✓ ——
+--       ★ 游戏循环里它便宜、够用 ✓（★ 但它**不是**一根基线时钟 ✗）
+--       ★★ 而**手感判定**（长按 / 双击）恰恰必须建在**真实时间**上 ✓✓
+--
+--   ★ 为什么用 `os.clock` ✓（★ 不是猜的 ✓）：
+--     ★ 官方运行环境白名单里**明确有它** ✓（`docs/api-cache/mhtakr07vej4.txt` ✓
+--       「除 `os.time` / `os.date` / **`os.clock`** / `os.difftime` 外的 `os.*` 都不可用」✓）
+--     ⇒ ★ `os.clock` 是**可用**的 ✓ 而且它单调 ✓
+--   ★★★ 测试怎么驱动时间 ✓：★ 显式设 **`M.TEST_CLOCK`** ✓
+--     ★ 为什么不能"看 `self.now` 是不是数字" ✗ —— ★ 它在真机上**也**永远是数字 ✓
+--       （★ `M.new` 里 `self.now = 0` ✓ 之后每帧 `tick` 累加 ✓）
+--       ⇒ ★★ 那样判 ⇒ ★ **真机照样用累加时钟** ✗ ⇒ ★ 等于没修 ✓（我第一版就是这么写的 ✓）
+--     ★★ 所以用一个**显式的**假时钟开关 ✓：★ 生产环境它是 nil ✓ ⇒ ★ 一定走 `os.clock` ✓✓
+M.TEST_CLOCK = nil
+
+local function gesture_now(self)
+  local t = rawget(M, "TEST_CLOCK")
+  if type(t) == "number" then return t end          -- ★ 测试推进的那根假时钟 ✓
+  local ok, c = pcall(os.clock)
+  if ok and type(c) == "number" then return c end
+  -- 兜底：真拿不到时钟就退回累加时间（★ 至少"能用" ✓ 而不是崩 ✓）
+  return (self and rawget(self, "now")) or 0
+end
+
 function Controller:snapshot()
   self._gesture_snapshot = self.core:serialize()
 end
@@ -3614,7 +3648,7 @@ function Controller:flush_pending_note()
 
   local p = self.pending_click
   if p == nil then return end
-  if (self.now or 0) - p.t < DOUBLE_CLICK_SECONDS then return end
+  if gesture_now(self) - p.t < DOUBLE_CLICK_SECONDS then return end
   self.pending_click = nil
   local ok, why = self.core:tap_cell(p.r, p.c)
 
@@ -3733,7 +3767,8 @@ end
 -- ── 按下 / 抬起：自己合成"长按" ──────────────────────────────────────────
 -- 返回 true = 这次抬起已经被当成"长按"处理掉了（后续那个 CursorClick 要忽略）
 function Controller:on_cell_down(r, c, x, y)
-  self._press = { r = r, c = c, t = self.now or 0, x = x, y = y }
+  -- ★ 按下时刻用**手势时钟**记 ✓（★ 见 `gesture_now` 那段：★ 真实时钟 ✓）
+  self._press = { r = r, c = c, t = gesture_now(self), x = x, y = y }
   return false
 end
 
@@ -3742,7 +3777,8 @@ function Controller:on_cell_up(r, c, x, y)
   self._press = nil
   if p == nil then return false end
   if p.r ~= r or p.c ~= c then return false end          -- 按在别处，不算
-  local dt = (self.now or 0) - p.t
+  -- ★★★ 与按下**同一个时钟** ✓ —— ★ 两边混用 ⇒ 时长会算出荒谬的数 ✓
+  local dt = gesture_now(self) - p.t
   if dt < LONG_PRESS_SECONDS then return false end         -- 还不够长
   -- 位移太大 = 划动，不算长按
   if p.x ~= nil and x ~= nil then
@@ -3785,24 +3821,22 @@ function Controller:on_cell_click(r, c)
   --   ⇒ 这不是"错"，只是**这次点击本来就没落在任何格子上** —— 什么都不做才是对的。
   --   ⚠️ 必须放在**读 `core.grid` 之前**：放在后面就等于没放。
   if r == nil or c == nil then return end
-  -- ★★★★★ 2026-10-07 **吃掉"点线索卡"带出来的那一次格子点击** ✗✓（治穿透 ✓）
-  --   ★ 网格视窗不消费点击 ⇒ ★ 同一次指针事件会**先给列表项、再给棋盘** ✓
-  --     ⇒ ★ 点卡片就会顺手点一下格子 ✓（真机日志两次可见 ✓ 见 `_on_grid_item_click` 处注释 ✓）
-  --   ★ 这里用"刚点过卡片"的时间戳挡掉 ✓ 窗口 0.35 秒（= 双击窗口 ✓）
-  --     ⚠️ 只挡**单击**这一路 ✓ 不影响双击放置/长按 ✓（它们走 down/up 判定，不经过这里 ✓）
-  if self._grid_click_t ~= nil and (self.now or 0) - self._grid_click_t <= 0.35 then
-    return
-  end
+  -- ★★★★★★★★ 2026-10-11 **删掉一段【从来没生效过】的护栏** ✗✓✓
+  --
+  --   ★★★ 它长这样 ✓：`if self._grid_click_t ~= nil and … <= 0.35 then return end`
+  --     ★★ 而 grep 全文件：**`_grid_click_t` 只有【读】没有【写】** ✗✓
+  --       ⇒ ★ 它**永远是 nil** ⇒ ★ 这个 `if` **一次都没进去过** ✓✓
+  --     ★ 而且它原本有**两份一模一样的**（★ 判据/窗口/注释全同 ✓）⇒ 删一份 ✓
+  --   ★ 真在用的那个去重是 `_grid_click_at` ✓（★ 在 `_on_grid_item_click` 里 ✓
+  --     ★ 它治的是"**同一次点击串进来一串列表项**" ✓ 完全不同的一件事 ✓）
+  --   ⇒ ★ 结论 ✓：★ 这一段是**读起来像有保护、实际没有** ✗ ——
+  --     ★★ 留着它比删掉更危险 ✓（★ 下一个人会以为"点卡片后的穿透已经被挡住了" ✓）
+  --
+  --   ⚠️ ★ 那么"点卡片会顺手点一下格子"这件事现在靠什么 ✗：
+  --     ★ 靠 `_on_grid_item_click` 里那一道 ✓（★ 它用的也是手势时钟 ✓）
+  --     ★★ 若真机仍观察到穿透 ⇒ ★ 应该去**那边**补 ✓ 而不是复活这段死码 ✓
   local core = self.core
   self.now = self.now or 0
-  -- ★★★★★ 2026-10-07 **吃掉"点线索卡"带出来的那一次格子点击** ✗✓（治穿透 ✓）
-  --   ★ 网格视窗不消费点击 ⇒ ★ 同一次指针事件**先给列表项、再给棋盘** ✓
-  --     ⇒ ★ 点卡片就会顺手点一下格子 ✓（真机日志两轮都可见 ✓）
-  --   ★ 这里用"刚点过卡片"的时间戳挡掉 ✓ 窗口 0.35 秒（= 双击窗口 ✓）
-  --     ⚠️ 只挡**单击**这一路 ✓ 双击/长按走 down-up 判定，不经过这里 ✓ ⇒ 不受影响 ✓
-  if self._grid_click_t ~= nil and (self.now or 0) - self._grid_click_t <= 0.35 then
-    return
-  end
   local occupied = core.grid[r][c] ~= nil
   local mode = core.mode
 
@@ -3822,7 +3856,8 @@ function Controller:on_cell_click(r, c)
   --   于是**单击零延迟，双击行为与原来完全一致**。
   if (not occupied) and mode == "place" then
     local last = self.last_click
-    if last and last.r == r and last.c == c and (self.now - last.t) <= DOUBLE_CLICK_SECONDS then
+    -- ★★ 双击窗口也走**手势时钟** ✓ —— ★ 与 `last.t` 必须同源 ✓（★ 见 `gesture_now` ✓）
+    if last and last.r == r and last.c == c and (gesture_now(self) - last.t) <= DOUBLE_CLICK_SECONDS then
       self.last_click = nil
       if last.did == "x" then
         core:toggle_x(r, c)             -- 撤销第一击切出来的 ✗
@@ -3863,7 +3898,7 @@ function Controller:on_cell_click(r, c)
     -- 记下这一击做了什么，供"第二击撤销第一击"用
     if (not occupied) and mode == "place" then
       self.last_click = {
-        r = r, c = c, t = self.now,
+        r = r, c = c, t = gesture_now(self),
         did = had_selected and "pre" or "x",
       }
     end
@@ -3879,7 +3914,7 @@ function Controller:on_cell_click(r, c)
     --   ★ 修法 ✓：★ **失败也记** ✓ 且 `did = "none"` ⇒
     --     ★ 第二击**不会去"撤销第一击"**（★ 什么都没做 ✓ 无需撤 ✓）★ 只做预放置 ✓✓
     if (not occupied) and mode == "place" and self.last_click == nil then
-      self.last_click = { r = r, c = c, t = self.now, did = "none" }
+      self.last_click = { r = r, c = c, t = gesture_now(self), did = "none" }
     end
     self:_refuse(r, c, why)
   end
@@ -3989,7 +4024,13 @@ function Controller:on_key(event)
     if kb ~= nil then
       self.kb_active = true
       self:on_cell_click(kb.r, kb.c)
-      self.pending_click = { r = kb.r, c = kb.c, t = (self.now or 0) - DOUBLE_CLICK_SECONDS - 1 }
+      -- ★★ 时间戳必须与 `flush_pending_note` **同一个时钟** ✓
+      --   ★ 原来是 `self.now` 减一个窗口 ✗ —— ★ 那是**累加时钟** ✓
+      --     ★★ 而 `flush_pending_note` 现在比的是**手势时钟** ⇒ ★ 两边不同源 ✓
+      --       ⇒ ★ 这个"减窗口"是**白减的** ✗（★ 数值上一定小于手势时钟 ⇒ 立刻落笔记 ✓）
+      --   ★ 语义 ✓：★ 键盘空格**没有双击概念** ✓ ⇒ ★ 本来就是要"立刻落笔记" ✓
+      --     ★ 写成手势时钟减窗口 ⇒ ★ **意图与实现一致** ✓✓
+      self.pending_click = { r = kb.r, c = kb.c, t = gesture_now(self) - DOUBLE_CLICK_SECONDS - 1 }
       self:flush_pending_note()
       return true
     end
@@ -5807,8 +5848,28 @@ function Controller:build_layout()
       local _note_src = nil
       local _resolve = Controller.letter_of
       if cd.suspect ~= nil then
-        _note_val = Controller.letter_of(vm, cd.suspect)
-        if _note_val ~= nil then _note_src = "letter(棋子)" end
+        local _lt = Controller.letter_of(vm, cd.suspect)
+        -- ★★★★★★★★ 2026-10-11 **必须包成【表】** ✗✓✓（★ 真机红字抓出来的 ✓）
+        --
+        --   ★★★ 症状 ✓（★ 用户 v183 真机日志原文 ✓）：
+        --     `属性下发失败：`cell.3.4.notes` ← bad argument #1 to 'concat' (table expected)` ✗
+        --     `属性补发 3 次仍未送达，已停止补发：`cell.3.4.notes`` ✗
+        --   ★ 根因 ✓：★ 适配层那条路是 **`table.concat(value or {}, " ")`** ✓
+        --     （★ `engine_adapter_qianxing.lua` 的 `key == "notes"` 分支 ✓）
+        --     ★★ 而 `letter_of` 返回的是**一个字符串** ✗（★ `_row_letter[行]` 存的就是字符串 ✓）
+        --       ⇒ ★ `table.concat("D")` ⇒ **抛错** ⇒ ★ **这一格的字一个都没下去** ✓✓
+        --   ★★ 对照 ✓：★ 同一段的**标记**那条路走 `mark_list_of` ✓ ⇒ ★ 它返回的是**表** ✓
+        --     ⇒ ★ **两条路类型不一致** ✗ —— ★ 而它们写进的是**同一个 `notes` 字段** ✓✓
+        --   ★ 修法 ✓：★ **统一成表** ✓（★ 一条一个字母 ✓）
+        --     ★ 与 `mark_list_of` 的形状对齐 ✓ ⇒ ★ 适配层【一个字都不用改】✓
+        --   ⚠️ 为什么以前没暴露 ✗：★ 落子那一刻 `do_place` 会**清掉该格笔记** ✓
+        --     ⇒ ★ 上一版这里多半取到 nil ⇒ 走了"清空"那条 ✓
+        --     ★★ 而 v183 把 `letter` 接上之后 ⇒ ★ 这里**第一次真的返回了字符串** ✓✓
+        --       ⇒ ★ **新接的这条线把老类型错暴露出来了** ✓
+        if _lt ~= nil and tostring(_lt) ~= "" then
+          _note_val = { tostring(_lt) }
+          _note_src = "letter(棋子)"
+        end
       end
       if _note_val == nil then
         -- ★★★★★★ 2026-10-11 **标记列表也走 `letter`** ✗✓✓（★ 这就是"取代" ✓）
@@ -7867,7 +7928,23 @@ function Controller:_grid_text_payload()
       --       ★ 棋盘上要显示的 `letter` / `face` **都来自同一行** ✓ ⇒ ★ **它们天然同键** ✓✓
       --     ★★ **不能拿它去查 `core.names`** ✗ —— ★ 那是我上一版加的过滤 ✓
       --       ★ 它把"用户自己配的键"当成了"必须是游戏里的人物 id" ✗ ⇒ **永远对不上** ✓✓
-      id     = (rt and rt.who) or ((cl.who ~= nil) and tostring(cl.who) or nil),
+      -- ★★★★★★★★ 2026-10-11 **`id` 改成【行号】（★ 与棋盘线同一把钥匙 ✓）** ✗✓✓
+      --
+      --   ★★★ 它原来是 **`rt.who`（那一行 `who` 槽的文本）** ✗✓
+      --     ★ 上面那几段注释正是**上一轮**为它写的（★ "键 = 那一行的 `who` 文本" ✓）
+      --     ★★ 而用户随后明确否掉了这条路 ✓：
+      --       「★ **如果非要这个机制，就把 `id` 设为 `letter`，或者 `row.i.j`** ✓
+      --        ★ **`who` 已经干扰了很多次了**」✓✓
+      --   ★ 留着它的后果（★ 不是"风格问题" ✗ 是**真的会错** ✓）：
+      --     ★ 每一个读 `items[i].id` 的地方都得**再猜一次它是什么** ✗ ——
+      --       ★ 灰白那条路（`core.placed[?]`）要的是**棋子 id** ✓ ⇒ ★ 猜错就**永不开灰** ✓✓
+      --         （★ 实测：夹具里 `who` 填 `W1` ⇒ `tonumber("W1")` = nil ⇒ 灰白找不到人 ✓）
+      --     ★★ 而"行号"是**唯一**能被两处同时接受的形状 ✓：
+      --       ★ 卡片侧：★ 行号 ↔ `row.<关>.<行>` ✓（要显示什么就用它查 `_row_text` ✓）
+      --       ★ 棋盘侧：★ 行号 ↔ 棋子 id ✓（`_piece_at_row` / `_pos_of_piece` ✓）
+      --   ⇒ ★ 修法 ✓：★ **`id` = 行号 `i`** ✓ —— ★ 不再从 `rt.who` / `cl.who` 取 ✗
+      --     ★★ 于是"`who` 填什么"**彻底与这条链无关** ✓✓（★ 用户要的正是这个 ✓）
+      id     = i,
     }
   end
   p = { level = lv, n = n, items = items }
@@ -8739,10 +8816,52 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   --     · 所以取 `cl.who` 存下来是 **零额外成本** ✓
   --     ⇒ ★ 既**拿回了 id** ✓ 又**没有**把"每次回调 14 次整视图重建"带回来 ✓✓
   --   ★ 优先级（与 L4211 老注释一致 ✓）：**id（权威）→ 素材名去前缀 → `cl.who`（显示名，最后兜底）**
+  --
+  -- ★★★★★★★★ 2026-10-11 **这一行原来会在【数字】上取长度 ⇒ 每帧抛错** ✗✓✓
+  --
+  --   ★ 原文 ✓：★ `if _pid == nil or _pid == "" or #_pid > 2 then …` ✗
+  --     ★★ 而 `cl.id` 现在是 **`i`（行号，数字）** ✓（★ 见 `_grid_text_payload` ✓）
+  --       ⇒ ★ `#_pid` 作用在**数字**上 ⇒ **抛错** ✓✓：
+  --         `attempt to get length of a number value (local '_pid')` ✗
+  --   ★★★ 后果有多重 ✗（★ 这才是要害 ✓）：
+  --     ★ 这一抛发生在 **`_fill_grid_item` 的回调里** ✓
+  --       ⇒ ★★ **整张卡都填不上** ✓ ⇒ ★ 表现是「**线索区点击反馈全坏**」✓✓
+  --         （★ 与真机 v104 那次事故**同一个形状** ✓ 见本文件"回调一次都没抛过异常"那条护栏 ✓）
+  --   ★ 修法 ✓：★ **先按类型分流** ✗ —— ★ 数字 ⇒ 本来就是行号 ✓ 直接用 ✓
+  --     ★ 字符串 ⇒ 才谈"长度/`@` 前缀"那两条老护栏 ✓
   local _pid = cl.id
-  -- ★ 2026-10-10 已删（地图员干跑 PASS ✓）：用 t_portrait 反推 _pid 的死兜底（★ 恒 nil ⇒ 永不生效 ✓）　原 L4930..L4934
-  if _pid == nil or _pid == "" or #_pid > 2 then _pid = cl.id or cl.who end
-  if type(_pid) == "string" and _pid:sub(1, 1) == "@" then _pid = nil end   -- 特殊角色（如 @thief）不算人
+  if type(_pid) == "string" then
+    -- ★ 老护栏 ✓：空串、超长（显示名/素材名 ✓）、`@` 特殊角色（如 `@thief` ✓）都不算"人"
+    if _pid == "" or #_pid > 2 then _pid = nil end
+    if _pid ~= nil and _pid:sub(1, 1) == "@" then _pid = nil end
+  end
+  if _pid == nil then _pid = cl.who end
+  if type(_pid) == "string" then
+    if _pid == "" or #_pid > 2 or _pid:sub(1, 1) == "@" then _pid = nil end
+  end
+  -- ★★★★★★★★ 2026-10-11 **灰白层必须用【棋子 id】查 `core.placed`（键是棋子 id ✗ 不是行号）** ✗✓✓
+  --
+  --   ★★★ 这是我【自己引入的回归】✗✓（★ 独立复核者之外、由 `grid_cost` 的护栏抓出来的 ✓）：
+  --     ★ v183 把棋盘线的键统一成**行号**之后 ✓ `cl.id` 也跟着变成**行号**了 ✓
+  --       （★ 见 `_grid_text_payload` 里 `id = (rt and rt.who) or …` ✓
+  --        ★ 而 `rt` 现在按行存 ⇒ ★ 那个 `id` 就是**第几行** ✓）
+  --     ★★ 而 **`core.placed` 的键是【棋子 id】** ✗（★ `do_place` 里 `self.placed[who] = true` ✓
+  --        ★ `who` = `core.selected` = 棋子 id ✓）
+  --       ⇒ ★ `core.placed[行号]` **恒 nil** ✓ ⇒ ★★ **灰白层永远不开** ✓✓
+  --     ★★★ 表现 ✓：★ **"线索区的选中/已放置反馈全消失"** ✗ ——
+  --       ★ 这正是 `grid_cost` 的 H 段专门守着的那件事 ✓（★ 它 2026-10-09 就因同一个症状加过护栏 ✓）
+  --   ⇒ ★ 修法 ✓：★ **行号 → 棋子 id** ✓（★ 与棋盘线**同一个换算** ✓ `_piece_at_row` ✓）
+  --     ★ 判据 ✓：★ `cl.id` 是行号时就换 ✓；★ 若它**本来就是棋子 id**（老路径/手写线索 ✓）
+  --       ⇒ ★ 换不出来 ⇒ **原样用它** ✓（★ 向后兼容 ✓ 不会更差 ✓）
+  if _pid ~= nil then
+    local _as_piece = Controller._piece_at_row(self.core, tonumber(_pid))
+    if _as_piece ~= nil then _pid = _as_piece end
+    -- ★ 顺带把"太长就不当 id"那条老护栏保留 ✓（★ 显示名/长文本一律不当 id ✓）
+    --   ⚠️ ★ 先 `tostring` 再取长度 ✗ —— ★ `_pid` 现在是**行号（数字）** ✓
+    --     ★★ 直接 `#_pid` ⇒ `attempt to get length of a number value` ✗✓
+    --       （★ 真机与回归都当场抓到 ✓ 见 `grid_cost` 的"回调没抛过异常"那条 ✓）
+    if type(_pid) == "string" and #_pid > 2 then _pid = nil end
+  end
   local _placed_now = (_pid ~= nil) and self.core ~= nil and self.core.placed ~= nil
     and self.core.placed[_pid] == true
   local _cgray = self:_grid_item_child_cached(item, index, pos, "gray")
@@ -14580,7 +14699,26 @@ function Adapter:set_property(id, key, value, nkey)
     --        （★ 现已由**编辑器存档**给好尺寸/对齐/字号 ✓ 脚本**不再插手几何** ✓）
     local c = self:sub(id, "note")
     if c ~= nil then
-      local txt = table.concat(value or {}, " ")
+      -- ★★★★★★★★ 2026-10-11 **`notes` 收【两种形状】：表 ✓ 或 字符串 ✓** ✗✓✓
+      --
+      --   ★★★ 真机红字 ✓（★ 用户 v183 日志原文 ✓）：
+      --     `属性下发失败：`cell.3.4.notes` ← bad argument #1 to 'concat' (table expected)` ✗
+      --     ⇒ ★ 补发 3 次仍未送达 ⇒ ★ **那一格的字一个都没下去** ✓✓
+      --   ★ 根因 ✓：★ 这条边界上**两种形状都出现过** ✗ ——
+      --     ★ 界面层"**放棋子**"那条路给的是**一个字母**（字符串 ✓）
+      --     ★ 界面层"**打标记**"那条路给的是**一串字母**（数组 ✓）
+      --   ★★ 为什么不能只认一种 ✗：★ 这是**两个模块之间的契约** ✓
+      --     谁改另一头都不会报错 ✗ ⇒ ★ 只会**静默丢字** ✓（★ 正是这次的形状 ✓）
+      --   ⇒ ★ 修法 ✓：★ **在这一层收口** ✓ —— ★ 表就 `concat` ✓、字符串直接用 ✓
+      --     ★ 顺带保住老调用（★ 历史上有传过字符串的 ✓）
+      local txt = nil
+      if type(value) == "table" then
+        txt = table.concat(value, " ")
+      elseif value == false or value == nil then
+        txt = ""
+      else
+        txt = tostring(value)
+      end
       if c.text ~= nil then c.text = txt end
       if type(c.SetText) == "function" then pcall(function() c:SetText(txt) end) end
       if c.SetVisible then pcall(function() c:SetVisible(txt ~= "") end) end
@@ -18730,7 +18868,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v183 / 2026-10-11 / 棋盘接线：键=行号(row.i.j)，who彻底退出棋盘线；删掉重复的第二趟单射 =====")
+        print("[murdoku] ===== 构建标记 v184 / 2026-10-11 / 修三处：notes必须是表(真机concat报错)、灰白改按棋子id查、长按改用真实时钟 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

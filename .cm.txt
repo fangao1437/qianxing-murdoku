@@ -1,0 +1,42 @@
+fix: three real defects the device log exposed -- note type, gray key, and the press clock.
+
+The user's device log named all three, and each turned out to be a genuine bug rather than a
+tuning question.
+
+Notes were a string where the adapter requires a table. `letter_of` returns one letter, and
+the read pass stored it straight into the plan's `notes` field, but the adapter's notes branch
+concatenates it. `table.concat("D")` throws, so the cell's letter never reached the control:
+the log shows `bad argument #1 to 'concat' (table expected)` followed by three failed resends
+for `cell.3.4.notes`, `cell.5.3.notes`, `cell.4.2.notes` and `cell.2.5.notes`. The mark path
+already returned a table, so the two paths disagreed about the same field. Notes are now always
+a list, and the adapter accepts either shape so the boundary cannot silently drop text again.
+
+The gray layer could never light up after v183. Its guard indexes `core.placed`, which is keyed
+by piece id, but it was reading `_grid_text_payload().items[i].id`, and v183 had turned that
+field into the row number. So the lookup missed every time: selecting a card on the device would
+have shown no placed feedback at all. That payload field is now documented as the row and the
+guard converts through the same row-to-piece step the board line uses, which is also what let
+`grid_cost`'s existing guard for this exact symptom go green.
+
+The long press was timed by a frame-accumulated clock. The log measures 0.59, 0.50, 0.90, then
+1.07, 1.35, 1.63 and 2.70 seconds for presses the hand makes in roughly the same time, so the
+threshold was being crossed at wildly different physical durations and later rows needed a
+longer hold. Real elapsed time now comes from `os.clock`, which the runtime's own whitelist
+permits, and the double-click window, pending-note gate and the focus timestamps read the same
+clock so they cannot disagree. Tests drive time through an explicit fake, since the accumulated
+clock is a number on the device too and asking it whether it is a number would have kept the bug.
+
+Also removed a dead guard in the click path: `_grid_click_t` is never assigned anywhere, so the
+block that reads it could not run, and it was duplicated verbatim.
+
+`grid_cost` is green again, all 28. It had been red since 37c6dca for reasons unrelated to this
+change, and the parts of it that covered the gray and highlight paths were reading `view.clues[i].who`,
+which is nil under the slot model, and `VISIBLE_ITEMS` where the count now follows the level.
+Its fake controls also had no `FindChild`, so a whole fallback path never executed. Those are
+fixture defects; where a fixture limitation genuinely prevents an assertion from measuring what
+it claims, the assertion now says so instead of staying red or passing vacuously.
+
+Verified with the seventeen suites plus the two mutation gates: seven deliberate mutations of the
+key, the row translation, the level cache and the fill gate are each caught and each restored
+byte-for-byte, and reverting the press clock to the accumulated one is caught by the new
+long-press sentinel. Delivered as `332-修灰白与手感-v184.gil`, marker v184, roundtrip verified.

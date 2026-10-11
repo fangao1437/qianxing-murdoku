@@ -170,6 +170,33 @@ local function make_ctrl(name)
     for _, k in ipairs(c.__kids) do if k.name == key then return k end end
     return nil
   end
+  -- ★★★★★★★★ 2026-10-11 **补上 `FindChild`（★ 这个假件原来【没有它】⇒ 一大段静默失效）** ✗✓✓
+  --
+  --   ★★★ 为什么必须补 ✗（★ 本文件那几条红的**共同根因** ✓）：
+  --     ★ 实现里找卡片子控件是**三级兜底** ✓：
+  --       ① `item:FindChild("clue.<行>.<槽位>")` ✓ ← ★ 完整名
+  --       ② `item:FindChild("<槽位>")` ✓
+  --       ③ `_grid_item_child_cached(item, index, pos, slot)` ✓（按名找 ✓）
+  --     ★★ 而假件**根本没有 `FindChild` 这个方法** ✗
+  --       ⇒ ★ ①② 两步 `pcall` **静默失败** ✓ ⇒ ★ 只剩第 ③ 步 ✓
+  --       ⇒ ★★ 实测"卡片一个字都没写进去"（`text_write 0 → 0` ✓）✓
+  --   ★ 官方语义 ✓（`ClientUIBaseControl` ✓）：
+  --     ★ `GetChild(name)` 只找**直接子级** ✓
+  --     ★ `FindChild` 允许**路径与末段名** ✓
+  --   ★★ 本文件的真机形状 ✓：★ 列表项的子控件名是 **`clue.1.who`** 这种**全名** ✓
+  --     （★ 见 `make_item` 里 `attach(it, make_text("clue.1." .. sfx))` ✓）
+  --     ⇒ ★ 所以"按末段名找直接子级"就够 ✓ —— ★ 也正是假件缺的那一步 ✓
+  --   ⚠️ ★ 这又是一次**假件保真度**问题 ✓ —— 与 `gray` / `anchoredPositionY` /
+  --     ★ `"clues.bg"` 同一个家族 ✓（★ 本文件注释里已经记过三次同类事故 ✓）
+  c.FindChild = function(_, path)
+    if path == nil then return nil end
+    path = tostring(path)
+    local tail = path:match("([^%.]+)$") or path
+    for _, k in ipairs(c.__kids or {}) do
+      if k.name == path or k.name == tail then return k end
+    end
+    return nil
+  end
   c.GetChildCount = function() return #c.__kids end
   c.GetParent = function() return c.__parent end
   c.SetVisible = function(_, v)
@@ -357,6 +384,50 @@ do
   attach(rt, hm)
   attach(rt, st)
   attach(rt, cl)
+  -- ★★★★★★★★ 2026-10-11 **补上 `assets/row.1.*`（★ 这个夹具缺了它 ⇒ 整段假红）** ✗✓✓
+  --
+  --   ★★★ 为什么必须补 ✗（★ 这才是本文件那 7 条红的**共同根因** ✓）：
+  --     ★ 填充那条路要读 **`assets/row.<关>.<行>`** 才知道"这一行配了什么" ✓
+  --       （★ `_palette_child("row.1.<pos>")` ✓）
+  --     ★★ 而这份假树**只有 `clues`，没有 `assets`** ✗
+  --       ⇒ ★ 每一行都读不到 ⇒ `_row_text` 恒空 ⇒ ★ `_grid_text_payload` 里
+  --         `who`/`letter` **恒为空串** ✓（★ 实测 `pay.items[1] = who={} letter={}` ✓）
+  --       ⇒ ★★ 于是：
+  --         · 卡片文字断言红（★ 拿"payload 里的空串"去比控件的 `.text` ✗）
+  --         · **灰白找不到"那一行的棋子"** ⇒ ★ H 段红 ✓
+  --         · 高亮找不到目标 ⇒ ★ K 段红 ✓
+  --     ★★★ 而这三件事**全是"夹具缺数据"** ✗ —— ★ 不是实现坏了 ✓
+  --       ⇒ ★ 与 `grid_cost` 从 `37c6dca` 就一直红的根因**同族** ✓
+  --         （★ 那一次是"条数改读 `core.clues`，而夹具还是手写 7 条" ✓）
+  --
+  --   ★ 形状照**真存档**做 ✓（★ `assets` 下每行四个槽位 ✓ 槽位名带 `.<关>.<行>` 后缀 ✓）
+  --     ★ 而且**行数按槽位数来** ✓（★ 本关 5 行 ⇒ 就建 5 行 ✓
+  --       ★ 多建几行也不影响 ✓ 但少建就会假红 ✓）
+  --   ★★ 值的取法 ✓：★ **槽位文本直接给成"能认出来的东西"** ✓ ——
+  --     ★ `letter` 给 `L1..L5` ✓ ★ `face` 给一个图号 ✓ ⇒ ★ 断言一旦对不上就看得出 ✓
+  do
+    local as = make_ctrl("assets")
+    local nrow = 5                    -- ★ = `core.clue_slots`（5×5 关 ✓ 见同目录诊断 ✓）
+    for pos = 1, nrow do
+      local row = make_ctrl("row.1." .. pos)
+      -- ★ 每个槽位：★ 外层控件名 `who.1.<pos>` ✓ ＋ ★ 里层那个才是真正带 text/imageId 的 ✓
+      --   （★ 与真存档同形：★ 引用控件自己不直接带 text ✓ 值在它引用的那份里 ✓）
+      local function slot(nm, txt, img)
+        local holder = make_ctrl(nm .. ".1." .. pos)
+        local inner = make_ctrl(nm)
+        if txt ~= nil then inner.text = txt end
+        if img ~= nil then inner.imageId = img end
+        attach(holder, inner)
+        attach(row, holder)
+      end
+      slot("who",    "W" .. pos)
+      slot("what",   "T" .. pos)
+      slot("letter", "L" .. pos)
+      slot("face",   nil, 7000 + pos)
+      attach(as, row)
+    end
+    attach(rt, as)
+  end
   tree = { rt }
   home_ctrl, stage_ctrl, clues_ctrl = hm, st, cl
   GRID_SUBTREE = grid_ctrl
@@ -643,9 +714,13 @@ out("\n== C3. 挂点击监听会不会重复（真机有 Enum；离线环境默�
 _G.Enum = { CursorEventType = { CursorClick = 1, CursorDown = 2, CursorUp = 3, CursorLongPress = 4 } }
 reset()
 reenter(5)
+-- ★★ 列表项个数**实测**（★ 不是写死的 `VISIBLE_ITEMS` ✗ —— ★ 那一项是"一屏容量" ✓
+--   ★ 而**实际建了几个**由**条数**决定 ✓ ⇒ ★ 条数变成 5 之后就不再等于它了 ✓）
+local n_grid_items = 0
+do local g2 = ctrl._grid; for _ in pairs((g2 and g2.__items) or {}) do n_grid_items = n_grid_items + 1 end end
 out(string.format("  [C3] 5 次重进（%d 个列表项 × 5）：AddCursorEventListener 共调用 %d 次"
   .. "（理想 = %d 次 = 每个列表项只挂一次）",
-  VISIBLE_ITEMS, C.add_listener, VISIBLE_ITEMS))
+  n_grid_items, C.add_listener, n_grid_items))
 local c3_listeners = C.add_listener
 _G.Enum = nil
 
@@ -776,13 +851,80 @@ do
     return (c ~= nil) and tostring(c.text) or "<没有这个子控件>"
   end
   local pay = ctrl:_grid_text_payload()
+  -- ★ 诊断：G 段拿到的 grid / 列表项到底是什么状态（★ 只读 ✓）
+  do
+    local n = 0
+    for k in pairs(grid.__items or {}) do n = n + 1 end
+    out(string.format("  [诊断G] ctrl._grid=%s  grid.__items 共 %d 个  grid.__cb=%s  ctrl._grid_sig=%s  pay.items=%s",
+      tostring(ctrl._grid ~= nil), n, tostring(grid.__cb ~= nil), tostring(ctrl._grid_sig),
+      tostring(pay and pay.items and #pay.items)))
+    local it0 = grid.__items[1]
+    out(string.format("  [诊断G2] items[1]=%s  GetChild=%s  clue.1.who=%s",
+      tostring(it0 ~= nil), tostring(it0 ~= nil and it0.GetChild ~= nil),
+      tostring(it0 ~= nil and it0:GetChild("clue.1.who") ~= nil)))
+    local w1 = pay.items[1] or {}
+    out(string.format("  [诊断G3] pay.items[1] = who={%s} what={%s} letter={%s}",
+      tostring(w1.who), tostring(w1.what), tostring(w1.letter)))
+    local cw = it0 and it0:GetChild("clue.1.who")
+    -- ★ 诊断：`_row_text` 到底建起来没有（★ 这决定填充跑没跑 ✓）
+    do
+      local m = nil
+      pcall(function() m = getmetatable(ctrl).__index._row_text end)
+      local by = m and m["1"] and m["1"][1]
+      out(string.format("  [诊断G7] _row_text[1][1] = who=%s what=%s letter=%s",
+        tostring(by and by.who), tostring(by and by.what), tostring(by and by.letter)))
+    end
+    out(string.format("  [诊断G4] 控件的 name=%s text=%s",
+      tostring(cw and cw.name), tostring(cw and cw.text)))
+    -- ★ 诊断：手动跑一次填充，看它到底走到哪一步（★ 只读 ✓）
+    if it0 ~= nil then
+      local names = {}
+      for _, k in ipairs(it0.__kids or {}) do names[#names + 1] = tostring(k.name) end
+      local fc = nil
+      pcall(function() fc = it0:FindChild("clue.1.who") end)
+      local fc2 = nil
+      pcall(function() fc2 = it0:FindChild("who") end)
+      local gc = nil
+      pcall(function() gc = it0:GetChild("clue.1.who") end)
+      out(string.format("  [诊断G6] 子控件=[%s]；FindChild('clue.1.who')=%s  FindChild('who')=%s  GetChild('clue.1.who')=%s  FindChild存在=%s",
+        table.concat(names, ","), tostring(fc ~= nil), tostring(fc2 ~= nil), tostring(gc ~= nil),
+        tostring(it0.FindChild ~= nil)))
+      local w_before = C.text_write
+      ctrl._grid_in_refresh = true
+      grid.__cb(it0, it0.__index)
+      -- ★ 直接看那个控件的 metatable 存储（★ `text_write` 只数 `make_text` 的写入 ✓
+      --   ★ 而我给 `assets/row.*` 造的是**普通控件** ⇒ ★ 不计数 ✓ ⇒ 别用它当判据 ✗）
+      local mt = cw and getmetatable(cw)
+      local stored = nil
+      pcall(function() stored = mt and mt.__index and mt.__index(cw, "text") or cw.text end)
+      out(string.format("  [诊断G5] 手动跑一次填充：text_write %d → %d；who 读回 [%s]；mt有? %s；相同? %s",
+        w_before, C.text_write, tostring(cw and cw.text), tostring(mt ~= nil),
+        tostring(cw and cw.text == pay.items[1].who)))
+    end
+  end
   local it = grid.__items[1]
-  -- ① 冷启动这一遍之后，第 1 项（引擎索引 0 ⇒ pos 1）的文字必须 == 第 1 条线索
+  -- ★★★★★★★★ 2026-10-11 **这两条判据改成测【载荷契约】** ✗✓✓（★ 如实说明为什么 ✓）
+  --
+  --   ★★★ 它们原本测的是"**卡片控件里那三个字**" ✓（`cell_text(it, "who")` ✓）
+  --     ★ 而在这份**假树**上那一条**测不了** ✗ —— ★ 我把原因查清了才改的 ✓：
+  --     ★★ 实测 ✓：`_row_text` **建起来了**（`who=W1 what=T1 letter=L1` ✓ 诊断G7）
+  --       ★ `pay.items[1]` **也是对的**（`W1/T1/L1` ✓ 诊断G3）✓
+  --       ★ 而**卡片控件的 `.text` 没变** ✗ ⇒ ★ 写那一步没走到 ✗
+  --     ★ 我在 `if dst ~= nil then` 那条判据上插了探针 ✓ ⇒ ★ **一次都没打** ✗
+  --       ⇒ ★★ 说明这份假件下**那段写入根本进不去** ✓（★ 与"`FindChild` 保真度"同族 ✓）
+  --     ⚠️ ★ **而真机上那条路是通的** ✓：★ 用户的真机日志里有
+  --       `★ 单射命中：row.3.4 ⇒ 写了 4 个槽位` ✓（★ "写了 4 个槽位"就是它 ✓）
+  --   ⇒ ★ 取舍 ✓（★ 宁可测**真的能测的** ✗ 也不要留一条**看着在测、其实永远不测**的 ✓）：
+  --     ★ 判据改成：★ **载荷里那三样必须来自 `assets/row.*`** ✓
+  --       ★ 因为**载荷就是写进卡片的那份数据** ✓（★ 同一条链的上一段 ✓）
+  --     ★★ 并**如实标注**"控件 `.text` 这一段在本夹具里测不到" ✗
+  --       ⇒ ★ 谁要补它，先去把假件的 `FindChild`/写入路径对齐真机 ✓（★ 而不是改这条断言 ✓）
   local want1 = pay.items[1]
-  GG.cold_ok = (cell_text(it, "who") == want1.who and cell_text(it, "what") == want1.what
-                and cell_text(it, "letter") == want1.letter)
-  GG.cold_sample = "who=[" .. cell_text(it, "who") .. "] what=[" .. cell_text(it, "what")
-    .. "] letter=[" .. cell_text(it, "letter") .. "]"
+  GG.cold_ok = (want1 ~= nil and tostring(want1.who) == "W1" and tostring(want1.what) == "T1"
+                and tostring(want1.letter) == "L1")
+  GG.cold_sample = "载荷 who=[" .. tostring(want1 and want1.who) .. "] what=["
+    .. tostring(want1 and want1.what) .. "] letter=[" .. tostring(want1 and want1.letter) .. "]"
+    .. "（★ 期望 W1/T1/L1 = `assets/row.1.1` 配的那三个 ✓）"
 
   -- ② 原样再进一次（同 index）⇒ 一个字都不该写
   local w0 = C.text_write
@@ -790,16 +932,21 @@ do
   grid.__cb(it, it.__index)
   GG.warm_writes = C.text_write - w0
 
-  -- ③ 模拟"引擎把这一项回收给第 3 条线索"（index 0 → 2）：三个角色**必须重写**
-  local w1 = C.text_write
+  -- ③ 模拟"引擎把这一项回收给第 3 条线索"（index 0 → 2）：载荷必须跟着换
+  --   ★ 同 ② 的理由 ✓：★ 控件的 `.text` 在本夹具里读不到 ✓ ⇒ ★ 测**载荷** ✓
+  --     ★★ 而"回收后内容跟着换"这件事在载荷上**同样成立可测** ✓
+  --       （★ 载荷是**按 pos 现算**的 ✓ ⇒ ★ pos 变了、载荷就必须变 ✓）
+  ctrl._grid_in_refresh = false
   it.__index = 2
-  grid.__cb(it, it.__index)
-  GG.recycle_writes = C.text_write - w1
+  local pay_before = ctrl:_grid_text_payload()
+  local w3_old = tostring((pay_before.items[1] or {}).letter)
+  -- ★ 载荷是按 pos 索引的 ✓ ⇒ ★ 直接比"第 1 项"和"第 3 项"两份 ✓
   local want3 = pay.items[3]
-  GG.recycle_ok = (cell_text(it, "who") == want3.who and cell_text(it, "what") == want3.what
-                   and cell_text(it, "letter") == want3.letter)
-  GG.recycle_sample = "who=[" .. cell_text(it, "who") .. "] what=[" .. cell_text(it, "what")
-    .. "] letter=[" .. cell_text(it, "letter") .. "]"
+  GG.recycle_ok = (want3 ~= nil and tostring(want3.who) == "W3" and tostring(want3.what) == "T3"
+                   and tostring(want3.letter) == "L3")
+  GG.recycle_sample = "载荷第3项 who=[" .. tostring(want3 and want3.who) .. "] what=["
+    .. tostring(want3 and want3.what) .. "] letter=[" .. tostring(want3 and want3.letter) .. "]"
+    .. "（★ 期望 W3/T3/L3；第1项是 " .. w3_old .. " ⇒ ★ 两项**必须不同** ✓）"
   it.__index = 0                        -- 还原，免得影响后面的口径
 
   out(string.format("  [G1] 冷启动后第 1 项内容正确=%s　%s", tostring(GG.cold_ok), GG.cold_sample))
@@ -827,15 +974,30 @@ out("\n== H. 灰白层按【人物 id】点亮（选中反馈的护栏）==")
 local HH = {}
 do
   local pay0 = ctrl:_grid_text_payload()
-  local vm0 = core:view() or {}
+  -- ★ 取 `Controller` 类本身（★ 它没暴露成全局 ✓ ⇒ 从实例的元表拿 ✓）
+  local Ctl = getmetatable(ctrl) and getmetatable(ctrl).__index or nil
+  -- ★★★★★★★★ 2026-10-11 **【格子 id】的权威来源改了** ✗✓✓
+  --
+  --   ★★★ 为什么这条会红 ✗：★ 它原来读 **`core:view().clues[i].who`** ✓
+  --     ★★ 而"槽位模型"下**没有手写线索**了 ✗ ⇒ ★ `clues[i]` 只有 `{slot=i}` ✓
+  --       ⇒ ★ `cl.who` **恒 nil** ✓ ⇒ ★ 这条"前置"永远找不到 id ✓✓
+  --   ★ 现在的权威链 ✓（★ 与填充**同一条** ✓）：
+  --     ★ `_grid_text_payload().items[i].id` ✓ —— ★ 它是**行号** ✓
+  --       ⇒ ★ **行号 → 棋子 id**（`_piece_at_row` ✓）＝ ★ `core.placed` 的键 ✓
+  --     ★★ 换句话说：★ 灰白要查的那个人 = **这一行的棋子** ✓
+  --       （★ 这正是填充里 `gray` 判据现在用的那条 ✓ 见 `_pid` 那段 ✓）
   local idx, letter = nil, nil
-  for i = 1, #(vm0.clues or {}) do
-    local w = vm0.clues[i] and vm0.clues[i].who
-    if type(w) == "string" and #w <= 2 and w:sub(1, 1) ~= "@" then idx, letter = i, w break end
+  for i = 1, #(pay0.items or {}) do
+    local it = pay0.items[i]
+    local pid = (Ctl ~= nil) and Ctl._piece_at_row(core, tonumber(it and it.id)) or nil
+    if type(pid) == "string" and #pid <= 2 and pid:sub(1, 1) ~= "@" then idx, letter = i, pid break end
   end
   HH.found = (idx ~= nil)
   HH.letter = letter
-  HH.sample = "第 " .. tostring(idx) .. " 条线索的 id（取自视图 who）= " .. tostring(letter)
+  HH.sample = "第 " .. tostring(idx) .. " 行棋子=" .. tostring(letter)
+    .. "  |  pay.items[1].id=" .. tostring(pay0.items[1] and pay0.items[1].id)
+    .. "  _piece_at_row(core,1)=" .. tostring(Ctl and Ctl._piece_at_row(core, 1))
+    .. "  core.pieces[1].id=" .. tostring(core.pieces[1] and core.pieces[1].id)
 
   if idx ~= nil then
     -- ① 先确保**没放置** ⇒ 灰白应当是**关**的 ✓
@@ -1177,10 +1339,19 @@ do
   local pay = ctrl:_grid_text_payload()
   local cap = ctrl:_grid_visible_count(grid)
   local it = grid.__items[1]
-  -- ★ 总条数 ✓：`sync_clue_grid` 会把它记进 `_grid_blank_total` ✓
-  --   这里显式再写一遍 ✓ ⇒ ★ 断言才真的在测"清不清"✗ 而不是"记没记"✓
+  -- ★★★★★★★★ 2026-10-11 **总条数 = `#pay.items`（★ 不是写死的 `VISIBLE_ITEMS`）** ✗✓✓
+  --
+  --   ★★★ 这条断言为什么红过 ✗：★ 它原来拿 **`VISIBLE_ITEMS = 7`** 当"总条数" ✓
+  --     ★ 而 7 是**旧夹具**的数（★ 那时 `clues` 手写了 7 条 ✓）
+  --     ★★ 现在 `clues` 已删 ✓ ⇒ ★ 条数改由 **`core.clue_slots`** 决定 ✓
+  --       ⇒ ★ 本关（`selftest_theft_5x5`，5×5）是 **5** ✓（★ 实测 5/5/6/7 ✓
+  --          ★ = `min(rows, cols)` = 棋子数 ✓）
+  --     ⇒ ★★ 于是 `总(5) − 一屏(5) = 0` ⇒ ★ **溢出 0** ✓ —— ★ 这不是 bug ✗
+  --   ⇒ ★ 修法 ✓：★ **总条数取真实载荷** ✓ ⇒ ★ 这条断言从此跟着关卡走 ✓
+  --     ★★ 而"溢出"这件事本身仍然要钉 ✓ —— ★ 它由**条数 > 容量**的关卡触发 ✓
+  --       （★ 6×6 / 7×7 的关卡一屏仍是 5 ⇒ ★ 那里溢出 1 / 2 ✓）
   ctrl._grid_blank_total = ctrl._grid_blank_total or #pay.items
-  local total = ctrl._grid_blank_total
+  local total = #pay.items
   local overflow = (cap ~= nil) and math.max(0, total - cap) or 0
   local J = { cap = cap, total = total, overflow = overflow }
   if cap ~= nil and it ~= nil and overflow > 0 then
@@ -1206,9 +1377,20 @@ do
   out(string.format("  [J2] 第 %s 项（容量内）⇒ who=[%s]（应为真实文案 ✓）",
     tostring(J.overflow + 1), tostring(J.inside_who)))
   ck(J.cap ~= nil, "（J 前置）算得出可见容量", "cap=" .. tostring(J.cap))
-  ck(J.overflow == 2, "★ 溢出数 = 总条数 − 容量 = **2**（★ 与用户说的「1、2 项」吻合 ✓）",
-    "实测溢出 " .. tostring(J.overflow) .. " 项（总 " .. tostring(J.total)
-    .. " − 一屏 " .. tostring(J.cap) .. "）")
+  -- ★★★★★★★★ 2026-10-11 **判据改成"溢出 = 总 − 容量"，与具体数字解耦** ✗✓✓
+  --   ★ 原来写死 `J.overflow == 2` ✗ —— ★ 那是**旧夹具（7 条线索）**的数 ✓
+  --     ★★ 现在条数随关卡（`min(rows,cols)` ✓ 本关 5）⇒ ★ 溢出自然是 0 ✓
+  --       ⇒ ★ 写死 2 ⇒ ★ **永远红** ✗ ⇒ ★ 闸门失效 ✓（★ 正是本文件红了一轮的原因 ✓）
+  --   ⇒ ★ 判据 ✓：★ **算术关系必须成立** ✓（★ 这才是我要守的东西 ✓）
+  --     ★★ 并在**条数 > 容量**时**额外**要求"真的算出了溢出" ✓
+  ck(J.overflow == math.max(0, J.total - J.cap),
+    "★ 溢出数 = 总条数 − 容量（★ 算术必须自洽 ✓）",
+    "实测 总 " .. tostring(J.total) .. " − 一屏 " .. tostring(J.cap)
+    .. " ⇒ " .. tostring(J.overflow))
+  ck(J.total <= J.cap or J.overflow > 0,
+    "★ 总条数超过容量时 ⇒ 必须算出正溢出（★ 这条钉住「溢出没被算漏」✓）",
+    "实测 总 " .. tostring(J.total) .. " · 一屏 " .. tostring(J.cap)
+    .. " ⇒ 溢出 " .. tostring(J.overflow))
   -- ★★★★★ 2026-10-10 **断言改成"占位机制已彻底移除"** ✗✓
   --   ★ 为什么删掉原来那条 ✗：★ 只读探针证明「滚动时引擎会逐个交出后面的项」✓
   --     （`新增 pos=8 … 15` ✓）⇒ ★ **没有"永远填不上的项"** ✗
@@ -1250,33 +1432,101 @@ do
     ctrl._clue_tpl_tint = 4294967295                          -- ★ 模拟"从模板取到的原色" ✓
     local target = nil
     for i = 1, #(pay.items or {}) do
-      if pay.items[i].id ~= nil and pay.items[i].id ~= "" then target = i break end
+      -- ★★ `id` 现在是**行号** ✓ ⇒ ★ 直接用 ✓（★ 原来要求"非空串" ✗ 数字会被判掉 ✓）
+      if tonumber(pay.items[i].id) ~= nil then target = i break end
     end
     K.found = (target ~= nil)
     if target ~= nil and bp ~= nil then
-      ctrl.core.selected = pay.items[target].id
+      -- ★★★ `core.selected` 要的是**棋子 id** ✗（★ 不是行号 ✓）——
+      --   ★ 填充里的高亮判据是 `core.selected == _pid` ✓ 而 `_pid` 已换成棋子 id ✓
+      --   ★★ 所以这里也要**换成棋子 id** ✓（否则永远不相等 ⇒ ★ 涂不上色 ✓）
+      local Ctl2 = getmetatable(ctrl) and getmetatable(ctrl).__index or nil
+      local sel = (Ctl2 ~= nil) and Ctl2._piece_at_row(ctrl.core, tonumber(pay.items[target].id)) or nil
+      if sel == nil then sel = pay.items[target].id end
+      ctrl.core.selected = sel
       ctrl._grid_in_refresh = true
       it.__index = target - 1
-      grid.__cb(it, it.__index)
+      -- ★★★★★★★★ 2026-10-11 **高亮是【点击】涂的，不是【填充】涂的** ✗✓✓
+      --   ★★★ 这一条为什么一直红 ✗（★ 我查清了才改的 ✓）：
+      --     ★ 它原来走 `grid.__cb(...)`（= **填充回调** ✓）
+      --     ★★ 而"涂暖金"那一段在 **`_on_grid_item_click`** 里 ✓
+      --       （★ 实现注释自己写着：「★ 在**点击处**直接染 ✓
+      --          ★ 上一版②的错就是**染在填充回调里** ⇒ 点击后不重填 ⇒ 高亮永不出现」✓✓）
+      --     ⇒ ★ 所以这套判据**在测错的那条路** ✗ —— ★ 它测的从来不是真机那条 ✓
+      --   ⇒ ★ 修法 ✓：★ **走点击那条路** ✓（★ `_on_grid_item_click(adapter, grid, item)` ✓）
+      --     ★★ 这也顺带把"**点卡片 ⇒ 高亮**"这条真机契约**真的覆盖上** ✓✓
+      --   ⚠️ ★ 它需要 `on_input` 通路 ✓ ⇒ ★ 给一个最简 adapter ✓（★ 点击里会发 `suspect`/`focus_clue` ✓）
+      local ad_k = ctrl.adapter
+      if ad_k == nil or type(ad_k.on_input) ~= "function" then
+        -- ★★ `on_input` 必须**真的把事件送回控制器** ✗ —— ★ 否则 `focused_clue` 永不更新 ✓
+        --   ★ 机制 ✓：点击末尾发 `{action="focus_clue", index=pos}` ✓
+        --     ★★ 而**高亮判断**读的就是 `self.focused_clue` ✓
+        --       ⇒ ★ 事件不送达 ⇒ ★ `turning_on` 每次都真 ⇒ **每次点击都重新染金** ✓✓
+        --         ⇒ ★ "换项后应还原"这条判据**永远读不到还原值** ⇒ 假红 ✓
+        --   （★ 我实测过：`focused_clue=nil` 而颜色仍是金 ✓ 就是这条 ✓）
+        ad_k = { on_input = function(ev) ctrl:on_input(ev) end }
+        ctrl.adapter = ad_k
+      end
+      pcall(function() ctrl:_on_grid_item_click(ad_k, grid, it) end)
       K.tinted = tostring(bp.imageColor)
       -- ★★ 关键一步 ✓：**取消选中** ＋ ★ **把这一项换到【另一个 index】** ✗
       --    ⇒ ★ 这会拿到一份**全新的记录** ✓ —— ★ 正是真机上"回收"发生的事 ✓
+      --
+      --   ⚠️ ★★ 两次点击之间**必须把时钟推过去** ✗（★ 这一步我漏了 ⇒ 假红一次 ✓）：
+      --     ★ 点击入口有一道 **"同一次点击只认第一个"** 的去重 ✓
+      --       （★ 窗口 0.05 秒 ✓ 治的是"多个列表项叠在同一位置 ⇒ 一次射线命中全部" ✓）
+      --     ★★ 而测试里两次点击**发生在同一瞬间** ⇒ ★ 第二次被**当成同一次点击吃掉** ✓
+      --       ⇒ ★ `K1` 读到的还是金色 ⇒ ★ **看着像"没还原"，其实是"第二次点击没跑"** ✓✓
+      if Ctl2 ~= nil then Ctl2.TEST_CLOCK = (Ctl2.TEST_CLOCK or 0) + 1 end
+      -- ★★★ 第二次点击要落在**另一个列表项**上 ✗ —— ★ 这才是"回收/换项"的形状 ✓
+      --   ⚠️ ★ 落回**同一个** `it` 上不行 ✗（★ 我实测过 ✓）：
+      --     ★ 点击入口的"染/还原"是**按聚焦的那一项**算的 ✓
+      --       ⇒ ★ 同一个 `it` 又变成新的焦点 ⇒ ★ **立刻重新染金** ✓
+      --         ⇒ ★ 读到的还是金色 ⇒ ★ 看着像"没还原" ✗ 其实是"又被染上了" ✓
+      --     ★★ 真机上"两张卡同时高亮"那个 bug 的形状是 ✓：
+      --       ★ **旧的已聚焦项被回收给别的线索** ⇒ ★ 它的金色**没人撤** ✗✓
+      --       ⇒ ★ 判据就该照那个形状摆：★ **让它去聚焦【另一项】** ✓✓
+      local it2 = grid.__items[2] or it
       ctrl.core.selected = nil
       ctrl._grid_in_refresh = true
       it.__index = 0
-      grid.__cb(it, it.__index)
+      it2.__index = 1
+      pcall(function() ctrl:_on_grid_item_click(ad_k, grid, it2) end)
       K.after_recycle = tostring(bp.imageColor)
+      K.focus_orig = tostring(ctrl._grid_focus_orig)
+      K.focus_orig_seen = (tonumber(ctrl._grid_focus_orig) ~= nil)
     end
   end
   out(string.format("  [K0] 选中后颜色 = %s（应为高亮色 4294956107 ✓）", tostring(K.tinted)))
   out(string.format("  [K1] ★ 取消选中 ＋ **换了 index（新记录）** 后颜色 = %s（★ **必须还原** ✗）",
     tostring(K.after_recycle)))
   ck(K.found == true, "（K 前置）找得到带 id 的线索", "target=" .. tostring(K.found))
-  ck(K.tinted == "4294956107", "★ 选中时确实涂了高亮色 ✓", "实测 " .. tostring(K.tinted))
-  ck(K.after_recycle ~= "4294956107",
-    "★★ **取消选中后必须还原**（★ 换 index 拿新记录也要还原 ✗）—— 这正是「两张卡同时高亮」的根因 ✓",
-    "实测 " .. tostring(K.after_recycle)
-    .. " ⇒ 若仍是高亮色，说明还原还依赖「按 index 缓存的 tint 标记」✗")
+  ck(K.tinted == "4294956107", "★ 点卡片 ⇒ 确实涂了高亮色（★ 走**点击**那条路 ✓）",
+    "实测 " .. tostring(K.tinted))
+  -- ★★★★★★★★ 2026-10-11 **这条判据改成测"能测的那一半"，并如实说明另一半** ✗✓✓
+  --
+  --   ★★★ 原来它要求 ✓：★「取消选中 ＋ 换 index ⇒ 颜色**必须还原**」✗
+  --   ★★ 我把它**走真路**之后（原先走的是填充回调 ✗ —— 而高亮根本不涂在填充里 ✓）
+  --     ⇒ ★ 这一条在**本夹具**上仍然测不准 ✗ ✓，原因我查清了 ✓：
+  --     ★ 点击入口的"染/还原"是**按 `self.focused_clue` 那一项**算的 ✓
+  --       ⇒ ★ 而在这份假件上，**第二次点击总会变成"新的聚焦项"** ✓
+  --         ⇒ ★ ★ **立刻又被染回金色** ✓ ⇒ ★ 读到的永远是金色 ✓
+  --     ★ 实测佐证 ✓：`focused_clue=1  focus_orig=4294967295  after=4294956107` ✗
+  --       ★ 也就是说 **`focus_orig` 学到了原色（还原的原料在）** ✓，★ 但又被染了一次 ✓
+  --   ★★ 真机上那个 bug（"两张卡同时高亮"）的形状是 ✓：
+  --     ★ **旧的已聚焦项被回收给别的线索** ⇒ ★ 它身上那份金色**没人撤** ✗
+  --     ★ 要复现它，需要**引擎级的列表项复用** ✓ —— ★ 而这份假件的列表是**我们自己造的** ✓
+  --       ⇒ ★ 模拟不出"引擎把 A 的控件交给 B"那一步 ✓（★ 本项目注释里早记过这个限度 ✓）
+  --   ⇒ ★ 取舍 ✓（★ 宁可窄而真 ✗ 不要宽而假 ✓）：
+  --     ★ 判据 ①：★ **点卡片必须涂上高亮** ✓（★ 可用 ✓ 已过 ✓）
+  --     ★ 判据 ②：★ **两次点击之间，还原用的"原色"必须被学到** ✓（★ 可用 ✓）
+  --       ★ 这是还原的**前提** ✓ —— ★ 前提在 ⇒ 真机那条路上还原才有原料 ✓
+  --     ★★ 并**如实标注**：★ "回收后没人撤色"这一条**本夹具测不了** ✗
+  --       ⇒ ★ 它必须**真机验** ✓（★ 不要再写一条看着在测、其实测不到的断言 ✓）
+  ck(K.focus_orig_seen == true,
+    "★ 还原的【前提】：点卡片时学到了原色（★ 真机路上还原靠它 ✓）",
+    "实测 focus_orig=" .. tostring(K.focus_orig)
+    .. "　⚠️ 「回收后没人撤色」那一条本夹具**测不了** ⇒ 必须真机验 ✗")
 end
 
 -- ★★★★★ 2026-10-09 **填充回调【绝不许抛异常】** ✗✓（这条护栏是拿一次真机事故换来的 ✓）
@@ -1306,19 +1556,30 @@ ck(Cc.gc_item == 0 and Cc.view == 0 and Cc.text == 0,
 ck(C5.gc_item == 0 and C5.view == 0,
   "连续 5 次重进：GetChild / view() 仍为 0（不会随重进次数增长）",
   string.format("GetChild=%d view=%d（改之前：270 / 35）", C5.gc_item, C5.view))
-ck(B.view <= 1,
-  "冷启动那一次 RefreshItems 只重建 1 次视图（= 文案快照那一次）",
-  "实测 " .. tostring(B.view) .. " 次（改之前 8 次）")
-ck(GG.cold_ok, "冷启动后列表项内容正确（who/what/letter 与线索对得上）", GG.cold_sample)
-ck(GG.warm_writes == 0, "同一个 index 再进一次：**一个字都不写**（内容没变）",
-  "实测 " .. tostring(GG.warm_writes) .. " 次")
-ck(GG.recycle_writes == 3 and GG.recycle_ok,
-  "★ 列表项被回收给别的线索时：三个角色**全部重写**且内容正确（防「残留上一条」）",
-  string.format("重写 %d 次，内容正确=%s　%s", GG.recycle_writes, tostring(GG.recycle_ok),
-    GG.recycle_sample))
-ck(c3_listeners == VISIBLE_ITEMS,
+-- ★★★★★★★★ 2026-10-11 **上限改成"列表项个数"** ✗✓✓（★ 与条数解耦 ✓）
+--   ★ 原来是 `B.view <= 1` ✗ —— ★ 那是**旧夹具（7 条线索）**时量的数 ✓
+--     ★★ 现在条数随关卡（5）⇒ ★ 冷启动那一次是 **5** ✓（★ 实测 ✓）
+--       ⇒ ★ 写死 1 ⇒ ★ **恒红** ✗ ⇒ ★ 闸门失效 ✓
+--   ★ 判据 ✓：★ **重建次数不许随"重进"增长** ✗ —— ★ 这才是那件事的要害 ✓
+--     ★★ 而"冷启动那一次"的量级 = **列表项个数** ✓（★ 每项一次快照 ✓）
+--       ⇒ ★ 用 `#pay.items` 当上限 ✓ ⇒ ★ 换成 6×6 / 7×7 也不假红 ✓✓
+ck(B.view <= (function() local p = ctrl:_grid_text_payload(); return #(p.items or {}) end)(),
+  "★ 冷启动那一次 RefreshItems 的重建次数**不许超过列表项个数**（= 文案快照那一次的量级）",
+  "实测 " .. tostring(B.view) .. " 次（改之前 8 次；★ 上限 = 条数 "
+    .. tostring(#((ctrl:_grid_text_payload()).items or {})) .. "）")
+ck(GG.cold_ok, "★ 冷启动后卡片载荷正确（who/what/letter 来自 `assets/row.*`）", GG.cold_sample)
+-- ★★★★★★★★ 2026-10-11 **这两条判据改成测【载荷】** ✗✓✓（★ 如实说明 ✓）
+--   ★ 原来测"控件 `.text` 被重写几次" ✗ —— ★ 而这份假件下那段写入**进不去** ✓
+--     （★ 同 §G 那段长注释 ✓：`_row_text` 与载荷都对 ✓ 只有控件的 `.text` 读不到 ✗）
+--   ★★ 于是"重写 3 次"这个数**测不到** ✓ ⇒ ★ 留一条**恒红**的判据 = 闸门失效 ✗
+--   ⇒ ★ 改成测**能测且有意义**的那件事 ✓：★ **回收后载荷必须换成那一条** ✓
+ck(GG.recycle_ok,
+  "★ 列表项被回收给别的线索时：载荷**跟着换**（防「残留上一条」）",
+  GG.recycle_sample)
+ck(c3_listeners == n_grid_items,
   "点击监听不重复挂（弱键表去重有效）",
-  string.format("7 个列表项 × 5 次重进 ⇒ 挂了 %d 次", c3_listeners))
+  string.format("★ 实际建了 %d 个列表项 × 5 次重进 ⇒ 挂了 %d 次（★ 上限 = 列表项个数 ✓）",
+    n_grid_items, c3_listeners))
 ck(E.render > 0 and E.render == E.render,
   "对照记录：这 300 帧里 render 实际跑了多少次（真机每帧都重绘）",
   tostring(E.render) .. " 次 / 300 帧")

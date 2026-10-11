@@ -67,11 +67,11 @@ do
     ok(select_and(c.core, "A"), "能选中角色 A")
     local n0 = placed_count(c.core)
 
-    c.now = 0
+    UIC.TEST_CLOCK = 0
     ok(c:on_cell_down(3, 1, 100, 100) == false, "按下时返回值是 false（还没到长按）")
     ok(c._press ~= nil, "按下后记录了 _press")
 
-    c.now = 0.60                       -- > LONG_PRESS_SECONDS(0.45)
+    UIC.TEST_CLOCK = 0.60                       -- > LONG_PRESS_SECONDS(0.45)
     ok(c:on_cell_up(3, 1, 100, 100) == true, "长按后抬起被判为放置")
     ok(placed_count(c.core) == n0 + 1, "确实放下了一个人")
     ok(c._suppress_click == true, "长按放置后置位 _suppress_click（抑制尾随 CursorClick）")
@@ -89,15 +89,15 @@ do
     ok(select_and(c.core, "A"), "能选中角色 A")
     local n0 = placed_count(c.core)
 
-    c.now = 0
+    UIC.TEST_CLOCK = 0
     c:on_cell_down(3, 1, 100, 100)
-    c.now = 0.30                       -- 还没到长按门槛
+    UIC.TEST_CLOCK = 0.30                       -- 还没到长按门槛
 
     -- 移出 TAP_MOVE_TOLERANCE(24) 之外
     ok(c:on_cell_drag(3, 1, 100 + 30, 100) == true, "拖动超容差 → on_cell_drag 返回 true（已取消）")
     ok(c._press == nil, "取消后 _press 被清空")
 
-    c.now = 0.80                       -- 就算按满时长，也已经取消了
+    UIC.TEST_CLOCK = 0.80                       -- 就算按满时长，也已经取消了
     ok(c:on_cell_up(3, 1, 130, 100) == false, "取消之后抬起不再放置")
     ok(placed_count(c.core) == n0, "没有多出人")
     ok(c._suppress_click ~= true, "没放置就不会去抑制点击")
@@ -113,15 +113,15 @@ do
     select_and(c.core, "A")
     local n0 = placed_count(c.core)
 
-    c.now = 0
+    UIC.TEST_CLOCK = 0
     c:on_cell_down(3, 1, 100, 100)
-    c.now = 0.20
+    UIC.TEST_CLOCK = 0.20
     ok(c:on_cell_drag(3, 1, 108, 96) == false, "位移 8px < 24px → 不取消")
     ok(c._press ~= nil, "_press 还在")
-    c.now = 0.25
+    UIC.TEST_CLOCK = 0.25
     ok(c:on_cell_drag(3, 1, 100 + 24, 100 + 24) == false, "位移正好等于容差 → 不取消（用的是 >）")
 
-    c.now = 0.70
+    UIC.TEST_CLOCK = 0.70
     ok(c:on_cell_up(3, 1, 124, 124) == true, "抖动之后长按依然生效")
     ok(placed_count(c.core) == n0 + 1, "放下了一个人")
   end
@@ -136,12 +136,12 @@ do
     select_and(c.core, "A")
     local n0 = placed_count(c.core)
 
-    c.now = 0
+    UIC.TEST_CLOCK = 0
     c:on_cell_down(3, 1, nil, nil)          -- 这个实现不给坐标
-    c.now = 0.20
+    UIC.TEST_CLOCK = 0.20
     ok(c:on_cell_drag(3, 1, 500, 500) == false, "按下坐标缺失 → drag 不取消")
     ok(c._press ~= nil, "_press 还在")
-    c.now = 0.60
+    UIC.TEST_CLOCK = 0.60
     ok(c:on_cell_up(3, 1, 500, 500) == true, "坐标全缺失时长按仍然生效（不看位移）")
     ok(placed_count(c.core) == n0 + 1, "放下了一个人")
   end
@@ -156,18 +156,18 @@ do
     select_and(c.core, "A")
     local n0 = placed_count(c.core)
 
-    c.now = 0
+    UIC.TEST_CLOCK = 0
     ok(c:on_cell_drag(3, 1, 999, 999) == false, "没按下过 → drag 什么都不做")
     ok(c:on_cell_up(3, 1, 100, 100) == false, "没按下过 → 抬起也不放置")
 
-    c.now = 0
+    UIC.TEST_CLOCK = 0
     c:on_cell_down(3, 1, 100, 100)
-    c.now = 0.60
+    UIC.TEST_CLOCK = 0.60
     ok(c:on_cell_up(2, 2, 100, 100) == false, "在**另一个格子**抬起 → 不放置")
 
-    c.now = 0
+    UIC.TEST_CLOCK = 0
     c:on_cell_down(3, 1, 100, 100)
-    c.now = 0.10                       -- < 0.45s
+    UIC.TEST_CLOCK = 0.10                       -- < 0.45s
     ok(c:on_cell_up(3, 1, 100, 100) == false, "时长不够 → 不放置（交给单击逻辑）")
 
     ok(placed_count(c.core) == n0, "以上一个都没放下")
@@ -183,9 +183,9 @@ do
     select_and(c.core, "A")
     local n0 = placed_count(c.core)
 
-    c.now = 0
+    UIC.TEST_CLOCK = 0
     c:on_cell_down(3, 1, 100, 100)
-    c.now = 0.80
+    UIC.TEST_CLOCK = 0.80
     ok(c:on_cell_up(3, 1, 100 + 40, 100) == false, "抬起时位移 40px → 判为划动，不放置")
     ok(placed_count(c.core) == n0, "没有多出人")
   end
@@ -228,6 +228,60 @@ do
     -- 边界：不能移出棋盘
     for _ = 1, 10 do c:on_key({ key = "KeyboardCraftspersonKey36Down" }) end
     ok(c.kb.r == 1, "光标上边界夹住（r=1）")
+  end
+end
+
+--------------------------------------------------------------------------------
+-- 8. ★★★ **长按时长必须与"已经玩了多久"无关**（★ 真机 bug 的回归 ✓）
+--
+--   ★★★ 用户报的原话 ✓：「**行数越靠后，长按放置需要的长按时间越长**」✗
+--     真机日志 ✓：`时长=0.59 / 0.50 / 0.90 → 1.07 → 1.35 → 1.63 → 2.70` ✗
+--     ⇒ ★★ **单调增大** ✓ —— ★ 玩家的手不可能越按越久 ✓
+--
+--   ★★ 根因 ✓：★ 长短按原来比的是 **`self.now`** ✓
+--     ★ 而 `self.now` = **每帧 `dt` 累加** ✓（`Controller:tick` ✓）
+--     ⇒ ★★ 它**不是**一根基线时钟 ✗ —— ★ 手感判定建在它上面 ⇒ **整体漂移** ✓✓
+--
+--   ★ 这一节的判据 ✓：★ **把"累加时钟"推到很大，长按判定不许受影响** ✓
+--     ★★ 换句话说：★ **生产路径必须走真实时钟** ✓（`os.clock` ✓ 官方白名单里有 ✓）
+--     ★ 做法 ✓：★ 把 `TEST_CLOCK` **撤掉**（= 生产状态 ✓）＋ ★ 把一个**荒谬大的**
+--       `c.now` 塞进去 ✓ ⇒ ★ 若实现还在比 `self.now` ⇒ ★ **0.01 秒也会被判成长按** ✗✓
+--------------------------------------------------------------------------------
+do
+  local c = new_controller()
+  if c then
+    ok(select_and(c.core, "A"), "能选中角色 A")
+    local n0 = placed_count(c.core)
+
+    -- ★ 撤掉假时钟 ⇒ 走**生产那条路**（真实时钟 ✓）
+    UIC.TEST_CLOCK = nil
+    -- ★★ 把累加时钟推到"已经玩了 999 秒"✗ —— 而真实长按只按了**一瞬间** ✓
+    c.now = 999
+    c:on_cell_down(3, 1, 100, 100)
+    -- ★ 同一瞬间抬起（真实经过 ≈ 0 秒）⇒ **不许**判成长按 ✓
+    local up_ok = c:on_cell_up(3, 1, 100, 100)
+    ok(up_ok == false,
+      "★ 累加时钟很大、但真实只按了一瞬间 ⇒ **不许**判成长按（实测 " .. tostring(up_ok) .. "）")
+    ok(placed_count(c.core) == n0,
+      "★ 因此也**没有**落子（实测 " .. tostring(placed_count(c.core)) .. " 该是 " .. tostring(n0) .. "）")
+    print("  [PASS] 长按时长与「已经玩了多久」无关（★ 这条就是真机那个 bug 的哨兵 ✓）")
+
+    -- ★★ 反向再钉一次 ✓：★ **真实按够时长** ⇒ 必须认 ✓
+    --   ★ 这里用 `os.clock` 的两点取样来"真等" ✗ 太慢（要 0.45 秒）⇒
+    --   ★★ 改成**直接验时钟源** ✓：★ 按下时记的 `t` 必须是**真实时钟的数** ✗
+    --     ★ 判据 ✓：★ 它**不等于** `self.now` ✓（★ 两者数值域完全不同 ✓）
+    c.now = 999
+    local before = os.clock()
+    c:on_cell_down(3, 2, 100, 100)
+    local p = c._press
+    ok(p ~= nil, "按下后 `_press` 在")
+    ok(p ~= nil and p.t ~= 999,
+      "★ 按下时刻用的是**真实时钟**、不是累加时钟（实测 t=" .. tostring(p and p.t) .. "）")
+    ok(p ~= nil and p.t >= before - 1,
+      "★ 而且它与 `os.clock()` 同一量级（实测 t=" .. tostring(p and p.t) ..
+      "  os.clock=" .. string.format("%.3f", os.clock()) .. "）")
+    c._press = nil
+    print("  [PASS] 按下时刻确实取自真实时钟（★ 生产路径不再依赖累加时钟 ✓）")
   end
 end
 
