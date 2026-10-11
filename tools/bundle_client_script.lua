@@ -43,6 +43,32 @@ local function read_file(rel)
   return data
 end
 
+-- ★★★★★★★★ 2026-10-11 **打包前先拦"文件被写空了"** ✗✓✓（★ 一次真实事故的护栏 ✓）
+--
+--   ★★★ 事故经过 ✓（★ 2026-10-11 本轮 ✓）：
+--     ★ `lua/ui_controller.lua` 在某个时刻变成了 **0 字节** ✗
+--     ★★ 而 **`luac -p` 对空文件【返回 0】** ✗✓ —— ★ 空 chunk 是**语法合法**的 ✓
+--       ⇒ ★ 语法闸门**放行** ✓ ★ 打包器也照样打包 ✓
+--       ⇒ ★★ 产物从 1.16 MB 掉到 **0.66 MB** ✗ ★ **16 套回归全红** ✓✓
+--     ★ 当时我是靠"**产物体积掉了一半**"才发现的 ✗ —— ★ 那是**运气**，不是护栏 ✓
+--
+--   ⇒ ★ 所以在这里拦 ✓：★ **任何一个模块为空（或只有空白）⇒ 直接拒绝打包** ✓
+--     ★★ 判据用"**去掉空白后还剩多少**" ✗ —— ★ 比"字节数 > 0"稳 ✓
+--       （★ 空文件、只剩换行、只剩注释都会被抓 ✓）
+--   ★ 为什么放这里 ✓：★ 这是**所有产物的唯一入口** ✓
+--     ⇒ ★ 在这里拦一次 ⇒ ★ 以后**任何**把源码写坏的脚本都过不去 ✓✓
+local function guard_module(name, src)
+  local body = (src or ""):gsub("%s", "")
+  if #body < 64 then
+    io.stderr:write("✗ 拒绝打包：" .. tostring(name) .. " 只有 " .. tostring(#body)
+      .. " 个有效字符（原文 " .. tostring(#(src or "")) .. " 字节）\n")
+    io.stderr:write("   ★ 多半是这个文件被写空了 / 只剩下注释 ✗\n")
+    io.stderr:write("   ★ 注意：`luac -p` 对【空的 chunk】是【通过】的 ✓ 所以它拦不住这一类 ✗\n")
+    io.stderr:write("   ★ 查法：git diff --stat 看哪个文件「掉了七千行」 ✓\n")
+    os.exit(2)
+  end
+end
+
 local function file_exists(rel)
   local fh = io.open(ROOT .. rel, "rb")
   if fh then fh:close() return true end
@@ -113,6 +139,7 @@ for i = 1, #modules do
   if not src then
     missing[#missing + 1] = m.path .. " (" .. tostring(err) .. ")"
   else
+    guard_module(m.path, src)      -- ★★ 空了就拒绝打包 ✓（★ 见上面那段事故注释 ✓）
     w('__M["' .. m.name .. '"] = function()')
     w(rewrite(src))
     w("end")
@@ -123,6 +150,7 @@ end
 -- 入口（官方生命周期）放最后，直接挂在 chunk 级，注册全局 OnInit/OnStart/...
 local entry = read_file("lua/entry_client_script.lua")
 if entry then
+  guard_module("lua/entry_client_script.lua", entry)   -- ★ 入口也要拦 ✓
   if force_level then
     -- 直接把入口里的 FORCE_LEVEL 换成具体关卡名（同 chunk 的 local，赋值最省事）
     local patched, n = entry:gsub("local FORCE_LEVEL = nil",

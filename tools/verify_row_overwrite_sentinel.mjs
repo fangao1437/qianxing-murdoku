@@ -12,6 +12,16 @@ const REPO = 'D:/新建文件夹/miHoYo Launcher/qianxing-murdoku';
 const P = REPO + '/lua/ui_controller.lua';
 const LUA = process.env.LOCALAPPDATA + '/Programs/Lua/bin/lua.exe';
 const sha = (s) => crypto.createHash('sha256').update(s).digest('hex');
+// ★★★ 起手先验「源码还在」✗✓（★ 两次真实事故换来的护栏 ✓）
+//   ★ 空的 ui_controller.lua **能通过 `luac -p`** ✗ ⇒ 打包器照样打 ⇒ 产物少一半 ✓
+//   ★★ 而这些破坏性验证脚本**自己会写那个文件** ⇒ 跑在空文件上只会报「锚点找不到」✗
+//     ★ 那句话**掩盖了真正的问题**（文件是空的 ✓）⇒ 所以先在这里拦住 ✓
+if (fs.readFileSync(P, 'utf8').length < 200000) {
+  console.error('✗ 拒绝运行：' + P + ' 太小（★ 源码可能是空的 ✗）');
+  console.error('   ★ 先跑： git checkout -- lua/ui_controller.lua');
+  console.error('   ★ 本脚本不写任何东西就退出 ✓');
+  process.exit(3);
+}
 const orig = fs.readFileSync(P, 'utf8');
 const origSha = sha(orig);
 

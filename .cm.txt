@@ -1,0 +1,38 @@
+﻿fix: lower the long-press threshold to sit below the player's hand, and signal when it is reached.
+
+The user reports placements still occasionally fail. The timing summary added last round settles the
+clock question: min 0.45, max 0.73, mean 0.57, first half 0.52 against second half 0.62. Flat, so
+the drift is genuinely gone and the measurement is honest. The failures are a different matter --
+the threshold was 0.45 and the player's natural hold is 0.45 to 0.73, so the two overlap and any
+press a little quicker fell under. The same log shows 0.45, 0.45, 0.48 and 0.49 among fourteen
+attempts, which are precisely the ones that did not land: roughly a third.
+
+A threshold may not be faster than the hand it serves. 0.45 was the player's fastest press, so it
+was being asked to clear the bar every single time. It is now 0.28, which leaves 0.17s of margin
+above their range while staying far above a real tap, measured on device at 0.10 to 0.20.
+
+Lowering it is only half. A long press had no feedback before release, so the player had to guess
+when to let go -- which is why their presses clustered right at the old threshold. Crossing the
+threshold now pulses that cell once, using the existing SELECT effect, so they can release the
+moment they see it and the spread collapses. The pulse fires from the same accumulated dt and the
+same threshold as the release check, and is latched per gesture so it does not repeat while held.
+
+Along the way I hit two infrastructure failures worth recording, both now guarded. First, the
+source file was silently truncated to zero bytes, twice. An empty file passes luac -p because an
+empty chunk is valid syntax, so the syntax gate waved it through and the bundle shrank from 1.16MB
+to 0.66MB, failing all nineteen suites. It was caught only because the bundle size halved -- luck,
+not a guard. The bundler now refuses to package any module with under 64 non-whitespace characters,
+and the four destructive-verification scripts refuse to run at all when the source is smaller than
+200KB, since they are the things that write to it and would otherwise pile misleading
+"anchor not found" errors on top of the real problem.
+
+Second, the sabotage gate had two anchors that could never match: the source is CRLF and the
+multi-line anchors were written with LF, so E and F silently stopped applying. The tool reported
+"mutation did not take effect" rather than passing, which is why it was visible. Matching is now
+line-ending agnostic. That same gate also left one mutation behind in an earlier run -- the
+accumulator stayed disabled and broke every long press with no error -- so restoration is now
+read-back verified with retries, and the script scans the source afterwards for any surviving
+"and false" / "if false" pattern and fails loudly if one exists.
+
+Delivered as 337-长按门槛-v190.gil, marker v190, roundtrip byte-identical. 19 suites green, seven
+mutations caught, all four verification scripts effective, source byte-identical after every run.

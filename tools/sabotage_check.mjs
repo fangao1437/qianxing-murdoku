@@ -60,19 +60,64 @@ const sabotages = [
 ];
 
 let allGood = true;
+// ★★★★★★★★ 2026-10-11 **锚点匹配要容忍 CRLF** ✗✓✓（★ 两个破坏静默失效过一次 ✓）
+//
+//   ★★★ 症状 ✓：★ E 与 F 报「**没匹配上（破坏未生效）**」✗
+//     ★★ 而它们要找的代码**明明就在源码里** ✓ —— ★ 我逐行核过 ✓
+//   ★ 根因 ✓：★ **本项目源码是 CRLF** ✗ ★ 而脚本里的跨行锚点写的是 `\n`（LF）✓
+//     ⇒ ★ 多行锚点**永远匹配不上** ✓✓
+//   ★★ 值得表扬 ✓：★ 这个工具**没有静默放过** ✗ —— ★ 它明说"没匹配上" ✓
+//     ★ 这正是"**破坏必须确认到位**"那条纪律 ✓（★ 长按那轮我踩过同一个坑 ✓）
+//   ⇒ ★ 修法 ✓：★ **把"源码"与"锚点"都归一成 LF 再比** ✗ ——
+//     ★ 改完写盘时**统一用 LF** ✓ ★ 反正 Lua 不在乎 ✓（★ 还原时有原始字节 ✓）
+const originalLF = original.replace(/\r\n/g, '\n');
+
+// ★★★★★★★★ 2026-10-11 **"还原"必须【自己验一遍】，而且不许留下破坏痕迹** ✗✓✓
+//
+//   ★★★ 事故 ✓（★ 2026-10-11 本轮 ✓）：★ 跑完这轮之后，源码里**留着**一处破坏 ✗：
+//     `if p ~= nil and false then p.dt = ... end` ✓
+//     ⇒ ★★ 长按**全废**（★ 12 条断言红 ✓）★ 而**当时没报错** ✓✓
+//   ★ 为什么会漏 ✗（★ 我没能复现，所以**不猜** ✓）：★ 关键是**它没被发现** ✓
+//   ⇒ ★★ 两道护栏 ✓（★ 不依赖"哪一步出的错" ✓）：
+//     ★ ① ★ 还原**写完就回读验** ✓ ★ 不一致 ⇒ **再写一次** ✓
+//     ★ ② ★ 收尾**扫一遍"破坏标记"** ✗ —— ★ 只要源码里还剩 `and false` / `if false`
+//       ★ 之类的痕迹 ⇒ ★ **大声报错** ✓✓（★ 这一类痕迹**本来就不该出现在源码里** ✓）
+//   ★ 为什么 ② 有用 ✓：★ 所有破坏都是"**把某处改成永假**"的形状 ✓
+//     ⇒ ★ 留没留下**一看就知道** ✓ ★ 不用理解当时发生了什么 ✓✓
+function restoreAndVerify() {
+  for (let i = 0; i < 3; i++) {
+    fs.writeFileSync(SRC, original, 'utf8');
+    if (sha(SRC) === origSha) return true;
+  }
+  return false;
+}
+const LEFTOVER = /\b(?:and|if)\s+false\b/;
+
 for (const [name, find, repl] of sabotages) {
-  const patched = original.split(find).join(repl);
-  if (patched === original) { console.log(`  ⚠️ ${name}：没匹配上（破坏未生效）`); allGood = false; continue; }
+  const patched = originalLF.split(find).join(repl);
+  if (patched === originalLF) { console.log(`  ⚠️ ${name}：没匹配上（破坏未生效）`); allGood = false; continue; }
   fs.writeFileSync(SRC, patched, 'utf8');
   const red = SUITES.filter(suiteRed);
-  fs.writeFileSync(SRC, original, 'utf8');
-  const restored = sha(SRC) === origSha;
+  const restored = restoreAndVerify();
   const caught = red.length > 0;
   console.log(`  ${caught ? '✅' : '❌'} ${name}　→ 变红：${caught ? red.join(', ') : '（无人抓 ✗）'}　还原=${restored}`);
   if (!caught || !restored) allGood = false;
 }
 
+// ★ 收尾自检 ✓：源码里**不许留下任何"永假"痕迹** ✗
+const finalSrc = fs.readFileSync(SRC, 'utf8');
+const leftovers = finalSrc.split(/\r?\n/)
+  .map((l, i) => [i + 1, l])
+  .filter(([, l]) => LEFTOVER.test(l));
+if (leftovers.length > 0) {
+  console.error('\n✗✗ 源码里**还留着破坏痕迹** ✗ —— 这一轮的结果**全部作废** ✓');
+  leftovers.slice(0, 6).forEach(([n, l]) => console.error(`    ${n}: ${l.trim()}`));
+  console.error('   ★ 修法：git checkout -- lua/ui_controller.lua　然后重跑 ✓');
+  allGood = false;
+}
+
 fs.unlinkSync(BAK);
 console.log(`\n最终 sha256 与原始一致：${sha(SRC) === origSha}`);
-console.log(allGood ? '✅ 五类破坏全部被抓 + 全部还原成功' : '❌ 有破坏没被抓 / 还原失败');
+console.log(`源码里没有残留破坏痕迹：${leftovers.length === 0}`);
+console.log(allGood ? '✅ 全部破坏被抓 + 全部还原成功 + 源码干净' : '❌ 有破坏没被抓 / 还原失败 / 源码有残留');
 process.exit(allGood ? 0 : 1);
