@@ -3499,8 +3499,34 @@ function Controller:do_submit()
   -- 规格 5.3：提交只给硬约束反馈，不揭晓任何线索层面的对错（连条数都不说）
   self.toast = res and res.message or nil
   self.toast_until = self.now + M.TOAST_SECONDS   -- ★ A8：同上（res 为 nil 时设了也无害 —— tick 先看 toast）
+  -- ★★★★★★ 2026-10-12 **提交通过即结算**（用户拍板 ✓）✗✓✓
+  --
+  --   ★ 用户原话 ✓：「**确认嫌疑人和同伙那两步我不要，删掉**」✓
+  --     ＋ 选项确认：「**提交通过即结算**」✓
+  --
+  --   ★ 改前 ✓：`res.ok` ⇒ 开 `accuse_thief` 指认面板 ⇒ 点嫌疑人 ⇒
+  --     再开 `accuse_accomplice` 点同伙 ⇒ 才 `finish_accuse` ✗（**两步**）
+  --   ★ 改后 ✓：`res.ok` ⇒ **直接结算** ✓ —— 那两个面板**再也不会打开** ✓
+  --
+  --   ★ 为什么这样改也对 ✓：那两排按钮（`modal.suspect.*`）靠**头像图** ✓
+  --     而图在模拟器里是缺的 ✗ ⇒ 玩家「看不到点哪」✓
+  --     ⇒ 删掉它们**同时**解决了"测不齐"和"步骤多"两件事 ✓
+  --
+  --   ★ 结案判定本身**一个字没动** ✓ —— 仍走 `finish_accuse` ⇒
+  --     `Core:accuse_verdict` ⇒ `self.status = SOLVED` + `res.solved` ⇒ 结果弹窗 ✓
+  --     所以下面这段是**把答案（roles）替玩家填进去** ✓ 不是绕开判定 ✗
+  --
+  --   ⚠️ 判据强弱如实记 ✓：`Core:submit()` 只查**硬约束 + 摆满** ✓
+  --     **不查线索、不比对 `solution`** ✗ ⇒ 严格说这是"摆位成立即胜" ✓
+  --     若将来要"必须摆对才胜"，改这里一处即可（比对 `core:check()` 为空 ✓）
   if res ~= nil and res.ok then
-    self.modal = { kind = "accuse_thief" }
+    local roles = core.roles or {}
+    if roles.thief ~= nil then
+      self:finish_accuse(roles.thief, roles.accomplice ~= nil, roles.accomplice)
+    else
+      -- 关卡数据缺 `roles.thief` ⇒ 明说，不要静默不结算
+      self.toast = "本关没配 roles.thief，无法结算（关卡数据问题）"
+    end
   end
   self.dirty = true
 end
