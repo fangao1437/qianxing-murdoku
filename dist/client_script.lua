@@ -6425,21 +6425,40 @@ function Controller:build_layout()
       --     ★ 四个偏移 **50 / 146 / 242 / 338** ✓（★ 面板内上下对称 ✓）
       --   ★★ 面板内上方仍有 `modal.title` / `modal.body` / `modal.stats` ✓
       --     ⇒ ★ **统计那一行就是"结算"的信息** ✓（★ 用时 ／ 误指认 ／ 位置 ✓）
+      -- ★★★★★★ 2026-10-12 **四键改用【独立 id 前缀 `result.`】** ✗✓✓
+      --
+      --   ★★ 起因（模拟器实测 ✓）：这四键原来叫 `modal.next/exit/home/settle` ✗，
+      --     而 `exit_menu` 那一屏**也叫 `modal.exit` / `modal.settle`** ——
+      --     同一个 id 在**两个状态里各有一套几何**（`y = my+50` vs `y = my+146`）✓
+      --     ⇒ `layout_plan()` 是**并集**、只留第一次命中的那一套 ✗
+      --     ⇒ 与本项目第 11 号历史 bug「自适应几何在并集里自相矛盾」**同形状** ✓
+      --
+      --   ★ 另外实测读数（v214，点击结算后）：
+      --     `这些控件还没建（共 3 个）：modal.* ×3  modal.exit modal.home modal.settle`
+      --     ⇒ 四键里**只有 `modal.next` 真的有控件** ✗ 玩家点不到另外三个 ✓
+      --     ⇒ 病根：`cfg.auto_create = false`，而白名单只放行 `hex.*`/`hit.*` 14 个；
+      --       **"计划里有、存档里没有、白名单里也没有"的控件没有任何一条被造出来的路** ✗
+      --
+      --   ⇒ ★ 修法（**分家，不是补丁**）✓：结算四键**不再复用 exit_menu 的 id** ✓
+      --     两个界面本来就是两件事 ✓ 分家之后：
+      --       · 并集冲突消失（缺口 2 ✓）
+      --       · 四个 id 只属于 `result` 状态 ⇒ 进 plan 的 `states` 并集，
+      --         由 `entry_client_script.lua` 的 `auto_create_only` 放行创建（缺口 1 ✓）
       local kw, kh = 374, 72
       local kx = mx + math.floor((mw - kw) / 2)
-      btn("modal.next", "modal", { x = kx, y = my + 50, w = kw, h = kh },
+      btn("result.next", "modal", { x = kx, y = my + 50, w = kw, h = kh },
           "下一关", { action = "next_level" }, "stamp.primary")
-      btn("modal.exit", "modal", { x = kx, y = my + 146, w = kw, h = kh },
+      btn("result.exit", "modal", { x = kx, y = my + 146, w = kw, h = kh },
           "退出至菜单", { action = "exit_menu_go" }, "stamp")
-      btn("modal.home", "modal", { x = kx, y = my + 242, w = kw, h = kh },
+      btn("result.home", "modal", { x = kx, y = my + 242, w = kw, h = kh },
           "返回首页", { action = "home" }, "stamp")
-      btn("modal.settle", "modal", { x = kx, y = my + 338, w = kw, h = kh },
+      btn("result.settle", "modal", { x = kx, y = my + 338, w = kw, h = kh },
           "存档并结算", { action = "exit_menu_settle" }, "stamp.primary")
       -- ★ 胶囊底图：★ 与 `exit_menu` 同一张（107179 ✓ 日志里 `回读=107179` ✓）
       --   ★ 用自己的守卫 ✓ —— 不跟 `_exit_menu_art` 共用 ✗（★ 那个可能在这段之前已被置真 ✓）
       if (not self._result_art) and self.adapter ~= nil then
         self._result_art = true
-        for _, bid in ipairs({ "modal.next", "modal.exit", "modal.home", "modal.settle" }) do
+        for _, bid in ipairs({ "result.next", "result.exit", "result.home", "result.settle" }) do
           local bg = nil
           pcall(function() bg = self.adapter:sub(bid, "bg") end)
           if bg == nil then pcall(function() bg = self.adapter:find(bid .. ".bg") end) end
