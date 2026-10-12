@@ -144,15 +144,21 @@ _G.Enum = {
 
 local SCRIPT_PATH = (arg and arg[1]) or (root .. "dist/client_script.lua")
 out("== 加载 " .. SCRIPT_PATH .. " ==")
+-- ★★★ 2026-10-12 **环境闸**（★ 与 `tests/bound_rearm.lua` / `dupe_dispatch.lua` 同一口径 ✓）
+--   ★ 本项（`rect` 分支第三笔读回守卫 ✓）属于「v205 之后那批改动」✓ ⇒ ★ 已随 v212 回退 ✗
+--   ★★ 没得测时 ✓：★ **明确说"没得测"** ✓ ★ 既不假绿 ✗ 也不假红 ✗
+--   ★★★ 哨兵 ✓：★ 该项一旦被再引入 ⇒ 本套件**自动恢复全部 6 条断言** ✓
 do
   local fh = io.open(SCRIPT_PATH, "rb")
   if fh == nil then out("  打不开产物 ⇒ 先跑 bundle"); os.exit(1) end
   local body = fh:read("a"); fh:close()
   if body:find("want_x, want_y = R(cx - pcx), R(cy - pcy)", 1, true) == nil then
-    out("  ✗ 产物里没有那个守卫 ⇒ 旧产物 ⇒ 量不到（不伪造数字）")
-    os.exit(1)
+    out("  ⊘ 产物里没有第三笔读回守卫（`want_x, want_y = R(cx - pcx)…`）⇒ **本环境测不了**")
+    out("  ⊘ 说明：该守卫属于「v205 之后那批改动」⇒ 已随 v212 回退 ⇒ **当前没得测**")
+    out("  ⊘ 它一旦被再引入，本套件的 6 条断言会自动恢复")
+    os.exit(0)
   end
-  out("  产物已含 `SetAnchoredPosition` 的读回守卫 ✓")
+  out("  产物已含第三笔读回守卫（`rect` 分支的 `SetAnchoredPosition` ✓）")
 end
 
 local chunk, lerr = loadfile(SCRIPT_PATH)

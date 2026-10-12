@@ -184,7 +184,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v212 / 2026-10-12 / 回退到v204之前干净点(用户确认能玩的那版):撤销v204几何缓存+守卫/v205旧路清理/v206对方换代重绑/v210先摘后挂/v211去重闸。用于把'能玩'先拿回来,之后逐项加回并逐项实测 =====")
+        print("[murdoku] ===== 构建标记 v213 / 2026-10-12 / 再引入第4项(换代重绑):bind_input 的闩锁由布尔改为按控件对象双重记账(bound[id]=对象 + 弱键表_bound_ctrl),使双绑在结构上不可能、且换代后新对象仍能重绑;不需要在任何换代/销毁路径清 bound;新增常驻回归 tests/bound_rearm.lua(15 条,双向篡改对照均能红);另把 3 套 v206 套件加环境闸(本项未再引入时明确没得测而非假红) =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
