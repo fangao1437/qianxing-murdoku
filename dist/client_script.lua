@@ -3448,6 +3448,17 @@ function Controller:finish_accuse(thief, has_acc, acc)
   self.toast = res.message
   self.toast_until = self.now + M.TOAST_SECONDS   -- ★ A8：只补截止时刻，文案一行不动
   if res.solved then
+    -- ★★★★★★ 2026-10-12 **用时定格**（用户指令 ✓）✗✓✓
+    --
+    --   ★ 用户原话 ✓：「**用时不要走动，取胜利时的时间填入**」✓
+    --   ★ 为什么要定格 ✗：结算弹窗开着的时候**计时器还在走** ✓
+    --     ⇒ 那行「用时」会**一直往上跳** ✗（用户看到的就是这个 ✓）
+    --   ⇒ 所以在**判胜的那一刻**把秒数抄下来 ✓ 之后弹窗里的那行永远读它 ✓
+    --   ⚠️ 只定格【显示值】✓ —— 底层 `core.elapsed` 不动 ✗（动它会牵连存档/统计 ✓）
+    local okv, v2 = pcall(function() return core:view() end)
+    if okv and type(v2) == "table" and type(v2.hud) == "table" then
+      self.result_seconds = v2.hud.time
+    end
     self.modal = { kind = "result", win = true, message = res.message }
     self:fx("modal", M.EFFECTS.SOLVED)
     -- 揭示：受害者头像从下往上顶出来。
@@ -3458,6 +3469,8 @@ function Controller:finish_accuse(thief, has_acc, acc)
     if self.opts.on_solved then self.opts.on_solved(core:view()) end
   else
     self.modal = nil
+    -- ★ 没破案 ⇒ 把定格值清掉 ✓（否则下一次开弹窗前会拿上一局的用时 ✓）
+    self.result_seconds = nil
     self:fx("modal", M.EFFECTS.FAIL)
   end
   self.dirty = true
@@ -6452,7 +6465,10 @@ function Controller:build_layout()
       push({ id = "modal.stats", kind = "text", parent = "modal",
              rect = { x = mx + 30, y = my + 262, w = mw - 60, h = 44 },
              text = string.format("用时 %s · 误指认 %d 次 · 位置 %d/%d",
-                                  self:format_time(vm.hud.time), vm.hud.failed_accusations, got, total),
+                                  -- ★ 2026-10-12 **定格值优先** ✓（用户：「用时不要走动，取胜利时的时间填入」✓）
+                                  --   取不到才退回实时值 ✓（老路径不变 ✓）
+                                  self:format_time(self.result_seconds or vm.hud.time),
+                                  vm.hud.failed_accusations, got, total),
              style = "muted" })
       -- ★★★★★★ 2026-10-12 **胜利界面改成【四键**，与 `exit_menu` 同款**】** ✗✓✓
       --
@@ -19584,7 +19600,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v217 / 2026-10-12 / 通关弹窗拉高720;三行文案上移居中;四键下移 =====")
+        print("[murdoku] ===== 构建标记 v218 / 2026-10-12 / 用时定格(判胜瞬间抄秒);通关弹窗拉高+三行居中 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
