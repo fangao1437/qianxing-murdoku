@@ -4374,16 +4374,20 @@ function Controller:on_input(event)
   --        ② 「揭示答案」会**顺手弹出"那同伙是谁？"**（reveal 的副作用），而且那次弹窗的
   --           `thief` 是 `event.id = nil` ⇒ 第二阶段一个嫌疑人都排除不掉。
   --      `tools/audit/check_actions.mjs` 正是靠"发了却没有 `a == "..."` 分支"把它抓出来的。
-  elseif a == "accuse_thief" then
-    self.pending_thief = event.id
-    self.modal = { kind = "accuse_accomplice", thief = event.id }
-
-  elseif a == "accuse_no_accomplice" then
-    self:finish_accuse(self.pending_thief, false, nil)
-
-  elseif a == "accuse_pick_accomplice" then
-    self:finish_accuse(self.pending_thief, true, event.id)
-
+  -- ★★★★★★ 2026-10-12 **指认两步整段删掉**（用户指令 ✓）✗✓✓
+  --
+  --   ★ 用户原话 ✓：「**确认嫌疑人和同伙那两步我不要，删掉**」✓
+  --     ＋ 选项确认：「**提交通过即结算**」✓
+  --
+  --   ★ 原来这里有三条分支（**已删 ✓ 备查见 git 历史**）：
+  --     点嫌疑人 ⇒ 记下 `pending_thief` 并把弹窗推进到"问同伙"那一屏；
+  --     另两条 ⇒ 点「同伙是谁」或「他独自作案」时收口到 `finish_accuse` ✓
+  --   ⇒ 现在 `do_submit()` 在 `res.ok` 时**直接** `finish_accuse(roles…)` ✓
+  --     ⇒ 这三条**再也收不到事件** ⇒ 删干净（用户要求「一行不留」✓）
+  --
+  --   ⚠️ 这里**故意不写出那三个事件名的字面量** ✗ ——
+  --      `tools/audit/check_actions.mjs` 是**逐行正则扫源码、连注释一起扫** ✓
+  --      注释里写出旧事件名会被当成"又发了一次" ⇒ 它又会红 ✓（这个坑项目里记过 ✓）
   elseif a == "accuse" then
     -- 兼容入口：只给盗窃者，同伙按关卡声明处理
   -- ★ 2026-10-02：重置关卡也要 ✓ 确认。
@@ -6392,34 +6396,25 @@ function Controller:build_layout()
     local mx, my = math.floor((M.DESIGN.width - mw) / 2), math.floor((M.DESIGN.height - mh) / 2)
     push({ id = "modal", kind = "panel", parent = "root", rect = { x = mx, y = my, w = mw, h = mh }, style = "modal" })
 
-    if modal.kind == "accuse_thief" or modal.kind == "accuse_accomplice" then
-      local is_acc = (modal.kind == "accuse_accomplice")
-      push({ id = "modal.title", kind = "text", parent = "modal",
-             rect = { x = mx + 30, y = my + 26, w = mw - 60, h = 56 },
-             text = is_acc and "那同伙是谁？" or "摆位成立。谁是盗窃者？",
-             style = "modal.title" })
-      local per = 3
-      for i = 1, #vm.tray do
-        local it = vm.tray[i]
-        if not (is_acc and it.id == modal.thief) then
-          local col = (i - 1) % per
-          local row = math.floor((i - 1) / per)
-          push({ id = "modal.suspect." .. tostring(it.id), kind = "button", parent = "modal",
-                 rect = { x = mx + 40 + col * 232, y = my + 110 + row * 128, w = 212, h = 110 },
-                 text = it.name, image = it.portrait, style = "portrait",
-                 event = is_acc and { action = "accuse_pick_accomplice", id = it.id }
-                                 or { action = "accuse_thief", id = it.id } })
-        end
-      end
-      if is_acc then
-        btn("modal.no_accomplice", "modal",
-            { x = mx + 40, y = my + mh - 88, w = 280, h = 60 }, "他独自作案（没有同伙）",
-            { action = "accuse_no_accomplice" }, "stamp")
-      end
-      btn("modal.cancel", "modal", { x = mx + mw - 200, y = my + mh - 88, w = 160, h = 60 }, "再看看",
-          { action = "close_modal" }, "tab")
+    -- ★★★★★★ 2026-10-12 **指认面板的渲染分支 —— 已整段删掉** ✗✓✓
+    --   （原为这条 if 链的链首；删后 `result` 成为链首 ✓ 内容与原因见下一段的注释 ✓）
+    --   ⚠️ 同样**故意不写出那三个事件的字面量** ✗（`check_actions` 连注释一起扫 ✓）
 
-    elseif modal.kind == "result" then
+    -- ★★★★★★ 2026-10-12 **这里原来是【指认面板】的渲染分支 —— 已整段删掉** ✗✓
+    --
+    --   删掉的是：标题（「摆位成立。谁是盗窃者？」/「那同伙是谁？」）＋
+    --   一排嫌疑人头像卡（`modal.suspect.<id>`，**靠 `it.portrait` 出图**）＋
+    --   「他独自作案（没有同伙）」键 ＋ 「再看看」键 ✓
+    --
+    --   ★ 为什么连渲染一起删 ✓（而不是只断开入口）：
+    --     ① 用户要求「删干净、一行不留」✓；
+    --     ② 那排按钮**靠头像图** ✓ 而图在模拟器里是缺的 ⇒ 玩家「**看不到点哪**」✓
+    --        ⇒ 留着就是一条永远点不准的路 ✓
+    --     ③ 留着还会让 `layout_plan()` 继续把 `modal.suspect.*` 声明成"计划必需" ✓
+    --        ⇒ **又是"计划有、存档没有、又没有创建路"** ⇒ 正是本轮刚修掉的那类静默缺失 ✗
+    --
+    --   ⇒ 所以它现在**从 `if` 变成链首**：`result` 成了这条 if 链的第一个分支 ✓
+    if modal.kind == "result" then
       local got, total = self.core:score()
       push({ id = "modal.title", kind = "text", parent = "modal",
              rect = { x = mx + 30, y = my + 40, w = mw - 60, h = 60 },
@@ -7036,9 +7031,17 @@ function Controller:layout_plan()
     { name = "select",            intro = 99, modal = nil, screen = "select" },
     { name = "intro",             intro = 1,  modal = nil, screen = nil },
     { name = "board",             intro = 99, modal = nil, screen = nil },
-    { name = "accuse_thief",      intro = 99, modal = { kind = "accuse_thief" }, screen = nil },
-    { name = "accuse_accomplice", intro = 99,
-      modal = { kind = "accuse_accomplice", thief = first_id }, screen = nil },
+    -- ★★★★★★ 2026-10-12 **指认相关的两个【计划状态】已删**（用户指令 ✓）✗✓
+    --
+    --   ★ 为什么必须删 ✓（不只是"好看"）：
+    --     这份清单是**全状态并集的唯一来源** ✓ 它同时喂给
+    --       · 模拟器控件树 · 编辑器搭建表 · 批量生成器 ✓
+    --     ⇒ 留着它 ⇒ `modal.suspect.*` / `modal.no_accomplice` 会被**继续声明成"计划必需"** ✗
+    --     ⇒ 而它们**存档里没有、也没有创建路** ⇒ **又变成"计划有、存档没有"的静默缺失** ✗
+    --     ⇒ 正是本轮刚修掉的那一类病 ✓ 所以**必须连同计划一起删干净** ✓✓
+    --
+    --   ★ 判定链**一个字没动** ✓ —— `Core:accuse_verdict` 仍在，只是改成
+    --     `do_submit()` 在 `res.ok` 时**直接调**它 ✓（答案由 `core.roles` 提供 ✓）
     { name = "result",            intro = 99,
       modal = { kind = "result", win = true, message = "（结果文案）" }, screen = nil },
     { name = "share",             intro = 99,
@@ -7138,8 +7141,8 @@ function Controller:layout_plan()
     local it = order[i]
     local in_board = false
     for k = 1, #it.states do
-      if it.states[k] == "board" or it.states[k] == "intro" or it.states[k] == "accuse_thief"
-         or it.states[k] == "accuse_accomplice" or it.states[k] == "result"
+      -- ★ 2026-10-12：`accuse_*` 两个状态名已随指认面板一起删 ✓（见上面 plan states 那段 ✓）
+      if it.states[k] == "board" or it.states[k] == "intro" or it.states[k] == "result"
          or it.states[k] == "share" or it.states[k] == "howto" then in_board = true end
     end
     it.visible = in_board and it.visible
