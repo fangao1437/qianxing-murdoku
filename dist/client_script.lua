@@ -3193,7 +3193,7 @@ M.LAYOUT = {
   actions = { x = 478, y = 944, w = 880, h = 120 },  -- y 944..1064，中心 x=918（与棋盘同）
   action_btn = { w = 168, h = 56, gap = 14 },
 
-  modal = { w = 760, h = 460 },
+  modal = { w = 760, h = 720 },   -- ★ 2026-10-12 460 → 720：通关弹窗要装下「恭喜破案/凶手分析/用时」三行 + 四键
 
   --------------------------------------------------------------------------
   -- ★★★★★ 2026-10-02 **按用户给的两张美术参考重排按键**（第二轮定稿）
@@ -6416,13 +6416,41 @@ function Controller:build_layout()
     --   ⇒ 所以它现在**从 `if` 变成链首**：`result` 成了这条 if 链的第一个分支 ✓
     if modal.kind == "result" then
       local got, total = self.core:score()
+      -- ★★★★★★ 2026-10-12 **通关弹窗拉高 ＋ 三行文案上移到四键上方**（用户指令 ✓）✗✓
+      --
+      --   用户原话 ✓：「**拉高通关弹窗，然后把通关提示文本放到四键上方** ✓
+      --     ★ **依次是恭喜破案，凶手分析，用时，分别居中放置** ✓ ★ **恭喜破案字号加大**」✓✓
+      --
+      --   ★ 版式（**设计空间 1920×1080**；`rect.y` = 从父控件【顶边】往下数 ✓）：
+      --     弹窗 h **460 → 720** ✓（画布侧 600 ⇒ 居中后占 y 150..750，画布 900 装得下 ✓）
+      --       恭喜破案   y=40   h=90
+      --       凶手分析   y=140  h=110
+      --       用时       y=262  h=44
+      --       四键       y=350 / 446 / 542 / 638（pitch 96 不变 ✓ 638+72=710 ≤ 720 ✓）
+      --
+      --   ⚠️ **"居中"怎么实现的（如实记 ✗）**：本项目**没有任何对齐 API** ✓
+      --     （`Align` / `Alignment` 在 `lua/` 里**零命中** ✓；适配器 `set_property`
+      --       也只认 `key == "text"` 这一个文本字段 ✓）
+      --     ⇒ 靠「**文本框铺满整幅、左右各留 30**」来居中 ✓
+      --       引擎若在框内**默认居中**就正是要的效果 ✓
+      --     ★ 若真机上看到**左对齐** ⇒ 需要接一个对齐属性（得先查到它的名字）✓
+      --
+      --   ⚠️ **"恭喜破案字号加大"【本轮没做】✗（如实说 ✓）**：
+      --     文字节点的字号在当前适配器里**没有写入口** ✓ —— `set_property` 不认 fontSize ✓，
+      --     而 `main.lua` 那个 `cfg.label_font_size` 只作用于**按钮的 label 子控件** ✓
+      --     ⇒ 要做**得先给适配器加一条「独立文字节点的字号」通道** ✓（下一轮 ✓）
+      --
+      --   第二行 = **凶手分析**：`core` 给的那句正文去掉开头重复的「破案！」✓
+      --     （标题已经说「恭喜破案」了，正文再喊一次就重了 ✓）
+      local body = modal.message or ""
+      if modal.win then body = body:gsub("^破案！", "") end
       push({ id = "modal.title", kind = "text", parent = "modal",
-             rect = { x = mx + 30, y = my + 40, w = mw - 60, h = 60 },
-             text = modal.win and "破案！" or "没能找齐所有人", style = "modal.title" })
+             rect = { x = mx + 30, y = my + 40, w = mw - 60, h = 90 },
+             text = modal.win and "恭喜破案" or "没能找齐所有人", style = "modal.title" })
       push({ id = "modal.body", kind = "text", parent = "modal",
-             rect = { x = mx + 30, y = my + 120, w = mw - 60, h = 120 }, text = modal.message or "", style = "modal.body" })
+             rect = { x = mx + 30, y = my + 140, w = mw - 60, h = 110 }, text = body, style = "modal.body" })
       push({ id = "modal.stats", kind = "text", parent = "modal",
-             rect = { x = mx + 30, y = my + 250, w = mw - 60, h = 40 },
+             rect = { x = mx + 30, y = my + 262, w = mw - 60, h = 44 },
              text = string.format("用时 %s · 误指认 %d 次 · 位置 %d/%d",
                                   self:format_time(vm.hud.time), vm.hud.failed_accusations, got, total),
              style = "muted" })
@@ -6467,13 +6495,13 @@ function Controller:build_layout()
       --         由 `entry_client_script.lua` 的 `auto_create_only` 放行创建（缺口 1 ✓）
       local kw, kh = 374, 72
       local kx = mx + math.floor((mw - kw) / 2)
-      btn("result.next", "modal", { x = kx, y = my + 50, w = kw, h = kh },
+      btn("result.next", "modal", { x = kx, y = my + 350, w = kw, h = kh },
           "下一关", { action = "next_level" }, "stamp.primary")
-      btn("result.exit", "modal", { x = kx, y = my + 146, w = kw, h = kh },
+      btn("result.exit", "modal", { x = kx, y = my + 446, w = kw, h = kh },
           "退出至菜单", { action = "exit_menu_go" }, "stamp")
-      btn("result.home", "modal", { x = kx, y = my + 242, w = kw, h = kh },
+      btn("result.home", "modal", { x = kx, y = my + 542, w = kw, h = kh },
           "返回首页", { action = "home" }, "stamp")
-      btn("result.settle", "modal", { x = kx, y = my + 338, w = kw, h = kh },
+      btn("result.settle", "modal", { x = kx, y = my + 638, w = kw, h = kh },
           "存档并结算", { action = "exit_menu_settle" }, "stamp.primary")
       -- ★ 胶囊底图：★ 与 `exit_menu` 同一张（107179 ✓ 日志里 `回读=107179` ✓）
       --   ★ 用自己的守卫 ✓ —— 不跟 `_exit_menu_art` 共用 ✗（★ 那个可能在这段之前已被置真 ✓）
@@ -19556,7 +19584,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v216 / 2026-10-12 / 提交即结算(删指认两步);胜利四键result.*建进存档 =====")
+        print("[murdoku] ===== 构建标记 v217 / 2026-10-12 / 通关弹窗拉高720;三行文案上移居中;四键下移 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
