@@ -6428,6 +6428,24 @@ function Controller:build_layout()
     --
     --   ⇒ 所以它现在**从 `if` 变成链首**：`result` 成了这条 if 链的第一个分支 ✓
     if modal.kind == "result" then
+      -- ★★★★★★ 2026-10-13 **通关弹窗的【专用底板】**（用户指令 ✓）✗✓✓
+      --
+      --   ★ 用户原话 ✓：「这样改会让**另一个需要用到 bg 的地方的图也被拉大** ✗，
+      --     所以我才让你**新建一个，换一个名字，脚本里的引用也一起换成新名字**」✓✓
+      --
+      --   ★ 起因 ✓：`modal` 是**五个状态共用**的容器 ✓
+      --     （`result` / `exit_menu` / `howto` / `levelselect` / `share` ✓）
+      --     而它那个 `bg` 是**共用的底板** ✓ ⇒ 把那个拉大 ⇒ **别的弹窗也跟着变大** ✗
+      --
+      --   ⇒ 所以 ✓：★ 共用的 `bg` **一个字没动**（633×383 ✓）
+      --     ★ 另建 `result.bg`（633×600 ✓ 在存档里是 `modal` 的**第 1 个子控件**
+      --       ⇒ **画在最底层** ✓ 垫在四键与三行文字下面 ✓）
+      --     ★ 本节点的 `states` **只有 `result`** ✓ ⇒ **只有通关弹窗会显示它** ✓
+      --   ★ 图 id 与调色随克隆体一起带过来 ✓（`图=100001`，与共用底板一致 ✓
+      --     —— 用户要求「素材引用和调色按这张就行」✓）
+      --   ⚠️ 尺寸仍以**存档为准** ✓（`respect_editor_rect = true` ⇒ 脚本不覆盖你在编辑器里调的几何 ✓）
+      push({ id = "result.bg", kind = "image", parent = "modal",
+             rect = { x = mx, y = my, w = mw, h = mh }, image_id = 100001 })
       local got, total = self.core:score()
       -- ★★★★★★ 2026-10-12 **通关弹窗拉高 ＋ 三行文案上移到四键上方**（用户指令 ✓）✗✓
       --
@@ -19600,7 +19618,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v218 / 2026-10-12 / 用时定格(判胜瞬间抄秒);通关弹窗拉高+三行居中 =====")
+        print("[murdoku] ===== 构建标记 v219 / 2026-10-13 / 通关弹窗专用底板result.bg(不动共用bg) =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
