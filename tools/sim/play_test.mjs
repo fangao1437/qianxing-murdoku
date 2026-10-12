@@ -495,20 +495,42 @@ skip('提交通过 → 弹出指认面板', '模拟器不实例化列表项 ⇒ 
     console.log('      [dbg] ' + l.text + '   @t=' + l.time);
   }
 }
+// ── ★★★★★ 2026-10-13 **两步式指认面板已按用户指令删除** ✗✓（★ 本节照此改判 ✓）
+//
+//   ★ 用户原话 ✓：「**确认嫌疑人和同伙那两步我不要，删掉**」
+//     ＋ 选项确认：「**提交通过即结算**」✓
+//   ★ 依据（★ 代码实证 ✓）：`ui_controller.lua` 的 `do_submit()` ——
+//     ★ `res.ok` ⇒ **直接** `finish_accuse(roles.thief, …)` ✓
+//     ⇒ ★★ `accuse_thief` / `accuse_accomplice` **再也不会打开** ✓
+//     ⇒ ★ 所以 `modal.suspect.*` 那排按钮**按设计不存在** ✓
+//
+//   ★★ 原先这里是怎么坏的 ✗✓（★ 值得记下来 ✓）：
+//     ★ 顶层断言「指认面板列出了嫌疑人按钮」**恒红** ✓（★ 面板已删 ✓）
+//     ★★ 而它下面 `if (susNames.length) { … }` 那个守卫 ⇒
+//       ★ 因为 `susNames.length == 0` ⇒ ★★ **守卫里面两条断言（含"结案 → 出现结果面板"）
+//       一次都没执行** ✗ ⇒ ★ **悄悄少测了两条** ✓✓
+//     ⇒ ★ 这比"红"更坏 ✗：★ 红至少看得见 ✓ ★ 而"永远不执行"**看不见** ✗✓
+//
+//   ★ 处置（★ 按项目既有惯例：**改判成哨兵 + 记录，不删断言** ✓ 见 §7/§8 ✓）：
+//     · ★ `modal.suspect.*` **重新出现 ⇒ 红** ✓（提醒把本段改回"点面板"动线 ✓）
+//     · ★ 依赖面板的那几条 ⇒ **明确 `skip`** ✓（★ 不伪装通过 ✗ ★ 也不谎报失败 ✗）
+//     · ★★ 而"提交通过 ⇒ 结算"这条**新契约**改由**顶层断言**直接锁 ✓
+//       ⇒ ★ 不再藏在守卫里 ✓✓
+//
+//   ⚠️ ★ 完整动线**没有失去覆盖** ✓：★ 由 `tools/sim/win_path.mjs` 负责 ✓
+//     （★ 按答案真打一局到「破案！」✓ 那才是这套动线的正式回归 ✓）
+const suspectBtns = [...indexTree(ri).keys()].filter((k) => /^modal\.suspect\./.test(k));
+check('两步式指认面板按设计已删（`modal.suspect.*` 若出现 ⇒ 本段应改回"点面板"动线）',
+  suspectBtns.length === 0,
+  suspectBtns.length ? ('★ 它们又出现了：' + suspectBtns.join(' ')) : '运行树里没有 ✓');
+skip('指认面板列出了嫌疑人按钮',
+  '两步式指认已按用户指令删除（`ui_controller:do_submit` 改为提交即结算）⇒ 该面板不存在');
+skip('选完盗窃者 → 进入同伙判定',
+  '同上：`accuse_accomplice` 面板已不存在');
+skip('结案（独自作案）→ 出现结果面板',
+  '本环境不实例化列表项 ⇒ 棋盘无人 ⇒ 提交必不过 ⇒ 走不到结算；'
+  + '结算动线由 `tools/sim/win_path.mjs` 覆盖 ✓');
 await ss('t08-accuse.png');
-
-// 指认第一个嫌疑人
-const susNames = [...indexTree(ri).keys()].filter((k) => /^modal\.suspect\./.test(k));
-check('指认面板列出了嫌疑人按钮', susNames.length > 0, susNames.join(' '));
-if (susNames.length) {
-  await click(susNames[0]); await tick(0.05);
-  ri = await get();
-  // ★ 2026-10-12：★ 它红是因为"**前面没弹指认面板** ⇒ 自然进不了同伙判定" ✓
-  //   ⇒ ★ 同一个环境边界 ✓ 标 `skip` ✓（★ 这条动线在真机上是通的 ✓）
-  skip('选完盗窃者 → 进入同伙判定', '模拟器不实例化列表项 ⇒ 提交不过 ⇒ 没有指认面板');
-  await ss('t09-accomplice.png');
-  await click('modal.no_accomplice'); await tick(0.05);
-  ri = await get();
 
 // ══ 附加：X 标记（放在最后，因为它需要"干净状态"，必须先重启本关）══
 console.log('\n=== 6. X 标记（单击空格直接切 ✗，不再需要工具按钮）');
@@ -526,11 +548,6 @@ ri = await get();
 const xNode = childOf(ri, 'cell.4.4', 'x');
 check('X 标记已显示', !!xNode && xNode.visible !== false, 'visible=' + (xNode && xNode.visible));
 await ss('t06-xmark.png');
-
-  check('结案（独自作案）→ 出现结果面板',
-    !!textOf(ri, 'modal.body'), JSON.stringify((textOf(ri, 'modal.body') || '').slice(0, 60)));
-  await ss('t10-result.png');
-}
 
 // ── 8b. 「从存档点开始」的完整闭环（2026-09-30）────────────────────────────
 //

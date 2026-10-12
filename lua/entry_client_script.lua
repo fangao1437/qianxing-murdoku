@@ -184,7 +184,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v220 / 2026-10-13 / 审计回应:P0-3改掉'模板里根本没配'错注释(那是我那条大鱼的源头)+写入撤回声明;P0-1/P0-4新增tools/gil/gen_tree_ref.mjs(从存档生成真实树参考边表,250条)+常驻测试tests/tree_ref_reconcile.lua(假边必红);P3-1按忠实树数据改写docs/技术架构.md的过期表(972->74等三条撤回) =====")
+        print("[murdoku] ===== 构建标记 v221 / 2026-10-13 / 指认功能已删的测试收尾:selftest新增skip口径+重写§10为'提交即结算'(57通过/0失败);play_test把测已删面板的3条改判为哨兵+skip(49/2/12),并修掉'if(susNames.length)'守卫藏掉两条断言不执行的沉默失败 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

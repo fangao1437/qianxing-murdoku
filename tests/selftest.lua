@@ -30,6 +30,23 @@ local function check(name, cond, extra)
   end
 end
 
+-- ★★ 2026-10-13 **过时断言的口径** ✗✓（★ 与项目已有的"本环境测不了"同一套 ✓）
+--
+--   ★ 为什么需要它 ✗：★ 有些断言测的**功能已被用户明确删除** ✓
+--     （★ 例：两步式指认面板 —— ★ 用户原话「确认嫌疑人和同伙那两步我不要，删掉」✓）
+--     ⇒ ★ 那种断言**永远不可能再绿** ✗
+--     ★★ 但如果让它一直红 ✗ ⇒ ★ 常驻套件里就常驻一条**假红** ✓
+--       ⇒ ★ 把真红的信噪比拉低 ✓ ★ 本项目为此栽过不止一次 ✓
+--     ★ 也不能直接删掉 ✗ —— ★ 那就把"这里**曾经**有条断言、以及**为什么**没了"一起丢了 ✓
+--   ⇒ ★★ 所以记成 `⊘ 已删功能` ✓：★ **不伪装通过** ✗ ★ **也不谎报失败** ✗ ✓
+--   ⚠️ ★ 判断标准要严 ✗：★ 只有当**功能真的被删**才用它 ✓
+--     ★ 若只是"这条断言写错了" ⇒ ★ **该改断言** ✓（★ 见 §10 ✓ 本文件两种都用了 ✓）
+local skipped = 0
+local function skip(name, why)
+  skipped = skipped + 1
+  print(string.format("  [⊘ 已删功能] %s —— %s", name, why))
+end
+
 -- 把答案摆上棋盘
 local function place_answer(core)
   core:reset()
@@ -182,32 +199,48 @@ check("拿起后「已正式放置」标记也清掉（否则该角色会被永�
       core.placed == nil or core.placed["A"] == nil,
       tostring(core.placed and core.placed["A"]))
 
-print("== 10. 提交 → 两段式指认的界面流程 ==")
-place_answer(core)
-ctrl:on_input({ action = "submit" })
--- ★★★★★ 2026-10-05 **这条断言过时了 —— 补上一次 ✓ 确认** ✗✓（用户明确授权修这一条 ✓）
+print("== 10. 提交 → **提交通过即结算**（★ 两步式指认面板已删 ✓）==")
+-- ★★★★★★ 2026-10-13 **本节按现行设计重写** ✗✓（★ 用户指令 ✓）
 --
---   为什么：**2026-10-02 起提交是两段的** ✓ ——
---     `submit` 只做 `self.pending = { action = "submit" }` + `sync_confirm()` ✓，
---     真正的 `do_submit()` 在 **`confirm_yes`** 分支里 ✓（见 `ui_controller.lua` 的
---     `a == "back_confirm"` 那一族状态机 ✓）。
---   ⇒ 只发 `submit` 时 `ctrl.modal` **必然是 nil** ✗ ⇒ 老写法**永远红** ✗（那不是行为错 ✓）
---   ⇒ 补一次 `confirm_yes` = **把测试拉齐到设计** ✓ **不是放宽断言** ✗
---     （后面「选了盗窃者后追问同伙」/「指认 D + 同伙 C → 破案」两条**印证**了这一点：
---       它们只发 `submit` 就往下走 ✓ 而 `accuse_thief` 不依赖弹窗类型 ✓ 所以早就是绿的 ✓）
-ctrl:on_input({ action = "confirm_yes" })
-check("提交后弹出“谁是盗窃者”", ctrl.modal and ctrl.modal.kind == "accuse_thief",
-      ctrl.modal and ctrl.modal.kind)
-ctrl:on_input({ action = "accuse_thief", id = "D" })
-check("选了盗窃者后追问同伙", ctrl.modal and ctrl.modal.kind == "accuse_accomplice",
-      ctrl.modal and ctrl.modal.kind)
-ctrl:on_input({ action = "accuse_no_accomplice" })
-check("说没有同伙 → 不成立且关闭弹窗", ctrl.modal == nil and core.status == Core.STATUS_FAILED)
+--   ★ 用户原话 ✓：「**确认嫌疑人和同伙那两步我不要，删掉**」✓
+--     ＋ 选项确认：「**提交通过即结算**」✓
+--   ★ 依据（★ 代码实证 ✓）：`ui_controller.lua` 的 `do_submit()` ——
+--     ★ `res.ok` ⇒ **直接** `finish_accuse(roles.thief, …)` ✓
+--     ⇒ ★★ `accuse_thief` / `accuse_accomplice` **再也不会打开** ✓✓
+--   ★★ 而**结案判定一个字没动** ✓：★ 仍走 `finish_accuse` ⇒ `Core:accuse_verdict` ✓
+--     ⇒ ★ 所以 §8 那三条**判定函数**的断言**照旧有效、照旧绿** ✓（★ 见 105/107/110 ✓）
+--
+--   ⚠️ 本节原先有 4 条断言，性质**不一样** ✗✓（★ 两种处理 ✓）：
+--     · ★「提交后弹出"谁是盗窃者"」✗「选了盗窃者后追问同伙」✗
+--       「说没有同伙 → 不成立且关闭弹窗」✗
+--       ⇒ ★★ **测的是已删的两个面板** ⇒ ★ **过时** ✓ ⇒ 记 `⊘ 已删功能` ✓
+--     · ★「指认 D + 同伙 C → 破案」⇒ ★ 它测的是 `status == SOLVED` ✓
+--       ★ 而**那条路仍然存在** ✓（★ 只是入口从"点面板"变成"提交即结算"✓）
+--       ⇒ ★★ **不是过时，是入口写错了** ✗ ⇒ ★ **该改断言** ✓✓
+--
+--   ★ 另一处要一起拉齐 ✓：★ 提交在现行设计里是**两段确认** ✓ ——
+--     ★ `submit` 只做 `self.pending = { action = "submit" }` ＋ `sync_confirm()` ✓
+--     ⇒ ★ 只发 `submit` 时 **`modal` 不是"指认面板"、而是"确认弹窗"** ✓
+--     ⇒ ★ 必须补一次 `confirm_yes` 才真的 `do_submit()` ✓
 place_answer(core)
 ctrl:on_input({ action = "submit" })
-ctrl:on_input({ action = "accuse_thief", id = "D" })
-ctrl:on_input({ action = "accuse_pick_accomplice", id = "C" })
-check("指认 D + 同伙 C → 破案", core.status == Core.STATUS_SOLVED)
+ctrl:on_input({ action = "confirm_yes" })
+
+-- ★★ 核心新契约：★ **提交通过 ⇒ 直接结算，且【不开】任何指认面板** ✓
+check("提交通过 ⇒ 直接结算（status=SOLVED）",
+      core.status == Core.STATUS_SOLVED, tostring(core.status))
+check("★ 两步式指认面板**不再打开**（modal 不是 accuse_thief/accomplice）",
+      ctrl.modal == nil
+        or (ctrl.modal.kind ~= "accuse_thief" and ctrl.modal.kind ~= "accuse_accomplice"),
+      ctrl.modal and ctrl.modal.kind)
+check("结算走的是 finish_accuse ⇒ Core:accuse_verdict（判定逻辑未绕开）",
+      core:accuse_verdict("D", true, "C").solved == true)
+
+-- ★ 那三条测已删面板的断言 ⇒ 明确记成"已删功能"（★ 不伪装通过、也不谎报失败 ✓）
+skip("提交后弹出“谁是盗窃者”", "两步式指认已按用户指令删除（`ui_controller:do_submit` 改为提交即结算）")
+skip("选了盗窃者后追问同伙", "同上：`accuse_accomplice` 面板已不存在")
+skip("说没有同伙 → 不成立且关闭弹窗", "同上：该面板不存在 ⇒ 这条界面路径无从触发；"
+  .. "「说没有同伙 ⇒ 不成立」的判定本身仍由 §8 的 `accuse_verdict(..., false, nil)` 覆盖 ✓")
 
 print("== 11. X 标记 / 橡皮擦 / 撤销重做 ==")
 core:reset()
@@ -282,4 +315,11 @@ check("门两侧的两格满足 in_front_of", pres[1].satisfied == true, pres[1]
 
 print("")
 print(string.format("结果：%d 通过 / %d 失败", pass, fail))
+-- ★ 2026-10-13：★ **把 `⊘ 已删功能` 也报出来** ✗✓ —— ★ 与 `play_test.mjs` 的
+--   "⊘ 本环境测不了"**同一口径** ✓：★ 它**不算通过** ✗ ★ 但也**不是失败** ✓
+--   ★ 报出来才看得见"有几条已经不再测任何东西" ✓（★ 藏起来就等于悄悄少测 ✓）
+if skipped > 0 then
+  print(string.format("⊘ 另有 %d 条**测的是已删功能**（不算通过 ✓ 也不是失败 ✓）"
+    .. " —— 本行出现即说明有断言在测已被用户删掉的界面路径", skipped))
+end
 if fail > 0 then os.exit(1) end
