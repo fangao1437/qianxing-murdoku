@@ -10839,8 +10839,52 @@ function Adapter:report_missing(force)
   if self.missing_reported and not force then return 0 end
   self.missing_reported = true
 
-  local groups, order = {}, {}
+  -- ★ 2026-10-13：这里原来有一条 `local groups, order = {}, {}` ✓
+  --   它配的那段"整段 printerr"已被下面**按性质分两类**的版本取代 ✓
+  --   ⇒ 那一条成了没人读的**死声明** ⇒ 删掉（用户要求：删干净 ✓）
+  --   （新的声明在下面分类逻辑里就地写 ✓）
+  -- ★★★★★★★★ 2026-10-13 **按性质分两类打：已知不需要（info）／未分类（error）** ✗✓✓
+  --
+  --   ★ 起因 ✓（真机日志实测 ✓）：这一段原来**整段**走 `printerr` ⇒ **error 级** ✗
+  --     而真机上那 38 项**全是"设计上就不该存在"的** ✓
+  --     ⇒ ★★ **真错误会被这一段淹掉** ✗✓ —— 本项目最怕的形状 ✓
+  --
+  --   ★ 分法 ✓：
+  --     · 🟡 **已知不需要** ⇒ `print`（info）✓ 一行带过 ✓ 不再刷屏 ✓
+  --     · 🔴 **未分类** ⇒ 仍然 `printerr`（error）✓
+  --       ★★ **这才是"计划有、存档没有、又没有创建路"的硬失败** ✓
+  --       　 一旦冒出来 ⇒ 就是**真问题**（要么补计划、要么补存档）✓
+  --
+  --   ⚠️ 这份名单**只放"已经确认过、设计上就不要"的** ✓
+  --     新东西冒出来**一律先落进 🔴** ✓ 逼着人去判断 —— 这正是闸门的意义 ✓
+  local KNOWN_ABSENT = {
+    "clue.",   -- 旧线索卡：已被网格视窗取代（列表项由引擎按 index 现建）
+    "clues.",  -- 旧滚动条 bar/up/down/track/knob/count/more：网格视窗自己滚
+    "board",   -- 已被 stage 取代（★ 注意 room.label.* 挂在它下面 ⇒ board 不能删）
+    "left",    -- 旧左栏容器（tray / legend 挂在它下面）
+    "legend",  -- 旧图例
+    "select",  -- 选关屏现由脚本建 selbar / selbtn.*
+    "tray",    -- 头像卡已并进滚动线索卡（用户 2026-10-02 定稿）
+    "room.",   -- 房间名标签：★ 用户 2026-10-13 定「下一阶段的事，暂时搁置」
+    "obj.",    -- 家具图标：同上
+  }
+  local function known_absent(id)
+    for i = 1, #KNOWN_ABSENT do
+      local p = KNOWN_ABSENT[i]
+      if id == p or id:sub(1, #p) == p then return true end
+    end
+    return false
+  end
+
+  local unknown, known_n = {}, 0
   for id in pairs(self.missing) do
+    if known_absent(id) then known_n = known_n + 1 else unknown[#unknown + 1] = id end
+  end
+  table.sort(unknown)
+
+  local groups, order = {}, {}
+  for i = 1, #unknown do
+    local id = unknown[i]
     local g = missing_group(id)
     if groups[g] == nil then
       groups[g] = { n = 0, sample = {} }
@@ -10854,9 +10898,15 @@ function Adapter:report_missing(force)
     return a < b
   end)
 
-  if printerr then
-    printerr("[murdoku] 这些控件还没建（共 " .. tostring(self.missing_count or 0)
-      .. " 个，按类分组）：")
+  if print and known_n > 0 then
+    print("[murdoku] 规划里有 " .. tostring(known_n) .. " 个控件是【已知不需要】的"
+      .. "（旧线索卡 / 旧滚动条 / board / left / legend / select / tray / room.* / obj.*）"
+      .. " —— 按 info 打，不再当错误（名单见 adapter 的 KNOWN_ABSENT）")
+  end
+
+  if printerr and #unknown > 0 then
+    printerr("[murdoku] ⚠️ 有 " .. tostring(#unknown)
+      .. " 个控件【计划有、存档没有、又没有创建路】—— 这是**真问题**，去补计划或补存档：")
     for i = 1, #order do
       local g = order[i]
       local gd = groups[g]
@@ -10864,7 +10914,7 @@ function Adapter:report_missing(force)
       if gd.n > #gd.sample then samp = samp .. " …" end
       printerr("[murdoku]   " .. g .. "  ×" .. gd.n .. "   " .. samp)
     end
-    printerr("[murdoku] 完整 150 个控件的名字/坐标/父子关系：docs/控件坐标表-1600x900.md")
+    printerr("[murdoku] （全部缺失项见 `node tools/gil/check_names.mjs` 的 🔴 那一组）")
   end
   return self.missing_count or 0
 end
@@ -19657,7 +19707,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v221 / 2026-10-13 / 指认功能已删的测试收尾:selftest新增skip口径+重写§10为'提交即结算'(57通过/0失败);play_test把测已删面板的3条改判为哨兵+skip(49/2/12),并修掉'if(susNames.length)'守卫藏掉两条断言不执行的沉默失败 =====")
+        print("[murdoku] ===== 构建标记 v222 / 2026-10-13 / 未建控件分两类:已知不需要降info,未分类才error =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
