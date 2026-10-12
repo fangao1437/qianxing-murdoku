@@ -3432,8 +3432,50 @@ function Controller:build_layout()
              text = string.format("用时 %s · 误指认 %d 次 · 位置 %d/%d",
                                   self:format_time(vm.hud.time), vm.hud.failed_accusations, got, total),
              style = "muted" })
-      btn("modal.again", "modal", { x = mx + 40, y = my + mh - 88, w = 180, h = 60 }, "重玩本关",
-          { action = "restart" }, "stamp")
+      -- ★★★★★★ 2026-10-12 **胜利界面改成【四键**，与 `exit_menu` 同款**】** ✗✓✓
+      --
+      --   ★★ 用户指令 ✓（★ 原话 ✓）：
+      --     「★ **和退出箭头一样的弹窗加四键** ✓，★ **只是功能不同** ✓：
+      --       ★ **第一个键是下一关**（★ 跳转至下一关 ✓）
+      --       ★ **第二个是退出至菜单**（★ 和退出箭头中那个完全一致 ✓）
+      --       ★ **第三个是返回首页**（★ 回到开局界面 ✓）
+      --       ★ **第四个存档并结算**（★ 尚未完全接线 ✗）」✓✓
+      --
+      --   ★★★ 四个动作【都已经存在】✓ ⇒ 本段只做【布局 ＋ 接线】✓：
+      --     · `next_level`      ⇒ 本文件 L1546（`self.opts.on_next_level` ✓）
+      --     · `exit_menu_go`    ⇒ 本文件 L1415 ✓
+      --     · `home`            ⇒ 本文件 L1466（`self.screen = "home"; modal = nil` ✓）
+      --     · `exit_menu_settle`⇒ 本文件 L1426 ✓（★ 待优化组补内部 ✓）
+      --
+      --   ★ 几何【直接复用 `exit_menu` 那一套】✓（★ 设计稿 B ✓ 用户 2026-10-09 拍板 ✓）：
+      --     ★ 键 374×72 ✓ ★ 水平居中 `kx = mx + (mw−374)/2` ✓
+      --     ★ 四个偏移 **50 / 146 / 242 / 338** ✓（★ 面板内上下对称 ✓）
+      --   ★★ 面板内上方仍有 `modal.title` / `modal.body` / `modal.stats` ✓
+      --     ⇒ ★ **统计那一行就是"结算"的信息** ✓（★ 用时 ／ 误指认 ／ 位置 ✓）
+      local kw, kh = 374, 72
+      local kx = mx + math.floor((mw - kw) / 2)
+      btn("modal.next", "modal", { x = kx, y = my + 50, w = kw, h = kh },
+          "下一关", { action = "next_level" }, "stamp.primary")
+      btn("modal.exit", "modal", { x = kx, y = my + 146, w = kw, h = kh },
+          "退出至菜单", { action = "exit_menu_go" }, "stamp")
+      btn("modal.home", "modal", { x = kx, y = my + 242, w = kw, h = kh },
+          "返回首页", { action = "home" }, "stamp")
+      btn("modal.settle", "modal", { x = kx, y = my + 338, w = kw, h = kh },
+          "存档并结算", { action = "exit_menu_settle" }, "stamp.primary")
+      -- ★ 胶囊底图：★ 与 `exit_menu` 同一张（107179 ✓ 日志里 `回读=107179` ✓）
+      --   ★ 用自己的守卫 ✓ —— 不跟 `_exit_menu_art` 共用 ✗（★ 那个可能在这段之前已被置真 ✓）
+      if (not self._result_art) and self.adapter ~= nil then
+        self._result_art = true
+        for _, bid in ipairs({ "modal.next", "modal.exit", "modal.home", "modal.settle" }) do
+          local bg = nil
+          pcall(function() bg = self.adapter:sub(bid, "bg") end)
+          if bg == nil then pcall(function() bg = self.adapter:find(bid .. ".bg") end) end
+          if bg ~= nil and self.adapter.set_image_deep ~= nil then
+            pcall(function() self.adapter:set_image_deep(bg, 107179, nil, nil, "弹窗胶囊") end)
+          end
+        end
+      end
+    elseif modal.kind == "share" then
       -- ★ 2026-10-05 **「分享棋局」按钮已删掉**（用户指令：「去掉分享」）。
       --   这里原来是一个 `modal.share` 按钮（文字「分享棋局」，事件名就是 `share`），
       --   但 `share` **从来没有分发分支** ⇒ 按下去没反应（`check_actions` 改前报的 2 个死 action 之一）。
@@ -3442,8 +3484,16 @@ function Controller:build_layout()
       --      于是它又会红。要复现旧行为，看 `versions/` 里的历史版本即可。
       --   渲染分支 `modal.kind == "share"` **保留**，理由写在下面那一段注释里。
       --   ⚠️ `modal.again` / `modal.next` 的坐标与文字**一个字都没动**。
-      btn("modal.next", "modal", { x = mx + 440, y = my + mh - 88, w = 200, h = 60 }, "下一关",
-          { action = "next_level" }, "stamp.primary")
+      -- ★★★★★★ 2026-10-12 **旧的【两键】版已删** ✗✓ —— ★ 见上面那段四键 ✓
+      --   ★ 删掉的原文（★ 备查 ✓）：
+      --     `btn("modal.again", "modal", { x = mx + 40, y = my + mh - 88, w = 180, h = 60 },`
+      --       `"重玩本关", { action = "restart" }, "stamp")`
+      --     `btn("modal.next", "modal", { x = mx + 440, y = my + mh - 88, w = 200, h = 60 },`
+      --       `"下一关", { action = "next_level" }, "stamp.primary")`
+      --   ★★★ 为什么删「重玩本关」✗ —— ★ **用户点名的是【四个键】** ✓：
+      --     ★ 下一关 ✓ 退出至菜单 ✓ 返回首页 ✓ 存档并结算 ✓
+      --     ★ 而「重玩本关」的动作 `restart` **在 `exit_menu` / 键盘里仍在** ✓
+      --       ⇒ ★ 它没有消失 ✓，只是**这个界面不再放它** ✓（★ 与"返回列表"那次同款处理 ✓）
 
     elseif modal.kind == "exit_menu" then
       -- ★★★★★ 2026-10-09 **几何改为【设计稿 B】** ✗✓（用户 2026-10-09 拍板选 B ✓）
