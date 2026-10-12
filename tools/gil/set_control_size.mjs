@@ -43,9 +43,11 @@ for (const part of SET.split(',')) {
 }
 const posSpec = new Map();
 if (POS) {
-  for (const part of POS.split(',')) {
+  // ★ 用 **分号** 分隔多项 ✓ —— 位置本身就写成 `x,y` ✓
+  //   用逗号分隔会把 `modal/bg:0,108` 切成两半 ⇒ **静默不写位置** ✗（我第一版就这么错的 ✓）
+  for (const part of POS.split(';')) {
     const m = /^([^:]+):(-?\d+),(-?\d+)$/.exec(part.trim());
-    if (!m) continue;
+    if (!m) { console.error('✗ 解析不了 --pos 的一段：' + part + '（应写成 名:x,y，多项用 ; 分隔）'); process.exit(1); }
     posSpec.set(m[1], { x: Number(m[2]), y: Number(m[3]) });
   }
 }
