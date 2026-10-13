@@ -19707,7 +19707,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v222 / 2026-10-13 / 未建控件分两类:已知不需要降info,未分类才error =====")
+        print("[murdoku] ===== 构建标记 v223 / 2026-10-13 / 整合v219-v222(四键分家/提交即结算/弹窗版式/用时定格/底板分家/未建控件分诊);附存档链路查证 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
