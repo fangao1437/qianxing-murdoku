@@ -6863,14 +6863,17 @@ function Controller:build_layout()
                  event = { action = "select_page", delta = 1 } })
           push({ id = "select.page", kind = "text", parent = "root", visible = true,
                  text = string.format("第 %d / %d 页", page, pages),
-                 rect = { x = 930, y = 955, w = 60, h = 70 } })
+                 -- ★ 2026-10-14 宽度 60 → 130 ✗✓：`第 1 / 2 页` 按 24 号字约 110px 宽 ✓
+                 --   原来只有 60 ⇒ 真到多页时**文字会被裁** ✗（而这正是它一直没被发现的原因：
+                 --   目前只有 4 关 ⇒ pages=1 ⇒ 这行**根本不显示** ✓）
+                 rect = { x = 895, y = 952, w = 130, h = 70 } })
         else
           push({ id = "select.prev", kind = "button", parent = "root", visible = false,
                  rect = { x = 700, y = 950, w = 220, h = 80 } })
           push({ id = "select.next", kind = "button", parent = "root", visible = false,
                  rect = { x = 1000, y = 950, w = 220, h = 80 } })
           push({ id = "select.page", kind = "text", parent = "root", visible = false,
-                 rect = { x = 930, y = 955, w = 60, h = 70 } })
+                 rect = { x = 895, y = 952, w = 130, h = 70 } })
         end
       -- ⚠️⚠️ `opts.levels` 在 main.lua 里传的是**表**（`levels = level_list`），不是函数！
       --   我第一版写成 `self.opts.levels()` ⇒ `attempt to call a table value (field 'levels')`
@@ -19707,7 +19710,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v223 / 2026-10-13 / 整合v219-v222(四键分家/提交即结算/弹窗版式/用时定格/底板分家/未建控件分诊);附存档链路查证 =====")
+        print("[murdoku] ===== 构建标记 v224 / 2026-10-14 / 选关分页:页码框60px裁字修到130px并居中于翻页键之间 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
