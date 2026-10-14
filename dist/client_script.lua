@@ -11118,7 +11118,19 @@ function Adapter:report_missing(force)
     "board",   -- 已被 stage 取代（★ 注意 room.label.* 挂在它下面 ⇒ board 不能删）
     "left",    -- 旧左栏容器（tray / legend 挂在它下面）
     "legend",  -- 旧图例
-    "select",  -- 选关屏现由脚本建 selbar / selbtn.*
+    "select.", -- ★★ 2026-10-15 **从 `"select"` 收窄成 `"select."`** ✗✓
+    --   ★ 为什么要收窄 ✓（用户 2026-10-15 指令 + 我自己的事故 ✓）：
+    --     原来是**裸前缀 `"select"`** ✗ ⇒ **`select.back` 也被它匹配** ✓
+    --     ⇒ ★★ 而 `select.back` **当时是真的不存在** ✗（`delete_controls.mjs` 实测 NOT-FOUND ✓）
+    --     ⇒ **一个真问题被静默归类成"已知不需要"** ✗✗ —— 这正是名单开太宽的代价 ✓
+    --   ★ 现在的分法 ✓：
+    --     · **已建进存档、不需要再报** ⇒ 不再列入名单 ✓
+    --       `select.back` / `select.prev` / `select.next`（#727/#728/#729 ✓）
+    --       ＋ 命中层 `hit.select.back` / `hit.select.prev` / `hit.select.next`（#730/731/732 ✓）
+    --     · **仍未建** ⇒ **逐项列举** ✓（下面三条 ✓）⇒ ★ 任何**新的** select 控件会落进未分类 ⇒ 报错 ✓
+    "select.title",  -- 选关屏标题「选择关卡」：存档里还没有（计划有 ✓）
+    "select.page",   -- 页码「第 N / M 页」：同上
+    "select.card.",  -- 四张关卡卡片 ＋ 卡上 .title / .info：同上（扑克牌版式 310×432 ✓）
     "tray",    -- 头像卡已并进滚动线索卡（用户 2026-10-02 定稿）
     "room.",   -- 房间名标签：★ 用户 2026-10-13 定「下一阶段的事，暂时搁置」
     "obj.",    -- 家具图标：同上
@@ -19980,7 +19992,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v230 / 2026-10-15 / 选关键两层(视觉select.*+命中hit.select.*,62x62);修返回键无功能 =====")
+        print("[murdoku] ===== 构建标记 v231 / 2026-10-15 / KNOWN_ABSENT收窄:select改为逐项列举,不再盖住真问题 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
