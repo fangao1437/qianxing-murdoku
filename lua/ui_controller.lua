@@ -3904,7 +3904,16 @@ function Controller:build_layout()
         local lv = self.opts.levels
         if type(lv) == "function" then list = lv() or {}
         elseif type(lv) == "table" then list = lv end
-        local PER = 8
+        -- ★★★★★★ 2026-10-15 **每页 8 → 4**（用户 2026-10-15 定稿：「选关改为四关一页」✓）
+        --
+        --   ★ 为什么改 ✓：现在**只有 4 个关卡** ✓
+        --     · `PER = 8` ⇒ `pages = 1` ⇒ `pg_visible = false` ⇒ **翻页键与页码整组隐藏** ✗
+        --       ⇒ ★ 翻页做好了却**永远看不到**，看起来像"没做" ✓
+        --     · `PER = 4` ⇒ 4 关正好 **1 页**、★ **第 5 关起就是 2 页** ⇒ 加一关即可验翻页 ✓
+        --
+        --   ★ 版面依据 ✓：设计空间 **1920×1080、左上原点、Y 向下** ✓
+        --     （见 `docs/控件坐标表-1600x900.md` 表头 ✓ 所以下面的 `y = 950` 是在 1080 里 ✓ 没出界 ✓）
+        local PER = 4
         local total = #list
         local pages = math.max(1, math.ceil(total / PER))
         local page = tonumber(self.select_page) or 1
@@ -3970,9 +3979,22 @@ function Controller:build_layout()
         --   为什么不做滚动列表：卡片是 2 行 × 4 列的大格子（含棋盘缩略图），
         --   一屏正好 8 张；翻页比滚动更贴合"选关"这个动作。
         
-        for i = 1, 8 do
+        -- ★★★★★★ 2026-10-15 **卡位数必须跟 `PER` 一致** ✗✓（原来硬编码 8 ⇒ 和 PER 打架）
+        --
+        --   ★ 原来的形状 ✗：`PER` 与循环的 `8` **是两个独立的数** ✓
+        --     · `lst_base = (page - 1) * PER` ⇒ 用 PER 算偏移 ✓
+        --     · `for i = 1, 8 do`         ⇒ 却渲染 **8 个卡位** ✗
+        --     ⇒ ★ 一旦 `PER ~= 8`（例如改成 4）：
+        --       第 1 页画 `list[1..8]`、第 2 页画 `list[5..12]` ✗
+        --       ⇒ **两页重叠四关、而且第 1~4 关翻不回去** ✗✗
+        --
+        --   ★ 现在 ✓：**一页 4 张、一行四个**（用户定「四关一页」✓）
+        --     · 卡位 `i = 1 .. PER` ✓ 偏移 `lst_base + i` ✓ 两处**同一个数** ✓
+        --     · `x` 沿用原来的 4 列算式（`160 + (i-1)*420`）✓ ⇒ 一行铺满 ✓
+        --     · 不再换行（原来第 5 张起 `y += 240`）⇒ **y 固定** ✓
+        for i = 1, PER do
           local it = list[lst_base + i]
-        local r = { x = 160 + ((i - 1) % 4) * 420, y = 240 + math.floor((i - 1) / 4) * 240,
+        local r = { x = 160 + ((i - 1) % PER) * 420, y = 300,
                     w = 380, h = 200 }
         if it ~= nil then
           -- ★★★ 2026-09-30：卡片改成**三段**（参考《派蒙的执律庭实习》的选关卡片：

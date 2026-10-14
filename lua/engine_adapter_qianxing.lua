@@ -5709,9 +5709,25 @@ function Adapter:_save_params(value)
   }
 end
 
-function Adapter:save(key, value)
+function Adapter:save(key, value, opts)
   self.state[key] = value
-  self:signal_emit(self.signals.SAVE, self:_save_params(value))
+  -- ★★★★★★ 2026-10-15 **加一个"只写本地、不发信号"的开关** ✗✓
+  --
+  --   ★ 起因 ✓：`main.lua` 里 `remember_level` / `mark_cleared` 那三处调的是
+  --     `a:save(SAVE_PROGRESS, p)` / `a:save(SAVE_RECENT, id)` ✓ —— 它们**只想写本地缓存** ✓
+  --     但 `Adapter:save` **无条件发 `murdoku/save` 信号** ✗
+  --     ⇒ ★ 而那三个值**不是存档 payload**（是进度表 / 关卡 id）✓
+  --     ⇒ `_save_params` 只能摊出 `{"", "", 0, 0, false}` ✗ ⇒ **白发一次信号** ✓
+  --
+  --   ★ 后果 ✓：服务端【监听信号 murdoku/save】被**无意义地触发** ✗
+  --     ★★ 将来接上局内存档后，这会**用空数据覆盖真存档** ✗✗ —— 不是"脏"，是**会咬人** ✓
+  --
+  --   ★ 修法 ✓：加**可选第三参** `opts` ✓ 不传 ⇒ 行为**完全不变**（照旧发信号 ✓）⇒ 向后兼容 ✓
+  --     · `murdoku/save` 的真存档那条（`save_now`）**不传 opts** ⇒ 照发 ✓
+  --     · 进度 / 最近游玩那三处**传 `{ no_signal = true }`** ⇒ 只写本地 ✓
+  if not (type(opts) == "table" and opts.no_signal) then
+    self:signal_emit(self.signals.SAVE, self:_save_params(value))
+  end
   return true
 end
 

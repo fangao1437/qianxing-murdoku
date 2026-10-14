@@ -6877,7 +6877,16 @@ function Controller:build_layout()
         local lv = self.opts.levels
         if type(lv) == "function" then list = lv() or {}
         elseif type(lv) == "table" then list = lv end
-        local PER = 8
+        -- ★★★★★★ 2026-10-15 **每页 8 → 4**（用户 2026-10-15 定稿：「选关改为四关一页」✓）
+        --
+        --   ★ 为什么改 ✓：现在**只有 4 个关卡** ✓
+        --     · `PER = 8` ⇒ `pages = 1` ⇒ `pg_visible = false` ⇒ **翻页键与页码整组隐藏** ✗
+        --       ⇒ ★ 翻页做好了却**永远看不到**，看起来像"没做" ✓
+        --     · `PER = 4` ⇒ 4 关正好 **1 页**、★ **第 5 关起就是 2 页** ⇒ 加一关即可验翻页 ✓
+        --
+        --   ★ 版面依据 ✓：设计空间 **1920×1080、左上原点、Y 向下** ✓
+        --     （见 `docs/控件坐标表-1600x900.md` 表头 ✓ 所以下面的 `y = 950` 是在 1080 里 ✓ 没出界 ✓）
+        local PER = 4
         local total = #list
         local pages = math.max(1, math.ceil(total / PER))
         local page = tonumber(self.select_page) or 1
@@ -6943,9 +6952,22 @@ function Controller:build_layout()
         --   为什么不做滚动列表：卡片是 2 行 × 4 列的大格子（含棋盘缩略图），
         --   一屏正好 8 张；翻页比滚动更贴合"选关"这个动作。
         
-        for i = 1, 8 do
+        -- ★★★★★★ 2026-10-15 **卡位数必须跟 `PER` 一致** ✗✓（原来硬编码 8 ⇒ 和 PER 打架）
+        --
+        --   ★ 原来的形状 ✗：`PER` 与循环的 `8` **是两个独立的数** ✓
+        --     · `lst_base = (page - 1) * PER` ⇒ 用 PER 算偏移 ✓
+        --     · `for i = 1, 8 do`         ⇒ 却渲染 **8 个卡位** ✗
+        --     ⇒ ★ 一旦 `PER ~= 8`（例如改成 4）：
+        --       第 1 页画 `list[1..8]`、第 2 页画 `list[5..12]` ✗
+        --       ⇒ **两页重叠四关、而且第 1~4 关翻不回去** ✗✗
+        --
+        --   ★ 现在 ✓：**一页 4 张、一行四个**（用户定「四关一页」✓）
+        --     · 卡位 `i = 1 .. PER` ✓ 偏移 `lst_base + i` ✓ 两处**同一个数** ✓
+        --     · `x` 沿用原来的 4 列算式（`160 + (i-1)*420`）✓ ⇒ 一行铺满 ✓
+        --     · 不再换行（原来第 5 张起 `y += 240`）⇒ **y 固定** ✓
+        for i = 1, PER do
           local it = list[lst_base + i]
-        local r = { x = 160 + ((i - 1) % 4) * 420, y = 240 + math.floor((i - 1) / 4) * 240,
+        local r = { x = 160 + ((i - 1) % PER) * 420, y = 300,
                     w = 380, h = 200 }
         if it ~= nil then
           -- ★★★ 2026-09-30：卡片改成**三段**（参考《派蒙的执律庭实习》的选关卡片：
@@ -10717,7 +10739,9 @@ function Stub:advance(seconds)
   for i = #due, 1, -1 do due[i].fn() end
 end
 
-function Stub:save(key, value) self.storage[key] = value return true end
+-- ★ 2026-10-15：第三参 `opts` 与真适配器对齐 ✓（这里只在内存里存，没有"发信号"这回事，
+--   所以 `opts` 收下不用 ✓ —— 但**签名要一致**，否则离线假适配器上测不出真实行为 ✗）
+function Stub:save(key, value, opts) self.storage[key] = value return true end
 function Stub:load(key) return self.storage[key] end
 
 function Stub:signal_emit(name, payload)
@@ -16465,9 +16489,25 @@ function Adapter:_save_params(value)
   }
 end
 
-function Adapter:save(key, value)
+function Adapter:save(key, value, opts)
   self.state[key] = value
-  self:signal_emit(self.signals.SAVE, self:_save_params(value))
+  -- ★★★★★★ 2026-10-15 **加一个"只写本地、不发信号"的开关** ✗✓
+  --
+  --   ★ 起因 ✓：`main.lua` 里 `remember_level` / `mark_cleared` 那三处调的是
+  --     `a:save(SAVE_PROGRESS, p)` / `a:save(SAVE_RECENT, id)` ✓ —— 它们**只想写本地缓存** ✓
+  --     但 `Adapter:save` **无条件发 `murdoku/save` 信号** ✗
+  --     ⇒ ★ 而那三个值**不是存档 payload**（是进度表 / 关卡 id）✓
+  --     ⇒ `_save_params` 只能摊出 `{"", "", 0, 0, false}` ✗ ⇒ **白发一次信号** ✓
+  --
+  --   ★ 后果 ✓：服务端【监听信号 murdoku/save】被**无意义地触发** ✗
+  --     ★★ 将来接上局内存档后，这会**用空数据覆盖真存档** ✗✗ —— 不是"脏"，是**会咬人** ✓
+  --
+  --   ★ 修法 ✓：加**可选第三参** `opts` ✓ 不传 ⇒ 行为**完全不变**（照旧发信号 ✓）⇒ 向后兼容 ✓
+  --     · `murdoku/save` 的真存档那条（`save_now`）**不传 opts** ⇒ 照发 ✓
+  --     · 进度 / 最近游玩那三处**传 `{ no_signal = true }`** ⇒ 只写本地 ✓
+  if not (type(opts) == "table" and opts.no_signal) then
+    self:signal_emit(self.signals.SAVE, self:_save_params(value))
+  end
   return true
 end
 
@@ -19001,7 +19041,7 @@ function Murdoku.remember_level(id)
   if id == nil then return end
   local a = store()
   if a == nil or a.save == nil then return end
-  pcall(function() a:save(SAVE_RECENT, tostring(id)) end)
+  pcall(function() a:save(SAVE_RECENT, tostring(id), { no_signal = true }) end)
   pcall(function()
     local p = a:load(SAVE_PROGRESS)
     if type(p) ~= "table" then p = {} end
@@ -19009,7 +19049,8 @@ function Murdoku.remember_level(id)
     if type(cur) ~= "table" then cur = {} end
     if not cur.cleared then cur.started = true end
     p[tostring(id)] = cur
-    a:save(SAVE_PROGRESS, p)
+    -- ★ 2026-10-15：进度表**只写本地** ⇒ 传 `no_signal` ✓（否则会白发一次 `murdoku/save` ✗）
+    a:save(SAVE_PROGRESS, p, { no_signal = true })
   end)
 end
 
@@ -19034,7 +19075,8 @@ function Murdoku.mark_cleared(id)
     cur.cleared = true
     cur.started = true
     p[tostring(id)] = cur
-    a:save(SAVE_PROGRESS, p)
+    -- ★ 2026-10-15：同上，**只写本地** ✓
+    a:save(SAVE_PROGRESS, p, { no_signal = true })
   end)
 end
 
@@ -19892,7 +19934,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v226 / 2026-10-15 / 选中残留:卡片高亮改为按core.selected派生;点卡片不再重复选人;补兜底时钟断言 =====")
+        print("[murdoku] ===== 构建标记 v227 / 2026-10-15 / 选关四关一页(卡位数与PER统一);进度表只写本地不发信号 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

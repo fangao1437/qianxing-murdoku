@@ -2381,7 +2381,7 @@ function Murdoku.remember_level(id)
   if id == nil then return end
   local a = store()
   if a == nil or a.save == nil then return end
-  pcall(function() a:save(SAVE_RECENT, tostring(id)) end)
+  pcall(function() a:save(SAVE_RECENT, tostring(id), { no_signal = true }) end)
   pcall(function()
     local p = a:load(SAVE_PROGRESS)
     if type(p) ~= "table" then p = {} end
@@ -2389,7 +2389,8 @@ function Murdoku.remember_level(id)
     if type(cur) ~= "table" then cur = {} end
     if not cur.cleared then cur.started = true end
     p[tostring(id)] = cur
-    a:save(SAVE_PROGRESS, p)
+    -- ★ 2026-10-15：进度表**只写本地** ⇒ 传 `no_signal` ✓（否则会白发一次 `murdoku/save` ✗）
+    a:save(SAVE_PROGRESS, p, { no_signal = true })
   end)
 end
 
@@ -2414,7 +2415,8 @@ function Murdoku.mark_cleared(id)
     cur.cleared = true
     cur.started = true
     p[tostring(id)] = cur
-    a:save(SAVE_PROGRESS, p)
+    -- ★ 2026-10-15：同上，**只写本地** ✓
+    a:save(SAVE_PROGRESS, p, { no_signal = true })
   end)
 end
 

@@ -123,7 +123,9 @@ function Stub:advance(seconds)
   for i = #due, 1, -1 do due[i].fn() end
 end
 
-function Stub:save(key, value) self.storage[key] = value return true end
+-- ★ 2026-10-15：第三参 `opts` 与真适配器对齐 ✓（这里只在内存里存，没有"发信号"这回事，
+--   所以 `opts` 收下不用 ✓ —— 但**签名要一致**，否则离线假适配器上测不出真实行为 ✗）
+function Stub:save(key, value, opts) self.storage[key] = value return true end
 function Stub:load(key) return self.storage[key] end
 
 function Stub:signal_emit(name, payload)
