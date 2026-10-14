@@ -4047,6 +4047,13 @@ function Controller:build_layout()
           --   上面一条"关名"纸条、中间是**该关棋盘的缩略图**、下面一行"人数/进度"）。
           --   原来是一整块按钮 + 多行文字 —— 缩略图没地方放（文字会盖在它上面）。
           push({ id = "select.card." .. i, kind = "button", parent = "root", visible = true,
+                 rect = r, image = 100108 })
+          -- ★★★★★★ 2026-10-15 **卡的点击也走命中层** ✗✓（同上：`hex.*` 图标收不到光标事件 ✗）
+          --   · 视觉：`select.card.N`（克隆自 `hex.back`，卡面图换成官方**白板 `100108`** ✓）310×432
+          --   · 命中：`hit.select.card.N`（克隆自 `hit.back` ✓ 光标检测区域 ✓）同 rect ✓
+          --   · ★ **事件绑在命中层** ✓（原来绑在 `select.card.N` 上 ⇒ **点不动** ✗）
+          --   ★ z 序：命中层 ID 更大 ⇒ 追加在后 ⇒ 压在上面 ✓
+          push({ id = "hit.select.card." .. i, kind = "button", parent = "root", visible = true,
                  rect = r, event = { action = "pick_level", id = it.id } })
           local t = self:level_card_parts(it)
           push({ id = "select.card." .. i .. ".title", kind = "text", parent = "root",
@@ -4058,6 +4065,9 @@ function Controller:build_layout()
           self:push_room_thumb(push, "select.card." .. i, it, r, "select")
         else
           push({ id = "select.card." .. i, kind = "button", parent = "root", visible = false,
+                 rect = r })
+          -- ★ 命中层也要显式隐藏 ✓ —— 否则**空卡位上会留一个能吃点击的透明块** ✗
+          push({ id = "hit.select.card." .. i, kind = "button", parent = "root", visible = false,
                  rect = r })
           -- 空卡片的三个附件也要显式隐藏 —— 否则上一屏的内容会**残留在空位上**
           for _, suf in ipairs({ ".title", ".info" }) do
