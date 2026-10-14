@@ -95,6 +95,18 @@ const sabotages = [
   ['I 高亮恒灭：规划里那一条永不取 `clue.focus`',
     'local style = (self.focused_clue == i) and "clue.focus"',
     'local style = false and "clue.focus"'],
+  // ★★★★★★★★ 2026-10-15（第二轮）**新增：把【真机那条】高亮打断** ✗✓✓
+  //
+  //   ★★★ 为什么要它 ✗（★ 这一条正对"第一轮没修好"的那个洞 ✓）：
+  //     ★ H 与 I 打的全是**老卡片**那条路 ✓（★ 只有模拟器/老路径会走 ✓）
+  //     ★★ 而真机 `_grid_state == "on"` ⇒ ★ 老卡片不进规划 ✓
+  //       ⇒ ★★ **真机那条高亮【没有任何破坏能打到】** ✓✓
+  //     ★★★ 这就是第一轮"6 红 → 0 红"却真机没修好的**工具侧根因** ✓
+  //   ⇒ ★ 这一条破坏 = ★ **让判据恒假** ✓ ⇒ ★ 高亮永远不画 ✓
+  //     ★ `selection_residue` 第 6/7 节**必须红** ✓（★ 实测过 ✓）
+  ['J 真机路高亮恒灭：列表项 `backrop1` 永不点亮',
+    'local want_on = ((want ~= nil) and want == pos)',
+    'local want_on = false and ((want ~= nil) and want == pos)'],
 ];
 
 let allGood = true;

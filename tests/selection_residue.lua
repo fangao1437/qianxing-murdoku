@@ -66,6 +66,13 @@ local function long_press(c, r, cc)
 end
 local function tap_cell(c, r, cc)
   c._suppress_click = nil
+  -- ★★★ 同 `tap_card` 的理由 ✓：★ 清掉"同一次点击只认第一个"那道闩 ✗✓
+  --   ★★ 不清的后果（★ 本轮实测踩到 ✓）：★ `tap_card` 刚记过 `_grid_click_at` ✓
+  --     ★ 紧接着 `tap_cell` 落在 **CPU 时间 0.05 秒**以内
+  --       ⇒ ★★ **"拿起棋子"这一次点击被静默丢掉** ✓ ⇒ ★ 选中**根本没变** ✓✓
+  --     ★ 症状 ✓：★ 看着像"高亮没跟着走" ✗ ★ 其实**那一步压根没发生** ✓
+  --   ★ 真机上这两下之间隔的是**人的手指** ✓（★ 远大于 0.05 秒 ✓）⇒ ★ 清掉才是对的 ✓
+  c._grid_click_at = nil
   c:on_input({ action = "click", r = r, c = cc })
 end
 local function undo(c) c:on_input({ action = "undo" }) end
@@ -130,6 +137,82 @@ local function build_rows(c)
   return rows
 end
 
+-- ★★★★★★★★ 2026-10-15（第二轮）**列表项：真机上高亮【真正】长在上面的那个东西** ✗✓✓
+--
+--   ★★★ 为什么第一轮的用例没抓到"没修好" ✗（★ 这一条是本轮最该记的教训 ✓）：
+--     ★ 第一轮只断言了**老卡片**的 `clue.focus` 样式 ✓
+--     ★★ 而真机 `_grid_state == "on"` ⇒ ★ **老卡片整段不进规划** ⇒
+--       ★★ **那条断言在真机上是空的** ✗✓ ★ 它守的是一个真机根本读不到的值 ✓
+--     ⇒ ★★ 于是"6 红 → 0 红"全是**模拟器那条路**上的 ✓ ★ 真机那条**一条都没覆盖** ✓✓
+--   ⇒ ★ 修法 ✓：★ **照真机那样造列表项** ✓ ★ 断言 `backrop1.imageColor` ✓
+--     ★（★ 那就是用户看得见的那张卡 ✓ ★ 也是原来的手动染色写的同一个控件 ✓）
+--   ★ 造法 ✓：★ 与 `tests/grid_cost.lua` 的 K 段同一条 ✓（★ 它已经证明这条路能跑起来 ✓）
+--     ★ 每个 item 的子控件要**带 `clue.<pos>.<槽位>` 与短名两份** ✓
+--     ★ 因为填充两侧都试：★ 先 `FindChild("clue.N.who")` ✓ 再 `FindChild("who")` ✓
+-- 造一个最小网格视窗（★ 只要填充与定位能跑 ✓ 不需要真的滚动 ✓）
+local function build_grid(c)
+  local nslot = #c.core.pieces
+  local items = {}
+  for pos = 1, nslot do
+    local card = {}
+    for _, nm in ipairs({ "who", "what", "letter", "face", "backrop1", "backrop2" }) do
+      -- ★★★ 形状必须与真机一致 ✗✓：★ **`item:GetChild("clue.N.backrop1")` 拿到的
+      --   【就是那个图片控件本身】** ✓（★ 存档实证 ✓：`backrop1` 父=`clue` ✓ 尺寸 360x96 ✓）
+      --   ★★ 而它**不必**再往下钻一层去找同名的东西 ✗
+      --     ★ 我第一版把它套成「外层容器 + 内层同名叶子」⇒ ★★
+      --       ★ **写的人写外层、读的人读内层** ⇒ ★ 两边不是同一个表 ⇒ **永远读不到** ✓✓
+      --     ★ 症状 ✓：★ 回读恒 `nil` / 恒原色 ⇒ ★ 看着像"填充没画" ✗ 其实是**夹具形状不对** ✓
+      --   ★ 真机那边的对应事实 ✓：★ 图片控件有 `imageId` / `imageSource` ✓
+      --     ★ 而"设图"要 `SetImage` ✓ —— ★ 那是**单射**那条路的事 ✓
+      --     ★ 本节的 `imageColor` 是**读写字段** ✓（★ 适配层注释：乘算着色 ✓）⇒ ★ 直接赋值 ✓
+      local leaf = ctrl("clue." .. pos .. "." .. nm, {})
+      leaf.imageColor = 4294967295            -- ★ 原色（白）✓ —— 与真机模板一致 ✓
+      card[#card + 1] = leaf
+    end
+    items[pos] = ctrl("item", card)
+    items[pos].__index = pos - 1              -- ★ 引擎 index 0 起 ✓
+  end
+  c._grid_base = 0
+  c._grid_state = "on"                        -- ★ 真机就是这个 ✓
+  c._grid_seen = {}
+  c._grid_in_refresh = true
+  for pos = 1, nslot do
+    c:_fill_grid_item(nil, nil, items[pos], pos - 1)
+  end
+  c._grid_in_refresh = false
+  c.__grid_items = items            -- ★ 点卡片时要用**真的那一个** ✓（见 `tap_card` ✓）
+  return items
+end
+
+-- 取某一条卡上 `backrop1` 的当前颜色（★ 用户看得见的那一笔 ✓）
+--   ★ 取法与**写的人同源** ✗：★ 实现里走 `_grid_item_child(item, index, pos, "backrop1")`
+--     ⇒ ★ 先 `item:GetChild("clue.<index>.<suffix>")` ✓ 再 `clue.<pos>.<suffix>` ✓ …
+--   ★★ 这里就用**同一个入口**读 ✓ —— ★ 别自己另拼一个名字 ✗
+--     （★ 我第一版自己多钻了一层 ⇒ ★ 读的不是写的那一个 ⇒ **假红** ✓）
+local function card_tint(c, items, pos)
+  local it = items[pos]
+  if it == nil then return nil end
+  local leaf = nil
+  pcall(function() leaf = c:_grid_item_child(it, pos - 1, pos, "backrop1") end)
+  if leaf == nil then return nil end
+  local v = nil
+  pcall(function() v = leaf.imageColor end)
+  return v
+end
+
+-- 让引擎"重进一次填充"（★ 真机上滚动/刷新时就会发生 ✓）
+--   ★★ `_grid_in_refresh` 必须是 **true** ✗✓（★ 这一条我第一版写反了 ⇒ 假红 ✓）：
+--     ★ 它标的是"**这是我们自己那趟**" ✓ ⇒ ★ 单射落账 ＋ 高亮那一笔**都在那一趟里** ✓
+--     ★ 而"引擎重进"那趟（false ✓）按设计**只按 index 刷内容** ✗
+--       ⇒ ★★ 拿 false 去测"高亮会不会跟着走" ⇒ ★ **测的不是那条路** ✓✓
+local function refill(c, items)
+  c._grid_in_refresh = true
+  for pos = 1, #items do
+    pcall(function() c:_fill_grid_item(nil, nil, items[pos], pos - 1) end)
+  end
+  c._grid_in_refresh = false
+end
+
 local function fresh()
   UIC.Controller._row_text = {}      -- ★ 模块级表 ✓ 每个实例自己重来一遍 ✓
   UIC.Controller._row_letter = {}
@@ -160,6 +243,16 @@ local function tap_card(c, pos)
     card[#card + 1] = ctrl("clue." .. pos .. "." .. nm, { ctrl(nm, {}) })
   end
   local it = ctrl("item", card)
+  -- ★★ 如果这一关造了真的网格列表项 ⇒ **点真的那一个** ✗✓
+  --   ★ 为什么必须这样 ✗：★ `_on_grid_item_click` 先用 `_grid_pos_of_item` 认"这是第几条" ✓
+  --     ★ 而它查的是 `_grid_seen[item]`（★ 填充时按**控件身份**记的 ✓）
+  --     ★★ 拿一个**临时造的新 item** 去点 ⇒ ★ **表里没有它** ⇒ ★ 这次点击**整条丢掉** ✓✓
+  --       （★ 症状 = "点了没反应" ✓ ★ 我第一版就是全红在这上面 ✓）
+  --     ★ 兜底是问引擎 ✓ 而这里给的 `GetItemIndex` 恒回 `pos-1` ⇒ ★ 也能中 ✓
+  --       ★ 但那只证明"兜底能跑" ✗ ★ **不是真机那条路**（真机走填充记录 ✓）✓
+  if c.__grid_items ~= nil and c.__grid_items[pos] ~= nil then
+    it = c.__grid_items[pos]
+  end
   local fired = {}
   local ad = { on_input = function(ev) fired[#fired + 1] = ev; c:on_input(ev) end }
   -- ★★ `self.adapter` **故意不设** ✗ —— ★ 生产里控制器的 `self.adapter` **就是 nil** ✓
@@ -411,6 +504,130 @@ do
   ok(c.core.grid[1][1] == "D", "★ 而 D 落在 (1,1)")
   ok(UIC.Controller.letter_of(c.core:view(), c.core.grid[1][1]) == "D",
     "★ (1,1) 那一格该显示的字母是 D（★ 不是 V ✗）")
+end
+
+--------------------------------------------------------------------------------
+-- 6. ★★★★★★★★ **真机那条路：网格列表项上的高亮** ✗✓✓
+--
+--   ★★★ 为什么单开一节 ✗（★ 这一节就是第一轮漏掉的那条路 ✓）：
+--     ★ 1~5 节判的是 **`focused_clue` / 老卡片样式** ✓
+--     ★★ 而真机 `_grid_state == "on"` ⇒ ★ **老卡片不进规划** ⇒ ★ 那几节在真机上**读不到** ✓
+--     ★★★ 真机上用户看得见的那张卡 = ★ **网格视窗的列表项** ✓
+--       ★ 它上面那笔底色 = `clue.<pos>.backrop1.imageColor` ✓
+--   ⇒ ★★ 所以这一节**只断言那一笔颜色** ✓ —— ★ 那才是"显示选择的 d"里那个"显示" ✓✓
+--
+--   ★ 判据是**两向**的 ✓：★ 该亮的那张亮 ✓ ★ 且**别的那张必须灭** ✗（P3 ✓）
+--------------------------------------------------------------------------------
+do
+  local c = fresh()
+  local items = build_grid(c)
+  ok(#items >= 2, "★ 前提：造出了 ≥2 个列表项（实测 " .. tostring(#items) .. "）")
+  local TINT = 4294956107          -- ★ 与实现里 `HIGHLIGHT_TINT` 同一个值 ✓（暖金 ✓）
+  local ORIG = 4294967295          -- ★ 原色（白 ✓）
+
+  -- ★ 前提闸 ✓：全灭（★ 一个都没选中 ✓）
+  local lit0 = {}
+  for pos = 1, #items do lit0[pos] = card_tint(c, items, pos) end
+  ok(lit0[V_POS] == ORIG and lit0[D_POS] == ORIG,
+    "★ 前提：还没选人 ⇒ 两张卡都是原色（实测 V=" .. tostring(lit0[V_POS])
+    .. " D=" .. tostring(lit0[D_POS]) .. "）")
+
+  -- ① 选 D ⇒ **D 那张必须亮**，且 V 那张必须**不亮** ✓（两向 ✓）
+  tap_card(c, D_POS)
+  refill(c, items)
+  local litD, litV = card_tint(c, items, D_POS), card_tint(c, items, V_POS)
+  ok(litD == TINT, "★★ 真机路：选中 D ⇒ **D 那张卡亮**（实测 " .. tostring(litD)
+    .. "，期望 " .. tostring(TINT) .. "）")
+  ok(litV ~= TINT, "★★ 反向：V 那张卡**不许**亮（实测 " .. tostring(litV) .. "）")
+  ok(c.core.selected == "D", "★ 且 core.selected = D（★ 高亮与选中一致 ✓）")
+
+  -- ② ★★★ 用户那一步：放 V → 选 D → **拿起 V** ⇒ 高亮必须**从 D 走到 V** ✗✓
+  --   ★★ 判据顺序要紧 ✗：★ 每一步都**先断言前置**（选中到底变成了谁 ✓）
+  --     ★ 再断言高亮 ✓ —— ★ 不然红了分不清"选中没变"还是"高亮没跟" ✓✓
+  --     ★（★ 我这一节第一版就是栽在这上面：★ 拿一个**没满足的前提**去判结论 ✓）
+  tap_card(c, V_POS); long_press(c, 3, 1)
+  refill(c, items)
+  ok(c.core.grid[3][1] == "V", "★ 前提：V 放在 (3,1)")
+  ok(c.core.selected == nil, "★ 前提：正式放置后选中被清（实测 "
+    .. tostring(c.core.selected) .. "）")
+  ok(card_tint(c, items, D_POS) == ORIG,
+    "★ 前提：没选人 ⇒ D 那张灭（实测 " .. tostring(card_tint(c, items, D_POS)) .. "）")
+
+  tap_card(c, D_POS)                       -- 选 D
+  refill(c, items)
+  ok(c.core.selected == "D", "★ 前提：点 D 卡 ⇒ 选中 D（实测 "
+    .. tostring(c.core.selected) .. "）")
+  ok(card_tint(c, items, D_POS) == TINT, "★ 前提：D 亮（实测 "
+    .. tostring(card_tint(c, items, D_POS)) .. "）")
+
+  -- ★★★ 关键一步：★ 拿起 V（★ 单击已放置的格子 ✓ 核心会把 V 选上 ✓）
+  tap_cell(c, 3, 1)
+  ok(c.core.grid[3][1] == nil, "★ 前提：V 被拿起来了")
+  ok(c.core.selected == "V", "★ 前提：拿起 V ⇒ core.selected = V（实测 "
+    .. tostring(c.core.selected) .. "）")
+  refill(c, items)
+  local afterV, afterD = card_tint(c, items, V_POS), card_tint(c, items, D_POS)
+  ok(afterV == TINT,
+    "★★★ 真机路：拿起 V 之后，**V 那张卡必须亮**（实测 " .. tostring(afterV)
+    .. "，期望 " .. tostring(TINT) .. "）")
+  ok(afterD == ORIG,
+    "★★★ 而 **D 那张必须灭**（实测 " .. tostring(afterD)
+    .. "）　⇒ ★ 用户报的「显示选择的 d」就是这一笔 ✗")
+
+  -- ③ ★★★ 行为面：此刻长按，落下的必须是**亮着那张卡上的人** ✓
+  local lit_pos = (card_tint(c, items, V_POS) == TINT) and V_POS or D_POS
+  local shown = c:_person_id_for_pos(lit_pos)
+  long_press(c, 1, 1)
+  ok(c.core.grid[1][1] == shown,
+    "★★★ 亮着第 " .. tostring(lit_pos) .. " 张卡（= " .. tostring(shown)
+    .. "）⇒ 长按落下的必须是它（实测 " .. tostring(c.core.grid[1][1])
+    .. "）　⇒ ★ 用户报的「再长按放置，放的会是 v」就是这里 ✗")
+
+  -- ④ 幂等 ✓：再重进几次填充 ⇒ 颜色**不许变** ✗（★ 防"每帧换色" ✓）
+  --   ★ 注意 ✓：★ 上一步长按**已经把 V 放下去、选中被清了** ✓
+  --     ⇒ ★ 这里的前置是"没人被选中" ✓ ★ 所以两张都该是原色 ✓
+  ok(c.core.selected == nil, "★ 前提：长按放置后选中已清（实测 "
+    .. tostring(c.core.selected) .. "）")
+  refill(c, items); refill(c, items)
+  ok(card_tint(c, items, V_POS) == ORIG and card_tint(c, items, D_POS) == ORIG,
+    "★ 反复重进填充 ⇒ 颜色稳定且都灭（V=" .. tostring(card_tint(c, items, V_POS))
+    .. " D=" .. tostring(card_tint(c, items, D_POS)) .. "）")
+end
+
+--------------------------------------------------------------------------------
+-- 7. "再点一次取消" —— ★ 在**真机那条路**上也要成立 ✓
+--      ★ 判据 = ★ `core.selected` **只由"是不是他"决定** ✗（★ 不看谁亮着 ✓）
+--------------------------------------------------------------------------------
+do
+  local c = fresh()
+  local items = build_grid(c)
+  local TINT = 4294956107
+  local ORIG = 4294967295
+
+  tap_card(c, V_POS)
+  refill(c, items)
+  ok(c.core.selected == "V", "★ 前提：点 V 卡 ⇒ 选中 V（实测 " .. tostring(c.core.selected) .. "）")
+  ok(card_tint(c, items, V_POS) == TINT, "★ 前提：V 亮（实测 "
+    .. tostring(card_tint(c, items, V_POS)) .. "）")
+
+  -- ★ 再点**同一张** ⇒ 取消 ✓
+  tap_card(c, V_POS)
+  refill(c, items)
+  ok(c.core.selected == nil, "★★ 再点一次同一张卡 ⇒ **选中取消**（实测 "
+    .. tostring(c.core.selected) .. "）")
+  ok(card_tint(c, items, V_POS) == ORIG, "★★ 且 V 那张**必须灭**（实测 "
+    .. tostring(card_tint(c, items, V_POS)) .. "）")
+
+  -- ★ 反向 ✓：取消之后**换一个人**照样能选上 ✗（★ 防"一次取消之后再也选不中" ✓）
+  tap_card(c, D_POS)
+  refill(c, items)
+  ok(c.core.selected == "D", "★ 取消之后换一个人照样能选上（实测 "
+    .. tostring(c.core.selected) .. "）")
+  ok(card_tint(c, items, D_POS) == TINT and card_tint(c, items, V_POS) == ORIG,
+    "★ 且只有 D 亮（D=" .. tostring(card_tint(c, items, D_POS))
+    .. " V=" .. tostring(card_tint(c, items, V_POS)) .. "）")
+
+  print("  [PASS] 真机那条路：再点一次取消 ✓ 换人重选 ✓（两向都钉住 ✓）")
 end
 
 print(string.format("selection_residue: %d passed, %d failed", passed, failed))

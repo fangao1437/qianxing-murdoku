@@ -627,6 +627,16 @@ end
 -- 双击窗口（秒）：两次单击落在这个窗口内、且在同一格 → 判定为双击
 local DOUBLE_CLICK_SECONDS = 0.35
 
+-- ★★★★★★★★ 2026-10-15 **选中那条卡的暖金 —— 从"点卡片时手写"提成【一处常量】** ✗✓✓
+--
+--   ★ 值一字不改 ✓：★ `4294956107` ✓ —— ★ 与用户已经看惯的那一版**逐字相同** ✓
+--   ★★ 为什么要提出来 ✗：★ 它原来**硬编码在点击分支里** ✓（★ 现在那一支已删 ✓）
+--     ★ 而真机那条路（网格列表项的 `backrop1`）要**同一个颜色** ✓
+--     ⇒ ★ 两处各写一个字面量 = 本项目最熟的那种坑 ✓（★ 一处改了另一处不知道 ✓）
+--   ★★★ 尤其要记 ✓：★ `imageColor` 是**乘算**着色 ✓（★ 适配层注释写着 ✓）
+--     ⇒ ★ 想调观感请改**这一个数** ✓ ★ 别在别处再写一个 ✓✓
+local HIGHLIGHT_TINT = 4294956107
+
 -- 长按窗口（秒）：按住不放超过这么久、且期间基本没移动 → 判定为长按
 --
 -- 为什么要它：官方**没有长按事件**，所以我们最初用"双击=放置"替代。
@@ -6536,6 +6546,9 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   local c_who    = self:_grid_item_child_cached(item, index, pos, "who")
   local c_what   = self:_grid_item_child_cached(item, index, pos, "what")
   local c_letter = self:_grid_item_child_cached(item, index, pos, "letter")
+  -- ★ 2026-10-15：★ 高亮那一笔要的那个子控件 ✓（★ 与上面三个同一条取法 ✓
+  --   ★ 取到就交给函数 ✓ 取不到函数自己再取一次 ✓ —— ★ 两种时机都对 ✓）
+  local c_backrop1 = self:_grid_item_child_cached(item, index, pos, "backrop1")
   -- ★ 2026-10-10 已删（地图员干跑 PASS ✓）：死变量 c_face（★ 单射不走它 ✓ 按槽位名自己取 ✓）　原 L5009..L5009
 
   -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
@@ -6608,6 +6621,77 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   --     ★ 但**不再依赖它** ✗ —— ★ 判据在最前面就已经满足 ✓
   self._grid_bind_n = (self._grid_bind_n or 0) + 1
   -- ★ 2026-10-10 已删（地图员干跑 PASS ✓）：最后一条内联诊断（★ 地图员：整行可删 ✓）　原 L5277..L5277
+
+  -- ★★★★★★★★ 2026-10-15（第二轮）**卡片高亮的【真机那一份】—— 在这里画** ✗✓✓
+  --
+  --   ★★★ 为什么第一轮没修好 ✗（★ 这一条是本轮最重要的发现 ✓）：
+  --     ★ 第一轮把高亮改成**派生值** ✓ 但**派生的出口是 `clue.focus` 样式** ✗
+  --     ★★ 而那个样式挂在 **老卡片 `clue.<n>` 节点**上 ✓ ★ 只有**老路径**会建它们 ✓
+  --     ★★★ 真机上 `_grid_state == "on"` ✗（★ 诊断实测 ✓ 见 `render` 里那段 L7304 ✓）
+  --       ⇒ ★ **老卡片那段整段不进规划** ✓ ⇒ ★ **`clue.focus` 在真机上根本没人读** ✓✓
+  --     ⇒ ★★ 用户说"没修好"是**对的** ✓ —— ★ 我只修了模拟器走的那条路 ✗
+  --
+  --   ★★★ 真机上那张卡的视觉在哪 ✗：★ **网格视窗的列表项**
+  --     （★ 模板 `clue` ✓ 子控件 `backrop1` / `backrop2` / `face` / `who` / `what` / `letter` ✓
+  --      ★ 存档实证 ✓：`backrop1` 父=`clue` ✓ 尺寸 360x96 ✓）
+  --   ★★ 而"谁被选中"原来**只有一处**写它 ✗：`_on_grid_item_click` 里那段**手动染色** ✓
+  --     ⇒ ★ 那就是第一轮我删掉的那段 ✓ —— ★ 删掉是对的 ✗（★ 它是第二份状态 ✓）
+  --     ★★★ 但我**没有给网格这条路补上替代** ✓ ⇒ ★ 真机上现在**连亮都不亮了** ✓✓
+  --
+  --   ⇒ ★★ 修法 ✓：★ **把这一笔画进【填充】里** ✗ ——
+  --     ★ 填充是**引擎每帧会重进**的那条路 ✓
+  --       （★ 见本函数开头"滚动时引擎会重进 RefreshItems 回调"那段实测 ✓）
+  --     ★★ 判据**现算** ✓：★ `core.selected` ⇒ 行号 ⇒ 与 `pos` 比 ✓
+  --       ⇒ ★★ **填充什么时候跑，高亮就什么时候对** ✓ ✓ **不需要任何人"记得去同步"** ✓✓
+  --   ★ 与第一轮的关系 ✓：★ 那两处**都保留** ✓
+  --     · ★ `clue.focus` 样式 → 老路径（★ 模拟器 / 没有网格视窗的机器 ✓）
+  --     · ★ 这里 → 网格路径（★ 真机 ✓）
+  --     ★★ 两条路**同一个判据**（`_clue_pos_of_person(core.selected)` ✓）⇒ 不会各说各话 ✓✓
+  --   ★ 颜色 ✓：★ 沿用原来那个暖金 `4294956107` ✓（★ 与用户已经看惯的那一版**一模一样** ✓
+  --     ★ 不借机改观感 ✗ —— ★ 这一轮只修"对不对" ✓ 不改"好不好看" ✓）
+  self:_grid_paint_highlight(item, index, pos, c_backrop1)
+end
+
+-- ★★ 把"这一条卡是不是被选中的那条"画到列表项的 `backrop1` 上 ✓
+--   ★ 状态存在**表里**（按列表项实例 ✓）⇒ 句柄失效时不至于写坏别人 ✓
+--   ★ 还原用的原色**第一次读到就记住** ✓（★ 不每帧回读 ✓ —— 回读会把"已染的金色"当原色 ✓✓）
+function Controller:_grid_paint_highlight(item, index, pos, c_backrop1)
+  if item == nil then return false end
+  local cp = c_backrop1
+  if cp == nil then
+    pcall(function() cp = self:_grid_item_child_cached(item, index, pos, "backrop1") end)
+  end
+  if cp == nil then return false end
+  local rec = self:_grid_item_rec(item, index)
+  if rec == nil then return false end
+  -- ★ 判据现算 ✓（★ 与老路径的 `clue.focus` **同一个来源** ✓）
+  local sel = self.core and self.core.selected or nil
+  local want = nil
+  if sel ~= nil then want = self:_clue_pos_of_person(sel) end
+  local want_on = ((want ~= nil) and want == pos)
+  -- ★ 目标一旦达成就是**幂等**的 ✓ ⇒ ★ 稳态每帧只做两次比较、一次都不写 ✓
+  if rec.hl_pos == pos and rec.hl_on == want_on then return true end
+  -- ★ 记住"这块底色本来是什么" ✓ —— ★ 只在第一次（或换了代表哪一条）时读 ✓
+  if rec.hl_orig == nil or rec.hl_idx ~= index then
+    local cur = nil
+    pcall(function() cur = cp.imageColor end)
+    rec.hl_orig = cur
+    rec.hl_idx = index
+  end
+  local target = want_on and HIGHLIGHT_TINT or rec.hl_orig
+  if target ~= nil then pcall(function() cp.imageColor = target end) end
+  if print and (self._grid_hl_log or 0) < 6 then
+    self._grid_hl_log = (self._grid_hl_log or 0) + 1
+    local back = nil
+    pcall(function() back = cp.imageColor end)
+    local isLeaf = (select(1, pcall(function() local _ = cp.GetChild end)) == true)
+    print("[murdoku] ★ 卡片高亮（真机这条）✓ pos=" .. tostring(pos)
+      .. " 选中=" .. tostring(sel) .. " ⇒ " .. (want_on and "**亮**" or "灭")
+      .. "　写了 " .. tostring(target) .. " 回读=" .. tostring(back)
+      .. "　有 GetChild=" .. tostring(isLeaf) .. "　orig=" .. tostring(rec.hl_orig))
+  end
+  rec.hl_pos, rec.hl_on = pos, want_on
+  return true
 end
 
 -- 给列表项挂点击。★ 列表项是**复用**的：同一个控件会先后代表不同线索 ⇒
@@ -6961,20 +7045,32 @@ function Controller:_on_grid_item_click(adapter, grid, item)
         --     · ★ 亮着 ∧ 选中的也是他 ⇒ ★ **取消**（"再点一次取消" ✓）
         --     · ★ 还不是他 ⇒ ★ **选中他** ✓
         --     · ★ 已经是他、但没亮着 ⇒ ★ **什么都不写** ✓（★ 高亮由派生自己跟上 ✓）
+        --   ★★★ 2026-10-15（第二轮）**判据去掉 `lit`，只看"是不是他"** ✗✓✓
+        --
+        --   ★★ 为什么必须去掉 ✗（★ 第一轮它把真机那条路带偏了 ✓）：
+        --     ★ `lit` 读的是 `focused_clue` ✓ —— ★ 而那个值**只在 `on_input` 收口处**派生 ✓
+        --     ★★ 网格视图那条路（★ 真机 ✓）的视觉走的是**列表项 `backrop1`** ✗
+        --       ⇒ ★ `focused_clue` 在真机上**可能一直是上一帧/别的值** ✓
+        --     ★★★ 后果（★ 本轮实测 ✓）：★ 点"正亮着那张卡"时 `lit` 判**假** ✗
+        --       ⇒ ★ 落进 `elseif not is_him`? 不 ✓ ★ 两边都不进 ⇒ **点了没反应** ✓
+        --       ⇒ ★★ 或者更糟：★ 选中被**又选一次**/又切一次 ⇒ **与屏幕对不上** ✓✓
+        --   ⇒ ★★ 新判据 ✓：★ **`is_him` 一条就够** ✓ ——
+        --     · ★ 选中的就是他 ⇒ **取消** ✓（★ "再点一次取消" ✓）
+        --     · ★ 不是他 ⇒ **选中他** ✓
+        --     ★★ 两者都以 `core.selected` 为唯一依据 ✓ ⇒ ★ **在两条路上行为一致** ✓✓
+        --   ★ 为什么这比"看谁亮着"更对 ✓：★ 亮着本来就是**从选中派生出来的** ✗
+        --     ★ 拿派生值反过来当判据 = 把因果倒过来 ✓ ★ 那正是漂移的温床 ✓✓
         local is_him = (tostring(self.core.selected or "") == tostring(pid))
-        local lit = (self.focused_clue == pos)
-        if is_him and lit then
+        if is_him then
           -- ★ 取消：★ 只调**一个**核心方法 ✓ ★ 高亮一个字都不写 ✗
-          --   （★ 由事件末尾的 `_sync_clue_focus` 派生 ✓ ⇒ ★ 只有它一个写点 ✓）
+          --   （★ 派生点只有 `_sync_clue_focus` ✓ ★ 真机那笔由填充每帧现算 ✓）
           self.core:select_suspect(pid)
-        elseif not is_him then
+        else
           -- ★ 走核心自己的入口 ✓（★ 不直接写 `core.selected` ✗ ——
           --   ★ 核心要顺带处理"橡皮擦/✗ 模式下选人会切回放置模式" ✓ 见 `select_suspect` ✓）
           self.core:select_suspect(pid)
         end
-        -- ★ 第三种情形**什么都不写** ✓ ★ 而且这里判据里的 `lit` **不许当状态存** ✗ ——
-        --   ★ 它只是"这一下点击该被读成什么意思" ✓ ★ 存下来就又成第二份状态了 ✓✓
-        --   ★★ 也**不许**在这里补发那条 `suspect` ✗ —— ★ 发了 = 再切换一次 ✓（见上面 ✓）
+        -- ★★ 这里**不许**补发那条 `suspect` ✗ —— ★ 发了 = 再切换一次 ✓（见上面 ✓）
         self._grid_refill_pending = true
         self.dirty = true
       end
