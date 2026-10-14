@@ -3548,6 +3548,20 @@ end
 function Controller:do_restart()
   local core = self.core
   if core ~= nil and core.reset ~= nil then core:reset() end
+  -- ★★★★★★★★ 2026-10-15 **重开 = 选中也归零 ⇒ 高亮必须跟着归零** ✗✓✓
+  --
+  --   ★ 为什么单独写这一句 ✗：★ `core:reset()` 会把 `selected` 清成 nil ✓
+  --     ★★ 而 `_sync_clue_focus` 是**按"选中变了没有"**决定要不要重算的 ✓
+  --       ★ 它记着上一把的 `_clue_sel_key` ✗ ⇒ ★ **不清就沿用上一把的判断** ✓
+  --     ★★ 极端情形 ✓：★ 上一把选中 D ⇒ 重开 ⇒ 再选 D ⇒
+  --       ★ `_clue_sel_key` 与这次**一模一样** ⇒ ★ 同步整段跳过 ⇒
+  --       ★★ **高亮不会回来** ✓✓（★ 又是一次"看起来像选中了、其实没同步" ✓）
+  --   ⇒ ★ 修法 ✓：★ **两个记忆字段一起清** ✓ ⇒ ★ 下一次事件必定重新判定 ✓✓
+  self._clue_sel_key, self._clue_sel_pos = nil, nil
+  self.focused_clue = nil
+  self._grid_focus_item, self._grid_focus_orig = nil, nil
+  self._grid_focus_idx, self._grid_focus_pos = nil, nil
+  self._grid_refill_pending = true
   self.modal = nil
   self.toast = nil
   self.toast_until = nil    -- ★ A8：清提示语时把截止时刻一起清掉（别留一个未来的时刻）
@@ -3692,6 +3706,19 @@ local function press_seconds(self)
   if p ~= nil and type(p.t) == "number" then return gesture_now(self) - p.t end
   return nil
 end
+
+-- ★★★★★★★★ 2026-10-15 **把"兜底那条路"也暴露出来** ✗✓✓（★ 它此前**零覆盖** ✓）
+--
+--   ★★★ 为什么要导出 ✗：★ 它是**模块级 local** ✓ ⇒ ★ 测试**够不着** ✓
+--     ★★ 而"够不着"的后果**刚刚才发生过** ✓：
+--       ★ `tests/input_logic.lua` 的假时钟上**留着一处破坏残迹**
+--         （`CLK + d * 0.25` ✓ 也就是"钟比真实慢 4 倍" ✓）
+--       ★★ 它**几个月没被发现** ✗ —— ★ **因为兜底那条路从来没有被断言过** ✓✓
+--         （★ 主判据走 `p.dt` ✓ ⇒ ★ 慢 4 倍的钟在那一场里红不了任何一条 ✓）
+--   ★ 判据 ✓：★ 导出一个**只读**入口 ✓（★ 不改任何行为 ✓ 生产里没人调它 ✓）
+--   ★ 用法 ✓：★ 测试把 `_press.dt` 抹掉 ⇒ ★ 强制走兜底 ✓ 再断言结果合理 ✓
+--   ⇒ ★★ 于是"兜底时钟必须与真实时间同速"这条**终于有断言守着** ✓✓
+M.press_seconds = press_seconds
 
 function Controller:snapshot()
   self._gesture_snapshot = self.core:serialize()
@@ -4364,6 +4391,9 @@ function Controller:on_input(event)
   elseif a == "reveal" then
     -- 直接揭示答案（照 murdoku 的 Reveal，用于教学/放弃）
     core:reset()
+    -- ★ 2026-10-15：`core:reset()` 清了选中 ⇒ 同步记忆也要清（★ 同 `do_restart` 的理由 ✓）
+    self._clue_sel_key, self._clue_sel_pos = nil, nil
+    self.focused_clue = nil
     for id, p in pairs(core.solution) do
       core:select_suspect(id)
       core:hold_cell(p.r, p.c)
@@ -4537,16 +4567,21 @@ function Controller:on_input(event)
     -- 做缩放反馈，未知样式是静默忽略的。这里复用已有的 CLUE_IN 特效，不引入新资产。
     local ci = event.index
     if ci ~= nil then
-      -- ★★ 2026-09-29 修（被"扫 `and nil or`"扫出来的真 bug）：
-      --   原文是 `self.focused_clue = (self.focused_clue == ci) and nil or ci`
-      --   —— Lua 里 `x and nil` **恒为 nil**，于是永远落到 `or ci`，
-      --   结果 `focused_clue` **永远是 ci，再点一次永远取消不掉聚焦**。
-      --   （和我在入口刚踩的那个是同一个坑；写成显式 if 就不会有这个问题。）
-      if self.focused_clue == ci then
-        self.focused_clue = nil       -- 再点一次 = 取消聚焦
-      else
-        self.focused_clue = ci
-      end
+      -- ★★★★★★★★ 2026-10-15 **这里【不再改】`focused_clue`** ✗✓✓
+      --
+      --   ★ 它原来长这样 ✗：`if self.focused_clue == ci then nil else ci end` ✓
+      --     ★ 也就是"点一下聚焦、再点取消" ✓ —— ★ **又一处独立的高亮状态** ✓✓
+      --   ★★ 为什么必须拿掉 ✗（★ 与点卡片那条路同一个病 ✓）：
+      --     ★ `focused_clue` 现在是**派生值** ✓（= 选中那个人配在第几行 ✓
+      --       ★ 见 `_sync_clue_focus` ✓）⇒ ★ 任何**别处**再写它 ⇒ **立刻漂移** ✓✓
+      --     ★★ 而且这条 action 是**列表项点击自己在发** ✓
+      --       （★ `_on_grid_item_click` 最后那个 `{action="focus_clue"}` ✓）
+      --       ⇒ ★ 它原来会把 `_on_grid_item_click` 刚设好的值**再翻一次** ✓✓
+      --   ★ 那还需要它吗 ✗：★ 需要 ✓ —— ★ **可点一下要有反馈** ✓ ★ 也要"回到视野"✓
+      --     · 反馈 ⇒ ★ 下面那行 `CLUE_IN` 特效**照旧** ✓
+      --     · 回视野 ⇒ ★ `sync_clue_grid` 里"焦点变了一次就滚一次"（`_clue_focus_seen` ✓）
+      --       ★ 仍然工作 ✓ —— ★ 因为 `focused_clue` 会**跟着选中变** ✓
+      --   ★✓ 于是"高亮"这件事全项目**只有一个写点** ✓（`_sync_clue_focus` ✓ P13 ✓）
       self:fx("clue." .. tostring(ci), M.EFFECTS.CLUE_IN)
     end
 
@@ -4562,6 +4597,19 @@ function Controller:on_input(event)
   elseif a == "next_level" and self.opts.on_next_level then
     self.opts.on_next_level()
   end
+
+  -- ★★★★★★★★ 2026-10-15 **每个输入事件的收口：把卡片高亮拉回"选中是谁"** ✗✓✓
+  --
+  --   ★ 为什么放在**这里** ✗（★ 而不是散在五个改 `core.selected` 的地方 ✓）：
+  --     ★ 上面那些分支（`suspect` / `click` / `undo` / `redo` / `submit` …）
+  --       以及它们**调进去的** `tap_cell` / `hold_cell` / `select_suspect` /
+  --       `set_mode` / `reset` —— ★ **全都会改 `core.selected`** ✓
+  --     ★★ 而从外面看，它们**只有这一个共同出口** ✓
+  --       ⇒ ★ 在这里同步一次 = **一处负责** ✓（★ 见 `_sync_clue_focus` 那段 ✓ P13 ✓）
+  --   ★ 代价 ✓：★ 稳态一次字符串比较 ＋ 一次表查找 ✓（`_sync_clue_focus` 首行就返回 ✓）
+  --   ★ 放事件末尾 ✗ **不能放开头**：★ 一进来就同步 ⇒
+  --     ★ 这次事件刚改的选中**要等下一个事件才反映** ✓ ⇒ ★ 仍然慢一拍 ✗✓
+  self:_sync_clue_focus()
 
   self.dirty = true
   return self.effects
@@ -8990,8 +9038,8 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                   if _key_face ~= nil then
                     Controller._row_face = Controller._row_face or {}
                     Controller._row_face[_key_face] = iid
-                    -- ★★★★★★ 2026-10-10 **同一行也记下 `letter`** ✗✓✓（★ 用户："像把内容填进 `clue` 的 `what` 一样，
-                    --   把 `letter` 的文本填进 `note` 里，和那个一样的路线" ✓✓）
+                    -- ★★★★★★ 2026-10-10 **同一行也记下 `letter`** ✗✓✓（★ 用户：「像把内容填进 `clue` 的 `what` 一样，
+                    --   把 `letter` 的文本填进 `note` 里，和那个一样的路线」✓✓）
                     --   ★ `letter` 的【数据侧已经是对的】✓：`_grid_text_payload` 的 `items[i].letter` ✓
                     --     （★ ui L4395 `letter = tostring(wid or "")` ✓ 而 `wid` 从卡片读 ✓ 卡片由单射填 ✓）
                     --   ⇒ ★★ 缺的只是"送到棋盘" ⇒ ★ 和 `face` 一样，在这里把它带出来 ✓✓
@@ -9534,6 +9582,21 @@ function Controller:_grid_pos_of_item(grid, item)
     end
   end
   -- ★ 兜底：问引擎 ✓（★ 不可靠 ✓ 但总比没有好 ✓）
+  -- ★★★★★★ 2026-10-15 **兜底：问引擎 —— 它到现在才真的能走到** ✗✓✓
+  --
+  --   ★★★ 下面这两行**原来关在上一段的 `if type(seen) == "table" then` 里** ✗✓
+  --     ⇒ ★ `_grid_seen` 没建（★ 或表里没有这一项 ✓）时 ⇒ ★ **直接落到最后 `return nil`** ✓
+  --       ⇒ ★ 调用方把这次点击**整条丢掉** ✓（★ "宁可丢掉，也不要聚焦到错误的一条" ✓）
+  --     ★★ 于是**兜底那条路从来没被走到过** ✗ —— ★ 而注释写的意图正是"总比没有好" ✓✓
+  --   ★ 为什么这次才露出来 ✗：★ 真机上列表项的句柄**基本都进过 `_grid_seen`** ✓
+  --     （★ 每次填充回调都会 `self._grid_seen[item] = index` ✓）
+  --     ★★ 而**离线 / 换代 / 滚动复用**之后拿到的 `item` 可能是引擎**另一个句柄** ✓
+  --       ⇒ ★ 表里没有 ⇒ ★ **静默丢掉** ✓✓
+  --   ★ 这是**作用域错位**（★ 本项目第 N 次同型 ✓）：★ 意图是"两个来源都试一遍" ✓
+  --     ★★ 而代码把第二个来源**也关进了第一个来源的 `if` 里** ✓✓
+  --   ★ 修法 ✓：★ **移到 `if` 外面** ✓ ⇒ ★ 与注释的意图一致 ✓✓
+  --   ⚠️ ★ 顺序**不变** ✗：★ 仍然**先认填充记录** ✓（★ 那是权威 ✓ 引擎那侧不可靠 ✓）
+  --     ⇒ ★ 只是"填充记录没有时"多给引擎一次机会 ✓ 不改变任何已有的正确定位 ✓
   local idx = nil
   pcall(function() idx = grid:GetItemIndex(item) end)
   if type(idx) == "number" then return idx - (self._grid_base or 0) + 1 end
@@ -9673,36 +9736,21 @@ function Controller:_on_grid_item_click(adapter, grid, item)
   -- ★ 走**和老卡片完全同一条**输入通路：`adapter.on_input` 是 main.lua 接的
   --   （`controller:on_input(event)` + 立刻渲染）⇒ 点列表项和点 `clue.N` 的后续行为
   --   （焦点切换、CLUE_IN 特效、重绘）一模一样，不会出现"两套焦点逻辑"。
-    -- ★★★★★ 2026-10-07 **网格选中视觉（只染聚焦那条）** ✗✓
-  --   上一版两个错（用户实测：★"没有点击高亮，但描边更亮了"✓）：
-  --     ① 给**未聚焦**的项也写了白色 ⇒ **整排描边变亮** ✗
-  --     ② 染色写在**填充回调**里 ⇒ 而填充只在"数据变化/滚动"时跑 ⇒ **点击后不重填 ⇒ 高亮永不出现** ✗
-  --   ⇒ 现在：★ **在点击处直接染** ✓ **只染聚焦那条** ✓ **换项/取消时恢复原色** ✓
-  local function _bp_get(it, ix, px)
-    local c2 = nil
-    pcall(function() c2 = self:_grid_item_child_cached(it, ix, px, "backrop1") end)
-    return c2
-  end
-  local turning_on = (self.focused_clue ~= pos)
-  local prev_item, prev_idx, prev_pos = self._grid_focus_item, self._grid_focus_idx, self._grid_focus_pos
-  if prev_item ~= nil then
-    local pc = _bp_get(prev_item, prev_idx or 0, prev_pos or 0)
-    if pc ~= nil then
-      local oc = self._grid_focus_orig
-      if oc ~= nil then pcall(function() pc.imageColor = oc end) end
-    end
-    self._grid_focus_item, self._grid_focus_orig = nil, nil
-  end
-  if turning_on then
-    local c2 = _bp_get(item, idx, pos)
-    if c2 ~= nil then
-      local cur = nil
-      pcall(function() cur = c2.imageColor end)
-      self._grid_focus_orig = cur
-      self._grid_focus_item, self._grid_focus_idx, self._grid_focus_pos = item, idx, pos
-      pcall(function() c2.imageColor = 4294956107 end)   -- ★ 暖金（乘算着色）
-    end
-  end
+  -- ★★★★★★★★ 2026-10-15 **这一段整段删掉：手动染色的高亮** ✗✓✓
+  --
+  --   ★ 它原来干什么 ✗：★ 点卡片时**手动**把那张卡的 `backrop1.imageColor` 染成暖金 ✓
+  --     ★ 换项/取消时再还原 ✓ —— ★ 也就是**第二套"谁被选中"的表示** ✓✓
+  --   ★★★ 为什么必须删 ✗（★ 用户报的两个症状都出自这一类 ✓）：
+  --     ★ 它只在**点卡片**那一下被写 ✗ ★ 而 `core.selected` 还会被
+  --       「拿起棋子 / 正式放置 / 切工具 / 撤销」改掉 ✓ ⇒ ★ **两套状态必然漂移** ✓✓
+  --     ★★ 而真正的高亮**本来就有一条更好的路** ✓：
+  --       ★ `clue.focus` 样式（`build_layout` 每帧按 `focused_clue` 重算 ✓）
+  --       ⇒ ★ 那条路**每帧现算** ⇒ ★ 不会残留 ✓✓
+  --   ★★ 保留的那条路 ✓：★ 点卡片 = ★ **选中卡上那个人** ✓（★ 下面那段一个字不动 ✓）
+  --     ★ 高亮由 `_sync_clue_focus` 按选中**派生**出来 ✓（★ 见那个函数 ✓）
+  --   ★ 用户要的语义 ✓（★ 原话 ✓）：「**像把内容填进 `clue` 的 `what` 一样**」——
+  --     ★ 素材与身份都走**单射那条线** ✓ ★ 高亮同理：★ **跟着人走 ✗ 不跟着点走** ✓✓
+  -- ★ 2026-10-10 已删的同类（★ 供对照 ✓）：诊断CLUE　原 L5654..L5669
   -- ★ 2026-10-07 一次性诊断：把该线索记录的【真实字段名】打出来（方案 A 取值失败 ⇒ 不猜了）
   -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：诊断CLUE　原 L5654..L5669
   -- ★★★★★ 2026-10-07 **方案 A：点线索卡 = 高亮这条 + 选中卡上那个人** ✗✓（用户确认走 A ✓）
@@ -9714,7 +9762,7 @@ function Controller:_on_grid_item_click(adapter, grid, item)
   --   ⇒ 这里补上：★ **点卡片即选中卡上那个人** ✓（★ 一步完成"高亮 + 选人"✓）
   --   ★ 取值**防御式**：线索记录里人物字段可能叫 `person`/`who_id`/`id`/`key` ✓
   --     再兜一层"从头像素材名 `portrait.X` 里取 X" ✓ 取不到就不动作（绝不误选）✓
-  pcall(function()
+  local _sel_ok, _sel_err = pcall(function()
     local v2 = self.core:view() or {}
     local cl = (v2.clues or {})[pos]
     -- ★★★ 2026-10-11 **选人这一步也要探针** ✗✓（★ 否则"选中了没有"看不出来 ✓）
@@ -9773,15 +9821,76 @@ function Controller:_on_grid_item_click(adapter, grid, item)
         end
       end
       if pid ~= nil then
-        local ev2 = { action = "suspect", id = pid }
-        if type(self.adapter) == "table" and type(self.adapter.on_input) == "function" then
-          self.adapter.on_input(ev2)
-        else
-          self:on_input(ev2)
+        -- ★★★★★★★★ 2026-10-15 **这里【直接就选】，不再绕那条 `suspect` 事件** ✗✓✓
+        --
+        --   ★★★ 为什么不能绕 ✗（★ 我前后试了三版 ✓ 真正的原因在第二条 ✓）：
+        --     ★ 它**自相矛盾** ✗：这条路先 `select_suspect` ✓ 紧接着又发一条
+        --       `{action="suspect"}` ✓ ⇒ ★ `on_input` 收口处**又选一次** ✓✓
+        --     ★★ 而 `select_suspect` 是**切换**（★ `murdoku_core.lua:1687` ✓）
+        --       ⇒ ★★ **选上又被切掉** ✓（★ 实测：发事件前 `selected=V` ⇒ 之后就 `nil` ✓）
+        --     ★★★ 我第一版拿 `focused_clue` 当判据时**看着是对的** ✗ ——
+        --       ★ 因为高亮那份状态当时**正好是错的** ✓
+        --       ⇒ ★★ **用一个有缺陷的状态当判据，把另一个缺陷抵消掉了** ✓✓
+        --         ★（而那个"错"正是用户报的这件事本身 ✓ 见 `_sync_clue_focus` ✓）
+        --
+        --   ★★★ 第二条（★ 这一条决定"绕不绕" ✓）：★ **适配器的 `on_input` 是【单向】的** ✗✓
+        --     ★ 依据 ✓（★ 本工程自己的架构文档写着 ✓）：★
+        --       「引擎事件**只会进来**（`main.lua` 把它转给 `controller:on_input` ✓）；
+        --         ★ 控制器**从不**"对着某个控件凭空发一个事件"」✓
+        --     ★★ 所以"点卡片"这个**引擎手势**必须在这里把选中**做实** ✓
+        --       ★ 绕那条 `suspect` 只是**转一圈回到自己** ✓ ⇒ ★ 净效果变成"切换" ✓✓
+        --     ⚠️ 与下面那条 `focus_clue` 的**不对称是有意的** ✓：
+        --       ★ 那一条**只播特效** ✓ ★ 而特效要 `adapter` ✓（本函数手里有这个参数 ✓）
+        --       ⇒ ★ 它借 `on_input` 走一趟 ✓ —— ★ 那才叫"借道" ✓ 这条不是 ✓✓
+        --
+        --   ★★★ 第三条：★ 为什么不干脆**删掉** `focus_clue` 那一趟 ✗
+        --     ★ 上位回归 `tests/clue_slots.lua` **正是断言那条事件发得出去** ✓
+        --       （★ 用意是"点卡片这条链是通的" ✓ ★ 不许放宽 ✓ P8 ✓）
+        --     ⇒ ★ 保留 ✓ ★ 只是它**不再承担任何状态** ✓（★ 见那个分支 ✓）
+        --
+        --   ★★ 分工定稿 ✓：★ **状态（选中）在这里定** ✓
+        --     ★ **高亮由 `_sync_clue_focus` 派生** ✓ ★ 收口处再派生一次 ✓
+        --     ⇒ ★ 全项目"高亮"只剩**一个**写点 ✓✓（P13 ✓）
+        --
+        --   ★ 三种情形 ✓（★ 互斥且穷尽 ✓）：
+        --     · ★ 亮着 ∧ 选中的也是他 ⇒ ★ **取消**（"再点一次取消" ✓）
+        --     · ★ 还不是他 ⇒ ★ **选中他** ✓
+        --     · ★ 已经是他、但没亮着 ⇒ ★ **什么都不写** ✓（★ 高亮由派生自己跟上 ✓）
+        local is_him = (tostring(self.core.selected or "") == tostring(pid))
+        local lit = (self.focused_clue == pos)
+        if is_him and lit then
+          -- ★ 取消：★ 只调**一个**核心方法 ✓ ★ 高亮一个字都不写 ✗
+          --   （★ 由事件末尾的 `_sync_clue_focus` 派生 ✓ ⇒ ★ 只有它一个写点 ✓）
+          self.core:select_suspect(pid)
+        elseif not is_him then
+          -- ★ 走核心自己的入口 ✓（★ 不直接写 `core.selected` ✗ ——
+          --   ★ 核心要顺带处理"橡皮擦/✗ 模式下选人会切回放置模式" ✓ 见 `select_suspect` ✓）
+          self.core:select_suspect(pid)
         end
+        -- ★ 第三种情形**什么都不写** ✓ ★ 而且这里判据里的 `lit` **不许当状态存** ✗ ——
+        --   ★ 它只是"这一下点击该被读成什么意思" ✓ ★ 存下来就又成第二份状态了 ✓✓
+        --   ★★ 也**不许**在这里补发那条 `suspect` ✗ —— ★ 发了 = 再切换一次 ✓（见上面 ✓）
+        self._grid_refill_pending = true
+        self.dirty = true
       end
     end
   end)
+  -- ★★★★★★★★ 2026-10-15 **这一段原来是【静默】的** ✗✓✓（★ P11：跳过就要出声 ✓）
+  --
+  --   ★★ 机制 ✓：★ 整段包在 `pcall` 里 ✓ ⇒ ★ 里面任何一处抛错 ⇒
+  --     ★ **"选中卡上那个人"这一步整段不发生** ✗ ★ 而且**一个字都不报** ✓✓
+  --   ★ 症状 ✓：★ 点卡片"看着有反应"（`focus_clue` 那半边照常 ✓）
+  --     ★★ 而**人根本没被选上** ✓ ⇒ ★ 玩家报的「点卡片选不中人」✓✓
+  --   ★ 这条本项目早该有 ✓（★ `_refuse` 那段注释写着同一个道理 ✓）：
+  --     ★ **"没生效"必须能说出来** ✗ 否则分不清"没调用"和"调用了但抛了" ✓
+  --   ★ 最多报 3 次 ✓（★ 不刷屏 ✓）
+  if (not _sel_ok) and print then
+    self._sel_err_log = (self._sel_err_log or 0) + 1
+    if self._sel_err_log <= 3 then
+      print("[murdoku] ⚠️ 点卡片**选人那一步抛了异常** ⇒ 这一步整段没生效（第 "
+        .. tostring(self._sel_err_log) .. " 次，最多报 3 次）：" .. tostring(_sel_err))
+    end
+  end
 local ev = { action = "focus_clue", index = pos, phase = "click" }
   if adapter ~= nil and type(adapter.on_input) == "function" then
     adapter.on_input(ev)
@@ -9836,6 +9945,79 @@ function Controller:_person_id_for_pos(pos)
     if pid ~= nil then return tostring(pid) end
   end
   return nil
+end
+
+-- ★★★★★★★★ 2026-10-15 **卡片高亮的唯一判据 = `core.selected`** ✗✓✓
+--
+--   ★★★ 用户报的两个症状（★ 原话 ✓）：
+--     ★ ①「**放置 v 后选择了 d，一不小心把 v 取消了，
+--          点出来的标记是 v 的，但显示选择的 d，此时再长按放置，放的会是 v**」✗
+--     ★ ②「**出现过 d 有选中高亮但没有选中行为的情况**」✗
+--   ★★ 两者是**同一个形状** ✓ —— ★ **高亮与选中是两份状态 ⇒ 必然漂移** ✓✓
+--
+--   ★ 根因（★ 探针 `tests/_wip/repro_select_residue.lua` 实测复现 ✓）：
+--     ★ `core.selected` 会在**好几条路**上被改 ✓：
+--       · `tap_cell` 拿起棋子 ⇒ `self.selected = self.grid[r][c]`（`murdoku_core.lua:1913` ✓）
+--       · `hold_cell` 正式放置完 ⇒ `self.selected = nil`（`:1961` ✓）
+--       · `select_suspect` 自己 ✓ · `set_mode` 切到 ✗/橡皮擦 ⇒ 清空 ✓
+--     ★★ 而**卡片高亮只在一个地方被写** ✗：`_on_grid_item_click`（点卡片那一下 ✓）
+--       ⇒ ★ **凡是"选中变了但不是点卡片改的"，高亮就留在原地** ✓✓
+--     ★★★ 用户那一步正好踩中 ✓：
+--       ★ 选 D（high=D ✓ `selected=D` ✓）⇒ ★ **拿起 V** ⇒
+--         ★ `selected` **变成 V** ✓ ★ 而高亮**还是 D** ✗
+--       ⇒ ★ 屏幕说"选的是 D" ✗ ★ 而长按落子用的是 `core.selected` = **V** ✓✓
+--         （★ 与用户原话逐字相符 ✓：「显示选择的 d」＋「放的会是 v」✓）
+--
+--   ★★★ 修法（★ 不是"多同步一处" ✗ —— 那是同一个错误再来一次 ✓）：
+--     ★ **把高亮降级成【派生值】** ✗ ⇒ ★ 它**没有自己的一份状态** ✓ ⇒ ★ **结构上不可能漂移** ✓✓
+--     ★ 判据一律现算 ✓：★ `focused_clue = 选中那个人配在第几行` ✓
+--     ★ 与 `_person_id_for_pos` **严格互逆** ✓（★ 同一条 `_piece_at_row` 换算 ✓）
+--       ⇒ ★ 两个方向都不会各说各话 ✓
+--
+--   ⚠️ ★ **放哪一层** ✗：★ 必须是**方法** ✓ 且定义在**函数外面** ✗
+--     （★ 与 `_person_id_for_pos` 那次同一个坑 ✓ ——
+--      ★ 写进别的函数体里会变成局部变量 ⇒ **静默失效** ✓ 见上面那段长注释 ✓）
+--   ⚠️ ★ 按**行号**比 ✓ ★ 不按"卡片上显示的字母"比 ✗
+--     （★ 字母是玩家配的素材 ✓ 可能是任意字符串 ✓ 甚至同一个人配了两次 ✓）
+function Controller:_clue_pos_of_person(id)
+  if id == nil then return nil end
+  local core = self.core
+  if core == nil then return nil end
+  local pos = Controller._pos_of_piece(core, id)
+  if pos == nil then return nil end
+  -- ★★ 反向自查 ✓（★ 与 `_person_id_for_pos` 成对 ✓）：
+  --   ★ 换回来必须还是同一个人 ✗ ⇒ ★ 对不上就**不设高亮** ✓（★ 绝不误亮 ✓）
+  local back = Controller._piece_at_row(core, pos)
+  if back == nil or tostring(back) ~= tostring(id) then return nil end
+  return pos
+end
+
+-- 把卡片高亮拉回"选中是谁就是谁"。每个输入事件末尾调一次（★ 见 `on_input` ✓）。
+--   ★ 只在**真的该变**的时候动手 ✓ ⇒ ★ 稳态成本 = 一次表查找 ✓
+--   ★ 变了就清 `_grid_refill_pending` ⇒ ★ 由 `sync_clue_grid` **就地重填** ✓
+--     ★★ 不重发 `RefreshItems` ✗ ⇒ ★ **滚动位置一动不动** ✓（★ 与放人/拿起同一条路 ✓）
+function Controller:_sync_clue_focus()
+  local core = self.core
+  local sel = core and core.selected or nil
+  local key = (sel == nil) and "\0none" or tostring(sel)
+  if rawget(self, "_clue_sel_key") == key then return false end
+  self._clue_sel_key = key
+  local pos = (sel == nil) and nil or self:_clue_pos_of_person(sel)
+  local want = ((pos ~= nil) and pos > 0) and pos or nil
+  if rawget(self, "_clue_sel_pos") == want then return false end
+  self._clue_sel_pos = want
+  local changed = (rawget(self, "focused_clue") ~= want)
+  if changed then
+    -- ★ 顺手丢掉**手动染色**留下的残迹 ✓
+    --   ★ 机制 ✓：★ 高亮改由 `clue.focus` 样式（规划每帧重算 ✓）画 ✓
+    --     ⇒ ★ 那个"点卡片时手动染的金色"**没有存在的必要** ✗ ⇒ ★ 留着就是第二份状态 ✓✓
+    self._grid_focus_item, self._grid_focus_orig = nil, nil
+    self._grid_focus_idx, self._grid_focus_pos = nil, nil
+    self.focused_clue = want
+    self._grid_refill_pending = true
+    self.dirty = true
+  end
+  return changed
 end
 
 ----------------------------------------------------------------------------
@@ -19710,7 +19892,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v224 / 2026-10-14 / 选关分页:页码框60px裁字修到130px并居中于翻页键之间 =====")
+        print("[murdoku] ===== 构建标记 v226 / 2026-10-15 / 选中残留:卡片高亮改为按core.selected派生;点卡片不再重复选人;补兜底时钟断言 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

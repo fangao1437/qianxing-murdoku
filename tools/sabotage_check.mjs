@@ -23,7 +23,20 @@ const suiteRed = (t) => {
   catch { return true; }
 };
 
-const SUITES = ['board_wiring_e2e', 'cell_mark_letter', 'row_letter_map', 'row_letter_stability', 'clue_slots', 'clue_slots'];
+const SUITES = ['board_wiring_e2e', 'cell_mark_letter', 'row_letter_map', 'row_letter_stability', 'clue_slots', 'selection_residue'];
+// ★★★★★★★★ 2026-10-15 **这一套测的是【打包产物】，不是源码** ✗✓✓
+//
+//   ★★★ 为什么必须单独列出来 ✗：★ `tests/grid_cost.lua` 读的是
+//     `dist/client_script.lua`（★ 默认参数 ✓ 见它的 §前置 ✓）
+//   ★★ 而破坏是改**源码**的 ⇒ ★ **不重新打包 ⇒ 它测的还是旧包** ✓✓
+//     ⇒ ★★ 表现就是把破坏**静默放过** ✗ —— ★ 正是 P7 里"破坏没到达被测代码"那一条 ✓
+//   ★ 判据出处 ✓：★ 我第一次跑 `I` 就是"无人抓" ✓ ★ 重新打包之后立刻变红 ✓（实测过 ✓）
+//   ⇒ ★ 所以这一类套件跑之前**必须先打包** ✓
+const BUNDLED_SUITES = ['grid_cost'];
+const bundleOnce = () => {
+  try { execFileSync(LUA, ['tools/bundle_client_script.lua'], { cwd: REPO, stdio: 'pipe' }); return true; }
+  catch { return false; }
+};
 
 const original = fs.readFileSync(SRC, 'utf8');
 fs.writeFileSync(BAK, original, 'utf8');
@@ -57,6 +70,31 @@ const sabotages = [
   ['G 补那一趟改成"整张表非空就算"（按行判退化成按表判）',
     '_row_need = (type(m0) ~= "table") or (m0[pos] == nil)',
     '_row_need = (type(m0) ~= "table") or (next(m0) == nil)'],
+  // ★★★★★★★★ 2026-10-15 **新增：选中残留那一类** ✗✓✓
+  //
+  //   ★★★ 用户报的（★ 原话 ✓）：「**放置 v 后选择了 d，一不小心把 v 取消了，
+  //     点出来的标记是 v 的，但显示选择的 d，此时再长按放置，放的会是 v**」✓
+  //   ★★ 根因 ✓：★ 卡片高亮原来是**独立的一份状态** ✗
+  //     ⇒ ★ "选中变了但不是点卡片改的"（★ 拿起棋子 ✓）⇒ ★ 高亮**留在原地** ✓✓
+  //   ★ 修法 ✓：★ 高亮降级成**派生值** ✓（★ 唯一写点 = `_sync_clue_focus` ✓）
+  //   ⇒ ★★ 这一条破坏 = **让那个派生恒等于"上一次的值"** ✗
+  //     ⇒ ★ 高亮**再也不跟着选中走** ✓ ⇒ ★ `selection_residue` 必须变红 ✓✓
+  //   ★ 判据出处 ✓：`tests/selection_residue.lua`
+  //     （★ 它在**修复前**的代码上是 6 红 ✓ —— ★ 已实测 ✓ 能红能绿 ✓）
+  ['H 选中残留：卡片高亮不再跟着 `core.selected` 派生',
+    'local want = ((pos ~= nil) and pos > 0) and pos or nil',
+    'local want = rawget(self, "_clue_sel_pos")'],
+  // ★★★★★★★★ 2026-10-15 **新增：让"高亮"恒亮 / 恒灭（★ 打掉 P3 的反向半边）** ✗✓✓
+  //
+  //   ★★★ 为什么必须单独破坏这一下 ✗：
+  //     ★ H 那条只能让**派生值**错 ✗ —— ★ 而 `grid_cost` 的 K 段是**自己推 `focused_clue`** ✓
+  //       （★ 它直接调 `_on_grid_item_click` ✓）⇒ ★ 两条路径碰不到一起 ✓✓
+  //     ★★ 所以"样式到底有没有被算成 `clue.focus`"这件事**没人打得到** ✗
+  //   ⇒ ★ 把规划里那一行**钉死成 `clue`** ✓ —— ★ 也就是"**永远不高亮**" ✓
+  //     ★ 一个"永不高亮"的实现 ⇒ ★ `grid_cost` 的 K 段必须红 ✓✓（P3 反向半边 ✓）
+  ['I 高亮恒灭：规划里那一条永不取 `clue.focus`',
+    'local style = (self.focused_clue == i) and "clue.focus"',
+    'local style = false and "clue.focus"'],
 ];
 
 let allGood = true;
@@ -97,10 +135,17 @@ for (const [name, find, repl] of sabotages) {
   const patched = originalLF.split(find).join(repl);
   if (patched === originalLF) { console.log(`  ⚠️ ${name}：没匹配上（破坏未生效）`); allGood = false; continue; }
   fs.writeFileSync(SRC, patched, 'utf8');
-  const red = SUITES.filter(suiteRed);
+  // ★★ 先打包，再跑"读产物"的那几套 ✗（★ 否则破坏根本到不了被测代码 ✓ P7 ✓）
+  const bundled = bundleOnce();
+  if (!bundled) console.log('  ⚠️ 打包失败 —— 读产物的那几套本轮结果不可信 ✗');
+  const red = SUITES.filter(suiteRed).concat(bundled ? BUNDLED_SUITES.filter(suiteRed) : []);
   const restored = restoreAndVerify();
+  // ★ 还原之后**必须再打一次包** ✗ —— ★ 否则 `dist/` 里留着"被破坏过的产物" ✓✓
+  //   （★ 后续别的套件/交付会拿到那份坏包 —— ★ 这与"源码留破坏"一样危险 ✓）
+  const rebundled = bundleOnce();
+  if (!restored || !rebundled) allGood = false;
   const caught = red.length > 0;
-  console.log(`  ${caught ? '✅' : '❌'} ${name}　→ 变红：${caught ? red.join(', ') : '（无人抓 ✗）'}　还原=${restored}`);
+  console.log(`  ${caught ? '✅' : '❌'} ${name}　→ 变红：${caught ? red.join(', ') : '（无人抓 ✗）'}　还原=${restored}　重打包=${rebundled}`);
   if (!caught || !restored) allGood = false;
 }
 

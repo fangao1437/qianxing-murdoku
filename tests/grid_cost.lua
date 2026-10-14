@@ -1446,6 +1446,7 @@ do
       ctrl.core.selected = sel
       ctrl._grid_in_refresh = true
       it.__index = target - 1
+      K.pos = target              -- ★ 第几条线索 ✓（★ 规划里那条就叫 `clue.<pos>` ✓）
       -- ★★★★★★★★ 2026-10-11 **高亮是【点击】涂的，不是【填充】涂的** ✗✓✓
       --   ★★★ 这一条为什么一直红 ✗（★ 我查清了才改的 ✓）：
       --     ★ 它原来走 `grid.__cb(...)`（= **填充回调** ✓）
@@ -1469,6 +1470,62 @@ do
       end
       pcall(function() ctrl:_on_grid_item_click(ad_k, grid, it) end)
       K.tinted = tostring(bp.imageColor)
+      -- ★★★★★★★★ 2026-10-15 **新的判据：那一条的 `style` 必须变成 `clue.focus`** ✗✓✓
+      --
+      --   ★ 为什么换到样式上 ✗（★ 见下面那两段长注释 ✓）：
+      --     ★ 手染像素那一段**已删** ✓ ★ 高亮改由 `clue.focus` 样式画 ✓
+      --       ★★ 而那个样式是 `build_layout` **每帧按 `focused_clue` 现算**的 ✓
+      --   ⇒ ★ 于是判据 = ★ **规划里那一条的 `style`** ✓（★ 脚本侧能读到的最接近屏幕的东西 ✓）
+      --   ★ 读法 ✓：★ `ctrl:build_layout()` 返回的就是那份规划 ✓
+      --     ★ 找 `id == "clue." .. pos` 那一条 ✓ ★ 读它的 `style` ✓✓
+      do
+        local function style_of(ctrl2, pos2)
+          local plan = nil
+          -- ★★ 两件事必须都摆对，否则 `clue.<n>` **根本不在规划里** ✗（★ 我实测定位过 ✓）：
+          --   ★ ① `self.screen` 必须是 **nil** ✓ —— ★ 否则 `build_layout` 提前 return ✓
+          --   ★ ② `self._grid_state` 必须是 **"off"** ✓ —— ★ 网格视窗那条路**整段不建老卡片** ✓
+          --     （★ 判据在 `ui_controller.lua:2753` `local grid_on = (self._grid_state == "on")` ✓
+          --      ★ 本夹具的 `clue.1.*` 是**老卡片那套** ✓ ⇒ ★ 必须让老路真的跑起来 ✓✓）
+          --   ⇒ ★ 不摆这两样时实测是 `hits=0` ✓ ⇒ ★ **假红** ✓（★ 看着像"样式没设" ✓）
+          local _sv_screen, _sv_grid = ctrl2.screen, ctrl2._grid_state
+          ctrl2.screen, ctrl2._grid_state = nil, "off"
+          local okp = pcall(function() plan = ctrl2:build_layout() end)
+          ctrl2.screen, ctrl2._grid_state = _sv_screen, _sv_grid
+          if type(plan) ~= "table" then return nil, ("build_layout 失败 ok=%s"):format(tostring(okp)) end
+          local want = "clue." .. tostring(pos2)
+          local hits, seen = 0, nil
+          for i = 1, #plan do
+            if tostring(plan[i].id or "") == want then
+              hits = hits + 1
+              if seen == nil then seen = tostring(plan[i].style) end
+            end
+          end
+          return seen, ("pos=%s hits=%d first=%s"):format(tostring(pos2), hits, tostring(seen))
+        end
+        -- ★★★★★★★★ 2026-10-15 **必须在【事件收口之后】读，而且要先造出"有人被选中"** ✗✓✓
+        --
+        --   ★★★ 我第一版就是在这里**假绿**的 ✗（★ 被破坏性验证 `I` 抓出来 ✓）：
+        --     ★ 我在 `_on_grid_item_click` 之后**立刻**读样式 ✓
+        --     ★★ 而那个函数最后会发一条 `focus_clue` ✓ ⇒ ★ 按**老语义**它会把
+        --       `focused_clue` **清掉** ✓ ⇒ ★ `build_layout` 算出来的是 `clue` 不是 `clue.focus` ✓✓
+        --     ★★★ 于是那条断言在"**永不高亮**"的实现上**照样通过** ✗✗
+        --       ⇒ ★ 它**什么也没守** ✓（★ P7：没见它红过的检查不是证据 ✓）
+        --   ⇒ ★★ 修法 ✓：★ **按真机那条路造状态** ✗ ——
+        --     ★ 让人被选中 ✓ ⇒ ★ 驱动一次**收口**（`on_input` ✓）⇒ ★ 派生落地 ✓
+        --     ★ **然后**再读规划 ✓ ⇒ ★ 这时 `focused_clue` 才真的是"跟着选中走"的那个值 ✓✓
+        --   ★ 判据出处 ✓：★ 这正是 `tests/selection_residue.lua` 在守的那条契约 ✓
+        --     ★（★ 它在修复前的代码上是 **6 红** ✓ —— ★ 能红能绿 ✓）
+        -- ★★ 再摆一次"就是他被选中"✗ —— ★ 防前面那几次点击把选中挪走了 ✓
+        --   （★ 收口按 `core.selected` 派生 ⇒ ★ 选中不是他 ⇒ 派生出的也不是他那一条 ✓）
+        ctrl.core.selected = sel
+        pcall(function() ctrl:on_input({ action = "clue_up" }) end)   -- ★ 收口：派生落地 ✓
+        local st, why = style_of(ctrl, K.pos)
+        K.focus_style = st
+        K.focus_style_why = why
+        K.focus_style_found = (K.focus_style == "clue.focus")
+        out(string.format("  [K2] 选中那个人所在的那一条 style = %s（★ 应为 clue.focus ✓）  %s",
+          tostring(K.focus_style), tostring(K.focus_style_why)))
+      end
       -- ★★ 关键一步 ✓：**取消选中** ＋ ★ **把这一项换到【另一个 index】** ✗
       --    ⇒ ★ 这会拿到一份**全新的记录** ✓ —— ★ 正是真机上"回收"发生的事 ✓
       --
@@ -1495,38 +1552,71 @@ do
       K.after_recycle = tostring(bp.imageColor)
       K.focus_orig = tostring(ctrl._grid_focus_orig)
       K.focus_orig_seen = (tonumber(ctrl._grid_focus_orig) ~= nil)
+      -- ★★ 反向判据 ✓：★ **取消选中之后，那一条的样式必须回到 `clue`** ✗
+      --   ★ 这一条防的是"恒亮" ✗ —— ★ 一个 `style` 永远等于 `clue.focus` 的实现过不了 ✓（P3 ✓）
+      --   ★ 怎么造出"取消选中"✓：★ 上面那句 `ctrl.core.selected = nil` 就是 ✓
+      --     ★ 再驱动**一次**收口（★ 走一个不改选中的动作 ✓）⇒ 派生重跑 ✓
+      do
+        -- ★★★ 顺序要紧 ✗：★ **先把选中清掉，再驱动收口** ✓
+        --   ★ 反了的话 ⇒ ★ 收口处会**按还没清的选中重新派生** ⇒ ★ 高亮照样亮着 ✓✓
+        --   ★（★ 上面那句 `ctrl.core.selected = nil` 已经在清 ✓ 这里再清一次是**为了读代码的人** ✓）
+        ctrl.core.selected = nil
+        pcall(function() ctrl:on_input({ action = "clue_up" }) end)
+        local plan2 = nil
+        local _sv_screen, _sv_grid = ctrl.screen, ctrl._grid_state
+        ctrl.screen, ctrl._grid_state = nil, "off"     -- ★ 同 `style_of`：老卡片才在规划里 ✓
+        pcall(function() plan2 = ctrl:build_layout() end)
+        ctrl.screen, ctrl._grid_state = _sv_screen, _sv_grid
+        local want2 = "clue." .. tostring(K.pos)
+        if type(plan2) == "table" then
+          for i = 1, #plan2 do
+            if tostring(plan2[i].id or "") == want2 then K.focus_style_after = plan2[i].style end
+          end
+        end
+        K.focus_cleared = (K.focus_style_after ~= nil and K.focus_style_after ~= "clue.focus")
+      end
     end
   end
-  out(string.format("  [K0] 选中后颜色 = %s（应为高亮色 4294956107 ✓）", tostring(K.tinted)))
-  out(string.format("  [K1] ★ 取消选中 ＋ **换了 index（新记录）** 后颜色 = %s（★ **必须还原** ✗）",
-    tostring(K.after_recycle)))
+  out(string.format("  [K0] 选中后颜色 = %s（★ **不再由点击手染** ⇒ 应为原色 4294967295 ✓）",
+    tostring(K.tinted)))
+  out(string.format("  [K1] ★ 换项后颜色 = %s", tostring(K.after_recycle)))
   ck(K.found == true, "（K 前置）找得到带 id 的线索", "target=" .. tostring(K.found))
-  ck(K.tinted == "4294956107", "★ 点卡片 ⇒ 确实涂了高亮色（★ 走**点击**那条路 ✓）",
-    "实测 " .. tostring(K.tinted))
-  -- ★★★★★★★★ 2026-10-11 **这条判据改成测"能测的那一半"，并如实说明另一半** ✗✓✓
+  -- ★★★★★★★★ 2026-10-15 **这一节整段改了理由：高亮不再"手染"，改走派生** ✗✓✓
   --
-  --   ★★★ 原来它要求 ✓：★「取消选中 ＋ 换 index ⇒ 颜色**必须还原**」✗
-  --   ★★ 我把它**走真路**之后（原先走的是填充回调 ✗ —— 而高亮根本不涂在填充里 ✓）
-  --     ⇒ ★ 这一条在**本夹具**上仍然测不准 ✗ ✓，原因我查清了 ✓：
-  --     ★ 点击入口的"染/还原"是**按 `self.focused_clue` 那一项**算的 ✓
-  --       ⇒ ★ 而在这份假件上，**第二次点击总会变成"新的聚焦项"** ✓
-  --         ⇒ ★ ★ **立刻又被染回金色** ✓ ⇒ ★ 读到的永远是金色 ✓
-  --     ★ 实测佐证 ✓：`focused_clue=1  focus_orig=4294967295  after=4294956107` ✗
-  --       ★ 也就是说 **`focus_orig` 学到了原色（还原的原料在）** ✓，★ 但又被染了一次 ✓
-  --   ★★ 真机上那个 bug（"两张卡同时高亮"）的形状是 ✓：
-  --     ★ **旧的已聚焦项被回收给别的线索** ⇒ ★ 它身上那份金色**没人撤** ✗
-  --     ★ 要复现它，需要**引擎级的列表项复用** ✓ —— ★ 而这份假件的列表是**我们自己造的** ✓
-  --       ⇒ ★ 模拟不出"引擎把 A 的控件交给 B"那一步 ✓（★ 本项目注释里早记过这个限度 ✓）
-  --   ⇒ ★ 取舍 ✓（★ 宁可窄而真 ✗ 不要宽而假 ✓）：
-  --     ★ 判据 ①：★ **点卡片必须涂上高亮** ✓（★ 可用 ✓ 已过 ✓）
-  --     ★ 判据 ②：★ **两次点击之间，还原用的"原色"必须被学到** ✓（★ 可用 ✓）
-  --       ★ 这是还原的**前提** ✓ —— ★ 前提在 ⇒ 真机那条路上还原才有原料 ✓
-  --     ★★ 并**如实标注**：★ "回收后没人撤色"这一条**本夹具测不了** ✗
-  --       ⇒ ★ 它必须**真机验** ✓（★ 不要再写一条看着在测、其实测不到的断言 ✓）
-  ck(K.focus_orig_seen == true,
-    "★ 还原的【前提】：点卡片时学到了原色（★ 真机路上还原靠它 ✓）",
-    "实测 focus_orig=" .. tostring(K.focus_orig)
-    .. "　⚠️ 「回收后没人撤色」那一条本夹具**测不了** ⇒ 必须真机验 ✗")
+  --   ★★★ 原来这里断言 ✓：★「点卡片 ⇒ `backrop1.imageColor` 涂成金色 `4294956107`」✓
+  --   ★★ 而那一手**正是用户报的那个 bug 的来源** ✗（★ 见
+  --     `docs/缺陷-选中残留-2026-10-15.md` ✓）：
+  --     ★ 它是**第二套"谁被选中"** ✓ ★ 只在"点卡片"那一下被写 ✗
+  --       ⇒ ★★ 而 `core.selected` 还会被「拿起棋子 / 正式放置」改掉 ⇒ **必然漂移** ✓✓
+  --   ⇒ ★ 所以那一段**整段删掉**了 ✓（★ 不是关掉 ✗）
+  --     ★ 高亮改由 **`clue.focus` 样式**画 ✓ ★ 而它**每帧按 `focused_clue` 现算** ✓
+  --       ⇒ ★ 不会残留 ✓✓（★ 那个样式在 `build_layout` 里 ✓ 见 `ui_controller.lua` ✓）
+  --
+  --   ★★★ 判据怎么改 ✗（★ 不放宽 ✗ —— ★ 换成**更强的**那一条 ✓）：
+  --     · ★ 旧的 ✓：★ "某个像素被涂成金色" ⇒ ★ 只证明**涂了一下** ✗
+  --     · ★ 新的 ✓：★ **"那一条卡的 `style` 必须是 `clue.focus`"** ✓ ——
+  --       ★ 那才是屏幕上真正的高亮 ✓ ★ 而且它**跟着 `core.selected` 走** ✓✓
+  --     · ★ 再补一条**反向** ✓：★ 取消选中之后 ⇒ ★ **那一格样式必须回到 `clue`** ✗
+  --       （★ 防"样式恒为 focus" ✓ —— ★ 一个恒亮的实现过不了 ✓ P3 ✓）
+  --
+  --   ⚠️ ★ 原来那条"还原的原料（`_grid_focus_orig`）"的断言**一并作废** ✗
+  --     ★ 理由 ✓：★ 那个字段已经**没有任何写入点**了 ✓（★ 手染那一段删了 ✓）
+  --       ⇒ ★ 它恒为 nil ✓ ★ 留着断言就是"测一段死代码" ✓✓
+  --     ★★ 而它原本想守的那件事（★ "回收后没人撤色" ✓）★ 现在**结构上不可能发生** ✓ ——
+  --       ★ 因为**没有人再往那个像素写色**了 ✓ ⇒ ★ 哨兵价值归零 ✓
+  --       ★ 但"列表项回收"这条真机行为**仍然未验** ✗ ⇒ ★ 保留下面那句如实说明 ✓
+  ck(K.tinted == "4294967295",
+    "★ 点卡片**不再**手染像素（★ 高亮改由 `clue.focus` 样式画 ✓ 实测 " .. tostring(K.tinted) .. "）",
+    "实测 " .. tostring(K.tinted) .. "（期望原色 4294967295 ✓）")
+  ck(K.focus_style_found == true,
+    "★★ 点卡片 ⇒ 那一条的 `style` 变成 `clue.focus`（★ 这才是屏幕上真正的高亮 ✓）",
+    "实测 style=" .. tostring(K.focus_style) .. "　[" .. tostring(K.focus_style_why) .. "]")
+  ck(K.focus_cleared == true,
+    "★★ 反向：取消选中（`core.selected = nil`）之后 ⇒ 那一条的样式**必须回到 `clue`** ✗",
+    "实测 style=" .. tostring(K.focus_style_after) .. "（★ 恒亮 ⇒ 这条必红 ✓ P3 ✓）")
+  out("  ⚠️ ★ 「列表项被引擎回收之后会不会留色」这一条**本夹具仍然测不了** ✗")
+  out("     ★ 但**风险已经归零** ✓：脚本不再往那个像素写任何颜色 ✓")
+  out("     ★ 真机上仍要**顺眼看一下**：点过的卡有没有残留金色 ✓")
 end
 
 -- ★★★★★ 2026-10-09 **填充回调【绝不许抛异常】** ✗✓（这条护栏是拿一次真机事故换来的 ✓）

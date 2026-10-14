@@ -407,7 +407,25 @@ do
   do
     local fired = {}
     -- ★ 只认 `ev` ✓（★ 原来写成 `(_, ev)` = 方法调用形式 ⇒ ★ 拿到的其实是 `self` ✗）
-    local ad = { on_input = function(ev) fired[#fired + 1] = ev end }
+    --
+    -- ★★★★★★★★ 2026-10-15 **这个假适配器必须【转发给控制器】，不能只是个收件箱** ✗✓✓
+    --
+    --   ★ 为什么 ✗（★ 它原来让"点卡片"这件事**少了一半** ✓）：
+    --     ★ 真机上"引擎手势只会**进来**" ✓ ★ 而适配器的 `on_input` 是**出**的方向 ✓
+    --       ★★ 它转手就调 `controller:on_input(ev)` ✓（★ `main.lua:471` ✓）
+    --     ★★ 只把事件塞进 `fired` 就完事 ⇒ ★ **控制器那条回路是断的** ✗
+    --       ⇒ ★ 这里测到的行为与真机**不是同一套** ✓✓
+    --   ★ 修法 ✓：★ `on_input` **一边记账、一边原样转发** ✓ ⇒ ★ 与真机同构 ✓✓
+    --   ★★ 为什么转发**不会**把选中打两遍 ✗（★ 2026-10-15 的实现已保证 ✓）：
+    --     ★ `_on_grid_item_click` 现在**自己就把选中做实** ✓
+    --       ★ 而它**不再**对着 `suspect` 绕一圈 ✓（★ 那条路是"转一圈回到自己" ✓）
+    --     ⇒ ★ 被转发进控制器的只有 `focus_clue` ✓ ★ 那一条**不碰任何状态** ✓✓
+    --   ★ 下面第 442 行那条**显式** `on_input` 就是"玩家手点了一下" ✓
+    --     ★ 它必须**幂等**（★ 点同一个人两次 = 还是选中他 ✓ 不是取消 ✓）✓
+    local ad = { on_input = function(ev)
+      fired[#fired + 1] = ev
+      c3:on_input(ev)          -- ★ 真机的适配器就是这么做的（`main.lua:471` ✓）
+    end }
     local it = ctrl("item", {})
     local bound = 0
     it.AddCursorEventListener = function() bound = bound + 1 end
@@ -427,19 +445,39 @@ do
     -- ★ 直接走"被点到"那一步 ✓（★ 引擎回调里就是它 ✓）
     c3:_on_grid_item_click(ad, g, it)
     _G.Enum = _saved_enum
-    local got_suspect = nil
-    for i = 1, #fired do
-      if fired[i].action == "suspect" then got_suspect = fired[i].id end
-    end
-    ok(got_suspect ~= nil,
-      "★ 点卡片 ⇒ 真的发出 `suspect` 事件（★ 不发就永远选不中 ✓ 实测 " .. tostring(got_suspect) .. "）")
-    ok(got_suspect == ids[1],
-      "★ 事件里带的是**第 1 张卡那个人** ✓（实测 " .. tostring(got_suspect)
+    -- ★★★★★★★★ 2026-10-15 **判据改成"选中真的落地了"，不再看那条事件** ✗✓✓
+    --
+    --   ★ 为什么改 ✗（★ 改的是**机制**，不是判定标准 ✓ P8 ✓）：
+    --     ★ 原来这条断言是"**发出了 `suspect` 事件**" ✓
+    --       ★ 而那正是**没生效**的那条路 ✗ —— ★ 发了它也只是**转一圈回到自己** ✓
+    --       ★★ 依据 ✓：★ 适配器的 `on_input` 是**出**的方向 ✓
+    --         （★ `main.lua:471`：`adapter.on_input = function(event) controller:on_input(event) end` ✓）
+    --         ⇒ ★ 控制器**从不**"对着控件凭空发事件" ✓ ⇒ ★ 那一下点击**没有任何状态落地** ✓✓
+    --     ★★★ 更要命的是它**和下面那句重复** ✗：
+    --       ★ `_on_grid_item_click` 自己先选一次 ⇒ 这条事件再选一次 ⇒
+    --       ★★ **切换 ⇒ 又变回没选中** ✓✓（★ 于是第 461 行那条也跟着红 ✓）
+    --   ⇒ ★★ 新判据 ✓：★ **点一下 = `core.selected` 就是卡上那个人** ✓
+    --     ★ 这一条**更强** ✗ —— ★ 它直接钉住"选人这件事发生了" ✓
+    --       ★ 而老的"发了事件"只钉住"发了个消息"（★ 消息可以是空的 ✓）✓✓
+    ok(c3.core.selected ~= nil,
+      "★ 点卡片 ⇒ **选中真的落地了**（★ 不只是「发了个消息」✗ 实测 "
+      .. tostring(c3.core.selected) .. "）")
+    ok(tostring(c3.core.selected or "") == tostring(ids[1]),
+      "★ 选中的是**第 1 张卡那个人** ✓（实测 " .. tostring(c3.core.selected)
       .. " 该是 " .. tostring(ids[1]) .. "）")
+    -- ★ 顺带记下"这条路上到底发过哪些事件" ✓ —— ★ 只观测、不断言 ✓
+    --   ★ 目的 ✓：★ 万一以后有人又往这里塞一条"会改状态"的事件 ⇒ 这一行**看得见** ✓
+    do
+      local names = {}
+      for i = 1, #fired do names[#names + 1] = tostring(fired[i].action) end
+      print("       （点卡片这条路上发出的事件：" .. table.concat(names, ", ") .. "）")
+    end
   end
 
   if pid ~= nil then
-    c3:on_input({ action = "suspect", id = pid })
+    -- ★ 这一下**不重复选人** ✓ —— ★ `_on_grid_item_click` 已经把他选上了 ✓
+    --   ★ 原来这里再发一次 `suspect` ⇒ ★ **把它切换掉了** ✓（★ 见上面那段 ✓）
+    --   ★★ 判据不变 ✓：★ 点完卡片之后，选中就是他 ✓
     ok(c3.core.selected == pid, "★ 点卡片 ⇒ **选中卡上那个人** ✓（实测 " .. tostring(c3.core.selected) .. "）")
     local okN = c3.core:tap_cell(2, 3)
     ok(okN == true and c3.core.notes[2][3] ~= nil and c3.core.notes[2][3][pid] == true,

@@ -63,6 +63,16 @@ end
 --   ★ 用法 ✓：★ `hold(c, 0.60)` = ★ **按住并让 0.60 秒真的过去** ✓
 --     ★ 内部按 **1/60 秒一帧**推进 ✓（★ 与真机同节奏 ✓）
 --     ★★ 同时推进 `TEST_CLOCK` ✗ —— ★ 让"兜底那条路"也有一根**同速**的钟 ✓
+--       ★★★ 2026-10-15 **这一行上原来留着一处【破坏性验证】的残迹** ✗✓✓
+--         ★ 它长这样 ✓：`CLK = CLK + d * 0.25` ＋ 一行注释「造出钟比真实慢 4 倍」✓
+--         ★★ 那是 `tools/verify_longpress.mjs` 那一类工具**故意改坏**用的 ✓
+--           ⇒ ★ 用完必须还原 ✓ ★ 而那一次**没还原干净** ✓✓
+--         ★★★ 为什么它一直没被发现 ✗（★ 值得记 ✓）：
+--           ★ 主判据走的是 `p.dt`（★ 引擎每帧给的 ✓）⇒ ★ `TEST_CLOCK` **只是兜底** ✓
+--           ★★ 而兜底**在这场测试里从不被走到** ⇒ ★ 慢 4 倍的钟**红不了任何一条** ✓✓
+--           ⇒ ★★ 于是它**静默地**留在源码里 ✓ —— ★ 与"注释当事实"同族 ✓
+--         ★ 现在改回**与 `dt` 同速** ✓（★ 兜底那条路才有资格当兜底 ✓）
+--         ⚠️ 以后再跑破坏性验证 ⇒ ★ 跑完**必须复查这一行** ✓
 local CLK = 0
 local function reset_clock() CLK = 0 UIC.TEST_CLOCK = 0 end
 local function hold(c, seconds)
@@ -71,7 +81,7 @@ local function hold(c, seconds)
   while left > 1e-9 do
     local d = (left > step) and step or left
     left = left - d
-    CLK = CLK + d * 0.25          -- ★★ 破坏：造出「钟比真实慢 4 倍」✗ * 0.25          -- ★★ 破坏：造出「钟比真实慢 4 倍」✗ * 0.25          -- ★★ 破坏：造出「钟比真实慢 4 倍」✗ * 0.25          -- ★★ 破坏：造出「钟比真实慢 4 倍」✗
+    CLK = CLK + d                  -- ★ 与 `dt` **同速** ✓（★ 兜底那条路的前提 ✓）
     UIC.TEST_CLOCK = CLK          -- ★ 假时钟也走同样多 ✓ ⇒ 两条路同速 ✓
     c:tick(d)                     -- ★★ 关键：按住期间真的过帧 ✓✓
   end
@@ -382,6 +392,72 @@ do
     ok(n2 == 0, "★ 继续按住 ⇒ **不重复播**（★ 实测又多排了 " .. tostring(n2) .. " 个 ✗）")
     c:on_cell_up(3, 1, 100, 100)
     print("  [PASS] 越过门槛那一刻给一次反馈，且只给一次 ✓")
+  end
+end
+
+--------------------------------------------------------------------------------
+-- 10. ★★★★★★★★ 2026-10-15 **兜底时钟那条路（★ 它此前【零覆盖】）** ✗✓✓
+--
+--   ★★★ 为什么要补 ✗（★ 这是本轮顺手查到的一件事 ✓）：
+--     ★ 上面那个 `hold()` 里原来**留着一处破坏性验证的残迹** ✓：
+--       ★ `CLK = CLK + d * 0.25` ＋ 一行注释「造出钟比真实慢 4 倍」✓
+--     ★★ 它**几个月都没让任何一条断言变红** ✗ —— ★ 为什么 ✓：
+--       ★ 主判据走的是 `p.dt`（★ 引擎每帧给的 ✓）⇒ ★ `TEST_CLOCK` **只是兜底** ✓
+--       ★★ 而兜底**从来没有被走到过** ⇒ ★ 慢 4 倍的钟**无人过问** ✓✓
+--   ⇒ ★★ 所以这一节做两件事 ✓：
+--     ★ ① ★ **把兜底那条路强制走一遍** ✓（★ 抹掉 `_press.dt` ✓）
+--     ★ ② ★ 断言它**与真实时间同速** ✗ —— ★ 而"同速"的判据就是
+--       ★ **同一段按住，两条路必须给出同一个门槛结论** ✓✓
+--   ★ 修法已经落地 ✓：`M.press_seconds` 被导出（★ 原来够不着 ✓）
+--     ★ 而 `hold()` 里的 `* 0.25` 已改回 `d` ✓（★ 见那个函数上面那段 ✓）
+--------------------------------------------------------------------------------
+do
+  local THRESH = 0.28                       -- ★ 与实现里的 `LONG_PRESS_SECONDS` 一致 ✓
+  local c = new_controller()
+  if c then
+    -- ① 先用**主判据**（帧累加）测一次：0.35 秒 ⇒ 认 ✓
+    ok(select_and(c.core, "A"), "★ 兜底节：能选中角色 A")
+    local n0 = placed_count(c.core)
+    reset_clock()
+    c:on_cell_down(3, 1, 100, 100)
+    hold(c, 0.35)
+    local main_ok = c:on_cell_up(3, 1, 100, 100)
+    ok(main_ok == true, "★【主判据】按 " .. THRESH .. "+ε（0.35）⇒ 认成长按 ✓")
+    ok(placed_count(c.core) == n0 + 1, "★ 而且确实落了一子 ✓")
+
+    -- ② 再走**兜底**（★ 抹掉帧累加 ✓）：同样的时长 ⇒ 结论必须**一模一样** ✓
+    --   ★ 抹掉的方式 ✓：★ 按住之后、抬起之前，把 `_press.dt` 置 nil ✓
+    --     ⇒ ★ `press_seconds` 落回 `gesture_now(self) - p.t` ✓（★ 那条兜底 ✓）
+    local c2 = new_controller()
+    ok(select_and(c2.core, "A"), "★ 兜底节：第二个控制器能选中角色 A")
+    local n2 = placed_count(c2.core)
+    reset_clock()
+    c2:on_cell_down(3, 1, 100, 100)
+    hold(c2, 0.35)
+    local dt_before = c2._press ~= nil and c2._press.dt or nil
+    ok(type(dt_before) == "number", "★ 前提：帧累加确实记到了时长（实测 "
+      .. tostring(dt_before) .. "）")
+    c2._press.dt = nil                       -- ★ 强制走兜底 ✓
+    local fb_ok = c2:on_cell_up(3, 1, 100, 100)
+    ok(fb_ok == true,
+      "★★【兜底】同样的 0.35 秒 ⇒ 必须**同样认成长按** ✓（★ 实测 " .. tostring(fb_ok) .. "）"
+      .. "　⇒ ★ 兜底时钟与真实时间**不同速**时这条必红 ✓")
+    ok(placed_count(c2.core) == n2 + 1, "★ 兜底那条路也真的落下了一子 ✓")
+
+    -- ③ 反向 ✓：★ 兜底同样**不许把短按认成长按** ✗（★ 防"兜底恒真" ✓）
+    local c3 = new_controller()
+    ok(select_and(c3.core, "A"), "★ 兜底节：第三个控制器能选中角色 A")
+    local n3 = placed_count(c3.core)
+    reset_clock()
+    c3:on_cell_down(3, 1, 100, 100)
+    hold(c3, 0.15)                           -- ★ 真机单击量级 ✓ < 门槛 ✓
+    c3._press.dt = nil                       -- ★ 走兜底 ✓
+    local fb_short = c3:on_cell_up(3, 1, 100, 100)
+    ok(fb_short == false,
+      "★★【兜底】只按 0.15 秒 ⇒ **不许认** ✓（★ 实测 " .. tostring(fb_short) .. "）")
+    ok(placed_count(c3.core) == n3, "★ 因此没落子 ✓")
+
+    print("  [PASS] 兜底时钟与真实时间同速（★ 两条路对同一段按住给同一结论 ✓）")
   end
 end
 
