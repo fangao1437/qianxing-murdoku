@@ -6903,20 +6903,38 @@ function Controller:build_layout()
 
         push({ id = "select.title", kind = "text", parent = "root", visible = true, text = "选择关卡",
              rect = { x = 460, y = 80, w = 1000, h = 90 } })
+      -- ★★★★★★ 2026-10-15 **返回键改成图形箭头**（用户定 ✓）：
+      --   「返回主页改为和关卡内**同样样式的箭头**，**不要弹窗，点击就返回主页**」
+      --   · 图 = **100109**（= 关卡内 `hex.back` / `hit.back` 那张 ✓ 索引 1073742502 ✓）
+      --   · ★ **控件已建进存档** ✓：`select.back` #1073742727（克隆自 `hex.back`，96×96 ✓）
+      --     —— 原来**存档里根本没有 `select.*`** ✗（文件里一个都没有 ✓）⇒ 那时点不到 ✓
+      --   · ★ **不写 `text`** ✓ ⇒ 让图露出来（写了字会盖在箭头上 ✗）
+      --   · ★ **位置在左上角**，和关卡内那颗同款位置 ✓
       push({ id = "select.back", kind = "button", parent = "root", visible = true,
-             rect = { x = 120, y = 950, w = 260, h = 80 },
-             text = "返回主页", event = { action = "home" } })
+             rect = { x = 80, y = 60, w = 96, h = 96 },
+             event = { action = "home" } })
         -- ★★★ 2026-10-01：**选关翻页**（关卡多于 8 个时才有意义）。
         --   只有一页时整组隐藏（`visible=false`），不占视觉。
         local pg_visible = (pages > 1)
+        -- ★★★★★★ 2026-10-15 **翻页键改成屏幕左右两侧的图形箭头**（用户定 ✓）
+        --   「上一页下一页改为**屏幕左右侧的两个箭头**」✓
+        --   · 控件已建进存档 ✓：`select.prev` #1073742728 / `select.next` #1073742729
+        --     （同样克隆自 `hex.back`，96×96，带图 100109 ✓）
+        --   · ★ **纵向居中**（y = 492 ⇒ 96 高正好落在 1080 的中线 540 上 ✓）
+        --   · ★ **贴屏幕左右缘**（x = 60 / x = 1764 = 1920−60−96 ✓）
+        --   · ★ **不写 `text`** ✓ ⇒ 露出箭头图
+        --   · ★ 左右各 96 宽、卡片区从 250 到 1670 ⇒ **不压卡片** ✓
+        --   · 页码留在**底部中间**（`select.page` ✓）
+        local ARROW = 96
+        local PG_Y  = math.floor((1080 - ARROW) / 2)      -- 492
         if pg_visible then
           push({ id = "select.prev", kind = "button", parent = "root",
-                 visible = (page > 1), text = "上一页",
-                 rect = { x = 700, y = 950, w = 220, h = 80 },
+                 visible = (page > 1),
+                 rect = { x = 60, y = PG_Y, w = ARROW, h = ARROW },
                  event = { action = "select_page", delta = -1 } })
           push({ id = "select.next", kind = "button", parent = "root",
-                 visible = (page < pages), text = "下一页",
-                 rect = { x = 1000, y = 950, w = 220, h = 80 },
+                 visible = (page < pages),
+                 rect = { x = 1920 - 60 - ARROW, y = PG_Y, w = ARROW, h = ARROW },
                  event = { action = "select_page", delta = 1 } })
           push({ id = "select.page", kind = "text", parent = "root", visible = true,
                  text = string.format("第 %d / %d 页", page, pages),
@@ -6926,9 +6944,9 @@ function Controller:build_layout()
                  rect = { x = 895, y = 952, w = 130, h = 70 } })
         else
           push({ id = "select.prev", kind = "button", parent = "root", visible = false,
-                 rect = { x = 700, y = 950, w = 220, h = 80 } })
+                 rect = { x = 60, y = PG_Y, w = ARROW, h = ARROW } })
           push({ id = "select.next", kind = "button", parent = "root", visible = false,
-                 rect = { x = 1000, y = 950, w = 220, h = 80 } })
+                 rect = { x = 1920 - 60 - ARROW, y = PG_Y, w = ARROW, h = ARROW } })
           push({ id = "select.page", kind = "text", parent = "root", visible = false,
                  rect = { x = 895, y = 952, w = 130, h = 70 } })
         end
@@ -19950,7 +19968,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v228 / 2026-10-15 / 选关卡片改扑克牌形(310x432,间距60,一行四张居中);整合至v226 =====")
+        print("[murdoku] ===== 构建标记 v229 / 2026-10-15 / 选关屏:返回/翻页改成图形箭头(图100109,96x96);存档补建三个箭头控件 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
