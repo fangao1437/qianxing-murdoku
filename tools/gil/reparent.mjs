@@ -26,7 +26,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  readGil, findChildListTop, setChildList, asIdList, pairOf, setPair,
+  readGil, encodeMsg, findChildListTop, setChildList, asIdList, pairOf, setPair,
 } from './gilread.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -103,7 +103,22 @@ function fixParent(fields) {
 for (const r of moving) fixParent(r.field.sub);
 console.log('  ✅ 改写 #504 的记录字段：' + n504 + ' 处');
 
-const buf = g.pack();
+// ★★★★★★ 2026-10-15 **修一个静默崩掉的 bug** ✗✓
+//
+//   ★ 症状 ✓：跑起来打印到「✅ 改写 #504 的记录字段：8 处」之后
+//     抛 `TypeError: Cannot read properties of undefined (reading 'length')` ✗
+//     ⇒ ★ **没有写出任何文件** ✗（所以那一步等于白做 ✓）
+//
+//   ★ 根因 ✓：这里原来是 `const buf = g.pack();` ✗ —— **少了参数** ✗
+//     `gilread` 的 `pack` 现在要**先 `encodeMsg(g.tree)` 再喂进去** ✓
+//     （对照 `set_key_art.mjs` 的正确写法 ✓：
+//        `const body = encodeMsg(g.tree); const buf = g.pack(body);` ✓）
+//     ⇒ `pack(undefined)` ⇒ 内部读 `undefined.length` ⇒ **正是那个 TypeError** ✓
+//
+//   ⇒ ★ 这个工具应该写在 `gilread` 换签名**之前** ✗ ⇒ 之后**再没人跑过它** ✓
+//     ★ 教训 ✓：**改公共库的签名，要 grep 全仓的调用点** ✗
+const body = encodeMsg(g.tree);
+const buf = g.pack(body);
 fs.writeFileSync(OUT, buf);
 console.log('  写出：' + path.basename(OUT) + '  ' + Math.round(buf.length / 1024) + ' KB');
 
