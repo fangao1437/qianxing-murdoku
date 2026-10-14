@@ -6903,50 +6903,62 @@ function Controller:build_layout()
 
         push({ id = "select.title", kind = "text", parent = "root", visible = true, text = "选择关卡",
              rect = { x = 460, y = 80, w = 1000, h = 90 } })
-      -- ★★★★★★ 2026-10-15 **返回键改成图形箭头**（用户定 ✓）：
-      --   「返回主页改为和关卡内**同样样式的箭头**，**不要弹窗，点击就返回主页**」
-      --   · 图 = **100109**（= 关卡内 `hex.back` / `hit.back` 那张 ✓ 索引 1073742502 ✓）
-      --   · ★ **控件已建进存档** ✓：`select.back` #1073742727（克隆自 `hex.back`，96×96 ✓）
-      --     —— 原来**存档里根本没有 `select.*`** ✗（文件里一个都没有 ✓）⇒ 那时点不到 ✓
-      --   · ★ **不写 `text`** ✓ ⇒ 让图露出来（写了字会盖在箭头上 ✗）
-      --   · ★ **位置在左上角**，和关卡内那颗同款位置 ✓
+      -- ★★★★★★ 2026-10-15 **返回键 = 视觉层 + 命中层（两层）** ✗✓
+      --
+      --   ★★ 根因 ✓（真机实测：「左上箭头出现了，**还没有功能**」✓）：
+      --     `hex.*` 这类【图标】控件**收不到光标事件** ✗
+      --     官方在 `ui_controller.lua:2101` 那轮就撞过并记下原话：
+      --       「**控件 `hex.back` 不支持光标事件**（请用「预设按钮」或「光标检测区域」控件）」✓
+      --     ⇒ ★ 所以关卡内一直是**两层**：`hex.back`（视觉 ✓）＋ `hit.back`（**光标检测区域** ✓ 吃点击 ✓）
+      --     ⇒ ★ 我第一版只克隆了 `hex.back` ⇒ **图出来了、点不动** ✓ 完全对得上现象 ✓
+      --
+      --   ★ 现在的结构 ✓（都建进了存档 ✓）：
+      --     · `select.back`    #1073742727  62×62  克隆自 `hex.back` ⇒ **只做视觉** ✓
+      --     · `hit.select.back` #1073742730  62×62  克隆自 `hit.back` ⇒ ★ **事件绑在它身上** ✓
+      --   ★ z 序 ✓：命中层的 ID **大于**视觉层 ⇒ 追加在后 ⇒ **压在上面** ✓
+      --     （与关卡内 `hex.back` #502 → `hit.back` #509 的顺序一致 ✓）
+      --   ★ 尺寸 = **62×62**，与关卡内那颗**一模一样** ✓（用户：「改到和关卡内一样」✓）
+      --   ★ `text` 不写 ✓ ⇒ 露出箭头图；★ `home` 分支 L1539 只切屏、`modal=nil` ⇒ **不弹窗** ✓
+      local BACK_RECT = { x = 60, y = 48, w = 62, h = 62 }
       push({ id = "select.back", kind = "button", parent = "root", visible = true,
-             rect = { x = 80, y = 60, w = 96, h = 96 },
+             rect = BACK_RECT })
+      push({ id = "hit.select.back", kind = "button", parent = "root", visible = true,
+             rect = BACK_RECT,
              event = { action = "home" } })
         -- ★★★ 2026-10-01：**选关翻页**（关卡多于 8 个时才有意义）。
         --   只有一页时整组隐藏（`visible=false`），不占视觉。
         local pg_visible = (pages > 1)
-        -- ★★★★★★ 2026-10-15 **翻页键改成屏幕左右两侧的图形箭头**（用户定 ✓）
-        --   「上一页下一页改为**屏幕左右侧的两个箭头**」✓
-        --   · 控件已建进存档 ✓：`select.prev` #1073742728 / `select.next` #1073742729
-        --     （同样克隆自 `hex.back`，96×96，带图 100109 ✓）
-        --   · ★ **纵向居中**（y = 492 ⇒ 96 高正好落在 1080 的中线 540 上 ✓）
-        --   · ★ **贴屏幕左右缘**（x = 60 / x = 1764 = 1920−60−96 ✓）
-        --   · ★ **不写 `text`** ✓ ⇒ 露出箭头图
-        --   · ★ 左右各 96 宽、卡片区从 250 到 1670 ⇒ **不压卡片** ✓
-        --   · 页码留在**底部中间**（`select.page` ✓）
-        local ARROW = 96
-        local PG_Y  = math.floor((1080 - ARROW) / 2)      -- 492
+        -- ★★★★★★ 2026-10-15 **翻页键也是两层：视觉 `select.*` ＋ 命中 `hit.select.*`** ✗✓
+        --   （理由同上面 `select.back` 那段：`hex.*` 图标**收不到光标事件** ✗）
+        --   · 视觉：`select.prev` #1073742728 / `select.next` #1073742729（克隆自 `hex.back`）62×62
+        --   · 命中：`hit.select.prev` #1073742731 / `hit.select.next` #1073742732（克隆自 `hit.back`）
+        --   · ★ **事件绑在命中层** ✓；★ **尺寸 62×62**、**纵向居中**（y = 509 ⇒ 62 高落在中线 540 上 ✓）
+        --   · ★ 贴屏幕左右缘：x = 60 / x = 1920−60−62 = 1798 ✓
+        --   · ★ 卡片区 250…1670 ⇒ 左右各 62 宽**不压卡片** ✓
+        local ARROW = 62
+        local PG_Y  = math.floor((1080 - ARROW) / 2)      -- 509
+        local PR = { x = 60, y = PG_Y, w = ARROW, h = ARROW }
+        local NX = { x = 1920 - 60 - ARROW, y = PG_Y, w = ARROW, h = ARROW }
         if pg_visible then
           push({ id = "select.prev", kind = "button", parent = "root",
-                 visible = (page > 1),
-                 rect = { x = 60, y = PG_Y, w = ARROW, h = ARROW },
-                 event = { action = "select_page", delta = -1 } })
+                 visible = (page > 1), rect = PR })
           push({ id = "select.next", kind = "button", parent = "root",
-                 visible = (page < pages),
-                 rect = { x = 1920 - 60 - ARROW, y = PG_Y, w = ARROW, h = ARROW },
+                 visible = (page < pages), rect = NX })
+          push({ id = "hit.select.prev", kind = "button", parent = "root",
+                 visible = (page > 1), rect = PR,
+                 event = { action = "select_page", delta = -1 } })
+          push({ id = "hit.select.next", kind = "button", parent = "root",
+                 visible = (page < pages), rect = NX,
                  event = { action = "select_page", delta = 1 } })
           push({ id = "select.page", kind = "text", parent = "root", visible = true,
                  text = string.format("第 %d / %d 页", page, pages),
                  -- ★ 2026-10-14 宽度 60 → 130 ✗✓：`第 1 / 2 页` 按 24 号字约 110px 宽 ✓
-                 --   原来只有 60 ⇒ 真到多页时**文字会被裁** ✗（而这正是它一直没被发现的原因：
-                 --   目前只有 4 关 ⇒ pages=1 ⇒ 这行**根本不显示** ✓）
                  rect = { x = 895, y = 952, w = 130, h = 70 } })
         else
-          push({ id = "select.prev", kind = "button", parent = "root", visible = false,
-                 rect = { x = 60, y = PG_Y, w = ARROW, h = ARROW } })
-          push({ id = "select.next", kind = "button", parent = "root", visible = false,
-                 rect = { x = 1920 - 60 - ARROW, y = PG_Y, w = ARROW, h = ARROW } })
+          push({ id = "select.prev", kind = "button", parent = "root", visible = false, rect = PR })
+          push({ id = "select.next", kind = "button", parent = "root", visible = false, rect = NX })
+          push({ id = "hit.select.prev", kind = "button", parent = "root", visible = false, rect = PR })
+          push({ id = "hit.select.next", kind = "button", parent = "root", visible = false, rect = NX })
           push({ id = "select.page", kind = "text", parent = "root", visible = false,
                  rect = { x = 895, y = 952, w = 130, h = 70 } })
         end
@@ -19968,7 +19980,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v229 / 2026-10-15 / 选关屏:返回/翻页改成图形箭头(图100109,96x96);存档补建三个箭头控件 =====")
+        print("[murdoku] ===== 构建标记 v230 / 2026-10-15 / 选关键两层(视觉select.*+命中hit.select.*,62x62);修返回键无功能 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
