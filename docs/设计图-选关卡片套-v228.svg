@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  选关屏 · 卡片套设计图（v228 定稿）
+  ★ 坐标系 = 设计空间 1920×1080，**左上原点、Y 向下**（写代码用这个空间）
+  ★ 所有矩形 = lua/ui_controller.lua 的 build_layout 里 select 分支的 rect 原值（含 2026-10-15 的扑克牌形）
+  ★ 卡片：高 = 40% × 1080 = 432，宽按扑克牌比 ≈ 1:1.4 ⇒ 310，间距 60，一行四张居中
+  ★ 生成：2026-10-15 · 构建标记 v228 · 交付档 360-选关扑克牌卡-v228.gil
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1440" height="810"
+     font-family="Microsoft YaHei, PingFang SC, Noto Sans CJK SC, sans-serif">
+  <defs>
+    <style>
+      .id   { font-size: 15px; fill: #7fd3ff; font-family: Consolas, monospace; }
+      .lbl  { font-size: 26px; fill: #f2f4f8; }
+      .card { fill: #1d2432; stroke: #6b7a99; stroke-width: 2; }
+      .strip{ fill: #2a3550; }
+      .thumb{ fill: #10151f; stroke: #4a5878; stroke-width: 1.5; stroke-dasharray: 6 5; }
+      .btn  { fill: #232c40; stroke: #7f8fb0; stroke-width: 2; rx: 10; }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1920" height="1080" fill="#0b0e14"/>
+
+  <!-- ── select.title ── -->
+  <rect x="460" y="80" width="1000" height="90" fill="none" stroke="#55627d" stroke-width="2" rx="8"/>
+  <text x="960" y="140" class="lbl" text-anchor="middle">选择关卡</text>
+  <text x="460" y="72" class="id">select.title</text>
+
+  <!-- ══ 一行四张卡片 ══
+       x = 250 + (i−1)×370　y = 330　w = 310　h = 432
+       卡内：.title = +16,+10  278×34 ｜ 缩略图 = +16,+54  278×300 ｜ .info = +16,+390  278×32
+  -->
+
+  <!-- 卡 1 -->
+  <rect class="card" x="250" y="330" width="310" height="432" rx="12"/>
+  <rect class="strip" x="266" y="340" width="278" height="34" rx="6"/>
+  <text x="280" y="365" font-size="21" fill="#dbe4f5">案 001</text>
+  <rect class="thumb" x="266" y="384" width="278" height="300" rx="6"/>
+  <text x="405" y="544" font-size="18" fill="#5f6c85" text-anchor="middle">棋盘缩略图</text>
+  <text x="282" y="750" font-size="17" fill="#98a3b8">5×5 · 4+1 人</text>
+  <text x="250" y="322" class="id">select.card.1</text>
+
+  <!-- 卡 2 -->
+  <rect class="card" x="620" y="330" width="310" height="432" rx="12"/>
+  <rect class="strip" x="636" y="340" width="278" height="34" rx="6"/>
+  <text x="650" y="365" font-size="21" fill="#dbe4f5">案 002</text>
+  <rect class="thumb" x="636" y="384" width="278" height="300" rx="6"/>
+  <text x="775" y="544" font-size="18" fill="#5f6c85" text-anchor="middle">棋盘缩略图</text>
+  <text x="652" y="750" font-size="17" fill="#98a3b8">6×6 · 5+1 人</text>
+  <text x="620" y="322" class="id">select.card.2</text>
+
+  <!-- 卡 3 -->
+  <rect class="card" x="990" y="330" width="310" height="432" rx="12"/>
+  <rect class="strip" x="1006" y="340" width="278" height="34" rx="6"/>
+  <text x="1020" y="365" font-size="21" fill="#dbe4f5">案 003</text>
+  <rect class="thumb" x="1006" y="384" width="278" height="300" rx="6"/>
+  <text x="1145" y="544" font-size="18" fill="#5f6c85" text-anchor="middle">棋盘缩略图</text>
+  <text x="1022" y="750" font-size="17" fill="#98a3b8">6×6 · 5+1 人</text>
+  <text x="990" y="322" class="id">select.card.3</text>
+
+  <!-- 卡 4 -->
+  <rect class="card" x="1360" y="330" width="310" height="432" rx="12"/>
+  <rect class="strip" x="1376" y="340" width="278" height="34" rx="6"/>
+  <text x="1390" y="365" font-size="21" fill="#dbe4f5">自测</text>
+  <rect class="thumb" x="1376" y="384" width="278" height="300" rx="6"/>
+  <text x="1515" y="544" font-size="18" fill="#5f6c85" text-anchor="middle">棋盘缩略图</text>
+  <text x="1392" y="750" font-size="17" fill="#98a3b8">5×5 · 4+1 人</text>
+  <text x="1360" y="322" class="id">select.card.4</text>
+
+  <!-- ── 底部一行 ── -->
+  <rect class="btn" x="120" y="950" width="260" height="80"/>
+  <text x="250" y="1000" class="lbl" text-anchor="middle">返回主页</text>
+  <text x="120" y="942" class="id">select.back</text>
+
+  <rect class="btn" x="700" y="950" width="220" height="80"/>
+  <text x="810" y="1000" class="lbl" text-anchor="middle">上一页</text>
+  <text x="700" y="942" class="id">select.prev</text>
+
+  <rect x="895" y="952" width="130" height="70" fill="none" stroke="#ffd479" stroke-width="2" rx="6"/>
+  <text x="960" y="998" font-size="20" fill="#ffd479" text-anchor="middle">第1/2页</text>
+  <text x="895" y="942" class="id">select.page</text>
+
+  <rect class="btn" x="1000" y="950" width="220" height="80"/>
+  <text x="1110" y="1000" class="lbl" text-anchor="middle">下一页</text>
+  <text x="1000" y="942" class="id">select.next</text>
+</svg>
