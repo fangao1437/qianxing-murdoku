@@ -4533,6 +4533,15 @@ function Controller:on_input(event)
       if self.select_page < 1 then self.select_page = 1 end
       self.dirty = true
 
+  -- ★★★★★★★★ 2026-10-15 **主页/选关左下角那颗「结算」** ✗✓✓
+  --
+  --   ★★ 用户要求 ✓：「**不接存档线，只接结算**」✓
+  --   ★ 所以这里**只**调 `on_settle_only` ✓ —— ★ 不碰 `on_save` ✗
+  --     ★ 对照 ✓：弹窗里那颗走 `exit_menu_settle` ⇒ **先 `on_save()` 再 `on_settle()`** ✓
+  --   ★ 回调缺失时**静默不做事** ✓（★ 与别处一致 ✓ 不留半截副作用 ✓）
+  elseif a == "settle_only" then
+    if self.opts.on_settle_only then self.opts.on_settle_only() end
+
     elseif a == "pick_level" then
     if self.opts.on_pick_level then
       self.modal = nil
@@ -7149,6 +7158,33 @@ function Controller:build_layout()
           self:push_room_thumb(push, "select.card." .. i, nil, r, "select")
         end
       end
+    end
+    -- ★★★★★★★★ 2026-10-15 **「结算」按钮：主页 ＋ 选关屏共用一颗，摆在左下角** ✗✓✓
+    --
+    --   ★★ 用户原话 ✓：「**在首页和选关界面左下角也加一个结算按钮，
+    --     不接存档线，只接结算**」✓
+    --
+    --   ★ 三件事说清楚 ✓：
+    --     · ★ **一颗控件、两个屏幕都用** ✓（★ 位置一样 ⇒ 不需要两套 ✓）
+    --       ⚠️ 但它**只在主页/选关进规划** ✓ ⇒ 关卡内由 `render` 的差集收口藏掉 ✓
+    --          （★ 与选关屏那整套同一个机制 ✓ 见 `render` 里 `self._shown` 那段 ✓）
+    --     · ★ **事件走"预设按钮"原生那条路** ✓ —— ★ 它不是 `hex.*` 图标 ✗
+    --       （★ 玩家在主页点了这么多天的「选关」正是同一类控件 ✓ 已验证能点 ✓）
+    --       ⇒ ★ **不需要命中层** ✓（那是给"收不到光标事件的图标"补的 ✗）
+    --     · ★★ **"不接存档线"= 只发 SETTLE 信号、不落盘** ✓
+    --       ★ 与弹窗里那颗「结算」的区别就在这 ✓（那颗是先存后结算 ✓ 见 `on_settle` ✓）
+    --       ⇒ ★ 回调是**独立的一个** `opts.on_settle_only` ✓ ⇒ 由 `main.lua` 提供 ✓
+    --
+    --   ★ 几何 ✓（设计空间 1920×1080，左上原点 ✓）：x=60, y=960, 260×72 ✓
+    --     · ★ 与选关屏的返回箭头**同一条左边距（60）** ✓
+    --     · ★ 纵向落在底部那条带里（页面指示在 952…1022 ✓ 它是 960…1032 ✓）⇒ 不打架 ✓
+    --     ⚠️ 真机上**以存档里那份为准** ✓（`respect_editor_rect = true` ✓）
+    --       ⇒ ★ 这个 `rect` 是"脚本心里的位置" ✓ 存档那份由 `tools/gil/add_button.mjs` 写 ✓
+    if self.screen == "home" or self.screen == "select" then
+      push({ id = "settle.btn", kind = "button", parent = "root", visible = true,
+             text = "结算",
+             rect = { x = 60, y = 960, w = 260, h = 72 },
+             event = { action = "settle_only" } })
     end
     -- ⚠️ **主页/选关这条提前 return 之前也必须调** —— 否则这两个屏幕的子树
     --    拿不到继承过来的 `pos_runtime`，子控件继续用编辑器里的锚点+偏移
@@ -17128,8 +17164,24 @@ local murdoku_vis_ids_key = nil
 --   ★ 这里用 `adapter.cells_rows/cols` —— 与下面 `%30` 段、与适配器**同一个优先级** ✓
 --     （`main.lua` 别处早就写着"`adapter.cells_rows` 比 cfg 里的兜底值准" ✓）
 local function murdoku_build_vis_ids(scr_now, rows)
-  local ids = { "selbar", "tpl-container" }
-  for i = 1, 6 do ids[#ids + 1] = "selbtn." .. tostring(i) end
+  -- ★★★★★★★★ 2026-10-15 **`selbar` / `selbtn.*` 按 `widgets` 开关决定要不要进清单** ✗✓✓
+  --
+  --   ★ 用户原话 ✓：「**把原来四个方块删掉**」✓ ⇒ ★ `cfg.widgets = false` ✓
+  --   ★★ 为什么清单也要跟着改 ✗：★ 这一份清单就是**每帧去找它们、按屏压显隐**的地方 ✓
+  --     ⇒ ★ 关掉创建之后它们**根本不存在** ✓
+  --       ⇒ ★ 每帧白跑 7 次 `find`（深树按名搜 ✗）＋ 0 笔写 ✓
+  --     ★ 这正是本项目反复算过的那笔账（「控件不在本关 ⇒ 立即记账、不补发」✓）
+  --   ★ 判据 ✓：`tests/perframe_throttle.lua` §A
+  --     ⇒ ★ 稳态 60 帧里 `selbar` 的 `SetVisible` **必须恰好 0 笔** ✓
+  --       （★ 删除前是 60 笔 ✓ —— 它同时证明了"确实没再碰它们" ✓）
+  --   ⚠️ `tpl-container` 与 `cell.*` **照旧** ✓（与那四个方块无关 ✓）
+  local wid_on = not (current ~= nil and current.adapter ~= nil and current.adapter.cfg ~= nil
+                      and current.adapter.cfg.widgets == false)
+  local ids = { "tpl-container" }
+  if wid_on then
+    ids[#ids + 1] = "selbar"
+    for i = 1, 6 do ids[#ids + 1] = "selbtn." .. tostring(i) end
+  end
   if scr_now == "level" then
     local n = tonumber(rows) or 5
     for r = 1, n do
@@ -17332,6 +17384,21 @@ function Murdoku.start(level_id, opts)
     end,
     on_settle = function()
       if Murdoku ~= nil and Murdoku.save_now ~= nil then pcall(function() Murdoku.save_now() end) end
+      if adapter ~= nil and adapter.signal_emit ~= nil then
+        pcall(function() adapter:signal_emit(Qianxing.SIGNALS.SETTLE, { tostring(level.id) }) end)
+      end
+    end,
+    -- ★★★★★★★★ 2026-10-15 **主页/选关左下角那颗「结算」的回调** ✗✓✓
+    --
+    --   ★★ 用户要求 ✓：「**不接存档线，只接结算**」✓
+    --   ⇒ ★ 与上面那颗**唯一的区别**：★ **不调 `Murdoku.save_now()`** ✗
+    --     ★ 只发 `SETTLE` 信号 ✓（★ 服务端那两条：`Level.settle_level` ＋ `PlayerSelf.settle_win` ✓
+    --       见 `回执-胜利路径-收尾` 那轮的实测 ✓）
+    --   ★★ 为什么单独一个回调、而不是复用 `on_settle` ✗：
+    --     ★ 复用就等于"顺手把存档也写了" ✗ —— ★ 那正是用户明确排除的东西 ✓
+    --     ★ 本项目的老毛病是"同一件事两处实现" ✓ 但这条**不是同一件事** ✓
+    --       （★ 一个"存档＋结算"、一个"只结算" ✓ 语义不同 ⇒ 两个入口才对 ✓）
+    on_settle_only = function()
       if adapter ~= nil and adapter.signal_emit ~= nil then
         pcall(function() adapter:signal_emit(Qianxing.SIGNALS.SETTLE, { tostring(level.id) }) end)
       end
@@ -20242,7 +20309,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v239 / 2026-10-15 / 修选关屏点不动:hit.前缀吃掉hit.select.*命中层;箭头永远可见+不能翻变暗;染色不再依赖不存在的Color() =====")
+        print("[murdoku] ===== 构建标记 v240 / 2026-10-15 / 删掉四个旧方块(widgets=false);主页/选关左下角加结算按钮(只发SETTLE,不存档) =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -20409,7 +20476,28 @@ local function build_adapter()
     --     它是在**客户端控件容器里**另存的 ⇒ 属于「客户端控件模板」⇒ 脚本能实例化。
     --     （1073742356 是在 root 下另存的 ⇒ 服务器模板 ⇒ 返回 nil，已作废。）
     prefab_icon = 1073742357,
-    widgets     = true,    -- ★ 打开：启动时创建并显示 selbtn.1..N（102 验证过"能完成选关"的那四个方块）
+    widgets     = false,   -- ★★★★★★★★ 2026-10-15 **关掉：四个方块删掉** ✗✓✓
+    --
+    --   ★★★ 用户原话 ✓：「**把原来四个方块删掉**」✓（★ 功能已通过的下一句 ✓）
+    --
+    --   ★ 那四个方块是什么 ✓：★ 脚本**运行时**用容器模板现建的
+    --     `selbar`（容器）＋ `selbtn.1..4`（四个按钮）✓
+    --     ★ 它们是"卡片还点不动"那段时间**唯一能完成选关的路** ✓
+    --       （★ 102 那轮验证过"能完成选关" ✓ 见旧注释 ✓）
+    --   ★★ 为什么现在可以删 ✓：★ **选关卡片已经能点了** ✓
+    --     （★ 用户真机确认「功能通过了」✓ —— 命中层被 `"hit."` 前缀藏掉那件事修好之后 ✓）
+    --     ⇒ ★ 两套入口并存 ⇒ ★ 玩家会看到**重复的四块白方块**压在卡片上 ✓
+    --
+    --   ★★ 关掉这一个开关 = **两件事一起停** ✓（main.lua 里两处都读它 ✓）：
+    --     · `main.lua:560` ⇒ **不再调 `ensure_widgets`** ✓ ⇒ `selbar`/`selbtn.*` **根本不建** ✓
+    --     · `main.lua:1524` ⇒ `on_select` 恒假 ⇒ **不再每帧同步它们的显隐** ✓（省下每帧的 find+写 ✓）
+    --   ★ 判据 ✓：`tests/perframe_throttle.lua` §A 已改成
+    --     「**`selbar` 压根不该存在，也不该有一笔同步**」✓（★ 跟着**意图**改 ✓ 不是放宽 ✓）
+    --   ⚠️ 要回退 ✓：★ 把这一行改回 `true` 即可 ✓（脚本一个字都不用动 ✓）
+    --
+    --   ★ 顺带 ✓：★ `selbtn.*` **从来不在 `.gil` 里** ✓（实测 `list_names 370 | sel` 里没有 ✓）
+    --     ⇒ ★ 所以"删掉"就是"不再创建" ✓ ★ **不需要动存档** ✓✓
+
     stage = {
       prefab = 1073742330,   -- 「容器节点」模板（用户 2026-10-02 提供）
       parent = "stage",

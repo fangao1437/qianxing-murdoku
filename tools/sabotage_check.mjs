@@ -32,6 +32,10 @@ const SUITES = ['board_wiring_e2e', 'cell_mark_letter', 'row_letter_map', 'row_l
 //   ★ 教训 ✓：★ **新加一条破坏时，必须同时确认"守着它的那套在 `SUITES` 里"** ✗
 //     ★ 否则破坏项**永远报无人抓** ✓ 而人会以为是用例的问题 ✓
 SUITES.push('select_hit_visible');
+// ★★★★★★★★ 2026-10-15 **再加 `settle_button`** ✗✓✓（破坏 M 需要它 ✓）
+//   ★ 教训与上一条一模一样 ✓：★ **新破坏必须同时确认"守着它的那套在名单里"** ✗
+//     ★ 否则破坏项报"无人抓" ✓ 而人会去查用例 ✗ —— ★ 其实是用例**根本没跑** ✓
+SUITES.push('settle_button');
 // ★★★★★★★★ 2026-10-15 **这一套测的是【打包产物】，不是源码** ✗✓✓
 //
 //   ★★★ 为什么必须单独列出来 ✗：★ `tests/grid_cost.lua` 读的是
@@ -144,6 +148,18 @@ const sabotages = [
   ['L 选关屏命中层又被「hit.」前缀吃掉（点了没反应）',
     '    PREFIX = { "clue.", "hud.", "room.label.", "tray.", "action.", "hex.",\n               "selbtn.", "tpl.",',
     '    PREFIX = { "clue.", "hud.", "room.label.", "tray.", "action.", "hex.", "hit.",\n               "selbtn.", "tpl.",'],
+  // ★★★★★★★★ 2026-10-15（同一晚第二轮）**新增：让「结算」顺手把存档也写了** ✗✓✓
+  //
+  //   ★★ 用户要求 ✓：「**不接存档线，只接结算**」✓
+  //   ★★★ 为什么必须专门破坏这一条 ✗：★ 这件事**在屏幕上完全看不出来** ✓
+  //     · 点了**都有反应** ✓（结算信号照发 ✓）
+  //     · 差别只在**存档有没有被写** ✗ —— ★ 没有任何视觉差异 ✓
+  //     ⇒ ★ 没有用例守着 ⇒ ★ 将来谁把两个分支合并了**没人会发现** ✓✓
+  //   ⇒ ★ 这一条破坏 = ★ **在结算之后补一次 `on_save()`** ✓
+  //     ⇒ ★ `tests/settle_button.lua` §3 的"on_save 一次都没被调"**必须变红** ✓
+  ['M 「结算」按钮顺手把存档也写了（违反"不接存档线"）',
+    '    if self.opts.on_settle_only then self.opts.on_settle_only() end',
+    '    if self.opts.on_settle_only then self.opts.on_settle_only() end\n    if self.opts.on_save then self.opts.on_save() end'],
 ];
 
 let allGood = true;

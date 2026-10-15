@@ -498,6 +498,25 @@ else
   ok(false, "拿不到适配器实例（__murdoku_debug.adapter）")
 end
 
+-- ── 6e. 四个方块已删除（`widgets = false`）────────────────────────────────
+out("\n== 6e. 四个方块（selbar + selbtn.1..4）已按用户指令删除 ==")
+do
+  local a = (__murdoku_debug ~= nil) and __murdoku_debug.adapter or nil
+  ok(a ~= nil and a.cfg ~= nil and a.cfg.widgets == false,
+    "入口配置里 widgets = false（★ 用户原话：「把原来四个方块删掉」✓）",
+    a and a.cfg and ("实测 widgets = " .. tostring(a.cfg.widgets)))
+  if a ~= nil then
+    -- ★ 对照 ✓：**同一环境下格子确实被建出来了** ⇒
+    --   ★ 下面那两条"没建"就**不是空过** ✗（★ 假绿的经典形状：环境本来建不出东西 ✓）
+    ok(a:find("cell.1.1") ~= nil,
+      "（对照）同一环境下格子确实建出来了 ⇒ 下面两条有意义")
+    ok(a:find("selbar") == nil, "`selbar` 没有被创建", "find('selbar') 実測 = " .. tostring(a:find("selbar") ~= nil))
+    local n = 0
+    for i = 1, 6 do if a:find("selbtn." .. i) ~= nil then n = n + 1 end end
+    ok(n == 0, "`selbtn.1..6` 一个都没建", "实测建了 " .. n .. " 个")
+  end
+end
+
 -- ── 7. OnDestroy ─────────────────────────────────────────────────────────
 out("\n== 7. OnDestroy ==")
 logs = {}

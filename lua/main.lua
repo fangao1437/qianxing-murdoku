@@ -160,8 +160,24 @@ local murdoku_vis_ids_key = nil
 --   ★ 这里用 `adapter.cells_rows/cols` —— 与下面 `%30` 段、与适配器**同一个优先级** ✓
 --     （`main.lua` 别处早就写着"`adapter.cells_rows` 比 cfg 里的兜底值准" ✓）
 local function murdoku_build_vis_ids(scr_now, rows)
-  local ids = { "selbar", "tpl-container" }
-  for i = 1, 6 do ids[#ids + 1] = "selbtn." .. tostring(i) end
+  -- ★★★★★★★★ 2026-10-15 **`selbar` / `selbtn.*` 按 `widgets` 开关决定要不要进清单** ✗✓✓
+  --
+  --   ★ 用户原话 ✓：「**把原来四个方块删掉**」✓ ⇒ ★ `cfg.widgets = false` ✓
+  --   ★★ 为什么清单也要跟着改 ✗：★ 这一份清单就是**每帧去找它们、按屏压显隐**的地方 ✓
+  --     ⇒ ★ 关掉创建之后它们**根本不存在** ✓
+  --       ⇒ ★ 每帧白跑 7 次 `find`（深树按名搜 ✗）＋ 0 笔写 ✓
+  --     ★ 这正是本项目反复算过的那笔账（「控件不在本关 ⇒ 立即记账、不补发」✓）
+  --   ★ 判据 ✓：`tests/perframe_throttle.lua` §A
+  --     ⇒ ★ 稳态 60 帧里 `selbar` 的 `SetVisible` **必须恰好 0 笔** ✓
+  --       （★ 删除前是 60 笔 ✓ —— 它同时证明了"确实没再碰它们" ✓）
+  --   ⚠️ `tpl-container` 与 `cell.*` **照旧** ✓（与那四个方块无关 ✓）
+  local wid_on = not (current ~= nil and current.adapter ~= nil and current.adapter.cfg ~= nil
+                      and current.adapter.cfg.widgets == false)
+  local ids = { "tpl-container" }
+  if wid_on then
+    ids[#ids + 1] = "selbar"
+    for i = 1, 6 do ids[#ids + 1] = "selbtn." .. tostring(i) end
+  end
   if scr_now == "level" then
     local n = tonumber(rows) or 5
     for r = 1, n do
@@ -364,6 +380,21 @@ function Murdoku.start(level_id, opts)
     end,
     on_settle = function()
       if Murdoku ~= nil and Murdoku.save_now ~= nil then pcall(function() Murdoku.save_now() end) end
+      if adapter ~= nil and adapter.signal_emit ~= nil then
+        pcall(function() adapter:signal_emit(Qianxing.SIGNALS.SETTLE, { tostring(level.id) }) end)
+      end
+    end,
+    -- ★★★★★★★★ 2026-10-15 **主页/选关左下角那颗「结算」的回调** ✗✓✓
+    --
+    --   ★★ 用户要求 ✓：「**不接存档线，只接结算**」✓
+    --   ⇒ ★ 与上面那颗**唯一的区别**：★ **不调 `Murdoku.save_now()`** ✗
+    --     ★ 只发 `SETTLE` 信号 ✓（★ 服务端那两条：`Level.settle_level` ＋ `PlayerSelf.settle_win` ✓
+    --       见 `回执-胜利路径-收尾` 那轮的实测 ✓）
+    --   ★★ 为什么单独一个回调、而不是复用 `on_settle` ✗：
+    --     ★ 复用就等于"顺手把存档也写了" ✗ —— ★ 那正是用户明确排除的东西 ✓
+    --     ★ 本项目的老毛病是"同一件事两处实现" ✓ 但这条**不是同一件事** ✓
+    --       （★ 一个"存档＋结算"、一个"只结算" ✓ 语义不同 ⇒ 两个入口才对 ✓）
+    on_settle_only = function()
       if adapter ~= nil and adapter.signal_emit ~= nil then
         pcall(function() adapter:signal_emit(Qianxing.SIGNALS.SETTLE, { tostring(level.id) }) end)
       end

@@ -1542,6 +1542,15 @@ function Controller:on_input(event)
       if self.select_page < 1 then self.select_page = 1 end
       self.dirty = true
 
+  -- ★★★★★★★★ 2026-10-15 **主页/选关左下角那颗「结算」** ✗✓✓
+  --
+  --   ★★ 用户要求 ✓：「**不接存档线，只接结算**」✓
+  --   ★ 所以这里**只**调 `on_settle_only` ✓ —— ★ 不碰 `on_save` ✗
+  --     ★ 对照 ✓：弹窗里那颗走 `exit_menu_settle` ⇒ **先 `on_save()` 再 `on_settle()`** ✓
+  --   ★ 回调缺失时**静默不做事** ✓（★ 与别处一致 ✓ 不留半截副作用 ✓）
+  elseif a == "settle_only" then
+    if self.opts.on_settle_only then self.opts.on_settle_only() end
+
     elseif a == "pick_level" then
     if self.opts.on_pick_level then
       self.modal = nil
@@ -4158,6 +4167,33 @@ function Controller:build_layout()
           self:push_room_thumb(push, "select.card." .. i, nil, r, "select")
         end
       end
+    end
+    -- ★★★★★★★★ 2026-10-15 **「结算」按钮：主页 ＋ 选关屏共用一颗，摆在左下角** ✗✓✓
+    --
+    --   ★★ 用户原话 ✓：「**在首页和选关界面左下角也加一个结算按钮，
+    --     不接存档线，只接结算**」✓
+    --
+    --   ★ 三件事说清楚 ✓：
+    --     · ★ **一颗控件、两个屏幕都用** ✓（★ 位置一样 ⇒ 不需要两套 ✓）
+    --       ⚠️ 但它**只在主页/选关进规划** ✓ ⇒ 关卡内由 `render` 的差集收口藏掉 ✓
+    --          （★ 与选关屏那整套同一个机制 ✓ 见 `render` 里 `self._shown` 那段 ✓）
+    --     · ★ **事件走"预设按钮"原生那条路** ✓ —— ★ 它不是 `hex.*` 图标 ✗
+    --       （★ 玩家在主页点了这么多天的「选关」正是同一类控件 ✓ 已验证能点 ✓）
+    --       ⇒ ★ **不需要命中层** ✓（那是给"收不到光标事件的图标"补的 ✗）
+    --     · ★★ **"不接存档线"= 只发 SETTLE 信号、不落盘** ✓
+    --       ★ 与弹窗里那颗「结算」的区别就在这 ✓（那颗是先存后结算 ✓ 见 `on_settle` ✓）
+    --       ⇒ ★ 回调是**独立的一个** `opts.on_settle_only` ✓ ⇒ 由 `main.lua` 提供 ✓
+    --
+    --   ★ 几何 ✓（设计空间 1920×1080，左上原点 ✓）：x=60, y=960, 260×72 ✓
+    --     · ★ 与选关屏的返回箭头**同一条左边距（60）** ✓
+    --     · ★ 纵向落在底部那条带里（页面指示在 952…1022 ✓ 它是 960…1032 ✓）⇒ 不打架 ✓
+    --     ⚠️ 真机上**以存档里那份为准** ✓（`respect_editor_rect = true` ✓）
+    --       ⇒ ★ 这个 `rect` 是"脚本心里的位置" ✓ 存档那份由 `tools/gil/add_button.mjs` 写 ✓
+    if self.screen == "home" or self.screen == "select" then
+      push({ id = "settle.btn", kind = "button", parent = "root", visible = true,
+             text = "结算",
+             rect = { x = 60, y = 960, w = 260, h = 72 },
+             event = { action = "settle_only" } })
     end
     -- ⚠️ **主页/选关这条提前 return 之前也必须调** —— 否则这两个屏幕的子树
     --    拿不到继承过来的 `pos_runtime`，子控件继续用编辑器里的锚点+偏移
