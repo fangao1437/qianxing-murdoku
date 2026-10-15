@@ -388,31 +388,37 @@ do
   ok(c.focused_clue == D_POS, "★ 高亮跟着走到第 " .. tostring(D_POS) .. " 张卡（实测 "
     .. tostring(c.focused_clue) .. "）")
 
-  -- ★★★ 关键一步：取消 V（单击已放置的格子 = 拿起 ✓ 核心会把人选上 ✓）
+  -- ★★★★ 关键一步：取消 V（单击已放置的格子 = 拿起 ✓）
+  --   ★★★ 2026-10-15 **语义已由用户定案** ✗✓（★ 这一条是本用例的判据核心 ✓）：
+  --     ★ 用户原话 ✓：「**取消操作确实捆绑选中，也就是我取消 a 放置的同时又重新选了 a，
+  --       把取消放置和选中的联系切断就行**」✓✓
+  --   ⇒ ★★ 判据改成 ✓：★ **拿起之后，选中【不许变】** ✗
+  --     · ★ 拿起前选中 D ⇒ ★ 拿起后**仍然是 D** ✓
+  --     · ★ 而且**长按放的也是 D** ✓ ⇒ ★ **屏幕与行为再也不可能对不上** ✓✓
   tap_cell(c, 3, 1)
   settle_highlight(c)
   ok(c.core.grid[3][1] == nil, "★ 取消 V：棋子拿下来了")
-  ok(c.core.selected == "V", "★ 拿起 V ⇒ 核心把 V 选上（★ 核心的既有语义 ✓）")
-  -- ★★★ 这就是用户报的那一句 ✗✓：
-  ok(c.focused_clue == V_POS,
-    "★★ 拿起 V 之后，高亮**必须跟到 V 那张卡**（实测高亮在第 "
-    .. tostring(c.focused_clue) .. " 张，期望第 " .. tostring(V_POS) .. " 张）"
-    .. "　⇒ ★ 用户报的「显示选择的 d」就是这里 ✗")
-  ok(c.focused_clue ~= D_POS,
-    "★★ 而且**不许**还留在 D 那张卡上（★ 那一张已经不表示任何东西了 ✓）"
-    .. "　⇒ ★ 用户报的「有选中高亮但没有选中行为」就是这里 ✗")
+  ok(c.core.selected == "D",
+    "★★★ 拿起点 D ⇒ **选中必须还是 D** ✗（实测 " .. tostring(c.core.selected)
+    .. "）　⇒ ★ 用户报的「取消 a 的同时又重新选了 a」就是这一行 ✗")
+  ok(c.core.selected ~= "V",
+    "★★★ 而且**不许**被选成 V ✗（★ 那正是原来那句捆绑 `self.selected = self.grid[r][c]` ✓）")
+  ok(c.focused_clue == D_POS,
+    "★★ 高亮**留在 D 那张卡**（实测第 " .. tostring(c.focused_clue)
+    .. " 张，期望第 " .. tostring(D_POS) .. " 张）")
   assert_consistent(c, "取消 V 之后")
 
-  -- ★★★ 行为判据：此刻长按，落的必须是**屏幕说的那个人** ✓
+  -- ★★★ 行为判据：此刻长按，落的必须是**屏幕上亮着的那个人** ✓
   local screen_says = c:_person_id_for_pos(c.focused_clue)
+  ok(screen_says == "D", "★ 屏幕说的还是 D（实测 " .. tostring(screen_says) .. "）")
   local okp = long_press(c, 1, 1)
   ok(okp == true and c.core.grid[1][1] ~= nil, "★ 此时长按 (1,1) 能落子")
   ok(c.core.grid[1][1] == screen_says,
-    "★★ 落下的必须是【屏幕说的那个人】= " .. tostring(screen_says)
+    "★★★ 落下的必须是【屏幕说的那个人】= " .. tostring(screen_says)
     .. "（实测 " .. tostring(c.core.grid[1][1]) .. "）"
     .. "　⇒ ★ 用户报的「再长按放置，放的会是 v」就是这里 ✗")
-  ok(c.core.grid[1][1] ~= "D",
-    "★★ 反向：此刻**不该**落下 D（★ 那是「点卡片」留下的残影 ✗）")
+  ok(c.core.grid[1][1] ~= "V",
+    "★★★ 反向：此刻**不许**落下 V（★ 那是「取消时顺手把 V 选上」留下的 ✗）")
 end
 
 --------------------------------------------------------------------------------
@@ -541,10 +547,13 @@ do
   ok(litV ~= TINT, "★★ 反向：V 那张卡**不许**亮（实测 " .. tostring(litV) .. "）")
   ok(c.core.selected == "D", "★ 且 core.selected = D（★ 高亮与选中一致 ✓）")
 
-  -- ② ★★★ 用户那一步：放 V → 选 D → **拿起 V** ⇒ 高亮必须**从 D 走到 V** ✗✓
-  --   ★★ 判据顺序要紧 ✗：★ 每一步都**先断言前置**（选中到底变成了谁 ✓）
-  --     ★ 再断言高亮 ✓ —— ★ 不然红了分不清"选中没变"还是"高亮没跟" ✓✓
-  --     ★（★ 我这一节第一版就是栽在这上面：★ 拿一个**没满足的前提**去判结论 ✓）
+  -- ② ★★★★ 用户那一步：放 V → 选 D → **拿起 V** ✗✓
+  --   ★★★ 2026-10-15 **用户定案之后，这一节的结论反过来了** ✗✓（★ 与 §1 同一条 ✓）：
+  --     ★ 原来 ✓：拿起 V ⇒ **选中变成 V** ⇒ 高亮必须从 D 走到 V ✓
+  --     ★★ 现在 ✓：拿起 V ⇒ **选中不动**（还是 D）⇒ ★ **高亮就该留在 D** ✓✓
+  --       ★ 依据 ✓：★ 用户原话「**把取消放置和选中的联系切断就行**」✓
+  --   ★ 判据顺序 ✓：★ 每一步**先断言前置**（选中到底是谁 ✓）再断言高亮 ✓
+  --     ★（★ 我这一节第一版就栽在"拿没满足的前提判结论" ✓）
   tap_card(c, V_POS); long_press(c, 3, 1)
   refill(c, items)
   ok(c.core.grid[3][1] == "V", "★ 前提：V 放在 (3,1)")
@@ -560,19 +569,20 @@ do
   ok(card_tint(c, items, D_POS) == TINT, "★ 前提：D 亮（实测 "
     .. tostring(card_tint(c, items, D_POS)) .. "）")
 
-  -- ★★★ 关键一步：★ 拿起 V（★ 单击已放置的格子 ✓ 核心会把 V 选上 ✓）
+  -- ★★★★ 关键一步：★ 拿起 V（★ 单击已放置的格子 ✓）
   tap_cell(c, 3, 1)
   ok(c.core.grid[3][1] == nil, "★ 前提：V 被拿起来了")
-  ok(c.core.selected == "V", "★ 前提：拿起 V ⇒ core.selected = V（实测 "
-    .. tostring(c.core.selected) .. "）")
+  ok(c.core.selected == "D",
+    "★★★ 拿起点 D ⇒ **选中不动**（实测 " .. tostring(c.core.selected)
+    .. "）　⇒ ★「取消 a 的同时又重新选了 a」已经被切断 ✗")
   refill(c, items)
   local afterV, afterD = card_tint(c, items, V_POS), card_tint(c, items, D_POS)
-  ok(afterV == TINT,
-    "★★★ 真机路：拿起 V 之后，**V 那张卡必须亮**（实测 " .. tostring(afterV)
+  ok(afterD == TINT,
+    "★★★ 真机路：拿起 V 之后，**D 那张仍然亮**（实测 " .. tostring(afterD)
     .. "，期望 " .. tostring(TINT) .. "）")
-  ok(afterD == ORIG,
-    "★★★ 而 **D 那张必须灭**（实测 " .. tostring(afterD)
-    .. "）　⇒ ★ 用户报的「显示选择的 d」就是这一笔 ✗")
+  ok(afterV == ORIG,
+    "★★★ 而 **V 那张不许亮** ✗（实测 " .. tostring(afterV)
+    .. "）　⇒ ★ 原来那一版就是这里亮错了人 ✓")
 
   -- ③ ★★★ 行为面：此刻长按，落下的必须是**亮着那张卡上的人** ✓
   local lit_pos = (card_tint(c, items, V_POS) == TINT) and V_POS or D_POS
@@ -582,6 +592,9 @@ do
     "★★★ 亮着第 " .. tostring(lit_pos) .. " 张卡（= " .. tostring(shown)
     .. "）⇒ 长按落下的必须是它（实测 " .. tostring(c.core.grid[1][1])
     .. "）　⇒ ★ 用户报的「再长按放置，放的会是 v」就是这里 ✗")
+  ok(c.core.grid[1][1] == "D",
+    "★★★ 具体到本场景：★ 落的必须是 **D** ✗（实测 "
+    .. tostring(c.core.grid[1][1]) .. "）")
 
   -- ④ 幂等 ✓：再重进几次填充 ⇒ 颜色**不许变** ✗（★ 防"每帧换色" ✓）
   --   ★ 注意 ✓：★ 上一步长按**已经把 V 放下去、选中被清了** ✓

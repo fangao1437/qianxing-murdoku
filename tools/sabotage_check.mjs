@@ -107,6 +107,21 @@ const sabotages = [
   ['J 真机路高亮恒灭：列表项 `backrop1` 永不点亮',
     'local want_on = ((want ~= nil) and want == pos)',
     'local want_on = false and ((want ~= nil) and want == pos)'],
+  // ★★★★★★★★ 2026-10-15（第三轮）**新增：把"取消放置 ⇄ 选中"的捆绑加回去** ✗✓✓
+  //
+  //   ★★★ 为什么这一条最重要 ✗（★ 它是用户点破的**根因** ✓）：
+  //     ★ 用户原话 ✓：「**取消操作确实捆绑选中，也就是我取消 a 放置的同时又重新选了 a，
+  //       把取消放置和选中的联系切断就行**」✓✓
+  //   ★★ 前两轮我都在这条上游打补丁 ✗（高亮错了就修高亮 ✓）
+  //     ★★ 而**根因是这一行**：★ 拿起棋子时 `self.selected = self.grid[r][c]` ✓
+  //       ⇒ ★ 屏幕亮 D ✗ 而选中变成 V ⇒ ★ **再长按放 V** ✓✓
+  //   ⇒ ★ 这一条破坏 = ★ **把那一行加回去** ✓ ⇒ ★ `selection_residue` 与 `selftest` **都必须红** ✓
+  //   ★ 注意 ✓：★ 它打在 **`lua/murdoku_core.lua`** ✗（★ 不是默认那个文件 ✓）
+  //     ★★ 这正是本轮把工具扩成"可指定文件"的原因 ✓（★ 否则这条**打不到** ✓）
+  ['K 把「拿起棋子顺手把人选上」的捆绑加回去',
+    '    return do_clear(self, r, c, true), nil\n  end\n  -- ★★ 2026-09-28 改',
+    '    self.selected = self.grid[r][c]\n    return do_clear(self, r, c, true), nil\n  end\n  -- ★★ 2026-09-28 改',
+    'lua/murdoku_core.lua'],
 ];
 
 let allGood = true;
@@ -122,36 +137,49 @@ let allGood = true;
 //     ★ 改完写盘时**统一用 LF** ✓ ★ 反正 Lua 不在乎 ✓（★ 还原时有原始字节 ✓）
 const originalLF = original.replace(/\r\n/g, '\n');
 
-// ★★★★★★★★ 2026-10-11 **"还原"必须【自己验一遍】，而且不许留下破坏痕迹** ✗✓✓
+// ★★★★★★★★ 2026-10-15 **破坏要能打在【别的文件】上** ✗✓✓（★ 本轮扩的 ✓）
 //
-//   ★★★ 事故 ✓（★ 2026-10-11 本轮 ✓）：★ 跑完这轮之后，源码里**留着**一处破坏 ✗：
-//     `if p ~= nil and false then p.dt = ... end` ✓
-//     ⇒ ★★ 长按**全废**（★ 12 条断言红 ✓）★ 而**当时没报错** ✓✓
-//   ★ 为什么会漏 ✗（★ 我没能复现，所以**不猜** ✓）：★ 关键是**它没被发现** ✓
-//   ⇒ ★★ 两道护栏 ✓（★ 不依赖"哪一步出的错" ✓）：
-//     ★ ① ★ 还原**写完就回读验** ✓ ★ 不一致 ⇒ **再写一次** ✓
-//     ★ ② ★ 收尾**扫一遍"破坏标记"** ✗ —— ★ 只要源码里还剩 `and false` / `if false`
-//       ★ 之类的痕迹 ⇒ ★ **大声报错** ✓✓（★ 这一类痕迹**本来就不该出现在源码里** ✓）
-//   ★ 为什么 ② 有用 ✓：★ 所有破坏都是"**把某处改成永假**"的形状 ✓
-//     ⇒ ★ 留没留下**一看就知道** ✓ ★ 不用理解当时发生了什么 ✓✓
-function restoreAndVerify() {
-  for (let i = 0; i < 3; i++) {
-    fs.writeFileSync(SRC, original, 'utf8');
-    if (sha(SRC) === origSha) return true;
+//   ★★★ 为什么必须扩 ✗：★ 原来这个工具**只会改 `lua/ui_controller.lua`** ✗
+//     ★★ 而本轮的根因在 **`lua/murdoku_core.lua`** ✓
+//       （★ "拿起棋子顺手把人选上" 那一行 ✓ 用户点破的正是它 ✓）
+//     ⇒ ★ 不改工具 ⇒ ★ **根因那一行【打不到】** ✓ ⇒ ★ 又是一条无人守的契约 ✓✓
+//   ★★ 判据 ✓：★ 每个破坏项第 4 个元素写**相对仓库的路径** ✓
+//     ★ 省略 ⇒ 默认还是 `lua/ui_controller.lua` ✓（★ 老项目一个都不用改 ✓）
+//   ★ 还原 ✓：★ 按**路径**各存一份原始字节 ✓ ★ 每轮破坏后逐文件验 sha ✓✓
+const snapshots = new Map();
+function snapshotOf(rel) {
+  if (!snapshots.has(rel)) {
+    const abs = REPO + '/' + rel;
+    snapshots.set(rel, { abs, text: fs.readFileSync(abs, 'utf8'), sha: sha(abs) });
   }
-  return false;
+  return snapshots.get(rel);
+}
+function restoreAll() {
+  let ok = true;
+  for (const s of snapshots.values()) {
+    let restored = false;
+    for (let i = 0; i < 3; i++) {
+      fs.writeFileSync(s.abs, s.text, 'utf8');
+      if (sha(s.abs) === s.sha) { restored = true; break; }
+    }
+    if (!restored) ok = false;
+  }
+  return ok;
 }
 const LEFTOVER = /\b(?:and|if)\s+false\b/;
 
-for (const [name, find, repl] of sabotages) {
-  const patched = originalLF.split(find).join(repl);
-  if (patched === originalLF) { console.log(`  ⚠️ ${name}：没匹配上（破坏未生效）`); allGood = false; continue; }
-  fs.writeFileSync(SRC, patched, 'utf8');
+for (const [name, find, repl, relIn] of sabotages) {
+  const rel = relIn || 'lua/ui_controller.lua';
+  const snap = snapshotOf(rel);
+  const baseLF = snap.text.replace(/\r\n/g, '\n');
+  const patched = baseLF.split(find).join(repl);
+  if (patched === baseLF) { console.log(`  ⚠️ ${name}：没匹配上（破坏未生效）`); allGood = false; continue; }
+  fs.writeFileSync(snap.abs, patched, 'utf8');
   // ★★ 先打包，再跑"读产物"的那几套 ✗（★ 否则破坏根本到不了被测代码 ✓ P7 ✓）
   const bundled = bundleOnce();
   if (!bundled) console.log('  ⚠️ 打包失败 —— 读产物的那几套本轮结果不可信 ✗');
   const red = SUITES.filter(suiteRed).concat(bundled ? BUNDLED_SUITES.filter(suiteRed) : []);
-  const restored = restoreAndVerify();
+  const restored = restoreAll();
   // ★ 还原之后**必须再打一次包** ✗ —— ★ 否则 `dist/` 里留着"被破坏过的产物" ✓✓
   //   （★ 后续别的套件/交付会拿到那份坏包 —— ★ 这与"源码留破坏"一样危险 ✓）
   const rebundled = bundleOnce();
@@ -161,20 +189,26 @@ for (const [name, find, repl] of sabotages) {
   if (!caught || !restored) allGood = false;
 }
 
-// ★ 收尾自检 ✓：源码里**不许留下任何"永假"痕迹** ✗
-const finalSrc = fs.readFileSync(SRC, 'utf8');
-const leftovers = finalSrc.split(/\r?\n/)
-  .map((l, i) => [i + 1, l])
-  .filter(([, l]) => LEFTOVER.test(l));
+// ★ 收尾自检 ✓：**所有被碰过的文件**都不许留下"永假"痕迹 ✗
+let leftovers = [];
+for (const s of snapshots.values()) {
+  if (!fs.existsSync(s.abs)) continue;
+  const lines = fs.readFileSync(s.abs, 'utf8').split(/\r?\n/)
+    .map((l, i) => [i + 1, l])
+    .filter(([, l]) => LEFTOVER.test(l))
+    .map(([n, l]) => [s.abs, n, l]);
+  leftovers = leftovers.concat(lines);
+}
 if (leftovers.length > 0) {
   console.error('\n✗✗ 源码里**还留着破坏痕迹** ✗ —— 这一轮的结果**全部作废** ✓');
-  leftovers.slice(0, 6).forEach(([n, l]) => console.error(`    ${n}: ${l.trim()}`));
-  console.error('   ★ 修法：git checkout -- lua/ui_controller.lua　然后重跑 ✓');
+  leftovers.slice(0, 6).forEach(([f, n, l]) => console.error(`    ${f.split('/').pop()}:${n}: ${l.trim()}`));
+  console.error('   ★ 修法：git checkout -- <该文件>　然后重跑 ✓');
   allGood = false;
 }
 
 fs.unlinkSync(BAK);
-console.log(`\n最终 sha256 与原始一致：${sha(SRC) === origSha}`);
+const allMatch = [...snapshots.values()].every((s) => sha(s.abs) === s.sha);
+console.log(`\n最终 sha256 与原始一致（全部 ${snapshots.size} 个被碰过的文件）：${allMatch}`);
 console.log(`源码里没有残留破坏痕迹：${leftovers.length === 0}`);
 console.log(allGood ? '✅ 全部破坏被抓 + 全部还原成功 + 源码干净' : '❌ 有破坏没被抓 / 还原失败 / 源码有残留');
 process.exit(allGood ? 0 : 1);
