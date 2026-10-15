@@ -963,9 +963,18 @@ function Murdoku.on_update(dt)
   --   ★ 修法 ✓：搬到 `on_update` 的**最前面**（每帧都跑到 ✓），自己用闩锁保证只做一次 ✓
   --     ⇒ 稳态**零成本** ✓（一次 set + 一个布尔判断 ✓）
   --     ⚠️ 用 `current.adapter` ✓ **不要**再用裸 `adapter` ✓
+  -- ★★★★★★★★ 2026-10-16 **v251：主页那四颗也套同一款胶囊底图** ✗✓✓（★ 用户要求 ✓）
+  --   ★ 原话 ✓：「**把首页中间四个按键的做成和弹窗按键一样的规格**」✓
+  --   ★ 弹窗那四颗的"规格"由三件组成 ✓：★ **尺寸 312×60**（★ 已写进存档 ✓ 交给编辑器 ✓）
+  --     ＋ ★ **文字**（脚本按规划写 ✓）＋ ★ **这颗 107179 胶囊底图**（★ 只在这一段里设 ✓）
+  --   ⇒ ★ 所以主页那四颗要"同规格"，差的就是**这一段没给它们设图** ✓
+  --   ⚠️ 与弹窗那四颗**同一行代码同一款素材** ✓ —— ★ 不新造一套 ✓（★ 一处改、两处一致 ✓）
   if (not Murdoku._exit_art_done) and current.adapter ~= nil then
     Murdoku._exit_art_done = true
-    for _, _bid in ipairs({ "modal.exit", "modal.save", "modal.settle", "modal.cancel" }) do
+    for _, _bid in ipairs({
+      "modal.exit", "modal.save", "modal.settle", "modal.cancel",
+      "home.select", "home.continue", "home.shop", "home.bag",
+    }) do
       local _bg = nil
       pcall(function() _bg = current.adapter:sub(_bid, "bg") end)
       if _bg ~= nil then

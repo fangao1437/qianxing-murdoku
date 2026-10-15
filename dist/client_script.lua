@@ -18247,9 +18247,18 @@ function Murdoku.on_update(dt)
   --   ★ 修法 ✓：搬到 `on_update` 的**最前面**（每帧都跑到 ✓），自己用闩锁保证只做一次 ✓
   --     ⇒ 稳态**零成本** ✓（一次 set + 一个布尔判断 ✓）
   --     ⚠️ 用 `current.adapter` ✓ **不要**再用裸 `adapter` ✓
+  -- ★★★★★★★★ 2026-10-16 **v251：主页那四颗也套同一款胶囊底图** ✗✓✓（★ 用户要求 ✓）
+  --   ★ 原话 ✓：「**把首页中间四个按键的做成和弹窗按键一样的规格**」✓
+  --   ★ 弹窗那四颗的"规格"由三件组成 ✓：★ **尺寸 312×60**（★ 已写进存档 ✓ 交给编辑器 ✓）
+  --     ＋ ★ **文字**（脚本按规划写 ✓）＋ ★ **这颗 107179 胶囊底图**（★ 只在这一段里设 ✓）
+  --   ⇒ ★ 所以主页那四颗要"同规格"，差的就是**这一段没给它们设图** ✓
+  --   ⚠️ 与弹窗那四颗**同一行代码同一款素材** ✓ —— ★ 不新造一套 ✓（★ 一处改、两处一致 ✓）
   if (not Murdoku._exit_art_done) and current.adapter ~= nil then
     Murdoku._exit_art_done = true
-    for _, _bid in ipairs({ "modal.exit", "modal.save", "modal.settle", "modal.cancel" }) do
+    for _, _bid in ipairs({
+      "modal.exit", "modal.save", "modal.settle", "modal.cancel",
+      "home.select", "home.continue", "home.shop", "home.bag",
+    }) do
       local _bg = nil
       pcall(function() _bg = current.adapter:sub(_bid, "bg") end)
       if _bg ~= nil then
@@ -20711,7 +20720,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v250 / 2026-10-16 / 确认卡锚点改读【运行时那颗键】紧贴+居中(不再用写死的规划坐标) + hit.ok/no 与图标同进退(修点不动) =====")
+        print("[murdoku] ===== 构建标记 v251 / 2026-10-16 / 主页四键与弹窗按键同规格(312x60 + 同款胶囊底图) + 结算键宽度 x1.5(=105) =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
