@@ -3746,8 +3746,40 @@ function Controller:build_layout(ui_adapter)
       push({ id = "modal.title", kind = "text", parent = "modal",
              rect = { x = mx + 30, y = my + 40, w = mw - 60, h = 90 },
              text = modal.win and "恭喜破案" or "没能找齐所有人", style = "modal.title" })
+      -- ★★★★★★★★ 2026-10-16 **v252：分析标语挪进 `win` 区（每关一颗 `win.N`）** ✗✓✓
+      --   ★ 用户原话 ✓：「★ **每关的通关弹窗的分析标语也像 clue 一样单独设一个对应区域放对应内容，
+      --     ★ 父级叫 win，子控件叫 win.i(1,2,3等)**」✓
+      --   ★ 为什么必须"每关一颗控件" ✗：★ 文字**存不进 `.gil`** ✓（`_probe_texts.mjs` 实测 ✓）
+      --     ⇒ ★ 想让"每关各自一句"在编辑器里能改 ⇒ ★ **一颗控件只能放一句** ✓
+      --     ⇒ ★ 所以先把**控件**建够（`win` ＋ `win.1..N` ✓ 已写进交付档 ✓）
+      --   ★ 脚本只做两件事 ✓：★ ① **只显示当前那关那一颗** ✓ ② ★ 读不到内容才写兜底 ✓
+      --     （"读不到才写"在适配层 ✓ `cfg.text_editor_first` 里已有 `win.1..4` ✓）
+      local win_n, win_idx = 4, nil
+      do
+        local lv = self.opts.levels
+        if type(lv) == "function" then lv = lv() end
+        if type(lv) == "table" and #lv > 0 then win_n = #lv end
+        local want = tostring(self.opts.current_level or "")
+        if type(lv) == "table" then
+          for i = 1, #lv do
+            if tostring(lv[i].id) == want then win_idx = i break end
+          end
+        end
+      end
+      local win_rect = { x = mx + 30, y = my + 140, w = mw - 60, h = 110 }
+      push({ id = "win", kind = "container", parent = "modal", rect = win_rect })
+      for i = 1, win_n do
+        push({ id = "win." .. i, kind = "text", parent = "win", rect = win_rect,
+               visible = (win_idx == i),
+               -- ★ 只给"当前那关"那一颗写兜底 ✓ —— ★ 别的关卡的内容**脚本不知道**（★ 那是编辑器的事 ✓）
+               text = (win_idx == i) and body or nil,
+               style = "modal.body" })
+      end
+      -- ★ 老的 `modal.body` **不再承担这句话** ✓ —— ★ 留着这条、但**藏起来** ✓
+      --   （★ 不藏的话，编辑器里那份旧内容会跟新区域**叠一遍** ✗）
       push({ id = "modal.body", kind = "text", parent = "modal",
-             rect = { x = mx + 30, y = my + 140, w = mw - 60, h = 110 }, text = body, style = "modal.body" })
+             rect = { x = mx + 30, y = my + 140, w = mw - 60, h = 110 },
+             visible = false, style = "modal.body" })
       push({ id = "modal.stats", kind = "text", parent = "modal",
              rect = { x = mx + 30, y = my + 262, w = mw - 60, h = 44 },
              text = string.format("用时 %s · 误指认 %d 次 · 位置 %d/%d",

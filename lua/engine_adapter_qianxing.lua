@@ -226,6 +226,22 @@ function M.new(cfg)
   self.warned = {}
   self.on_input = nil
   self.apply_rect = cfg.apply_rect == true   -- 默认不动位置（布局在编辑器里定）
+  -- ★★★★★★★★ 2026-10-16 **v252：哪些控件的文案"编辑器优先"** ✗✓✓
+  --   ★ 名单来自 `cfg.text_editor_first`（见 `entry_client_script.lua` ✓ 一处定义 ✓）
+  --   ★ 语义 ✓：★ 名单里的控件，★ 脚本**只在它当前是空的时候**才写字 ✓
+  --     ⇒ ★ 你在编辑器里填了文案 ⇒ 脚本一个字都不动 ✓✓（`set_property` 的 `text` 分支 ✓）
+  --   ⚠️ 为什么要"空才写"而不是"完全不写" ✗：
+  --     ★ 文字**存不进 `.gil`**（`_probe_texts.mjs` 实测 ✓）⇒ ★ 新导入的档里这些控件**是空的** ✓
+  --     ⇒ ★ 完全不写 ⇒ **按钮全空** ✗✓ —— ★ 留一个兜底，界面永远不会空 ✓
+  self.text_editor_first = {}
+  do
+    local list = cfg.text_editor_first
+    if type(list) == "table" then
+      for i = 1, #list do
+        if type(list[i]) == "string" then self.text_editor_first[list[i]] = true end
+      end
+    end
+  end
   return self
 end
 
@@ -4238,6 +4254,37 @@ function Adapter:set_property(id, key, value, nkey)
     --   ① 按钮自己的 `label` 子控件（我生成的那种）
     --   ② 按钮自己就是文字控件（`ctrl.text` 可写）
     --   ③ 老的 `text` 子控件（兼容）
+    --
+    -- ★★★★★★★★ 2026-10-16 **v252：这几颗的文案【编辑器优先】** ✗✓✓
+    --   ★ 用户要求 ✓：「**让所有按钮的文本内容也交由编辑器**」✓
+    --     （原话还有半句 ✓：「你如果能直接填内容进控件你就填，不能就把位置告诉我」✓
+    --      ★ 答复 ✓：★ `.gil` **存不下文字** ✗ —— ★ `tools/gil/_probe_texts.mjs` 实测
+    --      338 条记录里**一条"非名字文本"都没有** ✓ ⇒ ★ 只能**在编辑器里填** ✓
+    --      ⇒ ★ 所以这条通道的意义是：★ **你在编辑器里填了 ⇒ 脚本一个字都不动** ✓✓）
+    --   ★ 名单 ✓：`cfg.text_editor_first = { "home.select", … }`（见 `entry_client_script.lua` ✓）
+    --   ★ 机制 ✓：★ **先读一眼** ——
+    --     · ★ 已经有内容 ⇒ **不写** ✓（★ 算送达 ✓ 免得每帧重发 ✓）
+    --     · ★ 读不到 / 是空的 ⇒ **照旧写** ✓（★ 新关卡、刚导入的档 ⇒ 也不会出现空按钮 ✓✓）
+    local tef_target = nil
+    do
+      if self.text_editor_first and self.text_editor_first[id] then
+        local lc = nil
+        pcall(function() lc = self:sub(id, "label") end)
+        if lc ~= nil and lc.text ~= nil then tef_target = lc
+        elseif ctrl.text ~= nil then tef_target = ctrl
+        else
+          local tc = self:sub(id, "text")
+          if tc ~= nil and tc.text ~= nil then tef_target = tc end
+        end
+        if tef_target ~= nil then
+          local cur = nil
+          pcall(function() cur = tef_target.text end)
+          if cur ~= nil and tostring(cur) ~= "" then
+            return true      -- ★ 编辑器里已经有字 ⇒ 让位 ✓（故意的空操作 ⇒ 算送达 ✓）
+          end
+        end
+      end
+    end
     local done = false
     do
       local lc = nil

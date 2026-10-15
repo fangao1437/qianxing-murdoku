@@ -6737,8 +6737,40 @@ function Controller:build_layout(ui_adapter)
       push({ id = "modal.title", kind = "text", parent = "modal",
              rect = { x = mx + 30, y = my + 40, w = mw - 60, h = 90 },
              text = modal.win and "恭喜破案" or "没能找齐所有人", style = "modal.title" })
+      -- ★★★★★★★★ 2026-10-16 **v252：分析标语挪进 `win` 区（每关一颗 `win.N`）** ✗✓✓
+      --   ★ 用户原话 ✓：「★ **每关的通关弹窗的分析标语也像 clue 一样单独设一个对应区域放对应内容，
+      --     ★ 父级叫 win，子控件叫 win.i(1,2,3等)**」✓
+      --   ★ 为什么必须"每关一颗控件" ✗：★ 文字**存不进 `.gil`** ✓（`_probe_texts.mjs` 实测 ✓）
+      --     ⇒ ★ 想让"每关各自一句"在编辑器里能改 ⇒ ★ **一颗控件只能放一句** ✓
+      --     ⇒ ★ 所以先把**控件**建够（`win` ＋ `win.1..N` ✓ 已写进交付档 ✓）
+      --   ★ 脚本只做两件事 ✓：★ ① **只显示当前那关那一颗** ✓ ② ★ 读不到内容才写兜底 ✓
+      --     （"读不到才写"在适配层 ✓ `cfg.text_editor_first` 里已有 `win.1..4` ✓）
+      local win_n, win_idx = 4, nil
+      do
+        local lv = self.opts.levels
+        if type(lv) == "function" then lv = lv() end
+        if type(lv) == "table" and #lv > 0 then win_n = #lv end
+        local want = tostring(self.opts.current_level or "")
+        if type(lv) == "table" then
+          for i = 1, #lv do
+            if tostring(lv[i].id) == want then win_idx = i break end
+          end
+        end
+      end
+      local win_rect = { x = mx + 30, y = my + 140, w = mw - 60, h = 110 }
+      push({ id = "win", kind = "container", parent = "modal", rect = win_rect })
+      for i = 1, win_n do
+        push({ id = "win." .. i, kind = "text", parent = "win", rect = win_rect,
+               visible = (win_idx == i),
+               -- ★ 只给"当前那关"那一颗写兜底 ✓ —— ★ 别的关卡的内容**脚本不知道**（★ 那是编辑器的事 ✓）
+               text = (win_idx == i) and body or nil,
+               style = "modal.body" })
+      end
+      -- ★ 老的 `modal.body` **不再承担这句话** ✓ —— ★ 留着这条、但**藏起来** ✓
+      --   （★ 不藏的话，编辑器里那份旧内容会跟新区域**叠一遍** ✗）
       push({ id = "modal.body", kind = "text", parent = "modal",
-             rect = { x = mx + 30, y = my + 140, w = mw - 60, h = 110 }, text = body, style = "modal.body" })
+             rect = { x = mx + 30, y = my + 140, w = mw - 60, h = 110 },
+             visible = false, style = "modal.body" })
       push({ id = "modal.stats", kind = "text", parent = "modal",
              rect = { x = mx + 30, y = my + 262, w = mw - 60, h = 44 },
              text = string.format("用时 %s · 误指认 %d 次 · 位置 %d/%d",
@@ -11550,6 +11582,22 @@ function M.new(cfg)
   self.warned = {}
   self.on_input = nil
   self.apply_rect = cfg.apply_rect == true   -- 默认不动位置（布局在编辑器里定）
+  -- ★★★★★★★★ 2026-10-16 **v252：哪些控件的文案"编辑器优先"** ✗✓✓
+  --   ★ 名单来自 `cfg.text_editor_first`（见 `entry_client_script.lua` ✓ 一处定义 ✓）
+  --   ★ 语义 ✓：★ 名单里的控件，★ 脚本**只在它当前是空的时候**才写字 ✓
+  --     ⇒ ★ 你在编辑器里填了文案 ⇒ 脚本一个字都不动 ✓✓（`set_property` 的 `text` 分支 ✓）
+  --   ⚠️ 为什么要"空才写"而不是"完全不写" ✗：
+  --     ★ 文字**存不进 `.gil`**（`_probe_texts.mjs` 实测 ✓）⇒ ★ 新导入的档里这些控件**是空的** ✓
+  --     ⇒ ★ 完全不写 ⇒ **按钮全空** ✗✓ —— ★ 留一个兜底，界面永远不会空 ✓
+  self.text_editor_first = {}
+  do
+    local list = cfg.text_editor_first
+    if type(list) == "table" then
+      for i = 1, #list do
+        if type(list[i]) == "string" then self.text_editor_first[list[i]] = true end
+      end
+    end
+  end
   return self
 end
 
@@ -15562,6 +15610,37 @@ function Adapter:set_property(id, key, value, nkey)
     --   ① 按钮自己的 `label` 子控件（我生成的那种）
     --   ② 按钮自己就是文字控件（`ctrl.text` 可写）
     --   ③ 老的 `text` 子控件（兼容）
+    --
+    -- ★★★★★★★★ 2026-10-16 **v252：这几颗的文案【编辑器优先】** ✗✓✓
+    --   ★ 用户要求 ✓：「**让所有按钮的文本内容也交由编辑器**」✓
+    --     （原话还有半句 ✓：「你如果能直接填内容进控件你就填，不能就把位置告诉我」✓
+    --      ★ 答复 ✓：★ `.gil` **存不下文字** ✗ —— ★ `tools/gil/_probe_texts.mjs` 实测
+    --      338 条记录里**一条"非名字文本"都没有** ✓ ⇒ ★ 只能**在编辑器里填** ✓
+    --      ⇒ ★ 所以这条通道的意义是：★ **你在编辑器里填了 ⇒ 脚本一个字都不动** ✓✓）
+    --   ★ 名单 ✓：`cfg.text_editor_first = { "home.select", … }`（见 `entry_client_script.lua` ✓）
+    --   ★ 机制 ✓：★ **先读一眼** ——
+    --     · ★ 已经有内容 ⇒ **不写** ✓（★ 算送达 ✓ 免得每帧重发 ✓）
+    --     · ★ 读不到 / 是空的 ⇒ **照旧写** ✓（★ 新关卡、刚导入的档 ⇒ 也不会出现空按钮 ✓✓）
+    local tef_target = nil
+    do
+      if self.text_editor_first and self.text_editor_first[id] then
+        local lc = nil
+        pcall(function() lc = self:sub(id, "label") end)
+        if lc ~= nil and lc.text ~= nil then tef_target = lc
+        elseif ctrl.text ~= nil then tef_target = ctrl
+        else
+          local tc = self:sub(id, "text")
+          if tc ~= nil and tc.text ~= nil then tef_target = tc end
+        end
+        if tef_target ~= nil then
+          local cur = nil
+          pcall(function() cur = tef_target.text end)
+          if cur ~= nil and tostring(cur) ~= "" then
+            return true      -- ★ 编辑器里已经有字 ⇒ 让位 ✓（故意的空操作 ⇒ 算送达 ✓）
+          end
+        end
+      end
+    end
     local done = false
     do
       local lc = nil
@@ -20720,7 +20799,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v251 / 2026-10-16 / 主页四键与弹窗按键同规格(312x60 + 同款胶囊底图) + 结算键宽度 x1.5(=105) =====")
+        print("[murdoku] ===== 构建标记 v252 / 2026-10-16 / 按钮文案编辑器优先(cfg.text_editor_first,空才写) + 通关分析标语改放 win/win.N 区 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -20907,6 +20986,37 @@ local function build_adapter()
     --       判"没表态" ✗ —— ★ **`not false` 也是 `true`** ⇒ ★ 显式写 `false` **拦不住继承** ✗
     --       （`clues` / `clue.*` 就是这么被接管的 ✓ 用户原话「网格视窗的大小我已经改了」✗）
     geom_by_editor = true,
+    -- ★★★★★★★★ 2026-10-16 **v252：这些控件的文案"编辑器优先"** ✗✓✓
+    --   ★ 用户原话 ✓：「★ **让所有按钮的文本内容也交由编辑器** ✓
+    --     ★ **你如果能直接填内容进控件你就填，不能就把位置告诉我**」✓
+    --   ★★ 答复（先说结论 ✓）：★ **`.gil` 存不下控件的文字** ✗ ——
+    --     ★ 只读实测：`node tools/gil/_probe_texts.mjs 393.gil` ⇒
+    --       ★ **338 条记录里，一条"非名字文本"都没有** ✓（与项目 2026-09-28 的结论一致 ✓）
+    --     ⇒ ★ **填不了** ✗ ⇒ ★ 只能**在编辑器里逐颗填** ✓（★ 要填哪些：见本名单 ✓
+    --       ＋ 回执 §〇·补5 那张表 ✓ —— ★ 你已经填好的 **主页四键** 就在名单里 ✓）
+    --   ★ 语义 ✓：★ 名单里的控件 ⇒ ★ 脚本**只在它当前是空的时候**才写 ✓
+    --     ⇒ ★ 你填过 ⇒ 脚本一个字都不动 ✓✓；★ 没填 ⇒ 仍然有字（兜底 ✓ 界面不会空 ✓）
+    --   ⚠️ **不在名单里的**（★ 这类**必须**由脚本写 ✓ 别加进来 ✗）：
+    --     ★ `select.card.*.title` / `.info`（每关现算 ✓ 会随翻页变 ✓）
+    --     ★ `clues.*` 的计数、`hud.timer` / `hud.progress`（每秒在变 ✓）
+    --     ★ `clue.N.*` 的字母（分级现算 ✓）、`modal.stats`（用时/步数 ✓）
+    --     ★ `modal.title`（"恭喜破案" / "没能找齐所有人" **两态** ✓ —— ★ 编辑器只能存一份 ✗）
+    text_editor_first = {
+      -- ★ 首页四键（★ 你 2026-10-16 已经填好了 ✓）
+      "home.select", "home.continue", "home.shop", "home.bag",
+      -- ★ 结算键
+      "settle.btn",
+      -- ★ 返回弹窗四键
+      "modal.exit", "modal.save", "modal.settle", "modal.cancel",
+      -- ★ 通关弹窗四键
+      "result.next", "result.exit", "result.home", "result.settle",
+      -- ★ 线索区上下箭头（老路径，留着）
+      "clues.up", "clues.down",
+      -- ★ 通关弹窗的**分析标语区**（★ 每关一颗 ✓ 你要填的就是这四颗 ✓）
+      --   ★ 父级 `win`、子控件 `win.1..win.4`（= 第 1..4 关 ✓ 顺序与关卡注册表一致 ✓）
+      --   ★ 脚本只在"它是空的"时候写兜底 ✓ ⇒ ★ 你填了就以你的为准 ✓
+      "win.1", "win.2", "win.3", "win.4",
+    },
     widgets     = false,   -- ★★★★★★★★ 2026-10-15 **关掉：四个方块删掉** ✗✓✓
     --
     --   ★★★ 用户原话 ✓：「**把原来四个方块删掉**」✓（★ 功能已通过的下一句 ✓）

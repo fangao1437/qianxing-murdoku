@@ -30,8 +30,13 @@ const argv = process.argv.slice(2);
 const argOf = (k) => { const a = argv.find((s) => s.startsWith('--' + k + '=')); return a ? a.slice(k.length + 3) : null; };
 const IN = argOf('in'), OUT = argOf('out'), SRC = argOf('src'), NAME = argOf('name'), SIZE = argOf('size');
 const FRONT = argv.includes('--front');
+// ★ 2026-10-16 新增 ✓：`--parent=<名字>` ⇒ ★ 把克隆体挂到**另一个父控件**下 ✓
+//   ★ 为什么需要 ✗：★ 本工具原来只会"插到原型所在的那个父级" ✗ ——
+//     ★ 而 `win`（容器）与 `win.1..4`（文本）**必须挂在不同父级下** ✓
+//     （★ `win` 在 `modal` 下 ✓；★ `win.N` 在 `win` 下 ✓）
+const TPARENT = argOf('parent');
 if (!IN || !OUT || !SRC || !NAME) {
-  console.error('用法: node tools/gil/clone_control.mjs --in=<存档> --out=<输出> --src="父/源名" --name=<新名> [--size=宽x高] [--front]');
+  console.error('用法: node tools/gil/clone_control.mjs --in=<存档> --out=<输出> --src="父/源名" --name=<新名> [--parent=<目标父名>] [--size=宽x高] [--front]');
   process.exit(1);
 }
 
@@ -98,11 +103,37 @@ if (SIZE) {
 h.arr.splice(h.index + 1, 0, cf);
 
 // 登记进父的子列表
-const newPids = pids.slice();
+// ★ 2026-10-16：★ `--parent=` 指定时，登记到**那个**父控件 ✓（否则照旧用原型所在的父级 ✓）
+const destParent = TPARENT ? g.recs.find((r) => r.name === TPARENT) : parent;
+if (TPARENT && !destParent) { console.error('✗ 找不到目标父控件 ' + TPARENT); process.exit(2); }
+const destCl = destParent === parent ? pcl : findChildListTop(destParent.field.sub);
+const destIds = destParent === parent ? pids : (destCl ? (asIdList(destCl.payload, true) || []) : []);
+const destName = destParent === parent ? pn : TPARENT;
+// ★★★★★★★★ 2026-10-16 **目标父级没有 `#503` 子列表时，【新建一个】** ✗✓✓
+//   ★ 踩到的坑 ✓：★ `win`（克隆来的容器）**没有子列表** ✗ ⇒ 上一版只打印一句
+//     「只插树、不登记」✓ ⇒ ★ 结果 `win` 的 `_probe_kids` 是 **0 个子控件** ✗
+//     （★ 记录自己的父指针是对的 ✓ 但**父的子列表里没有它们** ✗ ⇒ 编辑器/引擎看不到它们 ✓）
+//   ⇒ ★ 现在：★ 没有就**新建**一个 `#503` ✓（★ payload = 那串 id 的 varint 拼 ✓ 见 `setChildList` ✓）
+let destClEff = destCl;
+if (!destClEff) {
+  destClEff = { field: 503, wt: 2, sub: [], payload: Buffer.alloc(0), len: 0, s1: 0 };
+  destParent.field.sub.push(destClEff);
+  console.log('  ★ ' + destName + ' 原来**没有** #503 子列表 ⇒ 已新建 ✓');
+}
+// ★★★★★★★★ 2026-10-16 **`--parent=` 还必须改记录自己的【顶层 `#504`（父指针）】** ✗✓✓
+//   ★ 踩到的坑 ✓：★ 只改"父的子列表"不够 ✗ —— ★ 记录里**另有一个顶层 `#504` 就是父 id** ✓
+//     （★ `gilread.mjs` 的 `parentId` 读的正是它 ✓ 见那里 2026-10-10「同号字段陷阱第 3 例」✓）
+//   ⇒ ★ 不改它 ⇒ ★ **子列表说新父、记录自己说旧父** ✗ —— ★ 复读核对当场 ❌（本轮实测 ✓）
+if (TPARENT) {
+  const p504 = cf.sub.find((f) => f.field === 504 && f.wt === 0);
+  if (p504) { p504.num = BigInt(destParent.id); console.log('  改顶层父指针 #504 → ' + destParent.id + '（' + TPARENT + ' ✓）'); }
+  else console.log('  ⚠️ 克隆体顶层没有 #504 父指针 —— 只登记子列表');
+}
+const newPids = destIds.slice();
 if (FRONT) newPids.unshift(Number(newId)); else newPids.push(Number(newId));
-if (pcl) { setChildList(pcl, newPids); console.log('  已登记进 ' + pn + ' 的子列表：' + pids.length + ' → ' + newPids.length
-  + (FRONT ? '（新控件是第 1 个 ✓）' : '（新控件是最后 1 个）')); }
-else console.log('  ⚠️ ' + pn + ' 没有 #503 子列表 —— 只插树、不登记');
+setChildList(destClEff, newPids);
+console.log('  已登记进 ' + destName + ' 的子列表：' + destIds.length + ' → ' + newPids.length
+  + (FRONT ? '（新控件是第 1 个 ✓）' : '（新控件是最后 1 个）'));
 
 fs.writeFileSync(OUT, g.pack(encodeMsg(g.tree)));
 console.log('\n已写出：' + path.basename(OUT) + '（' + fs.statSync(OUT).size + ' 字节）');
@@ -110,16 +141,16 @@ console.log('\n已写出：' + path.basename(OUT) + '（' + fs.statSync(OUT).siz
 // ── 从磁盘重读断言 ──
 const g2 = readGil(OUT);
 const rec2 = g2.recs.find((r) => r.id === Number(newId));
-const p2 = g2.recs.find((r) => r.id === parent.id);
+const p2 = g2.recs.find((r) => r.id === destParent.id);
 const p2cl = p2 ? findChildListTop(p2.field.sub) : null;
 const p2ids = p2cl ? (asIdList(p2cl.payload, true) || []) : [];
 const bl2 = rec2 ? (() => { const b = []; stateBlocks(rec2.field.sub, b); return b; })() : [];
 const sz2 = bl2[0] ? pairOf(bl2[0], 505) : null;
 console.log('\n── 复读核对（从磁盘重读）──');
-const okRec = !!rec2 && rec2.parentId === parent.id;
+const okRec = !!rec2 && rec2.parentId === destParent.id;
 const okPos = p2ids.indexOf(Number(newId)) === (FRONT ? 0 : p2ids.length - 1);
 console.log('  ' + (okRec ? '✅' : '❌') + ' ' + NAME + ' #' + newId + '  父=' + (rec2 ? rec2.parentId : '?')
-  + (okRec ? '（' + pn + ' ✓）' : ' ✗'));
+  + (okRec ? '（' + destName + ' ✓）' : ' ✗'));
 console.log('  ' + (okPos ? '✅' : '❌') + ' 在 ' + pn + ' 子列表里的位置 = 第 ' + (p2ids.indexOf(Number(newId)) + 1) + ' 个'
   + '（共 ' + p2ids.length + '）');
 if (SIZE) console.log('  ' + (sz2 ? '✅' : '❌') + ' 尺寸 = ' + (sz2 ? (pairValue(sz2, 0) + '×' + pairValue(sz2, 1)) : '?'));
