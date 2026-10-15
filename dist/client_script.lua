@@ -4888,6 +4888,35 @@ local function apply_screen_hide(nodes, screen)
     --   ⇒ 三样都补进隐藏名单：`selbar`（容器本身）、`selbtn.`（它的子按钮）、`tpl-`（模板引用控件）。
     HIDE["selbar"] = true
     HIDE["tpl-container"] = true
+    -- ★★★★★★★★ 2026-10-15 **关卡内那七颗命中层：改成【列具体 id】✗✓✓**（真机截图那件事的正解 ✓）
+    --
+    --   ★★★ 真机现象 ✓（用户 2026-10-15 截图 + 原话）：
+    --     ★「**左右箭头没加上去，功能也没换绑到新的方块上**」✗
+    --     ★ 截图里 4 张卡**在正确的位置**（几何已经修好了 ✓）★ 但**点了没反应** ✓
+    --
+    --   ★★ 根因 ✓（`tests/select_hit_visible.lua` 把它钉死了 ✓）：
+    --     ★ 这一支的 `PREFIX` 名单里有 **`"hit."`** ✗ ——
+    --       它本来是给**关卡内**那七颗 `hit.*`（光标检测区域）用的 ✓
+    --     ★★ 而它**同时命中选关屏自己的 `hit.select.*`** ✗✗
+    --       ⇒ ★ 选关屏**每帧**把这 7 个命中层 `visible = false` ✓
+    --       ⇒ ★★★ **可视层（白卡）在、命中层被藏 ⇒ 点哪儿都没反应** ✓✓
+    --     ★ 为什么一直没被发现 ✗：命中层**本来就是隐形的** ✓
+    --       ⇒ ★ "被藏了"与"正常隐藏"在屏幕上**长得一模一样** ✓
+    --       ⇒ ★ 只有"点击没反应"这一个可观察差异 ✓（用户正是这么报的 ✓）
+    --
+    --   ★★ 判据 ✓（可复跑 ✓）：
+    --     `lua tests/select_hit_visible.lua`
+    --       ★ 修前：7 条红 ✓（`hit.select.*` 实测 visible=false ✓ 而 `select.card.*` 是 true ✓）
+    --       ★ 修后：0 条红 ✓
+    --
+    --   ★ 规矩 ✓（与 `KNOWN_ABSENT` 那条**同一类病** ✓）：
+    --     ★★ **前缀只许给"整族都该藏"的族用** ✗ ——
+    --       一旦族里出现**合法的例外**（这里是选关屏自己的命中层 ✓），
+    --       就必须**列具体 id** ✓，否则那个例外会被静默吃掉 ✓✓
+    for _, id in ipairs({ "hit.back", "hit.submit", "hit.redo", "hit.undo",
+                          "hit.hint", "hit.ok", "hit.no" }) do
+      HIDE[id] = true
+    end
     -- ★★★★★ 2026-10-05 **`"cell."` 从这里删掉** ✗✓ —— 它就是「第一次进关墙/门不画」的根因 ✓
     --
     --   机制（本函数是**单向**的 ✗：只会 `visible = false` ✓ 从不写回 true ✓）：
@@ -4913,9 +4942,19 @@ local function apply_screen_hide(nodes, screen)
     --     ⇒ ★★ 这一条**本来就是重复的** ✗ —— 重复的那份还会用"单向藏"覆盖规划 ✗✓
     --   ⚠️ 教训：★ 可见性【只能有一个权威】✗ —— 规划给了，屏幕层就不该再管 ✓
     -- ★ 2026-10-12 `"ruler"` 已从名单里删掉 ✓（行标/列标那套控件已废弃 ✓ 见文件内说明 ✓）
-    PREFIX = { "clue.", "hud.", "room.label.", "tray.", "action.", "hex.", "hit.",
+    -- ★★★★★★★★ 2026-10-15 **`"hit."` 从这里【删掉】** ✗✓✓（它吃掉了选关屏的命中层 ✓ 见上面那段 ✓）
+    --   ★ 关卡内那七颗改为**列具体 id** ✓（上面刚加的那一圈 ✓）
+    PREFIX = { "clue.", "hud.", "room.label.", "tray.", "action.", "hex.",
                "selbtn.", "tpl.",
                (screen == "home") and "select." or "home." }
+    -- ⚠️ 这里**不需要**再补 `hit.select.` ✗ —— ★ 我第一版补了，随即核实是**多余的** ✓：
+    --   ★ 本函数只遍历**本帧规划里的节点** ✓，而选关屏那整套（含 `hit.select.*`）
+    --     **只在 `screen == "select"` 时才进规划** ✓（`build_layout` 的选关支路 ✓）
+    --   ⇒ ★ 主页/关卡这两帧，它们**压根不在 `nodes` 里** ⇒ 本函数碰不到它们 ✓
+    --   ★★ 那"切屏后它们怎么被藏" ✓：★ 由 `render` 的**差集**收口 ✓ ——
+    --     「上一帧显示过、这一帧不在布局里」⇒ 一律 `visible = false` ✓
+    --     （就在 `render` 里那两段 `if self._shown == nil then … else for pairs(self._shown)` ✓）
+    --     ⇒ ★ 所以**不要**在这里叠一层死代码 ✓（本项目专门清过这种"两处负责一件事"✓）
   end
   for i = 1, #nodes do
     local id = nodes[i].id
@@ -6975,42 +7014,50 @@ function Controller:build_layout()
              rect = BACK_RECT,
              event = { action = "home" } })
         -- ★★★ 2026-10-01：**选关翻页**（关卡多于 8 个时才有意义）。
-        --   只有一页时整组隐藏（`visible=false`），不占视觉。
-        local pg_visible = (pages > 1)
-        -- ★★★★★★ 2026-10-15 **翻页键也是两层：视觉 `select.*` ＋ 命中 `hit.select.*`** ✗✓
-        --   （理由同上面 `select.back` 那段：`hex.*` 图标**收不到光标事件** ✗）
-        --   · 视觉：`select.prev` #1073742728 / `select.next` #1073742729（克隆自 `hex.back`）62×62
-        --   · 命中：`hit.select.prev` #1073742731 / `hit.select.next` #1073742732（克隆自 `hit.back`）
-        --   · ★ **事件绑在命中层** ✓；★ **尺寸 62×62**、**纵向居中**（y = 509 ⇒ 62 高落在中线 540 上 ✓）
-        --   · ★ 贴屏幕左右缘：x = 60 / x = 1920−60−62 = 1798 ✓
-        --   · ★ 卡片区 250…1670 ⇒ 左右各 62 宽**不压卡片** ✓
+        -- ★★★★★★★★ 2026-10-15 **改成"永远显示 + 没得翻就变暗"** ✗✓✓（用户 2026-10-15 报的 ✓）
+        --
+        --   ★★ 用户原话 ✓：「**左右箭头没加上去**」✗ —— ★ 而他其实只有 **4 关** ✓
+        --     而脚本是「四关一页」✓（`PER = 4` ✓）⇒ `pages = 1` ✓
+        --     ⇒ ★ 旧写法 `pg_visible = (pages > 1)` ⇒ **整组隐藏** ✗
+        --       ⇒ ★★ 玩家看到的选关屏**没有左右箭头** ✓（用户就是这么报的 ✓）
+        --
+        --   ★ 旧写法错在哪 ✗：★ 它把"**这一屏有没有这个控件**"和
+        --     "**这个方向现在能不能翻**"当成了同一件事 ✓ —— 这两件事是两回事 ✓✓
+        --
+        --   ★ 新写法 ✓（两件事分开 ✓）：
+        --     · ★ **可见性 = 这一屏有没有** ⇒ 选关屏**永远有**这两个箭头 ✓
+        --     · ★ **可用性 = 这个方向能不能翻** ⇒ 不能翻的用 **变暗**（`imageColor` 乘算 ✓）
+        --       ⇒ ★ 玩家一眼能看出"箭头在、但这边没页了" ✓
+        --       ⇒ ★ 而点击**照旧一律绑上** ✓（`select_page` 那边已经夹紧了 ✓
+        --         见上面 `if page < 1 then page = 1 end` ✓ ⇒ 点它也不会越界 ✓）
+        --
+        --   ★ 变暗用的是本工程**已经用过的两个值** ✓（不新发明 ✓）：
+        --     · `0xFFFFFFFF` = 不透明白 = **原色** ✓（见适配层 `NORMAL_TINT` ✓）
+        --     · `0x7FFFFFFF` = 50% 透明白 = **整体减淡** ✓（见适配层 `PLACED_TINT` ✓
+        --       就是"已放置头像卡"那种变淡效果 ✓）
+        --   ⚠️ 前提 ✓：`tint` 那条路**必须在真机上真的生效** ✗ ——
+        --     它这次一起修了 ✓（原来 `tint` 只认 table **且要求全局 `Color()`**，
+        --     而真机上 `Color()` 不存在 ⇒ 一直是空操作 ✓ 见适配层那一段 ✓）
         local ARROW = 62
         local PG_Y  = math.floor((1080 - ARROW) / 2)      -- 509
         local PR = { x = 60, y = PG_Y, w = ARROW, h = ARROW }
         local NX = { x = 1920 - 60 - ARROW, y = PG_Y, w = ARROW, h = ARROW }
-        if pg_visible then
-          push({ id = "select.prev", kind = "button", parent = "root",
-                 visible = (page > 1), rect = PR })
-          push({ id = "select.next", kind = "button", parent = "root",
-                 visible = (page < pages), rect = NX })
-          push({ id = "hit.select.prev", kind = "button", parent = "root",
-                 visible = (page > 1), rect = PR,
-                 event = { action = "select_page", delta = -1 } })
-          push({ id = "hit.select.next", kind = "button", parent = "root",
-                 visible = (page < pages), rect = NX,
-                 event = { action = "select_page", delta = 1 } })
-          push({ id = "select.page", kind = "text", parent = "root", visible = true,
-                 text = string.format("第 %d / %d 页", page, pages),
-                 -- ★ 2026-10-14 宽度 60 → 130 ✗✓：`第 1 / 2 页` 按 24 号字约 110px 宽 ✓
-                 rect = { x = 895, y = 952, w = 130, h = 70 } })
-        else
-          push({ id = "select.prev", kind = "button", parent = "root", visible = false, rect = PR })
-          push({ id = "select.next", kind = "button", parent = "root", visible = false, rect = NX })
-          push({ id = "hit.select.prev", kind = "button", parent = "root", visible = false, rect = PR })
-          push({ id = "hit.select.next", kind = "button", parent = "root", visible = false, rect = NX })
-          push({ id = "select.page", kind = "text", parent = "root", visible = false,
-                 rect = { x = 895, y = 952, w = 130, h = 70 } })
-        end
+        local NORMAL_TINT, DIM_TINT = 4294967295, 2147483647
+        -- ★ 视觉层：**永远可见** ✓；不能翻的那一边变暗 ✓
+        push({ id = "select.prev", kind = "button", parent = "root", visible = true,
+               rect = PR, tint = (page > 1) and NORMAL_TINT or DIM_TINT })
+        push({ id = "select.next", kind = "button", parent = "root", visible = true,
+               rect = NX, tint = (page < pages) and NORMAL_TINT or DIM_TINT })
+        -- ★ 命中层：**永远可见** ✓（否则点不动 ✓）；两个方向都绑上 ✓（夹紧在 `select_page` ✓）
+        push({ id = "hit.select.prev", kind = "button", parent = "root", visible = true,
+               rect = PR, event = { action = "select_page", delta = -1 } })
+        push({ id = "hit.select.next", kind = "button", parent = "root", visible = true,
+               rect = NX, event = { action = "select_page", delta = 1 } })
+        -- ★ 页码：**永远显示** ✓ —— ★「第 1 / 1 页」正好解释"为什么箭头是暗的" ✓
+        push({ id = "select.page", kind = "text", parent = "root", visible = true,
+               text = string.format("第 %d / %d 页", page, pages),
+               -- ★ 2026-10-14 宽度 60 → 130 ✗✓：`第 1 / 2 页` 按 24 号字约 110px 宽 ✓
+               rect = { x = 895, y = 952, w = 130, h = 70 } })
       -- ⚠️⚠️ `opts.levels` 在 main.lua 里传的是**表**（`levels = level_list`），不是函数！
       --   我第一版写成 `self.opts.levels()` ⇒ `attempt to call a table value (field 'levels')`
       --   ⇒ **build_layout 直接抛错、整个渲染崩掉**，
@@ -11086,6 +11133,32 @@ end
 local Adapter = {}
 Adapter.__index = Adapter
 M.Adapter = Adapter
+
+-- ★★★★★★★★ 2026-10-15 **把 {r,g,b,a} 打包成引擎认的 32 位整数（`0xAARRGGBB`）** ✗✓✓
+--
+--   ★ 为什么需要它 ✓：★ 真机上**没有全局 `Color()`** ✓（本文件 `style` 分支的注释
+--     早就写着这条实测 ✓）⇒ ★ `imageColor` 只能**直接写整数** ✓
+--   ★ 为什么单独提成一个**导出的纯函数** ✓：
+--     ★ 纯函数**离线就能测** ✓（`tests/select_hit_visible.lua` 直接断言几个值 ✓）
+--     —— 这正是本项目"给测试留一条通路"的老做法 ✓（同 `M.press_seconds` ✓）
+--   ★ 约定 ✓（与真机日志里的值逐位对齐 ✓）：
+--     `0xFFFFFFFF` = 不透明白（原色）✓ · `0x7FFFFFFF` = 50% 透明白（减淡）✓
+--     `0xFF9353CB` 这类 = 不透明色 ✓ —— ★ 一律 **A 在高位** ✓
+--   ★ **不给 `a` = 不透明（255）** ✓ —— 与官方 `Color(r,g,b)` 的默认一致 ✓
+--     （⚠️ 我第一版让缺省 `a` 落到 0 ⇒ `pack_color(255,255,255)` 出 `0x00FFFFFF`
+--       —— 那是**全透明** ✗ 与本意相反 ✓ 测试当场抓出来 ✓）
+function M.pack_color(r, g, b, a)
+  local function c(v)
+    v = tonumber(v)
+    if v == nil then v = 0 end
+    v = math.floor(v + 0.5)
+    if v < 0 then v = 0 end
+    if v > 255 then v = 255 end
+    return v
+  end
+  if a == nil then a = 255 end
+  return c(a) * 16777216 + c(r) * 65536 + c(g) * 256 + c(b)
+end
 
 function M.new(cfg)
   cfg = cfg or {}
@@ -15392,32 +15465,41 @@ function Adapter:set_property(id, key, value, nkey)
   --   所以"同底图 + 不同颜色区分区域"是零额外素材的做法。
   --   value 用 {r,g,b,a?}（0–255）；官方构造是全局函数 `Color(r,g,b,a?)`。
   elseif key == "tint" then
+    -- ★★★★★★★★ 2026-10-15 **染色这条路【在真机上一直是空操作】** ✗✓✓（本轮修 ✓）
+    --
+    --   ★★ 旧写法有两道门槛 ✗，真机**两道都过不去** ✓：
+    --     ① `type(value) == "table"` ✗ —— ★ 缩略图那边传的是**打包整数** ✓
+    --        ⇒ ★ 直接不进分支 ⇒ **静默什么都不做** ✓（连一行日志都没有 ✗）
+    --     ② 就算传了 table，还要 `type(Color) == "function"` ✗ ——
+    --        ★★ 而本文件后面自己写着 ✓（`style` 分支那段 ✓）：
+    --        「颜色在引擎里就是 **32 位整数**，而 `Color()` 全局函数**不存在**」✓
+    --        ⇒ ★ 于是 table 那条路**也永远拿不到 made** ⇒ 又是一次空操作 ✓
+    --   ⇒ ★★ 结果 ✓：★ **卡片一直是纯白、缩略图一直没有颜色** ✓✓
+    --     （用户 2026-10-15 那张截图正是"4 张纯白卡" ✓ —— 与本条吻合 ✓）
+    --
+    --   ★ 修法 ✓（两条，都不依赖那个不存在的全局函数 ✓）：
+    --     · ★ **整数直接认** ✓ —— ★ 真机已经证明它能用 ✓：
+    --       `style` 分支的 `PLACED_TINT = 0x7FFFFFFF` / `NORMAL_TINT = 0xFFFFFFFF`、
+    --       以及选中高亮 `HIGHLIGHT_TINT = 4294956107` 都是**直接写整数** ✓
+    --     · ★ **table 自己打包成 `0xAARRGGBB`** ✓（`M.pack_color` ✓ 已导出，测试够得着 ✓）
+    --   ⚠️ 像素约定 ✓：★ `imageColor` 是**乘算** ✓ ⇒ 白(255) × 目标色 = 目标色 ✓；
+    --     ★ alpha 也乘 ⇒ `0x7F…` = 整体减淡（"已放置头像卡"那种效果 ✓）。
     local target = self:sub(id, "face") or ctrl
-    if target ~= nil and type(value) == "table" then
-      local r = tonumber(value.r or value[1]) or 255
-      local g = tonumber(value.g or value[2]) or 255
-      local b = tonumber(value.b or value[3]) or 255
-      local a = value.a or value[4]
+    if target ~= nil then
       local made = nil
-      if type(Color) == "function" then
-        if a ~= nil then made = Color(r, g, b, tonumber(a) or 255)
-        else made = Color(r, g, b) end
+      if type(value) == "number" then
+        made = value
+      elseif type(value) == "table" then
+        local r = tonumber(value.r or value[1]) or 255
+        local g = tonumber(value.g or value[2]) or 255
+        local b = tonumber(value.b or value[3]) or 255
+        local a = tonumber(value.a or value[4]) or 255
+        made = M.pack_color(r, g, b, a)
       end
       if made ~= nil then
         local ok = pcall(function() target.imageColor = made end)
         if not ok then
-          self:warn_once("tint", "设置 imageColor 失败（可能是 ColorValue 的构造方式不对）")
-        end
-      else
-        -- ⚠️ 没有全局 `Color` **不是错误**，只是这个运行环境不支持染色
-        --    （模拟器就没有它）。所以这里用 print 说一次，**不能走 printerr** ——
-        --    模拟器有「运行期不得有错误日志」的断言，走 printerr 会把 8b/9 两步打挂。
-        if not self._tint_no_color_noted then
-          self._tint_no_color_noted = true
-          if print then
-            print("[murdoku] 环境没有全局函数 `Color`，染色跳过（不影响玩法）。"
-              .. "官方文档里 ColorValue 由 `Color(r,g,b,a?)` 创建（0–255，a 可省略）。")
-          end
+          self:warn_once("tint", "设置 imageColor 失败（imageColor 可能不是整数）")
         end
       end
     end
@@ -20160,7 +20242,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v238 / 2026-10-15 / 三轮修选中残留根因:切断取消放置与选中的捆绑(tap_cell少一行);拿起不改选中 =====")
+        print("[murdoku] ===== 构建标记 v239 / 2026-10-15 / 修选关屏点不动:hit.前缀吃掉hit.select.*命中层;箭头永远可见+不能翻变暗;染色不再依赖不存在的Color() =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

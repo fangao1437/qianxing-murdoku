@@ -480,8 +480,20 @@ if __murdoku_debug ~= nil and __murdoku_debug.adapter ~= nil then
   ok(content.disableCursorEventPassthrough == false,
   "★ 中间容器的「屏蔽区域内点击事件穿透」被脚本关掉了（"
   .. tostring(content.disableCursorEventPassthrough) .. "）")
-  ok(face.imageColor ~= nil,
-    "② 染色落到了 face.imageColor（r=" .. tostring(face.imageColor and face.imageColor.r) .. "）")
+  -- ★★★★★★★★ 2026-10-15 **断言换成"打包整数"** ✗✓（旧断言读的是 `imageColor.r` ✗）
+  --
+  --   ★ 为什么必须换 ✗：★ 染色那条路**改契约了** ✓ ——
+  --     ★ 旧写法：`Color(r,g,b)`（若环境里有这个全局函数）⇒ `imageColor` 是**表** ✓
+  --     ★★ 真机实测：★ **`Color()` 根本不存在** ✗ ⇒ 表那条路**永远拿不到值** ✓
+  --       ⇒ ★★ 于是"卡片一直纯白、缩略图一直没颜色" ✓（用户 2026-10-15 截图 ✓）
+  --     ★ 新写法：★ 一律打包成 **`0xAARRGGBB` 整数** ✓ 直接写 `imageColor` ✓
+  --       （★ 真机已证明整数可用 ✓：`PLACED_TINT` / `HIGHLIGHT_TINT` 都是整数 ✓）
+  --   ★ 判据一并升级 ✓：★ 不只断言"有值"，而是断言**那个整数逐位对** ✓
+  --     `{r=10,g=20,b=30}` + a=255 ⇒ `0xFF0A141E` = 4278850590 ✓
+  local TINT_WANT = 4278850590
+  ok(face.imageColor == TINT_WANT,
+    "② 染色落到了 face.imageColor（0xAARRGGBB = " .. tostring(face.imageColor)
+    .. "，期望 " .. tostring(TINT_WANT) .. "）")
 else
   ok(false, "拿不到适配器实例（__murdoku_debug.adapter）")
 end

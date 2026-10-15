@@ -100,6 +100,32 @@ local Adapter = {}
 Adapter.__index = Adapter
 M.Adapter = Adapter
 
+-- ★★★★★★★★ 2026-10-15 **把 {r,g,b,a} 打包成引擎认的 32 位整数（`0xAARRGGBB`）** ✗✓✓
+--
+--   ★ 为什么需要它 ✓：★ 真机上**没有全局 `Color()`** ✓（本文件 `style` 分支的注释
+--     早就写着这条实测 ✓）⇒ ★ `imageColor` 只能**直接写整数** ✓
+--   ★ 为什么单独提成一个**导出的纯函数** ✓：
+--     ★ 纯函数**离线就能测** ✓（`tests/select_hit_visible.lua` 直接断言几个值 ✓）
+--     —— 这正是本项目"给测试留一条通路"的老做法 ✓（同 `M.press_seconds` ✓）
+--   ★ 约定 ✓（与真机日志里的值逐位对齐 ✓）：
+--     `0xFFFFFFFF` = 不透明白（原色）✓ · `0x7FFFFFFF` = 50% 透明白（减淡）✓
+--     `0xFF9353CB` 这类 = 不透明色 ✓ —— ★ 一律 **A 在高位** ✓
+--   ★ **不给 `a` = 不透明（255）** ✓ —— 与官方 `Color(r,g,b)` 的默认一致 ✓
+--     （⚠️ 我第一版让缺省 `a` 落到 0 ⇒ `pack_color(255,255,255)` 出 `0x00FFFFFF`
+--       —— 那是**全透明** ✗ 与本意相反 ✓ 测试当场抓出来 ✓）
+function M.pack_color(r, g, b, a)
+  local function c(v)
+    v = tonumber(v)
+    if v == nil then v = 0 end
+    v = math.floor(v + 0.5)
+    if v < 0 then v = 0 end
+    if v > 255 then v = 255 end
+    return v
+  end
+  if a == nil then a = 255 end
+  return c(a) * 16777216 + c(r) * 65536 + c(g) * 256 + c(b)
+end
+
 function M.new(cfg)
   cfg = cfg or {}
   -- ★★ 防呆：把 `cfg.cells.<调试开关>` 上提到顶层。
@@ -4405,32 +4431,41 @@ function Adapter:set_property(id, key, value, nkey)
   --   所以"同底图 + 不同颜色区分区域"是零额外素材的做法。
   --   value 用 {r,g,b,a?}（0–255）；官方构造是全局函数 `Color(r,g,b,a?)`。
   elseif key == "tint" then
+    -- ★★★★★★★★ 2026-10-15 **染色这条路【在真机上一直是空操作】** ✗✓✓（本轮修 ✓）
+    --
+    --   ★★ 旧写法有两道门槛 ✗，真机**两道都过不去** ✓：
+    --     ① `type(value) == "table"` ✗ —— ★ 缩略图那边传的是**打包整数** ✓
+    --        ⇒ ★ 直接不进分支 ⇒ **静默什么都不做** ✓（连一行日志都没有 ✗）
+    --     ② 就算传了 table，还要 `type(Color) == "function"` ✗ ——
+    --        ★★ 而本文件后面自己写着 ✓（`style` 分支那段 ✓）：
+    --        「颜色在引擎里就是 **32 位整数**，而 `Color()` 全局函数**不存在**」✓
+    --        ⇒ ★ 于是 table 那条路**也永远拿不到 made** ⇒ 又是一次空操作 ✓
+    --   ⇒ ★★ 结果 ✓：★ **卡片一直是纯白、缩略图一直没有颜色** ✓✓
+    --     （用户 2026-10-15 那张截图正是"4 张纯白卡" ✓ —— 与本条吻合 ✓）
+    --
+    --   ★ 修法 ✓（两条，都不依赖那个不存在的全局函数 ✓）：
+    --     · ★ **整数直接认** ✓ —— ★ 真机已经证明它能用 ✓：
+    --       `style` 分支的 `PLACED_TINT = 0x7FFFFFFF` / `NORMAL_TINT = 0xFFFFFFFF`、
+    --       以及选中高亮 `HIGHLIGHT_TINT = 4294956107` 都是**直接写整数** ✓
+    --     · ★ **table 自己打包成 `0xAARRGGBB`** ✓（`M.pack_color` ✓ 已导出，测试够得着 ✓）
+    --   ⚠️ 像素约定 ✓：★ `imageColor` 是**乘算** ✓ ⇒ 白(255) × 目标色 = 目标色 ✓；
+    --     ★ alpha 也乘 ⇒ `0x7F…` = 整体减淡（"已放置头像卡"那种效果 ✓）。
     local target = self:sub(id, "face") or ctrl
-    if target ~= nil and type(value) == "table" then
-      local r = tonumber(value.r or value[1]) or 255
-      local g = tonumber(value.g or value[2]) or 255
-      local b = tonumber(value.b or value[3]) or 255
-      local a = value.a or value[4]
+    if target ~= nil then
       local made = nil
-      if type(Color) == "function" then
-        if a ~= nil then made = Color(r, g, b, tonumber(a) or 255)
-        else made = Color(r, g, b) end
+      if type(value) == "number" then
+        made = value
+      elseif type(value) == "table" then
+        local r = tonumber(value.r or value[1]) or 255
+        local g = tonumber(value.g or value[2]) or 255
+        local b = tonumber(value.b or value[3]) or 255
+        local a = tonumber(value.a or value[4]) or 255
+        made = M.pack_color(r, g, b, a)
       end
       if made ~= nil then
         local ok = pcall(function() target.imageColor = made end)
         if not ok then
-          self:warn_once("tint", "设置 imageColor 失败（可能是 ColorValue 的构造方式不对）")
-        end
-      else
-        -- ⚠️ 没有全局 `Color` **不是错误**，只是这个运行环境不支持染色
-        --    （模拟器就没有它）。所以这里用 print 说一次，**不能走 printerr** ——
-        --    模拟器有「运行期不得有错误日志」的断言，走 printerr 会把 8b/9 两步打挂。
-        if not self._tint_no_color_noted then
-          self._tint_no_color_noted = true
-          if print then
-            print("[murdoku] 环境没有全局函数 `Color`，染色跳过（不影响玩法）。"
-              .. "官方文档里 ColorValue 由 `Color(r,g,b,a?)` 创建（0–255，a 可省略）。")
-          end
+          self:warn_once("tint", "设置 imageColor 失败（imageColor 可能不是整数）")
         end
       end
     end

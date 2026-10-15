@@ -1,0 +1,23 @@
+版本：147-v239-2026-10-15
+时间：2026/10/15 22:48:05
+配套 .gil：370-选关可点-v239.gil
+说明：修选关屏点不动(hit.前缀吃掉hit.select.*命中层)+箭头永远可见/不能翻变暗+染色不再依赖不存在的Color();新增select_hit_visible用例与破坏L
+
+文件清单：
+  engine_adapter.lua              5649 字节
+  engine_adapter_qianxing.lua     349904 字节
+  entry_client_script.lua         51254 字节
+  main.lua                        155027 字节
+  murdoku_core.lua                110816 字节
+  room_map.lua                    5227 字节
+  ui_controller.lua               552048 字节
+  client_script.lua               1260540 字节（真机跑的就是这份）
+  370-选关可点-v239.gil               1542396 字节（配套存档）
+
+用途：**这一版是"当时能跑的那一份"**。要回退：
+  1) 把本目录的 *.lua 拷回 qianxing-murdoku\lua\
+  2) 跑 node tools/bundle_client_script.lua，再 powershell -File tools/install_script_to_sandbox.ps1
+     （或直接用本目录的 client_script.lua 覆盖沙箱里的那份，省掉打包）
+  3) 导入本目录里的 .gil
+
+规则（重要）：**每轮一个新编号，不删旧的、不覆盖**。

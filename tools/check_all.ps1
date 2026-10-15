@@ -101,6 +101,13 @@ Run-Step '2c/13 文件编码归一（BOM）' 'powershell' @('-ExecutionPolicy', 
 #     这里直接造 Controller 调 on_cell_down / on_cell_drag / on_cell_up 把它钉死，
 #     顺带复验长按=放置、抑制尾随点击、键盘光标与回车放置。
 Run-Step '2d/13 输入手势状态机'                 $lua @('tests\input_logic.lua') | Out-Null
+# 2d2：**选关屏的命中层与翻页箭头**（2026-10-15 真机那两件事 ✓）
+#   为什么必须进闸门：★ 这一条**只有"点击有没有反应"一个可观察差异** ✗ ——
+#     命中层本来就是隐形的 ⇒ "被藏了"与"正常隐藏"在屏幕上**长得一模一样** ✓
+#   判据（两条都是"能红能绿"的 ✓）：
+#     · `hit.select.*` 在选关屏必须 `visible = true`（修前 7 条红 ✓）
+#     · 只有一页时左右箭头**仍要可见、只是变暗**（旧写法是整组隐藏 ✗）
+Run-Step '2d2/13 选关屏命中层与箭头'            $lua @('tests\select_hit_visible.lua') | Out-Null
 # 2c2：**构建标记有没有递增**（接手待办 P1 ✓）
 #   为什么要当闸门：`PLAN.md` D2 那次事故 —— 标记停在 v076 而 `versions/` 到 v092
 #     ⇒ 十几次安装之后**无法从日志分辨跑的是哪一版** ✗ 根因就是"靠人记得递增" ✓

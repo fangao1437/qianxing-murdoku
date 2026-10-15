@@ -24,6 +24,14 @@ const suiteRed = (t) => {
 };
 
 const SUITES = ['board_wiring_e2e', 'cell_mark_letter', 'row_letter_map', 'row_letter_stability', 'clue_slots', 'selection_residue'];
+// ★★★★★★★★ 2026-10-15 **新增 `select_hit_visible`** ✗✓✓（★ 破坏 L 需要它 ✓）
+//
+//   ★★★ 为什么必须加 ✗：★ 破坏 L 加进去之后**报了"无人抓"** ✗ ——
+//     ★ 而那不是"用例写得不对" ✓ ★ 是**用例压根不在这个名单里** ✓✓
+//     ⇒ ★★ 表现与"没有检查守着"**一模一样** ✓（★ H/I 那轮的洞就是这个形状 ✓）
+//   ★ 教训 ✓：★ **新加一条破坏时，必须同时确认"守着它的那套在 `SUITES` 里"** ✗
+//     ★ 否则破坏项**永远报无人抓** ✓ 而人会以为是用例的问题 ✓
+SUITES.push('select_hit_visible');
 // ★★★★★★★★ 2026-10-15 **这一套测的是【打包产物】，不是源码** ✗✓✓
 //
 //   ★★★ 为什么必须单独列出来 ✗：★ `tests/grid_cost.lua` 读的是
@@ -122,6 +130,20 @@ const sabotages = [
     '    return do_clear(self, r, c, true), nil\n  end\n  -- ★★ 2026-09-28 改',
     '    self.selected = self.grid[r][c]\n    return do_clear(self, r, c, true), nil\n  end\n  -- ★★ 2026-09-28 改',
     'lua/murdoku_core.lua'],
+  // ★★★★★★★★ 2026-10-15（真机截图那一轮）**新增：把选关屏的命中层重新藏起来** ✗✓✓
+  //
+  //   ★★★ 用户原话 ✓：「**左右箭头没加上去，功能也没换绑到新的方块上**」✗
+  //     ★ 真机截图里 4 张卡**位置全对** ✓ 但**点了没反应** ✓
+  //   ★★ 根因 ✓：★ `apply_screen_hide` 主页/选关那一支的 `PREFIX` 里有 **`"hit."`** ✗
+  //     ★ 它本来是给**关卡内**那七颗 `hit.*` 用的 ✓
+  //       ⇒ ★★ 却**同时命中选关屏自己的 `hit.select.*`** ✗ ⇒ 命中层被逐帧藏掉 ✓
+  //   ★★★ 这一条为什么**必须有** ✗：★ 命中层**本来就是隐形的** ✓
+  //     ⇒ ★ "被藏了"与"正常隐藏"在屏幕上**长得一模一样** ✓
+  //     ⇒ ★ 唯一可观察差异 = **点击有没有反应** ✓ ⇒ 没有专门用例 ⇒ 只能靠玩家发现 ✓
+  //   ⇒ ★ 这一条破坏 = ★ **把那颗前缀加回去** ✓ ⇒ ★ `select_hit_visible` **必须变红** ✓
+  ['L 选关屏命中层又被「hit.」前缀吃掉（点了没反应）',
+    '    PREFIX = { "clue.", "hud.", "room.label.", "tray.", "action.", "hex.",\n               "selbtn.", "tpl.",',
+    '    PREFIX = { "clue.", "hud.", "room.label.", "tray.", "action.", "hex.", "hit.",\n               "selbtn.", "tpl.",'],
 ];
 
 let allGood = true;
