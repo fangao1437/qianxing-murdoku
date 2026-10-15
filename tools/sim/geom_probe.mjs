@@ -113,19 +113,32 @@ function archiveGeom(saveFile) {
   return out;
 }
 
-/** 运行时树里按名字取节点（同名取第一个）＋ 这一帧画出来了哪些 */
+/** 运行时树里按名字取节点（同名取第一个）＋ 这一帧画出来了哪些 ＋ **绝对坐标**
+ *  ★ 2026-10-16 追加（用户报"首页四个按键不见了" ✓）：
+ *    只用"相对父级的 offset"做对照是**不够的** ✗ —— ★ 父级自己被移动/改尺寸时，
+ *    子控件的 offset 一个都没变，**可它们整体跑到屏幕外去了** ✓
+ *    ⇒ 必须把父级链上的 anchoredPosition **累加**起来，得到"画布绝对中心" ✓
+ *    ★ 口径：每个节点的 anchored 都是"相对其父级中心" ⇒ 绝对 = 画布中心 + Σ(anchored) ✓
+ *      （与适配器 `rect` 分支里那条换算链同源 ✓） */
 function runtimeNodes(ri) {
   const m = new Map();
-  const put = (x) => { if (x && x.name && !m.has(x.name)) m.set(x.name, x); };
-  (function walk(x) {
+  const abs = new Map();
+  const put = (x, chain) => {
+    if (!x || !x.name) return;
+    if (!m.has(x.name)) m.set(x.name, x);
+    let sx = 0, sy = 0;
+    for (const a of chain) { sx += (typeof a.anchoredPositionX === 'number' ? a.anchoredPositionX : 0); sy += (typeof a.anchoredPositionY === 'number' ? a.anchoredPositionY : 0); }
+    if (!abs.has(x.name)) abs.set(x.name, { x: sx, y: sy, depth: chain.length });
+  };
+  (function walk(x, chain) {
     if (!x || typeof x !== 'object') return;
-    if (Array.isArray(x)) { for (const y of x) walk(y); return; }
-    put(x);
-    for (const k of (x.children || [])) walk(k);
-  })(ri && ri.tree);
+    if (Array.isArray(x)) { for (const y of x) walk(y, chain); return; }
+    if (x.name) { put(x, chain.concat([x])); chain = chain.concat([x]); }
+    for (const k of (x.children || [])) walk(k, chain);
+  })(ri && ri.tree, []);
   const painted = new Set();
   for (const x of ((ri && ri.scene && ri.scene.nodes) || [])) if (x && x.name) painted.add(x.name);
-  return { byName: m, painted };
+  return { byName: m, painted, abs };
 }
 
 /** 从运行时节点上取几何（字段名随版本可能不同 ⇒ 全试一遍，实测命中前两个 ✓） */
@@ -191,7 +204,8 @@ try {
     idx += 1;
     const g = await c.play('get', { inspect: true, view: true });
     const ri = g && g.result ? g.result : g;
-    const { byName: rn, painted } = runtimeNodes(ri);
+    const { byName: rn, painted, abs } = runtimeNodes(ri);
+    const cw = ri.canvasWidth || 1600, chh = ri.canvasHeight || 900;
     const lg = logsOf(ri);
     say('   -- measure #' + idx + '  frame=' + ri.frame + ' time=' + ri.time
       + ' 节点=' + rn.size + ' 绘制=' + painted.size);
@@ -214,10 +228,21 @@ try {
       if (scriptTouched) touched += 1;
       rows.push({ name: nm, archive: a, session: b, runtime: r, same: eq, scriptTouched, painted: painted.has(nm) });
       const tag = !a ? '存档缺' : (!r ? '运行缺' : (eq ? '与编辑器一致' : '与编辑器不一致'));
+      const ab = abs.get(nm) || null;
+      // ★ 绝对盒子（画布中心为原点）→ 屏幕像素（左上原点）
+      let onscreen = '';
+      if (ab && r && r.w !== null) {
+        const cx = cw / 2 + ab.x, cy = chh / 2 + ab.y;
+        const L = cx - r.w / 2, R = cx + r.w / 2, B = chh - (cy - r.h / 2), T = chh - (cy + r.h / 2);
+        const inx = (R > 0 && L < cw && T > 0 && B < chh);
+        onscreen = `　屏幕像素 X[${L.toFixed(0)}..${R.toFixed(0)}] Y[${T.toFixed(0)}..${B.toFixed(0)}]`
+          + (inx ? '' : ' ★★ 跑出画布 ✗');
+      }
       say('     [' + tag + '] ' + nm + (scriptTouched ? ' ★脚本改过' : '') + (painted.has(nm) ? ' (已绘制)' : ' (没绘制)'));
       say('          编辑器 ' + (a ? `(${a.x},${a.y}) ${a.w}x${a.h}` : '—')
         + '　基线 ' + (b ? `(${b.x},${b.y}) ${b.w}x${b.h}` : '—')
         + '　运行 ' + (r ? `(${r.x},${r.y}) ${r.w}x${r.h})` : '—'));
+      if (onscreen !== '') say('         ' + onscreen);
     }
     say('     == 汇总 #' + idx + '：与编辑器一致 ' + same + ' / 不一致 ' + diff
       + ' / 缺 ' + missing + '　脚本改过 ' + touched + ' 个');

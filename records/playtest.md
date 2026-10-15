@@ -8,6 +8,8 @@
 | 1 | 2026-10-16 | simulator | v247（`_wip/v247.lua`）| `tools/sim/out/392-stage584.save.json` | 主页 → 点「选关」→ 量 19 个控件 | ★ **7 个被脚本改成规划值**（`select.card.1` 233×324 ✗ / `settle.btn` (689,166) ✗ / `clues.grid` 400×544 ✗）| `tools/sim/out/geom-redC-2.json` ＋ `geom-redC-2.png` |
 | 2 | 2026-10-16 | simulator | **v248**（`dist/client_script.lua`）| 同上 | 同上 | ★ **15/19 与编辑器一致**（其余 4 项是故意保留的 ✓）| `geom-g4-1/2.json` ＋ `geom-g4-2.png` |
 | 3 | 2026-10-16 | simulator | **v248** | ★ **交付档** `392-几何归编辑器-v248.gil` → `tools/sim/out/392-v248.save.json` | 首帧 ＋ 选关屏各量一次 | ★ 17/19、15/19 一致；★ 四张卡/结算/线索网格/棋盘框**全部等于编辑器值** ✓ | `geom-ship-1/2.json` ＋ `geom-ship-2.png` |
+| 3b | 2026-10-16 | **device** | v248 | ★ 用户导入 `392-几何归编辑器-v248.gil` | 用户回报（03:52 ✓ 附脚本日志 ✓）| ★ **首页四个按键不见了** ✗（★ 真因：`.gil` 里那 6 条是**设计空间**坐标 ✗ ⇒ 见 §补 ✓）| 用户日志 `日志_2026/10/16_03:52:49` |
+| 3c | 2026-10-16 | simulator | **v248** | ★ **`392.1-几何归编辑器-v248.gil`**（6 条坐标修好 ✓）| 首页取帧 | ★ 首页四键落屏 X[609..992]、Y 301/401/501/601 ✓ **与 v247 时逐位相同** ✓；★ 全档**跑出画布 0 个**、NaN 0 个 ✓ | `geom-fix2-1.json` ＋ `geom-fix2-1.png`；`_probe_offscreen.mjs` |
 | 4 | 2026-10-16 | simulator | v247 vs v248（同一时序，只换脚本）| `layout-plan.json` 建的树 | `tools/sim/play_test.mjs` | ★ 两版**逐行相同**：44 通过 / 7 失败 / 12 测不了 | 本文件表下注 |
 | 5 | 2026-10-16 | simulator | v247 vs v248 | 同上 | `tools/sim/verify_art.mjs` | ★ 两版**相同**：10 通过 / 3 失败（同三条）| — |
 | 6 | 2026-10-16 | — | — | — | 离线 22 套 `tests/*.lua` | ★ 全绿 | `tools/sim/out/check_all_v248.log` |
