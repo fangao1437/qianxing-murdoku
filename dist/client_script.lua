@@ -7111,8 +7111,12 @@ function Controller:build_layout()
         --     · 间距 **60**（原来是 40 ⇒ "稍宽" ✓）⇒ 步长 = 310 + 60 = **370** ✓
         --     · 一行四张：总宽 = 4×310 + 3×60 = **1420** ⇒ 居中起点 = (1920−1420)/2 = **250** ✓
         --     · 纵向居中偏上（给底部翻页那行留位）⇒ y = **330**（300…不重要，330 更居中 ✓）
-        local CARD_W, CARD_H = 310, 432
-        local CARD_GAP        = 60
+        -- ★★★★★★★★ 2026-10-16 **用户指令③：选关卡片缩到 90%** ✗✓✓
+        --   ★ 原话 ✓：「★ **把棋盘，棋盘背景图，选关卡片的 xy 缩减到现在的 90%**」✓
+        --   ★ 310/432 × 0.9 = **279 / 388.8** ✓；★ 间距 60 同步缩到 **54** ✓
+        --     （★ 间距不缩的话，四张卡的总宽反而会外扩 ✗）
+        local CARD_W, CARD_H = 279, 388.8
+        local CARD_GAP        = 54                         -- ★ 2026-10-16：60 × 0.9
         local CARD_STEP       = CARD_W + CARD_GAP          -- 370
         local CARD_X0         = 250                        -- (1920 − (4*CARD_W + 3*CARD_GAP)) / 2
         local CARD_Y0         = 330
@@ -7202,21 +7206,19 @@ function Controller:build_layout()
     --     ★ 而且不靠"有人记得去关它"——★ 这一条**每帧都算**，屏幕一变就跟着变 ✓
     --   ★ 收口仍然有兜底 ✓：★ `render` 的差集（`self._shown`）看到它上一帧显示过、
     --     这一帧不在规划里 ⇒ **照样发一次 `visible = false`** ✓（那条路早就在 ✓）
-    --   ★★★★★★★★ 2026-10-16 **用户要求：长度减半 ＋ 挪到右下角** ✗✓✓
-    --     ★ 原话 ✓：「★ **下一步是把长度缩减到现在的一半，然后加上弹窗按钮同款底图，
-    --       位置挪到右下角**」✓
-    --   ★ 新几何 ✓：★ 宽 260 → **130**（减半 ✓）；★ **右边距仍 60、下边距仍 960** ✓
-    --     ⇒ x = 1920 − 60 − 130 = **1730** ✓
-    --     ★ 与 `main.lua` 每帧写的那两个数**同源** ✓（画布：pos(696,−380) size(108×60) ✓）
+    --   ★★★★★★★★ 2026-10-16 **用户指令①：挪到和「提示」同一个位置** ✗✓✓
+    --     ★ 原话 ✓：「★ **把主页和选关界面那颗结算按钮挪到和提示一个位置**」✓
+    --   ★ 提示那颗 = `hex.hint`（放大镜 ✓）—— ★ 它在存档里是 `pos[683,−279] size[70×70]` ✓
+    --     ⇒ ★ 画布中心 = (800+683, 450−279) = **(1483, 171)** ✓
+    --   ★ 反算回设计空间 ✓：x = 1483×6/5 = 1779.6 ⇒ 左上原点 x = 1779.6 − 35 = **1744.6** ✓
+    --     ★ y = (450 − 171)×6/5 = 334.8 ⇒ 再减半高 36 ⇒ 左上原点 y = **298.8** ✓
+    --     （★ 尺寸取与提示同款 70×70 → 设计 84×84 ✓）
     local show_settle = (self.screen == "home" or self.screen == "select")
     --   ⚠️ ★★ **本函数里 `settle.btn` 只许有这一条 push** ✗✓（2026-10-16 用户点破 ✓）
-    --     ★ 曾经写成 `if … push(A) else push(B)` ✗ ⇒ ★ 同一个 id **一帧两条节点** ✓
-    --     ★ 两条节点 = **两套显隐** ⇒ ★ 必然漂移 ✓（本项目的老病 ✓）
-    --     ★ 判据由 `tests/settle_button.lua` §7 守着 ✓：★ 每个屏幕上它**只许出现一次** ✓
     push({ id = "settle.btn", kind = "button", parent = "root",
            visible = show_settle,
            text = "结算",
-           rect = { x = 1730, y = 960, w = 130, h = 72 },
+           rect = { x = 1744.6, y = 298.8, w = 84, h = 84 },
            raycast = show_settle,
            event = { action = "settle_only" } })
     -- ⚠️ **主页/选关这条提前 return 之前也必须调** —— 否则这两个屏幕的子树
@@ -17298,7 +17300,14 @@ Murdoku.GRID_ITEM_PREFAB = 1073742421    -- 列表项模板索引（存档核对
 --   ⚠️ 这两组数有**两处**要用：① 建控件**之前**（否则 `cell_geometry` 会读到 .gil 里的
 --      1600×900，算出格子 171 —— 真机日志 `边缘适配 wall.up：目标 171x8` 就是这么来的）；
 --      ② on_update 里每帧兜底。抽成常量就不会漂。
-local BOARD_W, BOARD_H = 584, 584
+--   ★★★★★★★★ 2026-10-16 **用户指令③：棋盘/棋盘底图缩到 90%** ✗✓✓
+--     ★ 原话 ✓：「★ **把棋盘，棋盘背景图，选关卡片的 xy 缩减到现在的 90%**」✓
+--     ★ 584 × 0.9 = **525.6** ✓；★ 底图（`board.bg`）按棋盘自适应（`cell_geometry` 算的 ✓）
+--       ⇒ ★ 缩棋盘即同时缩底图 ✓ 不需要另改一处 ✓
+--     ⚠️ ★ 但若你在编辑器里手改了 `stage` 尺寸、且 `cfg.geom_by_editor = true` ✓
+--       ⇒ ★ 那两个数**不生效** ✓（几何由编辑器决定 ✓）—— ★ 此时请**在编辑器里**把 stage
+--         尺寸改成你要的值 ✓（★ 这就是指令②的用法 ✓）
+local BOARD_W, BOARD_H = 525.6, 525.6
 local BOARD_X, BOARD_Y = 100, 20
 
 function Murdoku.prepare(adapter)
@@ -17623,7 +17632,12 @@ function Murdoku.start(level_id, opts)
     pcall(function() root = adapter:find("root") end)
     local s = nil
     if root ~= nil then pcall(function() s = root:GetChild("stage") end) end
-    if s ~= nil then
+    -- ★★★★★★★★ 2026-10-16 **用户指令②：把这些位置/尺寸交回编辑器** ✗✓✓
+    --   ★ 原话 ✓：「★ **把我调整过的东西那里的相关位置大小调整脚本关掉，交由编辑器决定**」✓
+    --   ⇒ ★ `cfg.geom_by_editor = true` 时：★ **建控件前也不摆 stage** ✓
+    --     ★ 让 `cell_geometry` 直接读**编辑器里那个 stage 的尺寸** ✓
+    local geom_by_editor = (adapter ~= nil and adapter.cfg ~= nil and adapter.cfg.geom_by_editor == true)
+    if s ~= nil and not geom_by_editor then
       pcall(function() s:SetSizeDelta(BOARD_W, BOARD_H) end)
       pcall(function() s:SetAnchoredPosition(BOARD_X, BOARD_Y) end)
       if print then
@@ -17633,7 +17647,8 @@ function Murdoku.start(level_id, opts)
           .. "（这样 cell_geometry 读到的就是 " .. tostring(BOARD_W) .. "）")
       end
     elseif print then
-      print("[murdoku] ⚠️ 建控件前没找到 stage（root 底下没有）—— 格子几何会退回默认尺寸")
+      print("[murdoku] ★ 几何交给编辑器（geom_by_editor=true）：stage 保持编辑器里那份 "
+        .. tostring(BOARD_W) .. "x" .. tostring(BOARD_H) .. " 不再由脚本写")
     end
   end
 
@@ -18663,14 +18678,22 @@ function Murdoku.on_update(dt)
         --     格子会被放大 33%（本文件上面正记着那次事故 ✓）⇒ 保留执行者、只加守卫 ✓
         --   ⚠️ 读不到尺寸时**照旧写** ✓（不许因为读不到就不摆 ✓ 与同块另三处同口径 ✓）
         local sw0, sh0 = nil, nil
-        pcall(function() sw0, sh0 = s:GetSizeDelta() end)
-        if not (sw0 == BOARD_W and sh0 == BOARD_H) then
-          pcall(function() s:SetSizeDelta(BOARD_W, BOARD_H) end)
-        end
-        local px0, py0 = nil, nil
-        pcall(function() px0, py0 = s:GetAnchoredPosition() end)
-        if not (px0 == BOARD_X and py0 == BOARD_Y) then
-          pcall(function() s:SetAnchoredPosition(BOARD_X, BOARD_Y) end)
+        -- ★★★★★★★★ 2026-10-16 **用户指令②：每帧兜底也交给编辑器** ✗✓✓
+        --   ★ 原话 ✓：「把我调整过的东西那里的相关位置大小调整脚本关掉，交由编辑器决定」✓
+        --   ⇒ ★ `geom_by_editor = true` ⇒ ★ **这里不读也不写** ✓
+        --     ★ 你把 stage 调成多大，棋盘就是多大 ✓（格子尺寸由它算 ✓）
+        local geom_by_editor = (current ~= nil and current.adapter ~= nil and current.adapter.cfg ~= nil
+                                and current.adapter.cfg.geom_by_editor == true)
+        if not geom_by_editor then
+          pcall(function() sw0, sh0 = s:GetSizeDelta() end)
+          if not (sw0 == BOARD_W and sh0 == BOARD_H) then
+            pcall(function() s:SetSizeDelta(BOARD_W, BOARD_H) end)
+          end
+          local px0, py0 = nil, nil
+          pcall(function() px0, py0 = s:GetAnchoredPosition() end)
+          if not (px0 == BOARD_X and py0 == BOARD_Y) then
+            pcall(function() s:SetAnchoredPosition(BOARD_X, BOARD_Y) end)
+          end
         end
       end
       local bar = nil
@@ -18949,9 +18972,18 @@ function Murdoku.on_update(dt)
   --
   --   ⚠️ 只对**这台**引擎兜底 ✓：读不到 `SetSizeDelta` 时**什么都不做** ✓
   --     （★ 不许因为读不到就不摆、也不许把别的东西改坏 ✓）
+  --   ★★★★★★★★ 2026-10-16 **用户指令②：这一段整个交给编辑器** ✗✓✓
+  --     ★ 原话 ✓：「★ **把我调整过的东西那里的相关位置大小调整脚本关掉，交由编辑器决定**」✓
+  --     ★ `cfg.geom_by_editor = true` ⇒ ★ **这里一个字都不写** ✓
+  --       ★ `stage` 的尺寸/位置完全由编辑器决定 ✓（★ 格子尺寸是从 stage 尺寸算出来的 ✓
+  --         ⇒ ★ 你把 stage 调多大，棋盘就多大 ✓ 脚本不再抢 ✓）
   do
+    local geom_by_editor = (current ~= nil and current.adapter ~= nil and current.adapter.cfg ~= nil
+                            and current.adapter.cfg.geom_by_editor == true)
     local sb = nil
-    pcall(function() sb = current.adapter:find("settle.btn") end)
+    if not geom_by_editor then
+      pcall(function() sb = current.adapter:find("settle.btn") end)
+    end
     if sb ~= nil then
       --   ★★★★★★★★ 2026-10-16 **用户要求：长度减半 ＋ 挪到右下角** ✗✓✓
       --     ★ 原话 ✓：「★ **下一步是把长度缩减到现在的一半，然后加上弹窗按钮同款底图，
@@ -20432,7 +20464,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v244 / 2026-10-16 / 「结算」按钮长度减半(130)并挪到右下角(1730,960)+每帧几何同步(画布 696,-380 108x60);其余同 v243 =====")
+        print("[murdoku] ===== 构建标记 v245 / 2026-10-16 / 结算按钮挪到提示同位置(683,-279 70x70);几何交回编辑器(cfg.geom_by_editor=true);棋盘 584→525.6、选关卡片×0.9=====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -20599,6 +20631,16 @@ local function build_adapter()
     --     它是在**客户端控件容器里**另存的 ⇒ 属于「客户端控件模板」⇒ 脚本能实例化。
     --     （1073742356 是在 root 下另存的 ⇒ 服务器模板 ⇒ 返回 nil，已作废。）
     prefab_icon = 1073742357,
+    -- ★★★★★★★★ 2026-10-16 **`geom_by_editor`：把位置/尺寸交回编辑器** ✗✓✓
+    --   ★ 用户原话 ✓：「★ **把我调整过的东西那里的相关位置大小调整脚本关掉，交由编辑器决定**」✓
+    --   ★ `true` ⇒ ★ 脚本**不再抢**这两处几何 ✓：
+    --     · `stage`（棋盘容器）—— ★ 建控件前那段 ＋ `on_update` 每帧兜底那段，**两处都跳过** ✓
+    --       ⇒ ★ 编辑器里把 stage 调多大，棋盘就是多大 ✓（★ 格子尺寸是按 stage 尺寸算的 ✓）
+    --     · `settle.btn`（结算按钮）—— ★ 那一段（含探针）**整段跳过** ✓
+    --   ★ `false` ⇒ 恢复旧行为（强制 584×584 @ (100,20) ／ 结算按钮那两个数 ✓）
+    --   ⚠️ ★ **这是"把权威交出去"的开关，不是"关掉功能"** ✓：★ 几何仍在，只是改由**编辑器**给 ✓
+    --     ⇒ ★ 你在编辑器里调一次就永久生效，脚本之后再也不会覆盖 ✓
+    geom_by_editor = true,
     widgets     = false,   -- ★★★★★★★★ 2026-10-15 **关掉：四个方块删掉** ✗✓✓
     --
     --   ★★★ 用户原话 ✓：「**把原来四个方块删掉**」✓（★ 功能已通过的下一句 ✓）

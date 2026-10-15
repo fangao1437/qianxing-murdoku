@@ -76,9 +76,12 @@ do
   -- ★ 左下角 ✓（设计空间 1920×1080、左上原点 ✓）
   local n = byHome["settle.btn"]
   if n ~= nil then
-    ok(n.rect.x == 1730 and n.rect.y == 960 and n.rect.w == 130 and n.rect.h == 72,
-      "位置在右下角且长度减半（1730, 960, 130×72 ✓ 右边距 60 ＝ 原来那条左边距 ✓）",
-      string.format("实测 %d,%d %d×%d", n.rect.x, n.rect.y, n.rect.w, n.rect.h))
+    -- ★ 2026-10-16：几何改成**与 `hex.hint`（提示）同款同位置** ✓（用户指令① ✓）
+    --   存档口径 pos[683,−279] size[70×70] ⇒ 反算设计空间 (1744.6, 298.8) 84×84 ✓
+    ok(math.abs(n.rect.x - 1744.6) < 0.5 and math.abs(n.rect.y - 298.8) < 0.5
+       and math.abs(n.rect.w - 84) < 0.5 and math.abs(n.rect.h - 84) < 0.5,
+      "★ 与「提示」(hex.hint) 同一个位置与同款尺寸（1744.6, 298.8, 84×84 ✓）",
+      string.format("实测 %.1f,%.1f %.1f×%.1f", n.rect.x, n.rect.y, n.rect.w, n.rect.h))
     ok(n.text == "结算", "按钮文字 = 结算", tostring(n.text))
     ok(n.kind == "button", "kind = button（★ 走预设按钮原生点击那条路 ✓ 不需要命中层 ✓）",
       tostring(n.kind))
@@ -166,8 +169,8 @@ do
       local b1x, b1y, b2x, b2y = b.rect.x, b.rect.y, b.rect.x + b.rect.w, b.rect.y + b.rect.h
       local overlap = not (a2x <= b1x or b2x <= a1x or a2y <= b1y or b2y <= a1y)
       ok(not overlap,
-        "★ 「结算」按钮**没有压住**「选关」（左下角 vs 中列 ✓）",
-        string.format("home.select=%d,%d %d×%d  settle.btn=%d,%d %d×%d",
+        "★ 「结算」按钮**没有压住**「选关」（右上角 vs 中列 ✓）",
+        string.format("home.select=%.0f,%.0f %.0f×%.0f  settle.btn=%.1f,%.1f %.1f×%.1f",
           sel.rect.x, sel.rect.y, sel.rect.w, sel.rect.h, b.rect.x, b.rect.y, b.rect.w, b.rect.h))
     end
   end

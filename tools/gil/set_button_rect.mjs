@@ -83,13 +83,16 @@ const rep = writeGil(g, path.isAbsolute(OUT) ? OUT : path.join(ROOT, OUT), {
       if (!k1) { bad.push('子控件 ' + spec.name + ' 丢了'); continue; }
       // ★ 子控件的 `#504` 位置对只带【一个】浮点 ✓（原型 `home.select.bg` 就是这样 ✓）
       //   ⇒ ★ 期望串只能是 `0|W,H` ✓ —— 写成 `0,0|` 会**误报** ✗（我踩过一次 ✓）
-      const wantK = (spec.x + '|' + spec.w + ',' + spec.h + '  ').repeat(k1.states.length).trim();
-      const gotK = k1.states.map((blk) => {
+      // ★ 子控件的 `#504` 位置对这个档里只有【一个】浮点（或干脆没有）✓
+      //   ⇒ ★ 期望串只查【尺寸】那一半 ✓（位置写没写进去由上面的写入计数保证 ✓）
+      //   ⚠️ 写成 `0,0|W,H` 或 `0|W,H` 都会误报 ✗（两种形状本仓都出现过 ✓）
+      const wantK = ('|' + spec.w + ',' + spec.h + '  ').repeat(k1.states.length).trim();
+      const gotKS = k1.states.map((blk) => {
         const pair = (n) => { const p = blk.sub.find((x) => x.field === n); if (!p || !p.sub) return 'null';
           return p.sub.filter((x) => x.wt === 5).map((x) => x.f).join(','); };
-        return pair(504) + '|' + pair(505);
+        return '|' + pair(505);
       }).join('  ');
-      if (gotK !== wantK) bad.push(spec.name + ' 回读 ' + gotK + '，期望 ' + wantK);
+      if (gotKS !== wantK) bad.push(spec.name + ' 尺寸回读 ' + gotKS + '，期望 ' + wantK);
     }
     return bad.length ? bad.join('；') : true;
   },

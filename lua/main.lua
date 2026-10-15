@@ -235,7 +235,14 @@ Murdoku.GRID_ITEM_PREFAB = 1073742421    -- 列表项模板索引（存档核对
 --   ⚠️ 这两组数有**两处**要用：① 建控件**之前**（否则 `cell_geometry` 会读到 .gil 里的
 --      1600×900，算出格子 171 —— 真机日志 `边缘适配 wall.up：目标 171x8` 就是这么来的）；
 --      ② on_update 里每帧兜底。抽成常量就不会漂。
-local BOARD_W, BOARD_H = 584, 584
+--   ★★★★★★★★ 2026-10-16 **用户指令③：棋盘/棋盘底图缩到 90%** ✗✓✓
+--     ★ 原话 ✓：「★ **把棋盘，棋盘背景图，选关卡片的 xy 缩减到现在的 90%**」✓
+--     ★ 584 × 0.9 = **525.6** ✓；★ 底图（`board.bg`）按棋盘自适应（`cell_geometry` 算的 ✓）
+--       ⇒ ★ 缩棋盘即同时缩底图 ✓ 不需要另改一处 ✓
+--     ⚠️ ★ 但若你在编辑器里手改了 `stage` 尺寸、且 `cfg.geom_by_editor = true` ✓
+--       ⇒ ★ 那两个数**不生效** ✓（几何由编辑器决定 ✓）—— ★ 此时请**在编辑器里**把 stage
+--         尺寸改成你要的值 ✓（★ 这就是指令②的用法 ✓）
+local BOARD_W, BOARD_H = 525.6, 525.6
 local BOARD_X, BOARD_Y = 100, 20
 
 function Murdoku.prepare(adapter)
@@ -560,7 +567,12 @@ function Murdoku.start(level_id, opts)
     pcall(function() root = adapter:find("root") end)
     local s = nil
     if root ~= nil then pcall(function() s = root:GetChild("stage") end) end
-    if s ~= nil then
+    -- ★★★★★★★★ 2026-10-16 **用户指令②：把这些位置/尺寸交回编辑器** ✗✓✓
+    --   ★ 原话 ✓：「★ **把我调整过的东西那里的相关位置大小调整脚本关掉，交由编辑器决定**」✓
+    --   ⇒ ★ `cfg.geom_by_editor = true` 时：★ **建控件前也不摆 stage** ✓
+    --     ★ 让 `cell_geometry` 直接读**编辑器里那个 stage 的尺寸** ✓
+    local geom_by_editor = (adapter ~= nil and adapter.cfg ~= nil and adapter.cfg.geom_by_editor == true)
+    if s ~= nil and not geom_by_editor then
       pcall(function() s:SetSizeDelta(BOARD_W, BOARD_H) end)
       pcall(function() s:SetAnchoredPosition(BOARD_X, BOARD_Y) end)
       if print then
@@ -570,7 +582,8 @@ function Murdoku.start(level_id, opts)
           .. "（这样 cell_geometry 读到的就是 " .. tostring(BOARD_W) .. "）")
       end
     elseif print then
-      print("[murdoku] ⚠️ 建控件前没找到 stage（root 底下没有）—— 格子几何会退回默认尺寸")
+      print("[murdoku] ★ 几何交给编辑器（geom_by_editor=true）：stage 保持编辑器里那份 "
+        .. tostring(BOARD_W) .. "x" .. tostring(BOARD_H) .. " 不再由脚本写")
     end
   end
 
@@ -1600,14 +1613,22 @@ function Murdoku.on_update(dt)
         --     格子会被放大 33%（本文件上面正记着那次事故 ✓）⇒ 保留执行者、只加守卫 ✓
         --   ⚠️ 读不到尺寸时**照旧写** ✓（不许因为读不到就不摆 ✓ 与同块另三处同口径 ✓）
         local sw0, sh0 = nil, nil
-        pcall(function() sw0, sh0 = s:GetSizeDelta() end)
-        if not (sw0 == BOARD_W and sh0 == BOARD_H) then
-          pcall(function() s:SetSizeDelta(BOARD_W, BOARD_H) end)
-        end
-        local px0, py0 = nil, nil
-        pcall(function() px0, py0 = s:GetAnchoredPosition() end)
-        if not (px0 == BOARD_X and py0 == BOARD_Y) then
-          pcall(function() s:SetAnchoredPosition(BOARD_X, BOARD_Y) end)
+        -- ★★★★★★★★ 2026-10-16 **用户指令②：每帧兜底也交给编辑器** ✗✓✓
+        --   ★ 原话 ✓：「把我调整过的东西那里的相关位置大小调整脚本关掉，交由编辑器决定」✓
+        --   ⇒ ★ `geom_by_editor = true` ⇒ ★ **这里不读也不写** ✓
+        --     ★ 你把 stage 调成多大，棋盘就是多大 ✓（格子尺寸由它算 ✓）
+        local geom_by_editor = (current ~= nil and current.adapter ~= nil and current.adapter.cfg ~= nil
+                                and current.adapter.cfg.geom_by_editor == true)
+        if not geom_by_editor then
+          pcall(function() sw0, sh0 = s:GetSizeDelta() end)
+          if not (sw0 == BOARD_W and sh0 == BOARD_H) then
+            pcall(function() s:SetSizeDelta(BOARD_W, BOARD_H) end)
+          end
+          local px0, py0 = nil, nil
+          pcall(function() px0, py0 = s:GetAnchoredPosition() end)
+          if not (px0 == BOARD_X and py0 == BOARD_Y) then
+            pcall(function() s:SetAnchoredPosition(BOARD_X, BOARD_Y) end)
+          end
         end
       end
       local bar = nil
@@ -1886,9 +1907,18 @@ function Murdoku.on_update(dt)
   --
   --   ⚠️ 只对**这台**引擎兜底 ✓：读不到 `SetSizeDelta` 时**什么都不做** ✓
   --     （★ 不许因为读不到就不摆、也不许把别的东西改坏 ✓）
+  --   ★★★★★★★★ 2026-10-16 **用户指令②：这一段整个交给编辑器** ✗✓✓
+  --     ★ 原话 ✓：「★ **把我调整过的东西那里的相关位置大小调整脚本关掉，交由编辑器决定**」✓
+  --     ★ `cfg.geom_by_editor = true` ⇒ ★ **这里一个字都不写** ✓
+  --       ★ `stage` 的尺寸/位置完全由编辑器决定 ✓（★ 格子尺寸是从 stage 尺寸算出来的 ✓
+  --         ⇒ ★ 你把 stage 调多大，棋盘就多大 ✓ 脚本不再抢 ✓）
   do
+    local geom_by_editor = (current ~= nil and current.adapter ~= nil and current.adapter.cfg ~= nil
+                            and current.adapter.cfg.geom_by_editor == true)
     local sb = nil
-    pcall(function() sb = current.adapter:find("settle.btn") end)
+    if not geom_by_editor then
+      pcall(function() sb = current.adapter:find("settle.btn") end)
+    end
     if sb ~= nil then
       --   ★★★★★★★★ 2026-10-16 **用户要求：长度减半 ＋ 挪到右下角** ✗✓✓
       --     ★ 原话 ✓：「★ **下一步是把长度缩减到现在的一半，然后加上弹窗按钮同款底图，
