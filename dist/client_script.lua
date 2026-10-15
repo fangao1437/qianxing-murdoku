@@ -7202,6 +7202,12 @@ function Controller:build_layout()
     --     ★ 而且不靠"有人记得去关它"——★ 这一条**每帧都算**，屏幕一变就跟着变 ✓
     --   ★ 收口仍然有兜底 ✓：★ `render` 的差集（`self._shown`）看到它上一帧显示过、
     --     这一帧不在规划里 ⇒ **照样发一次 `visible = false`** ✓（那条路早就在 ✓）
+    --   ★★★★★★★★ 2026-10-16 **用户要求：长度减半 ＋ 挪到右下角** ✗✓✓
+    --     ★ 原话 ✓：「★ **下一步是把长度缩减到现在的一半，然后加上弹窗按钮同款底图，
+    --       位置挪到右下角**」✓
+    --   ★ 新几何 ✓：★ 宽 260 → **130**（减半 ✓）；★ **右边距仍 60、下边距仍 960** ✓
+    --     ⇒ x = 1920 − 60 − 130 = **1730** ✓
+    --     ★ 与 `main.lua` 每帧写的那两个数**同源** ✓（画布：pos(696,−380) size(108×60) ✓）
     local show_settle = (self.screen == "home" or self.screen == "select")
     --   ⚠️ ★★ **本函数里 `settle.btn` 只许有这一条 push** ✗✓（2026-10-16 用户点破 ✓）
     --     ★ 曾经写成 `if … push(A) else push(B)` ✗ ⇒ ★ 同一个 id **一帧两条节点** ✓
@@ -7210,7 +7216,7 @@ function Controller:build_layout()
     push({ id = "settle.btn", kind = "button", parent = "root",
            visible = show_settle,
            text = "结算",
-           rect = { x = 60, y = 960, w = 260, h = 72 },
+           rect = { x = 1730, y = 960, w = 130, h = 72 },
            raycast = show_settle,
            event = { action = "settle_only" } })
     -- ⚠️ **主页/选关这条提前 return 之前也必须调** —— 否则这两个屏幕的子树
@@ -18947,8 +18953,20 @@ function Murdoku.on_update(dt)
     local sb = nil
     pcall(function() sb = current.adapter:find("settle.btn") end)
     if sb ~= nil then
-      local want_w, want_h = 217, 60
-      local want_x, want_y = -642, -380
+      --   ★★★★★★★★ 2026-10-16 **用户要求：长度减半 ＋ 挪到右下角** ✗✓✓
+      --     ★ 原话 ✓：「★ **下一步是把长度缩减到现在的一半，然后加上弹窗按钮同款底图，
+      --       位置挪到右下角**」✓
+      --
+      --   ★ 新几何（★ 设计空间 1920×1080、左上原点 ✓ 与 `ui_controller` 那份 `rect` 同源 ✓）：
+      --     · ★ 宽度 260 → **130**（长度减半 ✓）
+      --     · ★ 右下角：★ **右边距与原来一样 60** ✓、★ **下边距也不动** ✓
+      --       ⇒ x = 1920 − 60 − 130 = **1730** ✓ y = **960** ✓
+      --   ★ 换算到画布（1600×900、中心为原点 ✓ 缩放 5/6 ✓）：
+      --     · 尺寸 = (130×5/6, 72×5/6) = **(108, 60)** ✓
+      --     · 中心 = ((1730+65)×5/6 − 800, (450 − (960+36)×5/6)) = (**695.8, −380**) ✓
+      --       ★ 取整 **696** ✓（★ 与 `ui_controller` 的 `rect` 同步改 ✓ 两处同源 ✓）
+      local want_w, want_h = 108, 60
+      local want_x, want_y = 696, -380
       pcall(function() sb:SetSizeDelta(want_w, want_h) end)
       pcall(function() sb:SetAnchoredPosition(want_x, want_y) end)
       -- ★ 一次探针（只打一次 ✓）：把引擎**回读**到的几何打出来 ——
@@ -20414,7 +20432,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v243 / 2026-10-16 / 「结算」按钮收成一颗:一次 push+一个开关(主页/选关开着,进关卡整个关掉);其余同 v242 =====")
+        print("[murdoku] ===== 构建标记 v244 / 2026-10-16 / 「结算」按钮长度减半(130)并挪到右下角(1730,960)+每帧几何同步(画布 696,-380 108x60);其余同 v243 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

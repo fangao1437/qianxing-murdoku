@@ -1890,8 +1890,20 @@ function Murdoku.on_update(dt)
     local sb = nil
     pcall(function() sb = current.adapter:find("settle.btn") end)
     if sb ~= nil then
-      local want_w, want_h = 217, 60
-      local want_x, want_y = -642, -380
+      --   ★★★★★★★★ 2026-10-16 **用户要求：长度减半 ＋ 挪到右下角** ✗✓✓
+      --     ★ 原话 ✓：「★ **下一步是把长度缩减到现在的一半，然后加上弹窗按钮同款底图，
+      --       位置挪到右下角**」✓
+      --
+      --   ★ 新几何（★ 设计空间 1920×1080、左上原点 ✓ 与 `ui_controller` 那份 `rect` 同源 ✓）：
+      --     · ★ 宽度 260 → **130**（长度减半 ✓）
+      --     · ★ 右下角：★ **右边距与原来一样 60** ✓、★ **下边距也不动** ✓
+      --       ⇒ x = 1920 − 60 − 130 = **1730** ✓ y = **960** ✓
+      --   ★ 换算到画布（1600×900、中心为原点 ✓ 缩放 5/6 ✓）：
+      --     · 尺寸 = (130×5/6, 72×5/6) = **(108, 60)** ✓
+      --     · 中心 = ((1730+65)×5/6 − 800, (450 − (960+36)×5/6)) = (**695.8, −380**) ✓
+      --       ★ 取整 **696** ✓（★ 与 `ui_controller` 的 `rect` 同步改 ✓ 两处同源 ✓）
+      local want_w, want_h = 108, 60
+      local want_x, want_y = 696, -380
       pcall(function() sb:SetSizeDelta(want_w, want_h) end)
       pcall(function() sb:SetAnchoredPosition(want_x, want_y) end)
       -- ★ 一次探针（只打一次 ✓）：把引擎**回读**到的几何打出来 ——

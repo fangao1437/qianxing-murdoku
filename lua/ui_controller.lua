@@ -4211,6 +4211,12 @@ function Controller:build_layout()
     --     ★ 而且不靠"有人记得去关它"——★ 这一条**每帧都算**，屏幕一变就跟着变 ✓
     --   ★ 收口仍然有兜底 ✓：★ `render` 的差集（`self._shown`）看到它上一帧显示过、
     --     这一帧不在规划里 ⇒ **照样发一次 `visible = false`** ✓（那条路早就在 ✓）
+    --   ★★★★★★★★ 2026-10-16 **用户要求：长度减半 ＋ 挪到右下角** ✗✓✓
+    --     ★ 原话 ✓：「★ **下一步是把长度缩减到现在的一半，然后加上弹窗按钮同款底图，
+    --       位置挪到右下角**」✓
+    --   ★ 新几何 ✓：★ 宽 260 → **130**（减半 ✓）；★ **右边距仍 60、下边距仍 960** ✓
+    --     ⇒ x = 1920 − 60 − 130 = **1730** ✓
+    --     ★ 与 `main.lua` 每帧写的那两个数**同源** ✓（画布：pos(696,−380) size(108×60) ✓）
     local show_settle = (self.screen == "home" or self.screen == "select")
     --   ⚠️ ★★ **本函数里 `settle.btn` 只许有这一条 push** ✗✓（2026-10-16 用户点破 ✓）
     --     ★ 曾经写成 `if … push(A) else push(B)` ✗ ⇒ ★ 同一个 id **一帧两条节点** ✓
@@ -4219,7 +4225,7 @@ function Controller:build_layout()
     push({ id = "settle.btn", kind = "button", parent = "root",
            visible = show_settle,
            text = "结算",
-           rect = { x = 60, y = 960, w = 260, h = 72 },
+           rect = { x = 1730, y = 960, w = 130, h = 72 },
            raycast = show_settle,
            event = { action = "settle_only" } })
     -- ⚠️ **主页/选关这条提前 return 之前也必须调** —— 否则这两个屏幕的子树

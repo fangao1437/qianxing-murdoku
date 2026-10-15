@@ -76,8 +76,8 @@ do
   -- ★ 左下角 ✓（设计空间 1920×1080、左上原点 ✓）
   local n = byHome["settle.btn"]
   if n ~= nil then
-    ok(n.rect.x == 60 and n.rect.y == 960 and n.rect.w == 260 and n.rect.h == 72,
-      "位置在左下角（60, 960, 260×72 ✓ 与返回箭头同一条左边距 ✓）",
+    ok(n.rect.x == 1730 and n.rect.y == 960 and n.rect.w == 130 and n.rect.h == 72,
+      "位置在右下角且长度减半（1730, 960, 130×72 ✓ 右边距 60 ＝ 原来那条左边距 ✓）",
       string.format("实测 %d,%d %d×%d", n.rect.x, n.rect.y, n.rect.w, n.rect.h))
     ok(n.text == "结算", "按钮文字 = 结算", tostring(n.text))
     ok(n.kind == "button", "kind = button（★ 走预设按钮原生点击那条路 ✓ 不需要命中层 ✓）",
