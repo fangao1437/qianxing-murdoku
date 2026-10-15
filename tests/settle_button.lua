@@ -138,6 +138,41 @@ do
   ok(okc, "没有 on_settle_only 也不抛错", tostring(err))
 end
 
+----------------------------------------------------------------------------
+print("")
+print("== 6. ★★ 主页那颗「选关」按钮【一个字没动】（用户 2026-10-15 明确担心过这一点 ✓）==")
+--
+--   ★★★ 为什么单独一节 ✗（★ 这是用户的**原话** ✓）：
+--     「**我是让你在主页和选关界面左下角加按钮，不是让你把选关按钮换掉**」✓
+--   ★ 背景 ✓：★ 上一轮把脚本运行时建的 `selbar`/`selbtn.1..4` **停掉了** ✓
+--     （★ 用户随后确认：「**删的就是 selbtn 那四个 —— 卡片留着当选关入口**」✓）
+--     ⇒ ★ 但"主页那颗「选关」"是**另一颗控件** ✓（`home.select`，存档里就有 ✓）
+--     ⇒ ★★ 两件事**必须分开钉死** ✗ —— 否则下次谁再动 `widgets` 或加按钮时，
+--        ★ **把主页那颗顺手写坏/盖住，没有任何检查会响** ✓
+do
+  local by = plan_of(make("home"), "home")
+  local sel = by["home.select"]
+  ok(sel ~= nil, "`home.select`（主页「选关」）仍在规划里 ✓")
+  if sel ~= nil then
+    ok(sel.visible == true, "它仍然可见 ✓", "visible = " .. tostring(sel.visible))
+    ok(sel.text == "选关", "文字仍是「选关」✓", tostring(sel.text))
+    ok(sel.event ~= nil and sel.event.action == "levelselect",
+      "事件仍是 `levelselect` ✓（点它还能进选关 ✓）",
+      sel.event and ("实测 = " .. tostring(sel.event.action)) or "没有 event")
+    -- ★ 新增的那颗**不许压住**它 ✓（位置/大小将来谁改了，这里立刻响 ✓）
+    local b = by["settle.btn"]
+    if b ~= nil then
+      local a1x, a1y, a2x, a2y = sel.rect.x, sel.rect.y, sel.rect.x + sel.rect.w, sel.rect.y + sel.rect.h
+      local b1x, b1y, b2x, b2y = b.rect.x, b.rect.y, b.rect.x + b.rect.w, b.rect.y + b.rect.h
+      local overlap = not (a2x <= b1x or b2x <= a1x or a2y <= b1y or b2y <= a1y)
+      ok(not overlap,
+        "★ 「结算」按钮**没有压住**「选关」（左下角 vs 中列 ✓）",
+        string.format("home.select=%d,%d %d×%d  settle.btn=%d,%d %d×%d",
+          sel.rect.x, sel.rect.y, sel.rect.w, sel.rect.h, b.rect.x, b.rect.y, b.rect.w, b.rect.h))
+    end
+  end
+end
+
 print("")
 print(string.format("settle_button: %d passed, %d failed", pass, fail))
 os.exit(fail == 0 and 0 or 1)
