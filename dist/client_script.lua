@@ -5741,6 +5741,18 @@ function Controller:build_layout()
   --   但它的名字不在规划里 ⇒ 脚本从没点亮它 ⇒ 真机日志（11:31）里它一直 `可见=false` ✗
   --   ⇒ 补一条规划节点（`kind = "container"`：只摆位置/显隐，**不设图不设色**，图与色归编辑器）。
   --   尺寸与容器同尺寸（画布 400×544）、挂在 `clues` 下、坐标相对父级 ⇒ (0,0) ✓
+  --   ★★★★★★★★ 2026-10-16 **关于"网格视窗大小改不动"的结论（复核后写下 ✓）** ✗✓✓
+  --     ★ 用户原话 ✓：「★ **网格视窗的大小我已经改了，你也让脚本按原样大小出就行**」✓
+  --   ★★ 复核结果 ✓：★ **这里本来就已经是"原样出"** ✓ —— ★ 不用改 ✓
+  --     · ★ 适配器 `set_property` 的 `rect` 分支 ✓：`respect_editor_rect ~= false`
+  --       ★ 且控件不是脚本实例化的、也没有 `runtime_rect` ⇒ ★ **直接 `return true`** ✓
+  --       （★ 源码原文：「★ **这是故意的空操作**（"位置归编辑器管"）✓」✓）
+  --     · ★ 而这一条 `push` 带着 **`pos_runtime = false`** ✓（见下面 `clues.grid` 那条 ✓）
+  --       ⇒ ★ **它进不了"位置归脚本管"的那一类** ✓ ⇒ ★ 尺寸/位置**一直归编辑器** ✓
+  --   ★★ 所以"改不动"的真正原因不在这里 ✗ —— ★ 是 **`main.lua` 每帧强写 `stage`** ✓：
+  --     ★ `stage` 是 `clues` 的**祖先** ✓，★ 而格子尺寸是按**父容器尺寸**算的 ✓
+  --     ⇒ ★ `stage` 每帧被写回 584 ⇒ ★ 父级一变 ⇒ ★ 下级的几何跟着重算 ⇒ 你改的看不出来 ✓
+  --   ⇒ ★★ 已在 `main.lua` 用 **`cfg.geom_by_editor`** 关掉那两处 ✓（本轮 ✓）
   push({ id = "clues.bg", kind = "container", parent = "clues",
          rect = { x = L.clues.x, y = L.clues.y, w = L.clues.w, h = L.clues.h },
          -- ★★★★★ 2026-10-05 **补上 `visible`** ✗✓ —— 这是"线索区没出来"的**两个原因之一** ✓
@@ -18880,7 +18892,17 @@ function Murdoku.on_update(dt)
         --   棋盘缩到 584 之后，它还是 677。
         --   ⇒ 现在让它**跟着 stage 走**：尺寸 = stage 的实时尺寸，位置 (0,0) 对齐中心。
         --     只在尺寸变化时写一次（移动端：不做每帧 SetSizeDelta）。
-        if bg ~= nil and s ~= nil then
+        -- ★★★★★★★★ 2026-10-16 **用户指令②（第三处）：这一处也得让开** ✗✓✓
+        --   ★ 这是**漏掉的最后一处** ✓ —— ★ 真机日志点名了它 ✓：
+        --     「★ 底板对齐棋盘：stage **584.0**x584.0 → board.bg 回读 584.0x584.0」✓
+        --   ★★ 它做的事 ✓：★ 把 `board.bg`（棋盘底图）的尺寸**写成 stage 的实时尺寸** ✓
+        --     ⇒ ★ 而 `stage` 在**别处**被脚本写成 584 ✗ ⇒ ★ 于是把 584 **烙到 board.bg 上** ✓
+        --     ⇒ ★★ 这就是"改了编辑器尺寸、画面上没变"的**最后一环** ✓✓
+        --   ★ `geom_by_editor = true` ⇒ ★ **这一处整段不跑** ✓
+        --     ★ `board.bg` 的尺寸/位置**完全归编辑器** ✓（与 stage 同一套口径 ✓）
+        local geom_by_editor_bg = (current ~= nil and current.adapter ~= nil and current.adapter.cfg ~= nil
+                                  and current.adapter.cfg.geom_by_editor == true)
+        if bg ~= nil and s ~= nil and not geom_by_editor_bg then
           local sw, sh = nil, nil
           pcall(function() sw, sh = s:GetSizeDelta() end)
           if type(sw) == "number" and type(sh) == "number" and sw > 0 and sh > 0 then
@@ -20464,7 +20486,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v245 / 2026-10-16 / 结算按钮挪到提示同位置(683,-279 70x70);几何交回编辑器(cfg.geom_by_editor=true);棋盘 584→525.6、选关卡片×0.9=====")
+        print("[murdoku] ===== 构建标记 v246 / 2026-10-16 / 几何交回编辑器补齐第三处(底板对齐棋盘不再把 stage 尺寸烙到 board.bg);其余同 v245 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

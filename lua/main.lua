@@ -1815,7 +1815,17 @@ function Murdoku.on_update(dt)
         --   棋盘缩到 584 之后，它还是 677。
         --   ⇒ 现在让它**跟着 stage 走**：尺寸 = stage 的实时尺寸，位置 (0,0) 对齐中心。
         --     只在尺寸变化时写一次（移动端：不做每帧 SetSizeDelta）。
-        if bg ~= nil and s ~= nil then
+        -- ★★★★★★★★ 2026-10-16 **用户指令②（第三处）：这一处也得让开** ✗✓✓
+        --   ★ 这是**漏掉的最后一处** ✓ —— ★ 真机日志点名了它 ✓：
+        --     「★ 底板对齐棋盘：stage **584.0**x584.0 → board.bg 回读 584.0x584.0」✓
+        --   ★★ 它做的事 ✓：★ 把 `board.bg`（棋盘底图）的尺寸**写成 stage 的实时尺寸** ✓
+        --     ⇒ ★ 而 `stage` 在**别处**被脚本写成 584 ✗ ⇒ ★ 于是把 584 **烙到 board.bg 上** ✓
+        --     ⇒ ★★ 这就是"改了编辑器尺寸、画面上没变"的**最后一环** ✓✓
+        --   ★ `geom_by_editor = true` ⇒ ★ **这一处整段不跑** ✓
+        --     ★ `board.bg` 的尺寸/位置**完全归编辑器** ✓（与 stage 同一套口径 ✓）
+        local geom_by_editor_bg = (current ~= nil and current.adapter ~= nil and current.adapter.cfg ~= nil
+                                  and current.adapter.cfg.geom_by_editor == true)
+        if bg ~= nil and s ~= nil and not geom_by_editor_bg then
           local sw, sh = nil, nil
           pcall(function() sw, sh = s:GetSizeDelta() end)
           if type(sw) == "number" and type(sh) == "number" and sw > 0 and sh > 0 then
