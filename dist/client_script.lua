@@ -17659,8 +17659,16 @@ function Murdoku.start(level_id, opts)
           .. "（这样 cell_geometry 读到的就是 " .. tostring(BOARD_W) .. "）")
       end
     elseif print then
-      print("[murdoku] ★ 几何交给编辑器（geom_by_editor=true）：stage 保持编辑器里那份 "
-        .. tostring(BOARD_W) .. "x" .. tostring(BOARD_H) .. " 不再由脚本写")
+      -- ★★ 2026-10-16 **这一行必须打印【读回值】，不是常量** ✗✓
+      --   ★ 为什么：★ 上一版这里打的是 `BOARD_W/H`（脚本常量 ✗）⇒
+      --     ★ 真机日志出现「stage 保持编辑器里那份 **584.0x584.0**」✓
+      --     ★ 而**实际生效的是编辑器里那份** ✗ ⇒ ★ 这句把人往"脚本还在写 stage"上带 ✗
+      --     （★ 用户就是这么被误导的 ✓ —— ★ 连我都被自己这行日志骗了一轮 ✓）
+      local ew, eh = nil, nil
+      if s ~= nil then pcall(function() ew, eh = s:GetSizeDelta() end) end
+      print("[murdoku] ★ 几何交给编辑器（geom_by_editor=true）：stage **回读** "
+        .. tostring(ew) .. "x" .. tostring(eh)
+        .. "（★ 这才是实际生效的尺寸 ✓ 脚本常量 BOARD_W/H=" .. tostring(BOARD_W) .. "x" .. tostring(BOARD_H) .. " 不参与）")
     end
   end
 
@@ -20486,7 +20494,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v246 / 2026-10-16 / 几何交回编辑器补齐第三处(底板对齐棋盘不再把 stage 尺寸烙到 board.bg);其余同 v245 =====")
+        print("[murdoku] ===== 构建标记 v247 / 2026-10-16 / 日志改打 stage 回读值(不再打常量,那行骗过一轮);其余同 v246 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

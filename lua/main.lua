@@ -582,8 +582,16 @@ function Murdoku.start(level_id, opts)
           .. "（这样 cell_geometry 读到的就是 " .. tostring(BOARD_W) .. "）")
       end
     elseif print then
-      print("[murdoku] ★ 几何交给编辑器（geom_by_editor=true）：stage 保持编辑器里那份 "
-        .. tostring(BOARD_W) .. "x" .. tostring(BOARD_H) .. " 不再由脚本写")
+      -- ★★ 2026-10-16 **这一行必须打印【读回值】，不是常量** ✗✓
+      --   ★ 为什么：★ 上一版这里打的是 `BOARD_W/H`（脚本常量 ✗）⇒
+      --     ★ 真机日志出现「stage 保持编辑器里那份 **584.0x584.0**」✓
+      --     ★ 而**实际生效的是编辑器里那份** ✗ ⇒ ★ 这句把人往"脚本还在写 stage"上带 ✗
+      --     （★ 用户就是这么被误导的 ✓ —— ★ 连我都被自己这行日志骗了一轮 ✓）
+      local ew, eh = nil, nil
+      if s ~= nil then pcall(function() ew, eh = s:GetSizeDelta() end) end
+      print("[murdoku] ★ 几何交给编辑器（geom_by_editor=true）：stage **回读** "
+        .. tostring(ew) .. "x" .. tostring(eh)
+        .. "（★ 这才是实际生效的尺寸 ✓ 脚本常量 BOARD_W/H=" .. tostring(BOARD_W) .. "x" .. tostring(BOARD_H) .. " 不参与）")
     end
   end
 
