@@ -4193,6 +4193,36 @@ function Controller:build_layout()
       push({ id = "settle.btn", kind = "button", parent = "root", visible = true,
              text = "结算",
              rect = { x = 60, y = 960, w = 260, h = 72 },
+             raycast = true,
+             event = { action = "settle_only" } })
+    else
+      -- ★★★★★★★★ 2026-10-15 **不在主页/选关这一帧，必须【显式】推一条 `raycast = false`** ✗✓✓
+      --
+      --   ★★ 用户报的现象 ✓（原话）：
+      --     ★「**首页没有出现一个带图文的结算按钮，但全屏都被一个能触发结算的东西占满了**」✓✓
+      --   ★★ 我在**模拟器上复现到了同一件事** ✓（证据 `records/playtest.md`）
+      --     · 点 (91, 79)（远左上角）⇒ 日志：`收到点击 → 控件 settle.btn 事件=settle_only` ✗
+      --     · 点 (1200, 700)（远右下角）⇒ **同一个控件** ✗
+      --     ⇒ ★ **它的命中区不是那个 217×60 的小方块** ✓ —— ★ 它把整屏都吃了 ✓✓
+      --
+      --   ★★ 为什么必须**推一条 raycast**、不能只靠"本帧不在规划里" ✗：
+      --     ★ `settle.btn` **是存档里的实体控件** ✓ ⇒ ★ 只要没人关它，它**每一帧都可点** ✓
+      --     ★ 而这份规划**只在主页/选关才包含它** ✓ ⇒ 关卡内 / 其它屏
+      --       它**根本没进 `nodes`** ⇒ ★ 屏幕层 `apply_screen_hide` 也看不到它 ✗
+      --     ★★ 本项目已有的那条规矩，正是这一条 ✓：
+      --       「**前缀只许给"整族都该藏"的族用**；一旦族里出现合法例外，就必须列具体 id」
+      --       ⇒ ★ 反过来同样成立：★ **不在本屏的实体控件，必须有人明确关掉它的交互** ✗
+      --         否则它就是一个"**看不见但能吃点击**"的洞 ✓✓
+      --
+      --   ★ 为什么走 `raycast` 而不是 `visible = false` ✓：
+      --     ★ 两者都能止住命中和点击音 ✓；★ 但 `raycast` **不碰可见性** ✓
+      --       ⇒ ★ 不会与"可见性只该有一个权威"（本项目那次白方块事故的结论 ✓）打架 ✓
+      --     ★ 适配器侧的实现照 `_grid_disable_gray_raycast` 那条已验证的路 ✓：
+      --       `raycastTarget` / `blockRaycast` 都是**运行时可写字段** ✓
+      push({ id = "settle.btn", kind = "button", parent = "root", visible = true,
+             text = "结算",
+             rect = { x = 60, y = 960, w = 260, h = 72 },
+             raycast = false,
              event = { action = "settle_only" } })
     end
     -- ⚠️ **主页/选关这条提前 return 之前也必须调** —— 否则这两个屏幕的子树

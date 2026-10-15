@@ -4585,6 +4585,32 @@ function Adapter:set_property(id, key, value, nkey)
         end
       end
     end
+  -- ★★★★★★★★ 2026-10-15 **`raycast`：运行时可写的"能不能被射线打到"** ✗✓✓
+  --
+  --   ★★ 为什么必须补这一条 ✓：`ui_controller` 的「结算」按钮在**不在主页/选关那一帧**时
+  --     推 `raycast = false` ✓ —— ★ 目的是让一个**存档里的实体按钮**在别的屏幕上
+  --     **不再吃整屏的点击** ✓（用户报的"全屏都被一个能触发结算的东西占满了"）
+  --   ⚠️ 没有这一条会怎样 ✗：★ `set_property` 落到下面的 `else` ⇒ **静默什么都不做** ✗
+  --     ⇒ ★ 我推的那个 `false` **等于没推** ✓ ⇒ ★ 症状原样保留 ✓
+  --
+  --   ★ 实现照本文件那条**已验证**的路（`_grid_disable_gray_raycast`，
+  --     灰色占位列表项就是这么关掉射线的 ✓）：
+  --     · `raycastTarget` —— 控件自己收不收光标事件 ✓
+  --     · `blockRaycast`  —— 挡不挡后面控件收事件 ✓（*** 两个都写才等于"整颗退出命中" ***）
+  --   ★ 两个都**先读字段在不在**再写 ✓（本项目在假适配器/旧实现上踩过"改不存在的属性"）
+  --   ★ 与 `visible` 分工 ✓：这条**只碰射线**、不碰可见性 ✓
+  --     ⇒ ★ 不会和「可见性只该有一个权威」那条结论打架 ✓
+  elseif key == "raycast" then
+    local want = value and true or false
+    if ctrl.raycastTarget ~= nil then
+      pcall(function() ctrl.raycastTarget = want end)
+    end
+    if ctrl.blockRaycast ~= nil then
+      pcall(function() ctrl.blockRaycast = want end)
+    end
+    if ctrl.interactable ~= nil then
+      pcall(function() ctrl.interactable = want end)
+    end
   elseif key == "enabled" then
     if ctrl.interactable ~= nil then ctrl.interactable = value and true or false end
 

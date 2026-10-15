@@ -7184,6 +7184,36 @@ function Controller:build_layout()
       push({ id = "settle.btn", kind = "button", parent = "root", visible = true,
              text = "结算",
              rect = { x = 60, y = 960, w = 260, h = 72 },
+             raycast = true,
+             event = { action = "settle_only" } })
+    else
+      -- ★★★★★★★★ 2026-10-15 **不在主页/选关这一帧，必须【显式】推一条 `raycast = false`** ✗✓✓
+      --
+      --   ★★ 用户报的现象 ✓（原话）：
+      --     ★「**首页没有出现一个带图文的结算按钮，但全屏都被一个能触发结算的东西占满了**」✓✓
+      --   ★★ 我在**模拟器上复现到了同一件事** ✓（证据 `records/playtest.md`）
+      --     · 点 (91, 79)（远左上角）⇒ 日志：`收到点击 → 控件 settle.btn 事件=settle_only` ✗
+      --     · 点 (1200, 700)（远右下角）⇒ **同一个控件** ✗
+      --     ⇒ ★ **它的命中区不是那个 217×60 的小方块** ✓ —— ★ 它把整屏都吃了 ✓✓
+      --
+      --   ★★ 为什么必须**推一条 raycast**、不能只靠"本帧不在规划里" ✗：
+      --     ★ `settle.btn` **是存档里的实体控件** ✓ ⇒ ★ 只要没人关它，它**每一帧都可点** ✓
+      --     ★ 而这份规划**只在主页/选关才包含它** ✓ ⇒ 关卡内 / 其它屏
+      --       它**根本没进 `nodes`** ⇒ ★ 屏幕层 `apply_screen_hide` 也看不到它 ✗
+      --     ★★ 本项目已有的那条规矩，正是这一条 ✓：
+      --       「**前缀只许给"整族都该藏"的族用**；一旦族里出现合法例外，就必须列具体 id」
+      --       ⇒ ★ 反过来同样成立：★ **不在本屏的实体控件，必须有人明确关掉它的交互** ✗
+      --         否则它就是一个"**看不见但能吃点击**"的洞 ✓✓
+      --
+      --   ★ 为什么走 `raycast` 而不是 `visible = false` ✓：
+      --     ★ 两者都能止住命中和点击音 ✓；★ 但 `raycast` **不碰可见性** ✓
+      --       ⇒ ★ 不会与"可见性只该有一个权威"（本项目那次白方块事故的结论 ✓）打架 ✓
+      --     ★ 适配器侧的实现照 `_grid_disable_gray_raycast` 那条已验证的路 ✓：
+      --       `raycastTarget` / `blockRaycast` 都是**运行时可写字段** ✓
+      push({ id = "settle.btn", kind = "button", parent = "root", visible = true,
+             text = "结算",
+             rect = { x = 60, y = 960, w = 260, h = 72 },
+             raycast = false,
              event = { action = "settle_only" } })
     end
     -- ⚠️ **主页/选关这条提前 return 之前也必须调** —— 否则这两个屏幕的子树
@@ -15655,6 +15685,32 @@ function Adapter:set_property(id, key, value, nkey)
         end
       end
     end
+  -- ★★★★★★★★ 2026-10-15 **`raycast`：运行时可写的"能不能被射线打到"** ✗✓✓
+  --
+  --   ★★ 为什么必须补这一条 ✓：`ui_controller` 的「结算」按钮在**不在主页/选关那一帧**时
+  --     推 `raycast = false` ✓ —— ★ 目的是让一个**存档里的实体按钮**在别的屏幕上
+  --     **不再吃整屏的点击** ✓（用户报的"全屏都被一个能触发结算的东西占满了"）
+  --   ⚠️ 没有这一条会怎样 ✗：★ `set_property` 落到下面的 `else` ⇒ **静默什么都不做** ✗
+  --     ⇒ ★ 我推的那个 `false` **等于没推** ✓ ⇒ ★ 症状原样保留 ✓
+  --
+  --   ★ 实现照本文件那条**已验证**的路（`_grid_disable_gray_raycast`，
+  --     灰色占位列表项就是这么关掉射线的 ✓）：
+  --     · `raycastTarget` —— 控件自己收不收光标事件 ✓
+  --     · `blockRaycast`  —— 挡不挡后面控件收事件 ✓（*** 两个都写才等于"整颗退出命中" ***）
+  --   ★ 两个都**先读字段在不在**再写 ✓（本项目在假适配器/旧实现上踩过"改不存在的属性"）
+  --   ★ 与 `visible` 分工 ✓：这条**只碰射线**、不碰可见性 ✓
+  --     ⇒ ★ 不会和「可见性只该有一个权威」那条结论打架 ✓
+  elseif key == "raycast" then
+    local want = value and true or false
+    if ctrl.raycastTarget ~= nil then
+      pcall(function() ctrl.raycastTarget = want end)
+    end
+    if ctrl.blockRaycast ~= nil then
+      pcall(function() ctrl.blockRaycast = want end)
+    end
+    if ctrl.interactable ~= nil then
+      pcall(function() ctrl.interactable = want end)
+    end
   elseif key == "enabled" then
     if ctrl.interactable ~= nil then ctrl.interactable = value and true or false end
 
@@ -20309,7 +20365,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v240 / 2026-10-15 / 删掉四个旧方块(widgets=false);主页/选关左下角加结算按钮(只发SETTLE,不存档) =====")
+        print("[murdoku] ===== 构建标记 v241 / 2026-10-15 / 修「结算按钮吃整屏点击」:不在主页/选关时推 raycast=false(适配器新增 raycast 通道);其余同 v240 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

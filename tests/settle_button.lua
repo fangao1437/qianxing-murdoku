@@ -173,6 +173,58 @@ do
   end
 end
 
+---------------------------------------------------------------------------
+-- ★★★★★★★★ 2026-10-15 **§7：那一条"看不出来"的判据 —— 不在本屏时必须交出射线** ✗✓✓
+--
+--   ★★ 为什么必须有用例（这一条**在屏幕上看不出来** ✗）：
+--     · `settle.btn` 是**存档里的实体按钮** ✓ ⇒ 只要没人关它，它**每一帧都能被点到** ✓
+--     · 而这份规划**只在主页/选关包含它** ✓ ⇒ 关卡内它**根本不进 `nodes`** ✓
+--       ⇒ ★ 屏幕层 `apply_screen_hide` 也**看不到它** ✗ ⇒ **没有任何人负责关掉它的交互** ✓
+--     · ★★ 用户报的现象（原话）：「**全屏都被一个能触发结算的东西占满了**」✓
+--       我在模拟器上复现到同一件事：点 (91,79) 与 (1200,700) **都命中 `settle.btn`** ✓
+--     ⇒ ★ "它该不该吃这一帧的点击"这件事，**只有规划里那个 `raycast` 字段说得清** ✓
+--
+--   ★ 判据（三条，覆盖两个屏幕 + 关卡内）✓：
+--     · 主页/选关：`raycast == true` ✓（要能点 ✓）
+--     · 关卡内  ：**规划里根本不该有它** ✓（就算将来有人让它进规划，也必须 `raycast == false` ✓）
+--   ★ 破坏性验证（谁改坏了它就会响）✗：
+--     ★ 把 `ui_controller` 里那条 `else` 分支的 `raycast = false` 删掉 ⇒ **本段立刻红** ✓
+print("")
+print("== 7. ★ 不在本屏的实体按钮必须交出射线（否则它就是一个看不见却吃点击的洞）==")
+do
+  local byHome = plan_of(make("home"), "home")
+  local bySel  = plan_of(make("select"), "select")
+  local byLvl  = plan_of(make(nil), nil)
+
+  local h = byHome["settle.btn"]
+  local s = bySel["settle.btn"]
+  ok(h ~= nil and h.raycast == true,
+    "主页：raycast = true（要能点 ✓）",
+    h and ("实测 = " .. tostring(h.raycast)) or "规划里没有")
+  ok(s ~= nil and s.raycast == true,
+    "选关屏：raycast = true（要能点 ✓）",
+    s and ("实测 = " .. tostring(s.raycast)) or "规划里没有")
+
+  -- ★ 关卡内：两种情况都算过 —— ① 不在规划里（现状 ✓）② 在规划里但 raycast == false ✓
+  local l = byLvl["settle.btn"]
+  ok(l == nil or l.raycast == false,
+    "★ 关卡内：要么不进规划 ✓ 要么 raycast = false ✓（**绝不能**是可以点的 ✓）",
+    l == nil and "不在规划里（现状 ✓）" or ("在规划里，raycast = " .. tostring(l.raycast)))
+
+  -- ★ 更硬的一条：**只要不在主页/选关，任何屏幕的规划里都不许出现"可点的 settle.btn"** ✓
+  local bad = {}
+  for _, scr in ipairs({ nil, "board", "result", "exit_menu", "howto", "intro", "share" }) do
+    local by = plan_of(make(scr), scr)
+    local n = by["settle.btn"]
+    if n ~= nil and n.raycast ~= false then
+      bad[#bad + 1] = tostring(scr) .. "(raycast=" .. tostring(n.raycast) .. ")"
+    end
+  end
+  ok(#bad == 0,
+    '★ 其它 7 个屏幕都不存在「可点的 settle.btn」 ✓',
+    #bad == 0 and "全过 ✓" or ("这几个屏漏了：" .. table.concat(bad, " ")))
+end
+
 print("")
 print(string.format("settle_button: %d passed, %d failed", pass, fail))
 os.exit(fail == 0 and 0 or 1)
