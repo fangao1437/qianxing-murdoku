@@ -5962,42 +5962,15 @@ function M.capabilities()
   return text, missing
 end
 
--- ★★ 2026-09-28：`apply_button_labels` **放到文件最末尾**重新定义。
+-- ★★★★★★★★ 2026-10-16 **v253：`apply_button_labels` 【已删除】** ✗✓✓
 --
---   为什么搬：原来它定义在中段，语法上看是顶层，但实测
---   `M.Adapter.apply_button_labels == nil`（而同一位置的 `set_property` 存在）——
---   说明它被包在了某个 `do`/`local function` 里，**永远不会被赋值到 Adapter 上**。
---   放到 `return M` 前一行，**不可能再有嵌套**。
+--   ★ 用户指令 ✓：「把所有失效的几何/文字脚本代码从脚本中删除」✓
+--   ★ 它自己头部的注释就写着 ✗：「★ **现在它没有调用方** ✓（`main.lua` 走已验证的
+--     ⇒ ★ 一直没人用 ✓，而且它当初"放进 `Adapter` 上"还失败过 ✗（`== nil` ✓）
+--   ★ 现在的按钮文案通道 ✓（两条 ✓ 都在用 ✓ 别一起删掉 ✗）：
+--     · ★ `main.lua` 开机那条：走 `set_property(id, "text", …)` ✓（已验证 ✓ 带读回日志 ✓）
+--     · ★ 渲染每帧那条：同一个 `set_property` ✓ ＋ `self.text_editor_first` 名单 ✓
+--       （★ 编辑器里已经填了文案的控件 ⇒ **一个字都不动** ✓）
 --
---   ⚠️ 现在它**没有调用方**（main.lua 走已验证的 `set_property` 路径），
---      保留它只为将来需要"批量重写按钮文字 + 读回校验"时有个现成入口。
-function Adapter:apply_button_labels(labels)
-  if labels == nil or print == nil then return 0 end
-  local okN, miss, bad, shown = 0, 0, 0, 0
-  local ids = {}
-  for id in pairs(labels) do ids[#ids + 1] = id end
-  table.sort(ids)
-  for i = 1, #ids do
-    local id, want = ids[i], labels[ids[i]]
-    if type(want) == "string" and want ~= "" then
-      local lb = nil
-      pcall(function() lb = self:sub(id, "label") end)
-      if lb == nil then
-        miss = miss + 1
-      else
-        local wrote = pcall(function() lb.text = want end)
-        local back = nil
-        pcall(function() back = lb.text end)
-        if wrote and back == want then okN = okN + 1 else bad = bad + 1 end
-        if shown < 8 then
-          print(string.format("  %s：想要 %q → 读回 %s", id, want, tostring(back)))
-          shown = shown + 1
-        end
-      end
-    end
-  end
-  print(string.format("[murdoku] 按钮文字：成功 %d，读回不一致 %d，找不到 label %d", okN, bad, miss))
-  return okN
-end
 
 return M

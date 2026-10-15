@@ -4824,26 +4824,33 @@ local function rect_of(t) return { x = t.x, y = t.y, w = t.w, h = t.h } end
 --
 --   ★ 顺带记下"这是继承来的"（`pos_runtime_inherited`）✗✓ ——
 --     `geom_by_editor` 要用它把"继承"与"显式声明"分开（见 `render` 里那段 ✓）。
-local function inherit_pos_runtime(nodes)
-  local pr = {}
-  for i = 1, #nodes do
-    if nodes[i].pos_runtime then pr[nodes[i].id] = true end
-  end
-  for _ = 1, 8 do
-    local changed = false
-    for i = 1, #nodes do
-      local n = nodes[i]
-      -- ★ 只有"没表态"（nil）才继承；`false` 与 `true` 都是显式表态 ✓
-      if n.pos_runtime == nil and n.parent ~= nil and pr[n.parent] then
-        n.pos_runtime = true
-        n.pos_runtime_inherited = true
-        pr[n.id] = true
-        changed = true
-      end
-    end
-    if not changed then break end
-  end
-end
+-- ★★★★★★★★ 2026-10-16 **v253：`inherit_pos_runtime` 整个函数【已删除】** ✗✓✓
+--
+--   ★ 用户指令 ✓：「★ **把所有失效的几何/文字脚本代码从脚本中删除**」✓
+--
+--   ★ 它原来干什么 ✗：把 `root`（显式 `pos_runtime = true`）的标记**沿子树继承**给每一个
+--     规划内控件 ⇒ ★ 于是**每一个** `.gil` 里的控件都被判成"脚本说了算" ✓
+--     ⇒ ★ 脚本每帧把规划里的位置/尺寸**盖回**编辑器那份 ✓ —— ★ 这正是本轮要删的"失效几何代码" ✓
+--
+--   ★ 为什么它现在是**死代码** ✗（不是"暂时不用"✓）：
+--     · v248 起口径定为"几何归编辑器" ✓ ⇒ 继承出来的 `pos_runtime` **一律不再被采纳** ✓
+--       （`render` 里那条 `geom_by_editor + pos_runtime_inherited ⇒ script_owns = false` ✓）
+--     · v253 把 `render` 简化成**只看两件事** ✓（脚本建的控件 / 显式 `pos_runtime = true` ✓）
+--       ⇒ ★ **"继承"这件事彻底不参与判断** ✓ ⇒ 本函数没有任何调用者 ✓
+--
+--   ⚠️ 删掉它**不会**让界面空白 ✗ —— 当年"界面空白"的**真因**是
+--     ★ `.gil` 里的锚点/偏移落到了屏幕外 ✓，而 v248 已经把**几何交回编辑器** ✓
+--     ⇒ ★ 现在"控件在哪"由编辑器那份说了算 ✓，不需要再靠继承去接管 ✓
+--
+--   ★ 现在的几何所有权（全项目就这一条 ✓，详见 `render` 那段头部注释 ✓）：
+--     · ★ **脚本实例化的控件**（`adapter.instantiated`，例如 `cell.*`）⇒ 脚本摆 ✓
+--     · ★ **显式 `pos_runtime = true` 的那几类**（房间名标签 / 选卡文字与附件 / 缩略图 /
+--       确认卡与热区 ✓）⇒ 脚本摆 ✓（★ 它们必须按关卡数据或"卡片运行时矩形"每帧算 ✓）
+--     · ★ **其余全部** ⇒ ★ 编辑器摆 ✓（适配层的 `respect_editor_rect` 是第二道闸 ✓）
+--
+--   ★ 为什么必须有"显式 `pos_runtime = true`"这一档 ✗（别顺手也删了 ✓）：
+--     ★ 房间名标签 `room.label.*` **在 `.gil` 里** ✓ 但位置**必须每帧按房间外框算** ✓
+--       ⇒ ★ 不做这一档 ⇒ 三个标签会被按在存档那份几何上、**中心完全重叠** ✓（历史上真发生过 ✓）
 
 -- ★★★★★ 2026-10-05 **「老一套线索控件」的 id 判据（全项目唯一一份）**。
 --
@@ -5583,8 +5590,7 @@ function Controller:build_layout(ui_adapter)
           y = cy + math.floor(p[3] * s + 0.5) - math.floor(h / 2),
           w = w, h = h,
         },
-        rot = p[6],
-        pos_runtime = false,                   -- 固定几何，编辑器说了算
+        rot = p[6]
       })
     end
   end
@@ -5826,7 +5832,7 @@ function Controller:build_layout(ui_adapter)
   --     clue.N 及全部子控件）**统统退出脚本接管** ✓
   --   ⇒ 于是脚本对这块**只做两件事：显隐 + 交互**（正是用户要的），一个坐标都不碰 ✓
   push({ id = "clues", kind = "container", parent = "root", rect = rect_of(L.clues),
-         style = "panel", pos_runtime = false })
+         style = "panel" })
   -- ★★★★★ 2026-10-05 **线索区大底板（`clues.bg`）** —— 用户在编辑器里摆的那张图，
   --   但它的名字不在规划里 ⇒ 脚本从没点亮它 ⇒ 真机日志（11:31）里它一直 `可见=false` ✗
   --   ⇒ 补一条规划节点（`kind = "container"`：只摆位置/显隐，**不设图不设色**，图与色归编辑器）。
@@ -5916,7 +5922,9 @@ function Controller:build_layout(ui_adapter)
          -- 走不了网格视窗时（cfg.use_grid=false / 找不到控件 / 填内容失败）把它藏起来，
          -- 免得"老卡片回来了、但网格还盖在上面" —— 见 `Controller:sync_clue_grid`
          visible = (self._grid_state ~= "off"),
-         pos_runtime = false })
+         -- ★ 2026-10-16 v253：原来这里还有一句 `pos_runtime = false` ✓ —— ★ 已删除 ✓
+         --   （★ 现在只有"显式 `true`"才让脚本摆位置 ✓ ⇒ `false` 与"不写"完全等价 ✓ 是死代码 ✓）
+         })
   -- ★★★★★ 2026-10-05 **网格视窗在用时，老的一套线索控件"整段不进规划"**。
   --
   --   真机证据（用户实测，每帧刷、永久刷）：
@@ -7384,19 +7392,18 @@ function Controller:build_layout(ui_adapter)
            rect = { x = 1744.6, y = 298.8, w = 84, h = 84 },
            raycast = show_settle,
            event = { action = "settle_only" } })
-    -- ⚠️ **主页/选关这条提前 return 之前也必须调** —— 否则这两个屏幕的子树
-    --    拿不到继承过来的 `pos_runtime`，子控件继续用编辑器里的锚点+偏移
-    --    ⇒ 实际落到屏幕外（就是"界面空白"的直接原因）。
+    -- ★★★★★★★★ 2026-10-16 **v253：这里原来调的 `inherit_pos_runtime(nodes)` 已删** ✗✓
+    --   ★ 用户指令 ✓：「把所有失效的几何/文字脚本代码从脚本中删除」✓
+    --   ★ 它为什么**失效** ✗：★ 它会把 `root` 的 `pos_runtime = true` **沿子树传给每一个规划控件**
+    --     ⇒ ★ 每个控件都被判成"脚本接管几何" ✗ —— ★ 而 v248 起口径已经改成"归编辑器" ✓
+    --     ⇒ ★ 现在 `render` 只看**两件事**：★ ① 控件是不是脚本建的 ✓ ② 有没有**显式**写
+    --       `pos_runtime = true` ✓（★ 见那里的头部注释 ✓）⇒ ★ "继承"这件事**不再参与判断** ✓✓
     apply_screen_hide(nodes, self.screen)
-      inherit_pos_runtime(nodes)
     return nodes
   end
 
-  -- ★★★★ 2026-10-01 **界面空白的最后一环（用户实测定位）**：
-  --   `pos_runtime` 必须**沿子树继承** —— 详见函数外 `inherit_pos_runtime` 的注释。
-  --   这一处是**关卡路径**的收口；主页/选关那条提前 return 之前也调了一次。
+  -- （同上：关卡路径这一处的 `inherit_pos_runtime(nodes)` 也已随 v253 删除 ✓）
   apply_screen_hide(nodes, self.screen)
-    inherit_pos_runtime(nodes)
 
   return nodes
 end
@@ -11091,42 +11098,34 @@ function Controller:render(adapter, force)
       --   我第一版复用了 `instantiated` —— 那个标记还管着"允不允许销毁控件"，
       --   于是房间标签/选卡色块在某次渲染里短暂不可见时被**真销毁**，再也回不来
       --   （表现为"测试里可见色块 0 块，单独探针却看到 3 块"）。
-      -- ★★★★★★★★ 2026-10-16 **`geom_by_editor` 也要管住【规划侧】这一条路** ✗✓✓
+      -- ★★★★★★★★ 2026-10-16 **v253：几何所有权只剩【一条规则】** ✗✓✓
+      --   ★ 用户指令 ✓：「★ **把所有失效的几何/文字脚本代码从脚本中删除**」✓
       --
-      --   ★★ 上一轮（v246）把 `cfg.geom_by_editor` 加在 `main.lua` 的四处写法上 ✓
-      --      —— 但**真正在覆盖编辑器几何的是这里** ✗✓：
-      --        · ★ `root` 显式 `pos_runtime = true` ⇒ `inherit_pos_runtime` 沿树继承 ✓
-      --        · ★ 于是**每一个规划内控件**都拿到 `pos_runtime = true` ✓
-      --        · ★ 这里就把它记进 `adapter.runtime_rect` ⇒ ★ 适配器 `set_property("rect")` 的
-      --          `respect_editor_rect`（"编辑器几何优先"）**被整个绕开** ✗
-      --        ⇒ ★ **脚本每帧把规划里的位置/尺寸盖回存档控件** ✓✓
-      --   ★ 模拟器实测（`tools/sim/geom_probe.mjs`，基线 = `390.1.gil`）：选关屏上
-      --     `select.card.1` 编辑器 `(-374.175,-4.5) 208.98×291.6` ⇒ 运行 **`(-475,13) 233×324`**
-      --     （= 规划里那份 100% 的卡 ✓），`settle.btn` `(683,-279)` ⇒ **`(689,166)`** ✗
-      --     ⇒ ★ 与用户真机看到的**逐条对得上** ✓（"四张卡/结算按钮我改的都没变"、"只有 board.bg 变了"：
-      --       `board.bg` **不在规划里** ⇒ 它才没被覆盖 ✓ 这就是"只有它变了"的唯一解释 ✓）
+      --   ★★ 唯一规则 ✓：★ **只有"脚本自己创建的控件"（`adapter.instantiated`）
+      --     与"显式声明 `pos_runtime = true` 的那几颗"才由脚本摆位置** ✓
+      --     ★ 其余全是 `.gil` 里存在的控件 ⇒ ★ **几何完全归编辑器** ✓
       --
-      --   ★★ 口径（与 `main.lua` 那四处**同一句话**）✓：
-      --     · ★ **显式** `pos_runtime = true`（房间名标签 / 缩略图色块 / 弹窗四键 / `root` 本身）
-      --       ⇒ ★ 仍然算"脚本说了算" ✓（它们**必须**按关卡数据每帧算 ✓）
-      --     · ★ **继承来的** `pos_runtime`（`pos_runtime_inherited`）⇒ ★ `geom_by_editor` 打开时
-      --       **不再接管** ✓ ⇒ 编辑器里那份几何就是运行时的几何 ✓
-      --     · ★ **脚本自己建的**控件（`adapter.instantiated`，例如格子）⇒ 照旧由脚本摆 ✓
-      --       （它们没有"编辑器几何"可言 ✓）
-      local geom_by_editor = (adapter.cfg ~= nil and adapter.cfg.geom_by_editor == true)
-      if n.pos_runtime then
-        local script_owns = true
-        if geom_by_editor and n.pos_runtime_inherited == true
-           and not (adapter.instantiated and adapter.instantiated[n.id]) then
-          script_owns = false
-        end
+      --   ★ 本条**取代**了 v248 那套三件套判断 ✗✓（★ 已按本轮指令删除 ✓）：
+      --     · `cfg.geom_by_editor`（开关 ✓ 已删）
+      --     · `pos_runtime` **沿子树继承** + `pos_runtime_inherited`（已删 ✓
+      --       —— 它当年的作用就是"让每个规划控件都被判成脚本接管" ✗ 是**病根**本身 ✓）
+      --     · `respect_editor_rect`（★ 这条**留着** ✓ —— 它在适配层是**第二道闸** ✓
+      --       就算这里漏标记，适配层也不会去碰编辑器几何 ✓ 属于"防御"不是"死代码" ✓）
+      --   ★ 为什么能这样简化 ✓：★ 三种老口径的**结论本来就是"归编辑器"** ✓
+      --     ⇒ ★ 直接按"是不是脚本建的"判，比绕三个开关更准 ✓
+      --
+      --   ⚠️ 仍然必须由脚本摆的那几类（★ 别当死代码删 ✓ 见下面各条的 `pos_runtime = true`）：
+      --     · ★ **房间名标签** `room.label.*`（按每个房间的外框每帧摆 ✓ 否则三个字叠一起 ✓）
+      --     · ★ **选关卡的文字/附件/房间缩略图**（位置从**卡片自己的运行时矩形**推 ✓
+      --       —— ★ 卡片归编辑器 ⇒ 它们必须**跟着卡片走** ✓ `editor_card_box` 就是干这个的 ✓）
+      --     · ★ **确认卡** `hex.ok/no` 与热区 `hit.ok/no`（按**刚按下的那颗键**摆 ✓）
+      --     · ★ **脚本实例化的格子** `cell.*`（没有"编辑器几何"可言 ✓）
+      if adapter.instantiated and adapter.instantiated[n.id] then
         adapter.runtime_rect = adapter.runtime_rect or {}
-        if script_owns then
-          adapter.runtime_rect[n.id] = true
-        else
-          -- ★ 顺手清掉上一帧可能留下的记录（配置中途改动时不会"残留接管" ✓）
-          adapter.runtime_rect[n.id] = nil
-        end
+        adapter.runtime_rect[n.id] = true
+      elseif n.pos_runtime == true then
+        adapter.runtime_rect = adapter.runtime_rect or {}
+        adapter.runtime_rect[n.id] = true
       end
       -- ★ 位置也一样：**写成功才记账**（和上面那段属性同一个道理）。
       --   ⚠️ `respect_editor_rect` 打开时适配层会**故意跳过**位置 —— 那属于"故意的空操作"，
@@ -17318,43 +17317,16 @@ function M.capabilities()
   return text, missing
 end
 
--- ★★ 2026-09-28：`apply_button_labels` **放到文件最末尾**重新定义。
+-- ★★★★★★★★ 2026-10-16 **v253：`apply_button_labels` 【已删除】** ✗✓✓
 --
---   为什么搬：原来它定义在中段，语法上看是顶层，但实测
---   `M.Adapter.apply_button_labels == nil`（而同一位置的 `set_property` 存在）——
---   说明它被包在了某个 `do`/`local function` 里，**永远不会被赋值到 Adapter 上**。
---   放到 `return M` 前一行，**不可能再有嵌套**。
+--   ★ 用户指令 ✓：「把所有失效的几何/文字脚本代码从脚本中删除」✓
+--   ★ 它自己头部的注释就写着 ✗：「★ **现在它没有调用方** ✓（`main.lua` 走已验证的
+--     ⇒ ★ 一直没人用 ✓，而且它当初"放进 `Adapter` 上"还失败过 ✗（`== nil` ✓）
+--   ★ 现在的按钮文案通道 ✓（两条 ✓ 都在用 ✓ 别一起删掉 ✗）：
+--     · ★ `main.lua` 开机那条：走 `set_property(id, "text", …)` ✓（已验证 ✓ 带读回日志 ✓）
+--     · ★ 渲染每帧那条：同一个 `set_property` ✓ ＋ `self.text_editor_first` 名单 ✓
+--       （★ 编辑器里已经填了文案的控件 ⇒ **一个字都不动** ✓）
 --
---   ⚠️ 现在它**没有调用方**（main.lua 走已验证的 `set_property` 路径），
---      保留它只为将来需要"批量重写按钮文字 + 读回校验"时有个现成入口。
-function Adapter:apply_button_labels(labels)
-  if labels == nil or print == nil then return 0 end
-  local okN, miss, bad, shown = 0, 0, 0, 0
-  local ids = {}
-  for id in pairs(labels) do ids[#ids + 1] = id end
-  table.sort(ids)
-  for i = 1, #ids do
-    local id, want = ids[i], labels[ids[i]]
-    if type(want) == "string" and want ~= "" then
-      local lb = nil
-      pcall(function() lb = self:sub(id, "label") end)
-      if lb == nil then
-        miss = miss + 1
-      else
-        local wrote = pcall(function() lb.text = want end)
-        local back = nil
-        pcall(function() back = lb.text end)
-        if wrote and back == want then okN = okN + 1 else bad = bad + 1 end
-        if shown < 8 then
-          print(string.format("  %s：想要 %q → 读回 %s", id, want, tostring(back)))
-          shown = shown + 1
-        end
-      end
-    end
-  end
-  print(string.format("[murdoku] 按钮文字：成功 %d，读回不一致 %d，找不到 label %d", okN, bad, miss))
-  return okN
-end
 
 return M
 
@@ -17940,30 +17912,25 @@ function Murdoku.start(level_id, opts)
     pcall(function() root = adapter:find("root") end)
     local s = nil
     if root ~= nil then pcall(function() s = root:GetChild("stage") end) end
-    -- ★★★★★★★★ 2026-10-16 **用户指令②：把这些位置/尺寸交回编辑器** ✗✓✓
-    --   ★ 原话 ✓：「★ **把我调整过的东西那里的相关位置大小调整脚本关掉，交由编辑器决定**」✓
-    --   ⇒ ★ `cfg.geom_by_editor = true` 时：★ **建控件前也不摆 stage** ✓
-    --     ★ 让 `cell_geometry` 直接读**编辑器里那个 stage 的尺寸** ✓
-    local geom_by_editor = (adapter ~= nil and adapter.cfg ~= nil and adapter.cfg.geom_by_editor == true)
-    if s ~= nil and not geom_by_editor then
-      pcall(function() s:SetSizeDelta(BOARD_W, BOARD_H) end)
-      pcall(function() s:SetAnchoredPosition(BOARD_X, BOARD_Y) end)
-      if print then
-        local w, h = nil, nil
-        pcall(function() w, h = s:GetSizeDelta() end)
-        print("[murdoku] 建控件前先摆好 stage：" .. tostring(w) .. "x" .. tostring(h)
-          .. "（这样 cell_geometry 读到的就是 " .. tostring(BOARD_W) .. "）")
-      end
-    elseif print then
-      -- ★★ 2026-10-16 **这一行必须打印【读回值】，不是常量** ✗✓
-      --   ★ 为什么：★ 上一版这里打的是 `BOARD_W/H`（脚本常量 ✗）⇒
-      --     ★ 真机日志出现「stage 保持编辑器里那份 **584.0x584.0**」✓
-      --     ★ 而**实际生效的是编辑器里那份** ✗ ⇒ ★ 这句把人往"脚本还在写 stage"上带 ✗
-      --     （★ 用户就是这么被误导的 ✓ —— ★ 连我都被自己这行日志骗了一轮 ✓）
+    -- ★★★★★★★★ 2026-10-16 **v253：这段"建控件前先摆 stage"【整段删除】** ✗✓✓
+    --   ★ 用户指令 ✓：「★ **把所有失效的几何/文字脚本代码从脚本中删除**」✓
+    --   ★ 它原本靠 `cfg.geom_by_editor == true` 才不跑 ✗ —— ★ 本轮把那个开关也删了 ✓
+    --     ⇒ ★ 再留着它就会**真的去摆 stage** ✗（★ 几何明明已经归编辑器 ✓）
+    --     ★ 模拟器当场抓到过同类问题 ✓：`settle.btn` 被脚本挪到 `X[1442..1550] Y[800..860]` ✗
+    --       （★ 编辑器里是 `X[1431..1536] Y[694..764]` ✓）—— ★ 就是"开关删了、写还在"造成的 ✓
+    --   ★ 现在的口径 ✓：★ **stage 的位置/尺寸 = 编辑器里那份** ✓
+    --     ★ `cell_geometry` 读的就是编辑器那个 stage ✓（这正是当年要达到的效果 ✓）
+    --   ★ 只留一行"回读日志" ✓（★ 读回值 ✓ 不是脚本常量 ✓ —— 这一行救过一轮排查 ✓）
+    local s2 = nil
+    do
+      local root2 = nil
+      pcall(function() root2 = adapter:find("root") end)
+      if root2 ~= nil then pcall(function() s2 = root2:GetChild("stage") end) end
+    end
+    if print and s2 ~= nil then
       local ew, eh = nil, nil
-      if s ~= nil then pcall(function() ew, eh = s:GetSizeDelta() end) end
-      print("[murdoku] ★ 几何交给编辑器（geom_by_editor=true）：stage **回读** "
-        .. tostring(ew) .. "x" .. tostring(eh)
+      pcall(function() ew, eh = s2:GetSizeDelta() end)
+      print("[murdoku] ★ 几何归编辑器：stage **回读** " .. tostring(ew) .. "x" .. tostring(eh)
         .. "（★ 这才是实际生效的尺寸 ✓ 脚本常量 BOARD_W/H=" .. tostring(BOARD_W) .. "x" .. tostring(BOARD_H) .. " 不参与）")
     end
   end
@@ -19003,22 +18970,18 @@ function Murdoku.on_update(dt)
         --     格子会被放大 33%（本文件上面正记着那次事故 ✓）⇒ 保留执行者、只加守卫 ✓
         --   ⚠️ 读不到尺寸时**照旧写** ✓（不许因为读不到就不摆 ✓ 与同块另三处同口径 ✓）
         local sw0, sh0 = nil, nil
-        -- ★★★★★★★★ 2026-10-16 **用户指令②：每帧兜底也交给编辑器** ✗✓✓
-        --   ★ 原话 ✓：「把我调整过的东西那里的相关位置大小调整脚本关掉，交由编辑器决定」✓
-        --   ⇒ ★ `geom_by_editor = true` ⇒ ★ **这里不读也不写** ✓
-        --     ★ 你把 stage 调成多大，棋盘就是多大 ✓（格子尺寸由它算 ✓）
-        local geom_by_editor = (current ~= nil and current.adapter ~= nil and current.adapter.cfg ~= nil
-                                and current.adapter.cfg.geom_by_editor == true)
-        if not geom_by_editor then
+        -- ★★★★★★★★ 2026-10-16 **v253：这段"每帧兜底把 stage 摆回脚本常量"【已删除】** ✗✓✓
+        --   ★ 用户指令 ✓：「把所有失效的几何/文字脚本代码从脚本中删除」✓
+        --   ★ 它原来靠 `cfg.geom_by_editor == true` 才不跑 ✗ —— ★ 开关本轮已删 ✓
+        --     ⇒ ★ 再留着就会**每帧把 stage 拨回 `BOARD_W/H`** ✗ ⇒ ★ 你在编辑器里调的棋盘尺寸
+        --       会被顶掉 ✓（★ 这正是当初"我改了却没生效"那一类 ✓）
+        --   ★ 现在的口径 ✓：★ **stage 的尺寸就是编辑器里那份** ✓ ⇒ ★ 格子尺寸照它算 ✓
+        --   ⚠️ 当年那段注释担心的"stage 被改回全屏 ⇒ 格子放大 33%" ✗：
+        --     ★ 那是**脚本自己**把它改成全屏造成的 ✓，★ 现在脚本一个字都不写 ⇒ 不会发生 ✓
+        if s ~= nil and print then
           pcall(function() sw0, sh0 = s:GetSizeDelta() end)
-          if not (sw0 == BOARD_W and sh0 == BOARD_H) then
-            pcall(function() s:SetSizeDelta(BOARD_W, BOARD_H) end)
-          end
-          local px0, py0 = nil, nil
-          pcall(function() px0, py0 = s:GetAnchoredPosition() end)
-          if not (px0 == BOARD_X and py0 == BOARD_Y) then
-            pcall(function() s:SetAnchoredPosition(BOARD_X, BOARD_Y) end)
-          end
+          print("[murdoku] ★ 棋盘容器 stage 回读 " .. tostring(sw0) .. "x" .. tostring(sh0)
+            .. "（★ 归编辑器 ✓ 脚本不再写它 ✓）")
         end
       end
       local bar = nil
@@ -19205,33 +19168,14 @@ function Murdoku.on_update(dt)
         --   棋盘缩到 584 之后，它还是 677。
         --   ⇒ 现在让它**跟着 stage 走**：尺寸 = stage 的实时尺寸，位置 (0,0) 对齐中心。
         --     只在尺寸变化时写一次（移动端：不做每帧 SetSizeDelta）。
-        -- ★★★★★★★★ 2026-10-16 **用户指令②（第三处）：这一处也得让开** ✗✓✓
-        --   ★ 这是**漏掉的最后一处** ✓ —— ★ 真机日志点名了它 ✓：
-        --     「★ 底板对齐棋盘：stage **584.0**x584.0 → board.bg 回读 584.0x584.0」✓
-        --   ★★ 它做的事 ✓：★ 把 `board.bg`（棋盘底图）的尺寸**写成 stage 的实时尺寸** ✓
-        --     ⇒ ★ 而 `stage` 在**别处**被脚本写成 584 ✗ ⇒ ★ 于是把 584 **烙到 board.bg 上** ✓
-        --     ⇒ ★★ 这就是"改了编辑器尺寸、画面上没变"的**最后一环** ✓✓
-        --   ★ `geom_by_editor = true` ⇒ ★ **这一处整段不跑** ✓
-        --     ★ `board.bg` 的尺寸/位置**完全归编辑器** ✓（与 stage 同一套口径 ✓）
-        local geom_by_editor_bg = (current ~= nil and current.adapter ~= nil and current.adapter.cfg ~= nil
-                                  and current.adapter.cfg.geom_by_editor == true)
-        if bg ~= nil and s ~= nil and not geom_by_editor_bg then
-          local sw, sh = nil, nil
-          pcall(function() sw, sh = s:GetSizeDelta() end)
-          if type(sw) == "number" and type(sh) == "number" and sw > 0 and sh > 0 then
-            if current._board_bg_size ~= sw then
-              pcall(function() bg:SetSizeDelta(sw, sh) end)
-              pcall(function() bg:SetAnchoredPosition(0, 0) end)
-              current._board_bg_size = sw
-              local rw, rh = nil, nil
-              pcall(function() rw, rh = bg:GetSizeDelta() end)
-              if print then
-                print("[murdoku] 底板对齐棋盘：stage " .. tostring(sw) .. "x" .. tostring(sh)
-                  .. " → board.bg 回读 " .. tostring(rw) .. "x" .. tostring(rh))
-              end
-            end
-          end
-        end
+        -- ★★★★★★★★ 2026-10-16 **v253：这段"把 board.bg 对齐 stage"【已删除】** ✗✓✓
+        --   ★ 用户指令 ✓：「把所有失效的几何/文字脚本代码从脚本中删除」✓
+        --   ★ 它原来靠 `cfg.geom_by_editor == true` 才不跑 ✗ —— ★ 开关本轮已删 ✓
+        --     ⇒ ★ 再留着就会**把 stage 的（旧的）尺寸烙到 board.bg 上** ✗
+        --     ★ 当年真机日志点名过它 ✓：「底板对齐棋盘：stage 584.0x584.0 → board.bg 回读 584.0x584.0」✓
+        --     ★ 而你现在在编辑器里把 `board.bg` 调成了 **590** ✓ ⇒ ★ 脚本不该再动它 ✓
+        --   ★ 现在的口径 ✓：★ `board.bg` 的尺寸/位置**完全归编辑器** ✓（与 stage 同一套 ✓）
+        --   ⚠️ 显隐仍然由脚本管 ✓（下面那几行 ✓ —— ★ 那是"可见性"不是"几何" ✓ 留着 ✓）
         -- ★ 显隐：**只在状态变化时**写一次（不再每帧 SetVisible ⇒ 省一次跨引擎调用）
         if bg ~= nil then
           local want = true
@@ -19307,51 +19251,30 @@ function Murdoku.on_update(dt)
   --
   --   ⚠️ 只对**这台**引擎兜底 ✓：读不到 `SetSizeDelta` 时**什么都不做** ✓
   --     （★ 不许因为读不到就不摆、也不许把别的东西改坏 ✓）
-  --   ★★★★★★★★ 2026-10-16 **用户指令②：这一段整个交给编辑器** ✗✓✓
-  --     ★ 原话 ✓：「★ **把我调整过的东西那里的相关位置大小调整脚本关掉，交由编辑器决定**」✓
-  --     ★ `cfg.geom_by_editor = true` ⇒ ★ **这里一个字都不写** ✓
-  --       ★ `stage` 的尺寸/位置完全由编辑器决定 ✓（★ 格子尺寸是从 stage 尺寸算出来的 ✓
-  --         ⇒ ★ 你把 stage 调多大，棋盘就多大 ✓ 脚本不再抢 ✓）
+  --   ★★★★★★★★ 2026-10-16 **v253：这段"每帧显式摆 `settle.btn`"【已删除】** ✗✓✓
+  --     ★ 用户指令 ✓：「把所有失效的几何/文字脚本代码从脚本中删除」✓
+  --     ★ 它原来靠 `cfg.geom_by_editor == true` 才不跑 ✗ —— ★ 开关本轮已删 ✓
+  --       ⇒ ★ 再留着就会**每帧把结算键拨到 `(696,-380) 108×60`** ✗
+  --       ★ 模拟器当场抓到 ✓：`settle.btn` 落屏变成 `X[1442..1550] Y[800..860]` ✗
+  --       ★（★ 编辑器里那份是 `X[1431..1536] Y[694..764]` = 105×70 ✓ —— 那是你要的 ×1.5 ✓）
+  --     ⇒ ★ **删掉之后，结算键就是编辑器里那个 105×70** ✓✓
+  --     ★ 顺带：这里原来那段"每帧 SetSizeDelta 兜底"是为"引擎不认存档几何"写的 ✗
+  --       —— ★ 那是**几何归脚本**时代的对策 ✓；★ 现在几何归编辑器 ✓ 对策随之作废 ✓
   do
-    local geom_by_editor = (current ~= nil and current.adapter ~= nil and current.adapter.cfg ~= nil
-                            and current.adapter.cfg.geom_by_editor == true)
-    local sb = nil
-    if not geom_by_editor then
-      pcall(function() sb = current.adapter:find("settle.btn") end)
-    end
-    if sb ~= nil then
-      --   ★★★★★★★★ 2026-10-16 **用户要求：长度减半 ＋ 挪到右下角** ✗✓✓
-      --     ★ 原话 ✓：「★ **下一步是把长度缩减到现在的一半，然后加上弹窗按钮同款底图，
-      --       位置挪到右下角**」✓
-      --
-      --   ★ 新几何（★ 设计空间 1920×1080、左上原点 ✓ 与 `ui_controller` 那份 `rect` 同源 ✓）：
-      --     · ★ 宽度 260 → **130**（长度减半 ✓）
-      --     · ★ 右下角：★ **右边距与原来一样 60** ✓、★ **下边距也不动** ✓
-      --       ⇒ x = 1920 − 60 − 130 = **1730** ✓ y = **960** ✓
-      --   ★ 换算到画布（1600×900、中心为原点 ✓ 缩放 5/6 ✓）：
-      --     · 尺寸 = (130×5/6, 72×5/6) = **(108, 60)** ✓
-      --     · 中心 = ((1730+65)×5/6 − 800, (450 − (960+36)×5/6)) = (**695.8, −380**) ✓
-      --       ★ 取整 **696** ✓（★ 与 `ui_controller` 的 `rect` 同步改 ✓ 两处同源 ✓）
-      local want_w, want_h = 108, 60
-      local want_x, want_y = 696, -380
-      pcall(function() sb:SetSizeDelta(want_w, want_h) end)
-      pcall(function() sb:SetAnchoredPosition(want_x, want_y) end)
-      -- ★ 一次探针（只打一次 ✓）：把引擎**回读**到的几何打出来 ——
-      --   这是唯一能判定"它到底在哪、多大"的东西 ✓（位置这种事，不靠猜 ✓）
-      if not Murdoku._settle_probe_done then
-        Murdoku._settle_probe_done = true
+    -- ★ 只留一条**一次性回读探针** ✓（★ 位置这种事不靠猜 ✓ 但它**不写**任何几何 ✓）
+    if not Murdoku._settle_probe_done then
+      Murdoku._settle_probe_done = true
+      local sb0 = nil
+      pcall(function() sb0 = current.adapter:find("settle.btn") end)
+      if sb0 ~= nil and print then
         local rw, rh, rx, ry, rvis, rray = "?", "?", "?", "?", "?", "?"
-        pcall(function() rw, rh = sb:GetSizeDelta() end)
-        pcall(function() rx, ry = sb:GetAnchoredPosition() end)
-        pcall(function() rvis = tostring(sb.visible) end)
-        pcall(function() rray = tostring(sb.raycastTarget) end)
-        if print then
-          print("[murdoku] ★ 结算按钮几何探针：写入 size=(" .. want_w .. "," .. want_h
-            .. ") pos=(" .. want_x .. "," .. want_y
-            .. ") ⇒ 回读 size=(" .. tostring(rw) .. "," .. tostring(rh)
-            .. ") pos=(" .. tostring(rx) .. "," .. tostring(ry)
-            .. ") visible=" .. rvis .. " raycastTarget=" .. rray)
-        end
+        pcall(function() rw, rh = sb0:GetSizeDelta() end)
+        pcall(function() rx, ry = sb0:GetAnchoredPosition() end)
+        pcall(function() rvis = tostring(sb0.visible) end)
+        pcall(function() rray = tostring(sb0.raycastTarget) end)
+        print("[murdoku] ★ 结算按钮（归编辑器 ✓ 脚本一个字都不写）：回读 size=("
+          .. tostring(rw) .. "," .. tostring(rh) .. ") pos=(" .. tostring(rx) .. "," .. tostring(ry)
+          .. ") visible=" .. rvis .. " raycastTarget=" .. rray)
       end
     end
   end
@@ -20799,7 +20722,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v252 / 2026-10-16 / 按钮文案编辑器优先(cfg.text_editor_first,空才写) + 通关分析标语改放 win/win.N 区 =====")
+        print("[murdoku] ===== 构建标记 v253 / 2026-10-16 / 清理失效几何代码(inherit_pos_runtime/geom_by_editor/pos_runtime=false 全删) + 无效文字通道(apply_button_labels)删除 + 文案编辑器优先 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -20985,7 +20908,15 @@ local function build_adapter()
     --     ★ 同时修掉一个 Lua 语义错 ✓：`inherit_pos_runtime` 里原来用 `not n.pos_runtime`
     --       判"没表态" ✗ —— ★ **`not false` 也是 `true`** ⇒ ★ 显式写 `false` **拦不住继承** ✗
     --       （`clues` / `clue.*` 就是这么被接管的 ✓ 用户原话「网格视窗的大小我已经改了」✗）
-    geom_by_editor = true,
+    -- ★★★★★★★★ 2026-10-16 **v253：`geom_by_editor` 这个开关【已删除】** ✗✓✓
+    --   ★ 用户指令 ✓：「把所有失效的几何/文字脚本代码从脚本中删除」✓
+    --   ★ 它为什么失效 ✗：★ `render` 现在**只看两件事** ——
+    --     ① 控件是不是脚本建的 ✓ ② 有没有**显式**写 `pos_runtime = true` ✓
+    --     ⇒ ★ "归编辑器"已经成了**默认** ✓ ⇒ 不再需要这个开关去"关掉接管" ✓
+    --   ★ 位置/尺寸从哪来 ✓：★ **全部以 `.gil` 为准** ✓
+    --     ★ 适配层的 `respect_editor_rect = true`（见下 ✓）是第二道闸 ✓
+    --   ★ 仍然由脚本摆的那几类 ✓（★ 别当死代码删 ✓）：
+    --     ★ 房间名标签 / 选卡文字与附件 / 房间缩略图 / 确认卡与其热区 / 脚本实例化的 `cell.*` ✓
     -- ★★★★★★★★ 2026-10-16 **v252：这些控件的文案"编辑器优先"** ✗✓✓
     --   ★ 用户原话 ✓：「★ **让所有按钮的文本内容也交由编辑器** ✓
     --     ★ **你如果能直接填内容进控件你就填，不能就把位置告诉我**」✓

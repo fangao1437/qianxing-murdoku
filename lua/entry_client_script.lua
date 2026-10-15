@@ -184,7 +184,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v252 / 2026-10-16 / 按钮文案编辑器优先(cfg.text_editor_first,空才写) + 通关分析标语改放 win/win.N 区 =====")
+        print("[murdoku] ===== 构建标记 v253 / 2026-10-16 / 清理失效几何代码(inherit_pos_runtime/geom_by_editor/pos_runtime=false 全删) + 无效文字通道(apply_button_labels)删除 + 文案编辑器优先 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -370,7 +370,15 @@ local function build_adapter()
     --     ★ 同时修掉一个 Lua 语义错 ✓：`inherit_pos_runtime` 里原来用 `not n.pos_runtime`
     --       判"没表态" ✗ —— ★ **`not false` 也是 `true`** ⇒ ★ 显式写 `false` **拦不住继承** ✗
     --       （`clues` / `clue.*` 就是这么被接管的 ✓ 用户原话「网格视窗的大小我已经改了」✗）
-    geom_by_editor = true,
+    -- ★★★★★★★★ 2026-10-16 **v253：`geom_by_editor` 这个开关【已删除】** ✗✓✓
+    --   ★ 用户指令 ✓：「把所有失效的几何/文字脚本代码从脚本中删除」✓
+    --   ★ 它为什么失效 ✗：★ `render` 现在**只看两件事** ——
+    --     ① 控件是不是脚本建的 ✓ ② 有没有**显式**写 `pos_runtime = true` ✓
+    --     ⇒ ★ "归编辑器"已经成了**默认** ✓ ⇒ 不再需要这个开关去"关掉接管" ✓
+    --   ★ 位置/尺寸从哪来 ✓：★ **全部以 `.gil` 为准** ✓
+    --     ★ 适配层的 `respect_editor_rect = true`（见下 ✓）是第二道闸 ✓
+    --   ★ 仍然由脚本摆的那几类 ✓（★ 别当死代码删 ✓）：
+    --     ★ 房间名标签 / 选卡文字与附件 / 房间缩略图 / 确认卡与其热区 / 脚本实例化的 `cell.*` ✓
     -- ★★★★★★★★ 2026-10-16 **v252：这些控件的文案"编辑器优先"** ✗✓✓
     --   ★ 用户原话 ✓：「★ **让所有按钮的文本内容也交由编辑器** ✓
     --     ★ **你如果能直接填内容进控件你就填，不能就把位置告诉我**」✓

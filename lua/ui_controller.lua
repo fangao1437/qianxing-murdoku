@@ -1833,26 +1833,33 @@ local function rect_of(t) return { x = t.x, y = t.y, w = t.w, h = t.h } end
 --
 --   ★ 顺带记下"这是继承来的"（`pos_runtime_inherited`）✗✓ ——
 --     `geom_by_editor` 要用它把"继承"与"显式声明"分开（见 `render` 里那段 ✓）。
-local function inherit_pos_runtime(nodes)
-  local pr = {}
-  for i = 1, #nodes do
-    if nodes[i].pos_runtime then pr[nodes[i].id] = true end
-  end
-  for _ = 1, 8 do
-    local changed = false
-    for i = 1, #nodes do
-      local n = nodes[i]
-      -- ★ 只有"没表态"（nil）才继承；`false` 与 `true` 都是显式表态 ✓
-      if n.pos_runtime == nil and n.parent ~= nil and pr[n.parent] then
-        n.pos_runtime = true
-        n.pos_runtime_inherited = true
-        pr[n.id] = true
-        changed = true
-      end
-    end
-    if not changed then break end
-  end
-end
+-- ★★★★★★★★ 2026-10-16 **v253：`inherit_pos_runtime` 整个函数【已删除】** ✗✓✓
+--
+--   ★ 用户指令 ✓：「★ **把所有失效的几何/文字脚本代码从脚本中删除**」✓
+--
+--   ★ 它原来干什么 ✗：把 `root`（显式 `pos_runtime = true`）的标记**沿子树继承**给每一个
+--     规划内控件 ⇒ ★ 于是**每一个** `.gil` 里的控件都被判成"脚本说了算" ✓
+--     ⇒ ★ 脚本每帧把规划里的位置/尺寸**盖回**编辑器那份 ✓ —— ★ 这正是本轮要删的"失效几何代码" ✓
+--
+--   ★ 为什么它现在是**死代码** ✗（不是"暂时不用"✓）：
+--     · v248 起口径定为"几何归编辑器" ✓ ⇒ 继承出来的 `pos_runtime` **一律不再被采纳** ✓
+--       （`render` 里那条 `geom_by_editor + pos_runtime_inherited ⇒ script_owns = false` ✓）
+--     · v253 把 `render` 简化成**只看两件事** ✓（脚本建的控件 / 显式 `pos_runtime = true` ✓）
+--       ⇒ ★ **"继承"这件事彻底不参与判断** ✓ ⇒ 本函数没有任何调用者 ✓
+--
+--   ⚠️ 删掉它**不会**让界面空白 ✗ —— 当年"界面空白"的**真因**是
+--     ★ `.gil` 里的锚点/偏移落到了屏幕外 ✓，而 v248 已经把**几何交回编辑器** ✓
+--     ⇒ ★ 现在"控件在哪"由编辑器那份说了算 ✓，不需要再靠继承去接管 ✓
+--
+--   ★ 现在的几何所有权（全项目就这一条 ✓，详见 `render` 那段头部注释 ✓）：
+--     · ★ **脚本实例化的控件**（`adapter.instantiated`，例如 `cell.*`）⇒ 脚本摆 ✓
+--     · ★ **显式 `pos_runtime = true` 的那几类**（房间名标签 / 选卡文字与附件 / 缩略图 /
+--       确认卡与热区 ✓）⇒ 脚本摆 ✓（★ 它们必须按关卡数据或"卡片运行时矩形"每帧算 ✓）
+--     · ★ **其余全部** ⇒ ★ 编辑器摆 ✓（适配层的 `respect_editor_rect` 是第二道闸 ✓）
+--
+--   ★ 为什么必须有"显式 `pos_runtime = true`"这一档 ✗（别顺手也删了 ✓）：
+--     ★ 房间名标签 `room.label.*` **在 `.gil` 里** ✓ 但位置**必须每帧按房间外框算** ✓
+--       ⇒ ★ 不做这一档 ⇒ 三个标签会被按在存档那份几何上、**中心完全重叠** ✓（历史上真发生过 ✓）
 
 -- ★★★★★ 2026-10-05 **「老一套线索控件」的 id 判据（全项目唯一一份）**。
 --
@@ -2592,8 +2599,7 @@ function Controller:build_layout(ui_adapter)
           y = cy + math.floor(p[3] * s + 0.5) - math.floor(h / 2),
           w = w, h = h,
         },
-        rot = p[6],
-        pos_runtime = false,                   -- 固定几何，编辑器说了算
+        rot = p[6]
       })
     end
   end
@@ -2835,7 +2841,7 @@ function Controller:build_layout(ui_adapter)
   --     clue.N 及全部子控件）**统统退出脚本接管** ✓
   --   ⇒ 于是脚本对这块**只做两件事：显隐 + 交互**（正是用户要的），一个坐标都不碰 ✓
   push({ id = "clues", kind = "container", parent = "root", rect = rect_of(L.clues),
-         style = "panel", pos_runtime = false })
+         style = "panel" })
   -- ★★★★★ 2026-10-05 **线索区大底板（`clues.bg`）** —— 用户在编辑器里摆的那张图，
   --   但它的名字不在规划里 ⇒ 脚本从没点亮它 ⇒ 真机日志（11:31）里它一直 `可见=false` ✗
   --   ⇒ 补一条规划节点（`kind = "container"`：只摆位置/显隐，**不设图不设色**，图与色归编辑器）。
@@ -2925,7 +2931,9 @@ function Controller:build_layout(ui_adapter)
          -- 走不了网格视窗时（cfg.use_grid=false / 找不到控件 / 填内容失败）把它藏起来，
          -- 免得"老卡片回来了、但网格还盖在上面" —— 见 `Controller:sync_clue_grid`
          visible = (self._grid_state ~= "off"),
-         pos_runtime = false })
+         -- ★ 2026-10-16 v253：原来这里还有一句 `pos_runtime = false` ✓ —— ★ 已删除 ✓
+         --   （★ 现在只有"显式 `true`"才让脚本摆位置 ✓ ⇒ `false` 与"不写"完全等价 ✓ 是死代码 ✓）
+         })
   -- ★★★★★ 2026-10-05 **网格视窗在用时，老的一套线索控件"整段不进规划"**。
   --
   --   真机证据（用户实测，每帧刷、永久刷）：
@@ -4393,19 +4401,18 @@ function Controller:build_layout(ui_adapter)
            rect = { x = 1744.6, y = 298.8, w = 84, h = 84 },
            raycast = show_settle,
            event = { action = "settle_only" } })
-    -- ⚠️ **主页/选关这条提前 return 之前也必须调** —— 否则这两个屏幕的子树
-    --    拿不到继承过来的 `pos_runtime`，子控件继续用编辑器里的锚点+偏移
-    --    ⇒ 实际落到屏幕外（就是"界面空白"的直接原因）。
+    -- ★★★★★★★★ 2026-10-16 **v253：这里原来调的 `inherit_pos_runtime(nodes)` 已删** ✗✓
+    --   ★ 用户指令 ✓：「把所有失效的几何/文字脚本代码从脚本中删除」✓
+    --   ★ 它为什么**失效** ✗：★ 它会把 `root` 的 `pos_runtime = true` **沿子树传给每一个规划控件**
+    --     ⇒ ★ 每个控件都被判成"脚本接管几何" ✗ —— ★ 而 v248 起口径已经改成"归编辑器" ✓
+    --     ⇒ ★ 现在 `render` 只看**两件事**：★ ① 控件是不是脚本建的 ✓ ② 有没有**显式**写
+    --       `pos_runtime = true` ✓（★ 见那里的头部注释 ✓）⇒ ★ "继承"这件事**不再参与判断** ✓✓
     apply_screen_hide(nodes, self.screen)
-      inherit_pos_runtime(nodes)
     return nodes
   end
 
-  -- ★★★★ 2026-10-01 **界面空白的最后一环（用户实测定位）**：
-  --   `pos_runtime` 必须**沿子树继承** —— 详见函数外 `inherit_pos_runtime` 的注释。
-  --   这一处是**关卡路径**的收口；主页/选关那条提前 return 之前也调了一次。
+  -- （同上：关卡路径这一处的 `inherit_pos_runtime(nodes)` 也已随 v253 删除 ✓）
   apply_screen_hide(nodes, self.screen)
-    inherit_pos_runtime(nodes)
 
   return nodes
 end
@@ -8100,42 +8107,34 @@ function Controller:render(adapter, force)
       --   我第一版复用了 `instantiated` —— 那个标记还管着"允不允许销毁控件"，
       --   于是房间标签/选卡色块在某次渲染里短暂不可见时被**真销毁**，再也回不来
       --   （表现为"测试里可见色块 0 块，单独探针却看到 3 块"）。
-      -- ★★★★★★★★ 2026-10-16 **`geom_by_editor` 也要管住【规划侧】这一条路** ✗✓✓
+      -- ★★★★★★★★ 2026-10-16 **v253：几何所有权只剩【一条规则】** ✗✓✓
+      --   ★ 用户指令 ✓：「★ **把所有失效的几何/文字脚本代码从脚本中删除**」✓
       --
-      --   ★★ 上一轮（v246）把 `cfg.geom_by_editor` 加在 `main.lua` 的四处写法上 ✓
-      --      —— 但**真正在覆盖编辑器几何的是这里** ✗✓：
-      --        · ★ `root` 显式 `pos_runtime = true` ⇒ `inherit_pos_runtime` 沿树继承 ✓
-      --        · ★ 于是**每一个规划内控件**都拿到 `pos_runtime = true` ✓
-      --        · ★ 这里就把它记进 `adapter.runtime_rect` ⇒ ★ 适配器 `set_property("rect")` 的
-      --          `respect_editor_rect`（"编辑器几何优先"）**被整个绕开** ✗
-      --        ⇒ ★ **脚本每帧把规划里的位置/尺寸盖回存档控件** ✓✓
-      --   ★ 模拟器实测（`tools/sim/geom_probe.mjs`，基线 = `390.1.gil`）：选关屏上
-      --     `select.card.1` 编辑器 `(-374.175,-4.5) 208.98×291.6` ⇒ 运行 **`(-475,13) 233×324`**
-      --     （= 规划里那份 100% 的卡 ✓），`settle.btn` `(683,-279)` ⇒ **`(689,166)`** ✗
-      --     ⇒ ★ 与用户真机看到的**逐条对得上** ✓（"四张卡/结算按钮我改的都没变"、"只有 board.bg 变了"：
-      --       `board.bg` **不在规划里** ⇒ 它才没被覆盖 ✓ 这就是"只有它变了"的唯一解释 ✓）
+      --   ★★ 唯一规则 ✓：★ **只有"脚本自己创建的控件"（`adapter.instantiated`）
+      --     与"显式声明 `pos_runtime = true` 的那几颗"才由脚本摆位置** ✓
+      --     ★ 其余全是 `.gil` 里存在的控件 ⇒ ★ **几何完全归编辑器** ✓
       --
-      --   ★★ 口径（与 `main.lua` 那四处**同一句话**）✓：
-      --     · ★ **显式** `pos_runtime = true`（房间名标签 / 缩略图色块 / 弹窗四键 / `root` 本身）
-      --       ⇒ ★ 仍然算"脚本说了算" ✓（它们**必须**按关卡数据每帧算 ✓）
-      --     · ★ **继承来的** `pos_runtime`（`pos_runtime_inherited`）⇒ ★ `geom_by_editor` 打开时
-      --       **不再接管** ✓ ⇒ 编辑器里那份几何就是运行时的几何 ✓
-      --     · ★ **脚本自己建的**控件（`adapter.instantiated`，例如格子）⇒ 照旧由脚本摆 ✓
-      --       （它们没有"编辑器几何"可言 ✓）
-      local geom_by_editor = (adapter.cfg ~= nil and adapter.cfg.geom_by_editor == true)
-      if n.pos_runtime then
-        local script_owns = true
-        if geom_by_editor and n.pos_runtime_inherited == true
-           and not (adapter.instantiated and adapter.instantiated[n.id]) then
-          script_owns = false
-        end
+      --   ★ 本条**取代**了 v248 那套三件套判断 ✗✓（★ 已按本轮指令删除 ✓）：
+      --     · `cfg.geom_by_editor`（开关 ✓ 已删）
+      --     · `pos_runtime` **沿子树继承** + `pos_runtime_inherited`（已删 ✓
+      --       —— 它当年的作用就是"让每个规划控件都被判成脚本接管" ✗ 是**病根**本身 ✓）
+      --     · `respect_editor_rect`（★ 这条**留着** ✓ —— 它在适配层是**第二道闸** ✓
+      --       就算这里漏标记，适配层也不会去碰编辑器几何 ✓ 属于"防御"不是"死代码" ✓）
+      --   ★ 为什么能这样简化 ✓：★ 三种老口径的**结论本来就是"归编辑器"** ✓
+      --     ⇒ ★ 直接按"是不是脚本建的"判，比绕三个开关更准 ✓
+      --
+      --   ⚠️ 仍然必须由脚本摆的那几类（★ 别当死代码删 ✓ 见下面各条的 `pos_runtime = true`）：
+      --     · ★ **房间名标签** `room.label.*`（按每个房间的外框每帧摆 ✓ 否则三个字叠一起 ✓）
+      --     · ★ **选关卡的文字/附件/房间缩略图**（位置从**卡片自己的运行时矩形**推 ✓
+      --       —— ★ 卡片归编辑器 ⇒ 它们必须**跟着卡片走** ✓ `editor_card_box` 就是干这个的 ✓）
+      --     · ★ **确认卡** `hex.ok/no` 与热区 `hit.ok/no`（按**刚按下的那颗键**摆 ✓）
+      --     · ★ **脚本实例化的格子** `cell.*`（没有"编辑器几何"可言 ✓）
+      if adapter.instantiated and adapter.instantiated[n.id] then
         adapter.runtime_rect = adapter.runtime_rect or {}
-        if script_owns then
-          adapter.runtime_rect[n.id] = true
-        else
-          -- ★ 顺手清掉上一帧可能留下的记录（配置中途改动时不会"残留接管" ✓）
-          adapter.runtime_rect[n.id] = nil
-        end
+        adapter.runtime_rect[n.id] = true
+      elseif n.pos_runtime == true then
+        adapter.runtime_rect = adapter.runtime_rect or {}
+        adapter.runtime_rect[n.id] = true
       end
       -- ★ 位置也一样：**写成功才记账**（和上面那段属性同一个道理）。
       --   ⚠️ `respect_editor_rect` 打开时适配层会**故意跳过**位置 —— 那属于"故意的空操作"，

@@ -577,30 +577,25 @@ function Murdoku.start(level_id, opts)
     pcall(function() root = adapter:find("root") end)
     local s = nil
     if root ~= nil then pcall(function() s = root:GetChild("stage") end) end
-    -- ★★★★★★★★ 2026-10-16 **用户指令②：把这些位置/尺寸交回编辑器** ✗✓✓
-    --   ★ 原话 ✓：「★ **把我调整过的东西那里的相关位置大小调整脚本关掉，交由编辑器决定**」✓
-    --   ⇒ ★ `cfg.geom_by_editor = true` 时：★ **建控件前也不摆 stage** ✓
-    --     ★ 让 `cell_geometry` 直接读**编辑器里那个 stage 的尺寸** ✓
-    local geom_by_editor = (adapter ~= nil and adapter.cfg ~= nil and adapter.cfg.geom_by_editor == true)
-    if s ~= nil and not geom_by_editor then
-      pcall(function() s:SetSizeDelta(BOARD_W, BOARD_H) end)
-      pcall(function() s:SetAnchoredPosition(BOARD_X, BOARD_Y) end)
-      if print then
-        local w, h = nil, nil
-        pcall(function() w, h = s:GetSizeDelta() end)
-        print("[murdoku] 建控件前先摆好 stage：" .. tostring(w) .. "x" .. tostring(h)
-          .. "（这样 cell_geometry 读到的就是 " .. tostring(BOARD_W) .. "）")
-      end
-    elseif print then
-      -- ★★ 2026-10-16 **这一行必须打印【读回值】，不是常量** ✗✓
-      --   ★ 为什么：★ 上一版这里打的是 `BOARD_W/H`（脚本常量 ✗）⇒
-      --     ★ 真机日志出现「stage 保持编辑器里那份 **584.0x584.0**」✓
-      --     ★ 而**实际生效的是编辑器里那份** ✗ ⇒ ★ 这句把人往"脚本还在写 stage"上带 ✗
-      --     （★ 用户就是这么被误导的 ✓ —— ★ 连我都被自己这行日志骗了一轮 ✓）
+    -- ★★★★★★★★ 2026-10-16 **v253：这段"建控件前先摆 stage"【整段删除】** ✗✓✓
+    --   ★ 用户指令 ✓：「★ **把所有失效的几何/文字脚本代码从脚本中删除**」✓
+    --   ★ 它原本靠 `cfg.geom_by_editor == true` 才不跑 ✗ —— ★ 本轮把那个开关也删了 ✓
+    --     ⇒ ★ 再留着它就会**真的去摆 stage** ✗（★ 几何明明已经归编辑器 ✓）
+    --     ★ 模拟器当场抓到过同类问题 ✓：`settle.btn` 被脚本挪到 `X[1442..1550] Y[800..860]` ✗
+    --       （★ 编辑器里是 `X[1431..1536] Y[694..764]` ✓）—— ★ 就是"开关删了、写还在"造成的 ✓
+    --   ★ 现在的口径 ✓：★ **stage 的位置/尺寸 = 编辑器里那份** ✓
+    --     ★ `cell_geometry` 读的就是编辑器那个 stage ✓（这正是当年要达到的效果 ✓）
+    --   ★ 只留一行"回读日志" ✓（★ 读回值 ✓ 不是脚本常量 ✓ —— 这一行救过一轮排查 ✓）
+    local s2 = nil
+    do
+      local root2 = nil
+      pcall(function() root2 = adapter:find("root") end)
+      if root2 ~= nil then pcall(function() s2 = root2:GetChild("stage") end) end
+    end
+    if print and s2 ~= nil then
       local ew, eh = nil, nil
-      if s ~= nil then pcall(function() ew, eh = s:GetSizeDelta() end) end
-      print("[murdoku] ★ 几何交给编辑器（geom_by_editor=true）：stage **回读** "
-        .. tostring(ew) .. "x" .. tostring(eh)
+      pcall(function() ew, eh = s2:GetSizeDelta() end)
+      print("[murdoku] ★ 几何归编辑器：stage **回读** " .. tostring(ew) .. "x" .. tostring(eh)
         .. "（★ 这才是实际生效的尺寸 ✓ 脚本常量 BOARD_W/H=" .. tostring(BOARD_W) .. "x" .. tostring(BOARD_H) .. " 不参与）")
     end
   end
@@ -1640,22 +1635,18 @@ function Murdoku.on_update(dt)
         --     格子会被放大 33%（本文件上面正记着那次事故 ✓）⇒ 保留执行者、只加守卫 ✓
         --   ⚠️ 读不到尺寸时**照旧写** ✓（不许因为读不到就不摆 ✓ 与同块另三处同口径 ✓）
         local sw0, sh0 = nil, nil
-        -- ★★★★★★★★ 2026-10-16 **用户指令②：每帧兜底也交给编辑器** ✗✓✓
-        --   ★ 原话 ✓：「把我调整过的东西那里的相关位置大小调整脚本关掉，交由编辑器决定」✓
-        --   ⇒ ★ `geom_by_editor = true` ⇒ ★ **这里不读也不写** ✓
-        --     ★ 你把 stage 调成多大，棋盘就是多大 ✓（格子尺寸由它算 ✓）
-        local geom_by_editor = (current ~= nil and current.adapter ~= nil and current.adapter.cfg ~= nil
-                                and current.adapter.cfg.geom_by_editor == true)
-        if not geom_by_editor then
+        -- ★★★★★★★★ 2026-10-16 **v253：这段"每帧兜底把 stage 摆回脚本常量"【已删除】** ✗✓✓
+        --   ★ 用户指令 ✓：「把所有失效的几何/文字脚本代码从脚本中删除」✓
+        --   ★ 它原来靠 `cfg.geom_by_editor == true` 才不跑 ✗ —— ★ 开关本轮已删 ✓
+        --     ⇒ ★ 再留着就会**每帧把 stage 拨回 `BOARD_W/H`** ✗ ⇒ ★ 你在编辑器里调的棋盘尺寸
+        --       会被顶掉 ✓（★ 这正是当初"我改了却没生效"那一类 ✓）
+        --   ★ 现在的口径 ✓：★ **stage 的尺寸就是编辑器里那份** ✓ ⇒ ★ 格子尺寸照它算 ✓
+        --   ⚠️ 当年那段注释担心的"stage 被改回全屏 ⇒ 格子放大 33%" ✗：
+        --     ★ 那是**脚本自己**把它改成全屏造成的 ✓，★ 现在脚本一个字都不写 ⇒ 不会发生 ✓
+        if s ~= nil and print then
           pcall(function() sw0, sh0 = s:GetSizeDelta() end)
-          if not (sw0 == BOARD_W and sh0 == BOARD_H) then
-            pcall(function() s:SetSizeDelta(BOARD_W, BOARD_H) end)
-          end
-          local px0, py0 = nil, nil
-          pcall(function() px0, py0 = s:GetAnchoredPosition() end)
-          if not (px0 == BOARD_X and py0 == BOARD_Y) then
-            pcall(function() s:SetAnchoredPosition(BOARD_X, BOARD_Y) end)
-          end
+          print("[murdoku] ★ 棋盘容器 stage 回读 " .. tostring(sw0) .. "x" .. tostring(sh0)
+            .. "（★ 归编辑器 ✓ 脚本不再写它 ✓）")
         end
       end
       local bar = nil
@@ -1842,33 +1833,14 @@ function Murdoku.on_update(dt)
         --   棋盘缩到 584 之后，它还是 677。
         --   ⇒ 现在让它**跟着 stage 走**：尺寸 = stage 的实时尺寸，位置 (0,0) 对齐中心。
         --     只在尺寸变化时写一次（移动端：不做每帧 SetSizeDelta）。
-        -- ★★★★★★★★ 2026-10-16 **用户指令②（第三处）：这一处也得让开** ✗✓✓
-        --   ★ 这是**漏掉的最后一处** ✓ —— ★ 真机日志点名了它 ✓：
-        --     「★ 底板对齐棋盘：stage **584.0**x584.0 → board.bg 回读 584.0x584.0」✓
-        --   ★★ 它做的事 ✓：★ 把 `board.bg`（棋盘底图）的尺寸**写成 stage 的实时尺寸** ✓
-        --     ⇒ ★ 而 `stage` 在**别处**被脚本写成 584 ✗ ⇒ ★ 于是把 584 **烙到 board.bg 上** ✓
-        --     ⇒ ★★ 这就是"改了编辑器尺寸、画面上没变"的**最后一环** ✓✓
-        --   ★ `geom_by_editor = true` ⇒ ★ **这一处整段不跑** ✓
-        --     ★ `board.bg` 的尺寸/位置**完全归编辑器** ✓（与 stage 同一套口径 ✓）
-        local geom_by_editor_bg = (current ~= nil and current.adapter ~= nil and current.adapter.cfg ~= nil
-                                  and current.adapter.cfg.geom_by_editor == true)
-        if bg ~= nil and s ~= nil and not geom_by_editor_bg then
-          local sw, sh = nil, nil
-          pcall(function() sw, sh = s:GetSizeDelta() end)
-          if type(sw) == "number" and type(sh) == "number" and sw > 0 and sh > 0 then
-            if current._board_bg_size ~= sw then
-              pcall(function() bg:SetSizeDelta(sw, sh) end)
-              pcall(function() bg:SetAnchoredPosition(0, 0) end)
-              current._board_bg_size = sw
-              local rw, rh = nil, nil
-              pcall(function() rw, rh = bg:GetSizeDelta() end)
-              if print then
-                print("[murdoku] 底板对齐棋盘：stage " .. tostring(sw) .. "x" .. tostring(sh)
-                  .. " → board.bg 回读 " .. tostring(rw) .. "x" .. tostring(rh))
-              end
-            end
-          end
-        end
+        -- ★★★★★★★★ 2026-10-16 **v253：这段"把 board.bg 对齐 stage"【已删除】** ✗✓✓
+        --   ★ 用户指令 ✓：「把所有失效的几何/文字脚本代码从脚本中删除」✓
+        --   ★ 它原来靠 `cfg.geom_by_editor == true` 才不跑 ✗ —— ★ 开关本轮已删 ✓
+        --     ⇒ ★ 再留着就会**把 stage 的（旧的）尺寸烙到 board.bg 上** ✗
+        --     ★ 当年真机日志点名过它 ✓：「底板对齐棋盘：stage 584.0x584.0 → board.bg 回读 584.0x584.0」✓
+        --     ★ 而你现在在编辑器里把 `board.bg` 调成了 **590** ✓ ⇒ ★ 脚本不该再动它 ✓
+        --   ★ 现在的口径 ✓：★ `board.bg` 的尺寸/位置**完全归编辑器** ✓（与 stage 同一套 ✓）
+        --   ⚠️ 显隐仍然由脚本管 ✓（下面那几行 ✓ —— ★ 那是"可见性"不是"几何" ✓ 留着 ✓）
         -- ★ 显隐：**只在状态变化时**写一次（不再每帧 SetVisible ⇒ 省一次跨引擎调用）
         if bg ~= nil then
           local want = true
@@ -1944,51 +1916,30 @@ function Murdoku.on_update(dt)
   --
   --   ⚠️ 只对**这台**引擎兜底 ✓：读不到 `SetSizeDelta` 时**什么都不做** ✓
   --     （★ 不许因为读不到就不摆、也不许把别的东西改坏 ✓）
-  --   ★★★★★★★★ 2026-10-16 **用户指令②：这一段整个交给编辑器** ✗✓✓
-  --     ★ 原话 ✓：「★ **把我调整过的东西那里的相关位置大小调整脚本关掉，交由编辑器决定**」✓
-  --     ★ `cfg.geom_by_editor = true` ⇒ ★ **这里一个字都不写** ✓
-  --       ★ `stage` 的尺寸/位置完全由编辑器决定 ✓（★ 格子尺寸是从 stage 尺寸算出来的 ✓
-  --         ⇒ ★ 你把 stage 调多大，棋盘就多大 ✓ 脚本不再抢 ✓）
+  --   ★★★★★★★★ 2026-10-16 **v253：这段"每帧显式摆 `settle.btn`"【已删除】** ✗✓✓
+  --     ★ 用户指令 ✓：「把所有失效的几何/文字脚本代码从脚本中删除」✓
+  --     ★ 它原来靠 `cfg.geom_by_editor == true` 才不跑 ✗ —— ★ 开关本轮已删 ✓
+  --       ⇒ ★ 再留着就会**每帧把结算键拨到 `(696,-380) 108×60`** ✗
+  --       ★ 模拟器当场抓到 ✓：`settle.btn` 落屏变成 `X[1442..1550] Y[800..860]` ✗
+  --       ★（★ 编辑器里那份是 `X[1431..1536] Y[694..764]` = 105×70 ✓ —— 那是你要的 ×1.5 ✓）
+  --     ⇒ ★ **删掉之后，结算键就是编辑器里那个 105×70** ✓✓
+  --     ★ 顺带：这里原来那段"每帧 SetSizeDelta 兜底"是为"引擎不认存档几何"写的 ✗
+  --       —— ★ 那是**几何归脚本**时代的对策 ✓；★ 现在几何归编辑器 ✓ 对策随之作废 ✓
   do
-    local geom_by_editor = (current ~= nil and current.adapter ~= nil and current.adapter.cfg ~= nil
-                            and current.adapter.cfg.geom_by_editor == true)
-    local sb = nil
-    if not geom_by_editor then
-      pcall(function() sb = current.adapter:find("settle.btn") end)
-    end
-    if sb ~= nil then
-      --   ★★★★★★★★ 2026-10-16 **用户要求：长度减半 ＋ 挪到右下角** ✗✓✓
-      --     ★ 原话 ✓：「★ **下一步是把长度缩减到现在的一半，然后加上弹窗按钮同款底图，
-      --       位置挪到右下角**」✓
-      --
-      --   ★ 新几何（★ 设计空间 1920×1080、左上原点 ✓ 与 `ui_controller` 那份 `rect` 同源 ✓）：
-      --     · ★ 宽度 260 → **130**（长度减半 ✓）
-      --     · ★ 右下角：★ **右边距与原来一样 60** ✓、★ **下边距也不动** ✓
-      --       ⇒ x = 1920 − 60 − 130 = **1730** ✓ y = **960** ✓
-      --   ★ 换算到画布（1600×900、中心为原点 ✓ 缩放 5/6 ✓）：
-      --     · 尺寸 = (130×5/6, 72×5/6) = **(108, 60)** ✓
-      --     · 中心 = ((1730+65)×5/6 − 800, (450 − (960+36)×5/6)) = (**695.8, −380**) ✓
-      --       ★ 取整 **696** ✓（★ 与 `ui_controller` 的 `rect` 同步改 ✓ 两处同源 ✓）
-      local want_w, want_h = 108, 60
-      local want_x, want_y = 696, -380
-      pcall(function() sb:SetSizeDelta(want_w, want_h) end)
-      pcall(function() sb:SetAnchoredPosition(want_x, want_y) end)
-      -- ★ 一次探针（只打一次 ✓）：把引擎**回读**到的几何打出来 ——
-      --   这是唯一能判定"它到底在哪、多大"的东西 ✓（位置这种事，不靠猜 ✓）
-      if not Murdoku._settle_probe_done then
-        Murdoku._settle_probe_done = true
+    -- ★ 只留一条**一次性回读探针** ✓（★ 位置这种事不靠猜 ✓ 但它**不写**任何几何 ✓）
+    if not Murdoku._settle_probe_done then
+      Murdoku._settle_probe_done = true
+      local sb0 = nil
+      pcall(function() sb0 = current.adapter:find("settle.btn") end)
+      if sb0 ~= nil and print then
         local rw, rh, rx, ry, rvis, rray = "?", "?", "?", "?", "?", "?"
-        pcall(function() rw, rh = sb:GetSizeDelta() end)
-        pcall(function() rx, ry = sb:GetAnchoredPosition() end)
-        pcall(function() rvis = tostring(sb.visible) end)
-        pcall(function() rray = tostring(sb.raycastTarget) end)
-        if print then
-          print("[murdoku] ★ 结算按钮几何探针：写入 size=(" .. want_w .. "," .. want_h
-            .. ") pos=(" .. want_x .. "," .. want_y
-            .. ") ⇒ 回读 size=(" .. tostring(rw) .. "," .. tostring(rh)
-            .. ") pos=(" .. tostring(rx) .. "," .. tostring(ry)
-            .. ") visible=" .. rvis .. " raycastTarget=" .. rray)
-        end
+        pcall(function() rw, rh = sb0:GetSizeDelta() end)
+        pcall(function() rx, ry = sb0:GetAnchoredPosition() end)
+        pcall(function() rvis = tostring(sb0.visible) end)
+        pcall(function() rray = tostring(sb0.raycastTarget) end)
+        print("[murdoku] ★ 结算按钮（归编辑器 ✓ 脚本一个字都不写）：回读 size=("
+          .. tostring(rw) .. "," .. tostring(rh) .. ") pos=(" .. tostring(rx) .. "," .. tostring(ry)
+          .. ") visible=" .. rvis .. " raycastTarget=" .. rray)
       end
     end
   end
