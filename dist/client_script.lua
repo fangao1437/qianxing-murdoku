@@ -18920,7 +18920,59 @@ function Murdoku.on_update(dt)
     --      上半段 `selbtn.*` 的循环也只在 `widgets = true` 时才让 `on_select` 为真，
     --      默认配置下它什么都不做，不会干扰 93 里原有的卡片。
   end
-  -- ★★★★★ 2026-10-04 **整块删掉"把 topbar / right 锚点归零"** —— 它是错的，两半都是。
+  -- ★★★★★★★★ 2026-10-15 **「结算」按钮：位置与命中区【由脚本【每帧】按屏设定】** ✗✓✓
+  --
+  --   ★★ 为什么不能再"以存档那份为准" ✗（v241 真机日志给的判决 ✓）：
+  --     · v241 已经把"不该吃点击的屏"改成 `raycast = false`（`ui_controller` ✓）
+  --     · ★ 真机仍然：★「全屏按钮还在，预期的按钮未出现」✗
+  --     · ★ 而且真机日志明确：点 **(654, 112)** ⇒ `收到点击 → 控件 settle.btn` ✗
+  --       ★ 那一点离"存档里那个 217×60 的左下角小方块"**很远** ✓
+  --     ⇒ ★★ 结论：★ **存档里那份几何在这台引擎上不是它实际占的矩形** ✗
+  --       （★ 本项目早就有过同款教训：★「真正决定位置的不是存档里的几何」✓
+  --         见上面那段"整块删掉把 topbar / right 锚点归零" ✓）
+  --
+  --   ★★ 所以这一轮改成与 `stage` / `domove` 们**同一套**做法 ✓：
+  --     ★ **脚本每帧显式 SetSizeDelta + SetAnchoredPosition** ✓
+  --       ⇒ ★ 位置和尺寸都变成"我写进去的那两个数" ✓
+  --       ⇒ ★ 命中区跟着它走 ✓（★ 不再依赖存档里那条记录算出来的结果 ✓）
+  --
+  --   ★ 值怎么取 ✓（与 `ui_controller` 里那份 `rect` 同源 ✓ 不另造一套数 ✓）：
+  --     · 设计空间（1920×1080、左上原点）x=60, y=960, 260×72 ✓
+  --     · 画布 1600×900、**中心为原点** ⇒ 缩放 5/6 ⇒
+  --       中心 = ((60+130)×5/6 − 800, (450 − (960+36)×5/6)) = (−642, −380) ✓
+  --       ★ 这两个数**正好等于**存档里那份 `pos[-642,-380]` ✓
+  --       ⇒ ★ 说明存档的坐标口径与我算的一致 ✓，★ 分歧在**引擎怎么用它** ✗
+  --     · 尺寸 = (260×5/6, 72×5/6) = (217, 60) ✓（★ 也与存档一致 ✓）
+  --
+  --   ⚠️ 只对**这台**引擎兜底 ✓：读不到 `SetSizeDelta` 时**什么都不做** ✓
+  --     （★ 不许因为读不到就不摆、也不许把别的东西改坏 ✓）
+  do
+    local sb = nil
+    pcall(function() sb = current.adapter:find("settle.btn") end)
+    if sb ~= nil then
+      local want_w, want_h = 217, 60
+      local want_x, want_y = -642, -380
+      pcall(function() sb:SetSizeDelta(want_w, want_h) end)
+      pcall(function() sb:SetAnchoredPosition(want_x, want_y) end)
+      -- ★ 一次探针（只打一次 ✓）：把引擎**回读**到的几何打出来 ——
+      --   这是唯一能判定"它到底在哪、多大"的东西 ✓（位置这种事，不靠猜 ✓）
+      if not Murdoku._settle_probe_done then
+        Murdoku._settle_probe_done = true
+        local rw, rh, rx, ry, rvis, rray = "?", "?", "?", "?", "?", "?"
+        pcall(function() rw, rh = sb:GetSizeDelta() end)
+        pcall(function() rx, ry = sb:GetAnchoredPosition() end)
+        pcall(function() rvis = tostring(sb.visible) end)
+        pcall(function() rray = tostring(sb.raycastTarget) end)
+        if print then
+          print("[murdoku] ★ 结算按钮几何探针：写入 size=(" .. want_w .. "," .. want_h
+            .. ") pos=(" .. want_x .. "," .. want_y
+            .. ") ⇒ 回读 size=(" .. tostring(rw) .. "," .. tostring(rh)
+            .. ") pos=(" .. tostring(rx) .. "," .. tostring(ry)
+            .. ") visible=" .. rvis .. " raycastTarget=" .. rray)
+        end
+      end
+    end
+  end
   --
   --   历史：2026-10-02 为了让"子控件不再双重偏移"加了这段
   --   （当时真机日志：`right` pos=(575,-23)，子控件 `hud.progress` pos=(508,-283)
@@ -20365,7 +20417,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v241 / 2026-10-15 / 修「结算按钮吃整屏点击」:不在主页/选关时推 raycast=false(适配器新增 raycast 通道);其余同 v240 =====")
+        print("[murdoku] ===== 构建标记 v242 / 2026-10-15 / 「结算」按钮几何改由脚本每帧显式写(不再信存档那份)+首帧回读探针;其余同 v241 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
