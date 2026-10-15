@@ -52,6 +52,8 @@ const kids = (r) => {
 };
 
 // #504 = 位置对（两个 float），#505 = 尺寸对
+// ★ 2026-10-16 修 ✗：**分量缺失 = 0，不是"没有"** ✓（protobuf 稀疏编码：0 不写 ✓）
+//   —— 旧写法要求两个分量都在，于是「x=0 的居中控件」被**静默跳过** ✗（本轮漏过一整片弹窗 ✓）
 function msg2(blk, field) {
   const hit = (function w(fs) {
     for (const x of fs) {
@@ -60,24 +62,31 @@ function msg2(blk, field) {
     }
     return null;
   })(blk.sub);
-  if (!hit) return null;
-  const get = (n) => { const y = hit.find((z) => z.field === n); return y && typeof y.f === 'number' ? y.f : null; };
-  const a = get(501), b = get(502);
-  return (a === null || b === null) ? null : { a, b };
+  if (!hit) return null;                       // 连"对"字段都没有 ⇒ 真没有
+  const get = (n) => { const y = hit.find((z) => z.field === n); return y && typeof z_num(y) === 'number' ? z_num(y) : 0; };
+  function z_num(y) { return typeof y.f === 'number' ? y.f : undefined; }
+  return { a: get(501), b: get(502) };
 }
 
 const info = new Map();
 for (const r of g.recs) {
   if (!r.name || !r.states || !r.states.length) continue;
-  const off = msg2(r.states[0], 504), size = msg2(r.states[0], 505);
+  // ★ 2026-10-16 修 ✗：**不能只看第一个状态块** —— 「另存为模板」生成的按钮常常
+  //   只有部分状态块带几何 ⇒ ★ 只看第一块会**静默跳过**它 ✗（本轮就这么漏掉过 `modal.exit` ✓）
+  let off = null, size = null, blkIdx = -1;
+  for (let i = 0; i < r.states.length; i++) {
+    const o = msg2(r.states[i], 504), s2 = msg2(r.states[i], 505);
+    if (o && s2) { off = o; size = s2; blkIdx = i; break; }
+  }
   if (!off || !size) continue;
   const parent = (function find(rec) {
     for (const p of g.recs) if (kids(p).some((k) => k.id === rec.id)) return p;
     return null;
   })(r);
-  info.set(r.id, { rec: r, name: r.name, off, size, parentId: parent ? parent.id : null, parentName: parent ? parent.name : null });
+  info.set(r.id, { rec: r, name: r.name, off, size, blkIdx, parentId: parent ? parent.id : null, parentName: parent ? parent.name : null });
 }
-console.log('存档 ' + path.basename(file) + '　记录 ' + g.recs.length + '　带位置+尺寸的 ' + info.size);
+console.log('存档 ' + path.basename(file) + '　记录 ' + g.recs.length + '　带位置+尺寸的 ' + info.size
+  + '（★ 取**第一个带几何的状态块** ✓）');
 
 const abs = new Map();   // id -> {x,y} 叠加口径
 function absOf(id, guard) {

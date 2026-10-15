@@ -152,6 +152,9 @@ function geomOf(n) {
     h: pick('sizeDeltaY', 'height', 'h', 'sizeY'),
     visible: n.visible,
     instantiated: n.instantiated,
+    // ★ 2026-10-16 加 ✓：图与色 —— ★ 「头像被棋盘染色」那条要用它判（`imageColor` 是**乘算** ✓）
+    imageId: (typeof n.imageId === 'number' ? n.imageId : null),
+    imageColor: (typeof n.imageColor === 'number' ? n.imageColor : null),
   };
 }
 
@@ -242,6 +245,10 @@ try {
       say('          编辑器 ' + (a ? `(${a.x},${a.y}) ${a.w}x${a.h}` : '—')
         + '　基线 ' + (b ? `(${b.x},${b.y}) ${b.w}x${b.h}` : '—')
         + '　运行 ' + (r ? `(${r.x},${r.y}) ${r.w}x${r.h})` : '—'));
+      if (r && (r.imageId !== null || r.imageColor !== null)) {
+        say('          图/色 imageId=' + r.imageId + '　imageColor='
+          + (r.imageColor === null ? '—' : r.imageColor + '（0x' + (r.imageColor >>> 0).toString(16).toUpperCase() + '）'));
+      }
       if (onscreen !== '') say('         ' + onscreen);
     }
     say('     == 汇总 #' + idx + '：与编辑器一致 ' + same + ' / 不一致 ' + diff

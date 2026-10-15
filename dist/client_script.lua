@@ -5259,6 +5259,15 @@ function Controller:build_layout(ui_adapter)
       local ax, ay = a[3], a[4]
       if a[1] == "hex.ok" then ax, ay = anchor.x, anchor.y end
       if a[1] == "hex.no" then ax, ay = anchor.x + 54 + CONFIRM_GAP, anchor.y end
+      -- ★★★★★★★★ 2026-10-16 **确认卡（✓/✗）显式交回脚本** ✗✓✓（★ 用户原话 ✓：
+      --   「**提交和重置关卡的确认卡没有出现在对应按键旁边（这个就脚本接管吧）**」✓）
+      --
+      --   ★ 为什么它**必须**由脚本摆 ✗：★ 它的位置是**算出来的** ✓ ——
+      --     跟着"刚按下的那颗键"走（见上面 `anchor` ✓）⇒ ★ 存档里**没有**一份能对应的固定坐标 ✗
+      --   ★ 而 v248 起「继承来的 `pos_runtime` 不受理」⇒ ★ 它落回存档那份 ⇒
+      --     ★ **✓/✗ 出现在别处**（用户看到的正是这个 ✓）✗
+      --   ⇒ ★ 这两颗（**只这两颗**）显式写 `pos_runtime = true` ⇒ 脚本每帧按 `anchor` 摆 ✓
+      local is_confirm_icon = (a[1] == "hex.ok" or a[1] == "hex.no")
       local vis = (not is_confirm) or icon_pending_on
       local rect = { x = D(ax), y = D(ay), w = D(a[5]), h = D(a[6]) }
       -- ① 贴图：纯图片模板，**不绑事件**
@@ -5282,6 +5291,8 @@ function Controller:build_layout(ui_adapter)
         imageType = "Stretch",
         icon_template = true,          -- ★ 走 cfg.prefab_icon（真机验证：图标看得见）
         rect = rect,
+        -- ★ 确认卡那两颗（hex.ok / hex.no）**位置归脚本** ✓（理由见上面那段 ✓）
+        pos_runtime = is_confirm_icon or nil,
       }
       -- ② 热区：格子模板、**不给 image_id**（所以 face 不会被点亮 ⇒ 完全透明），只负责收点击
       nodes[#nodes + 1] = {
@@ -6494,7 +6505,19 @@ function Controller:build_layout(ui_adapter)
         doors = cd.doors,
         -- ★ 房间染色：`imageColor` 是**读写**字段，所以"同一张底图 + 不同颜色区分房间"
         --   是零额外素材的做法。颜色表在下面 ROOM_COLORS。
-        tint = Controller.room_color(cd.room),
+        --
+        -- ★★★★★★★★ 2026-10-16 **有棋子时不下发房间色** ✗✓✓（★ 用户报 ✓：
+        --   「**棋盘染色把放置的头像也染色了，有没有办法能让头像不受底色影响**」✓）
+        --
+        --   ★ 为什么会被染 ✗：★ 头像与房间色**落在同一个控件上** ✓ ——
+        --     · 头像：`image = portrait` ⇒ 适配层 `set_image_deep` 把图设到格子的 **`face`** ✓
+        --     · 房间色：`tint = room_color` ⇒ 适配层 `local target = self:sub(id, "face")` ✓
+        --       ⇒ ★ **同一个 `face`** ✗ ⇒ ★ `imageColor` 是**乘算** ⇒ 头像被乘上底色 ✓✓
+        --   ★ 模板里没有第二个"可以放头像又不受色"的图片子控件 ✗（`obj` 归家具、`note` 归字母 ✓）
+        --   ⇒ ★★ 最小且不倒着的修法 ✓：★ **有棋子的格子，房间色下发白色**（= 不染色 ✓）✓
+        --     ★ 那一格本来就被头像铺满 ⇒ 房间色**看不见**，不下发它不损失任何信息 ✓✓
+        --     ★ 棋子一拿开（`cd.suspect` 变 nil ✓）⇒ ★ 下一帧自然回到房间色 ✓（无需额外状态 ✓）
+        tint = (cd.suspect and 4294967295) or Controller.room_color(cd.room),
         occupiable = cd.occupiable,
         x_mark = cd.x,
         enabled = true,   -- 不可站人的格子也要能点（用于打 X / 提示原因）
@@ -20629,7 +20652,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v248 / 2026-10-16 / 几何归编辑器：规划侧不再接管(继承来的pos_runtime不受理) + false能拦继承 + 卡片随件跟编辑器那张卡 =====")
+        print("[murdoku] ===== 构建标记 v249 / 2026-10-16 / 确认卡(hex.ok/no)位置交回脚本 + 有棋子的格子不下发房间色(头像不再被染) + 弹窗文字/按钮与卡片对齐(存档侧) =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
