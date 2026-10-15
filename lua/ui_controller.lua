@@ -1815,6 +1815,24 @@ local function rect_of(t) return { x = t.x, y = t.y, w = t.w, h = t.h } end
 --   ⚠️ 必须**两个 `return nodes` 之前都调用**：`build_layout` 在"主页/选关"状态下
 --      会**提前 return**（只 push 主页/选关那几棵子树）。我第一版只加在函数末尾，
 --      结果主页状态根本跑不到 ⇒ 继承没生效（探针实测 `home.select` 仍是 false）。
+-- ★★★★★★★★ 2026-10-16 **`false` 必须能拦住继承** ✗✓✓（一个 Lua 语义错，害了两处功能）
+--
+--   ★ 下面那句原文一直是 ✗：`if (not n.pos_runtime) and … then n.pos_runtime = true end`
+--     ★★ 而 Lua 里 **`not false` 也是 `true`** ✓ ⇒ ★ **显式写 `false` 根本拦不住** ✗
+--        （`not nil` 与 `not false` 在这句里**分不开** ✓ —— 这正是它的错处 ✓）
+--   ⇒ ★ 后果（本轮在模拟器里量到的两处 ✓ 全是用户点名过的地方）：
+--     · ★ `clues` 显式 `pos_runtime = false` ✗ ⇒ 仍从 `root(true)` 继承成 true ✓
+--       ⇒ ★ `clues.bg` / `clues.grid` 也跟着被继承 ⇒ **脚本每帧把 400×544 的规划框
+--         盖到编辑器那份 360×490 上** ✓ —— ★ 用户原话「网格视窗的大小我已经改了」✗
+--         改不动就是这个原因 ✓
+--     · ★ `clue.N` / `clue.N.backrop*` 同样 ✗（2026-10-05 就写着「不再给 pos_runtime，
+--       位置归编辑器」✓ 而实际上一直被继承接管 ✓）
+--   ⇒ ★ 判据改成 **`n.pos_runtime == nil`**（只有"没表态"的才继承 ✓）：
+--     ★ `true` = 显式声明"脚本说了算"；★ `false` = 显式声明"编辑器说了算"；
+--     ★ `nil` = 没表态 ⇒ 跟父级 ✓（原意 ✓）
+--
+--   ★ 顺带记下"这是继承来的"（`pos_runtime_inherited`）✗✓ ——
+--     `geom_by_editor` 要用它把"继承"与"显式声明"分开（见 `render` 里那段 ✓）。
 local function inherit_pos_runtime(nodes)
   local pr = {}
   for i = 1, #nodes do
@@ -1824,8 +1842,10 @@ local function inherit_pos_runtime(nodes)
     local changed = false
     for i = 1, #nodes do
       local n = nodes[i]
-      if (not n.pos_runtime) and n.parent ~= nil and pr[n.parent] then
+      -- ★ 只有"没表态"（nil）才继承；`false` 与 `true` 都是显式表态 ✓
+      if n.pos_runtime == nil and n.parent ~= nil and pr[n.parent] then
         n.pos_runtime = true
+        n.pos_runtime_inherited = true
         pr[n.id] = true
         changed = true
       end
@@ -2074,7 +2094,7 @@ function Controller:toast_text()
   return t
 end
 
-function Controller:build_layout()
+function Controller:build_layout(ui_adapter)
   local vm = self.core:view()
   local L = M.LAYOUT
   local nodes = {}
@@ -4145,6 +4165,11 @@ function Controller:build_layout()
           local it = list[lst_base + i]
         local r = { x = CARD_X0 + ((i - 1) % PER) * CARD_STEP, y = CARD_Y0,
                     w = CARD_W, h = CARD_H }
+        -- ★★★★★★★★ 2026-10-16 **卡片本身与它的随件，统一用【编辑器那张卡】的框** ✗✓✓
+        --   ★ 见 `editor_card_box` 的函数头 ✓（读不到就退回上面这个规划框 ✓）
+        --   ⚠️ 卡片自己**不会被写**（`geom_by_editor` ⇒ 编辑器说了算 ✓）；
+        --      这里的 `r` 只决定"随件画在哪" + "控件不存在时按什么建" ✓
+        r = self:editor_card_box(ui_adapter, "select.card." .. i, r)
         if it ~= nil then
           -- ★★★ 2026-09-30：卡片改成**三段**（参考《派蒙的执律庭实习》的选关卡片：
           --   上面一条"关名"纸条、中间是**该关棋盘的缩略图**、下面一行"人数/进度"）。
@@ -4162,12 +4187,23 @@ function Controller:build_layout()
           push({ id = "hit.select.card." .. i, kind = "button", parent = "root", visible = true,
                  rect = r, event = { action = "pick_level", id = it.id } })
           local t = self:level_card_parts(it)
+          -- ★★★★★★★★ 2026-10-16 **`.title` / `.info` 也必须显式 `pos_runtime = true`** ✗✓✓
+          --   ★ 为什么 ✗：这两条原来**没表态** ⇒ 靠继承（旧代码里 `root` 是 true ⇒ 它们也是 true）
+          --     —— ★ 而 v248 起「继承来的」不再受理（几何归编辑器 ✓）
+          --     ⇒ ★ 于是它们停在**存档里那份 100% 的卡位**上 ✗
+          --       ★ 实测（模拟器截图）：★ 关名跑到卡**上方**、人数行跑到卡**下方** ✓
+          --   ★ 它们和缩略图是**同一类** ✓：★ 内容是每关算的（关名/进度/房间）⇒
+          --     ★ **几何必须跟着这张卡走** ⇒ 显式声明"脚本说了算" ✓
+          --   ⚠️ 卡**本身**（`select.card.N` / `hit.select.card.N`）**不加** ✓ ——
+          --     它归编辑器 ✓，而上面那个 `r` 已经让它"算出来的位置" = 编辑器那份 ✓
           push({ id = "select.card." .. i .. ".title", kind = "text", parent = "root",
                  visible = true, text = t.title, style = "card.title",
-                 rect = { x = r.x + 16, y = r.y + 10, w = r.w - 32, h = 34 } })
+                 rect = { x = r.x + 16, y = r.y + 10, w = r.w - 32, h = 34 },
+                 pos_runtime = true })
           push({ id = "select.card." .. i .. ".info", kind = "text", parent = "root",
                  visible = true, text = t.info, style = "muted",
-                 rect = { x = r.x + 16, y = r.y + r.h - 42, w = r.w - 32, h = 32 } })
+                 rect = { x = r.x + 16, y = r.y + r.h - 42, w = r.w - 32, h = 32 },
+                 pos_runtime = true })
           self:push_room_thumb(push, "select.card." .. i, it, r, "select")
         else
           push({ id = "select.card." .. i, kind = "button", parent = "root", visible = false,
@@ -4176,9 +4212,10 @@ function Controller:build_layout()
           push({ id = "hit.select.card." .. i, kind = "button", parent = "root", visible = false,
                  rect = r })
           -- 空卡片的三个附件也要显式隐藏 —— 否则上一屏的内容会**残留在空位上**
+          -- ★ 与上面同口径：附件显式 `pos_runtime = true`（卡位变了它们也得跟着 ✓）
           for _, suf in ipairs({ ".title", ".info" }) do
             push({ id = "select.card." .. i .. suf, kind = "text", parent = "root", visible = false,
-                   rect = { x = r.x, y = r.y, w = 1, h = 1 } })
+                   rect = { x = r.x, y = r.y, w = 1, h = 1 }, pos_runtime = true })
           end
           self:push_room_thumb(push, "select.card." .. i, nil, r, "select")
         end
@@ -4339,6 +4376,53 @@ end
 --     ⇒ ★ 缩略图色块与棋盘房间色**从此同一个来源** ✓（★ 不会再各说各话 ✓）
 local ROOM_MAX = 6          -- 一关最多画几个房间色块
 local WHITE_MAT = 106053    -- 真机日志里确认过的白底素材 id（「底板」类 ✓ 可 Stretch ✓）
+
+-- ★★★★★★★★ 2026-10-16 **卡片的"随件"以【编辑器里的卡】为准** ✗✓✓
+--
+--   ★ 起因 ✓：★ 这一轮把几何交回编辑器之后（`geom_by_editor` ✓），
+--     `select.card.N` 用的是**编辑器里那份 208.98×291.6**（用户缩到 90% 的那一版 ✓），
+--     ★ 而卡片上的**随件**——`select.card.N.title` / `.info` / `.room.M`（缩略图色块）——
+--       是**按规划里那份 100% 的卡框**算出来的 ✗
+--     ⇒ ★ 结果是"卡小了、字和缩略图还在原来那个大位置上" ⇒ 看起来像没修 ✓（比不修更糟 ✗）
+--
+--   ★★ 口径 ✓：★ **随件跟着编辑器那张卡走** ✓ ——
+--     · 卡的**位置/尺寸**：读运行时（= 编辑器那份）✓
+--     · 卡的**内容**（关名/进度/房间缩略图）：仍由脚本按关卡数据算 ✓（分页/换关都要变 ✓）
+--     ⇒ ★ 两者用**同一个框**：随件算出来的坐标就永远落在卡里 ✓
+--
+--   ★ 换算链（与适配器 `rect` 分支**逐字同源**，不另造一套 ✓）：
+--     设计坐标(1920×1080, 左上原点) --×scale--> 画布(左右/上下都 ×scale)
+--     --父级中心--> 引擎的 anchoredPosition（Y 向上）
+--     ⇒ 反着走一遍就得到"设计空间的框" ✓
+--   ★ 父级中心为什么是画布中心：卡片的真实父级是 `root`，而 `root` 撑满画布 ✓
+--     （实测佐证：规划 `settle.btn` = 设计 (1744.6,298.8,84,84) ⇒ 落屏 (689,166) ✓
+--       与"父级中心 = (800,450)" 逐位吻合 ✓）
+--   ★ 读不到（控件不在 / 引擎不给读）⇒ ★ **退回规划框** ✓（不许因此不摆 ✗）
+--   ⚠️⚠️ **必须把适配器【当参数传进来】** ✗✓ —— 本轮踩过 ✓：
+--     `Controller` 上**没有** `self.adapter` 这个字段 ✗（`main.lua:510` 的 `self.adapter = adapter`
+--     设的是 **Murdoku 实例**，不是控制器 ✓）⇒ 我第一版写 `self.adapter` ⇒ **恒为 nil** ⇒
+--     静默退回规划框 ⇒ 量出来的缩略图还在 100% 那张卡的位置上 ✓（看起来"没生效"✓）
+--     ⇒ ★ `render(adapter, force)` 手里就有 ✓ 传下去即可（`build_layout(ui_adapter)` ✓）
+function Controller:editor_card_box(a, id, plan_r)
+  if a == nil or type(a.find) ~= "function" then return plan_r end
+  local ctrl = nil
+  pcall(function() ctrl = a:find(id) end)
+  if ctrl == nil or ctrl.GetSizeDelta == nil or ctrl.GetAnchoredPosition == nil then return plan_r end
+  local w, h, ax, ay = nil, nil, nil, nil
+  pcall(function() w, h = ctrl:GetSizeDelta() end)
+  pcall(function() ax, ay = ctrl:GetAnchoredPosition() end)
+  if type(w) ~= "number" or type(h) ~= "number" or w <= 0 or h <= 0 then return plan_r end
+  if type(ax) ~= "number" or type(ay) ~= "number" then return plan_r end
+  local cfg = a.cfg or {}
+  local sc = cfg.scale or (5 / 6)
+  local cw = cfg.canvas_w or 1600
+  local ch = cfg.canvas_h or 900
+  local cx = cw * 0.5 + ax
+  local cy = ch * 0.5 + ay
+  local dw = w / sc
+  local dh = h / sc
+  return { x = cx / sc - dw * 0.5, y = (ch - cy) / sc - dh * 0.5, w = dw, h = dh }
+end
 
 function Controller:push_room_thumb(push, cardId, it, cardRect, parent)
   -- 缩略图区域：卡片中间那块（上面留给标题、下面留给说明）
@@ -7517,7 +7601,15 @@ function Controller:render(adapter, force)
   --   它自己保证：任何一步失败都只报一次、并且退回老路径（`_grid_state = "off"`）。
   self:sync_clue_grid(adapter)
 
-  local nodes = self:build_layout()
+  -- ★★★★★★★★ 2026-10-16 **把适配器交给 `build_layout`** ✗✓
+  --   ★ 理由：★ 选关卡片上的**随件**（关名/进度/房间缩略图）要**跟着编辑器那张卡**摆 ✓
+  --     ⇒ 必须**读运行时**（`GetSizeDelta` / `GetAnchoredPosition`）⇒ 需要适配器 ✓
+  --   ★ 为什么不在 `build_layout` 里写 `self.adapter` ✗：★ **控制器上没有这个字段** ✓
+  --     （`main.lua:510` 的 `self.adapter = adapter` 设的是 **Murdoku 实例** ✓ 不是控制器 ✓
+  --       —— ★ 本轮实测踩到：写 `self.adapter` ⇒ **恒 nil** ⇒ 静默退回规划框 ⇒ 看起来"没生效" ✓）
+  --   ★ 外部调用 `controller:build_layout()`（`main.lua:671` 生成坐标表那条）不传 ⇒ nil ✓
+  --     ⇒ ★ 那条路**本来就该用规划框** ✓（它要的是"编辑器里该填多少" ✓ 正好 ✓）
+  local nodes = self:build_layout(adapter)
 
   -- ★★★★★ 2026-10-05 **网格视窗在用时，"老一套线索控件"的名字一个都不许再碰。**
   --
@@ -7894,9 +7986,42 @@ function Controller:render(adapter, force)
       --   我第一版复用了 `instantiated` —— 那个标记还管着"允不允许销毁控件"，
       --   于是房间标签/选卡色块在某次渲染里短暂不可见时被**真销毁**，再也回不来
       --   （表现为"测试里可见色块 0 块，单独探针却看到 3 块"）。
+      -- ★★★★★★★★ 2026-10-16 **`geom_by_editor` 也要管住【规划侧】这一条路** ✗✓✓
+      --
+      --   ★★ 上一轮（v246）把 `cfg.geom_by_editor` 加在 `main.lua` 的四处写法上 ✓
+      --      —— 但**真正在覆盖编辑器几何的是这里** ✗✓：
+      --        · ★ `root` 显式 `pos_runtime = true` ⇒ `inherit_pos_runtime` 沿树继承 ✓
+      --        · ★ 于是**每一个规划内控件**都拿到 `pos_runtime = true` ✓
+      --        · ★ 这里就把它记进 `adapter.runtime_rect` ⇒ ★ 适配器 `set_property("rect")` 的
+      --          `respect_editor_rect`（"编辑器几何优先"）**被整个绕开** ✗
+      --        ⇒ ★ **脚本每帧把规划里的位置/尺寸盖回存档控件** ✓✓
+      --   ★ 模拟器实测（`tools/sim/geom_probe.mjs`，基线 = `390.1.gil`）：选关屏上
+      --     `select.card.1` 编辑器 `(-374.175,-4.5) 208.98×291.6` ⇒ 运行 **`(-475,13) 233×324`**
+      --     （= 规划里那份 100% 的卡 ✓），`settle.btn` `(683,-279)` ⇒ **`(689,166)`** ✗
+      --     ⇒ ★ 与用户真机看到的**逐条对得上** ✓（"四张卡/结算按钮我改的都没变"、"只有 board.bg 变了"：
+      --       `board.bg` **不在规划里** ⇒ 它才没被覆盖 ✓ 这就是"只有它变了"的唯一解释 ✓）
+      --
+      --   ★★ 口径（与 `main.lua` 那四处**同一句话**）✓：
+      --     · ★ **显式** `pos_runtime = true`（房间名标签 / 缩略图色块 / 弹窗四键 / `root` 本身）
+      --       ⇒ ★ 仍然算"脚本说了算" ✓（它们**必须**按关卡数据每帧算 ✓）
+      --     · ★ **继承来的** `pos_runtime`（`pos_runtime_inherited`）⇒ ★ `geom_by_editor` 打开时
+      --       **不再接管** ✓ ⇒ 编辑器里那份几何就是运行时的几何 ✓
+      --     · ★ **脚本自己建的**控件（`adapter.instantiated`，例如格子）⇒ 照旧由脚本摆 ✓
+      --       （它们没有"编辑器几何"可言 ✓）
+      local geom_by_editor = (adapter.cfg ~= nil and adapter.cfg.geom_by_editor == true)
       if n.pos_runtime then
+        local script_owns = true
+        if geom_by_editor and n.pos_runtime_inherited == true
+           and not (adapter.instantiated and adapter.instantiated[n.id]) then
+          script_owns = false
+        end
         adapter.runtime_rect = adapter.runtime_rect or {}
-        adapter.runtime_rect[n.id] = true
+        if script_owns then
+          adapter.runtime_rect[n.id] = true
+        else
+          -- ★ 顺手清掉上一帧可能留下的记录（配置中途改动时不会"残留接管" ✓）
+          adapter.runtime_rect[n.id] = nil
+        end
       end
       -- ★ 位置也一样：**写成功才记账**（和上面那段属性同一个道理）。
       --   ⚠️ `respect_editor_rect` 打开时适配层会**故意跳过**位置 —— 那属于"故意的空操作"，
