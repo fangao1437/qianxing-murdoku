@@ -184,45 +184,52 @@ end
 --       我在模拟器上复现到同一件事：点 (91,79) 与 (1200,700) **都命中 `settle.btn`** ✓
 --     ⇒ ★ "它该不该吃这一帧的点击"这件事，**只有规划里那个 `raycast` 字段说得清** ✓
 --
---   ★ 判据（三条，覆盖两个屏幕 + 关卡内）✓：
---     · 主页/选关：`raycast == true` ✓（要能点 ✓）
---     · 关卡内  ：**规划里根本不该有它** ✓（就算将来有人让它进规划，也必须 `raycast == false` ✓）
---   ★ 破坏性验证（谁改坏了它就会响）✗：
---     ★ 把 `ui_controller` 里那条 `else` 分支的 `raycast = false` 删掉 ⇒ **本段立刻红** ✓
+--   ★★★★ 2026-10-16 **本段按用户那句话重写** ✓（原话 ✓）：
+--     「**其实应该算一颗，它们位置一样，功能一样，没有必要建两颗还要分别隐藏，
+--       建一颗只在进入关卡后隐藏就行了**」✓✓
+--   ⇒ ★ 所以判据也换成**用户那句话的形状** ✓：
+--     ★ ① 任何屏幕上，`settle.btn` **只许出现一次** ✓（不许 `if/else` 各 push 一条 ✗）
+--     ★ ② 主页/选关 ⇒ `visible = true` ＋ `raycast = true` ✓（整个开着 ✓）
+--     ★ ③ 其它任何屏 ⇒ **两个都 false** ✓（★ 不再靠"不在规划里"这种间接说法 ✓）
 print("")
-print("== 7. ★ 不在本屏的实体按钮必须交出射线（否则它就是一个看不见却吃点击的洞）==")
+print("== 7. ★ 一颗按钮、一个开关：进关卡就整个关掉（用户 2026-10-16 定形）==")
 do
-  local byHome = plan_of(make("home"), "home")
-  local bySel  = plan_of(make("select"), "select")
-  local byLvl  = plan_of(make(nil), nil)
-
-  local h = byHome["settle.btn"]
-  local s = bySel["settle.btn"]
-  ok(h ~= nil and h.raycast == true,
-    "主页：raycast = true（要能点 ✓）",
-    h and ("实测 = " .. tostring(h.raycast)) or "规划里没有")
-  ok(s ~= nil and s.raycast == true,
-    "选关屏：raycast = true（要能点 ✓）",
-    s and ("实测 = " .. tostring(s.raycast)) or "规划里没有")
-
-  -- ★ 关卡内：两种情况都算过 —— ① 不在规划里（现状 ✓）② 在规划里但 raycast == false ✓
-  local l = byLvl["settle.btn"]
-  ok(l == nil or l.raycast == false,
-    "★ 关卡内：要么不进规划 ✓ 要么 raycast = false ✓（**绝不能**是可以点的 ✓）",
-    l == nil and "不在规划里（现状 ✓）" or ("在规划里，raycast = " .. tostring(l.raycast)))
-
-  -- ★ 更硬的一条：**只要不在主页/选关，任何屏幕的规划里都不许出现"可点的 settle.btn"** ✓
-  local bad = {}
-  for _, scr in ipairs({ nil, "board", "result", "exit_menu", "howto", "intro", "share" }) do
-    local by = plan_of(make(scr), scr)
-    local n = by["settle.btn"]
-    if n ~= nil and n.raycast ~= false then
-      bad[#bad + 1] = tostring(scr) .. "(raycast=" .. tostring(n.raycast) .. ")"
+  local screens = { "home", "select", nil, "board", "result", "exit_menu", "howto", "intro", "share" }
+  local bad_on = {}      -- 该开着却没开
+  local bad_off = {}     -- 该关着却没关
+  local multi = {}       -- 一帧出现多条
+  for _, scr in ipairs(screens) do
+    c = make(scr)
+    c.screen = scr
+    local nodes = c:build_layout()
+    local n, cnt = nil, 0
+    for i = 1, #nodes do
+      if nodes[i].id == "settle.btn" then cnt = cnt + 1; n = nodes[i] end
+    end
+    local tag = tostring(scr)
+    if cnt == 0 then
+      bad_on[#bad_on + 1] = tag .. "(一条都没有)"
+    elseif cnt > 1 then
+      multi[#multi + 1] = tag .. " x" .. cnt
+    elseif scr == "home" or scr == "select" then
+      if not (n.visible == true and n.raycast == true) then
+        bad_on[#bad_on + 1] = tag .. "(visible=" .. tostring(n.visible) .. " raycast=" .. tostring(n.raycast) .. ")"
+      end
+    else
+      if not (n.visible == false and n.raycast == false) then
+        bad_off[#bad_off + 1] = tag .. "(visible=" .. tostring(n.visible) .. " raycast=" .. tostring(n.raycast) .. ")"
+      end
     end
   end
-  ok(#bad == 0,
-    '★ 其它 7 个屏幕都不存在「可点的 settle.btn」 ✓',
-    #bad == 0 and "全过 ✓" or ("这几个屏漏了：" .. table.concat(bad, " ")))
+  ok(#multi == 0,
+    "★ 每个屏幕上它**只许出现一次** ✓（一帧两条节点 = 两套显隐 = 必然漂移 ✗）",
+    #multi == 0 and "全过 ✓" or ("这几屏重了：" .. table.concat(multi, " ")))
+  ok(#bad_on == 0,
+    "主页/选关：`visible` 与 `raycast` **都开着** ✓",
+    #bad_on == 0 and "全过 ✓" or ("这几屏没开：" .. table.concat(bad_on, " ")))
+  ok(#bad_off == 0,
+    '★ 其它 7 个屏（含关卡内 `nil`）：**两个都关掉** ✓（绝不留下「看不见却吃点击」的洞 ✓）',
+    #bad_off == 0 and "全过 ✓" or ("这几屏漏了：" .. table.concat(bad_off, " ")))
 end
 
 print("")
