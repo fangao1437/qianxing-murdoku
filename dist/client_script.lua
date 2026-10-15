@@ -5234,7 +5234,56 @@ function Controller:build_layout(ui_adapter)
       restart = { x = 1448 - CONFIRM_GAP - 54 - CONFIRM_GAP - 54,   y = 144 },  -- hex.redo   左侧
     }
     local pend_action = (self.pending and self.pending.action) or nil
+    -- ★★★★★★★★ 2026-10-16 **v250：锚点跟着「那颗键的运行时位置」走** ✗✓✓
+    --   ★ 用户原话 ✓：「**勾叉确认卡用的是旧规划的位置，没到新位置的旁边**」✓
+    --   ★ 真因 ✓：★ 下面那张 `CONFIRM_ANCHOR` 是**写死的** ✗ ——
+    --     它是照**规划图**推的（`back` 取"返回菜单那行字的右缘 347+8" ✓）⇒
+    --     ★ 一旦那颗键在编辑器里挪了（★ 现在键也归编辑器了 ✓）⇒ ★ 确认卡**不跟** ✗✓
+    --   ★ 修法 ✓：★ **读运行时那颗键的真实矩形** ⇒ ★ 卡紧贴它、纵向居中 ✓；
+    --     ★ 读不到（控件不在/引擎不给读）⇒ ★ 退回下面那张写死的表 ✓（不许因此不摆 ✓）
+    --
+    --   ⚠️⚠️ **单位必须是【画布】不是【设计】** ✗✓（★ 第一次写错了 ✓ 见下 ✓）：
+    --     · ★ 静态表 `CONFIRM_ANCHOR` 那份是**画布**坐标 ✓（1448 / 48 / 54 … ✓
+    --       与 `ICON_ASSETS` 同一套 ✓）—— ★ 而 `ICON_ASSETS` 的数值是**画布 px** ✓
+    --       （★ `D()` 会乘 6/5 转成设计 ✓ 交给适配器 ✓）
+    --     · ★ 所以本函数**也要给画布** ✓：`cx = 画布宽/2 + ax` ✓、`y = (画布高 − cy) − h/2` ✓
+    --       ★ **不要再除 `scale`** ✗ —— 除了就变成"设计"，再进 `D()` 又乘 6/5 ⇒ **位置放大 1.2 倍** ✗✓
+    local function key_box_canvas(action)
+      local id = (action == "submit" and "hex.submit")
+        or (action == "restart" and "hex.redo")
+        or (action == "back" and "hex.back") or nil
+      if id == nil or ui_adapter == nil or type(ui_adapter.find) ~= "function" then return nil end
+      local ctrl = nil
+      pcall(function() ctrl = ui_adapter:find(id) end)
+      if ctrl == nil or ctrl.GetSizeDelta == nil or ctrl.GetAnchoredPosition == nil then return nil end
+      local w, h, ax, ay = nil, nil, nil, nil
+      pcall(function() w, h = ctrl:GetSizeDelta() end)
+      pcall(function() ax, ay = ctrl:GetAnchoredPosition() end)
+      if type(w) ~= "number" or type(h) ~= "number" or w <= 0 or h <= 0 then return nil end
+      if type(ax) ~= "number" or type(ay) ~= "number" then return nil end
+      local cfg = ui_adapter.cfg or {}
+      local cw = cfg.canvas_w or 1600
+      local ch = cfg.canvas_h or 900
+      local cx = cw * 0.5 + ax          -- 画布绝对 x（中心为原点）
+      local cy = ch * 0.5 + ay          -- 画布绝对 y（中心为原点、y 向上）
+      -- ★ 换算成"画布 px、左上原点"的矩形 ✓ —— 与静态表同一个坐标系 ✓✓
+      return { x = cx - w * 0.5, y = (ch - cy) - h * 0.5, w = w, h = h }
+    end
     local anchor = CONFIRM_ANCHOR[pend_action] or CONFIRM_ANCHOR.back
+    do
+      local kb = key_box_canvas(pend_action)
+      if kb ~= nil then
+        -- ★ 紧贴那颗键：★ 左边那颗（返回菜单）放**右侧** ✓；右边那两颗放**左侧** ✓
+        --   （右边已经贴到画布边缘 1600，放不下 ✓ 与旧注释同一条理由 ✓）
+        -- ★ 纵向**居中于那颗键** ✓（旧表是"顶对齐"，视觉上偏高 ✓）
+        local cy2 = kb.y + (kb.h - 54) * 0.5
+        if pend_action == "back" then
+          anchor = { x = kb.x + kb.w + CONFIRM_GAP, y = cy2 }
+        else
+          anchor = { x = kb.x - CONFIRM_GAP - 54 - CONFIRM_GAP - 54, y = cy2 }
+        end
+      end
+    end
     local icon_pending_on = (self.pending ~= nil)
     -- ★★★★★ 2026-10-04 **两件东西分开做：图标纯贴图 + 独立透明热区**（用户原本的构思，现已验证）
     --
@@ -5295,12 +5344,22 @@ function Controller:build_layout(ui_adapter)
         pos_runtime = is_confirm_icon or nil,
       }
       -- ② 热区：格子模板、**不给 image_id**（所以 face 不会被点亮 ⇒ 完全透明），只负责收点击
+      --
+      -- ★★★★★★★★ 2026-10-16 **v250：确认卡的【热区】必须和图标同进退** ✗✓✓
+      --   ★ 用户原话 ✓：「**它们的功能也丢失了，现在点不动**」✓
+      --   ★ 真因 ✓：★ v249 只把**图标**（`hex.ok`/`hex.no`）交回脚本 ✗ ——
+      --     ★ 而**点击落在热区**（`hit.ok`/`hit.no` ✓ 事件绑在它们身上 ✓）⇒
+      --     ★ 热区仍是"归编辑器"⇒ 停在存档那份（= 旧的 back 锚点 355,48 ✗）⇒
+      --     ★★ **看得见的 ✓/✗ 与能点的 ✓/✗ 分了家** ⇒ ★ 点不动 ✓✓
+      --   ⇒ ★ 这一条：★ 与 `hex.ok/hex.no` **同一个开关同一个位置** ✓（`rect = rect` ✓ 上面就是同源 ✓）
+      local is_confirm_hit = (a[1] == "hex.ok" or a[1] == "hex.no")
       nodes[#nodes + 1] = {
         id = "hit." .. a[1]:sub(5), kind = "button", parent = "root",
         visible = vis,
         event = { action = a[7] },
         icon_template = false,         -- 走 cfg.cells.prefab（真机验证：能收到点击）
         rect = rect,
+        pos_runtime = is_confirm_hit or nil,
       }
     end
   -- ★ 每个节点都必须带**显式** visible：
@@ -20652,7 +20711,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v249 / 2026-10-16 / 确认卡(hex.ok/no)位置交回脚本 + 有棋子的格子不下发房间色(头像不再被染) + 弹窗文字/按钮与卡片对齐(存档侧) =====")
+        print("[murdoku] ===== 构建标记 v250 / 2026-10-16 / 确认卡锚点改读【运行时那颗键】紧贴+居中(不再用写死的规划坐标) + hit.ok/no 与图标同进退(修点不动) =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
