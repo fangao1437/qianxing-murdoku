@@ -3659,7 +3659,7 @@ function Controller:build_layout(ui_adapter)
         --     ⇒ 脚本**只负责显示 / 隐藏** ✓ 颜色一个字都不写 ✓（`tint` 回到只管房间色 ✓）
         tint = (cd.suspect and 4294967295) or Controller.room_color(cd.room),
         -- ★ 每格都发（true/false）⇒ 取消选中 / 换卡时自然把上一批关掉 ✓（账本按值去重 ✓）
-        hint = (hint_set ~= nil and hint_set[r .. ":" .. c] == true),
+        hint = (function() local v = (hint_set ~= nil and hint_set[r .. ":" .. c] == true); if print and (self._hint_probe or 0) < 1 and r == 1 and c == 1 then self._hint_probe = 1; local n = 0; if hint_set ~= nil then for _k in pairs(hint_set) do n = n + 1 end end; print("[murdoku] ★ 提示下发探针：走到格子循环时 hint_set 有 " .. tostring(n) .. " 格") end; return v end)(),   -- 提示下发探针
         -- ★★★★★★★★ 2026-10-17 **格子边长（画布）直接告诉适配层** ✗✓
         --   用途：把"铺满型"子控件（`face` / `hint` / `obj`）钉成**和格子一样大**
         --   ★ 为什么由界面层给：`build_layout` 本来就算出了 `cell`（设计空间）✓
