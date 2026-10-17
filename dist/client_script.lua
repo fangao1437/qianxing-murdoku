@@ -10393,6 +10393,15 @@ function Controller:_on_grid_item_click(adapter, grid, item)
   --   ★ `focused_clue` 给一个**合法正数但超出卡范围**的值（n+1）⇒ 没有卡会对上 ✓
   --     绘制侧把 `general_focus` 解释成通用线索（见 build_layout 那段）✓
   if item ~= nil and self._general_item == item then
+    -- ★★★ 2026-10-18 **再点一次 = 取消选中** ✗✓（用户：通用线索没接取消选中）
+    if self.general_focus ~= nil then
+      self.general_focus = nil
+      self.focused_clue = nil
+      self.general_hint = nil
+      self.dirty = true
+      self._grid_sig = nil
+      return
+    end
     local _ncl = 0
     pcall(function() local _v = self.core:view(); _ncl = #_v.clues end)
     self.focused_clue = _ncl + 1
