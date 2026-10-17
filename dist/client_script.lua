@@ -10352,6 +10352,21 @@ function Controller:_on_grid_item_click(adapter, grid, item)
   --   ⇒ ★★ 改用 `_grid_pos_of_item` ✓ —— ★ **用填充时引擎亲手交来的那个 index** ✓✓
   --     ★（★ 那一次是权威的 ✓ ★ 我们就是按它算 `pos` 填内容的 ✓）
   local pos = self:_grid_pos_of_item(grid, item)
+  -- ★★★★★ 2026-10-18 **通用线索那一项：在这里就返回** ✗✓（真机日志定案）
+  --   日志证据（用户 05:38 那次）：点通用卡 ⇒ `GetItemIndex=0 ⇒ pos=1` ⇒
+  --     「★ 选人这一步：pos=1 解析出的人=A」⇒ **把 A 选中了** ⇒ 高亮跟着 A 的卡走（=a）✗
+  --   ⇒ 我前面只改了后面的 `ev` 派发，**没拦住前面这步选人** ✗
+  --   ⇒ 通用线索**没有人可选中**（它不是任何人的卡）⇒ 必须**在选人之前**返回 ✓
+  do
+    local _gen = false
+    pcall(function() _gen = (pos == 1 and self:_has_general_clue()) end)
+    if _gen then
+      self.general_focus = true
+      pcall(function() self.general_hint = self.core:clue_hint_general(1) end)
+      self.dirty = true
+      return   -- 通用线索那一项：不选人、不发 focus_clue ✓
+    end
+  end
   if type(pos) ~= "number" then
     -- 两个来源都拿不到 ⇒ 这一次点击**宁可丢掉**，也不要聚焦到错误的一条 ✓
     self:_grid_log("noindex", "网格视窗：这一项属于哪一条读不到（填充记录与 GetItemIndex 都空）"
