@@ -23,7 +23,7 @@ package.path = root .. "/lua/?.lua;" .. root .. "/lua/?/init.lua;" .. package.pa
 
 local Core = require("murdoku_core")
 local UIC  = require("ui_controller")
-local lv   = require("levels.case_001")
+local lv   = require("tests.old_case_001")   -- ★ 冻结夹具（不随已交付内容漂 ✓）
 
 local passed, failed = 0, 0
 local function ok(cond, msg)

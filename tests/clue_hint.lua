@@ -24,8 +24,8 @@ package.path = table.concat({
 
 local Core = require("murdoku_core")
 local UIC  = require("ui_controller")
-local L1   = require("levels.case_001")
-local L2   = require("levels.case_002")
+local L1   = require("tests.old_case_001")   -- ★ 冻结夹具（不随已交付内容漂 ✓）
+local L2   = require("tests.old_case_002")   -- ★ 冻结夹具
 
 local passed, failed = 0, 0
 local function ok(cond, msg)

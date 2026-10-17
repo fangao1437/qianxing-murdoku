@@ -72,7 +72,12 @@ end
 
 -- ★ `case_001`（5×5）的完整克隆 ＋ 它原来那 8 条线索 ✓
 function M.clue_level_case001()
-  local base = require("levels.case_001")
+  -- ★★ 2026-10-18 改指向**冻结夹具** ✓
+  --   第 2 关已经换成真正的 6×6 内容（`lua/levels/case_001.lua`）⇒
+  --   本 fixture 原本克隆它，会跟着已交付内容一起漂 ✗
+  --   ⇒ 改用 `tests/old_case_001.lua`（从 e0531ef 逐字节冻结的旧 5×5 内容）✓
+  --   ★ 这样"测引擎行为"的套件就与"交付的关卡内容"彻底解耦 ✓
+  local base = require("tests.old_case_001")
   local lv = {}
   for k, v in pairs(base) do lv[k] = v end
   lv.clues = {
