@@ -9127,21 +9127,21 @@ function Controller:_fill_general_item(adapter, item, index, pos)
   for _, nm in ipairs({ "gen.backrop", "gen.title", "gen.body" }) do
     local c = child(nm)
     if c ~= nil then pcall(function() c:SetVisible(true) end) end
-  end  -- ★★★★★ 2026-10-18 **通用卡自己的描边** ✗✓（用户实测：没有描边出现）
-  --   普通卡的描边靠 core.selected 涂 imageColor（见 _grid_item_hl 那段）
-  --   通用卡**没有「人」** ⇒ 那条路永远涂不到它 ⇒ 点了毫无视觉变化 ✗
-  --   ⇒ 用同一个高亮色 HIGHLIGHT_TINT 涂它的底板 ✓
-  --     亮条件 = general_focus（点它是真；点普通卡时被清 ✓）
+  end  -- ★★★★★ 2026-10-18 **通用卡的「标记」走普通卡同一条路** ✗✓
+  --   用户实测：涂 gen.backrop 是「整块染色」✗ 不是描边
+  --   为什么普通卡是描边：涂的是 backrop1（**下层**），backrop2 盖住中间 ⇒ 只剩边缘 ✓
+  --   ⇒ 通用卡也涂 backrop1 ✓（它本来就在模板里、也在通用卡上可见 ✓）
+  --   判定**绑在通用线索身份上**：general_focus 为真 ⇒ 亮；否则还原 ✓
   do
-    local _bg = nil
-    pcall(function() _bg = item:FindChild("gen.backrop") end)
-    if _bg ~= nil then
+    local _cp = nil
+    pcall(function() _cp = item:FindChild("backrop1") end)
+    if _cp ~= nil then
       if self._gen_hl_orig == nil then
-        pcall(function() self._gen_hl_orig = _bg.imageColor end)
+        pcall(function() self._gen_hl_orig = _cp.imageColor end)
       end
       local _want = (self.general_focus ~= nil)
       local _target = _want and HIGHLIGHT_TINT or self._gen_hl_orig
-      if _target ~= nil then pcall(function() _bg.imageColor = _target end) end
+      if _target ~= nil then pcall(function() _cp.imageColor = _target end) end
     end
   end
 end
