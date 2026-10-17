@@ -44,7 +44,11 @@ const WALL_COLOR = 0xFF2B2B33;   // 近黑（设计图里的墙）
 const DOOR_COLOR = 0xFFE2622F;   // 橙（设计图里的门）
 const CELL = 135;
 // ★ 2026-10-18：墙/门统一换成**可拉伸**的底板素材（106053）—— 100108/100001 这类基础形状不吃 Stretch
-const WALL_MAT = 106053;                // 设计单位（脚本运行时再按格子尺寸钉住）
+// ★★ 2026-10-18 三修（v262，用户指令）：「**门墙素材换成 107092**」
+//   107092 在素材库里是 **512×256 的浅米色板**（`plate_survey.json`：coverage 0.988、
+//   r244/g237/b218、近乎纯色）⇒ 正是"能吃 Stretch 的底板"，而且自带米色纹理。
+//   `imageColor` 仍按下面的近黑/橙乘算 ⇒ 墙仍近黑、门仍橙，只是底纹换了。
+const WALL_MAT = Number((process.argv.slice(2).find((s) => s.startsWith('--wall-mat=')) || '').slice(11)) || 106053;
 const STRETCH_BOX = ['face', 'hint', 'obj'];
 const SIDES = ['up', 'down', 'left', 'right'];
 

@@ -15941,8 +15941,28 @@ end
 --   ★ 只做一次：按子控件实例记 {w,h}，尺寸没变就**不再写** ✓（稳态零成本 ✓）
 --   ★ 不碰 `wall.*` / `door.*` —— 那两个由 `_apply_edges` 用 localScale 缩放 + 贴边 ✓
 --   ⚠️ 读不到格子尺寸（首帧还没摆好）⇒ **直接返回**，下一帧属性重发时会再来一次 ✓
+-- ★★★★★★★★ 2026-10-18 **「贴格」只能对格子自己用** ✗✓✓（选关卡片塌成一张的真因）
+--
+--   用户定位 ✓：「**选关渲染问题的出现在 397 之后**」✓ —— 397 正是 v255，
+--   而那一版给 `tint` 分支加了这一行「顺手把 face 钉成格子大小」✓（见下面 `_fit_child_to_cell` 的调用点）
+--
+--   事故链（实测可推）：
+--     · `select.card.N` 没有 `face` 子控件 ⇒ `target = self:sub(id, "face") or ctrl` **落到 ctrl 本身**
+--     · 于是 `_fit_child_sized(ctrl, …)` 对**卡片自己**执行：
+--         `SetSizeDelta(w,h)` + **`SetAnchoredPosition(0, 0)`**
+--     · 四张卡**各自**被钉到父级中心 ⇒ 四张叠在一起 ⇒ **看起来只有一张** ✓
+--   而卡片同时下发 `image` 与 `tint` ⇒ 上面两个分支各触发一次（`image` 分支 L4547）✓
+--   ⇒ 闸门：**只有 id 形如 `cell.<行>.<列>` 的控件**才允许贴格 ✓
+--     （与 v257 给 `rect` 分支加的那道闸门同一条判据 ✓ 上次只堵了一条路 ✓）
+local function is_cell_id(id)
+  return type(id) == "string" and id:match("^cell%.%d+%.%d+$") ~= nil
+end
+Adapter._is_cell_id = is_cell_id
+
 function Adapter:_fit_child_to_cell(ctrl, sub, cell_id)
   if ctrl == nil or sub == nil then return end
+  -- ★ 兜底闸门（任何调用点漏了外面那道，这里也不会把非格子控件拽到父级中心）
+  if cell_id ~= nil and not is_cell_id(cell_id) then return end
   local w, h = size_of(ctrl)
   -- ★ 兜底：控件尺寸读不到（模拟器的桥接就没有这两个 getter）⇒ 用界面层**刚发给格子的 rect**
   if (type(w) ~= "number" or w <= 1) and cell_id ~= nil and self.rects ~= nil then
@@ -16198,7 +16218,8 @@ function Adapter:set_property(id, key, value, nkey)
     local target = self:sub(id, "face") or ctrl
     if target ~= nil then
       -- ★ 2026-10-17：`face` 也钉成"和格子一样大"（房间色/头像都不该溢到邻格 ✓）
-      self:_fit_child_to_cell(ctrl, target, id)
+      -- ★★ 2026-10-18 **加闸门**：只有格子才贴（否则会把选关卡片钉到父级中心 ⇒ 四张叠成一张 ✗）
+      if is_cell_id(id) then self:_fit_child_to_cell(ctrl, target, id) end
       -- ★★ 2026-09-27 修：**没有图时不要直接把 face 藏掉**。
       --
       -- 旧行为：`value == nil` → `SetVisible(false)`。后果很严重 ——
@@ -16298,7 +16319,10 @@ function Adapter:set_property(id, key, value, nkey)
     if target ~= nil then
       -- ★ 2026-10-17：`face` 钉成"和格子一样大"（房间色/头像都不该溢到邻格 ✓）
       --   `tint` 每格每关都会下发一次 ⇒ 这里是最稳的挂钩
-      self:_fit_child_to_cell(ctrl, target)
+      -- ★★ 2026-10-18 **加闸门**：`select.card.N` 没有 `face` ⇒ `target` 会落到**卡片自己**，
+      --   于是 `SetAnchoredPosition(0,0)` 把四张卡全钉到父级中心 ⇒ **看起来只有一张** ✗
+      --   （用户定位：选关渲染问题出现在 397 之后 —— 正是这一行加进来的那版 ✓）
+      if is_cell_id(id) then self:_fit_child_to_cell(ctrl, target) end
       local made = nil
       if type(value) == "number" then
         made = value
@@ -21244,7 +21268,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v261 / 2026-10-18 / 去掉运行时创建 obj.*（修多次运行必撞 GUID）+ 素材只从存档 things / cfg.obj_art 取 + 其余同 v260 =====")
+        print("[murdoku] ===== 构建标记 v262 / 2026-10-18 / 修「选关四张卡塌成一张」（image/tint 分支的贴格钩子只认 cell.R.C）+ 门墙素材 107092 + root 补几何 + 其余同 v261 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
