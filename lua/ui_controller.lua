@@ -3374,6 +3374,11 @@ function Controller:build_layout(ui_adapter)
       if _gh ~= nil and _gh.set ~= nil and next(_gh.set) ~= nil then hint_set = _gh.set end
       fci = nil
     end
+    -- ★★ 2026-10-18 **卡号 0 = 通用线索** ✓（同一份 `focused_clue`，不另开旁路开关）
+    if fci == 0 and self.core ~= nil and type(self.core.clue_hint_general) == "function" then
+      local _g0 = self.core:clue_hint_general(1)   -- fci == 0 解释成通用线索
+      if _g0 ~= nil and _g0.set ~= nil and next(_g0.set) ~= nil then hint_set = _g0.set end
+    end
     if fci ~= nil and fci > 0 and self.core ~= nil and self.core.clue_hint ~= nil then
       local h = self.core:clue_hint(fci)
       if h ~= nil and h.set ~= nil and next(h.set) ~= nil then hint_set = h.set end
@@ -7432,32 +7437,18 @@ function Controller:_on_grid_item_click(adapter, grid, item)
   --   ⇒ ★★ 改用 `_grid_pos_of_item` ✓ —— ★ **用填充时引擎亲手交来的那个 index** ✓✓
   --     ★（★ 那一次是权威的 ✓ ★ 我们就是按它算 `pos` 填内容的 ✓）
   local pos = self:_grid_pos_of_item(grid, item)
-  -- ★★★★★ 2026-10-18 **通用线索那一项：在这里就返回** ✗✓（真机日志定案）
-  --   日志证据（用户 05:38 那次）：点通用卡 ⇒ `GetItemIndex=0 ⇒ pos=1` ⇒
-  --     「★ 选人这一步：pos=1 解析出的人=A」⇒ **把 A 选中了** ⇒ 高亮跟着 A 的卡走（=a）✗
-  --   ⇒ 我前面只改了后面的 `ev` 派发，**没拦住前面这步选人** ✗
-  --   ⇒ 通用线索**没有人可选中**（它不是任何人的卡）⇒ 必须**在选人之前**返回 ✓
-  do
-    local _gen = false
-    pcall(function() _gen = (pos == 1 and self:_has_general_clue()) end)
-    if _gen then
-      self.general_focus = true
-      pcall(function() self.general_hint = self.core:clue_hint_general(1) end)
-      self.dirty = true
-      return   -- 通用线索那一项：不选人、不发 focus_clue ✓
-    end
-  end
-  -- ★★★★★ 2026-10-18 **有通用线索 ⇒ 点击判据必须 −1** ✗✓（用户定案）
-  --   用户原话：「现在 n 张卡的点击判定在 n+1 上」✓ 实机现象：**点 b 选中 c** ✗
-  --   填充侧已经减过（列表第 1 项 = 通用卡，真卡从第 2 项起 ✓）
-  --   ⇒ 点击侧不同步减 ⇒ 点第 k 张卡读到第 k+1 张的人 ✗
-  --   ★ 第 1 项（pos==1）是通用卡，上面已经 return ✓ 所以这里只处理 pos > 1 ✓
+  -- ★★★★★ 2026-10-18 **通用线索走【正常选中链路】，只是把卡号算成 0** ✗✓（用户定案）
+  --   用户原话：「把相关拦截取消，高亮也补上」✓（拦了之后通用卡选不中 ⇒ 提示路径断 ✗）
+  --   ⇒ 不再早退 ✗：它**和普通卡一样**参与选中，只是：
+  --     · 卡号 = 0（通用卡不是任何人的卡 ⇒ `vm.clues[0]` 为 nil ⇒ 选人那步自然什么都不选 ✓）
+  --     · 高亮绘制侧把 `focused_clue == 0` 解释成通用线索 ✓（见 `build_layout` 那段）
+  --   ★ 真卡：列表第 k+1 项 ⇒ pos 减 1 得到卡号 k ✓（本次一并合进来，不再分两块）
   do
     local _hg = false
     pcall(function() _hg = self:_has_general_clue() end)
-    if _hg and pos ~= nil and pos > 1 then pos = pos - 1   -- 点击判据要 −1
-    end
+    if _hg and pos ~= nil and pos >= 1 then pos = pos - 1 end   -- 通用卡 → 0；真卡 k+1 → k
   end
+
   if type(pos) ~= "number" then
     -- 两个来源都拿不到 ⇒ 这一次点击**宁可丢掉**，也不要聚焦到错误的一条 ✓
     self:_grid_log("noindex", "网格视窗：这一项属于哪一条读不到（填充记录与 GetItemIndex 都空）"
