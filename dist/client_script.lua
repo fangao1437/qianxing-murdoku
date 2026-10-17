@@ -9069,7 +9069,10 @@ function Controller:_fill_general_item(adapter, item, index, pos)
       if _txt ~= nil and _txt ~= "" then
         local _dst = nil
         pcall(function() _dst = item:FindChild("gen.body") end)
-        if _dst ~= nil then pcall(function() _dst.text = _txt end) end
+        -- ★★ 2026-10-18 走**正规文字链路** ✓（docs/线索区-内容填入规则.md §四：
+        --   `write_control_text(ctrl, text)` —— **值变了才写**，与 who/what/letter 同一条路 ✓）
+        --   我第一版直接 `_dst.text = _txt` 绕过了它 ⇒ 被签名门/属性账本盖掉 ✗
+        if _dst ~= nil then pcall(function() write_control_text(_dst, _txt) end) end
       end
     end
   end
