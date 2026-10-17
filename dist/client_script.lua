@@ -14291,18 +14291,6 @@ function Adapter:apply_tray_layout(layout)
         if sub ~= nil then
           if sub.SetSizeDelta then pcall(function() sub:SetSizeDelta(it.w, it.h) end) end
           if sub.SetAnchoredPosition then pcall(function() sub:SetAnchoredPosition(0, 0) end) end
-          -- ★★★★★ 2026-10-18 **门素材偏心补偿** ✗✓（用户：直接量图、挪坐标）
-          --   实测截图（1604×960，格线 pitch≈93.5，墙正好压在格线上 ✓）：
-          --     竖门 实测 x 比格线 **+6.0 / +6.5**（偏右）
-          --     横门 实测 y 比格线 **+6.5**（偏下）
-          --   ⇒ 门素材内部有透明边距（可见条不居中）⇒ 缩放后整体偏 ✓ 与墙无关
-          --   ⇒ 按实测反向补偿：横门往上 +nudge、竖门往左 −nudge ✓
-          --   ★ 一个旋钮调准：`cfg.cells.door_nudge`（单位=画布 px，默认 6）
-          if prefix == "door" then
-            local nudge = (self.cfg.cells and self.cfg.cells.door_nudge) or 6
-            if s == "up" or s == "down" then y = y + nudge
-            else x = x - nudge end
-          end
           if sub.SetPivot then pcall(function() sub:SetPivot(0.5, 0.5) end) end
         end
       end
@@ -15835,6 +15823,17 @@ function Adapter:_apply_edges(id, prefix, flags)
           elseif s == "down" then y = -((ch - tthick) / 2)
           elseif s == "left" then x = -((cw - tthick) / 2)
           elseif s == "right" then x = ((cw - tthick) / 2) end
+          -- ★★★★★ 2026-10-18 **门素材偏心补偿** ✗✓（用户：直接量图、挪坐标）
+          --   截图实测（格线 pitch≈93.5，墙正压在格线上 ✓，门不压）：
+          --     竖门 x 比格线 +6.0 / +6.5（偏右）　横门 y 比格线 +6.5（偏下）
+          --   ⇒ 门素材带透明边距、可见条不居中，缩放绕中心去不掉 ✓ 与墙无关
+          --   ⇒ 反向补偿：横门往上 +nudge、竖门往左 −nudge ✓
+          --   ★ 一个旋钮：`cfg.cells.door_nudge`（画布 px，默认 6）
+          if prefix == "door" then
+            local nudge = (self.cfg.cells and self.cfg.cells.door_nudge) or 6
+            if s == "up" or s == "down" then y = y + nudge
+            else x = x - nudge end
+          end
           if sub.SetPivot then pcall(function() sub:SetPivot(0.5, 0.5) end) end
           if sub.SetAnchoredPosition then pcall(function() sub:SetAnchoredPosition(x, y) end) end
         end
