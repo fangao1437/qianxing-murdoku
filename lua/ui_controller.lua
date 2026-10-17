@@ -6163,11 +6163,11 @@ function Controller:_fill_general_item(adapter, item, index, pos)
   end
   for _, nm in ipairs({ "who", "what", "letter", "face" }) do
     local c = child(nm)
-    if c ~= nil then pcall(function() c.visible = false end) end
+    if c ~= nil then pcall(function() c:SetVisible(false) end) end
   end
   for _, nm in ipairs({ "gen.backrop", "gen.title", "gen.body" }) do
     local c = child(nm)
-    if c ~= nil then pcall(function() c.visible = true end) end
+    if c ~= nil then pcall(function() c:SetVisible(true) end) end
   end
 end
 
@@ -6280,7 +6280,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
     for _, _nm in ipairs({ "gen.backrop", "gen.title", "gen.body" }) do
       pcall(function()
         local _cc = self:_grid_item_child_cached(item, index, pos, _nm)
-        if _cc ~= nil then _cc.visible = false end
+        if _cc ~= nil then pcall(function() _cc:SetVisible(false) end) end
       end)
     end
   end
