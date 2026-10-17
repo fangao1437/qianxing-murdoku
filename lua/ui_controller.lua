@@ -6126,6 +6126,10 @@ end
 --   把四样卡片文字（who/what/letter/face）全部藏掉 —— 两张卡长得不一样 ✓
 --   ★ 文字：本函数**不写文字**（用户定：内容源那边他自己填 ⇒ 先留空 ✓）
 function Controller:_fill_general_item(adapter, item, index, pos)
+  -- ★★★ 2026-10-18 **记下"通用线索那一项"的句柄** ✓
+  --   点击时用句柄比对，**不再依赖 pos 算术、也不依赖 general_clues 查询** ✓
+  --   （用户实测：按 pos==1 判时，点它仍然按第 1 张真卡 a 去高亮 ✗）
+  self._general_item = item
   local function child(nm)
     local c = nil
     pcall(function() c = self:_grid_item_child_cached(item, index, pos, nm) end)
@@ -7582,7 +7586,10 @@ function Controller:_on_grid_item_click(adapter, grid, item)
 local ev = { action = "focus_clue", index = pos, phase = "click" }
   -- ★★ 2026-10-18 通用线索占列表第 1 项 ⇒ 它的点击**只发 focus_general**（只接提示，不接 note/放置）✓
   pcall(function()
-    if pos == 1 and self.core ~= nil and type(self.core.general_clues) == "table"
+    if item ~= nil and self._general_item == item then
+      -- ★ 句柄比对 ✓：就是通用线索那一项 ⇒ 只发 focus_general
+      ev = { action = "focus_general", phase = "click" }
+    elseif pos == 1 and self.core ~= nil and type(self.core.general_clues) == "table"
        and #self.core.general_clues > 0 then
       ev = { action = "focus_general", phase = "click" }
     end
