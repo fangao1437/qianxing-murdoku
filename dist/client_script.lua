@@ -10788,7 +10788,6 @@ end
 --   ⚠️ 报错**按 id + 键各报一次**，而且**最多只列 8 条**（第 9 条换成一句总结）：
 --      一个坏句柄会每帧抛，不去重/不限量就是拿日志刷屏 —— 那正是用户这一轮最烦的事。
 function Controller:_set_prop(adapter, id, key, value, nkey)
-  -- ★★ 2026-10-18 hint 出口探针：**UI 到底有没有把 hint 发给适配器** ✓
   -- ★★★★★ 2026-10-05 **多带一个 `nkey`：这把键就是属性账本那把 `node_key`。**
   --
   --   为什么要有它：`build_layout` 里**同一个 id 会出现在两个节点上**
@@ -16026,7 +16025,6 @@ function Adapter:set_property(id, key, value, nkey)
   --   ★ 为什么不再染 `face` ✗：`face` 是**房间色 + 人像**的载体，染它会把头像也染蓝 ✓
   --   ★ `sub()` 会**穿过 `content`** 找同名子控件（见 `Adapter:sub` 的三级尝试 ✓）
   elseif key == "hint" then
-      -- ★★ 2026-10-18 淡蓝探针：这里才是 hint 的真正消费点 ✓
     local h = self:sub(id, "hint")
     if h == nil then
       -- 老存档 / 模拟器建树没有这一层：**算送达**（不发重试、不刷屏），只是这次没东西可显示

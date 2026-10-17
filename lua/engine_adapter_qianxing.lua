@@ -4483,7 +4483,6 @@ function Adapter:set_property(id, key, value, nkey)
   --   ★ 为什么不再染 `face` ✗：`face` 是**房间色 + 人像**的载体，染它会把头像也染蓝 ✓
   --   ★ `sub()` 会**穿过 `content`** 找同名子控件（见 `Adapter:sub` 的三级尝试 ✓）
   elseif key == "hint" then
-      -- ★★ 2026-10-18 淡蓝探针：这里才是 hint 的真正消费点 ✓
     local h = self:sub(id, "hint")
     if h == nil then
       -- 老存档 / 模拟器建树没有这一层：**算送达**（不发重试、不刷屏），只是这次没东西可显示
