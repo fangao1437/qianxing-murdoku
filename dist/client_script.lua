@@ -16039,6 +16039,18 @@ function Adapter:set_property(id, key, value, nkey)
     self:_fit_child_to_cell(ctrl, h, id)
     local on = (value == true)
     if h.SetVisible then pcall(function() h:SetVisible(on) end) end
+    -- ★★★★★ 2026-10-18 **淡蓝层抬到最上层** ✗✓
+    --   日志：「图层顺序：对 N 个格子排过层序，子控件成功置底 …」⇒ 子控件被重排过
+    --   ⇒ hint 很可能被压到 face 下面 ⇒ 可见性开了、却被不透明 face 盖住 ✗
+    if on then
+      if h.SetAsLastSibling then pcall(function() h:SetAsLastSibling() end) end
+      if print and (self._hint_top_log or 0) < 3 then
+        self._hint_top_log = (self._hint_top_log or 0) + 1
+        local si = nil
+        pcall(function() si = h:GetSiblingIndex() end)
+        print("[murdoku] ★ 淡蓝层：开可见并抬到最上层（" .. tostring(id) .. " 层序=" .. tostring(si) .. "）")
+      end
+    end
     if on and h.SetActive then pcall(function() h:SetActive(true) end) end
     return true
 
