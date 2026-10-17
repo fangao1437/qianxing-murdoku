@@ -754,6 +754,52 @@ reg("alone", {
   text = function(ctx, cl) return string.format("%s 独自一人", ctx.name(cl.who)) end,
 })
 
+-- ★★ 2026-10-17 为内容设计第一阶段的两关补两条线索类型。
+--    它们之所以没有被现成类型覆盖：
+--      · 引擎只有 `nobody_in_water`（水里没人），没有"**任何一格家具上都没人**"；
+--      · 而第二关 v 的那句话是**一句复合陈述**（"我独自一人" ＋ "c 在我下方的不同区域中"），
+--        拆成两条会让"一句假话"的粒度变糊（假话判据是按【整条】算的），所以做成一条。
+--    ⇒ 线索的**内容**由编辑器 row 区填（用户定稿），这里只补**类型**。
+
+-- “没有任何人站在 X 上”：X 可以是多格家具（如"地毯"有多格）
+reg("nobody_on_object", {
+  params = { "object" },
+  validate = function(ctx, cl)
+    return ctx.count_on_object(cl.object) == 0
+  end,
+  text = function(ctx, cl)
+    return string.format("没有任何人站在 %s 上", tostring(cl.object))
+  end,
+})
+
+-- “a 在 b 下方的不同区域中”：a 的行号更大，且两者不在同一区域
+reg("below_in_other_room", {
+  params = { "a", "b" },
+  validate = function(ctx, cl)
+    local a, b = ctx.pos(cl.a), ctx.pos(cl.b)
+    if not a or not b then return false end
+    return a.r > b.r and ctx.room_of(a.r, a.c) ~= ctx.room_of(b.r, b.c)
+  end,
+  text = function(ctx, cl)
+    return string.format("%s 在 %s 下方的不同区域中", ctx.name(cl.a), ctx.name(cl.b))
+  end,
+})
+
+-- “who 独自一人，且 a 在 b 下方的不同区域中” —— 一句复合陈述（第二关 v 的那句话）
+reg("alone_and_below_in_other_room", {
+  params = { "who", "a", "b" },
+  validate = function(ctx, cl)
+    local p, a, b = ctx.pos(cl.who), ctx.pos(cl.a), ctx.pos(cl.b)
+    if not p or not a or not b then return false end
+    if ctx.count_in_room(ctx.room_of(p.r, p.c)) ~= 1 then return false end
+    return a.r > b.r and ctx.room_of(a.r, a.c) ~= ctx.room_of(b.r, b.c)
+  end,
+  text = function(ctx, cl)
+    return string.format("%s 独自一人，且 %s 在 %s 下方的不同区域中",
+      ctx.name(cl.who), ctx.name(cl.a), ctx.name(cl.b))
+  end,
+})
+
 -- “was the only person beside X”
 reg("only_beside", {
   params = { "who", "object" },
@@ -1584,17 +1630,25 @@ function Core:structure_report(roles)
     end
   end
 
+  -- ★★ 2026-10-17 【同伙规则已废止】（用户决定，见 内容设计-第一阶段任务书 后续决定）
+  --
+  --   被删掉的旧规则有两条，它们互相咬合、把"受害者房间里还有别人"与"必须有同伙"绑死：
+  --     ⑪ 受害者所在区域人数 k >= 2  ⇒ 盗窃者必然有且只有一个同伙
+  --     ⑫ 同伙必须与盗窃者待在同一个区域
+  --   用户判断：这条规则**过度约束了变化性**——只要 k>=2 就强制多出一个角色，
+  --   关卡设计的自由度被吃掉一大块。
+  --
+  --   现在的语义：
+  --     · k 取任何值都**不再**要求同伙；
+  --     · 关卡在 roles 里声明了 accomplice，那个角色才存在（旧关卡 case_003 等不受影响）；
+  --     · 同伙**不再**被要求与盗窃者同区。
+  --   R3（盗窃者所在区域 = 受害者相邻区域里无辜人数最多的那个）**保持不变**。
   local has_acc = roles.accomplice ~= nil
   info.has_accomplice = has_acc
-  if info.k >= 2 and not has_acc then
-    errors[#errors + 1] = "受害者与他人同区（k>=2），盗窃者必然有且只有一个同伙"
-  end
   if has_acc then
     local ap = self.pos[roles.accomplice]
     if not ap then
       errors[#errors + 1] = "同伙还没摆上棋盘"
-    elseif self.room[ap.r][ap.c] ~= info.thief_room then
-      errors[#errors + 1] = "同伙与盗窃者不在同一个区域"
     end
   end
 
@@ -2524,7 +2578,10 @@ function Core:view()
     k = sinfo.k,
     thief_room = sinfo.thief_room,
     has_accomplice = sinfo.has_accomplice,
-    must_have_accomplice = (sinfo.k ~= nil and sinfo.k >= 2),
+    -- ★ 2026-10-17 同伙规则废止：k>=2 不再意味着"必须有同伙"。
+    --   这里保留字段名（界面/存档已在读它），但恒为 false；
+    --   "这一关到底有没有同伙"请直接看 roles.accomplice（= has_accomplice 字段）。
+    must_have_accomplice = false,
   }
 
   local hud = {

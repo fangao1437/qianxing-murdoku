@@ -62,10 +62,21 @@ check("盗窃者区域是无辜最多的相邻区域", sinfo.thief_room == sinfo
 check("无辜人数 1 > 0（无并列）", sinfo.best == 1 and #sinfo.best_rooms == 1,
       tostring(sinfo.best))
 
-print("== 4. 同伙存在性（R4 叠加）==")
-local s2, e2 = core:structure_report({ thief = "D", accomplice = nil, victim = "V" })
-check("k>=2 时删掉同伙会报错", s2 == false, e2 and table.concat(e2, "; "))
-check("报错信息指向同伙规则", (e2 and table.concat(e2, "; "):find("同伙") ~= nil))
+print("== 4. ★ 同伙规则【已废止】（2026-10-17）==")
+-- 旧断言（现已被规则变更取代）：
+--   check("k>=2 时删掉同伙会报错", ...) ／ check("报错信息指向同伙规则", ...)
+-- 现在：k 取任何值都不再要求同伙；只有关卡自己在 roles 里声明了 accomplice 才存在同伙。
+local s2, e2, i2 = core:structure_report({ thief = "D", accomplice = nil, victim = "V" })
+check("k>=2 时没有同伙【不再报错】", s2 == true,
+      e2 and table.concat(e2, "; ") or "")
+check("k 仍然被正确数出来（k=2）", i2.k == 2, tostring(i2.k))
+check("info.has_accomplice 反映的是传进来的 roles（本例无同伙 ⇒ false）",
+      i2.has_accomplice == false, tostring(i2.has_accomplice))
+-- 同伙即便被摆到别的区域，也不再报"不在同一个区域"（该条已废止）
+local s3, e3 = core:structure_report({ thief = "D", accomplice = "C", victim = "V" })
+check("同伙不再被要求与盗窃者同区（本条已废止）",
+      (e3 == nil) or (table.concat(e3, "; "):find("不在同一个区域") == nil),
+      e3 and table.concat(e3, "; ") or "")
 
 print("== 5. 假话规则（至多一句，粒度=整条）==")
 local res = core:clue_results()

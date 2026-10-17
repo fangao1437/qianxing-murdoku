@@ -54,6 +54,22 @@ function M.clue_level_case001()
   local base = require("levels.case_001")
   local lv = {}
   for k, v in pairs(base) do lv[k] = v end
+  -- ★★ 2026-10-17：真关卡 case_001 的家具换成了 桌子 / 植物 / 地毯 / 椅子，
+  --   其中 **桌子占了 (1,1)**（`occupiable = false`）。
+  --   而 `board_wiring_e2e` 判据①/② 是沿**主对角线 (k,k)** 逐个放棋子的，
+  --   (1,1) 一被家具挡住，那条判据就会报"棋A@(1,1) 得到 <没有这一格>"✗ ——
+  --   但那是**内容规则**（这一关不让人站桌子上），**不是接线坏了** ✗
+  --   （判据自己的注释就是这么写的：「判据只该测接线，不该测这一关能不能放」）
+  --   ⇒ 本 fixture 是**给引擎测试用的**，把家具一律标成可站，
+  --     让"放棋子 → 出头像"这条接线判据不被内容挡住 ✓
+  --   ⚠️ 只影响这一份测试 fixture，**不改真关卡** ✓
+  lv.objects = {}
+  for name, obj in pairs(base.objects or {}) do
+    local o2 = {}
+    for k2, v2 in pairs(obj) do o2[k2] = v2 end
+    o2.occupiable = true
+    lv.objects[name] = o2
+  end
   lv.clues = {
     { type = "at",         who = "V",      r = 4, c = 5 },   -- 受害者就在保险库内室
     { type = "in_col",     who = "@thief", c = 3 },          -- 盗窃者在第 3 列
