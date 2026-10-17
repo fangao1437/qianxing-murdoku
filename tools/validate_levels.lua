@@ -23,6 +23,9 @@ package.path = table.concat({
 
 local Core   = require("murdoku_core")
 local Levels = require("levels.init")
+-- ★★ 2026-10-18 求解器已从运行时核心搬出 ⇒ 设计期工具显式 require 它 ✓
+--   （用户：「求解器是不必要的算力消耗 …… 把它单独拿出来当一个关卡设计的独立校准工具」）
+local Solve  = require("tools.design_solve")
 
 local limit = tonumber(arg and arg[1]) or 2
 local total, bad = 0, 0
@@ -122,7 +125,7 @@ for _, lv in ipairs(levels) do
       if n_clues == 0 then
         print("  唯一解: 未测（本关线索 0 条 —— ★ 内容待设计 ✓ 不是判据失效 ✗）")
       else
-        local sols = core:solve(limit)
+        local sols = Solve.solve(core, limit)
         if #sols == 1 then
           print(string.format("  唯一解: OK（盗窃者 %s，同伙 %s）",
                 tostring(sols[1].thief), tostring(sols[1].accomplice)))
