@@ -10356,6 +10356,23 @@ function Controller:_on_grid_item_click(adapter, grid, item)
   --       ⇒ ★ **高亮与选人都落在第 1 条上** ✓（★ 用户看到的"链路还是断的" ✓）
   --   ⇒ ★★ 改用 `_grid_pos_of_item` ✓ —— ★ **用填充时引擎亲手交来的那个 index** ✓✓
   --     ★（★ 那一次是权威的 ✓ ★ 我们就是按它算 `pos` 填内容的 ✓）
+  -- ★★★★★ 2026-10-18 **通用线索：在最前面识别，不走 `pos` 那条路** ✗✓（日志定案）
+  --   证据（用户 05:55 日志）：点它 ⇒ `GetItemIndex=0` ⇒ `_grid_pos_of_item` 拿不到位置 ⇒
+  --     `pos` 非法 ⇒ **整条点击被丢掉**（连"点卡片定位"都不打印）⇒ 表现为"不可选" ✗
+  --   ⇒ 用**填充时记下的句柄**在算 pos 之前就认出来 ✓
+  --     （句柄是权威的 ✓；它被回收去显示普通卡时已在填充侧清掉 ✓）
+  --   ★ `focused_clue` 给一个**合法正数但超出卡范围**的值（n+1）⇒ 没有卡会对上 ✓
+  --     绘制侧把 `general_focus` 解释成通用线索（见 build_layout 那段）✓
+  if item ~= nil and self._general_item == item then
+    local _ncl = 0
+    pcall(function() local _v = self.core:view(); _ncl = #_v.clues end)
+    self.focused_clue = _ncl + 1
+    self.general_focus = true
+    pcall(function() self.general_hint = self.core:clue_hint_general(1) end)
+    self.dirty = true
+    self._grid_sig = nil
+    return
+  end
   local pos = self:_grid_pos_of_item(grid, item)
   -- ★★★★★ 2026-10-18 **通用线索走【正常选中链路】，只是把卡号算成 0** ✗✓（用户定案）
   --   用户原话：「把相关拦截取消，高亮也补上」✓（拦了之后通用卡选不中 ⇒ 提示路径断 ✗）
@@ -10367,14 +10384,7 @@ function Controller:_on_grid_item_click(adapter, grid, item)
     local _hg = false
     pcall(function() _hg = self:_has_general_clue() end)
     if _hg and pos ~= nil then
-      if pos == 1 then
-        -- ★★★ 通用卡：**没有"人"可选** ⇒ pos 置 nil，让"选人"那步自然跳过 ✓
-        --   ★ 不能置 0 ✗（真机日志：pos=0 被点击链路当非法值丢掉 ⇒ 连派发都没有 ✗）
-        pos = nil
-        self._general_click = true   -- 让下面的派发换成 focus_general（一次性 ✓）
-      else
-        pos = pos - 1                -- 真卡：列表位置 −1 = 卡号 ✓
-      end
+      pos = pos - 1                -- 真卡：列表位置 −1 = 卡号 ✓（通用卡已在上面 return ✓）
     end
   end
 
