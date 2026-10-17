@@ -1152,6 +1152,53 @@ reg("nobody_in_water", {
 })
 
 ----------------------------------------------------------------------------
+-- 线索类型：两关定稿新增（2026-10-17，来自设计阶段的 main 分支）
+--
+--   ★ 只补【类型】，线索【内容】由关卡表/编辑器 row 区填 ✓
+--   ★ 为什么做成"复合类型"：假话判据按**整条**陈述算 ——
+--     把 v 那句拆成两条，"一句假话"的粒度就糊了（设计收尾交接口径）。
+----------------------------------------------------------------------------
+
+-- 「地毯上没有人」：object 的每一格都必须空着（第二关的通用线索）
+reg("nobody_on_object", {
+  params = { "object" },
+  validate = function(ctx, cl) return ctx.count_on_object(cl.object) == 0 end,
+  text = function(ctx, cl) return string.format("%s 上没有人", cl.object) end,
+})
+
+-- 「a 在 b 下方的不同区域中」
+reg("below_in_other_room", {
+  params = { "a", "b" },
+  validate = function(ctx, cl)
+    local a, b = ctx.pos(cl.a), ctx.pos(cl.b)
+    if not a or not b then return false end
+    if a.r <= b.r then return false end
+    return not ctx.same_room(a, b)
+  end,
+  text = function(ctx, cl)
+    return string.format("%s 在 %s 下方的不同区域中", ctx.name(cl.a), ctx.name(cl.b))
+  end,
+})
+
+-- 「who 独自一人，且 a 在 b 下方的不同区域中」——第二关 v 的那一句
+reg("alone_and_below_in_other_room", {
+  params = { "who", "a", "b" },
+  validate = function(ctx, cl)
+    local p = ctx.pos(cl.who)
+    if not p then return false end
+    if ctx.count_in_room(ctx.room_of(p.r, p.c)) ~= 1 then return false end
+    local a, b = ctx.pos(cl.a), ctx.pos(cl.b)
+    if not a or not b then return false end
+    if a.r <= b.r then return false end
+    return not ctx.same_room(a, b)
+  end,
+  text = function(ctx, cl)
+    return string.format("%s 独自一人，且 %s 在 %s 下方的不同区域中",
+      ctx.name(cl.who), ctx.name(cl.a), ctx.name(cl.b))
+  end,
+})
+
+----------------------------------------------------------------------------
 -- 线索类型：偷窃版新增（门径 / 身份）
 ----------------------------------------------------------------------------
 
@@ -1313,6 +1360,26 @@ function M.validate_level(level)
           for _, p in ipairs(def.params or {}) do
             if cl[p] == nil then err("第 %d 条线索(%s)缺少参数 %s", i, cl.type, p) end
           end
+        end
+      end
+    end
+  end
+
+  -- ★ 2026-10-17 通用线索（不属于任何人的卡）：与卡线索**同一套校验** ✓
+  --   ★ 为什么要校验 ✗：类型拼错时 `clue_results` 只会退回"待填内容" ✓
+  --     而通用线索**没有卡可以看见** ⇒ 拼错就**永远静默失效** ✓ ⇒ 必须在这里报 ✓
+  local g_list = level.general_clues or {}
+  for i = 1, #g_list do
+    local cl = g_list[i]
+    if type(cl) ~= "table" or not cl.type then
+      err("第 %d 条通用线索缺少 type", i)
+    else
+      local def = M.clues[cl.type]
+      if not def then
+        err("第 %d 条通用线索类型未注册：%s", i, tostring(cl.type))
+      else
+        for _, p in ipairs(def.params or {}) do
+          if cl[p] == nil then err("第 %d 条通用线索(%s)缺少参数 %s", i, cl.type, p) end
         end
       end
     end
@@ -1495,6 +1562,23 @@ function M.new(level, opts)
   end
   -- ★ 槽位条数 = 棋盘**容量** ✓（★ 判据写在代码里 ✓ 而不是只写在注释里 ✓）
   self.clue_slots = #self.clues
+
+  -- ★ 2026-10-17 通用线索：**不属于任何人的卡**（例如第二关的「地毯上没有人」）。
+  --
+  --   ★ 为什么单独一条表 ✗：卡位数量 = 棋盘容量（一人一条）✓
+  --     通用线索**没有主人** ⇒ 放进 `self.clues` 会挤掉一张卡、还会让卡序和棋子错位 ✓
+  --   ★ 它参与：① `solve` 的搜索剪枝 ✓ ② `view().general_clues`（界面/调试 ✓）
+  --   ★ 它不参与：位置提示（没有卡 ⇒ 没有"选卡"这个动作 ✓）
+  --     —— 但 `Core:clue_hint_general` 照样能算，测试与真机核验都用它 ✓
+  self.general_clues = {}
+  if type(level.general_clues) == "table" then
+    for i = 1, #level.general_clues do
+      local g = level.general_clues[i]
+      if type(g) == "table" and g.type ~= nil then
+        self.general_clues[#self.general_clues + 1] = g
+      end
+    end
+  end
 
   -- 家具
   self.objects = {}
@@ -1825,6 +1909,159 @@ end
 --     ⇒ ★ **全文只有定义那一处，0 个调用点** ✓（★ 连测试都没引用 ✓）
 --   ★ 为什么它没用了 ✓：★ 凶手判定走的是 `level.murderer` ＋ 结算那套 ✓
 --     （★ 见 `view()` 的 `murderer_hint_available` ✓）—— 这个"同室推定"是早期版本的路 ✓
+
+-- 通用线索的结果（与 `clue_results` 同形；条数 = `#self.general_clues`）
+function Core:general_clue_results()
+  local ctx = make_context(self)
+  local list = self.general_clues or {}
+  local out = {}
+  for i = 1, #list do
+    local cl = list[i]
+    local def = cl.type and M.clues[cl.type] or nil
+    out[i] = {
+      index = i,
+      type = cl.type,
+      text = def and def.text(ctx, cl) or ("待填内容（通用线索 " .. tostring(i) .. "）"),
+      satisfied = (def ~= nil) and (def.validate(ctx, cl) and true or false),
+    }
+  end
+  return out
+end
+
+----------------------------------------------------------------------------
+-- 线索位置提示（2026-10-17）
+--
+--   用途：玩家选中一张线索卡 ⇒ 棋盘上把「这条线索允许那个人出现的位置」亮出来。
+--   规则不是这里发明的，逐条对照设计定稿：
+--     · 家具类 on / only_on / one_on / n_on / nobody_on ⇒ 该家具**自己的格子**
+--     · 旁边类 beside / only_beside / not_beside      ⇒ 家具**四邻、同区域、可站人的格**
+--     · in_col / in_row                               ⇒ 那一列 / 那一行的可站格
+--     · at                                            ⇒ 那一格本身
+--     · 人对人（above/below/beside/offset…）、区域级（room_has/alone…）、
+--       身份类（is_role/not_role）⇒ **不做位置提示**（返回 nil ✓ 给出来就会剧透 ✓）
+--   来源：`murdoku-内容设计-两关布局图/线索卡-位置提示表.md` §二（通用规则）
+--         ＋ `Temp/qxmurdoku/design/clue_hint.lua`（设计期可执行原型）
+--
+--   ★ 只算**可站人的格**（`is_blocked` 过滤）：家具占了但不可站的格永不出现 ✓
+--   ★ 只依赖关卡静态数据（家具/墙/门/区域），**与当前摆位无关** ✓
+--     ⇒ 玩家摆了几个棋子都不会改变提示 ✓（这正是"允许出现的位置"的意思 ✓）
+----------------------------------------------------------------------------
+
+local function standable(self, r, c)
+  if r == nil or c == nil then return false end
+  if r < 1 or r > self.rows or c < 1 or c > self.cols then return false end
+  return not self:is_blocked(r, c)
+end
+
+-- 集合 → 排好序的数组（行优先、再列）⇒ 界面顺序稳定、测试好比对
+local function cells_sorted(set)
+  local list = {}
+  for k in pairs(set or {}) do
+    local sr, sc = tostring(k):match("^(%d+):(%d+)$")
+    if sr ~= nil then list[#list + 1] = { r = tonumber(sr), c = tonumber(sc) } end
+  end
+  table.sort(list, function(a, b)
+    if a.r ~= b.r then return a.r < b.r end
+    return a.c < b.c
+  end)
+  return list
+end
+
+local HINT_DIRS = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }
+
+local function object_own_cells(self, name)
+  local set = {}
+  local cells = self.objects[name] or {}
+  for i = 1, #cells do
+    local p = cells[i]
+    if standable(self, p.r, p.c) then set[cell_key(p.r, p.c)] = true end
+  end
+  return set
+end
+
+local function object_beside_cells(self, name)
+  local set = {}
+  local cells = self.objects[name] or {}
+  for i = 1, #cells do
+    local p = cells[i]
+    local room = (self.room[p.r] ~= nil) and self.room[p.r][p.c] or nil
+    for d = 1, #HINT_DIRS do
+      local rr = p.r + HINT_DIRS[d][1]
+      local cc = p.c + HINT_DIRS[d][2]
+      if standable(self, rr, cc)
+         and self.room[rr] ~= nil and self.room[rr][cc] == room then
+        set[cell_key(rr, cc)] = true
+      end
+    end
+  end
+  return set
+end
+
+local function col_cells(self, col)
+  local set = {}
+  local c = tonumber(col)
+  if c == nil then return set end
+  for r = 1, self.rows do
+    if standable(self, r, c) then set[cell_key(r, c)] = true end
+  end
+  return set
+end
+
+local function row_cells(self, row)
+  local set = {}
+  local r = tonumber(row)
+  if r == nil then return set end
+  for c = 1, self.cols do
+    if standable(self, r, c) then set[cell_key(r, c)] = true end
+  end
+  return set
+end
+
+-- 一条线索 →（格子集合, 规则说明）；nil = 这条线索不做位置提示
+local function hint_for(self, cl)
+  if type(cl) ~= "table" or cl.type == nil then return nil end
+  local t = cl.type
+  if t == "on_object" or t == "only_on_object" or t == "one_on_object"
+     or t == "n_on_object" or t == "nobody_on_object" then
+    return object_own_cells(self, cl.object), "该家具自己的格子"
+  elseif t == "beside_object" or t == "only_beside" or t == "not_beside_object" then
+    return object_beside_cells(self, cl.object), "该家具四邻、同区域、可站人的格"
+  elseif t == "in_col" then
+    return col_cells(self, cl.c), "第 " .. tostring(cl.c) .. " 列的可站格"
+  elseif t == "in_row" then
+    return row_cells(self, cl.r), "第 " .. tostring(cl.r) .. " 行的可站格"
+  elseif t == "at" then
+    local set = {}
+    if standable(self, cl.r, cl.c) then set[cell_key(cl.r, cl.c)] = true end
+    return set, "这一格本身"
+  end
+  return nil
+end
+
+local function hint_result(self, cl, index, kind)
+  local set, rule = hint_for(self, cl)
+  if set == nil then return nil end
+  local list = cells_sorted(set)
+  return {
+    index = index,
+    kind = kind,        -- "card"（卡）/ "general"（通用线索）
+    type = cl.type,
+    rule = rule,
+    cells = list,       -- 有序数组：{ {r=,c=}, ... }
+    set = set,          -- 集合："r:c" = true（界面 O(1) 判断）
+    count = #list,
+  }
+end
+
+-- 第 index 张卡（= 第 index 条线索；卡序 = 棋子序，见 `_piece_at_row`）
+function Core:clue_hint(index)
+  return hint_result(self, (self.clues or {})[index], index, "card")
+end
+
+-- 第 index 条通用线索（不上卡；目前只有第二关用）
+function Core:clue_hint_general(index)
+  return hint_result(self, (self.general_clues or {})[index], index, "general")
+end
 
 function Core:is_full()
   local n = 0
@@ -2687,6 +2924,10 @@ function Core:view()
     }
   end
 
+  -- ★ 2026-10-17 通用线索（不属于任何人的卡）：单独一条，供界面/调试读取
+  --   ★ 卡位数量不变（`#self.clues`）⇒ 卡片不会多出一张 ✓
+  local general_view = self:general_clue_results()
+
   -- 偷窃版结构信息（界面可以直接展示，玩家自己也能数出来）
   local sok, serrors, sinfo = self:structure_report()
   local structure = {
@@ -2749,6 +2990,8 @@ function Core:view()
     cells = cells,
     tray = tray,
     clues = clue_view,
+    -- ★ 2026-10-17 通用线索（不上卡）：{index,type,text,satisfied}
+    general_clues = general_view,
     violations = self:violations(),
     hud = hud,
     last_message = self.last_result and self.last_result.message or nil,
@@ -2790,7 +3033,12 @@ function Core:solve(limit)
   --     ⇒ ★ 它们**还不能判真假** ⇒ ★★ **`solve` 无从下嘴** ✓
   --   ⇒ ★ 如实返回**空解表** ✓ ★ **不猜、不编解** ✗✓
   --     ★（★ 上层：`validate_levels` 报"未测" ✓ ★ 作者拿到的是"还没内容"而不是"多解" ✓）
-  local clues = self.clues or {}
+  -- ★★ 2026-10-17：**通用线索也参与搜索** ✗✓
+  --   ★ 它们没有卡位 ✓ 但同样是"这个摆位必须成立的事实" ✓
+  --   ⇒ 拼成一张本地清单给下面的剪枝/叶子判定用（不改 `self.clues` ✓ 卡位数量不受影响 ✓）
+  local clues = {}
+  for i = 1, #(self.clues or {}) do clues[#clues + 1] = self.clues[i] end
+  for i = 1, #(self.general_clues or {}) do clues[#clues + 1] = self.general_clues[i] end
   local real = 0
   for i = 1, #clues do if clues[i] and clues[i].type then real = real + 1 end end
   if real == 0 then return {} end
@@ -3627,6 +3875,17 @@ local DOUBLE_CLICK_SECONDS = 0.35
 --   ★★★ 尤其要记 ✓：★ `imageColor` 是**乘算**着色 ✓（★ 适配层注释写着 ✓）
 --     ⇒ ★ 想调观感请改**这一个数** ✓ ★ 别在别处再写一个 ✓✓
 local HIGHLIGHT_TINT = 4294956107
+
+-- ★★★★★★★★ 2026-10-17 **线索位置提示的颜色归【编辑器】** ✗✓✓
+--
+--   上一版脚本自己拿一个常量去染格子的 `face`（`HINT_TINT = 0x809ED8FF`）✗
+--   ★★ 用户随后在编辑器里把这一层做成了**独立子控件**：模板 `cell` → `content` → **`hint`**
+--     （135×135 铺满格子，颜色 `0x7F0063D5` = 50% 透明蓝）✓
+--     ★ 用户原话：「模板已经修改了，颜色也已经调好了，你现在只需要管显示就行了」✓
+--   ⇒ ★ 所以**这个常量删掉了** ✗ —— 颜色只存在于存档/编辑器一处 ✓
+--     ★ 脚本只发 `hint = true/false`（见 `build_layout` 的格子节点 ✓），
+--       适配层的 `key == "hint"` 分支把它落到子控件可见性上 ✓
+--   ⚠️ `imageColor` 是**乘算**；`hint` 那层的底色是编辑器里配的，别在脚本里再写一遍 ✗
 
 -- ★★★★★★★★ 2026-10-15 **选关卡片的"牌面"该用哪一类素材** ✗✓✓
 --
@@ -5132,24 +5391,16 @@ function Controller:build_layout(ui_adapter)
     --
     --   ⚠️ 关卡里物件是**中文名做键**（`["书架"]`），界面层用 `object_key_of` 翻成
     --     `obj.<kind>`（写了 kind）或 `obj.<中文名>`（没写）—— 所以条目名必须是 obj.shelf 这种。
-    local OBJECT_PALETTE = {
-      ["obj.shelf"]  = 111051,
-      ["obj.case"]   = 111064,
-      ["obj.desk"]   = 111050,
-      ["obj.carpet"] = 106053,
-    }
-    --   ⚠️ 这里**不能用 `push`** —— `push` 是在下面才定义的局部函数，
-    --     在 `local nodes = {}` 后面直接调它会拿到 nil。
-    --     （我第一次就插在这里，dump_layout 当场报 `[C]: in ?`，
-    --      连带 play_test 红了 3 条。）直接往 nodes 里塞，绕开这个顺序问题。
-    for pid, pimg in pairs(OBJECT_PALETTE) do
-      -- 父级是编辑器里的 `assets` 容器（`read_palette` 扫它的子控件）
-      nodes[#nodes + 1] = {
-        id = pid, kind = "button", parent = "assets", visible = false,
-        image_id = pimg,
-        rect = { x = 0, y = 0, w = 48, h = 48 },
-      }
-    end
+    --
+    -- ★★★★★★★★ 2026-10-18 **删掉"运行时创建 obj.*"这一段** ✗✓✓
+    --   用户定位（原话）：「你的脚本是实时创建 things，不要这样，在存档里创建好就行，
+    --   **脚本里不要有创建控件这种操作，不然多次运行就必撞 id**」✓
+    --   ★ 机制：这里往规划里塞 4 个 `obj.*` 节点 ⇒ 运行时 `create_control` 真的去建它们 ⇒
+    --     建出来的控件 GUID 由引擎分配，**每跑一次就多一批** ⇒ 编辑器里"GUID 重复" ✓
+    --   ★ 现在素材从哪来：★ **存档里的 `things` 素材区**（在编辑器里换图）✓
+    --     兜底 = 脚本配置 `cfg.obj_art`（见 `Adapter:read_palette`，**控件优先**）✓
+    --   ⇒ 规划里**一个 `obj.*` 都不再出现**（日志里那条"已知不需要：…/obj.*"也就干净了）✓
+    local OBJECT_PALETTE_DISABLED = nil   -- 保留名字，避免别处 `local` 重名冲突（值为 nil = 不建）
 
     -- ★★★★★ 2026-10-03 **六个图标改走「官方素材 + 脚本创建」**（用户定稿的路线）
     --
@@ -6328,6 +6579,28 @@ function Controller:build_layout(ui_adapter)
 
   -- ★ 2026-10-12 **行标尺（`ruler.r.*`）已按用户要求删除** ✗✓（连同容器与列标 ✓）
   --   理由见上面【已删除】那段长注释 ✓ —— ★ 而且它从来就是哑的（`apply_ruler_layout` 只对齐不创建 ✓）
+  --
+  -- ★★★★★★★★ 2026-10-17 **线索位置提示：选中第几张卡，就亮第几条线索允许的格** ✗✓✓
+  --
+  --   ★ 判据**只有一个**：`focused_clue` ✓（= 选中那个人配在第几行 ✓ 见 `_sync_clue_focus`）
+  --     ⇒ 真机「点线索卡」与模拟器「点卡上的人像」两条输入**都汇到这里** ✓
+  --       ⇒ ★ 不需要第二份"选中了哪张卡"的状态 ✓（本项目为"两份状态必然漂移"栽过多次 ✓）
+  --   ★ 格子集合现算 ✓：`core:clue_hint(focused_clue)` 只读关卡静态数据（家具/墙/门）
+  --     ⇒ **与当前摆位无关** ✓ ⇒ 玩家摆了几个棋子都不会改变提示 ✓
+  --   ★ 刷新成本 ✓：`build_layout` 只在 `dirty` 时跑 ✓；属性账本按值去重 ✓
+  --     ⇒ 稳态每帧零写入 ✓（与"房间色"同一条路 ✓）
+  --   ★★ 2026-10-17 **显示方式改了** ✗✓：不再染格子颜色，而是开/关模板里的
+  --     `cell.R.C` → `content` → **`hint`** 子控件（颜色在编辑器里，见上面那段注释 ✓）
+  --     ⇒ 每格都发 `hint = true/false` ✓ 取消选中 / 换卡时上一批自然关掉 ✓
+  local hint_set = nil
+  do
+    local fci = self.focused_clue
+    if fci ~= nil and fci > 0 and self.core ~= nil and self.core.clue_hint ~= nil then
+      local h = self.core:clue_hint(fci)
+      if h ~= nil and h.set ~= nil and next(h.set) ~= nil then hint_set = h.set end
+    end
+  end
+
   for r = 1, vm.rows do
     for c = 1, vm.cols do
       local cd = vm.cells[r][c]
@@ -6584,7 +6857,17 @@ function Controller:build_layout(ui_adapter)
         --   ⇒ ★★ 最小且不倒着的修法 ✓：★ **有棋子的格子，房间色下发白色**（= 不染色 ✓）✓
         --     ★ 那一格本来就被头像铺满 ⇒ 房间色**看不见**，不下发它不损失任何信息 ✓✓
         --     ★ 棋子一拿开（`cd.suspect` 变 nil ✓）⇒ ★ 下一帧自然回到房间色 ✓（无需额外状态 ✓）
+        -- ★★★★★★★★ 2026-10-17 **提示层：只发一个布尔** ✗✓（★ 见上面 `hint_set` 那段 ✓）
+        --   ★ 用户已经在模板里做好了 `hint` 子控件（`content` 下，135×135，颜色已调好）✓
+        --     ⇒ 脚本**只负责显示 / 隐藏** ✓ 颜色一个字都不写 ✓（`tint` 回到只管房间色 ✓）
         tint = (cd.suspect and 4294967295) or Controller.room_color(cd.room),
+        -- ★ 每格都发（true/false）⇒ 取消选中 / 换卡时自然把上一批关掉 ✓（账本按值去重 ✓）
+        hint = (hint_set ~= nil and hint_set[r .. ":" .. c] == true),
+        -- ★★★★★★★★ 2026-10-17 **格子边长（画布）直接告诉适配层** ✗✓
+        --   用途：把"铺满型"子控件（`face` / `hint` / `obj`）钉成**和格子一样大**
+        --   ★ 为什么由界面层给：`build_layout` 本来就算出了 `cell`（设计空间）✓
+        --     比"让适配层去读控件尺寸"可靠得多 —— 读不到就整段静默跳过 ⇒ 溢出 ✓
+        fit = math.floor(cell * M.SCALE + 0.5),
         occupiable = cd.occupiable,
         x_mark = cd.x,
         enabled = true,   -- 不可站人的格子也要能点（用于打 X / 提示原因）
@@ -7523,6 +7806,22 @@ function Controller:editor_card_box(a, id, plan_r)
   local w, h, ax, ay = nil, nil, nil, nil
   pcall(function() w, h = ctrl:GetSizeDelta() end)
   pcall(function() ax, ay = ctrl:GetAnchoredPosition() end)
+  -- ★ 2026-10-18 一次性诊断（用户报「选关界面只有一张卡」）：每张卡**只打一次** ✓
+  --   ★ 判据：四张卡若**位置完全相同** ⇒ 编辑器里就是叠着的 ⇒ 脚本按规划格重排 ✓
+  --           若**各不相同** ⇒ 叠的原因是别的（层级/父级换算），再换方向 ✓
+  if print then
+    self._ecb_seen = self._ecb_seen or {}
+    if not self._ecb_seen[id] then
+      self._ecb_seen[id] = true
+      local function sh(v)
+        if type(v) == "table" then return "表[" .. tostring(v[1]) .. "," .. tostring(v[2]) .. "]"
+        elseif type(v) == "number" then return string.format("%.1f", v)
+        else return type(v) end
+      end
+      print("[murdoku] 选关卡框 " .. tostring(id) .. "：w=" .. sh(w) .. " h=" .. sh(h)
+        .. " pos=(" .. sh(ax) .. "," .. sh(ay) .. ")")
+    end
+  end
   if type(w) ~= "number" or type(h) ~= "number" or w <= 0 or h <= 0 then return plan_r end
   if type(ax) ~= "number" or type(ay) ~= "number" then return plan_r end
   local cfg = a.cfg or {}
@@ -11481,6 +11780,26 @@ function M.pack_color(r, g, b, a)
   return c(a) * 16777216 + c(r) * 65536 + c(g) * 256 + c(b)
 end
 
+-- ★ 读控件尺寸：**真机返回两个数，模拟器返回一个数组** ⇒ 两种都认 ✗✓
+--   （2026-10-17 实测：模拟器的桥接把 `GetSizeDelta()` 包成一个返回数组的方法，
+--     `local a, b = c:GetSizeDelta()` 拿到的是 `a=表, b=nil` ⇒ 会被当成"读不到" ✗）
+--   ★ 必须定义在**文件靠前**：`_apply_edges`（很靠前）也要用它 ✓
+--     （定义在后面的 `local function` 对**前面**的函数不可见 ⇒ 会变成"全局 nil"✓）
+local function size_of(ctrl)
+  if ctrl == nil then return nil, nil end
+  local a, b = nil, nil
+  if ctrl.GetSizeDelta ~= nil then
+    pcall(function() a, b = ctrl:GetSizeDelta() end)
+  end
+  if type(a) == "table" then return tonumber(a[1]), tonumber(a[2]) end
+  if type(a) == "number" then return tonumber(a), tonumber(b) end
+  -- ★ 兜底：直接读字段（个别环境没有 getter，但字段是有的）
+  local px, py = nil, nil
+  pcall(function() px = ctrl.sizeDeltaX end)
+  pcall(function() py = ctrl.sizeDeltaY end)
+  return tonumber(px), tonumber(py)
+end
+
 function M.new(cfg)
   cfg = cfg or {}
   -- ★★ 防呆：把 `cfg.cells.<调试开关>` 上提到顶层。
@@ -14924,26 +15243,52 @@ function Adapter:read_palette()
   if self._palette ~= nil then return self._palette end
   local map, names = {}, {}
   local a = self.cfg.assets or {}
-  local root = self:find(a.palette or "assets")
-  if root ~= nil then
-    local kids = nil
-    pcall(function() kids = root:GetChildren() end)
-    if type(kids) == "table" then
-      for i = 1, #kids do
-        local k = kids[i]
-        local nm, src, id = nil, nil, nil
-        pcall(function() nm = tostring(k.name) end)
-        pcall(function() src = k.imageSource end)
-        pcall(function() id = k.imageId end)
-        if nm ~= nil and nm ~= "" and type(id) == "number" then
-          map[nm] = { source = src, id = id }
-          names[#names + 1] = nm
+  -- ★ 2026-10-17 **调色板可以有两处** ✗✓
+  --   ① `assets`（老：`portrait.*` / `row.*`）
+  --   ② **`things`（新：家具/障碍物的美术素材，用户要求"单独建一个 things 区域"）**
+  --   ★ 两个容器的子控件都用**名字**当引用键（`obj.table` / `portrait.A` …）✓
+  --   ★ `imageColor` 也一起读 ✓ —— 素材先按色块占位时，格子里的 `obj` 要跟着变色 ✓
+  local roots = { a.palette or "assets", a.things or "things" }
+  for ri = 1, #roots do
+    local root = self:find(roots[ri])
+    if root ~= nil then
+      local kids = nil
+      pcall(function() kids = root:GetChildren() end)
+      if type(kids) == "table" then
+        for i = 1, #kids do
+          local k = kids[i]
+          local nm, src, id, col = nil, nil, nil, nil
+          pcall(function() nm = tostring(k.name) end)
+          pcall(function() src = k.imageSource end)
+          pcall(function() id = k.imageId end)
+          pcall(function() col = k.imageColor end)
+          if nm ~= nil and nm ~= "" and type(id) == "number" then
+            map[nm] = { source = src, id = id, color = col, from = roots[ri] }
+            names[#names + 1] = nm
+          end
         end
       end
     end
   end
   self._palette = map
   self._palette_names = names
+  -- ★★★★★★★★ 2026-10-18 **家具素材也可以直接写在脚本里**（`cfg.obj_art`）✗✓✓
+  --   ★ 为什么加这条：用户实测「编辑器报 GUID 重复」是从 396（第一次新建 `things` 素材区）开始的 ✗
+  --     ⇒ 只要**不新建控件**就不会撞 ✓ 而家具图标本来只需要"一张图 + 一个颜色" ✓
+  --   ★ 优先级：**控件里有的优先**（用户若真在编辑器里做了 `things` 区，仍以那边为准 ✓）
+  --   ★ 写法：`obj_art = { table = { id = 100001, color = 0xFFB07946 }, … }`
+  --     （键 = `kind`，不是控件名；内部拼成 `obj.<kind>` ✓，与 `object_key_of` 对齐 ✓）
+  local oa = self.cfg.obj_art
+  if type(oa) == "table" then
+    for k, v in pairs(oa) do
+      local key = (type(k) == "string" and k:match("^obj%.") and k) or ("obj." .. tostring(k))
+      local okk = type(v) == "table" and type(v.id) == "number"
+      if okk and map[key] == nil then
+        map[key] = { source = v.source or "StaticReference", id = v.id, color = v.color, from = "cfg.obj_art" }
+        names[#names + 1] = key
+      end
+    end
+  end
   return map
 end
 
@@ -15501,8 +15846,8 @@ function Adapter:_apply_edges(id, prefix, flags)
         local s = sides[i]
         local sub = self:sub(id, prefix .. "." .. s)
         if sub ~= nil and flags[s] then
-          local w, h = nil, nil
-          pcall(function() w, h = sub:GetSizeDelta() end)
+          -- ★ 2026-10-17：用 `size_of`（真机两数 / 模拟器一个数组，两种都认 ✓）
+          local w, h = size_of(sub)
           local horiz = (s == "up" or s == "down")
           -- 目标几何：横边 = 长 cw × 厚 thick；竖边 = 厚 thick × 长 ch
           -- 门比墙短一点，看起来才像"门"而不是一整面墙
@@ -15578,6 +15923,58 @@ function Adapter:_apply_edges(id, prefix, flags)
   --      （比如基准尺寸读成 0），但那些不是"缺控件"，把它们也算成失败会让每条边都反复重发，
   --      纯粹是噪音 —— 那两种情形已经各自打了日志（见上面两处「边缘适配 …」）。
   return #missing_sub == 0
+end
+
+-- ★ 读控件尺寸：见文件靠前的 `size_of`（**必须在前**：`_apply_edges` 也要用 ✓）
+--   ⚠️ 这里原来又定义了一份 local —— 对**前面**的函数不可见 ⇒ 会变成"全局 nil"崩掉 ✓ 已删
+
+-- ★★★★★★★★ 2026-10-17 **把"铺满格子"的图层钉成和格子一样大** ✗✓✓
+--
+--   用户真机回报：「**家具和提示不要溢出格子**」✓
+--   ★ 根因有两条，**都在模板/素材层**，脚本只能补后半条：
+--     ① 图片的 `imageType` 没写 = **Basic** ⇒ 图片**按自己原尺寸画**，盒子多大都没用 ✓
+--        （已在存档里改成 `Stretch`：见 `tools/gil/fix_cell_layers.mjs` ✓）
+--     ② 子控件的**尺寸/锚点是编辑器里那一套 135×135 定值** ✗
+--        而格子边长随关卡变（5×5 → 108 画布 / 6×6 → 89 画布 ✓ 见 `cell_geometry`）
+--        ⇒ 6×6 那一关**必然溢出** ✓
+--   ⇒ 这里按"**格子自己当前的尺寸**"把子控件钉成同尺寸、居中（`face` / `hint` / `obj` 三层）✓
+--   ★ 只做一次：按子控件实例记 {w,h}，尺寸没变就**不再写** ✓（稳态零成本 ✓）
+--   ★ 不碰 `wall.*` / `door.*` —— 那两个由 `_apply_edges` 用 localScale 缩放 + 贴边 ✓
+--   ⚠️ 读不到格子尺寸（首帧还没摆好）⇒ **直接返回**，下一帧属性重发时会再来一次 ✓
+function Adapter:_fit_child_to_cell(ctrl, sub, cell_id)
+  if ctrl == nil or sub == nil then return end
+  local w, h = size_of(ctrl)
+  -- ★ 兜底：控件尺寸读不到（模拟器的桥接就没有这两个 getter）⇒ 用界面层**刚发给格子的 rect**
+  if (type(w) ~= "number" or w <= 1) and cell_id ~= nil and self.rects ~= nil then
+    local r = self.rects[cell_id]
+    if type(r) == "table" then w, h = r.w, r.h end
+  end
+  if type(w) ~= "number" or type(h) ~= "number" or w <= 1 or h <= 1 then return end
+  self:_fit_child_sized(sub, w, h)
+end
+
+-- 已经知道格子尺寸时直接调这个（`rect` 下发那一刻用 ✓）
+function Adapter:_fit_child_sized(sub, w, h)
+  if sub == nil then return end
+  if type(w) ~= "number" or type(h) ~= "number" or w <= 1 or h <= 1 then return end
+  local marks = self._fit_marks
+  if marks == nil then
+    marks = setmetatable({}, { __mode = "k" })   -- 弱键：格子实例被回收后自动释放
+    self._fit_marks = marks
+  end
+  local m = marks[sub]
+  if m ~= nil and math.abs(m.w - w) < 0.5 and math.abs(m.h - h) < 0.5 then return end
+  marks[sub] = { w = w, h = h }
+  if print and (self._fit_log or 0) < 10 then
+    self._fit_log = (self._fit_log or 0) + 1
+    print("[murdoku] 图层贴格：" .. tostring(sub.name) .. " ← 格子 " ..
+      tostring(w) .. "×" .. tostring(h))
+  end
+  if sub.SetAnchorMin then pcall(function() sub:SetAnchorMin(0.5, 0.5) end) end
+  if sub.SetAnchorMax then pcall(function() sub:SetAnchorMax(0.5, 0.5) end) end
+  if sub.SetPivot then pcall(function() sub:SetPivot(0.5, 0.5) end) end
+  if sub.SetSizeDelta then pcall(function() sub:SetSizeDelta(w, h) end) end
+  if sub.SetAnchoredPosition then pcall(function() sub:SetAnchoredPosition(0, 0) end) end
 end
 
 function Adapter:set_property(id, key, value, nkey)
@@ -15673,6 +16070,8 @@ function Adapter:set_property(id, key, value, nkey)
     --   ⇒ 没物件就**藏起来**；将来配了物件图（调色板 `obj.*`）再按名字换图并显示。
     local o = self:sub(id, "obj")
     if o ~= nil then
+      -- ★ 2026-10-17：先把 `obj` 钉成"和格子一样大" —— 否则 6×6 那一关家具会溢出 ✓
+      self:_fit_child_to_cell(ctrl, o, id)
       -- `false` 是 ui_controller 约定的"没有物件"哨兵（nil 会让这个键在 `pairs` 里消失）
       if value == false or value == nil then
         if o.SetVisible then pcall(function() o:SetVisible(false) end) end
@@ -15692,12 +16091,54 @@ function Adapter:set_property(id, key, value, nkey)
         pcall(function() src = o.imageSource end)
         if hit.source ~= nil then src = hit.source end
         pcall(function() o:SetImage(src, hit.id) end)
+        -- ★ 2026-10-17：调色板控件的**颜色也照抄**（`things` 里每个素材自带一个色）
+        --   ★ 为什么：家具素材先按"色块"占位（真图 id 只有编辑器里有）；换真图时
+        --     把那一格的 `imageColor` 改回白色即可 —— 脚本不用动 ✓
+        if hit.color ~= nil then pcall(function() o.imageColor = hit.color end) end
         if o.SetVisible then pcall(function() o:SetVisible(true) end) end
       else
         -- 没有物件（或名字解析不出来）→ **必须藏**，否则白板会盖住头像
         if o.SetVisible then pcall(function() o:SetVisible(false) end) end
       end
     end
+
+  -- ★★★★★★★★ 2026-10-17 **线索位置提示层：`cell.R.C` 的 `hint` 子控件** ✗✓
+  --
+  --   用户已经在编辑器里把这一层做好了：模板 `cell` → `content` → **`hint`**
+  --   （135×135 铺满格子，颜色 `0x7F0063D5` = 50% 透明蓝，图片 100001）
+  --   ⇒ ★ **脚本只负责"显示 / 隐藏"** ✓ 颜色一个字都不写 ✓（用户原话："颜色也已经调好了"）
+  --   ★ 为什么不再染 `face` ✗：`face` 是**房间色 + 人像**的载体，染它会把头像也染蓝 ✓
+  --   ★ `sub()` 会**穿过 `content`** 找同名子控件（见 `Adapter:sub` 的三级尝试 ✓）
+  elseif key == "hint" then
+    local h = self:sub(id, "hint")
+    if h == nil then
+      -- 老存档 / 模拟器建树没有这一层：**算送达**（不发重试、不刷屏），只是这次没东西可显示
+      self:warn_once("hint:missing", "模板里没有 `hint` 子控件（线索位置提示画不出来）"
+        .. " —— 2026-10-17 的存档里它在 `cell` 的 `content` 下")
+      return true
+    end
+    -- ★ 2026-10-17：提示层也必须"和格子一样大"（否则 6×6 会溢出格子 ✓）
+    self:_fit_child_to_cell(ctrl, h, id)
+    local on = (value == true)
+    if h.SetVisible then pcall(function() h:SetVisible(on) end) end
+    if on and h.SetActive then pcall(function() h:SetActive(true) end) end
+    return true
+
+  -- ★★★★★★★★ 2026-10-17 **`fit`：界面层直接给格子边长（画布）** ✗✓
+  --   把"铺满型"三层（face / hint / obj）钉成这个尺寸、居中 ✓
+  --   ★ 为什么由界面层给：`build_layout` 本来就知道 `cell`；适配层**读控件尺寸不可靠**
+  --     （模拟器的桥接根本没有 `GetSizeDelta` 的实现 ⇒ 静默跳过 ⇒ 溢出）✓
+  --   ★ 与 `hint` / `object` / `rect` 的**到达顺序无关** ⇒ 不会出现"第一条到了就记死账" ✓
+  elseif key == "fit" then
+    local n = tonumber(value)
+    if n ~= nil and n > 1 then
+      for _, nm in ipairs({ "face", "hint", "obj" }) do
+        local s2 = self:sub(id, nm)
+        if s2 ~= nil then self:_fit_child_sized(s2, n, n) end
+      end
+    end
+    return true
+
   elseif key == "imageType" then
     -- ★★★ 2026-10-01：**强制图片的拉伸方式**（Basic = 按原始像素 / Stretch = 填满控件）。
     --
@@ -15756,6 +16197,8 @@ function Adapter:set_property(id, key, value, nkey)
     --     整数 ID 的难题（只读字段 + 不能手抄数字）由调色板解决：见 read_palette。
     local target = self:sub(id, "face") or ctrl
     if target ~= nil then
+      -- ★ 2026-10-17：`face` 也钉成"和格子一样大"（房间色/头像都不该溢到邻格 ✓）
+      self:_fit_child_to_cell(ctrl, target, id)
       -- ★★ 2026-09-27 修：**没有图时不要直接把 face 藏掉**。
       --
       -- 旧行为：`value == nil` → `SetVisible(false)`。后果很严重 ——
@@ -15828,7 +16271,6 @@ function Adapter:set_property(id, key, value, nkey)
 
   elseif key == "doors" then
     return self:_apply_edges(id, "door", value)
-
   -- ★ 染色：`imageColor` 官方是 **读写**（ColorValue、Tweenable），
   --   所以"同底图 + 不同颜色区分区域"是零额外素材的做法。
   --   value 用 {r,g,b,a?}（0–255）；官方构造是全局函数 `Color(r,g,b,a?)`。
@@ -15854,6 +16296,9 @@ function Adapter:set_property(id, key, value, nkey)
     --     ★ alpha 也乘 ⇒ `0x7F…` = 整体减淡（"已放置头像卡"那种效果 ✓）。
     local target = self:sub(id, "face") or ctrl
     if target ~= nil then
+      -- ★ 2026-10-17：`face` 钉成"和格子一样大"（房间色/头像都不该溢到邻格 ✓）
+      --   `tint` 每格每关都会下发一次 ⇒ 这里是最稳的挂钩
+      self:_fit_child_to_cell(ctrl, target)
       local made = nil
       if type(value) == "number" then
         made = value
@@ -16116,6 +16561,19 @@ function Adapter:set_property(id, key, value, nkey)
 
     self.rects = self.rects or {}
     self.rects[id] = { cx = cx, cy = cy, w = w, h = h }
+
+    -- ★★★★★★★★ 2026-10-17 **格子尺寸就在手上 ⇒ 顺手把"铺满型"三层钉一次** ✗✓
+    --   ★ 2026-10-18 **删掉过一次又加回来了，但要加闸门** ✗✓
+    --     事故：这段对**每个**带 rect 的控件都跑 ⇒ `select.card.N` 也进了 `_fit_child_sized`
+    --     （`sub()` 通过 `FindChild("content/face")` 之类找到了**别的**东西），
+    --     于是四张选关卡全被 `SetAnchoredPosition(0,0)` 钉到画布中心 ⇒ **看起来只有一张** ✓
+    --   ⇒ 闸门：**只认 `cell.<行>.<列>`**（脚本自己实例化出来的格子）✓
+    if w ~= nil and h ~= nil and type(id) == "string" and id:match("^cell%.%d+%.%d+$") then
+      for _, nm in ipairs({ "face", "hint", "obj" }) do
+        local sub3 = self:sub(id, nm)
+        if sub3 ~= nil then self:_fit_child_sized(sub3, w, h) end
+      end
+    end
 
     -- ★★ 父级中心怎么来：**从父节点自己的 `rect` 算**，而不是读"运行时已经摆过没有"。
     --
@@ -18978,7 +19436,10 @@ function Murdoku.on_update(dt)
         --   ★ 现在的口径 ✓：★ **stage 的尺寸就是编辑器里那份** ✓ ⇒ ★ 格子尺寸照它算 ✓
         --   ⚠️ 当年那段注释担心的"stage 被改回全屏 ⇒ 格子放大 33%" ✗：
         --     ★ 那是**脚本自己**把它改成全屏造成的 ✓，★ 现在脚本一个字都不写 ⇒ 不会发生 ✓
-        if s ~= nil and print then
+        if s ~= nil and print and current._stage_rb_logged ~= true then
+          -- ★ 2026-10-18 **只打一次**（用户实测：这一行**每帧**刷，日志被淹没了 ✗）
+          --   它本来只是"确认 stage 归编辑器"的诊断 ⇒ 一次就够 ✓
+          current._stage_rb_logged = true
           pcall(function() sw0, sh0 = s:GetSizeDelta() end)
           print("[murdoku] ★ 棋盘容器 stage 回读 " .. tostring(sw0) .. "x" .. tostring(sh0)
             .. "（★ 归编辑器 ✓ 脚本不再写它 ✓）")
@@ -20138,7 +20599,6 @@ __M["levels.case_001"] = function()
 
   主题：深夜盗窃案。5×5，5 枚棋子（4 名嫌疑人 + 1 名受害者）。
   教学点：**受害者独处一区（k=1）→ 本案没有同伙**，盗窃者单独作案。
-          玩家必须自己推断出"没有同伙"，而不是被直接告知。
 
   ── 空间结构（三个区域）────────────────────────────────────────────────
     R_A = 第 1-3 行 × 第 1-3 列（9 格）            ← 盗窃者藏在这里
@@ -20152,28 +20612,35 @@ __M["levels.case_001"] = function()
 
     所以 Adj(R_B) = {R_A, R_C} —— **两个**候选区域，R3 才是真约束。
 
-  ── 为什么这样摆（R3/R4 的自洽性）──────────────────────────────────────
-    受害者 V 在 (5,5)，R_B 内只有它一人 → k=1 → 同伙可有可无。
+  ── 为什么这样摆（R3 的自洽性）──────────────────────────────────────────
+    受害者 V 在 (4,5)，R_B 内只有它一人 → k=1 → 没有同伙。
     四名嫌疑人分布：R_A 三人（含盗窃者）、R_C 一人。
       inno(R_A) = 2（除盗窃者外的两人）
       inno(R_C) = 1
-    → 唯一最大是 R_A，所以盗窃者必在 R_A  ✔（R3）
-    → 若硬说有同伙：同伙在 R_A 会让 inno 变成 1，与 R_C 并列（tie_policy=forbid 直接非法）；
-      同伙在 R_C 又违反"同伙与盗窃者同区"。**结构本身就排除了同伙** ✔（R4）
+    → 唯一最大是 R_A，所以盗窃者必在 R_A ✔（R3）
 
   ── 每行每列恰好一人 ────────────────────────────────────────────────────
     列：R_A 占 1/2/3，R_C 占 4，受害者占 5 → 行 1..5 各一人。
 
-  ★★★ 2026-10-11 **线索表已删** ✗✓（★ 用户原话 ✓）：
-    「★ **原本那套为每关人物发位置和字母的逻辑直接删了** ✓
-     ★ **关卡设计本来就要改** ✓ ★ **不用留着他了**」✓
-  ⇒ ★★ 原来那套"报位置 ＋ 发字母"的线索**整段删掉** ✓
-    ★ **`meta.false_clue` 一并作废** ✓（★ 它按序号指线索 ✓ 线索没了它就没意义 ✓）
-  ⇒ ★★★ **本关现在【没有线索】** ✓ —— ★ **等新设计** ✓
-    ★ 关卡本体（`walls`/`doors`/`objects`/`roles`/`solution`/`size`）**一个字没动** ✓✓
-  ⚠️ ★ 已知后果 ✓（★ 不是 bug ✗）：★ `tools/validate_levels.lua` 的**唯一解**闸门
-    会报「找到 3 个解」✓ —— ★ 那是**内容还没设计** ✓ ★ 不是逻辑坏了 ✓
+  ── 家具（2026-10-17 第一关定稿 v2）────────────────────────────────────
+    桌子 (1,1)(2,1)                     occupiable = false
+    植物 (1,2)(5,1)(5,3)                occupiable = false
+    地毯 (3,1)(3,2)(2,4)(2,5)           occupiable = true
+    椅子 (4,2)(5,4)                     occupiable = true
 
+  ── 线索（2026-10-17 定稿）──────────────────────────────────────────────
+    ★ 卡序 = 棋子序 A,B,C,D,V；**说话人 ≠ 线索主体**（按用户给的置换）：
+        卡 1 A 说「收藏家 在第 5 列」        ← 原 v 的线索
+        卡 2 B 说「旧识古董商 在 植物 旁边」  ← 原 d
+        卡 3 C 说「只有 值班保安 站在 地毯 上」← 原 a
+        卡 4 D 说「夜班清洁工 站在 椅子 上」  ← 原 c
+        卡 5 V 说「前台姑娘 在 桌子 旁边」    ← 原 b
+    ★ 推理只依赖「有哪些事实」，与谁说无关 ⇒ 摆位/唯一性不受影响。
+    ★ 顺序【必须】与卡序一致：界面用 `focused_clue`（= 第几张卡）去取
+      `Core:clue_hint`（= 第几条线索）⇒ 错一位就会亮错格子。
+    证据：`lua verify_case001.lua`（设计期，2 个摆位 → 模糊规则 → 唯一解）
+          `lua tools/validate_levels.lua` 会对本关报「2 个解 ✓ 不是 bug」——
+          因为**模糊规则还没有落进 `core:solve`**（见 docs/回执-线索卡位置提示-2026-10-17.md）
 ----------------------------------------------------------------------------]]--
 
 return {
@@ -20208,15 +20675,16 @@ return {
   },
 
   -- ⚠️ Lua 标识符只能是 ASCII，中文家具名必须写成 ["名"] = {...}
+  -- `kind` = 家具图标的素材键（界面层翻成 `obj.<kind>`，见 ui_controller.object_key_of）
   objects = {
-    -- ★ 2026-09-30：物件多了个**可选**的 `kind` —— **家具图标的素材键**。
-    --   界面层会把它翻成 `obj.shelf` / `obj.case` / `obj.carpet`，
-    --   去 `assets` 调色板里查图（见 `ui_controller.object_key_of`）。
-    --   不写 kind 也能跑（退回中文名 `obj.书架`），只是素材名不好管理。
-    --   等家具素材配好，在 assets 里放 obj.shelf / obj.case / obj.carpet 即可显示。
-    ["书架"]   = { cells = { { r = 5, c = 1 } }, occupiable = false, kind = "shelf"  },
-    ["展示柜"] = { cells = { { r = 5, c = 3 } }, occupiable = false, kind = "case"   },
-    ["地毯"]   = { cells = { { r = 4, c = 2 } }, occupiable = true,  kind = "carpet" },
+    ["桌子"] = { cells = { { r = 1, c = 1 }, { r = 2, c = 1 } },
+                 occupiable = false, kind = "table"  },
+    ["植物"] = { cells = { { r = 1, c = 2 }, { r = 5, c = 1 }, { r = 5, c = 3 } },
+                 occupiable = false, kind = "plant"  },
+    ["地毯"] = { cells = { { r = 3, c = 1 }, { r = 3, c = 2 }, { r = 2, c = 4 }, { r = 2, c = 5 } },
+                 occupiable = true,  kind = "carpet" },
+    ["椅子"] = { cells = { { r = 4, c = 2 }, { r = 5, c = 4 } },
+                 occupiable = true,  kind = "chair"  },
   },
   blocked = {},
   water   = {},
@@ -20236,17 +20704,26 @@ return {
     thief = "D",
   },
 
-  -- 至多一句假话；announce = "unknown" → 不告诉玩家本关有没有假话，让他自己推
+  -- 线索：**按卡序**（卡 i ↔ 线索 i ↔ 第 i 枚棋子）
+  clues = {
+    { type = "in_col",         who = "V", c = 5 },                -- 卡 1（A 说）：收藏家 在第 5 列
+    { type = "beside_object",  who = "D", object = "植物" },       -- 卡 2（B 说）：旧识古董商 在 植物 旁边
+    { type = "only_on_object", who = "A", object = "地毯" },       -- 卡 3（C 说）：只有 值班保安 站在 地毯 上
+    { type = "on_object",      who = "C", object = "椅子" },       -- 卡 4（D 说）：夜班清洁工 站在 椅子 上
+    { type = "beside_object",  who = "B", object = "桌子" },       -- 卡 5（V 说）：前台姑娘 在 桌子 旁边
+  },
+
+  -- 至多一句假话：本关五句全部为真（announce = "none" ⇒ 界面显示「线索全部为真」）
   meta = {
-    false_clue = nil,   -- ★ 线索表已删 ⇒ 假话声明一并作废 ✓
-    announce   = "unknown",
+    false_clue = nil,
+    announce   = "none",
   },
 
   solution = {
     D = { r = 1, c = 3 },   -- R_A（盗窃者）
-    A = { r = 3, c = 1 },   -- R_A
+    A = { r = 3, c = 1 },   -- R_A（地毯）
     B = { r = 2, c = 2 },   -- R_A
-    C = { r = 5, c = 4 },   -- R_C
+    C = { r = 5, c = 4 },   -- R_C（椅子）
     V = { r = 4, c = 5 },   -- R_B（受害者，独处一区）
   },
 
@@ -20258,47 +20735,65 @@ __M["levels.case_002"] = function()
 --[[----------------------------------------------------------------------------
   levels/case_002.lua —— 案件 002《双影》
 
-  主题：6×6，6 枚棋子（4 名嫌疑人 + 1 名受害者 + 1 名同伙）。
-  教学点：**受害者与他人同区（k≥2）→ 必然有且只有一个同伙**，
-          而且同伙一定和盗窃者待在同一个区域。
+  主题：6×6，6 枚棋子（5 名嫌疑人 + 1 名受害者）。**本案没有同伙。**
 
-  ── 空间结构（三个区域）────────────────────────────────────────────────
-    R_T = 第 1-4 行 × 第 1-4 列（16 格）        ← 盗窃者与同伙都藏在这里
-    R_V = 第 5-6 列 × 第 1-6 行（12 格）        ← 受害者所在区域
-    R_C = 第 5-6 行 × 第 1-4 列（8 格）         ← 另一条通往 R_V 的路（答案里是空的）
+  ── 本关教什么 ──────────────────────────────────────────────────────────
+    ① 相邻定义：受害者 V 所在区域**只有一扇门**，所以它只与一个区域相邻。
+       玩家必须先看清门，才能判断"盗窃者应该在哪一间"。
+    ② 谎言：全部线索为真时**无解** ⇒ 一定有人说谎；
+       逐条剔除后**只有 D 的那条**能留下自洽摆位 ⇒ 说谎者是 D。
+    ③ 盗窃者判据（设计层，**尚未落进 core**）：
+       **当盗窃者只剩一个可选位置时，他会说谎。**
 
-    墙： v,1..6,4（第 4 列与第 5 列之间）、h,4,1..4（第 4 行与第 5 行之间）
-    门： v,2,4（R_T↔R_V）、v,5,4（R_C↔R_V）、h,4,1（R_T↔R_C）
+  ── 空间结构（★ 四个区域）──────────────────────────────────────────────
+    R1 = 第 1-3 行 × 第 1-4 列（12 格）
+    R2 = 第 1-3 行 × 第 5-6 列 ＋ (4,6)（7 格）      ← 受害者 V 所在区域
+    R3 = (4,1)(4,2)(4,3) (5,1)(5,2)(5,3) (6,1)..(6,4)（10 格）
+    R4 = (4,4)(4,5) (5,4)(5,5)(5,6) (6,5)(6,6)（7 格）
 
-    Adj(R_V) = {R_T, R_C} —— 两个候选区域，R3 才是真约束。
+    墙 = 区域边界：
+      v,1,4 / v,2,4 / v,3,4    R1 | R2
+      v,4,5                    R4 | R2（(4,5) 与 (4,6) 之间）
+      h,3,1 .. h,3,5           R1 | (R3 ∪ R4)
+      h,4,6                    R2 | R4（(4,6) 与 (5,6) 之间）
+      v,4,3 / v,5,3            R3 | R4（第 4、5 行 第3列与第4列之间）
+      v,6,4                    R3 | R4（(6,4) 与 (6,5) 之间）
+    墙 = 区域内部的隔断（只做造型，不改变划分）：
+      h,5,4                    R4 内部：(5,4) 与 (6,4) 之间
 
-  ── 为什么这样摆（R3/R4 的自洽性）──────────────────────────────────────
-    受害者 V 与随行记者 E 同在 R_V → k=2 → **必有同伙** ✔（R4）
-    六枚棋子分布：R_T 四人（盗窃者 D + 同伙 C + 两名无辜 A/B）、R_V 两人、R_C 零人。
-      inno(R_T) = 2
-      inno(R_C) = 0        （R_C 空着 —— "那个区没人"本身就是有用的观察）
-    → 唯一最大是 R_T，所以盗窃者与同伙必在 R_T ✔（R3）
+    门（★ 全场只有一扇）：
+      v,2,4                    R1 ↔ R2 —— **受害者那间屋唯一的门**
 
-  ── 每行每列恰好一人 ────────────────────────────────────────────────────
-    答案：D(1,1) C(2,4) A(3,3) B(4,2) V(5,6) E(6,5)
-          行 1..6 各一次、列 1..6 各一次。
+    ⇒ Adj(R1) = {R2}　Adj(R2) = {R1}　Adj(R3) = {}　Adj(R4) = {}
+      R3 与 R4 都没有门 ⇒ 它们与谁都不相邻（本关强调"相邻"就靠这个对比）。
 
-  ★★★ 2026-10-11 **线索表已删** ✗✓（★ 用户原话 ✓）：
-    「★ **原本那套为每关人物发位置和字母的逻辑直接删了** ✓
-     ★ **关卡设计本来就要改** ✓ ★ **不用留着他了**」✓
-  ⇒ ★★ 原来那套"报位置 ＋ 发字母"的线索**整段删掉** ✓
-    ★ **`meta.false_clue` 一并作废** ✓（★ 它按序号指线索 ✓ 线索没了它就没意义 ✓）
-  ⇒ ★★★ **本关现在【没有线索】** ✓ —— ★ **等新设计** ✓
-    ★ 关卡本体（`walls`/`doors`/`objects`/`roles`/`solution`/`size`）**一个字没动** ✓✓
-  ⚠️ ★ 已知后果 ✓（★ 不是 bug ✗）：★ `tools/validate_levels.lua` 的**唯一解**闸门
-    会报「找到 3 个解」✓ —— ★ 那是**内容还没设计** ✓ ★ 不是逻辑坏了 ✓
+  ── 家具（★ 桌子/植物/书架/雕塑【不能站人】，椅子/地毯【可以站人】）
+    椅子 (1,1) (2,4)          occupiable = true
+    地毯 (1,4) (3,3)(3,4) (5,1)(6,1)   occupiable = true
+    桌子 (1,2)(1,3) (6,5)     occupiable = false
+    植物 (3,2) (5,4)(6,4)     occupiable = false
+    书架 (6,2)                occupiable = false
+    雕塑 (1,6)                occupiable = false
 
+  ── 线索（2026-10-17 定稿 v5）──────────────────────────────────────────
+    ★ 卡序 = 棋子序 A,B,C,D,E,V（这一关说话人不变）：
+        卡 1 a：画廊助理 在 桌子 旁边
+        卡 2 b：有两人坐在椅子上
+        卡 3 c：夜班门卫 在 书架 旁边
+        卡 4 d：随行记者 在 夜班门卫 的上方（同一列）  ← ★ 本案唯一的假话
+        卡 5 e：只有 随行记者 在 植物 旁边
+        卡 6 v：我独自一人，且 临时搬运工 在我下方的不同区域中
+    ★ 通用线索（不属于任何人的卡）：地毯上没有人
+      ⇒ 走 `general_clues`，只参与求解/校验，**不占卡位**。
+    ★ 顺序【必须】与卡序一致（`Core:clue_hint` 的入参就是卡号）。
+    ★ `false_clue = 4`（d）＋ `announce = "unknown"`：
+      ⇒ `allowed_false = 1`（求解允许一句假话），但**不告诉玩家**是哪一句。
 ----------------------------------------------------------------------------]]--
 
 return {
   id = "case_002",
   name = "案件 002 · 双影",
-  subtitle = "内室里留下了两个人的痕迹 —— 这一次，他身边还有别人。",
+  subtitle = "侧廊只留一个人的痕迹，大厅里却站着两位 —— 谁在说谎？",
   difficulty = "normal",
 
   size = { rows = 6, cols = 6 },
@@ -20311,25 +20806,37 @@ return {
     tie_policy   = "forbid",
   },
 
-  -- 墙 = 区域边界
+  -- 墙 = 区域边界 ＋ 区域内造型隔断
   walls = {
-    { "v", 1, 4 }, { "v", 2, 4 }, { "v", 3, 4 },   -- R_T | R_V
-    { "v", 4, 4 }, { "v", 5, 4 }, { "v", 6, 4 },   -- R_C | R_V
-    { "h", 4, 1 }, { "h", 4, 2 }, { "h", 4, 3 }, { "h", 4, 4 },  -- R_T | R_C
+    { "v", 1, 4 }, { "v", 2, 4 }, { "v", 3, 4 },   -- R1 | R2
+    { "v", 4, 5 },                                 -- R4 | R2（(4,5) 与 (4,6) 之间）
+    { "h", 3, 1 }, { "h", 3, 2 }, { "h", 3, 3 }, { "h", 3, 4 }, { "h", 3, 5 },  -- R1 | R3∪R4
+    { "h", 4, 6 },                                 -- R2 | R4
+    { "v", 4, 3 }, { "v", 5, 3 },                  -- R3 | R4
+    { "v", 6, 4 },                                 -- R3 | R4
+    { "h", 5, 4 },                                 -- R4 内部造型（(5,4) 与 (6,4) 之间）
   },
 
-  -- 门径
+  -- 门径 = 跨区域通道（与墙同粒度；不改变区域划分）
   doors = {
-    { "v", 2, 4 },   -- R_T ↔ R_V：(2,4) 与 (2,5)
-    { "v", 5, 4 },   -- R_C ↔ R_V：(5,4) 与 (5,5)
-    { "h", 4, 1 },   -- R_T ↔ R_C：(4,1) 与 (5,1)
+    { "v", 2, 4 },   -- R1 ↔ R2：★ 受害者所在区域唯一的门
+    -- ★ 2026-10-18 用户指定补两扇（原话：「给第二关第一列的三四行之间的那堵墙、
+    --   和第四行三四列之间的那堵墙加上门」）：
+    { "h", 3, 1 },   -- R1 ↔ R3：(3,1) 与 (4,1) 之间
+    { "v", 4, 3 },   -- R3 ↔ R4：(4,3) 与 (4,4) 之间
   },
 
   objects = {
     -- `kind` = 家具图标的素材键（界面层翻成 `obj.<kind>`，见 ui_controller.object_key_of）
-    ["书架"]   = { cells = { { r = 5, c = 1 }, { r = 6, c = 1 } }, occupiable = false, kind = "shelf"  },
-    ["展示柜"] = { cells = { { r = 5, c = 4 } }, occupiable = false, kind = "case"   },
-    ["地毯"]   = { cells = { { r = 6, c = 3 }, { r = 6, c = 4 } }, occupiable = true,  kind = "carpet" },
+    ["椅子"] = { cells = { { r = 1, c = 1 }, { r = 2, c = 4 } }, occupiable = true,  kind = "chair"  },
+    ["地毯"] = { cells = { { r = 1, c = 4 }, { r = 3, c = 3 }, { r = 3, c = 4 },
+                           { r = 5, c = 1 }, { r = 6, c = 1 } }, occupiable = true,  kind = "carpet" },
+    ["桌子"] = { cells = { { r = 1, c = 2 }, { r = 1, c = 3 }, { r = 6, c = 5 } },
+                 occupiable = false, kind = "table" },
+    ["植物"] = { cells = { { r = 3, c = 2 }, { r = 5, c = 4 }, { r = 6, c = 4 } },
+                 occupiable = false, kind = "plant" },
+    ["书架"] = { cells = { { r = 6, c = 2 } }, occupiable = false, kind = "shelf" },
+    ["雕塑"] = { cells = { { r = 1, c = 6 } }, occupiable = false, kind = "statue" },
   },
   blocked = {},
   water   = {},
@@ -20345,35 +20852,50 @@ return {
 
   victim = { id = "V", name = "馆长" },
 
-  -- 角色归属：盗窃者 + 同伙（本案必有同伙，因为 k=2）
+  -- 角色归属：只有盗窃者。★ 本案不写 accomplice ⇒ 没有同伙
   roles = {
-    thief      = "D",
-    accomplice = "C",
+    thief = "D",
   },
 
+  -- 线索：**按卡序**（卡 i ↔ 线索 i ↔ 第 i 枚棋子）
+  clues = {
+    { type = "beside_object", who = "B", object = "桌子" },                  -- a
+    { type = "n_on_object",   object = "椅子", n = 2 },                      -- b
+    { type = "beside_object", who = "A", object = "书架" },                  -- c
+    { type = "above",         a = "E", b = "A" },                            -- d（唯一假话）
+    { type = "only_beside",   who = "E", object = "植物" },                  -- e
+    { type = "alone_and_below_in_other_room", who = "V", a = "C", b = "V" }, -- v
+  },
+
+  -- 通用线索：不是任何人的卡（设计图里那格"通用线索"）
+  general_clues = {
+    { type = "nobody_on_object", object = "地毯" },
+  },
+
+  -- 有没有假话不直接告诉玩家 —— `announce = "unknown"`
   meta = {
-    false_clue = nil,   -- ★ 线索表已删 ⇒ 假话声明一并作废 ✓
-    announce   = "one",
+    false_clue = 4,
+    announce   = "unknown",
   },
 
   solution = {
-    D = { r = 1, c = 1 },   -- R_T（盗窃者）
-    C = { r = 2, c = 4 },   -- R_T（同伙，与盗窃者同区）
-    A = { r = 3, c = 3 },   -- R_T
-    B = { r = 4, c = 2 },   -- R_T
-    V = { r = 5, c = 6 },   -- R_V（受害者）
-    E = { r = 6, c = 5 },   -- R_V（与受害者同区 → k=2 → 必有同伙）
+    B = { r = 1, c = 1 },   -- R1（椅子）
+    D = { r = 2, c = 4 },   -- R1（椅子）★ 盗窃者
+    V = { r = 3, c = 6 },   -- R2（受害者，独处一区）
+    C = { r = 4, c = 5 },   -- R4
+    A = { r = 5, c = 2 },   -- R3
+    E = { r = 6, c = 3 },   -- R3
   },
 
-
-  --[[ 设计备注：为什么不用 left_of / right_of / above / below
-       这四种线索的判定是「**同一行**且列更小 / **同一列**且行更小」
+  --[[ 设计备注：为什么不用 left_of / right_of / above / below 当常规线索
+       这四种判定是「**同一行**且列更小 / **同一列**且行更小」
        （见 murdoku_core.lua 的 ctx.is_left_of / ctx.is_above）。
        本工程开了 one_per_row + one_per_col，任意两人**不可能同行同列**，
        所以这四个线索在本作里**永远为假**。
-       要表达"谁在谁左边"请用 col_offset / row_offset（它们不要求同行同列）。 ]]
+       d 的那句「e 在 a 的上方」正是利用这一点：它恒假，所以它是天然的假话候选；
+       但玩家**不能靠这一点**直接排除它（其它线索同样可能假），
+       要靠"逐条剔除 + 只剩一个可选位置"两步才能锁定。 ]]
 }
-
 
 end
 
@@ -20722,7 +21244,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v253 / 2026-10-16 / 清理失效几何代码(inherit_pos_runtime/geom_by_editor/pos_runtime=false 全删) + 无效文字通道(apply_button_labels)删除 + 文案编辑器优先 =====")
+        print("[murdoku] ===== 构建标记 v261 / 2026-10-18 / 去掉运行时创建 obj.*（修多次运行必撞 GUID）+ 素材只从存档 things / cfg.obj_art 取 + 其余同 v260 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -21095,7 +21617,8 @@ local function build_adapter()
       --   [murdoku] 边缘适配 wall.up：基准 24x8 → 目标 135x8（倍率 5.63 / 1.00）
       edge_thickness = 8,
       -- 门比墙短一点（占格子边长的比例），看起来才像"门"
-      door_length_ratio = 0.45,
+      -- ★ 2026-10-17：0.45 → **0.30**（对齐设计图：门只是墙线上的**一小段**橙标 ✓）
+      door_length_ratio = 0.30,
       -- 边缘适配的日志每个方向只打一次（调完可设 false 关掉）
       edge_fit_log = true,
 
@@ -21111,6 +21634,8 @@ local function build_adapter()
       --
       -- 规划理由：
       --   face  最底 —— 它是格面底图，也是"放置角色"时被换图的那张
+      --   ★ hint 2026-10-17 新增 —— 线索位置提示的**半透明底色**：压在格面之上、
+      --     **在家具图标之下**（用户要求"家具不要被提示盖住"✓ 颜色归编辑器 ✓）
       --   obj   在底图之上 —— 家具图标要能看见
       --   wall  压住底图 —— 墙贴在格子边上，必须显出来
       --   door  压住墙 —— 同一段边可能既是墙又是门，门要在墙上面
@@ -21118,6 +21643,7 @@ local function build_adapter()
       --   note  铅笔笔记最上 —— 玩家写的信息永远可读，不能被图挡
       layer_order = {
         "face",
+        "hint",
         "obj",
         "wall.up", "wall.down", "wall.left", "wall.right",
         "door.up", "door.down", "door.left", "door.right",
@@ -21133,6 +21659,27 @@ local function build_adapter()
     --   脚本只摆"自己运行时生成的控件"（格子等）。
     --   想回到"布局全由代码说了算"：改成 false。
     respect_editor_rect = true,
+
+    -- ★★★★★★★★ 2026-10-18 **家具/障碍物素材：直接写在脚本里，不新建控件** ✗✓✓
+    --
+    --   用户实测（关键判据）：「**395 是没错的**」「错误从 **396** 就存在」
+    --   —— 396 正是我第一次在**存档里新建** `things` 素材区（7 个新控件）的那一版 ✗
+    --   ⇒ 只要**不新增控件**，编辑器就不会报 "GUID 重复" ✓
+    --
+    --   ★ 家具图标本来只需要「一张图 + 一个颜色」两件事 ✓ ⇒ 放脚本里足够了 ✓
+    --   · `id`  = 官方素材 id（100001 = 白色矩形，着色后就是干净色块）
+    --   · `color` = 0xAARRGGBB（与 `imageColor` 同格式，乘算）
+    --   ★ 优先级：编辑器里若**真有** `things` / `assets` 下的同名控件，**以控件为准** ✓
+    --     （见 `Adapter:read_palette`：控件先扫，这里只补缺 ✓）
+    --   ★ 换真素材：把 `id` 换成编辑器素材库里的图即可（不用动存档）✓
+    obj_art = {
+      table  = { id = 100001, color = 0xFFB07946 },   -- 桌子：木棕
+      plant  = { id = 100001, color = 0xFF4CAF50 },   -- 植物：绿
+      carpet = { id = 100001, color = 0xFFD9C8A6 },   -- 地毯：米
+      chair  = { id = 100001, color = 0xFFE0A040 },   -- 椅子：橙
+      shelf  = { id = 100001, color = 0xFF7A5230 },   -- 书架：深棕
+      statue = { id = 100001, color = 0xFFB8B8C0 },   -- 雕塑：灰
+    },
 
     -- 2026-09-27 踩过：我一开始把它们加在 `cells = { … }` 里（挨着 `debug_signal`），
     -- 而 adapter 读的是 `self.cfg.debug_key` → **永远 nil** → 诊断一行都不打，

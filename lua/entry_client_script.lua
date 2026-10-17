@@ -184,7 +184,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v253 / 2026-10-16 / 清理失效几何代码(inherit_pos_runtime/geom_by_editor/pos_runtime=false 全删) + 无效文字通道(apply_button_labels)删除 + 文案编辑器优先 =====")
+        print("[murdoku] ===== 构建标记 v261 / 2026-10-18 / 去掉运行时创建 obj.*（修多次运行必撞 GUID）+ 素材只从存档 things / cfg.obj_art 取 + 其余同 v260 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -557,7 +557,8 @@ local function build_adapter()
       --   [murdoku] 边缘适配 wall.up：基准 24x8 → 目标 135x8（倍率 5.63 / 1.00）
       edge_thickness = 8,
       -- 门比墙短一点（占格子边长的比例），看起来才像"门"
-      door_length_ratio = 0.45,
+      -- ★ 2026-10-17：0.45 → **0.30**（对齐设计图：门只是墙线上的**一小段**橙标 ✓）
+      door_length_ratio = 0.30,
       -- 边缘适配的日志每个方向只打一次（调完可设 false 关掉）
       edge_fit_log = true,
 
@@ -573,6 +574,8 @@ local function build_adapter()
       --
       -- 规划理由：
       --   face  最底 —— 它是格面底图，也是"放置角色"时被换图的那张
+      --   ★ hint 2026-10-17 新增 —— 线索位置提示的**半透明底色**：压在格面之上、
+      --     **在家具图标之下**（用户要求"家具不要被提示盖住"✓ 颜色归编辑器 ✓）
       --   obj   在底图之上 —— 家具图标要能看见
       --   wall  压住底图 —— 墙贴在格子边上，必须显出来
       --   door  压住墙 —— 同一段边可能既是墙又是门，门要在墙上面
@@ -580,6 +583,7 @@ local function build_adapter()
       --   note  铅笔笔记最上 —— 玩家写的信息永远可读，不能被图挡
       layer_order = {
         "face",
+        "hint",
         "obj",
         "wall.up", "wall.down", "wall.left", "wall.right",
         "door.up", "door.down", "door.left", "door.right",
@@ -595,6 +599,27 @@ local function build_adapter()
     --   脚本只摆"自己运行时生成的控件"（格子等）。
     --   想回到"布局全由代码说了算"：改成 false。
     respect_editor_rect = true,
+
+    -- ★★★★★★★★ 2026-10-18 **家具/障碍物素材：直接写在脚本里，不新建控件** ✗✓✓
+    --
+    --   用户实测（关键判据）：「**395 是没错的**」「错误从 **396** 就存在」
+    --   —— 396 正是我第一次在**存档里新建** `things` 素材区（7 个新控件）的那一版 ✗
+    --   ⇒ 只要**不新增控件**，编辑器就不会报 "GUID 重复" ✓
+    --
+    --   ★ 家具图标本来只需要「一张图 + 一个颜色」两件事 ✓ ⇒ 放脚本里足够了 ✓
+    --   · `id`  = 官方素材 id（100001 = 白色矩形，着色后就是干净色块）
+    --   · `color` = 0xAARRGGBB（与 `imageColor` 同格式，乘算）
+    --   ★ 优先级：编辑器里若**真有** `things` / `assets` 下的同名控件，**以控件为准** ✓
+    --     （见 `Adapter:read_palette`：控件先扫，这里只补缺 ✓）
+    --   ★ 换真素材：把 `id` 换成编辑器素材库里的图即可（不用动存档）✓
+    obj_art = {
+      table  = { id = 100001, color = 0xFFB07946 },   -- 桌子：木棕
+      plant  = { id = 100001, color = 0xFF4CAF50 },   -- 植物：绿
+      carpet = { id = 100001, color = 0xFFD9C8A6 },   -- 地毯：米
+      chair  = { id = 100001, color = 0xFFE0A040 },   -- 椅子：橙
+      shelf  = { id = 100001, color = 0xFF7A5230 },   -- 书架：深棕
+      statue = { id = 100001, color = 0xFFB8B8C0 },   -- 雕塑：灰
+    },
 
     -- 2026-09-27 踩过：我一开始把它们加在 `cells = { … }` 里（挨着 `debug_signal`），
     -- 而 adapter 读的是 `self.cfg.debug_key` → **永远 nil** → 诊断一行都不打，

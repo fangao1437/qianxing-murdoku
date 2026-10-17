@@ -82,20 +82,52 @@ do
 end
 
 --------------------------------------------------------------------------------
--- 2. ★★ 真关卡不再靠手写线索表 ⇒ 引擎照旧补满槽位
+-- 2. ★★★ 2026-10-17 **口径反转：真关卡现在【有】线索，而且必须"有内容"**
+--
+--   ★ 旧断言（已作废 ✗）：真关卡不该有手写 `clues` 表
+--     ★ 它钉的是 2026-10-11「线索表整段删掉、等内容设计」那一步 ✓
+--   ★★ 而设计定稿（2026-10-17）把两关的线索**写回了关卡表** ✓：
+--     ★ 一条线索 = `{type=…, who/object/c/…}` ✓ `type` 必须在注册表里 ✓
+--     ★ 顺序 = **卡序**（卡 i ↔ 线索 i ↔ 第 i 枚棋子）✓ —— 高亮就是这么取的 ✓
+--   ★★★ 所以新判据是**双向**的 ✗✓：
+--     ① 真关卡如果有 `clues` ⇒ 每条都必须有**已注册的 type**（不许留空壳 ✓）
+--     ② 真关卡如果**没有** `clues` ⇒ 引擎照旧按棋盘容量补满槽位（老路不许坏 ✓）
+--   ★ 为什么两条都要 ✗：只有 ① 会让"没写内容的关卡"在别处静默炸掉；
+--     只有 ② 又会让"写了类型但拼错名字"的关卡一路绿到真机 ✓✓
 --------------------------------------------------------------------------------
 do
   local all = init.all()
   for i = 1, #all do
     local lv = all[i]
-    ok(type(lv.clues) ~= "table" or #lv.clues == 0,
-      "真关卡 " .. tostring(lv.id) .. " 不该再有手写的 clues 表（★ 那套已被替换 ✓）")
+    local has = (type(lv.clues) == "table" and #lv.clues > 0)
+    local core = Core.new(lv)
+    if has and core ~= nil then
+      ok(#core.clues == core:clue_slot_count(),
+        string.format("%s：线索条数 %d 应等于卡位 %d",
+          tostring(lv.id), #core.clues, core:clue_slot_count()))
+      local bad = {}
+      for j = 1, #core.clues do
+        local t = core.clues[j].type
+        if t == nil or Core.clues[t] == nil then
+          bad[#bad + 1] = tostring(j) .. ":" .. tostring(t)
+        end
+      end
+      ok(#bad == 0, "真关卡 " .. tostring(lv.id) .. " 的线索类型都必须在注册表里（坏项：" ..
+        table.concat(bad, ",") .. "）")
+    elseif core ~= nil then
+      -- 没有手写线索 ⇒ 槽位补满（老路）
+      ok(core.clue_slots == core:clue_slot_count(),
+        "真关卡 " .. tostring(lv.id) .. " 没有线索时，槽位应补满")
+    end
   end
-  print("  [PASS] 真关卡无手写线索表，槽位由棋盘规格生成")
+  print("  [PASS] 真关卡线索：有内容则类型合法、无内容则补满槽位（双向）")
 end
 
 --------------------------------------------------------------------------------
--- 3. ★★ 槽位是"待填"：没有 type ⇒ 不编内容（★ 如实报占位 ✓）
+-- 3. ★★★ 2026-10-17 **内容已定稿：case_001 第 1 条必须"有类型、有文案"**
+--
+--   ★ 旧断言是「槽位没有 type ⇒ 如实报占位」✓ —— 它测的正是"还没内容"那一步 ✗
+--   ★ 现在两关都定稿了 ⇒ 反过来钉：**类型在、文案在、且不再是占位串** ✓
 --------------------------------------------------------------------------------
 do
   local lv = require("levels.case_001")
@@ -103,10 +135,19 @@ do
   local vm = core:view() or {}
   local c1 = (vm.clues or {})[1]
   ok(c1 ~= nil, "第 1 张卡存在")
-  ok(c1 ~= nil and c1.type == nil, "槽位没有 type（★ 内容还没填 ✓）")
-  -- ★ 文案要**看得出是占位** ✗ 而不是编一条像真的线索 ✓
-  ok(c1 ~= nil and type(c1.text) == "string" and #c1.text > 0, "占位文案非空（便于肉眼看出待填）")
-  print("  [PASS] 槽位如实报占位，不编内容")
+  ok(c1 ~= nil and c1.type ~= nil, "第 1 张卡有 type（内容已定稿 ✓）")
+  ok(c1 ~= nil and type(c1.text) == "string" and #c1.text > 0, "第 1 张卡有文案")
+  ok(c1 ~= nil and not tostring(c1.text):find("待填内容", 1, true),
+    "第 1 张卡的文案不是占位串（实测：" .. tostring(c1 and c1.text) .. "）")
+  -- ★ 反向：占位文案这条**仍然要能用**（没写内容的关卡照旧如实报 ✓）
+  local bare = require("levels.demo_selftest")
+  local bcore = Core.new(bare)
+  local bvm = bcore:view() or {}
+  local b1 = (bvm.clues or {})[1]
+  ok(b1 ~= nil and b1.type == nil, "没有线索的关卡：槽位没有 type")
+  ok(b1 ~= nil and tostring(b1.text):find("待填内容", 1, true) ~= nil,
+    "没有线索的关卡：文案如实报占位")
+  print("  [PASS] 定稿关卡有内容；未填关卡仍如实报占位（双向）")
 end
 
 --------------------------------------------------------------------------------

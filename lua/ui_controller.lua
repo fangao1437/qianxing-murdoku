@@ -637,6 +637,17 @@ local DOUBLE_CLICK_SECONDS = 0.35
 --     ⇒ ★ 想调观感请改**这一个数** ✓ ★ 别在别处再写一个 ✓✓
 local HIGHLIGHT_TINT = 4294956107
 
+-- ★★★★★★★★ 2026-10-17 **线索位置提示的颜色归【编辑器】** ✗✓✓
+--
+--   上一版脚本自己拿一个常量去染格子的 `face`（`HINT_TINT = 0x809ED8FF`）✗
+--   ★★ 用户随后在编辑器里把这一层做成了**独立子控件**：模板 `cell` → `content` → **`hint`**
+--     （135×135 铺满格子，颜色 `0x7F0063D5` = 50% 透明蓝）✓
+--     ★ 用户原话：「模板已经修改了，颜色也已经调好了，你现在只需要管显示就行了」✓
+--   ⇒ ★ 所以**这个常量删掉了** ✗ —— 颜色只存在于存档/编辑器一处 ✓
+--     ★ 脚本只发 `hint = true/false`（见 `build_layout` 的格子节点 ✓），
+--       适配层的 `key == "hint"` 分支把它落到子控件可见性上 ✓
+--   ⚠️ `imageColor` 是**乘算**；`hint` 那层的底色是编辑器里配的，别在脚本里再写一遍 ✗
+
 -- ★★★★★★★★ 2026-10-15 **选关卡片的"牌面"该用哪一类素材** ✗✓✓
 --
 --   ★★★ 真机现象 ✓（交班文档 §四·A2 原话）：
@@ -2141,24 +2152,16 @@ function Controller:build_layout(ui_adapter)
     --
     --   ⚠️ 关卡里物件是**中文名做键**（`["书架"]`），界面层用 `object_key_of` 翻成
     --     `obj.<kind>`（写了 kind）或 `obj.<中文名>`（没写）—— 所以条目名必须是 obj.shelf 这种。
-    local OBJECT_PALETTE = {
-      ["obj.shelf"]  = 111051,
-      ["obj.case"]   = 111064,
-      ["obj.desk"]   = 111050,
-      ["obj.carpet"] = 106053,
-    }
-    --   ⚠️ 这里**不能用 `push`** —— `push` 是在下面才定义的局部函数，
-    --     在 `local nodes = {}` 后面直接调它会拿到 nil。
-    --     （我第一次就插在这里，dump_layout 当场报 `[C]: in ?`，
-    --      连带 play_test 红了 3 条。）直接往 nodes 里塞，绕开这个顺序问题。
-    for pid, pimg in pairs(OBJECT_PALETTE) do
-      -- 父级是编辑器里的 `assets` 容器（`read_palette` 扫它的子控件）
-      nodes[#nodes + 1] = {
-        id = pid, kind = "button", parent = "assets", visible = false,
-        image_id = pimg,
-        rect = { x = 0, y = 0, w = 48, h = 48 },
-      }
-    end
+    --
+    -- ★★★★★★★★ 2026-10-18 **删掉"运行时创建 obj.*"这一段** ✗✓✓
+    --   用户定位（原话）：「你的脚本是实时创建 things，不要这样，在存档里创建好就行，
+    --   **脚本里不要有创建控件这种操作，不然多次运行就必撞 id**」✓
+    --   ★ 机制：这里往规划里塞 4 个 `obj.*` 节点 ⇒ 运行时 `create_control` 真的去建它们 ⇒
+    --     建出来的控件 GUID 由引擎分配，**每跑一次就多一批** ⇒ 编辑器里"GUID 重复" ✓
+    --   ★ 现在素材从哪来：★ **存档里的 `things` 素材区**（在编辑器里换图）✓
+    --     兜底 = 脚本配置 `cfg.obj_art`（见 `Adapter:read_palette`，**控件优先**）✓
+    --   ⇒ 规划里**一个 `obj.*` 都不再出现**（日志里那条"已知不需要：…/obj.*"也就干净了）✓
+    local OBJECT_PALETTE_DISABLED = nil   -- 保留名字，避免别处 `local` 重名冲突（值为 nil = 不建）
 
     -- ★★★★★ 2026-10-03 **六个图标改走「官方素材 + 脚本创建」**（用户定稿的路线）
     --
@@ -3337,6 +3340,28 @@ function Controller:build_layout(ui_adapter)
 
   -- ★ 2026-10-12 **行标尺（`ruler.r.*`）已按用户要求删除** ✗✓（连同容器与列标 ✓）
   --   理由见上面【已删除】那段长注释 ✓ —— ★ 而且它从来就是哑的（`apply_ruler_layout` 只对齐不创建 ✓）
+  --
+  -- ★★★★★★★★ 2026-10-17 **线索位置提示：选中第几张卡，就亮第几条线索允许的格** ✗✓✓
+  --
+  --   ★ 判据**只有一个**：`focused_clue` ✓（= 选中那个人配在第几行 ✓ 见 `_sync_clue_focus`）
+  --     ⇒ 真机「点线索卡」与模拟器「点卡上的人像」两条输入**都汇到这里** ✓
+  --       ⇒ ★ 不需要第二份"选中了哪张卡"的状态 ✓（本项目为"两份状态必然漂移"栽过多次 ✓）
+  --   ★ 格子集合现算 ✓：`core:clue_hint(focused_clue)` 只读关卡静态数据（家具/墙/门）
+  --     ⇒ **与当前摆位无关** ✓ ⇒ 玩家摆了几个棋子都不会改变提示 ✓
+  --   ★ 刷新成本 ✓：`build_layout` 只在 `dirty` 时跑 ✓；属性账本按值去重 ✓
+  --     ⇒ 稳态每帧零写入 ✓（与"房间色"同一条路 ✓）
+  --   ★★ 2026-10-17 **显示方式改了** ✗✓：不再染格子颜色，而是开/关模板里的
+  --     `cell.R.C` → `content` → **`hint`** 子控件（颜色在编辑器里，见上面那段注释 ✓）
+  --     ⇒ 每格都发 `hint = true/false` ✓ 取消选中 / 换卡时上一批自然关掉 ✓
+  local hint_set = nil
+  do
+    local fci = self.focused_clue
+    if fci ~= nil and fci > 0 and self.core ~= nil and self.core.clue_hint ~= nil then
+      local h = self.core:clue_hint(fci)
+      if h ~= nil and h.set ~= nil and next(h.set) ~= nil then hint_set = h.set end
+    end
+  end
+
   for r = 1, vm.rows do
     for c = 1, vm.cols do
       local cd = vm.cells[r][c]
@@ -3593,7 +3618,17 @@ function Controller:build_layout(ui_adapter)
         --   ⇒ ★★ 最小且不倒着的修法 ✓：★ **有棋子的格子，房间色下发白色**（= 不染色 ✓）✓
         --     ★ 那一格本来就被头像铺满 ⇒ 房间色**看不见**，不下发它不损失任何信息 ✓✓
         --     ★ 棋子一拿开（`cd.suspect` 变 nil ✓）⇒ ★ 下一帧自然回到房间色 ✓（无需额外状态 ✓）
+        -- ★★★★★★★★ 2026-10-17 **提示层：只发一个布尔** ✗✓（★ 见上面 `hint_set` 那段 ✓）
+        --   ★ 用户已经在模板里做好了 `hint` 子控件（`content` 下，135×135，颜色已调好）✓
+        --     ⇒ 脚本**只负责显示 / 隐藏** ✓ 颜色一个字都不写 ✓（`tint` 回到只管房间色 ✓）
         tint = (cd.suspect and 4294967295) or Controller.room_color(cd.room),
+        -- ★ 每格都发（true/false）⇒ 取消选中 / 换卡时自然把上一批关掉 ✓（账本按值去重 ✓）
+        hint = (hint_set ~= nil and hint_set[r .. ":" .. c] == true),
+        -- ★★★★★★★★ 2026-10-17 **格子边长（画布）直接告诉适配层** ✗✓
+        --   用途：把"铺满型"子控件（`face` / `hint` / `obj`）钉成**和格子一样大**
+        --   ★ 为什么由界面层给：`build_layout` 本来就算出了 `cell`（设计空间）✓
+        --     比"让适配层去读控件尺寸"可靠得多 —— 读不到就整段静默跳过 ⇒ 溢出 ✓
+        fit = math.floor(cell * M.SCALE + 0.5),
         occupiable = cd.occupiable,
         x_mark = cd.x,
         enabled = true,   -- 不可站人的格子也要能点（用于打 X / 提示原因）
@@ -4532,6 +4567,22 @@ function Controller:editor_card_box(a, id, plan_r)
   local w, h, ax, ay = nil, nil, nil, nil
   pcall(function() w, h = ctrl:GetSizeDelta() end)
   pcall(function() ax, ay = ctrl:GetAnchoredPosition() end)
+  -- ★ 2026-10-18 一次性诊断（用户报「选关界面只有一张卡」）：每张卡**只打一次** ✓
+  --   ★ 判据：四张卡若**位置完全相同** ⇒ 编辑器里就是叠着的 ⇒ 脚本按规划格重排 ✓
+  --           若**各不相同** ⇒ 叠的原因是别的（层级/父级换算），再换方向 ✓
+  if print then
+    self._ecb_seen = self._ecb_seen or {}
+    if not self._ecb_seen[id] then
+      self._ecb_seen[id] = true
+      local function sh(v)
+        if type(v) == "table" then return "表[" .. tostring(v[1]) .. "," .. tostring(v[2]) .. "]"
+        elseif type(v) == "number" then return string.format("%.1f", v)
+        else return type(v) end
+      end
+      print("[murdoku] 选关卡框 " .. tostring(id) .. "：w=" .. sh(w) .. " h=" .. sh(h)
+        .. " pos=(" .. sh(ax) .. "," .. sh(ay) .. ")")
+    end
+  end
   if type(w) ~= "number" or type(h) ~= "number" or w <= 0 or h <= 0 then return plan_r end
   if type(ax) ~= "number" or type(ay) ~= "number" then return plan_r end
   local cfg = a.cfg or {}

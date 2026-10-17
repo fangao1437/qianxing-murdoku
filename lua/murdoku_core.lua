@@ -994,6 +994,53 @@ reg("nobody_in_water", {
 })
 
 ----------------------------------------------------------------------------
+-- 线索类型：两关定稿新增（2026-10-17，来自设计阶段的 main 分支）
+--
+--   ★ 只补【类型】，线索【内容】由关卡表/编辑器 row 区填 ✓
+--   ★ 为什么做成"复合类型"：假话判据按**整条**陈述算 ——
+--     把 v 那句拆成两条，"一句假话"的粒度就糊了（设计收尾交接口径）。
+----------------------------------------------------------------------------
+
+-- 「地毯上没有人」：object 的每一格都必须空着（第二关的通用线索）
+reg("nobody_on_object", {
+  params = { "object" },
+  validate = function(ctx, cl) return ctx.count_on_object(cl.object) == 0 end,
+  text = function(ctx, cl) return string.format("%s 上没有人", cl.object) end,
+})
+
+-- 「a 在 b 下方的不同区域中」
+reg("below_in_other_room", {
+  params = { "a", "b" },
+  validate = function(ctx, cl)
+    local a, b = ctx.pos(cl.a), ctx.pos(cl.b)
+    if not a or not b then return false end
+    if a.r <= b.r then return false end
+    return not ctx.same_room(a, b)
+  end,
+  text = function(ctx, cl)
+    return string.format("%s 在 %s 下方的不同区域中", ctx.name(cl.a), ctx.name(cl.b))
+  end,
+})
+
+-- 「who 独自一人，且 a 在 b 下方的不同区域中」——第二关 v 的那一句
+reg("alone_and_below_in_other_room", {
+  params = { "who", "a", "b" },
+  validate = function(ctx, cl)
+    local p = ctx.pos(cl.who)
+    if not p then return false end
+    if ctx.count_in_room(ctx.room_of(p.r, p.c)) ~= 1 then return false end
+    local a, b = ctx.pos(cl.a), ctx.pos(cl.b)
+    if not a or not b then return false end
+    if a.r <= b.r then return false end
+    return not ctx.same_room(a, b)
+  end,
+  text = function(ctx, cl)
+    return string.format("%s 独自一人，且 %s 在 %s 下方的不同区域中",
+      ctx.name(cl.who), ctx.name(cl.a), ctx.name(cl.b))
+  end,
+})
+
+----------------------------------------------------------------------------
 -- 线索类型：偷窃版新增（门径 / 身份）
 ----------------------------------------------------------------------------
 
@@ -1155,6 +1202,26 @@ function M.validate_level(level)
           for _, p in ipairs(def.params or {}) do
             if cl[p] == nil then err("第 %d 条线索(%s)缺少参数 %s", i, cl.type, p) end
           end
+        end
+      end
+    end
+  end
+
+  -- ★ 2026-10-17 通用线索（不属于任何人的卡）：与卡线索**同一套校验** ✓
+  --   ★ 为什么要校验 ✗：类型拼错时 `clue_results` 只会退回"待填内容" ✓
+  --     而通用线索**没有卡可以看见** ⇒ 拼错就**永远静默失效** ✓ ⇒ 必须在这里报 ✓
+  local g_list = level.general_clues or {}
+  for i = 1, #g_list do
+    local cl = g_list[i]
+    if type(cl) ~= "table" or not cl.type then
+      err("第 %d 条通用线索缺少 type", i)
+    else
+      local def = M.clues[cl.type]
+      if not def then
+        err("第 %d 条通用线索类型未注册：%s", i, tostring(cl.type))
+      else
+        for _, p in ipairs(def.params or {}) do
+          if cl[p] == nil then err("第 %d 条通用线索(%s)缺少参数 %s", i, cl.type, p) end
         end
       end
     end
@@ -1337,6 +1404,23 @@ function M.new(level, opts)
   end
   -- ★ 槽位条数 = 棋盘**容量** ✓（★ 判据写在代码里 ✓ 而不是只写在注释里 ✓）
   self.clue_slots = #self.clues
+
+  -- ★ 2026-10-17 通用线索：**不属于任何人的卡**（例如第二关的「地毯上没有人」）。
+  --
+  --   ★ 为什么单独一条表 ✗：卡位数量 = 棋盘容量（一人一条）✓
+  --     通用线索**没有主人** ⇒ 放进 `self.clues` 会挤掉一张卡、还会让卡序和棋子错位 ✓
+  --   ★ 它参与：① `solve` 的搜索剪枝 ✓ ② `view().general_clues`（界面/调试 ✓）
+  --   ★ 它不参与：位置提示（没有卡 ⇒ 没有"选卡"这个动作 ✓）
+  --     —— 但 `Core:clue_hint_general` 照样能算，测试与真机核验都用它 ✓
+  self.general_clues = {}
+  if type(level.general_clues) == "table" then
+    for i = 1, #level.general_clues do
+      local g = level.general_clues[i]
+      if type(g) == "table" and g.type ~= nil then
+        self.general_clues[#self.general_clues + 1] = g
+      end
+    end
+  end
 
   -- 家具
   self.objects = {}
@@ -1667,6 +1751,159 @@ end
 --     ⇒ ★ **全文只有定义那一处，0 个调用点** ✓（★ 连测试都没引用 ✓）
 --   ★ 为什么它没用了 ✓：★ 凶手判定走的是 `level.murderer` ＋ 结算那套 ✓
 --     （★ 见 `view()` 的 `murderer_hint_available` ✓）—— 这个"同室推定"是早期版本的路 ✓
+
+-- 通用线索的结果（与 `clue_results` 同形；条数 = `#self.general_clues`）
+function Core:general_clue_results()
+  local ctx = make_context(self)
+  local list = self.general_clues or {}
+  local out = {}
+  for i = 1, #list do
+    local cl = list[i]
+    local def = cl.type and M.clues[cl.type] or nil
+    out[i] = {
+      index = i,
+      type = cl.type,
+      text = def and def.text(ctx, cl) or ("待填内容（通用线索 " .. tostring(i) .. "）"),
+      satisfied = (def ~= nil) and (def.validate(ctx, cl) and true or false),
+    }
+  end
+  return out
+end
+
+----------------------------------------------------------------------------
+-- 线索位置提示（2026-10-17）
+--
+--   用途：玩家选中一张线索卡 ⇒ 棋盘上把「这条线索允许那个人出现的位置」亮出来。
+--   规则不是这里发明的，逐条对照设计定稿：
+--     · 家具类 on / only_on / one_on / n_on / nobody_on ⇒ 该家具**自己的格子**
+--     · 旁边类 beside / only_beside / not_beside      ⇒ 家具**四邻、同区域、可站人的格**
+--     · in_col / in_row                               ⇒ 那一列 / 那一行的可站格
+--     · at                                            ⇒ 那一格本身
+--     · 人对人（above/below/beside/offset…）、区域级（room_has/alone…）、
+--       身份类（is_role/not_role）⇒ **不做位置提示**（返回 nil ✓ 给出来就会剧透 ✓）
+--   来源：`murdoku-内容设计-两关布局图/线索卡-位置提示表.md` §二（通用规则）
+--         ＋ `Temp/qxmurdoku/design/clue_hint.lua`（设计期可执行原型）
+--
+--   ★ 只算**可站人的格**（`is_blocked` 过滤）：家具占了但不可站的格永不出现 ✓
+--   ★ 只依赖关卡静态数据（家具/墙/门/区域），**与当前摆位无关** ✓
+--     ⇒ 玩家摆了几个棋子都不会改变提示 ✓（这正是"允许出现的位置"的意思 ✓）
+----------------------------------------------------------------------------
+
+local function standable(self, r, c)
+  if r == nil or c == nil then return false end
+  if r < 1 or r > self.rows or c < 1 or c > self.cols then return false end
+  return not self:is_blocked(r, c)
+end
+
+-- 集合 → 排好序的数组（行优先、再列）⇒ 界面顺序稳定、测试好比对
+local function cells_sorted(set)
+  local list = {}
+  for k in pairs(set or {}) do
+    local sr, sc = tostring(k):match("^(%d+):(%d+)$")
+    if sr ~= nil then list[#list + 1] = { r = tonumber(sr), c = tonumber(sc) } end
+  end
+  table.sort(list, function(a, b)
+    if a.r ~= b.r then return a.r < b.r end
+    return a.c < b.c
+  end)
+  return list
+end
+
+local HINT_DIRS = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }
+
+local function object_own_cells(self, name)
+  local set = {}
+  local cells = self.objects[name] or {}
+  for i = 1, #cells do
+    local p = cells[i]
+    if standable(self, p.r, p.c) then set[cell_key(p.r, p.c)] = true end
+  end
+  return set
+end
+
+local function object_beside_cells(self, name)
+  local set = {}
+  local cells = self.objects[name] or {}
+  for i = 1, #cells do
+    local p = cells[i]
+    local room = (self.room[p.r] ~= nil) and self.room[p.r][p.c] or nil
+    for d = 1, #HINT_DIRS do
+      local rr = p.r + HINT_DIRS[d][1]
+      local cc = p.c + HINT_DIRS[d][2]
+      if standable(self, rr, cc)
+         and self.room[rr] ~= nil and self.room[rr][cc] == room then
+        set[cell_key(rr, cc)] = true
+      end
+    end
+  end
+  return set
+end
+
+local function col_cells(self, col)
+  local set = {}
+  local c = tonumber(col)
+  if c == nil then return set end
+  for r = 1, self.rows do
+    if standable(self, r, c) then set[cell_key(r, c)] = true end
+  end
+  return set
+end
+
+local function row_cells(self, row)
+  local set = {}
+  local r = tonumber(row)
+  if r == nil then return set end
+  for c = 1, self.cols do
+    if standable(self, r, c) then set[cell_key(r, c)] = true end
+  end
+  return set
+end
+
+-- 一条线索 →（格子集合, 规则说明）；nil = 这条线索不做位置提示
+local function hint_for(self, cl)
+  if type(cl) ~= "table" or cl.type == nil then return nil end
+  local t = cl.type
+  if t == "on_object" or t == "only_on_object" or t == "one_on_object"
+     or t == "n_on_object" or t == "nobody_on_object" then
+    return object_own_cells(self, cl.object), "该家具自己的格子"
+  elseif t == "beside_object" or t == "only_beside" or t == "not_beside_object" then
+    return object_beside_cells(self, cl.object), "该家具四邻、同区域、可站人的格"
+  elseif t == "in_col" then
+    return col_cells(self, cl.c), "第 " .. tostring(cl.c) .. " 列的可站格"
+  elseif t == "in_row" then
+    return row_cells(self, cl.r), "第 " .. tostring(cl.r) .. " 行的可站格"
+  elseif t == "at" then
+    local set = {}
+    if standable(self, cl.r, cl.c) then set[cell_key(cl.r, cl.c)] = true end
+    return set, "这一格本身"
+  end
+  return nil
+end
+
+local function hint_result(self, cl, index, kind)
+  local set, rule = hint_for(self, cl)
+  if set == nil then return nil end
+  local list = cells_sorted(set)
+  return {
+    index = index,
+    kind = kind,        -- "card"（卡）/ "general"（通用线索）
+    type = cl.type,
+    rule = rule,
+    cells = list,       -- 有序数组：{ {r=,c=}, ... }
+    set = set,          -- 集合："r:c" = true（界面 O(1) 判断）
+    count = #list,
+  }
+end
+
+-- 第 index 张卡（= 第 index 条线索；卡序 = 棋子序，见 `_piece_at_row`）
+function Core:clue_hint(index)
+  return hint_result(self, (self.clues or {})[index], index, "card")
+end
+
+-- 第 index 条通用线索（不上卡；目前只有第二关用）
+function Core:clue_hint_general(index)
+  return hint_result(self, (self.general_clues or {})[index], index, "general")
+end
 
 function Core:is_full()
   local n = 0
@@ -2529,6 +2766,10 @@ function Core:view()
     }
   end
 
+  -- ★ 2026-10-17 通用线索（不属于任何人的卡）：单独一条，供界面/调试读取
+  --   ★ 卡位数量不变（`#self.clues`）⇒ 卡片不会多出一张 ✓
+  local general_view = self:general_clue_results()
+
   -- 偷窃版结构信息（界面可以直接展示，玩家自己也能数出来）
   local sok, serrors, sinfo = self:structure_report()
   local structure = {
@@ -2591,6 +2832,8 @@ function Core:view()
     cells = cells,
     tray = tray,
     clues = clue_view,
+    -- ★ 2026-10-17 通用线索（不上卡）：{index,type,text,satisfied}
+    general_clues = general_view,
     violations = self:violations(),
     hud = hud,
     last_message = self.last_result and self.last_result.message or nil,
@@ -2632,7 +2875,12 @@ function Core:solve(limit)
   --     ⇒ ★ 它们**还不能判真假** ⇒ ★★ **`solve` 无从下嘴** ✓
   --   ⇒ ★ 如实返回**空解表** ✓ ★ **不猜、不编解** ✗✓
   --     ★（★ 上层：`validate_levels` 报"未测" ✓ ★ 作者拿到的是"还没内容"而不是"多解" ✓）
-  local clues = self.clues or {}
+  -- ★★ 2026-10-17：**通用线索也参与搜索** ✗✓
+  --   ★ 它们没有卡位 ✓ 但同样是"这个摆位必须成立的事实" ✓
+  --   ⇒ 拼成一张本地清单给下面的剪枝/叶子判定用（不改 `self.clues` ✓ 卡位数量不受影响 ✓）
+  local clues = {}
+  for i = 1, #(self.clues or {}) do clues[#clues + 1] = self.clues[i] end
+  for i = 1, #(self.general_clues or {}) do clues[#clues + 1] = self.general_clues[i] end
   local real = 0
   for i = 1, #clues do if clues[i] and clues[i].type then real = real + 1 end end
   if real == 0 then return {} end

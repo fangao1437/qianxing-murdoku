@@ -126,6 +126,26 @@ function M.pack_color(r, g, b, a)
   return c(a) * 16777216 + c(r) * 65536 + c(g) * 256 + c(b)
 end
 
+-- ★ 读控件尺寸：**真机返回两个数，模拟器返回一个数组** ⇒ 两种都认 ✗✓
+--   （2026-10-17 实测：模拟器的桥接把 `GetSizeDelta()` 包成一个返回数组的方法，
+--     `local a, b = c:GetSizeDelta()` 拿到的是 `a=表, b=nil` ⇒ 会被当成"读不到" ✗）
+--   ★ 必须定义在**文件靠前**：`_apply_edges`（很靠前）也要用它 ✓
+--     （定义在后面的 `local function` 对**前面**的函数不可见 ⇒ 会变成"全局 nil"✓）
+local function size_of(ctrl)
+  if ctrl == nil then return nil, nil end
+  local a, b = nil, nil
+  if ctrl.GetSizeDelta ~= nil then
+    pcall(function() a, b = ctrl:GetSizeDelta() end)
+  end
+  if type(a) == "table" then return tonumber(a[1]), tonumber(a[2]) end
+  if type(a) == "number" then return tonumber(a), tonumber(b) end
+  -- ★ 兜底：直接读字段（个别环境没有 getter，但字段是有的）
+  local px, py = nil, nil
+  pcall(function() px = ctrl.sizeDeltaX end)
+  pcall(function() py = ctrl.sizeDeltaY end)
+  return tonumber(px), tonumber(py)
+end
+
 function M.new(cfg)
   cfg = cfg or {}
   -- ★★ 防呆：把 `cfg.cells.<调试开关>` 上提到顶层。
@@ -3569,26 +3589,52 @@ function Adapter:read_palette()
   if self._palette ~= nil then return self._palette end
   local map, names = {}, {}
   local a = self.cfg.assets or {}
-  local root = self:find(a.palette or "assets")
-  if root ~= nil then
-    local kids = nil
-    pcall(function() kids = root:GetChildren() end)
-    if type(kids) == "table" then
-      for i = 1, #kids do
-        local k = kids[i]
-        local nm, src, id = nil, nil, nil
-        pcall(function() nm = tostring(k.name) end)
-        pcall(function() src = k.imageSource end)
-        pcall(function() id = k.imageId end)
-        if nm ~= nil and nm ~= "" and type(id) == "number" then
-          map[nm] = { source = src, id = id }
-          names[#names + 1] = nm
+  -- ★ 2026-10-17 **调色板可以有两处** ✗✓
+  --   ① `assets`（老：`portrait.*` / `row.*`）
+  --   ② **`things`（新：家具/障碍物的美术素材，用户要求"单独建一个 things 区域"）**
+  --   ★ 两个容器的子控件都用**名字**当引用键（`obj.table` / `portrait.A` …）✓
+  --   ★ `imageColor` 也一起读 ✓ —— 素材先按色块占位时，格子里的 `obj` 要跟着变色 ✓
+  local roots = { a.palette or "assets", a.things or "things" }
+  for ri = 1, #roots do
+    local root = self:find(roots[ri])
+    if root ~= nil then
+      local kids = nil
+      pcall(function() kids = root:GetChildren() end)
+      if type(kids) == "table" then
+        for i = 1, #kids do
+          local k = kids[i]
+          local nm, src, id, col = nil, nil, nil, nil
+          pcall(function() nm = tostring(k.name) end)
+          pcall(function() src = k.imageSource end)
+          pcall(function() id = k.imageId end)
+          pcall(function() col = k.imageColor end)
+          if nm ~= nil and nm ~= "" and type(id) == "number" then
+            map[nm] = { source = src, id = id, color = col, from = roots[ri] }
+            names[#names + 1] = nm
+          end
         end
       end
     end
   end
   self._palette = map
   self._palette_names = names
+  -- ★★★★★★★★ 2026-10-18 **家具素材也可以直接写在脚本里**（`cfg.obj_art`）✗✓✓
+  --   ★ 为什么加这条：用户实测「编辑器报 GUID 重复」是从 396（第一次新建 `things` 素材区）开始的 ✗
+  --     ⇒ 只要**不新建控件**就不会撞 ✓ 而家具图标本来只需要"一张图 + 一个颜色" ✓
+  --   ★ 优先级：**控件里有的优先**（用户若真在编辑器里做了 `things` 区，仍以那边为准 ✓）
+  --   ★ 写法：`obj_art = { table = { id = 100001, color = 0xFFB07946 }, … }`
+  --     （键 = `kind`，不是控件名；内部拼成 `obj.<kind>` ✓，与 `object_key_of` 对齐 ✓）
+  local oa = self.cfg.obj_art
+  if type(oa) == "table" then
+    for k, v in pairs(oa) do
+      local key = (type(k) == "string" and k:match("^obj%.") and k) or ("obj." .. tostring(k))
+      local okk = type(v) == "table" and type(v.id) == "number"
+      if okk and map[key] == nil then
+        map[key] = { source = v.source or "StaticReference", id = v.id, color = v.color, from = "cfg.obj_art" }
+        names[#names + 1] = key
+      end
+    end
+  end
   return map
 end
 
@@ -4146,8 +4192,8 @@ function Adapter:_apply_edges(id, prefix, flags)
         local s = sides[i]
         local sub = self:sub(id, prefix .. "." .. s)
         if sub ~= nil and flags[s] then
-          local w, h = nil, nil
-          pcall(function() w, h = sub:GetSizeDelta() end)
+          -- ★ 2026-10-17：用 `size_of`（真机两数 / 模拟器一个数组，两种都认 ✓）
+          local w, h = size_of(sub)
           local horiz = (s == "up" or s == "down")
           -- 目标几何：横边 = 长 cw × 厚 thick；竖边 = 厚 thick × 长 ch
           -- 门比墙短一点，看起来才像"门"而不是一整面墙
@@ -4223,6 +4269,58 @@ function Adapter:_apply_edges(id, prefix, flags)
   --      （比如基准尺寸读成 0），但那些不是"缺控件"，把它们也算成失败会让每条边都反复重发，
   --      纯粹是噪音 —— 那两种情形已经各自打了日志（见上面两处「边缘适配 …」）。
   return #missing_sub == 0
+end
+
+-- ★ 读控件尺寸：见文件靠前的 `size_of`（**必须在前**：`_apply_edges` 也要用 ✓）
+--   ⚠️ 这里原来又定义了一份 local —— 对**前面**的函数不可见 ⇒ 会变成"全局 nil"崩掉 ✓ 已删
+
+-- ★★★★★★★★ 2026-10-17 **把"铺满格子"的图层钉成和格子一样大** ✗✓✓
+--
+--   用户真机回报：「**家具和提示不要溢出格子**」✓
+--   ★ 根因有两条，**都在模板/素材层**，脚本只能补后半条：
+--     ① 图片的 `imageType` 没写 = **Basic** ⇒ 图片**按自己原尺寸画**，盒子多大都没用 ✓
+--        （已在存档里改成 `Stretch`：见 `tools/gil/fix_cell_layers.mjs` ✓）
+--     ② 子控件的**尺寸/锚点是编辑器里那一套 135×135 定值** ✗
+--        而格子边长随关卡变（5×5 → 108 画布 / 6×6 → 89 画布 ✓ 见 `cell_geometry`）
+--        ⇒ 6×6 那一关**必然溢出** ✓
+--   ⇒ 这里按"**格子自己当前的尺寸**"把子控件钉成同尺寸、居中（`face` / `hint` / `obj` 三层）✓
+--   ★ 只做一次：按子控件实例记 {w,h}，尺寸没变就**不再写** ✓（稳态零成本 ✓）
+--   ★ 不碰 `wall.*` / `door.*` —— 那两个由 `_apply_edges` 用 localScale 缩放 + 贴边 ✓
+--   ⚠️ 读不到格子尺寸（首帧还没摆好）⇒ **直接返回**，下一帧属性重发时会再来一次 ✓
+function Adapter:_fit_child_to_cell(ctrl, sub, cell_id)
+  if ctrl == nil or sub == nil then return end
+  local w, h = size_of(ctrl)
+  -- ★ 兜底：控件尺寸读不到（模拟器的桥接就没有这两个 getter）⇒ 用界面层**刚发给格子的 rect**
+  if (type(w) ~= "number" or w <= 1) and cell_id ~= nil and self.rects ~= nil then
+    local r = self.rects[cell_id]
+    if type(r) == "table" then w, h = r.w, r.h end
+  end
+  if type(w) ~= "number" or type(h) ~= "number" or w <= 1 or h <= 1 then return end
+  self:_fit_child_sized(sub, w, h)
+end
+
+-- 已经知道格子尺寸时直接调这个（`rect` 下发那一刻用 ✓）
+function Adapter:_fit_child_sized(sub, w, h)
+  if sub == nil then return end
+  if type(w) ~= "number" or type(h) ~= "number" or w <= 1 or h <= 1 then return end
+  local marks = self._fit_marks
+  if marks == nil then
+    marks = setmetatable({}, { __mode = "k" })   -- 弱键：格子实例被回收后自动释放
+    self._fit_marks = marks
+  end
+  local m = marks[sub]
+  if m ~= nil and math.abs(m.w - w) < 0.5 and math.abs(m.h - h) < 0.5 then return end
+  marks[sub] = { w = w, h = h }
+  if print and (self._fit_log or 0) < 10 then
+    self._fit_log = (self._fit_log or 0) + 1
+    print("[murdoku] 图层贴格：" .. tostring(sub.name) .. " ← 格子 " ..
+      tostring(w) .. "×" .. tostring(h))
+  end
+  if sub.SetAnchorMin then pcall(function() sub:SetAnchorMin(0.5, 0.5) end) end
+  if sub.SetAnchorMax then pcall(function() sub:SetAnchorMax(0.5, 0.5) end) end
+  if sub.SetPivot then pcall(function() sub:SetPivot(0.5, 0.5) end) end
+  if sub.SetSizeDelta then pcall(function() sub:SetSizeDelta(w, h) end) end
+  if sub.SetAnchoredPosition then pcall(function() sub:SetAnchoredPosition(0, 0) end) end
 end
 
 function Adapter:set_property(id, key, value, nkey)
@@ -4318,6 +4416,8 @@ function Adapter:set_property(id, key, value, nkey)
     --   ⇒ 没物件就**藏起来**；将来配了物件图（调色板 `obj.*`）再按名字换图并显示。
     local o = self:sub(id, "obj")
     if o ~= nil then
+      -- ★ 2026-10-17：先把 `obj` 钉成"和格子一样大" —— 否则 6×6 那一关家具会溢出 ✓
+      self:_fit_child_to_cell(ctrl, o, id)
       -- `false` 是 ui_controller 约定的"没有物件"哨兵（nil 会让这个键在 `pairs` 里消失）
       if value == false or value == nil then
         if o.SetVisible then pcall(function() o:SetVisible(false) end) end
@@ -4337,12 +4437,54 @@ function Adapter:set_property(id, key, value, nkey)
         pcall(function() src = o.imageSource end)
         if hit.source ~= nil then src = hit.source end
         pcall(function() o:SetImage(src, hit.id) end)
+        -- ★ 2026-10-17：调色板控件的**颜色也照抄**（`things` 里每个素材自带一个色）
+        --   ★ 为什么：家具素材先按"色块"占位（真图 id 只有编辑器里有）；换真图时
+        --     把那一格的 `imageColor` 改回白色即可 —— 脚本不用动 ✓
+        if hit.color ~= nil then pcall(function() o.imageColor = hit.color end) end
         if o.SetVisible then pcall(function() o:SetVisible(true) end) end
       else
         -- 没有物件（或名字解析不出来）→ **必须藏**，否则白板会盖住头像
         if o.SetVisible then pcall(function() o:SetVisible(false) end) end
       end
     end
+
+  -- ★★★★★★★★ 2026-10-17 **线索位置提示层：`cell.R.C` 的 `hint` 子控件** ✗✓
+  --
+  --   用户已经在编辑器里把这一层做好了：模板 `cell` → `content` → **`hint`**
+  --   （135×135 铺满格子，颜色 `0x7F0063D5` = 50% 透明蓝，图片 100001）
+  --   ⇒ ★ **脚本只负责"显示 / 隐藏"** ✓ 颜色一个字都不写 ✓（用户原话："颜色也已经调好了"）
+  --   ★ 为什么不再染 `face` ✗：`face` 是**房间色 + 人像**的载体，染它会把头像也染蓝 ✓
+  --   ★ `sub()` 会**穿过 `content`** 找同名子控件（见 `Adapter:sub` 的三级尝试 ✓）
+  elseif key == "hint" then
+    local h = self:sub(id, "hint")
+    if h == nil then
+      -- 老存档 / 模拟器建树没有这一层：**算送达**（不发重试、不刷屏），只是这次没东西可显示
+      self:warn_once("hint:missing", "模板里没有 `hint` 子控件（线索位置提示画不出来）"
+        .. " —— 2026-10-17 的存档里它在 `cell` 的 `content` 下")
+      return true
+    end
+    -- ★ 2026-10-17：提示层也必须"和格子一样大"（否则 6×6 会溢出格子 ✓）
+    self:_fit_child_to_cell(ctrl, h, id)
+    local on = (value == true)
+    if h.SetVisible then pcall(function() h:SetVisible(on) end) end
+    if on and h.SetActive then pcall(function() h:SetActive(true) end) end
+    return true
+
+  -- ★★★★★★★★ 2026-10-17 **`fit`：界面层直接给格子边长（画布）** ✗✓
+  --   把"铺满型"三层（face / hint / obj）钉成这个尺寸、居中 ✓
+  --   ★ 为什么由界面层给：`build_layout` 本来就知道 `cell`；适配层**读控件尺寸不可靠**
+  --     （模拟器的桥接根本没有 `GetSizeDelta` 的实现 ⇒ 静默跳过 ⇒ 溢出）✓
+  --   ★ 与 `hint` / `object` / `rect` 的**到达顺序无关** ⇒ 不会出现"第一条到了就记死账" ✓
+  elseif key == "fit" then
+    local n = tonumber(value)
+    if n ~= nil and n > 1 then
+      for _, nm in ipairs({ "face", "hint", "obj" }) do
+        local s2 = self:sub(id, nm)
+        if s2 ~= nil then self:_fit_child_sized(s2, n, n) end
+      end
+    end
+    return true
+
   elseif key == "imageType" then
     -- ★★★ 2026-10-01：**强制图片的拉伸方式**（Basic = 按原始像素 / Stretch = 填满控件）。
     --
@@ -4401,6 +4543,8 @@ function Adapter:set_property(id, key, value, nkey)
     --     整数 ID 的难题（只读字段 + 不能手抄数字）由调色板解决：见 read_palette。
     local target = self:sub(id, "face") or ctrl
     if target ~= nil then
+      -- ★ 2026-10-17：`face` 也钉成"和格子一样大"（房间色/头像都不该溢到邻格 ✓）
+      self:_fit_child_to_cell(ctrl, target, id)
       -- ★★ 2026-09-27 修：**没有图时不要直接把 face 藏掉**。
       --
       -- 旧行为：`value == nil` → `SetVisible(false)`。后果很严重 ——
@@ -4473,7 +4617,6 @@ function Adapter:set_property(id, key, value, nkey)
 
   elseif key == "doors" then
     return self:_apply_edges(id, "door", value)
-
   -- ★ 染色：`imageColor` 官方是 **读写**（ColorValue、Tweenable），
   --   所以"同底图 + 不同颜色区分区域"是零额外素材的做法。
   --   value 用 {r,g,b,a?}（0–255）；官方构造是全局函数 `Color(r,g,b,a?)`。
@@ -4499,6 +4642,9 @@ function Adapter:set_property(id, key, value, nkey)
     --     ★ alpha 也乘 ⇒ `0x7F…` = 整体减淡（"已放置头像卡"那种效果 ✓）。
     local target = self:sub(id, "face") or ctrl
     if target ~= nil then
+      -- ★ 2026-10-17：`face` 钉成"和格子一样大"（房间色/头像都不该溢到邻格 ✓）
+      --   `tint` 每格每关都会下发一次 ⇒ 这里是最稳的挂钩
+      self:_fit_child_to_cell(ctrl, target)
       local made = nil
       if type(value) == "number" then
         made = value
@@ -4761,6 +4907,19 @@ function Adapter:set_property(id, key, value, nkey)
 
     self.rects = self.rects or {}
     self.rects[id] = { cx = cx, cy = cy, w = w, h = h }
+
+    -- ★★★★★★★★ 2026-10-17 **格子尺寸就在手上 ⇒ 顺手把"铺满型"三层钉一次** ✗✓
+    --   ★ 2026-10-18 **删掉过一次又加回来了，但要加闸门** ✗✓
+    --     事故：这段对**每个**带 rect 的控件都跑 ⇒ `select.card.N` 也进了 `_fit_child_sized`
+    --     （`sub()` 通过 `FindChild("content/face")` 之类找到了**别的**东西），
+    --     于是四张选关卡全被 `SetAnchoredPosition(0,0)` 钉到画布中心 ⇒ **看起来只有一张** ✓
+    --   ⇒ 闸门：**只认 `cell.<行>.<列>`**（脚本自己实例化出来的格子）✓
+    if w ~= nil and h ~= nil and type(id) == "string" and id:match("^cell%.%d+%.%d+$") then
+      for _, nm in ipairs({ "face", "hint", "obj" }) do
+        local sub3 = self:sub(id, nm)
+        if sub3 ~= nil then self:_fit_child_sized(sub3, w, h) end
+      end
+    end
 
     -- ★★ 父级中心怎么来：**从父节点自己的 `rect` 算**，而不是读"运行时已经摆过没有"。
     --

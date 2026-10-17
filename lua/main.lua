@@ -1643,7 +1643,10 @@ function Murdoku.on_update(dt)
         --   ★ 现在的口径 ✓：★ **stage 的尺寸就是编辑器里那份** ✓ ⇒ ★ 格子尺寸照它算 ✓
         --   ⚠️ 当年那段注释担心的"stage 被改回全屏 ⇒ 格子放大 33%" ✗：
         --     ★ 那是**脚本自己**把它改成全屏造成的 ✓，★ 现在脚本一个字都不写 ⇒ 不会发生 ✓
-        if s ~= nil and print then
+        if s ~= nil and print and current._stage_rb_logged ~= true then
+          -- ★ 2026-10-18 **只打一次**（用户实测：这一行**每帧**刷，日志被淹没了 ✗）
+          --   它本来只是"确认 stage 归编辑器"的诊断 ⇒ 一次就够 ✓
+          current._stage_rb_logged = true
           pcall(function() sw0, sh0 = s:GetSizeDelta() end)
           print("[murdoku] ★ 棋盘容器 stage 回读 " .. tostring(sw0) .. "x" .. tostring(sh0)
             .. "（★ 归编辑器 ✓ 脚本不再写它 ✓）")

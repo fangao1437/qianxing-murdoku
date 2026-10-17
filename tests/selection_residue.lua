@@ -78,7 +78,27 @@ end
 local function undo(c) c:on_input({ action = "undo" }) end
 
 -- ── 一个新控制器（★ 与 `input_logic.lua` 同一个造法 ✓）──────────────────
-local lv = require("levels.case_001")
+--
+--   ★★★★ 2026-10-17 **改成"家具全可站"的测试床** ✗✓
+--     ★ 起因 ✓：第一关家具换成设计定稿那一套 ⇒ **(1,1) 现在是桌子（不可站人）** ✗
+--       ⇒ 本文件按「沿对角线放 D 到 (1,1)」造场景 ⇒ **落子直接被内容规则挡住** ✓
+--     ★★ 本测试要证的是「**选中残留**」（高亮/落子是不是同一个人）✓
+--       ★ 与"这一关让不让人站桌子上"无关 ✗
+--     ⇒ ★ 只在这里把家具标成可站人 ✓ ★ 真关卡一个字不动 ✓
+local function wiring_level()
+  local base = require("levels.case_001")
+  local lv = {}
+  for k, v in pairs(base) do lv[k] = v end
+  local objs = {}
+  for name, def in pairs(base.objects or {}) do
+    local cells = {}
+    for i = 1, #(def.cells or {}) do cells[i] = def.cells[i] end
+    objs[name] = { cells = cells, occupiable = true, kind = def.kind }
+  end
+  lv.objects = objs
+  return lv
+end
+local lv = wiring_level()
 
 -- ★★★★★★★★ 2026-10-15 **把「点卡片」摆成真机那条路** ✗✓✓
 --

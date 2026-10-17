@@ -29,6 +29,27 @@
 
 local M = {}
 
+-- ★★★★ 2026-10-17 **测试床：家具一律标成"可站人"** ✗✓
+--
+--   ★ 起因 ✓：第一关的家具换成了设计定稿那一套 —— 桌子占了 **(1,1)**、
+--     植物占了 (1,2)/(5,1)/(5,3)，而这些按内容规则**不可站人** ✓
+--   ★ 而一批测试的判据是"沿主对角线 (k,k) 放棋子"（`board_wiring_e2e` 等）✓
+--     ⇒ ★ (1,1) 被桌子挡住 ⇒ 报「棋A@(1,1) 得到 <没有这一格>」✗
+--   ★★ 那是**内容规则**（这一关不让人站桌子上），**不是接线坏了** ✗ ——
+--     ★ 判据自己的注释就写着「只该测接线，不该测这一关能不能放」✓
+--   ⇒ ★ 所以只在**这份测试 fixture** 里把家具标成可站 ✓
+--     ★★ 真关卡 `lua/levels/case_001.lua` **一个字不动** ✓✓
+--   （★ 与设计阶段 `main` 分支对 fixtures 的处置**同一口径** ✓）
+local function objects_all_occupiable(base)
+  local out = {}
+  for name, def in pairs(base.objects or {}) do
+    local cells = {}
+    for i = 1, #(def.cells or {}) do cells[i] = def.cells[i] end
+    out[name] = { cells = cells, occupiable = true, kind = def.kind }
+  end
+  return out
+end
+
 -- ★ 自检关（5×5）的**完整克隆** ＋ 它原来那 7 条线索 ✓
 --   ★ 布局/墙/门/物件/答案全部照抄真关卡 ✓ ⇒ ★ 其它断言（区域、门径、唯一解）继续成立 ✓
 function M.clue_level_5x5()
@@ -65,6 +86,7 @@ function M.clue_level_case001()
     { type = "in_col",     who = "A",      c = 4 },          -- ★ 第 8 条：假话
   }
   lv.meta = { false_clue = 8, announce = "unknown" }
+  lv.objects = objects_all_occupiable(base)
   return lv
 end
 
@@ -94,6 +116,7 @@ function M.clue_level_6x6()
     { type = "abs_col_from", who = "C", n = 1 },
   }
   lv.meta = { false_clue = 15, announce = "one" }
+  lv.objects = objects_all_occupiable(base)
   return lv
 end
 
