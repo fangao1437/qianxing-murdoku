@@ -17,7 +17,8 @@
 ----------------------------------------------------------------------------]]--
 
 -- ★ 注意：`murdoku_core` 返回的是模块表 M，**类**在 M.Core 上 ✓
-local Core = require("murdoku_core").Core
+local M = require("murdoku_core")   -- ★ 搬来的函数体里用了 `M.TIE_FORBID` ⇒ 必须留 M ✓
+local Core = M.Core
 
 function Core:tie_policy()
   local r = self.level.rules or {}

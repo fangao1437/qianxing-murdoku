@@ -4186,6 +4186,13 @@ function Adapter:_apply_edges(id, prefix, flags)
     -- 而不是"看你素材多大"。
     local thick = (self.cfg.cells and self.cfg.cells.edge_thickness) or 8
     local door_ratio = (self.cfg.cells and self.cfg.cells.door_length_ratio) or 0.45
+  -- ★★★★ 2026-10-18（v264）**墙加长 4px，填掉相邻两格之间的缝** ✗✓
+  --   用户真机原话：「现在墙稍微有一点缝隙，把墙的长度增加 4，填满现在的空隙即可」
+  --   缝的来源：每格只画自己那条边（长 = cw），相邻两格各画各的 ⇒ 取整误差在四角留 1–2px。
+  --   加 4 ⇒ 两端各溢出 2（`localScale` 绕中心 ⇒ 位置不变）⇒ 角上相邻两格重叠，缝消失。
+  --   ★ 只加**墙**，不加门（门要明显短于墙才像门，见 `door_length_ratio`）。
+  --   ★ 想调就只改这一个数：2 = 几乎无缝不重叠；6 = 明显重叠（角上变厚）。
+  local overlap = (self.cfg.cells and self.cfg.cells.edge_overlap) or 4
 
     if cw ~= nil then
       for i = 1, #sides do
@@ -4197,7 +4204,7 @@ function Adapter:_apply_edges(id, prefix, flags)
           local horiz = (s == "up" or s == "down")
           -- 目标几何：横边 = 长 cw × 厚 thick；竖边 = 厚 thick × 长 ch
           -- 门比墙短一点，看起来才像"门"而不是一整面墙
-          local tlen = (prefix == "door") and (cw * door_ratio) or cw
+          local tlen = (prefix == "door") and (cw * door_ratio) or (cw + overlap)
           local tthick = thick
           local base_l = horiz and w or h      -- 基准：编辑器里控件的尺寸
           local base_t = horiz and h or w

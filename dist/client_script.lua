@@ -15521,6 +15521,13 @@ function Adapter:_apply_edges(id, prefix, flags)
     -- 而不是"看你素材多大"。
     local thick = (self.cfg.cells and self.cfg.cells.edge_thickness) or 8
     local door_ratio = (self.cfg.cells and self.cfg.cells.door_length_ratio) or 0.45
+  -- ★★★★ 2026-10-18（v264）**墙加长 4px，填掉相邻两格之间的缝** ✗✓
+  --   用户真机原话：「现在墙稍微有一点缝隙，把墙的长度增加 4，填满现在的空隙即可」
+  --   缝的来源：每格只画自己那条边（长 = cw），相邻两格各画各的 ⇒ 取整误差在四角留 1–2px。
+  --   加 4 ⇒ 两端各溢出 2（`localScale` 绕中心 ⇒ 位置不变）⇒ 角上相邻两格重叠，缝消失。
+  --   ★ 只加**墙**，不加门（门要明显短于墙才像门，见 `door_length_ratio`）。
+  --   ★ 想调就只改这一个数：2 = 几乎无缝不重叠；6 = 明显重叠（角上变厚）。
+  local overlap = (self.cfg.cells and self.cfg.cells.edge_overlap) or 4
 
     if cw ~= nil then
       for i = 1, #sides do
@@ -15532,7 +15539,7 @@ function Adapter:_apply_edges(id, prefix, flags)
           local horiz = (s == "up" or s == "down")
           -- 目标几何：横边 = 长 cw × 厚 thick；竖边 = 厚 thick × 长 ch
           -- 门比墙短一点，看起来才像"门"而不是一整面墙
-          local tlen = (prefix == "door") and (cw * door_ratio) or cw
+          local tlen = (prefix == "door") and (cw * door_ratio) or (cw + overlap)
           local tthick = thick
           local base_l = horiz and w or h      -- 基准：编辑器里控件的尺寸
           local base_t = horiz and h or w
@@ -20106,18 +20113,15 @@ local M = {}
 --   ⇒ 所以「第几关」不是猜的，也不是存档里另存的，**只由下面这几行的先后决定** ✓
 --
 --   当前的对应关系（★ 改这个 LIST 就等于改 row 编号，必须同步改编辑器里的 row.* ✗）：
---     LIST[1] demo_selftest  → 编辑器的 row.1.1 … row.1.5   （框架自检关，5 枚棋子）
---     LIST[2] case_001       → 编辑器的 row.2.1 … row.2.5   （5 枚棋子）
+--     --     LIST[2] case_001       → 编辑器的 row.2.1 … row.2.5   （5 枚棋子）
 --     LIST[3] case_002       → 编辑器的 row.3.1 … row.3.6   （6 枚棋子）
 --     LIST[4] case_003       → 编辑器的 row.4.*             （本阶段未配内容）
 --   ⇒ 通用线索那块也是同一个口径：`row.<关>.clue`
 --     （★ 只有"有关卡声明了 general_clues"的那一关才需要它 —— 目前是 case_002 ⇒
 --       应是 **row.3.clue**，不是 row.2.clue ✗ 那一格属于 case_001，而 case_001 没有通用线索）
-local LIST = {
-  "levels.demo_selftest",     -- 第 1 关：框架自检样例（row.1.*）
-  "levels.case_001",          -- 第 2 关：案件 001 · 夜盗独行（5×5，k=1，无同伙；row.2.*）
-  "levels.case_002",          -- 第 3 关：案件 002 · 双影（6×6，无同伙 ＋ 1 条通用线索；row.3.*）
-  "levels.case_003",          -- 第 4 关：案件 003 · 第三方（未配 row 内容）
+local LIST = {  "levels.case_001",          -- 第 1 关：案件 001 · 夜盗独行（5×5，5 人；row.1.1 … row.1.5）
+  "levels.case_002",          -- 第 2 关：案件 002 · 双影（6×6，6 人 ＋ 通用线索；row.2.1 … row.2.6 ＋ row.2.clue）
+  "levels.case_003",          -- 第 3 关：案件 003 · 第三方（未配 row 内容；row.3.*）
 }
 
 M._errors = {}
@@ -20215,36 +20219,19 @@ return M
 
 end
 
-__M["levels.demo_selftest"] = function()
+__M["levels.case_001"] = function()
 --[[----------------------------------------------------------------------------
-  levels/demo_selftest.lua —— 框架自检样例（偷窃版规则，不是关卡内容）
+  levels/case_001.lua —— 第 1 关：案件 001《夜盗·独行》（5×5，5 枚棋子）
 
-  这是一个**完全合法**的最小局，用来验证 v0.3 引擎的每一条新规则：
-    · 5×5，5 枚棋子（4 名嫌疑人 + 1 名受害者，受害者也要摆）
-    · 三个区域：R_A(第1-3行)、R_B(第4-5行左3列)、R_C(第4-5行右2列)
-    · 门径：R_A↔R_B、R_B↔R_C（所以受害者所在区域 R_B 的相邻区域 = {R_A, R_C}）
-    · 受害者 V 与 A 同在 R_B → k=2 → 必有同伙
-    · 盗窃者 D 与同伙 C 都在 R_A；R_A 无辜人数 1 > R_C 的 0
-      → 满足"挑无辜人数最多的相邻区域"
-  ★★★ 2026-10-11 **线索表已删** ✗✓（★ 用户原话 ✓）：
-    「★ **原本那套为每关人物发位置和字母的逻辑直接删了** ✓
-     ★ **关卡设计本来就要改** ✓ ★ **不用留着他了**」✓
-  ⇒ ★★ 原来那套"报位置 ＋ 发字母"的线索**整段删掉** ✓
-    ★ **`meta.false_clue` 一并作废** ✓（★ 它按序号指线索 ✓ 线索没了它就没意义 ✓）
-  ⇒ ★★★ **本关现在【没有线索】** ✓ —— ★ **等新设计** ✓
-    ★ 关卡本体（`walls`/`doors`/`objects`/`roles`/`solution`/`size`）**一个字没动** ✓✓
-  ⚠️ ★ 已知后果 ✓（★ 不是 bug ✗）：★ `tools/validate_levels.lua` 的**唯一解**闸门
-    会报「找到 3 个解」✓ —— ★ 那是**内容还没设计** ✓ ★ 不是逻辑坏了 ✓
-
-
-  你设计正式关卡时把这个文件删掉即可。
+  ★★★ 2026-10-18 **归位**：第 1 关就该是这套**真正的第一关内容** ✓
+    （之前槽 1 被框架自检关占着，而这里是双影；现在换回来了）
+  ⇒ 内容源 = `row.1.*`（5 枚棋子 ⇒ row.1.1 … row.1.5）✓
 ----------------------------------------------------------------------------]]--
-
-return {
-  id = "selftest_theft_5x5",
-  name = "框架自检样例（偷窃版）",
-  subtitle = "仅用于验证引擎与界面绑定",
-  difficulty = "selftest",
+ return {
+  id = "case_001",
+  name = "案件 001 · 夜盗独行",
+  subtitle = "保险库内室只留下一个人的痕迹 —— 是独自作案，还是有人替他望风？",
+  difficulty = "easy",
 
   size = { rows = 5, cols = 5 },
 
@@ -20253,66 +20240,90 @@ return {
     one_per_col  = true,
     one_per_room = false,
     place_all    = true,
-    tie_policy   = "forbid",   -- 相邻区域无辜人数不允许并列；特殊关卡可写 "allow"
+    tie_policy   = "forbid",   -- 相邻区域无辜人数不允许并列
   },
 
   -- 墙 = 区域边界
   walls = {
-    { "h", 3, 1 }, { "h", 3, 2 }, { "h", 3, 3 },   -- R_A | R_B
-    { "h", 3, 4 }, { "h", 3, 5 },                  -- R_A | R_C
-    { "v", 4, 3 }, { "v", 5, 3 },                  -- R_B | R_C
+    { "v", 1, 3 }, { "v", 2, 3 }, { "v", 3, 3 },   -- R_A | R_B
+    { "h", 3, 1 }, { "h", 3, 2 }, { "h", 3, 3 },   -- R_A | R_C
+    { "h", 3, 4 },                                 -- R_B | R_C
+    { "v", 4, 4 }, { "v", 5, 4 },                  -- R_C | R_B
   },
 
-  -- 门径 = 跨区域的可达通道（同样开在格边上；不改变区域划分）
+  -- 门径 = 跨区域通道（与墙同粒度；不改变区域划分）
   doors = {
-    { "h", 3, 1 },   -- R_A ↔ R_B： (3,1) 与 (4,1) 之间
-    { "v", 4, 3 },   -- R_B ↔ R_C： (4,3) 与 (4,4) 之间
+    { "v", 2, 3 },   -- R_A ↔ R_B：(2,3) 与 (2,4)
+    { "h", 3, 2 },   -- R_A ↔ R_C：(3,2) 与 (4,2)
+    { "h", 3, 4 },   -- R_B ↔ R_C：(3,4) 与 (4,4)
   },
 
-  -- ⚠️ Lua 的标识符只能是 ASCII，所以中文家具名必须写成 ["名"] = {...} 这种字符串键
+  -- ⚠️ Lua 标识符只能是 ASCII，中文家具名必须写成 ["名"] = {...}
+  -- `kind` = 家具图标的素材键（界面层翻成 `obj.<kind>`，见 ui_controller.object_key_of）
   objects = {
-    -- `kind` = 家具图标的素材键（界面层翻成 `obj.<kind>`，见 ui_controller.object_key_of）
-    ["书桌"] = { cells = { { r = 1, c = 5 } }, occupiable = false, kind = "desk"   },
-    ["地毯"] = { cells = { { r = 2, c = 1 }, { r = 2, c = 2 } }, occupiable = true,  kind = "carpet" },
+    ["桌子"] = { cells = { { r = 1, c = 1 }, { r = 2, c = 1 } },
+                 occupiable = false, kind = "table"  },
+    ["植物"] = { cells = { { r = 1, c = 2 }, { r = 5, c = 1 }, { r = 5, c = 3 } },
+                 occupiable = false, kind = "plant"  },
+    ["地毯"] = { cells = { { r = 3, c = 1 }, { r = 3, c = 2 }, { r = 2, c = 4 }, { r = 2, c = 5 } },
+                 occupiable = true,  kind = "carpet" },
+    ["椅子"] = { cells = { { r = 4, c = 2 }, { r = 5, c = 4 } },
+                 occupiable = true,  kind = "chair"  },
   },
   blocked = {},
   water   = {},
 
   suspects = {
-    { id = "A", name = "管家", portrait = "portrait.A" },
-    { id = "B", name = "医生", portrait = "portrait.B" },
-    { id = "C", name = "歌女", portrait = "portrait.C" },
-    { id = "D", name = "伯爵", portrait = "portrait.D" },
-    { id = "V", name = "老宅主", portrait = "portrait.V", is_victim = true },
+    { id = "A", name = "值班保安", portrait = "portrait.A",   gender = "male" },
+    { id = "B", name = "前台姑娘", portrait = "portrait.B",   gender = "female" },
+    { id = "C", name = "夜班清洁工", portrait = "portrait.C", gender = "male" },
+    { id = "D", name = "旧识古董商", portrait = "portrait.D", gender = "male" },
+    { id = "V", name = "收藏家", portrait = "portrait.V",     is_victim = true },
   },
 
-  victim = { id = "V", name = "老宅主" },
+  victim = { id = "V", name = "收藏家" },
 
-  -- 角色归属（答案的一部分）
+  -- 答案的一半：角色归属（不写 accomplice = 本案没有同伙）
   roles = {
     thief = "D",
-    accomplice = "C",     -- 不写 = 本案没有同伙
   },
 
-  -- 线索里至多一句假话；这里声明是第 7 条
+  -- 线索：**按卡序**（卡 i ↔ 线索 i ↔ 第 i 枚棋子）
+  clues = {
+    { type = "in_col",         who = "V", c = 5 },                -- 卡 1（A 说）：收藏家 在第 5 列
+    { type = "beside_object",  who = "D", object = "植物" },       -- 卡 2（B 说）：旧识古董商 在 植物 旁边
+    { type = "only_on_object", who = "A", object = "地毯" },       -- 卡 3（C 说）：只有 值班保安 站在 地毯 上
+    { type = "on_object",      who = "C", object = "椅子" },       -- 卡 4（D 说）：夜班清洁工 站在 椅子 上
+    { type = "beside_object",  who = "B", object = "桌子" },       -- 卡 5（V 说）：前台姑娘 在 桌子 旁边
+  },
+
+  -- 至多一句假话：本关五句全部为真（announce = "none" ⇒ 界面显示「线索全部为真」）
   meta = {
-    false_clue = nil,   -- ★ 线索表已删 ⇒ 假话声明一并作废 ✓
-    announce   = "one",   -- none | one | unknown（unknown = 不告诉玩家）
+    false_clue = nil,
+    announce   = "none",
   },
 
   solution = {
-    A = { r = 5, c = 3 },   -- 与受害者同区（R_B）
-    B = { r = 3, c = 2 },   -- R_A
-    C = { r = 2, c = 5 },   -- R_A（同伙）
-    D = { r = 1, c = 4 },   -- R_A（盗窃者）
-    V = { r = 4, c = 1 },   -- R_B（受害者）
+    D = { r = 1, c = 3 },   -- R_A（盗窃者）
+    A = { r = 3, c = 1 },   -- R_A（地毯）
+    B = { r = 2, c = 2 },   -- R_A
+    C = { r = 5, c = 4 },   -- R_C（椅子）
+    V = { r = 4, c = 5 },   -- R_B（受害者，独处一区）
   },
 
 }
 
 end
 
-__M["levels.case_001"] = function()
+__M["levels.case_002"] = function()
+--[[----------------------------------------------------------------------------
+  levels/case_002.lua —— 第 2 关：案件 002《双影》（6×6，6 枚棋子 ABCDEV）
+
+  ★★★ 2026-10-18 **归位**：双影是**第 2 关** ✓
+  ⇒ 内容源 = `row.2.*`（6 枚棋子 ⇒ row.2.1 … row.2.6）
+    通用线索 = `row.2.clue`（子控件 `clue.2.1`）✓
+    —— 这也正是为什么通用线索挂在第 2 关：本关是全作里唯一有通用线索的关 ✓
+----------------------------------------------------------------------------]]--
 --[[----------------------------------------------------------------------------
   ★★★ 2026-10-18 **关卡归位（用户定）** ✗✓
 
@@ -20384,8 +20395,8 @@ __M["levels.case_001"] = function()
 ----------------------------------------------------------------------------]]--
 
 return {
-  id = "case_001",
-  name = "案件 001 · 双影",
+  id = "case_002",
+  name = "案件 002 · 双影",
   subtitle = "侧廊只留一个人的痕迹，大厅里却站着两位 —— 谁在说谎？",
   difficulty = "normal",
 
@@ -20488,84 +20499,6 @@ return {
        d 的那句「e 在 a 的上方」正是利用这一点：它恒假，所以它是天然的假话候选；
        但玩家**不能靠这一点**直接排除它（其它线索同样可能假），
        要靠"逐条剔除 + 只剩一个可选位置"两步才能锁定。 ]]
-}
-
-end
-
-__M["levels.case_002"] = function()
---[[----------------------------------------------------------------------------
-  levels/case_002.lua —— 第 3 关：**空白占位棋盘（内容待设计）**
-
-  ★★★ 2026-10-18 用户定：「被填入了错误内容的第三关，清理成没有布局的棋盘，
-    或者按原来的第三关还原都行。」
-  ⇒ 这里选**空白占位**：6×6、6 枚棋子 A B C D E V、**没有任何家具 / 障碍**，
-    只有两间房和一扇门（结构校验必须要有"受害者区域有门相邻区域"，
-    所以不能真的只有一间房）。
-  ⇒ 内容源是 `row.3.*`（6 行）—— 现在**不配内容**，等正式设计。
-
-  ⚠️ 本关**故意没有线索** ⇒ `tools/validate_levels.lua` 的"唯一解"一项会报"未测"，
-     那是**内容还没设计**，不是判据失效 ✓（与 selftest_theft_5x5 / case_003 同一个口径）
-----------------------------------------------------------------------------]]--
-
-return {
-  id = "case_002",
-  name = "案件 002 · 待设计",
-  subtitle = "（第三关内容待设计）",
-  difficulty = "normal",
-
-  size = { rows = 6, cols = 6 },
-
-  rules = {
-    one_per_row  = true,
-    one_per_col  = true,
-    one_per_room = false,
-    place_all    = true,
-    tie_policy   = "forbid",
-  },
-
-  -- 只切两间房：第 1-3 行 / 第 4-6 行；其余留空
-  walls = {
-    { "h", 3, 1 }, { "h", 3, 2 }, { "h", 3, 3 },
-    { "h", 3, 4 }, { "h", 3, 5 }, { "h", 3, 6 },
-  },
-  doors = {
-    { "h", 3, 3 },   -- 上下两间房之间唯一的一扇门
-  },
-
-  -- ★ 空白棋盘：没有家具、没有障碍
-  objects = {},
-  blocked = {},
-  water   = {},
-
-  suspects = {
-    { id = "A", name = "嫌疑人 A", portrait = "portrait.A", gender = "male" },
-    { id = "B", name = "嫌疑人 B", portrait = "portrait.B", gender = "female" },
-    { id = "C", name = "嫌疑人 C", portrait = "portrait.C", gender = "male" },
-    { id = "D", name = "嫌疑人 D", portrait = "portrait.D", gender = "male" },
-    { id = "E", name = "嫌疑人 E", portrait = "portrait.E", gender = "female" },
-    { id = "V", name = "受害者 V", portrait = "portrait.V", is_victim = true },
-  },
-  victim = { id = "V", name = "受害者 V" },
-
-  -- 占位答案（正式设计时整体替换）
-  roles = {
-    thief = "A",
-  },
-
-  meta = {
-    false_clue = nil,
-    announce   = "unknown",
-  },
-
-  -- 每行每列各一人：主对角线
-  solution = {
-    A = { r = 1, c = 1 },
-    B = { r = 2, c = 2 },
-    C = { r = 3, c = 3 },
-    D = { r = 4, c = 4 },
-    E = { r = 5, c = 5 },
-    V = { r = 6, c = 6 },
-  },
 }
 
 end
@@ -20915,7 +20848,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v262 / 2026-10-18 / 修「选关四张卡塌成一张」（image/tint 分支的贴格钩子只认 cell.R.C）+ 门墙素材 107092 + root 补几何 + 其余同 v261 =====")
+        print("[murdoku] ===== 构建标记 v264 / 2026-10-18 / 墙加长 4（edge_overlap，门不加）+ 规则与求解器移出运行时 + 第 1 关＝夜盗独行、第 2 关＝双影")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
