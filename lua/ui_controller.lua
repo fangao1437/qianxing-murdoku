@@ -6207,6 +6207,22 @@ function Controller:_fill_general_item(adapter, item, index, pos)
   for _, nm in ipairs({ "gen.backrop", "gen.title", "gen.body" }) do
     local c = child(nm)
     if c ~= nil then pcall(function() c:SetVisible(true) end) end
+  end  -- ★★★★★ 2026-10-18 **通用卡自己的描边** ✗✓（用户实测：没有描边出现）
+  --   普通卡的描边靠 core.selected 涂 imageColor（见 _grid_item_hl 那段）
+  --   通用卡**没有「人」** ⇒ 那条路永远涂不到它 ⇒ 点了毫无视觉变化 ✗
+  --   ⇒ 用同一个高亮色 HIGHLIGHT_TINT 涂它的底板 ✓
+  --     亮条件 = general_focus（点它是真；点普通卡时被清 ✓）
+  do
+    local _bg = nil
+    pcall(function() _bg = item:FindChild("gen.backrop") end)
+    if _bg ~= nil then
+      if self._gen_hl_orig == nil then
+        pcall(function() self._gen_hl_orig = _bg.imageColor end)
+      end
+      local _want = (self.general_focus ~= nil)
+      local _target = _want and HIGHLIGHT_TINT or self._gen_hl_orig
+      if _target ~= nil then pcall(function() _bg.imageColor = _target end) end
+    end
   end
 end
 
