@@ -10782,7 +10782,7 @@ end
 --      一个坏句柄会每帧抛，不去重/不限量就是拿日志刷屏 —— 那正是用户这一轮最烦的事。
 function Controller:_set_prop(adapter, id, key, value, nkey)
   -- ★★ 2026-10-18 hint 出口探针：**UI 到底有没有把 hint 发给适配器** ✓
-  if key == "hint" and print and (self._hint_out or 0) < 8 then
+  if key == "hint" and (value == true) and print and (self._hint_out or 0) < 12 then
     self._hint_out = (self._hint_out or 0) + 1
     print("[murdoku] ★ hint 出口：给 " .. tostring(id) .. " 发 hint=" .. tostring(value))
   end
