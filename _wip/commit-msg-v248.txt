@@ -1,7 +1,0 @@
-the geometry takeover was on the plan side, not in main.lua: every plan node inherited pos_runtime from root, which stamped runtime_rect and bypassed the editor-owns-geometry early return, so board.bg was the only control the user saw change because board.bg is the only one absent from the plan
-
-v248 only refuses inherited pos_runtime when geom_by_editor is set, keeps explicit pos_runtime and script-created controls, and fixes an explicit false that could never block inheritance (not false is true in Lua) which had been silently capturing the clues block and the clue cards all along - that is why the grid viewport size the user set never showed
-
-the card parts now read the card box from the runtime instead of the plan, because shrinking the cards to ninety percent while their titles and thumbnails stayed at the plan box put the text outside the card; the adapter has to be passed into build_layout explicitly since the controller has no self.adapter field and the silent nil fallback is what made the first attempt look like it did nothing
-
-the archive carries the same board box the script used to write, so handing it over changes nothing visually, and the delivery save is the user's own 390.1.gil with only that box and the embedded script touched
