@@ -4483,6 +4483,11 @@ function Adapter:set_property(id, key, value, nkey)
   --   ★ 为什么不再染 `face` ✗：`face` 是**房间色 + 人像**的载体，染它会把头像也染蓝 ✓
   --   ★ `sub()` 会**穿过 `content`** 找同名子控件（见 `Adapter:sub` 的三级尝试 ✓）
   elseif key == "hint" then
+      -- ★★ 2026-10-18 淡蓝探针：这里才是 hint 的真正消费点 ✓
+      if print and (self._dbg_hint or 0) < 8 then
+        self._dbg_hint = (self._dbg_hint or 0) + 1
+        print("[murdoku] ★ 淡蓝探针：适配器收到 hint 键（格子 " .. tostring(id) .. "）")
+      end
     local h = self:sub(id, "hint")
     if h == nil then
       -- 老存档 / 模拟器建树没有这一层：**算送达**（不发重试、不刷屏），只是这次没东西可显示
