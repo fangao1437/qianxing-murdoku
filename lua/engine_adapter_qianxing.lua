@@ -4071,6 +4071,22 @@ function Adapter:_apply_edges(id, prefix, flags)
   --   ⇒ 这里把**本关真需要、却取不到子控件**的边记下来，函数返回 false；
   --     界面层按"有限次重试"补发（次数有上限，不会变成每帧死循环）。
   local missing_sub = {}
+      -- ★★★★★ 2026-10-18 **content 归位** ✗✓（墙/门错位到格子内部）
+      --   墙/门的贴边坐标是「相对 content 中心」算的（见下面那段贴边 ✓）
+      --   ⇒ content 自己若带偏移/尺寸不对，**整组边会被一起挪走** ✓
+      --     表现就是「墙不在两行/列之间，而是陷在格子里面」✓ 正是用户截图那个形状
+      --   ⇒ 把 content 钉成"锚点居中、尺寸=格子、位置=0" ⇒ 边的坐标基准干净 ✓
+      do
+        local content = nil
+        pcall(function() content = self:sub(id, "content") end)
+        if content ~= nil then
+          if content.SetAnchorMin then pcall(function() content:SetAnchorMin(0.5, 0.5) end) end
+          if content.SetAnchorMax then pcall(function() content:SetAnchorMax(0.5, 0.5) end) end
+          if content.SetPivot then pcall(function() content:SetPivot(0.5, 0.5) end) end
+          if content.SetSizeDelta then pcall(function() content:SetSizeDelta(cw, ch) end) end
+          if content.SetAnchoredPosition then pcall(function() content:SetAnchoredPosition(0, 0) end) end
+        end
+      end
   for i = 1, #sides do
     local s = sides[i]
     local want = (flags[s] and not skip[s]) and true or false
