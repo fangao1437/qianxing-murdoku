@@ -6290,14 +6290,27 @@ function Controller:build_layout(ui_adapter)
     --   它没有"卡号" ⇒ 不能走 `focused_clue`（那会把高亮给到第 1 张真卡 a ✗）
     if self.general_focus ~= nil and self.core ~= nil
        and type(self.core.clue_hint_general) == "function" then
-      local _gh = self.core:clue_hint_general(1)
-      if _gh ~= nil and _gh.set ~= nil and next(_gh.set) ~= nil then hint_set = _gh.set end
+      -- ★★ pcall + **一次性诊断**：能证明这条分支到底走没走到、提示集有几格 ✓
+      pcall(function()
+        local _gh = self.core:clue_hint_general(1)
+        local _cnt = 0
+        if _gh ~= nil and _gh.set ~= nil then for _ in pairs(_gh.set) do _cnt = _cnt + 1 end end
+        if (self._gh_log or 0) < 3 and print then
+          self._gh_log = (self._gh_log or 0) + 1
+          print("[murdoku] ★ 通用线索提示分支：走到了 ✓ 提示格数=" .. tostring(_cnt))
+        end
+        if _cnt > 0 then hint_set = _gh.set end
+      end)
       fci = nil
     end
     -- ★★ 2026-10-18 **卡号 0 = 通用线索** ✓（同一份 `focused_clue`，不另开旁路开关）
     if fci == 0 and self.core ~= nil and type(self.core.clue_hint_general) == "function" then
-      local _g0 = self.core:clue_hint_general(1)   -- fci == 0 解释成通用线索
-      if _g0 ~= nil and _g0.set ~= nil and next(_g0.set) ~= nil then hint_set = _g0.set end
+      -- ★★ 2026-10-18 **必须 pcall** ✗：这里抛错会把整个 build_layout 中断 ⇒
+      --   卡片和棋盘**都不重绘** ⇒ 用户看到"卡片没有视觉变化" ✓ 正是这个形状
+      pcall(function()
+        local _g0 = self.core:clue_hint_general(1)   -- 卡号 0 = 通用线索
+        if _g0 ~= nil and _g0.set ~= nil and next(_g0.set) ~= nil then hint_set = _g0.set end
+      end)
     end
     if fci ~= nil and fci > 0 and self.core ~= nil and self.core.clue_hint ~= nil then
       local h = self.core:clue_hint(fci)
