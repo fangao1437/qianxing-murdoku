@@ -206,6 +206,7 @@ do
   end
   local core = Core.new(best_lv)
   local ctl = UIC.new(core, {})
+  ctl._level_ordinal = function() return 1 end   -- 关序由测试注入（不依赖已交付关卡清单）
   local plan = ctl:layout_plan()
 
   -- ★ ① 条数 = 棋子数 ✓（★ 读的是网格视窗发 RefreshItems 用的那个同一个来源 ✓）
@@ -260,7 +261,7 @@ do
   local LV = require("levels.demo_selftest")
   local core = Core.new(LV)
   local c = UIC.new(core, { skip_intro = true })
-
+  c._level_ordinal = function() return 1 end   -- 关序由测试注入（不依赖已交付关卡清单）
   local function ctrl(name, kids, text)
     local x = { name = name, _kids = kids or {} }
     if text ~= nil then x.text = text end
@@ -339,7 +340,7 @@ do
   local LV = require("levels.demo_selftest")
   local core = Core.new(LV)
   local c = UIC.new(core, { skip_intro = true })
-
+  c._level_ordinal = function() return 1 end   -- 关序由测试注入（不依赖已交付关卡清单）
   local function ctrl(name, kids, text)
     local x = { name = name, _kids = kids or {} }
     if text ~= nil then x.text = text end
@@ -368,6 +369,7 @@ do
   local function build(use_name)
     local co = Core.new(LV)
     local c2 = UIC.new(co, { skip_intro = true })
+    c2._level_ordinal = function() return 1 end   -- 关序由测试注入（不依赖已交付关卡清单）
     -- ★★ 必须先清空那张模块级表 ✗✓（★ 不清 ⇒ 上一节的行还在 ⇒ 本次**一个字都不落账** ✓）
     --   ★ 机制 ✓：`_fill_grid_item` 落账时是 **"只填一次"** ✓（`if _by_pos[slot] == nil` ✓）
     --     ⇒ ★ 表里已经有值 ⇒ ★ **这次的配置被静默忽略** ✓✓
@@ -547,7 +549,7 @@ do
   local LV = require("levels.demo_selftest")
   local core = Core.new(LV)
   local c = UIC.new(core, { skip_intro = true })
-
+  c._level_ordinal = function() return 1 end   -- 关序由测试注入（不依赖已交付关卡清单）
   local function ctrl(name, kids, text)
     local x = { name = name, _kids = kids or {} }
     if text ~= nil then x.text = text end
@@ -655,6 +657,7 @@ do
   local LV = require("levels.demo_selftest")
   local core = Core.new(LV)
   local c = UIC.new(core, { skip_intro = true })
+  c._level_ordinal = function() return 1 end   -- 关序由测试注入（不依赖已交付关卡清单）
   c._grid_base = 0
 
   local function ctrl(name, kids, text)
