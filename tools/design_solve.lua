@@ -20,6 +20,7 @@
 ----------------------------------------------------------------------------]]--
 
 local Core = require("murdoku_core")
+require("tools.design_rules")   -- ★ 设计期：把结构规则挂回 Core（运行时没有它 ✓）
 local make_context = Core.make_context   -- ★ 核心导出的那个（不增加运行时开销 ✓）
 
 local M = {}

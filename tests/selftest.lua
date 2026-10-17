@@ -15,6 +15,7 @@ package.path = table.concat({
 }, ";")
 
 local Core     = require("murdoku_core")
+require("tools.design_rules")   -- ★ 设计期：把结构规则挂回 Core（运行时没有它 ✓）
 local UIC      = require("ui_controller")
 local Adapters = require("engine_adapter")
 local Level    = require("tests.fixtures").clue_level_5x5()

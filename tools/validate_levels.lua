@@ -23,6 +23,7 @@ package.path = table.concat({
 
 local Core   = require("murdoku_core")
 local Levels = require("levels.init")
+require("tools.design_rules")   -- ★ 设计期：把结构规则挂回 Core（运行时没有它 ✓）
 -- ★★ 2026-10-18 求解器已从运行时核心搬出 ⇒ 设计期工具显式 require 它 ✓
 --   （用户：「求解器是不必要的算力消耗 …… 把它单独拿出来当一个关卡设计的独立校准工具」）
 local Solve  = require("tools.design_solve")
