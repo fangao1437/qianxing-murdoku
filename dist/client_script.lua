@@ -9045,6 +9045,27 @@ end
 --   只点亮模板里新加的 gen.backrop / gen.title / gen.body 三件，
 --   把四样卡片文字（who/what/letter/face）全部藏掉 —— 两张卡长得不一样 ✓
 --   ★ 文字：本函数**不写文字**（用户定：内容源那边他自己填 ⇒ 先留空 ✓）
+-- ★★★★ 2026-10-18 **本关有没有通用线索** —— 判据 = **内容源存在** ✓
+--   用户实测：按 `core.general_clues` 判的两版都没生效（点通用卡仍然给 a 发高亮）
+--   ⇒ 改用**用户实际配的东西**：存档里 `row.<关>.clue` 这个内容块存在 = 有通用线索 ✓
+--     ★ 它由编辑器/存档决定，与 lua 关卡表是否声明无关 ⇒ 不会因为一处漏配整条链失效 ✓
+--   ★ 兜底：内容源取不到时，仍看 `core.general_clues` ✓
+function Controller:_has_general_clue()
+  local lv = nil
+  pcall(function() lv = self:_level_ordinal() end)
+  if lv ~= nil then
+    local rc = nil
+    pcall(function() rc = self:_palette_child("row." .. tostring(lv) .. ".clue") end)
+    if rc ~= nil then return true end
+  end
+  local ok = false
+  pcall(function()
+    ok = (self.core ~= nil and type(self.core.general_clues) == "table"
+          and #self.core.general_clues > 0)
+  end)
+  return ok
+end
+
 function Controller:_fill_general_item(adapter, item, index, pos)
   -- ★★★ 2026-10-18 **记下"通用线索那一项"的句柄** ✓
   --   点击时用句柄比对，**不再依赖 pos 算术、也不依赖 general_clues 查询** ✓
@@ -9186,10 +9207,7 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   --   ★ 这么写只用一个局部变量 `pos` 做减法，后面那一大段读 `row.<lv>.<pos>` 的代码
   --     **一个字都不用动** ✓（否则整段的行号都会错位一格 ✗）
   local _has_gen = false
-  pcall(function()
-    _has_gen = (self.core ~= nil and type(self.core.general_clues) == "table"
-                and #self.core.general_clues > 0)
-  end)
+  pcall(function() _has_gen = self:_has_general_clue() end)
   if _has_gen then
     if pos == 1 then
       pcall(function() self:_fill_general_item(adapter, item, index, pos) end)
@@ -10540,6 +10558,8 @@ local ev = { action = "focus_clue", index = pos, phase = "click" }
   pcall(function()
     if item ~= nil and self._general_item == item then
       -- ★ 句柄比对 ✓：就是通用线索那一项 ⇒ 只发 focus_general
+      ev = { action = "focus_general", phase = "click" }
+    elseif pos == 1 and self:_has_general_clue() then
       ev = { action = "focus_general", phase = "click" }
     elseif pos == 1 and self.core ~= nil and type(self.core.general_clues) == "table"
        and #self.core.general_clues > 0 then
