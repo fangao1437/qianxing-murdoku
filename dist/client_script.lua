@@ -10367,6 +10367,17 @@ function Controller:_on_grid_item_click(adapter, grid, item)
       return   -- 通用线索那一项：不选人、不发 focus_clue ✓
     end
   end
+  -- ★★★★★ 2026-10-18 **有通用线索 ⇒ 点击判据必须 −1** ✗✓（用户定案）
+  --   用户原话：「现在 n 张卡的点击判定在 n+1 上」✓ 实机现象：**点 b 选中 c** ✗
+  --   填充侧已经减过（列表第 1 项 = 通用卡，真卡从第 2 项起 ✓）
+  --   ⇒ 点击侧不同步减 ⇒ 点第 k 张卡读到第 k+1 张的人 ✗
+  --   ★ 第 1 项（pos==1）是通用卡，上面已经 return ✓ 所以这里只处理 pos > 1 ✓
+  do
+    local _hg = false
+    pcall(function() _hg = self:_has_general_clue() end)
+    if _hg and pos ~= nil and pos > 1 then pos = pos - 1   -- 点击判据要 −1
+    end
+  end
   if type(pos) ~= "number" then
     -- 两个来源都拿不到 ⇒ 这一次点击**宁可丢掉**，也不要聚焦到错误的一条 ✓
     self:_grid_log("noindex", "网格视窗：这一项属于哪一条读不到（填充记录与 GetItemIndex 都空）"
