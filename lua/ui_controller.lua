@@ -6130,6 +6130,29 @@ function Controller:_fill_general_item(adapter, item, index, pos)
   --   点击时用句柄比对，**不再依赖 pos 算术、也不依赖 general_clues 查询** ✓
   --   （用户实测：按 pos==1 判时，点它仍然按第 1 张真卡 a 去高亮 ✗）
   self._general_item = item
+  -- ★★★ 2026-10-18 **正文从内容源读** ✓（用户定：gen.title 的文本已在模板里填好，只差正文）
+  --   内容源链路（存档实测）：`row.<关>.clue`（容器）→ 子控件 `clue.<关>.1`（文本框）
+  --   读法照抄卡片四样那套：`_palette_child` 拿容器 → `FindChild(全名)` 拿文本框 → 取 `text` ✓
+  --   写入：`item:FindChild("gen.body").text = 正文` ✓（与卡片 `who/what` 同一条路 ✓）
+  --   ★ 什么都没配 ⇒ 不写（留空 ✓ 绝不写成立）
+  do
+    local _lv = self:_level_ordinal()
+    if _lv ~= nil then
+      local _txt = nil
+      local _rc = nil
+      pcall(function() _rc = self:_palette_child("row." .. tostring(_lv) .. ".clue") end)
+      if _rc ~= nil then
+        local _src = nil
+        pcall(function() _src = _rc:FindChild("clue." .. tostring(_lv) .. ".1") end)
+        if _src ~= nil then pcall(function() _txt = _src.text end) end
+      end
+      if _txt ~= nil and _txt ~= "" then
+        local _dst = nil
+        pcall(function() _dst = item:FindChild("gen.body") end)
+        if _dst ~= nil then pcall(function() _dst.text = _txt end) end
+      end
+    end
+  end
   local function child(nm)
     local c = nil
     pcall(function() c = self:_grid_item_child_cached(item, index, pos, nm) end)
