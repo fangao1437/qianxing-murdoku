@@ -10366,7 +10366,16 @@ function Controller:_on_grid_item_click(adapter, grid, item)
   do
     local _hg = false
     pcall(function() _hg = self:_has_general_clue() end)
-    if _hg and pos ~= nil and pos >= 1 then pos = pos - 1 end   -- 通用卡 → 0；真卡 k+1 → k
+    if _hg and pos ~= nil then
+      if pos == 1 then
+        -- ★★★ 通用卡：**没有"人"可选** ⇒ pos 置 nil，让"选人"那步自然跳过 ✓
+        --   ★ 不能置 0 ✗（真机日志：pos=0 被点击链路当非法值丢掉 ⇒ 连派发都没有 ✗）
+        pos = nil
+        self._general_click = true   -- 让下面的派发换成 focus_general（一次性 ✓）
+      else
+        pos = pos - 1                -- 真卡：列表位置 −1 = 卡号 ✓
+      end
+    end
   end
 
   if type(pos) ~= "number" then
@@ -10571,6 +10580,11 @@ function Controller:_on_grid_item_click(adapter, grid, item)
     end
   end
 local ev = { action = "focus_clue", index = pos, phase = "click" }
+  -- ★★★ 2026-10-18 **通用线索发它自己的 action** ✓（只接提示 ✓ 不接 note / 放置）
+  if self._general_click then
+    ev = { action = "focus_general", phase = "click" }
+    self._general_click = nil            -- 一次性：下一次点击重新判定 ✓
+  end
   -- ★★ 2026-10-18 通用线索占列表第 1 项 ⇒ 它的点击**只发 focus_general**（只接提示，不接 note/放置）✓
   pcall(function()
     if item ~= nil and self._general_item == item then
