@@ -16725,6 +16725,35 @@ function Adapter:set_property(id, key, value, nkey)
     for i = 1, #dirs do
       local c = self:sub(id, prefix .. dirs[i])
       if c and c.SetVisible then c:SetVisible((value and value[dirs[i]]) and true or false) end
+      -- ★★★★★ 2026-10-18 **这里只管显隐 ⇒ 定位也一起做** ✗✓
+      --   用户实测：`_apply_edges` 里加的补偿没生效（那条是 `edges` 键的路）
+      --   而**显隐这条路一定在跑**（门能显示就说明它跑过 ✓）⇒ 把定位放这里最可靠 ✓
+      --   坐标与 `_apply_edges` 同一套公式（贴格线），门再叠加素材偏心补偿 ✓
+      local _rc = self.rects and self.rects[id] or nil
+      local _cw = _rc and _rc.w or nil
+      local _ch = _rc and _rc.h or nil
+      if _cw and _ch then
+        local _thick = (self.cfg.cells and self.cfg.cells.edge_thickness) or 8
+        local _dn = (self.cfg.cells and self.cfg.cells.door_nudge) or 6
+        for _i = 1, #dirs do
+          local _c = self:sub(id, prefix .. dirs[_i])
+          if _c ~= nil then
+            local _d = dirs[_i]
+            local _x, _y = 0, 0
+            if _d == "up" then _y = (_ch - _thick) / 2
+            elseif _d == "down" then _y = -((_ch - _thick) / 2)
+            elseif _d == "left" then _x = -((_cw - _thick) / 2)
+            else _x = ((_cw - _thick) / 2) end
+            if key == "doors" then
+              if _d == "up" or _d == "down" then _y = _y + _dn else _x = _x - _dn end
+            end
+            if _c.SetAnchorMin then pcall(function() _c:SetAnchorMin(0.5, 0.5) end) end
+            if _c.SetAnchorMax then pcall(function() _c:SetAnchorMax(0.5, 0.5) end) end
+            if _c.SetPivot then pcall(function() _c:SetPivot(0.5, 0.5) end) end
+            if _c.SetAnchoredPosition then pcall(function() _c:SetAnchoredPosition(_x, _y) end) end
+          end
+        end
+      end
     end
   end
 
