@@ -1639,10 +1639,12 @@ function Controller:on_input(event)
     --   用户原话：「通用线索只接提示这一个选中反馈，note 和放置都不接」
     pcall(function()
       if self.core ~= nil and type(self.core.clue_hint_general) == "function" then
+        self.general_focus = true          -- ★ 高亮绘制认这个开关（见 build_layout 那段）
         self.general_hint = self.core:clue_hint_general(1)
       end
     end)
   elseif a == "focus_clue" then
+    self.general_focus = nil             -- ★ 点普通卡 ⇒ 通用线索的高亮关掉 ✓
     -- 线索卡：点一下聚焦、再点取消。
     --
     -- 为什么必须有这个分支：线索卡在 push 时就发了 `event = { action = "focus_clue" }`，
@@ -3364,6 +3366,14 @@ function Controller:build_layout(ui_adapter)
   local hint_set = nil
   do
     local fci = self.focused_clue
+    -- ★★ 2026-10-18 **通用线索优先** ✓（点它时 `general_focus` 为真）
+    --   它没有"卡号" ⇒ 不能走 `focused_clue`（那会把高亮给到第 1 张真卡 a ✗）
+    if self.general_focus ~= nil and self.core ~= nil
+       and type(self.core.clue_hint_general) == "function" then
+      local _gh = self.core:clue_hint_general(1)
+      if _gh ~= nil and _gh.set ~= nil and next(_gh.set) ~= nil then hint_set = _gh.set end
+      fci = nil
+    end
     if fci ~= nil and fci > 0 and self.core ~= nil and self.core.clue_hint ~= nil then
       local h = self.core:clue_hint(fci)
       if h ~= nil and h.set ~= nil and next(h.set) ~= nil then hint_set = h.set end
