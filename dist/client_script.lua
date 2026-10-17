@@ -10781,6 +10781,11 @@ end
 --   ⚠️ 报错**按 id + 键各报一次**，而且**最多只列 8 条**（第 9 条换成一句总结）：
 --      一个坏句柄会每帧抛，不去重/不限量就是拿日志刷屏 —— 那正是用户这一轮最烦的事。
 function Controller:_set_prop(adapter, id, key, value, nkey)
+  -- ★★ 2026-10-18 hint 出口探针：**UI 到底有没有把 hint 发给适配器** ✓
+  if key == "hint" and print and (self._hint_out or 0) < 8 then
+    self._hint_out = (self._hint_out or 0) + 1
+    print("[murdoku] ★ hint 出口：给 " .. tostring(id) .. " 发 hint=" .. tostring(value))
+  end
   -- ★★★★★ 2026-10-05 **多带一个 `nkey`：这把键就是属性账本那把 `node_key`。**
   --
   --   为什么要有它：`build_layout` 里**同一个 id 会出现在两个节点上**
