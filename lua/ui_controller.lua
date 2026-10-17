@@ -6246,6 +6246,13 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
       return
     end
     pos = pos - 1
+    -- ★★★ 2026-10-18 **普通卡必须把通用线索那三件藏掉** ✗✓    --   它们是**模板里的子控件** ⇒ 默认对**每一张卡**都可见 ✗    --   用户实测：「gen.backrop 会在所有线索卡上出现」✓ 修在这里 ✓
+    for _, _nm in ipairs({ "gen.backrop", "gen.title", "gen.body" }) do
+      pcall(function()
+        local _cc = self:_grid_item_child_cached(item, index, pos, _nm)
+        if _cc ~= nil then _cc.visible = false end
+      end)
+    end
   end
   -- ★ 2026-10-10 **记下句柄与它当时的 index** ✓ —— ★ 就地重填要用 ✓
   --   ★ 为什么要有它 ✗：★ 有了句柄就能【不重发 RefreshItems】而刷新内容 ✓
