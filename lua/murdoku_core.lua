@@ -1668,17 +1668,24 @@ function Core:structure_report(roles)
     end
   end
 
+  -- ★★ 2026-10-18 【同伙规则已废止】（用户决定；此前只落在 main 分支，这里补到开发线）
+  --
+  --   被删掉的旧规则有两条，它们互相咬合、把"受害者房间里还有别人"与"必须有同伙"绑死：
+  --     ⑪ 受害者所在区域人数 k >= 2  ⇒ 盗窃者必然有且只有一个同伙
+  --     ⑫ 同伙必须与盗窃者待在同一个区域
+  --   用户判断：这条规则**过度约束了变化性** —— 只要 k>=2 就强制多出一个角色。
+  --
+  --   现在的语义：
+  --     · k 取任何值都**不再**要求同伙；
+  --     · 关卡在 roles 里声明了 accomplice，那个角色才存在（旧关卡不受影响）；
+  --     · 同伙**不再**被要求与盗窃者同区。
+  --   R3（盗窃者所在区域 = 受害者相邻区域里无辜人数最多的那个）**保持不变**。
   local has_acc = roles.accomplice ~= nil
   info.has_accomplice = has_acc
-  if info.k >= 2 and not has_acc then
-    errors[#errors + 1] = "受害者与他人同区（k>=2），盗窃者必然有且只有一个同伙"
-  end
   if has_acc then
     local ap = self.pos[roles.accomplice]
     if not ap then
       errors[#errors + 1] = "同伙还没摆上棋盘"
-    elseif self.room[ap.r][ap.c] ~= info.thief_room then
-      errors[#errors + 1] = "同伙与盗窃者不在同一个区域"
     end
   end
 
