@@ -149,6 +149,10 @@ do
   Ctl._row_letter = {}
   local core2 = Core.new(lv)
   local c2 = UIC.new(core2, { skip_intro = true })
+  -- ★★ 2026-10-18 这一趟是**手工新建**的控制器（没走 `boot()`）⇒ 关序也要注入 ✓
+  --   ★ 第一版只注了 `boot()` 里那个 ⇒ 这一趟 `_level_ordinal()` 返回 nil
+  --     ⇒ 一条都读不到 ⇒ 这条"换顺序仍然确定"的断言假红 ✗
+  c2._level_ordinal = function() return 1 end   -- _level_ordinal 由测试注入
   c2._grid_in_refresh = true
   -- ★ 索引基准要钉住 ✓ —— ★ 否则第一趟进来的是 `index = #letters` ⇒ 基准被定成 7
   --   ★ ⇒ `pos` 算成 0 / −3 …… ✗ ★ 那是**假环境**的问题，不是落账的问题 ✓
