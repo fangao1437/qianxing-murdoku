@@ -26,7 +26,6 @@ local Levels = require("levels.init")
 require("tools.design_rules")   -- ★ 设计期：把结构规则挂回 Core（运行时没有它 ✓）
 -- ★★ 2026-10-18 求解器已从运行时核心搬出 ⇒ 设计期工具显式 require 它 ✓
 --   （用户：「求解器是不必要的算力消耗 …… 把它单独拿出来当一个关卡设计的独立校准工具」）
-local Solve  = require("tools.design_solve")
 
 local limit = tonumber(arg and arg[1]) or 2
 local total, bad = 0, 0
@@ -116,30 +115,7 @@ for _, lv in ipairs(levels) do
         end
       end
 
-      -- 唯一解（含角色归属）
-      -- ★★★ 2026-10-11 **是否"未测"的判据 = 有没有【有内容的】线索** ✗✓
-      --   ★ 槽位（★ 按棋盘规格生成 ✓ 没有 `type` ✓）不算内容 ✓
-      --     ⇒ ★ 它们必然"多解" ✗ ★ 照旧报 FAIL ⇒ ★★ **每关都红** ✓ ⇒ **假红淹真红** ✗
-      --   ⇒ ★★ 判据改用 `n_content` ✓（★ 上一段已经数好了 ✓）
-      --     ★ **只要有内容，判据一字不变** ✓✓
-      local n_clues = n_content
-      if n_clues == 0 then
-        print("  唯一解: 未测（本关线索 0 条 —— ★ 内容待设计 ✓ 不是判据失效 ✗）")
-      else
-        local sols = Solve.solve(core, limit)
-        if #sols == 1 then
-          print(string.format("  唯一解: OK（盗窃者 %s，同伙 %s）",
-                tostring(sols[1].thief), tostring(sols[1].accomplice)))
-        else
-          bad = bad + 1
-          print(string.format("  唯一解: FAIL（找到 %d 个解，上限 %d）—— 线索不足或角色不唯一",
-                #sols, limit))
-          for i = 1, #sols do
-            print(string.format("    解%d: 盗窃者 %s / 同伙 %s",
-                  i, tostring(sols[i].thief), tostring(sols[i].accomplice)))
-          end
-        end
-      end
+      -- ★★ 2026-10-18 **多解检查已删** ✓（用户定：「原设计已经收口了」⇒ 不再统计解数、不再报 FAIL）
 
       print(string.format("  规模: %dx%d / 棋子 %d / 线索 %d / 区域 %d / 门 %d",
             core.rows, core.cols, core:piece_count(), #(lv.clues or {}),

@@ -6298,10 +6298,6 @@ function Controller:build_layout(ui_adapter)
         local _gh = self.core:clue_hint_general(1)
         local _cnt = 0
         if _gh ~= nil and _gh.set ~= nil then for _ in pairs(_gh.set) do _cnt = _cnt + 1 end end
-        if (self._gh_log or 0) < 3 and print then
-          self._gh_log = (self._gh_log or 0) + 1
-          print("[murdoku] ★ 通用线索提示分支：走到了 ✓ 提示格数=" .. tostring(_cnt))
-        end
         if _cnt > 0 then hint_set = _gh.set end
       end)
       fci = nil
@@ -6582,7 +6578,7 @@ function Controller:build_layout(ui_adapter)
         --     ⇒ 脚本**只负责显示 / 隐藏** ✓ 颜色一个字都不写 ✓（`tint` 回到只管房间色 ✓）
         tint = (cd.suspect and 4294967295) or Controller.room_color(cd.room),
         -- ★ 每格都发（true/false）⇒ 取消选中 / 换卡时自然把上一批关掉 ✓（账本按值去重 ✓）
-      hint = (function() local v = (hint_set ~= nil and hint_set[r .. ":" .. c] == true); if print and (self._hint_probe or 0) < 8 then local n = 0; if hint_set ~= nil then for _k in pairs(hint_set) do n = n + 1 end end; if n > 0 then self._hint_probe = (self._hint_probe or 0) + 1; print("[murdoku] ★ 提示下发探针：hint_set=" .. tostring(n) .. " 格") end end; return v end)(),
+      hint = (hint_set ~= nil and hint_set[r .. ":" .. c] == true),
         -- ★★★★★★★★ 2026-10-17 **格子边长（画布）直接告诉适配层** ✗✓
         --   用途：把"铺满型"子控件（`face` / `hint` / `obj`）钉成**和格子一样大**
         --   ★ 为什么由界面层给：`build_layout` 本来就算出了 `cell`（设计空间）✓
@@ -9058,7 +9054,6 @@ function Controller:_grid_disable_gray_raycast(item, index, pos)
   if cg.raycastTarget ~= nil then pcall(function() cg.raycastTarget = false end) end
   if cg.blockRaycast ~= nil then pcall(function() cg.blockRaycast = false end) end
   if cg.interactable ~= nil then pcall(function() cg.interactable = false end) end
-  print("[murdoku] 灰白层 `gray`：已关掉射线与交互（点击照常落在卡片上）")
   return true
 end
 
@@ -10794,10 +10789,6 @@ end
 --      一个坏句柄会每帧抛，不去重/不限量就是拿日志刷屏 —— 那正是用户这一轮最烦的事。
 function Controller:_set_prop(adapter, id, key, value, nkey)
   -- ★★ 2026-10-18 hint 出口探针：**UI 到底有没有把 hint 发给适配器** ✓
-  if key == "hint" and (value == true) and print and (self._hint_out or 0) < 12 then
-    self._hint_out = (self._hint_out or 0) + 1
-    print("[murdoku] ★ hint 出口：给 " .. tostring(id) .. " 发 hint=" .. tostring(value))
-  end
   -- ★★★★★ 2026-10-05 **多带一个 `nkey`：这把键就是属性账本那把 `node_key`。**
   --
   --   为什么要有它：`build_layout` 里**同一个 id 会出现在两个节点上**
@@ -16036,10 +16027,6 @@ function Adapter:set_property(id, key, value, nkey)
   --   ★ `sub()` 会**穿过 `content`** 找同名子控件（见 `Adapter:sub` 的三级尝试 ✓）
   elseif key == "hint" then
       -- ★★ 2026-10-18 淡蓝探针：这里才是 hint 的真正消费点 ✓
-      if print and (self._dbg_hint or 0) < 8 then
-        self._dbg_hint = (self._dbg_hint or 0) + 1
-        print("[murdoku] ★ 淡蓝探针：适配器收到 hint 键（格子 " .. tostring(id) .. "）")
-      end
     local h = self:sub(id, "hint")
     if h == nil then
       -- 老存档 / 模拟器建树没有这一层：**算送达**（不发重试、不刷屏），只是这次没东西可显示
@@ -16056,12 +16043,6 @@ function Adapter:set_property(id, key, value, nkey)
     --   ⇒ hint 很可能被压到 face 下面 ⇒ 可见性开了、却被不透明 face 盖住 ✗
     if on then
       if h.SetAsLastSibling then pcall(function() h:SetAsLastSibling() end) end
-      if print and (self._hint_top_log or 0) < 3 then
-        self._hint_top_log = (self._hint_top_log or 0) + 1
-        local si = nil
-        pcall(function() si = h:GetSiblingIndex() end)
-        print("[murdoku] ★ 淡蓝层：开可见并抬到最上层（" .. tostring(id) .. " 层序=" .. tostring(si) .. "）")
-      end
     end
     if on and h.SetActive then pcall(function() h:SetActive(true) end) end
     return true
