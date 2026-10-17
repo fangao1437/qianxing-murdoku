@@ -15840,6 +15840,12 @@ function Adapter:_apply_edges(id, prefix, flags)
     -- 而不是"看你素材多大"。
     local thick = (self.cfg.cells and self.cfg.cells.edge_thickness) or 8
     local door_ratio = (self.cfg.cells and self.cfg.cells.door_length_ratio) or 0.45
+    -- ★★★★★★★★ 2026-10-18（v263）**墙加长，填掉相邻两格之间的缝** ✗✓✓
+    --   用户原话：「现在墙稍微有一点缝隙，把墙的长度增加 4，填满现在的空隙即可」
+    --   缝的来源：每格只画自己那条边（长 = 格子边长 `cw`），相邻两格各画各的 ⇒
+    --   取整误差在**四角**留下 1–2px。加 4 ⇒ 两端各溢出 2（`localScale` 绕中心 ⇒ 位置不变），
+    --   角上相邻两格**重叠**，缝消失。只加墙不加门（门要明显短于墙才像门）。
+    local overlap = (self.cfg.cells and self.cfg.cells.edge_overlap) or 4
 
     if cw ~= nil then
       for i = 1, #sides do
@@ -15851,7 +15857,8 @@ function Adapter:_apply_edges(id, prefix, flags)
           local horiz = (s == "up" or s == "down")
           -- 目标几何：横边 = 长 cw × 厚 thick；竖边 = 厚 thick × 长 ch
           -- 门比墙短一点，看起来才像"门"而不是一整面墙
-          local tlen = (prefix == "door") and (cw * door_ratio) or cw
+          -- ★ v263：**墙**多加 `overlap`（填四角的缝）；门不加
+          local tlen = (prefix == "door") and (cw * door_ratio) or (cw + overlap)
           local tthick = thick
           local base_l = horiz and w or h      -- 基准：编辑器里控件的尺寸
           local base_t = horiz and h or w
@@ -21268,7 +21275,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v262 / 2026-10-18 / 修「选关四张卡塌成一张」（image/tint 分支的贴格钩子只认 cell.R.C）+ 门墙素材 107092 + root 补几何 + 其余同 v261 =====")
+        print("[murdoku] ===== 构建标记 v263 / 2026-10-18 / 墙加长 4（填掉格与格之间的缝；门不加）+ 其余同 v262 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -21640,6 +21647,17 @@ local function build_adapter()
       -- 脚本第一次试玩会把基准与倍率打进日志，可以核对：
       --   [murdoku] 边缘适配 wall.up：基准 24x8 → 目标 135x8（倍率 5.63 / 1.00）
       edge_thickness = 8,
+      -- ★★★★★★★★ 2026-10-18（v263）**墙加长 4 画布 px，用来填掉格与格之间的那道缝** ✗✓✓
+      --
+      --   用户真机回报（原话）：「现在墙稍微有一点缝隙，把墙的长度增加 4，填满现在的空隙即可」
+      --
+      --   为什么会有缝：每一格的 `wall.*` 只画**自己那一条边**，长度 = 格子边长 `cw`；
+      --   而相邻两格各自画、都从自己边的两端开始 ⇒ 长与宽的取整误差会在**四角**留出 1–2px 的缝。
+      --   加长 4（= 两端各溢出 2，`localScale` 绕中心缩放 ⇒ 位置不动）就能把缝盖住，
+      --   且相邻两格在角上**重叠 4px** —— 同色叠加看不出来。
+      --   ★ 只加**墙**，不加门（门要明显比墙短才像门，见 `door_length_ratio`）。
+      --   ★ 想调就只改这一个数：2 = 几乎无缝但不重叠；6 = 明显重叠（角上会变厚）。
+      edge_overlap = 4,
       -- 门比墙短一点（占格子边长的比例），看起来才像"门"
       -- ★ 2026-10-17：0.45 → **0.30**（对齐设计图：门只是墙线上的**一小段**橙标 ✓）
       door_length_ratio = 0.30,

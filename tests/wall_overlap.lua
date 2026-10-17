@@ -1,0 +1,101 @@
+﻿--[[----------------------------------------------------------------------------
+  tests/wall_overlap.lua —— ★「墙加长 4，填掉格与格之间的缝」（v263）的回归断言
+
+  用户真机回报（原话）：「现在墙稍微有一点缝隙，把墙的长度增加 4，填满现在的空隙即可」
+
+  ⇒ 钉两件事（双向）：
+    ① **墙**的目标长度 = 格子边长 + `edge_overlap`（默认 4）⇒ 相邻两格角上重叠
+    ② **门**的长度**不受**这个改动影响（仍是 `cw × door_length_ratio`）—— 别把门也拉长了
+
+  跑法：lua tests/wall_overlap.lua
+----------------------------------------------------------------------------]]--
+
+local HERE = (arg and arg[0] and arg[0]:match("^(.*)[/\\][^/\\]*$")) or "."
+local root = HERE .. "/.."
+package.path = table.concat({
+  root .. "/lua/?.lua", root .. "/lua/?/init.lua", root .. "/?.lua", package.path,
+}, ";")
+
+local Ad = require("engine_adapter_qianxing")
+
+local passed, failed = 0, 0
+local function ok(cond, msg)
+  if cond then passed = passed + 1
+  else failed = failed + 1; print("  FAIL  " .. msg) end
+end
+local function near(a, b, eps) return type(a) == "number" and math.abs(a - b) <= (eps or 1e-6) end
+
+-- 假控件（与 tests/things_wiring.lua 同一套写法）
+local function ctrl(name, kids, fields)
+  local x = { name = name, _kids = kids or {} }
+  for k, v in pairs(fields or {}) do x[k] = v end
+  x.GetChildren = function() return x._kids end
+  x.GetChild = function(_, n)
+    for _, k in ipairs(x._kids) do if k.name == n then return k end end
+    return nil
+  end
+  x.FindChild = x.GetChild
+  x.SetVisible = function(_, v) x.visible = v end
+  x.SetActive = function(_, v) x.active = v end
+  x.SetImage = function(_, src, id) x.imageSource = src; x.imageId = id end
+  x.SetLocalScale = function(_, a, b) x.localScaleX, x.localScaleY = a, b end
+  x._scale = function() return x.localScaleX or 1, x.localScaleY or 1 end
+  x.GetSizeDelta = function() return x.sizeDeltaX, x.sizeDeltaY end
+  x.SetSizeDelta = function(_, w, h) x.sizeDeltaX, x.sizeDeltaY = w, h end
+  x.SetAnchoredPosition = function(_, px, py) x.anchoredPositionX, x.anchoredPositionY = px, py end
+  x.SetAnchorMin = function() end
+  x.SetAnchorMax = function() end
+  x.SetPivot = function() end
+  if x.visible == nil then x.visible = true end
+  if x.active == nil then x.active = true end
+  return x
+end
+
+-- 编辑器里墙/门的基准尺寸：24×8（横条），竖条则 8×24
+local WALL_BASE_L, DOOR_BASE_L = 24, 24
+local wallUp = ctrl("wall.up", {}, { imageId = 107092, sizeDeltaX = WALL_BASE_L, sizeDeltaY = 8, visible = false })
+local wallLeft = ctrl("wall.left", {}, { imageId = 107092, sizeDeltaX = 8, sizeDeltaY = WALL_BASE_L, visible = false })
+local doorUp = ctrl("door.up", {}, { imageId = 107092, sizeDeltaX = DOOR_BASE_L, sizeDeltaY = 8, visible = false })
+local content = ctrl("content", { wallUp, wallLeft, doorUp })
+local CELL = 108                                   -- 5×5 的格子边长（画布单位）
+local cell = ctrl("cell.1.1", { content })
+cell.kind = "button"
+cell.sizeDeltaX, cell.sizeDeltaY = CELL, CELL
+local rootCtl = ctrl("root", { cell })
+_G.game = { GetClientUIRoots = function() return { rootCtl } end }
+
+local OVERLAP = 4
+local a = Ad.new({ cells = { rows = 5, cols = 5, edge_thickness = 8, edge_overlap = OVERLAP, door_length_ratio = 0.30 } })
+-- ★ 墙的目标长度用的是适配器**自己算出来的**格子边长（不是测试里那个 108）
+local CW = a:cell_geometry(5)
+assert(type(CW) == "number" and CW > 0, "cell_geometry 读不到格子边长")
+
+--------------------------------------------------------------------------------
+-- ① 墙：目标长度 = 108 + 4 = 112 ⇒ 横墙的 localScaleX = 112/24
+--------------------------------------------------------------------------------
+a:set_property("cell.1.1", "walls", { up = true, down = false, left = false, right = false })
+local sx, sy = wallUp._scale()
+ok(near(sx, (CW + OVERLAP) / WALL_BASE_L, 1e-6),
+  "横墙 localScaleX = (" .. tostring(CW) .. "+4)/24 = " .. tostring((CW + OVERLAP) / WALL_BASE_L) .. "（实测 " .. tostring(sx) .. "）")
+ok(near(sy, 8 / 8, 1e-6), "横墙厚度倍率不变（实测 " .. tostring(sy) .. "）")
+ok(wallUp.visible == true, "墙仍然可见")
+
+-- 竖墙：长边是 Y（基准 8×24）⇒ localScaleY = 112/24
+a:set_property("cell.1.1", "walls", { up = false, down = false, left = true, right = false })
+local lx, ly = wallLeft._scale()
+ok(near(ly, (CW + OVERLAP) / WALL_BASE_L, 1e-6),
+  "竖墙 localScaleY = (" .. tostring(CW) .. "+4)/24（实测 " .. tostring(ly) .. "）")
+
+--------------------------------------------------------------------------------
+-- ② 门：**不**受 overlap 影响 ⇒ localScaleX = 108×0.30/24 = 1.35
+--------------------------------------------------------------------------------
+a:set_property("cell.1.1", "doors", { up = true, down = false, left = false, right = false })
+local dx = doorUp._scale()
+local want = (CW * 0.30) / DOOR_BASE_L
+ok(near(dx, want, 1e-6),
+  "门长度没被拉长（期望 " .. tostring(want) .. "，实测 " .. tostring(dx) .. "）")
+ok(doorUp.visible == true, "门仍然可见")
+ok(not near(dx, (CELL + OVERLAP) / DOOR_BASE_L, 1e-6), "门长度 ≠ 墙长度（双向判据）")
+
+print(string.format("\nwall_overlap: %d passed, %d failed", passed, failed))
+os.exit(failed == 0 and 0 or 1)
