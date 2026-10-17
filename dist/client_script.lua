@@ -6288,8 +6288,11 @@ function Controller:build_layout(ui_adapter)
     local fci = self.focused_clue
     -- ★★ 2026-10-18 **通用线索优先** ✓（点它时 `general_focus` 为真）
     --   它没有"卡号" ⇒ 不能走 `focused_clue`（那会把高亮给到第 1 张真卡 a ✗）
-    if self.general_focus ~= nil and self.core ~= nil
-       and type(self.core.clue_hint_general) == "function" then
+    -- ★★★ 2026-10-18 **只认卡号，不认标志** ✗✓（用户实测：点卡 a 亮的是通用线索那 5 格）
+    --   原因：`general_focus` 标志残留 ⇒ 真卡也被当成通用线索 ✗
+    --   ⇒ 判据改成**卡号越界**：通用卡号 = 卡片数 + 1（点击时设的）⇒ 不会和任何真卡撞号 ✓
+    if fci ~= nil and fci > 0 and self.core ~= nil
+       and (self.core.clues == nil or fci > #self.core.clues) then
       -- ★★ pcall + **一次性诊断**：能证明这条分支到底走没走到、提示集有几格 ✓
       pcall(function()
         local _gh = self.core:clue_hint_general(1)
