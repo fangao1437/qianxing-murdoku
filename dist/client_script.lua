@@ -4554,6 +4554,14 @@ function Controller:on_input(event)
     self.clue_scroll = s
     self.dirty = true
 
+  elseif a == "focus_general" then
+    -- ★ 2026-10-18 通用线索：**只接"提示"这一个选中反馈** ✓
+    --   用户原话：「通用线索只接提示这一个选中反馈，note 和放置都不接」
+    pcall(function()
+      if self.core ~= nil and type(self.core.clue_hint_general) == "function" then
+        self.general_hint = self.core:clue_hint_general(1)
+      end
+    end)
   elseif a == "focus_clue" then
     -- 线索卡：点一下聚焦、再点取消。
     --
@@ -8205,7 +8213,7 @@ function Controller:sync_clue_grid(adapter)
   do
     local core = self.core
     if core ~= nil and type(core.clues) == "table" then
-      n = #core.clues
+      n = #core.clues + ((type(core.general_clues) == "table" and #core.general_clues > 0) and 1 or 0)   -- ★ 有通用线索 ⇒ 列表多一条（在最上面）
     else
       -- ★ 兜底 ✓：★ 核心还没建起来 ⇒ ★ 退回读关卡数据 ✓（★ 老行为 ✓ 不崩 ✓）
       local lv = core and core.level
@@ -9023,6 +9031,26 @@ function Controller:_grid_disable_gray_raycast(item, index, pos)
   return true
 end
 
+-- ★★★★ 2026-10-18 **通用线索卡**（列表第 1 项）✗✓
+--   只点亮模板里新加的 gen.backrop / gen.title / gen.body 三件，
+--   把四样卡片文字（who/what/letter/face）全部藏掉 —— 两张卡长得不一样 ✓
+--   ★ 文字：本函数**不写文字**（用户定：内容源那边他自己填 ⇒ 先留空 ✓）
+function Controller:_fill_general_item(adapter, item, index, pos)
+  local function child(nm)
+    local c = nil
+    pcall(function() c = self:_grid_item_child_cached(item, index, pos, nm) end)
+    return c
+  end
+  for _, nm in ipairs({ "who", "what", "letter", "face" }) do
+    local c = child(nm)
+    if c ~= nil then pcall(function() c.visible = false end) end
+  end
+  for _, nm in ipairs({ "gen.backrop", "gen.title", "gen.body" }) do
+    local c = child(nm)
+    if c ~= nil then pcall(function() c.visible = true end) end
+  end
+end
+
 function Controller:_fill_grid_item(adapter, grid, item, index)
   self._grid_calls = (self._grid_calls or 0) + 1
   if item == nil then return end
@@ -9110,6 +9138,25 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
     end
   end
   local pos = (tonumber(index) or self._grid_base) - self._grid_base + 1
+  -- ★★★★ 2026-10-18 **通用线索占列表第 1 位** ✗✓
+  --   用户：「通用线索…放在最上方，如果有通用线索则其它线索卡往下移」
+  --   ⇒ 列表位置 `pos` 与"第几张真卡 / 第几行"从此**不是同一个数** ✓
+  --     · pos == 1        ⇒ 通用线索卡（只点亮 gen.* 三件，四样卡片文字藏掉）
+  --     · pos >= 2        ⇒ 第 (pos-1) 张真卡 ⇒ `row.<关>.<行>` 的行号**仍是 pos-1 起的 1** ✓
+  --   ★ 这么写只用一个局部变量 `pos` 做减法，后面那一大段读 `row.<lv>.<pos>` 的代码
+  --     **一个字都不用动** ✓（否则整段的行号都会错位一格 ✗）
+  local _has_gen = false
+  pcall(function()
+    _has_gen = (self.core ~= nil and type(self.core.general_clues) == "table"
+                and #self.core.general_clues > 0)
+  end)
+  if _has_gen then
+    if pos == 1 then
+      pcall(function() self:_fill_general_item(adapter, item, index, pos) end)
+      return
+    end
+    pos = pos - 1
+  end
   -- ★ 2026-10-10 **记下句柄与它当时的 index** ✓ —— ★ 就地重填要用 ✓
   --   ★ 为什么要有它 ✗：★ 有了句柄就能【不重发 RefreshItems】而刷新内容 ✓
   --     ⇒ ★ **滚动位置才保得住** ✓✓（★ 这是"点一下弹回顶部"的治本一步 ✓）
@@ -10436,6 +10483,13 @@ function Controller:_on_grid_item_click(adapter, grid, item)
     end
   end
 local ev = { action = "focus_clue", index = pos, phase = "click" }
+  -- ★★ 2026-10-18 通用线索占列表第 1 项 ⇒ 它的点击**只发 focus_general**（只接提示，不接 note/放置）✓
+  pcall(function()
+    if pos == 1 and self.core ~= nil and type(self.core.general_clues) == "table"
+       and #self.core.general_clues > 0 then
+      ev = { action = "focus_general", phase = "click" }
+    end
+  end)
   if adapter ~= nil and type(adapter.on_input) == "function" then
     adapter.on_input(ev)
   else
