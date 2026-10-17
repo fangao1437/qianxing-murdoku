@@ -9196,6 +9196,12 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
       return
     end
     pos = pos - 1
+    -- ★★★ 2026-10-18 **列表项会被引擎复用** ✗✓
+    --   上一轮用 `self._general_item` 记句柄来判断"哪一项是通用线索" ✓
+    --   但**同一个 item 句柄**滚动/回收后会拿去显示普通卡 ⇒ 标记还在 ⇒
+    --   点那张**普通卡**也发 `focus_general` ⇒ 高亮派发错 ✗（用户实测）
+    --   ⇒ 填普通卡时**就地清掉**这个标记 ✓（下次填成通用卡会重新设 ✓）
+    if self._general_item == item then self._general_item = nil end   -- _general_item 清掉（复用护栏）
     -- ★★★ 2026-10-18 **普通卡必须把通用线索那三件藏掉** ✗✓    --   它们是**模板里的子控件** ⇒ 默认对**每一张卡**都可见 ✗    --   用户实测：「gen.backrop 会在所有线索卡上出现」✓ 修在这里 ✓
     for _, _nm in ipairs({ "gen.backrop", "gen.title", "gen.body" }) do
       pcall(function()
