@@ -4071,11 +4071,46 @@ function Adapter:_apply_edges(id, prefix, flags)
   --   ⇒ 这里把**本关真需要、却取不到子控件**的边记下来，函数返回 false；
   --     界面层按"有限次重试"补发（次数有上限，不会变成每帧死循环）。
   local missing_sub = {}
+
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ 2026-10-18（v265）**边的几何基准** ✗✓✓
+  --
+  --   ★ 用户原话：「调整门墙坐标让**门墙位于格子之间**，偏差你测量图片」✓
+  --
+  --   ★ 实机截图实测（`records/shot-2026-10-18-doorwall.png`，1600×900 画布，1 画布 px = 1 截图 px）：
+  --       · 格子 91×91、缝 2px ⇒ **pitch 93**；格线（缝中线）在格子边**再往外 gap/2 = 1px** 处 ✓
+  --       · 墙条 #29282B 7×92：竖墙中心 x=1001，格线 x=994.5 ⇒ **偏 +6.5** ✗
+  --         （横墙同理偏 +6.5，**门也一样偏** ⇒ 不是素材偏心、也不是只门有问题 ✓）
+  --   ★ 根因：旧代码把条子摆成「**贴格子内侧边**」：
+  --       up: y = (cw − 厚)/2 ⇒ 条子的**外沿**正好压在格子边上、整条在格子**里面** ✓
+  --     而格线在「格子边 + gap/2」⇒ 条子中心离格线 = 厚/2 + gap/2 = 4 + 1 = 5px（实测 6.5）✓
+  --   ⇒ ★ 本版的判据只有一条：**格子之间的墙都居中在格线上** ✓
+  --       · **内部边**（两格之间）⇒ 距本格中心 **pitch/2** ✓ ← 本次要修的就是这条
+  --       · **外框边**（棋盘最外圈）⇒ 仍**贴格子内侧**（`(cw−厚)/2`）—— 外框由 ruler 做边界，
+  --         用户没抱怨它，动它只是新增风险（"墙压到外框上"）⇒ 保持原观感 ✓
+  --     ★ 墙与门**共用**同一个距离 ⇒ 门永远压在墙的正中（不会一上一下）✓
+  --   ⚠️ 不要再用"固定 nudge 数字"来补：缝随 N 变（5×5 缝 3 / 6×6 缝 2），写死必错 ✓
+  local geo_n = self.cells_rows or self.cells_cols
+    or (self.cfg.cells and (self.cfg.cells.rows or self.cfg.cells.cols)) or 5
+  local cw, pitch = nil, nil
+  pcall(function() cw, pitch = self:cell_geometry(geo_n) end)
+  if type(cw) ~= "number" or cw <= 0 then cw, pitch = nil, nil end
+  local ch = cw
+  -- pitch 读不到 / 小于边长（异常）⇒ 退化成"没有缝"，至少不会把条子推到隔壁格子外
+  if cw ~= nil and (type(pitch) ~= "number" or pitch <= 0 or pitch < cw) then pitch = cw end
+  if cw == nil and print and not self._edge_no_geo_noted then
+    self._edge_no_geo_noted = true
+    print("[murdoku] 边缘适配：**算不出格子边长**（cell_geometry(" .. tostring(geo_n)
+      .. ") 返回 0/nil）⇒ 墙/门的**缩放与贴边整段跳过**（按编辑器里摆的原样显示）")
+  end
+
       -- ★★★★★ 2026-10-18 **content 归位** ✗✓（墙/门错位到格子内部）
       --   墙/门的贴边坐标是「相对 content 中心」算的（见下面那段贴边 ✓）
       --   ⇒ content 自己若带偏移/尺寸不对，**整组边会被一起挪走** ✓
       --     表现就是「墙不在两行/列之间，而是陷在格子里面」✓ 正是用户截图那个形状
       --   ⇒ 把 content 钉成"锚点居中、尺寸=格子、位置=0" ⇒ 边的坐标基准干净 ✓
+      --   ⚠️ 2026-10-18 修正：原来这里用的是 `cw, ch`，而那两个 local 在**下面**才声明
+      --      ⇒ 传进去恒为 nil ⇒ `SetSizeDelta(nil,nil)` 被 pcall 吞掉 ⇒ **等于没做** ✗
+      --      现在几何值提到函数开头算（见上），这里真的会写进去 ✓
       do
         local content = nil
         pcall(function() content = self:sub(id, "content") end)
@@ -4083,7 +4118,9 @@ function Adapter:_apply_edges(id, prefix, flags)
           if content.SetAnchorMin then pcall(function() content:SetAnchorMin(0.5, 0.5) end) end
           if content.SetAnchorMax then pcall(function() content:SetAnchorMax(0.5, 0.5) end) end
           if content.SetPivot then pcall(function() content:SetPivot(0.5, 0.5) end) end
-          if content.SetSizeDelta then pcall(function() content:SetSizeDelta(cw, ch) end) end
+          if content.SetSizeDelta and cw ~= nil then
+            pcall(function() content:SetSizeDelta(cw, ch) end)
+          end
           if content.SetAnchoredPosition then pcall(function() content:SetAnchoredPosition(0, 0) end) end
         end
       end
@@ -4179,24 +4216,9 @@ function Adapter:_apply_edges(id, prefix, flags)
   --    前提：编辑器里把墙控件的尺寸调成**"正好包住那张图"**（脚本按
   --    目标长度 ÷ 这个尺寸 求缩放比）。控件已经铺满整条边时缩放比≈1，不受影响。
   if self.cfg.cells == nil or self.cfg.cells.edge_fit ~= false then
-    -- 格子边长：`cell_geometry(n)` 才是权威算法（它按 board 实际尺寸与行列数算）。
-    -- n 用当前关卡的真实行列数（ensure_cells 时记在 self.cells_rows/cols 上）。
-    local n = self.cells_rows or (self.cfg.cells and self.cfg.cells.rows) or 5
-    local cw = nil
-    pcall(function() cw = self:cell_geometry(n) end)
-    local ch = cw
-    if type(cw) ~= "number" or cw <= 0 then cw, ch = nil, nil end
-
-    -- ★★★★★ 2026-10-05 **"算不出格子边长"必须说出来**（否则这一整段是静默跳过的）。
-    --
-    --   为什么：下面 `if cw ~= nil then` 一旦为假，**整个几何适配（缩放 + 贴边）都不跑**，
-    --   日志里却一个字都没有 —— 而"什么都没做"和"做了但没生效"在画面上完全一样，
-    --   排查时会往错的方向找（比如怀疑贴图/层序）。
-    if cw == nil and print and not self._edge_no_geo_noted then
-      self._edge_no_geo_noted = true
-      print("[murdoku] 边缘适配：**算不出格子边长**（cell_geometry(" .. tostring(n)
-        .. ") 返回 0/nil）⇒ 墙/门的**缩放与贴边整段跳过**（按编辑器里摆的原样显示）")
-    end
+    -- 格子边长 / pitch：★ 2026-10-18 已提到**函数开头**统一算（见 `geo_n` 那段 ✓）
+    --   ⚠️ 别再在这里重新声明 `cw` —— 这里再声明一次的话，上面 `content` 归位那段
+    --      又会拿到 nil（v264 的坑：`local cw` 在下面，上面引用恒 nil，pcall 吞掉）✓
 
     -- 墙/门的**目标厚度**（画布单位）。做成配置项，这样"看起来多粗"是确定的数字，
     -- 而不是"看你素材多大"。
@@ -4275,23 +4297,36 @@ function Adapter:_apply_edges(id, prefix, flags)
               end
             end
           end
-          -- 贴到对应边（缩放绕中心，所以位置按"目标厚度"算，不再依赖控件自身尺寸）
-          local x, y = 0, 0
-          if s == "up" then y = (ch - tthick) / 2
-          elseif s == "down" then y = -((ch - tthick) / 2)
-          elseif s == "left" then x = -((cw - tthick) / 2)
-          elseif s == "right" then x = ((cw - tthick) / 2) end
-          -- ★★★★★ 2026-10-18 **门素材偏心补偿** ✗✓（用户：直接量图、挪坐标）
-          --   截图实测（格线 pitch≈93.5，墙正压在格线上 ✓，门不压）：
-          --     竖门 x 比格线 +6.0 / +6.5（偏右）　横门 y 比格线 +6.5（偏下）
-          --   ⇒ 门素材带透明边距、可见条不居中，缩放绕中心去不掉 ✓ 与墙无关
-          --   ⇒ 反向补偿：横门往上 +nudge、竖门往左 −nudge ✓
-          --   ★ 一个旋钮：`cfg.cells.door_nudge`（画布 px，默认 6）
-          if prefix == "door" then
-            local nudge = (self.cfg.cells and self.cfg.cells.door_nudge) or 6
-            if s == "up" or s == "down" then y = y + nudge
-            else x = x - nudge end
+          -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★ 2026-10-18（v265）**居中在格线上** ✗✓✓
+          --
+          --   ★ 判据（实测 + 设计图两边都成立）：
+          --     · 实机截图：墙/门整条偏在格线**右/下**侧 +6.5 截图 px（门也偏 ⇒ 不是素材偏心）
+          --     · 设计图（`records/design-layout-measure.md`）：23 根墙 + 4 个门**全部**压格线，
+          --       偏移 +0.0 px ⇒ 设计意图就是"骑在格线上"✓
+          --
+          --   ★ 旧公式（贴着格子**内侧边**）：
+          --       up: y = +(cw − 厚)/2 ⇒ 条子的外沿压在格子边上、整条在格子**里面**
+          --     而格线在「格子边 + gap/2」⇒ 系统性差 **(gap + 厚)/2**（6×6：1+4 = 5px）✓
+          --   ★ 新公式（居中在格线）：
+          --       · 内部边 ⇒ 距本格中心 **pitch/2**（两格中心的中点 = 缝中线 ✓）
+          --       · 外框边 ⇒ 距本格中心 **size/2**（棋盘最外那条格线就是格子自己的边 ✓）
+          --   ★ 墙与门走**同一个** `d` ⇒ 门永远压在墙正中（共线 ✓）
+          --   ⚠️ 不再有 `door_nudge` —— 那条是给旧公式打的手工补丁（6），公式对了它反而是错 ✓
+          local d
+          do
+            local outer = (s == "down" or s == "right")
+            if s == "up" then outer = (r == nil or r <= 1) end
+            if s == "left" then outer = (c == nil or c <= 1) end
+            -- ★ 内部边 ⇒ **居中在格线**（pitch/2）；外框边 ⇒ **贴格子内侧**（保持原观感）
+            --   为什么外框不改：棋盘最外那条线是**外框（ruler）**在做视觉边界 ✓
+            --   用户要的是"格子**之间**"的墙（内部边）✓ ⇒ 外框侧不动 = 不动已经对的部分 ✓
+            d = outer and ((cw - tthick) / 2) or (pitch / 2)
           end
+          local x, y = 0, 0
+          if s == "up" then y = d
+          elseif s == "down" then y = -d
+          elseif s == "left" then x = -d
+          else x = d end
           if sub.SetPivot then pcall(function() sub:SetPivot(0.5, 0.5) end) end
           if sub.SetAnchoredPosition then pcall(function() sub:SetAnchoredPosition(x, y) end) end
         end
@@ -5176,44 +5211,22 @@ function Adapter:set_property(id, key, value, nkey)
   elseif key == "x_mark" then
     local c = self:sub(id, "x")
     if c and c.SetVisible then c:SetVisible(value and true or false) end
-
-  elseif key == "walls" or key == "doors" then
-    local prefix = (key == "walls") and "wall." or "door."
-    local dirs = { "up", "down", "left", "right" }
-    for i = 1, #dirs do
-      local c = self:sub(id, prefix .. dirs[i])
-      if c and c.SetVisible then c:SetVisible((value and value[dirs[i]]) and true or false) end
-      -- ★★★★★ 2026-10-18 **这里只管显隐 ⇒ 定位也一起做** ✗✓
-      --   用户实测：`_apply_edges` 里加的补偿没生效（那条是 `edges` 键的路）
-      --   而**显隐这条路一定在跑**（门能显示就说明它跑过 ✓）⇒ 把定位放这里最可靠 ✓
-      --   坐标与 `_apply_edges` 同一套公式（贴格线），门再叠加素材偏心补偿 ✓
-      local _rc = self.rects and self.rects[id] or nil
-      local _cw = _rc and _rc.w or nil
-      local _ch = _rc and _rc.h or nil
-      if _cw and _ch then
-        local _thick = (self.cfg.cells and self.cfg.cells.edge_thickness) or 8
-        local _dn = (self.cfg.cells and self.cfg.cells.door_nudge) or 6
-        for _i = 1, #dirs do
-          local _c = self:sub(id, prefix .. dirs[_i])
-          if _c ~= nil then
-            local _d = dirs[_i]
-            local _x, _y = 0, 0
-            if _d == "up" then _y = (_ch - _thick) / 2
-            elseif _d == "down" then _y = -((_ch - _thick) / 2)
-            elseif _d == "left" then _x = -((_cw - _thick) / 2)
-            else _x = ((_cw - _thick) / 2) end
-            if key == "doors" then
-              if _d == "up" or _d == "down" then _y = _y + _dn else _x = _x - _dn end
-            end
-            if _c.SetAnchorMin then pcall(function() _c:SetAnchorMin(0.5, 0.5) end) end
-            if _c.SetAnchorMax then pcall(function() _c:SetAnchorMax(0.5, 0.5) end) end
-            if _c.SetPivot then pcall(function() _c:SetPivot(0.5, 0.5) end) end
-            if _c.SetAnchoredPosition then pcall(function() _c:SetAnchoredPosition(_x, _y) end) end
-          end
-        end
-      end
-    end
   end
+
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  -- ★ 2026-10-18（v265）**删除：这里曾经有一份"第二套墙/门定位"代码** ✗✓✓
+  --
+  --   它长这样（现在已删）：
+  --     elseif key == "walls" or key == "doors" then
+  --       … 用 `self.rects[id].w/h` 再算一遍 (cw−厚)/2 + `door_nudge` 的补偿 …
+  --
+  --   ★ 为什么删：`set_property` 在**前面**（本函数 L4710/L4715）已经 `return self:_apply_edges(…)`
+  --     ⇒ 这个 `elseif` **永远走不到**（Lua 的 return 直接出函数）✓ ⇒ 是**死代码** ✗
+  --   ★ 但死代码在这里**特别危险**：它是"同一条边有两套坐标公式"的第二份 ✓
+  --     （一份贴格子内侧 + nudge=6，一份居中格线 ⇒ 谁被复活谁就覆盖另一份 ✗）
+  --     —— 本项目已经为"两处实现同一件事"栽过多次（上色 / 缩放表 / 显隐 / 几何都在里面）✓
+  --   ⇒ 坐标公式**只有一处**：`Adapter:_apply_edges`（居中格线，墙门共线）✓
+  --     ⚠️ 想改墙/门位置，只改那儿；不要在这里再写一份 ✗
 
   -- ★★★★★ 2026-10-05 **默认"送达成功"** —— 这条 `return true` 是上面那条契约的另一半：
   --   只有明确知道"没送到"的分支（`ctrl == nil`、文字无处可写、墙/门缺子控件）才返回 false，

@@ -184,7 +184,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v264 / 2026-10-18 / 墙加长 4（edge_overlap，门不加）+ 规则与求解器移出运行时 + 第 1 关＝夜盗独行、第 2 关＝双影")
+        print("[murdoku] ===== 构建标记 v265 / 2026-10-18 / 门墙**居中在格线**（pitch/2，墙门共线；删 door_nudge 与死掉的第二套定位）+ 墙加长 4 + 规则与求解器移出运行时 + 第 1 关＝夜盗独行、第 2 关＝双影")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
