@@ -547,6 +547,11 @@ do
 
     -- ① 入口配置就是 `cells_beacon = false` ⇒ beacon 必须一步都不动
     ok(keep == false, "入口 CONFIG 里 cells_beacon = false（实测 " .. tostring(keep) .. "）")
+    -- ★ 这条就是缺陷 3 的**病因判据**：旧代码读的是 `a.cells_beacon`，
+    --   而它在 adapter 上**恒为 nil** ⇒ `nil == false` 为假 ⇒ 早退永远不成立。
+    ok(a.cells_beacon == nil,
+      "（病因）adapter.cells_beacon 恒为 nil ⇒ 旧代码读它永远读不到关闭开关"
+      .. "（实测 " .. tostring(a.cells_beacon) .. "）")
     dbg.beacon(a, 300)
     ok((cellc.sd_calls or 0) == before,
       "① 默认关闭 ⇒ 信标没碰 cell.1.1（调用次数 " .. tostring(cellc.sd_calls or 0)

@@ -110,3 +110,18 @@ powershell -ExecutionPolicy Bypass -File tools/install_script_to_sandbox.ps1
 - ⏳ 弹窗四键的**运行时贴图**未完成（只差一处读数）
 - ⏳ `assets` 内容区（`row.*`、`portrait.*`）运行时取用未打通
 - 📄 排障与实测结论集中在 `docs/`（建议先读 `docs/弹窗-线索汇总.md`、`docs/assets取不到-追查.md`）
+---
+
+## 存档位置（★ 2026-10-18 起 ✓）
+
+★ 根目录的 \.gil\ 存档**已全部移入 **\存档/\\** ✓**（★ 90 个 ✓ 全部 ≥v237 ✓）
+
+★★ **原因** ✓：★ 根目录散落文件太多 ✓ ⇒ ★ 按类别归位 ✓
+　 ★ **不是**按"30 版"归档 ✗ —— ★ **旧档（≤v236）在 **\qianxing-murdoku-old\** 仓 ✓**
+
+★ **工具用法不变** ✓：★ 既有工具都【显式传 .gil 路径】✓
+`ash
+node tools/gil/inspect_gil.mjs "存档/455-外圈骑格线-v267.gil"
+node tools/gil/embed_script.mjs --in="存档/452-门定位常走路径.gil" --out="存档/456-新档.gil"
+`
+★ ⚠️ **不传参时的默认值仍指向根目录** ✗ ⇒ ★ **请始终显式传路径** ✓
