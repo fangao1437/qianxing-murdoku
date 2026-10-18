@@ -15798,13 +15798,30 @@ function Adapter:_apply_edges(id, prefix, flags)
           -- ★ 2026-10-17：用 `size_of`（真机两数 / 模拟器一个数组，两种都认 ✓）
           local w, h = size_of(sub)
           local horiz = (s == "up" or s == "down")
+          -- ★ 这条边是不是**外框边**（棋盘最外一圈）——长度与位置都要用到 ⇒ 只算一次
+          local outer = (s == "down" or s == "right")
+          if s == "up" then outer = (r == nil or r <= 1) end
+          if s == "left" then outer = (c == nil or c <= 1) end
           -- 目标几何：横边 = 长 × 厚；竖边 = 厚 × 长
           -- ★ 2026-10-18（v266）：
           --     · 墙 = cw + overlap(缝补 4) + extra_len(用户要的 +4) = **cw + 8**
           --     · 门 = cw × door_length_ratio(**0.44**) + extra_len(同样 +4)
           --   ⇒ 门/墙 = 44/99 ≈ 44% ⇒ 与设计图"门占墙线 44%"同一比例 ✓（见 records/design-layout-measure.md）
-          local tlen = (prefix == "door") and (cw * door_ratio + extra_len)
-            or (cw + overlap + extra_len)
+          --
+          -- ★★★★★ 2026-10-18（v268）**外框边再包一个厚** ✗✓（用户：「角上还有小台阶」）
+          --   外圈墙是"骑在棋盘最外那条格线"上的 ⇒ 它**向外偏了 厚/2 = 5px**，
+          --   而端头原本只多出 (overlap+extra)/2 = 4px ⇒ **每个角短 1px** = 那一级小台阶 ✓
+          --   ⇒ 外框边长度改成 **cw + 厚**（两端各多 厚/2）：端头正好顶到相邻那条外框墙的**外沿**，
+          --     横竖两段在角上合成一个干净的直角（不多不少，也不靠取整运气）✓
+          --   ⚠️ 只给**墙**；门不在外框上（门只在内部边上），长度公式不动 ✓
+          local tlen
+          if prefix == "door" then
+            tlen = cw * door_ratio + extra_len
+          elseif outer then
+            tlen = cw + thick
+          else
+            tlen = cw + overlap + extra_len
+          end
           local tthick = thick
           local base_l = horiz and w or h      -- 基准：编辑器里控件的尺寸
           local base_t = horiz and h or w
@@ -15871,27 +15888,16 @@ function Adapter:_apply_edges(id, prefix, flags)
           --     而格线在「格子边 + gap/2」⇒ 系统性差 **(gap + 厚)/2**（6×6：1+4 = 5px）✓
           --   ★ 新公式（居中在格线）：
           --       · 内部边 ⇒ 距本格中心 **pitch/2**（两格中心的中点 = 缝中线 ✓）
-          --       · 外框边 ⇒ 距本格中心 **size/2**（棋盘最外那条格线就是格子自己的边 ✓）
+          --       · 外框边 ⇒ 距本格中心 **cw/2**（棋盘最外那条格线就是格子自己的边 ✓）
+          --         ★ v267（用户：「边缘一圈墙没贴边，转角处仍然有小缺口」）：
+          --           外框原来用 `(cw−厚)/2`（贴格子内侧）⇒ 外沿只到格子边，而**格子边离外框内沿
+          --           还差 1–2px** ⇒ 那 1–2px 露出的是**格子自己的颜色**（实机放大图里那条橙细线）✗
+          --           改成 `cw/2` 后整圈**向外移 厚/2 = 5px**：外侧盖住细缝、压到外框内沿 ✓
+          --         ★ v268（用户：「角上还有小台阶」）：外移 5px 而旧端头只多出 4px ⇒ 每个角短 1px ✗
+          --           ⇒ 外框墙的长度再 **+厚**（见上面 `tlen` 那段）⇒ 横竖两段在角上互相盖住 ✓
           --   ★ 墙与门走**同一个** `d` ⇒ 门永远压在墙正中（共线 ✓）
           --   ⚠️ 不再有 `door_nudge` —— 那条是给旧公式打的手工补丁（6），公式对了它反而是错 ✓
-          local d
-          do
-            local outer = (s == "down" or s == "right")
-            if s == "up" then outer = (r == nil or r <= 1) end
-            if s == "left" then outer = (c == nil or c <= 1) end
-            -- ★ 内部边 ⇒ **居中在格线**（pitch/2）；外框边 ⇒ **也居中在棋盘最外那条格线**（cw/2）
-            --
-            -- ★★★★★ 2026-10-18（v267）**外框也骑格线** ✗✓（用户实机反馈）
-            --   用户原话：「**边缘一圈墙没贴边**，转角处仍然有小缺口，你量着补」
-            --   实测（`records/shot-2026-10-18-v266-device.png`，8× 放大 + 逐像素扫描）：
-            --     · 外框黑边内沿 x≈622 / y≈206；格子边 = x≈622.3 / y≈209.5 ⇒ 两者只差 1–2px，
-            --       而外圈墙是"贴格子内侧" ⇒ 这 1–2px 露出的是**格子自己的颜色**（截图里那条橙细线）✗
-            --     · 横向外圈墙的左端 = 格子宽 +4（621）而竖向的要到 625 ⇒ 角上错开 4px（小缺口）✗
-            --   ⇒ 把外圈也改成"骑在棋盘最外那条格线"：条形**向外移半个厚**（thick/2 = 5px）
-            --     · 外侧 5px 盖住那条 1–2px 细缝并压到外框内沿 ✓
-            --     · 四个角上横竖两段各向外多出 4px + 各越过格线 5px ⇒ **互相搭接**，缺口消失 ✓
-            d = outer and (cw / 2) or (pitch / 2)
-          end
+          local d = outer and (cw / 2) or (pitch / 2)
           local x, y = 0, 0
           if s == "up" then y = d
           elseif s == "down" then y = -d
@@ -21165,7 +21171,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v267 / 2026-10-18 / 门墙居中在格线（**外圈也骑格线**，盖住贴框细缝）＋ 加粗 10 / 加长 4 / 门长 0.44 + 规则与求解器移出运行时 + 第 1 关＝夜盗独行、第 2 关＝双影")
+        print("[murdoku] ===== 构建标记 v269 / 2026-10-18 / 优化组：两个 opt-in 开关修复（按钮底图上色 cfg.btn_art 的调用写回闸门内，默认不再每局覆盖按钮底图；启动信标 cells_beacon 改读 cfg，默认真的关掉、不再改 cell.1.1 尺寸）＋ 上一版门墙居中（外圈骑格线）/ 加粗 10 / 加长 4 / 门长 0.44 与两关内容原样保留 ＋ **v269：外框墙长度 = 格＋厚（四角直角、去掉角上的小台阶）**")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

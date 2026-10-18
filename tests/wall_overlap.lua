@@ -58,7 +58,7 @@ local wallLeft = ctrl("wall.left", {}, { imageId = 107092, sizeDeltaX = 8, sizeD
 local doorUp = ctrl("door.up", {}, { imageId = 107092, sizeDeltaX = DOOR_BASE_L, sizeDeltaY = 8, visible = false })
 local content = ctrl("content", { wallUp, wallLeft, doorUp })
 local CELL = 108                                   -- 5×5 的格子边长（画布单位）
-local cell = ctrl("cell.1.1", { content })
+local cell = ctrl("cell.2.2", { content })   -- ★ 内部格（up/left 都是内部边）
 cell.kind = "button"
 cell.sizeDeltaX, cell.sizeDeltaY = CELL, CELL
 local rootCtl = ctrl("root", { cell })
@@ -73,7 +73,7 @@ assert(type(CW) == "number" and CW > 0, "cell_geometry 读不到格子边长")
 --------------------------------------------------------------------------------
 -- ① 墙：目标长度 = 108 + 4 = 112 ⇒ 横墙的 localScaleX = 112/24
 --------------------------------------------------------------------------------
-a:set_property("cell.1.1", "walls", { up = true, down = false, left = false, right = false })
+a:set_property("cell.2.2", "walls", { up = true, down = false, left = false, right = false })
 local sx, sy = wallUp._scale()
 ok(near(sx, (CW + OVERLAP) / WALL_BASE_L, 1e-6),
   "横墙 localScaleX = (" .. tostring(CW) .. "+4)/24 = " .. tostring((CW + OVERLAP) / WALL_BASE_L) .. "（实测 " .. tostring(sx) .. "）")
@@ -81,7 +81,7 @@ ok(near(sy, 8 / 8, 1e-6), "横墙厚度倍率不变（实测 " .. tostring(sy) .
 ok(wallUp.visible == true, "墙仍然可见")
 
 -- 竖墙：长边是 Y（基准 8×24）⇒ localScaleY = 112/24
-a:set_property("cell.1.1", "walls", { up = false, down = false, left = true, right = false })
+a:set_property("cell.2.2", "walls", { up = false, down = false, left = true, right = false })
 local lx, ly = wallLeft._scale()
 ok(near(ly, (CW + OVERLAP) / WALL_BASE_L, 1e-6),
   "竖墙 localScaleY = (" .. tostring(CW) .. "+4)/24（实测 " .. tostring(ly) .. "）")
@@ -89,7 +89,7 @@ ok(near(ly, (CW + OVERLAP) / WALL_BASE_L, 1e-6),
 --------------------------------------------------------------------------------
 -- ② 门：**不**受 overlap 影响 ⇒ localScaleX = 108×0.30/24 = 1.35
 --------------------------------------------------------------------------------
-a:set_property("cell.1.1", "doors", { up = true, down = false, left = false, right = false })
+a:set_property("cell.2.2", "doors", { up = true, down = false, left = false, right = false })
 local dx = doorUp._scale()
 local want = (CW * 0.30) / DOOR_BASE_L
 ok(near(dx, want, 1e-6),
@@ -111,14 +111,14 @@ local V266 = { rows = 5, cols = 5, edge_thickness = 10, edge_overlap = 4,
 local a266 = Ad.new({ cells = V266 })
 local CW266 = a266:cell_geometry(5)
 
-a266:set_property("cell.1.1", "walls", { up = true, down = false, left = false, right = false })
+a266:set_property("cell.2.2", "walls", { up = true, down = false, left = false, right = false })
 local sx2, sy2 = wallUp._scale()
 ok(near(sx2, (CW266 + 8) / WALL_BASE_L, 1e-6),
   "v266 墙长 = cw + 4 + 4 = " .. tostring(CW266 + 8) .. "（实测倍率 " .. tostring(sx2) .. "）")
 ok(near(sy2, 10 / 8, 1e-6),
   "v266 墙厚 = 10（倍率应为 1.25，实测 " .. tostring(sy2) .. "）")
 
-a266:set_property("cell.1.1", "doors", { up = true, down = false, left = false, right = false })
+a266:set_property("cell.2.2", "doors", { up = true, down = false, left = false, right = false })
 local dx2, dy2 = doorUp._scale()
 ok(near(dx2, (CW266 * 0.44 + 4) / DOOR_BASE_L, 1e-6),
   "v266 门长 = cw×0.44 + 4 = " .. tostring(CW266 * 0.44 + 4) .. "（实测倍率 " .. tostring(dx2) .. "）")
@@ -127,6 +127,30 @@ ok(near(dy2, 10 / 8, 1e-6),
 ok(dx2 > (CW266 * 0.44) / DOOR_BASE_L + 1e-6,
   "门比「只按比例」更长：+4 确实加到了门上（比例值 " .. tostring(CW266 * 0.44) .. " → 目标 " .. tostring(CW266 * 0.44 + 4) .. "）")
 ok(dx2 < sx2, "门仍然比墙短（门 " .. tostring(CW266 * 0.44 + 4) .. " < 墙 " .. tostring(CW266 + 8) .. "）")
+
+-------------------------------------------------------------------------------
+-- ④ ★ v268 外框墙（用户 2026-10-18：「角上还有小台阶」）
+--
+--   外圈骑在棋盘最外那条格线上 ⇒ 它比格子边**向外多出 厚/2 = 5px**；
+--   端头若只多出 (overlap+extra)/2 = 4px ⇒ 每个角短 1px = 小台阶 ✗
+--   ⇒ 外框墙长度 = `cw + 厚`（两端各多 厚/2 = 5）✓ 端头正好顶到相邻那段的外沿 ⇒ 角上是个干净直角 ✓
+-------------------------------------------------------------------------------
+local wUpEdge = ctrl("wall.up", {}, { imageId = 107092, sizeDeltaX = WALL_BASE_L, sizeDeltaY = 8, visible = false })
+local wLfEdge = ctrl("wall.left", {}, { imageId = 107092, sizeDeltaX = 8, sizeDeltaY = WALL_BASE_L, visible = false })
+local contentEdge = ctrl("content", { wUpEdge, wLfEdge })
+local cellEdge = ctrl("cell.1.1", { contentEdge })     -- r=1/c=1 ⇒ up/left 都是外框边
+cellEdge.kind = "button"
+cellEdge.sizeDeltaX, cellEdge.sizeDeltaY = CELL, CELL
+rootCtl._kids[#rootCtl._kids + 1] = cellEdge
+
+a266:set_property("cell.1.1", "walls", { up = true, down = false, left = true, right = false })
+local sxE, syE = wUpEdge._scale()
+ok(near(sxE, (CW266 + 10) / WALL_BASE_L, 1e-6),
+  "v268 外框墙长 = cw + 厚 = " .. tostring(CW266 + 10) .. "（实测倍率 " .. tostring(sxE) .. "）")
+ok(near(syE, 10 / 8, 1e-6), "v268 外框墙厚仍是 10")
+local _lxE, lyE = wLfEdge._scale()
+ok(near(lyE, (CW266 + 10) / WALL_BASE_L, 1e-6),
+  "v268 外框竖墙同样多包一个厚（实测倍率 " .. tostring(lyE) .. "）")
 
 print(string.format("\nwall_overlap: %d passed, %d failed", passed, failed))
 os.exit(failed == 0 and 0 or 1)

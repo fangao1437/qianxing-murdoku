@@ -1,4 +1,4 @@
-﻿--[[----------------------------------------------------------------------------
+--[[----------------------------------------------------------------------------
   tests/edge_center.lua —— ★「门墙要落在**格子之间**的格线上」（v265）的回归断言
 
   用户实机截图实测（`records/shot-2026-10-18-doorwall.png`，1600×900 画布）：
@@ -192,6 +192,21 @@ ok(near(k55.GetChild(k55, "wall.left").anchoredPositionX, -P5 / 2),
   "5×5 的左墙也居中在格线：x 应为 -pitch/2 = " .. fmt(-P5 / 2)
   .. "（实测 " .. fmt(k55.GetChild(k55, "wall.left").anchoredPositionX) .. "）")
 ok(P5 > S5, "5×5 也有缝（size=" .. fmt(S5) .. " pitch=" .. fmt(P5) .. "）")
+
+-------------------------------------------------------------------------------
+-- ⑥ 外框墙的长度 = **cw + 厚**（v268）
+--
+--   外圈向外移了 厚/2 = 5px（为了贴住外框），端头必须正好多出这 5px，否则每个角短 1px
+--   ⇒ 用户实机看到的那级"小台阶" ✓
+--   ⚠️ 这条**不受** overlap / extra 影响 —— 外框没有"相邻格子要填缝"的问题，只要直角干净
+-------------------------------------------------------------------------------
+local BASE_L = 24                                     -- make_cell 里横墙的基准长度
+local len_outer = (k11.GetChild(k11, "wall.up").localScaleX or 1) * BASE_L
+local len_inner = (k22.GetChild(k22, "wall.up").localScaleX or 1) * BASE_L
+ok(near(len_outer, SIZE + THICK, 0.01),
+  "外框墙长 = cw + 厚 = " .. fmt(SIZE + THICK) .. "（实测 " .. fmt(len_outer) .. "）—— 端头顶到外沿，角上直角")
+ok(near(len_inner, SIZE + 4, 0.01),
+  "内部墙长 = cw + overlap(4) = " .. fmt(SIZE + 4) .. "（实测 " .. fmt(len_inner) .. "）")
 
 print(string.format("\nedge_center: %d passed, %d failed", passed, failed))
 os.exit(failed == 0 and 0 or 1)
