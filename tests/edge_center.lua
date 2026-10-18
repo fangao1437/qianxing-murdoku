@@ -145,22 +145,22 @@ ok(math.abs(du.anchoredPositionY - PITCH / 2) < 0.5,
   "门没有被额外的 nudge 推离格线（实测 " .. fmt(du.anchoredPositionY) .. "）")
 
 -------------------------------------------------------------------------------
--- ③ 外框边（cell.1.1 的 up/left、cell.6.6 的 down/right）：**保持原样**（贴格子内侧）⇒ ±(size−厚)/2
+-- ③ 外框边（cell.1.1 的 up/left、cell.6.6 的 down/right）：**也骑格线**（v267，用户要"外圈贴边"）⇒ ±size/2
 -------------------------------------------------------------------------------
 a:set_property("cell.1.1", "walls", { up = true, down = false, left = true, right = false })
-ok(near(k11.GetChild(k11, "wall.up").anchoredPositionY, (SIZE - THICK) / 2),
-  "外框上墙仍贴格子内侧（不改动已有观感）：y 应为 (size−厚)/2 = " .. fmt((SIZE - THICK) / 2)
+ok(near(k11.GetChild(k11, "wall.up").anchoredPositionY, SIZE / 2),
+  "外框上墙也骑格线（v267）：y 应为 size/2 = " .. fmt(SIZE / 2)
   .. "（实测 " .. fmt(k11.GetChild(k11, "wall.up").anchoredPositionY) .. "）")
-ok(near(k11.GetChild(k11, "wall.left").anchoredPositionX, -((SIZE - THICK) / 2)),
-  "外框左墙仍贴格子内侧：x 应为 -(size−厚)/2 = " .. fmt(-((SIZE - THICK) / 2))
+ok(near(k11.GetChild(k11, "wall.left").anchoredPositionX, -(SIZE / 2)),
+  "外框左墙也骑格线（v267）：x 应为 -size/2 = " .. fmt(-(SIZE / 2))
   .. "（实测 " .. fmt(k11.GetChild(k11, "wall.left").anchoredPositionX) .. "）")
 
 a:set_property("cell.6.6", "walls", { up = false, down = true, left = false, right = true })
-ok(near(k66.GetChild(k66, "wall.down").anchoredPositionY, -((SIZE - THICK) / 2)),
-  "外框下墙仍贴格子内侧：y 应为 -(size−厚)/2（实测 "
+ok(near(k66.GetChild(k66, "wall.down").anchoredPositionY, -(SIZE / 2)),
+  "外框下墙也骑格线（v267）：y 应为 -size/2（实测 "
   .. fmt(k66.GetChild(k66, "wall.down").anchoredPositionY) .. "）")
-ok(near(k66.GetChild(k66, "wall.right").anchoredPositionX, (SIZE - THICK) / 2),
-  "外框右墙仍贴格子内侧：x 应为 (size−厚)/2（实测 "
+ok(near(k66.GetChild(k66, "wall.right").anchoredPositionX, SIZE / 2),
+  "外框右墙也骑格线（v267）：x 应为 size/2（实测 "
   .. fmt(k66.GetChild(k66, "wall.right").anchoredPositionX) .. "）")
 
 -------------------------------------------------------------------------------
