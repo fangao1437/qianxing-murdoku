@@ -567,40 +567,11 @@ do
     a.cfg.cells_beacon = keep
   end
 
-  -- ── 缺陷 1：按钮底图上色 ────────────────────────────────────────────────
-  if a ~= nil then
-    -- 造一棵最小可用的树：`tray`（apply_tray_layout 的入口闸）+ 带 `bg` 的按钮
-    local tray = make_ctrl("tray")
-    local bg = make_ctrl("bg")
-    bg.imageId, bg.imageSource = 999, 7
-    local btn = make_ctrl("hex.undo")
-    btn.__kids = { bg }
-    local r0 = roots[1]
-    r0.__kids[#r0.__kids + 1] = tray
-    r0.__kids[#r0.__kids + 1] = btn
-
-    local keep_list = a.cfg.btn_list
-    local keep_art = a.cfg.btn_art
-    a.cfg.btn_list = { "hex.undo" }
-
-    ok(a:find("hex.undo") ~= nil, "（前提）`hex.undo` 在假树里")
-    ok(a:find("hex.undo") ~= nil and a:sub("hex.undo", "bg") ~= nil, "（前提）它的 `bg` 子控件在")
-
-    -- ① 默认（cfg.btn_art 为 nil）⇒ 底图一个字节都不许改
-    a:apply_tray_layout({ tray_cx = 0, tray_cy = 0, items = {} })
-    ok(bg.imageId == 999,
-      "① 默认关闭 ⇒ 按钮底图没被重设（实测 imageId = " .. tostring(bg.imageId) .. "，期望 999）")
-
-    -- ② 反向：打开开关 ⇒ 真的会重设（功能没被删）
-    a.cfg.btn_art = true
-    a:apply_tray_layout({ tray_cx = 0, tray_cy = 0, items = {} })
-    ok(bg.imageId == (a.cfg.bg_image_id or 100108),
-      "② 打开后底图被重设成 " .. tostring(a.cfg.bg_image_id or 100108)
-      .. "（实测 " .. tostring(bg.imageId) .. "）")
-
-    a.cfg.btn_art = keep_art
-    a.cfg.btn_list = keep_list
-  end
+  -- ── 缺陷 1（按钮底图上色开关）不在这里测 ──────────────────────────────
+  --   ★ 它在 `tests/btn_art_gate.lua` 里单独测 ✓ —— 原因：适配层的 `find()`
+  --     对着**建好之后**的树有缓存，本文件的控件是 `OnInit` 之后才挂进去的 ⇒
+  --     `find("hex.undo")` 恒 nil，会得到一个"看着像产品坏了"的假红 ✗
+  --   ★ 那个夹具在 `Ad.new` **之前**建树，和 `tests/card_fit_gate.lua` 同一套写法 ✓
 end
 
 -- ── 7. OnDestroy ─────────────────────────────────────────────────────────
