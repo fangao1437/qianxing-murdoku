@@ -72,7 +72,12 @@ local function make_ctrl(name)
   end
   c.SetVisible = function() end
   c.SetActive = function() end
-  c.SetSizeDelta = function() end
+  -- ★ 2026-10-18（优化组）：记下最后一次尺寸与调用次数 —— 6f 的两个测试要数
+  --   "信标到底有没有动这个控件"（只看最终值会被后面的写入覆盖，看不出跑没跑）。
+  c.SetSizeDelta = function(_, w, h)
+    c.sd_calls = (c.sd_calls or 0) + 1
+    c.sd_w, c.sd_h = w, h
+  end
   -- 记录锚点位置：用来断言"引用控件被挪出了画布"（_park_control 靠它生效）
   c.SetAnchoredPosition = function(_, x, y) c.ax, c.ay = x, y end
   c.SetAnchorMin = function() end
@@ -514,6 +519,87 @@ do
     local n = 0
     for i = 1, 6 do if a:find("selbtn." .. i) ~= nil then n = n + 1 end end
     ok(n == 0, "`selbtn.1..6` 一个都没建", "实测建了 " .. n .. " 个")
+  end
+end
+
+-- ── 6f. 两个 opt-in 开关（缺陷 1 / 缺陷 3 的回归）────────────────────────────
+--
+--   ★ 两条 bug 是同一个形状：**开关写在注释里、代码里没生效** ✗
+--     · 缺陷 3：`beacon()` 读 `a.cells_beacon`，而配置在 `a.cfg.cells_beacon`
+--              ⇒ 恒 nil ⇒ 早退从不生效 ⇒ "默认关闭"的信标每局都在改尺寸；
+--     · 缺陷 1：`_tray_btn_art(...)` 的调用被写在 `if cfg.btn_art == true` 的 `end` **之外**
+--              ⇒ 每局无条件把每个按钮底图重设成 100108（覆盖编辑器配好的图）。
+--   ★ 两条都必须**双向**断言 ✓：「默认关着」＋「打开后真的还会跑」——
+--     只测前一半的话，把开关删掉也能过（那就把功能修没了）。
+out("\n== 6f. 两个 opt-in 开关（默认关闭 / 打开后仍然有效）==")
+do
+  local dbg = _G.__murdoku_debug
+  local a = dbg and dbg.adapter or nil
+  ok(type(dbg) == "table" and type(dbg.beacon) == "function",
+    "beacon 已挂到 __murdoku_debug（离线可测的前提）")
+
+  -- ── 缺陷 3：启动信标 ────────────────────────────────────────────────────
+  local cellc = a and a:find("cell.1.1") or nil
+  ok(cellc ~= nil, "（前提）`cell.1.1` 在假树里")
+  if a ~= nil and type(dbg.beacon) == "function" and cellc ~= nil then
+    local before = cellc.sd_calls or 0
+    local keep = a.cfg.cells_beacon
+
+    -- ① 入口配置就是 `cells_beacon = false` ⇒ beacon 必须一步都不动
+    ok(keep == false, "入口 CONFIG 里 cells_beacon = false（实测 " .. tostring(keep) .. "）")
+    dbg.beacon(a, 300)
+    ok((cellc.sd_calls or 0) == before,
+      "① 默认关闭 ⇒ 信标没碰 cell.1.1（调用次数 " .. tostring(cellc.sd_calls or 0)
+      .. "，调用前 " .. tostring(before) .. "）")
+
+    -- ② 老路径（直接挂在 adapter 上）也要能关 —— 离线夹具就是这么用的
+    a.cells_beacon = false
+    dbg.beacon(a, 300)
+    ok((cellc.sd_calls or 0) == before, "② 老路径 a.cells_beacon=false 同样生效")
+    a.cells_beacon = nil
+
+    -- ③ 反向：放开开关 ⇒ 信标必须真的跑（别把它修成永久关闭）
+    a.cfg.cells_beacon = nil
+    dbg.beacon(a, 300)
+    ok((cellc.sd_calls or 0) > before and cellc.sd_w == 300 and cellc.sd_h == 300,
+      "③ 放开后信标真的把 cell.1.1 改成 300×300（实测 "
+      .. tostring(cellc.sd_w) .. "×" .. tostring(cellc.sd_h) .. "）")
+    a.cfg.cells_beacon = keep
+  end
+
+  -- ── 缺陷 1：按钮底图上色 ────────────────────────────────────────────────
+  if a ~= nil then
+    -- 造一棵最小可用的树：`tray`（apply_tray_layout 的入口闸）+ 带 `bg` 的按钮
+    local tray = make_ctrl("tray")
+    local bg = make_ctrl("bg")
+    bg.imageId, bg.imageSource = 999, 7
+    local btn = make_ctrl("hex.undo")
+    btn.__kids = { bg }
+    local r0 = roots[1]
+    r0.__kids[#r0.__kids + 1] = tray
+    r0.__kids[#r0.__kids + 1] = btn
+
+    local keep_list = a.cfg.btn_list
+    local keep_art = a.cfg.btn_art
+    a.cfg.btn_list = { "hex.undo" }
+
+    ok(a:find("hex.undo") ~= nil, "（前提）`hex.undo` 在假树里")
+    ok(a:find("hex.undo") ~= nil and a:sub("hex.undo", "bg") ~= nil, "（前提）它的 `bg` 子控件在")
+
+    -- ① 默认（cfg.btn_art 为 nil）⇒ 底图一个字节都不许改
+    a:apply_tray_layout({ tray_cx = 0, tray_cy = 0, items = {} })
+    ok(bg.imageId == 999,
+      "① 默认关闭 ⇒ 按钮底图没被重设（实测 imageId = " .. tostring(bg.imageId) .. "，期望 999）")
+
+    -- ② 反向：打开开关 ⇒ 真的会重设（功能没被删）
+    a.cfg.btn_art = true
+    a:apply_tray_layout({ tray_cx = 0, tray_cy = 0, items = {} })
+    ok(bg.imageId == (a.cfg.bg_image_id or 100108),
+      "② 打开后底图被重设成 " .. tostring(a.cfg.bg_image_id or 100108)
+      .. "（实测 " .. tostring(bg.imageId) .. "）")
+
+    a.cfg.btn_art = keep_art
+    a.cfg.btn_list = keep_list
   end
 end
 

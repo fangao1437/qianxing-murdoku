@@ -1,4 +1,4 @@
-﻿--[[----------------------------------------------------------------------------
+--[[----------------------------------------------------------------------------
   entry_client_script.lua —— 客户端脚本入口（挂到客户端控件上的那个文件）
 
   用法：在「千星沙箱 → 客户端脚本资源管理器」里新建脚本映射，
@@ -105,7 +105,14 @@ local BEACON = { OnInit = 300, OnStart = 380 }
 
 local function beacon(a, v)
   if a == nil then return end
+  -- ★ 2026-10-18 修（优化组 · 缺陷 3）：**开关在 `a.cfg.cells_beacon`**（见下面 CONFIG，
+  --   经 `Qianxing.new(CONFIG)` 变成 `adapter.cfg`），而这里原来只读 `a.cells_beacon`
+  --   ⇒ 恒为 nil ⇒ `nil == false` 为假 ⇒ **早退从不生效** ⇒ 信标在"默认关闭"下照样跑
+  --   （它会改 `cell.1.1` 的尺寸 ⇒ 肉眼可见，CONFIG 注释写的就是"正式游玩保持 false"）。
+  --   两处都认：老路径 `a.cells_beacon` 保留，任一为 false 即关 —— 这样离线夹具
+  --   （直接往 adapter 上挂字段的那种）不会被误伤。
   if a.cells_beacon == false then return end
+  if a.cfg ~= nil and a.cfg.cells_beacon == false then return end
   if a._cells_beacon_button ~= nil then
     pcall(function() a:_cells_beacon_button(v) end)
   end
@@ -675,7 +682,10 @@ local function build_adapter()
   -- 离线测试钩子：让 tests/entry_smoke.lua 能直接驱动适配层
   -- （验调色板 / 染色 / 墙门这些需要构造场景的东西）。
   -- 生产环境无副作用：只是一个可读的全局引用，名字够独特不会撞上游戏自己的全局。
-  __murdoku_debug = { adapter = adapter, Murdoku = Murdoku }
+  __murdoku_debug = { adapter = adapter, Murdoku = Murdoku, beacon = beacon }
+  -- ★ 2026-10-18（优化组 · 缺陷 3）：把 `beacon` 也挂上，供 `tests/optin_gates.lua` 做**双向**断言 ——
+  --   `beacon` 是**文件局部函数**，不挂出来就只能靠"跑一次 OnInit 看尺寸有没有变"间接观察，
+  --   那样测不到"打开开关后仍然会跑"这一半。挂一个**只读引用**，生产行为零变化。
   return adapter
 end
 

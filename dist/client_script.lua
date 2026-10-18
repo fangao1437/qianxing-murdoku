@@ -14381,7 +14381,11 @@ function Adapter:apply_tray_layout(layout)
     --   ⇒ 既然静态图已经对，就不该再动它。**同一件事有两处实现，就会有两处不一致** ——
     --     这一课我这个项目里已经吃了两次（另一次是 `erases` 动效）。
     --   想再实验运行时上色时，传 `cfg.btn_art = true` 打开。
-    if self.cfg.btn_art == true and print then
+    -- ★ 2026-10-18 修（优化组 · 缺陷 1）：`moved_final` 必须在 `if` **外面**先落一个值 ——
+    --   下面这个 `if` 是**唯一**的调用点。原来调用被写在 `end` 之外 ⇒ 开关形同虚设
+    --   （`cfg.btn_art` 默认 nil，却每局对全部按钮底图重设一次 100108）。
+    local moved_final = moved
+    if self.cfg.btn_art == true and print ~= nil then
     -- ⚠️ 名单**不能手写**！第一版我手写了 19 个，而实际有 35 个按钮 → 那 16 个
     --    （`action.q.*`、`modal.level.*` …）**从没被验证过**
     --    （真机日志 `SetImage 成功 19 个` 暴露的）。
@@ -14395,6 +14399,8 @@ function Adapter:apply_tray_layout(layout)
     --   `apply_tray_layout` 只在开局摆一次，这点成本可忽略（不给每帧路径加负担）。
     local names = self.cfg.btn_list or {}
     local done, miss = 0, 0
+    -- ★ 2026-10-18（优化组 · 缺陷 1）：**唯一的调用点** —— 在 `cfg.btn_art` 闸门内。
+    moved_final = self:_tray_btn_art(moved, names, done, miss)
     -- ★ ★ ★★★ 2026-10-05 **Round 35 收口**：块账在这里收平 ✓
     --
     --   历史（这条 bug 的形状很值得记）：
@@ -14420,9 +14426,13 @@ function Adapter:apply_tray_layout(layout)
   --   （`names` / `done` / `miss` @L2461）⇒ 一旦 `cfg.btn_art = true` 就会**当场崩**（`#nil` 抛错 ✗）。
   --   该路径**默认关闭** ⇒ 离线测试测不到 ✗ ⇒ 只有静态检查能抓 ✓（这正是 selene 的价值 ✓）
   --   ⇒ 修法：在调用前就地声明（与 helper 内部那份等价 ✓ 传参用 ✓）
-  local names = self.cfg.btn_list or {}
-  local done, miss = 0, 0
-  local moved_final = self:_tray_btn_art(moved, names, done, miss)
+  -- ★ 2026-10-18（优化组 · 缺陷 1）：**这里原来还有一份调用** ✗
+  --   它在上面那个 `if self.cfg.btn_art == true …` 的 `end` **之外** ⇒ 每局无条件执行
+  --   ⇒ `cfg.btn_art` 这个"opt-in 开关"从来没起过作用：启动时把每个按钮的 `bg`
+  --     按 `cfg.bg_image_id or 100108` 重设一遍，而 2837-2841 的注释正是当年
+  --     "运行时设 100108 反而覆盖成紫色 ⇒ 静态图已对就别再动它"的那次教训。
+  --   ⇒ 现在调用点上移到闸门内（见上），这里什么也不做。
+  --   ⚠️ 判据：`grep -c '_tray_btn_art(moved' lua/engine_adapter_qianxing.lua` == 1
   -- ⚠️⚠️ 这个 `end` 关的就是 `apply_tray_layout`（`function` 在 2244 行）。
   --   它**必须**在下面两个方法之前 —— 否则那两个方法又会被吞成它的**子闭包**
   --   ⇒ 加载时不存在 ⇒ `main.lua` 的 `~= nil` 守卫恒假
@@ -21069,7 +21079,14 @@ local BEACON = { OnInit = 300, OnStart = 380 }
 
 local function beacon(a, v)
   if a == nil then return end
+  -- ★ 2026-10-18 修（优化组 · 缺陷 3）：**开关在 `a.cfg.cells_beacon`**（见下面 CONFIG，
+  --   经 `Qianxing.new(CONFIG)` 变成 `adapter.cfg`），而这里原来只读 `a.cells_beacon`
+  --   ⇒ 恒为 nil ⇒ `nil == false` 为假 ⇒ **早退从不生效** ⇒ 信标在"默认关闭"下照样跑
+  --   （它会改 `cell.1.1` 的尺寸 ⇒ 肉眼可见，CONFIG 注释写的就是"正式游玩保持 false"）。
+  --   两处都认：老路径 `a.cells_beacon` 保留，任一为 false 即关 —— 这样离线夹具
+  --   （直接往 adapter 上挂字段的那种）不会被误伤。
   if a.cells_beacon == false then return end
+  if a.cfg ~= nil and a.cfg.cells_beacon == false then return end
   if a._cells_beacon_button ~= nil then
     pcall(function() a:_cells_beacon_button(v) end)
   end
@@ -21639,7 +21656,10 @@ local function build_adapter()
   -- 离线测试钩子：让 tests/entry_smoke.lua 能直接驱动适配层
   -- （验调色板 / 染色 / 墙门这些需要构造场景的东西）。
   -- 生产环境无副作用：只是一个可读的全局引用，名字够独特不会撞上游戏自己的全局。
-  __murdoku_debug = { adapter = adapter, Murdoku = Murdoku }
+  __murdoku_debug = { adapter = adapter, Murdoku = Murdoku, beacon = beacon }
+  -- ★ 2026-10-18（优化组 · 缺陷 3）：把 `beacon` 也挂上，供 `tests/optin_gates.lua` 做**双向**断言 ——
+  --   `beacon` 是**文件局部函数**，不挂出来就只能靠"跑一次 OnInit 看尺寸有没有变"间接观察，
+  --   那样测不到"打开开关后仍然会跑"这一半。挂一个**只读引用**，生产行为零变化。
   return adapter
 end
 
