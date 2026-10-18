@@ -4231,6 +4231,12 @@ function Adapter:_apply_edges(id, prefix, flags)
   --   ★ 只加**墙**，不加门（门要明显短于墙才像门，见 `door_length_ratio`）。
   --   ★ 想调就只改这一个数：2 = 几乎无缝不重叠；6 = 明显重叠（角上变厚）。
   local overlap = (self.cfg.cells and self.cfg.cells.edge_overlap) or 4
+  -- ★★★★★ 2026-10-18（v266）用户原话：「**位置对了，再把门墙加粗 2 加长 4**」✗✓
+  --   ⇒ 厚度走 `edge_thickness`（8 → 10，墙门同厚 ✓）；**长度**必须"墙和门都 +4" ⇒ 单独一个旋钮：
+  --       extra 同时加到墙（cw + overlap + extra）与门（cw×ratio + extra）上 ✓
+  --   ⚠️ 不要把它并进 `overlap`：`overlap` 是"墙填缝"专用，门不吃它 ✓
+  --     （并进去的话，门长度一点都不会变 —— 而用户这次要的就是"门也长 4" ✓）
+  local extra_len = (self.cfg.cells and self.cfg.cells.edge_extra_len) or 0
 
     if cw ~= nil then
       for i = 1, #sides do
@@ -4240,9 +4246,13 @@ function Adapter:_apply_edges(id, prefix, flags)
           -- ★ 2026-10-17：用 `size_of`（真机两数 / 模拟器一个数组，两种都认 ✓）
           local w, h = size_of(sub)
           local horiz = (s == "up" or s == "down")
-          -- 目标几何：横边 = 长 cw × 厚 thick；竖边 = 厚 thick × 长 ch
-          -- 门比墙短一点，看起来才像"门"而不是一整面墙
-          local tlen = (prefix == "door") and (cw * door_ratio) or (cw + overlap)
+          -- 目标几何：横边 = 长 × 厚；竖边 = 厚 × 长
+          -- ★ 2026-10-18（v266）：
+          --     · 墙 = cw + overlap(缝补 4) + extra_len(用户要的 +4) = **cw + 8**
+          --     · 门 = cw × door_length_ratio(**0.44**) + extra_len(同样 +4)
+          --   ⇒ 门/墙 = 44/99 ≈ 44% ⇒ 与设计图"门占墙线 44%"同一比例 ✓（见 records/design-layout-measure.md）
+          local tlen = (prefix == "door") and (cw * door_ratio + extra_len)
+            or (cw + overlap + extra_len)
           local tthick = thick
           local base_l = horiz and w or h      -- 基准：编辑器里控件的尺寸
           local base_t = horiz and h or w

@@ -1,4 +1,4 @@
-﻿--[[----------------------------------------------------------------------------
+--[[----------------------------------------------------------------------------
   tests/wall_overlap.lua —— ★「墙加长 4，填掉格与格之间的缝」（v263）的回归断言
 
   用户真机回报（原话）：「现在墙稍微有一点缝隙，把墙的长度增加 4，填满现在的空隙即可」
@@ -96,6 +96,37 @@ ok(near(dx, want, 1e-6),
   "门长度没被拉长（期望 " .. tostring(want) .. "，实测 " .. tostring(dx) .. "）")
 ok(doorUp.visible == true, "门仍然可见")
 ok(not near(dx, (CELL + OVERLAP) / DOOR_BASE_L, 1e-6), "门长度 ≠ 墙长度（双向判据）")
+
+-------------------------------------------------------------------------------
+-- ③ ★ v266 视觉规格（用户 2026-10-18：「位置对了，再把门墙**加粗 2 加长 4**」＋「**门也改 0.44**」）
+--
+--   这份规格**只由 4 个配置决定**，脚本逻辑不参与 ⇒ 钉住"配置→目标几何"这条链：
+--     厚  = `edge_thickness`  8 → 10（墙门同厚）
+--     墙长 = `cw + edge_overlap(4) + edge_extra_len(4)` = **cw + 8**
+--     门长 = `cw × door_length_ratio(0.44) + edge_extra_len(4)`
+--   ⚠️ `edge_extra_len` 必须对**墙和门都生效**（用户要的是"门墙一起长 4"）✓
+-------------------------------------------------------------------------------
+local V266 = { rows = 5, cols = 5, edge_thickness = 10, edge_overlap = 4,
+               edge_extra_len = 4, door_length_ratio = 0.44 }
+local a266 = Ad.new({ cells = V266 })
+local CW266 = a266:cell_geometry(5)
+
+a266:set_property("cell.1.1", "walls", { up = true, down = false, left = false, right = false })
+local sx2, sy2 = wallUp._scale()
+ok(near(sx2, (CW266 + 8) / WALL_BASE_L, 1e-6),
+  "v266 墙长 = cw + 4 + 4 = " .. tostring(CW266 + 8) .. "（实测倍率 " .. tostring(sx2) .. "）")
+ok(near(sy2, 10 / 8, 1e-6),
+  "v266 墙厚 = 10（倍率应为 1.25，实测 " .. tostring(sy2) .. "）")
+
+a266:set_property("cell.1.1", "doors", { up = true, down = false, left = false, right = false })
+local dx2, dy2 = doorUp._scale()
+ok(near(dx2, (CW266 * 0.44 + 4) / DOOR_BASE_L, 1e-6),
+  "v266 门长 = cw×0.44 + 4 = " .. tostring(CW266 * 0.44 + 4) .. "（实测倍率 " .. tostring(dx2) .. "）")
+ok(near(dy2, 10 / 8, 1e-6),
+  "v266 门厚 = 10（墙门同厚，实测 " .. tostring(dy2) .. "）")
+ok(dx2 > (CW266 * 0.44) / DOOR_BASE_L + 1e-6,
+  "门比「只按比例」更长：+4 确实加到了门上（比例值 " .. tostring(CW266 * 0.44) .. " → 目标 " .. tostring(CW266 * 0.44 + 4) .. "）")
+ok(dx2 < sx2, "门仍然比墙短（门 " .. tostring(CW266 * 0.44 + 4) .. " < 墙 " .. tostring(CW266 + 8) .. "）")
 
 print(string.format("\nwall_overlap: %d passed, %d failed", passed, failed))
 os.exit(failed == 0 and 0 or 1)

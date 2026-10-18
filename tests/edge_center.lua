@@ -101,7 +101,7 @@ _G.game = { GetClientUIRoots = function() return { rootCtl } end }
 local a = Ad.new({
   cells = {
     rows = 6, cols = 6, parent = "stage", ruler = 12,
-    edge_thickness = 8, edge_overlap = 4, door_length_ratio = 0.30,
+    edge_thickness = 10, edge_overlap = 4, door_length_ratio = 0.30,
     edge_fit_log = false,
   },
 })
@@ -111,7 +111,7 @@ ok(type(SIZE) == "number" and SIZE > 0, "cell_geometry 读到格子边长（" ..
 ok(type(PITCH) == "number" and PITCH > SIZE,
   "pitch > size（有缝才会出现「墙在格子里面」的偏移；实测 size=" .. fmt(SIZE) .. " pitch=" .. fmt(PITCH) .. "）")
 
-local THICK = 8
+local THICK = 10
 local UP, LEFT, DOWN, RIGHT = "up", "left", "down", "right"
 
 -------------------------------------------------------------------------------
@@ -177,7 +177,7 @@ ok(near(k22.anchoredPositionX, 0) and near(k22.anchoredPositionY, 0), "content �
 local a5 = Ad.new({
   cells = {
     rows = 5, cols = 5, parent = "stage", ruler = 12,
-    edge_thickness = 8, edge_overlap = 4, door_length_ratio = 0.30,
+    edge_thickness = 10, edge_overlap = 4, door_length_ratio = 0.30,
     edge_fit_log = false,
   },
 })

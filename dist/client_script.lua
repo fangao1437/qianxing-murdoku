@@ -15773,6 +15773,12 @@ function Adapter:_apply_edges(id, prefix, flags)
   --   ★ 只加**墙**，不加门（门要明显短于墙才像门，见 `door_length_ratio`）。
   --   ★ 想调就只改这一个数：2 = 几乎无缝不重叠；6 = 明显重叠（角上变厚）。
   local overlap = (self.cfg.cells and self.cfg.cells.edge_overlap) or 4
+  -- ★★★★★ 2026-10-18（v266）用户原话：「**位置对了，再把门墙加粗 2 加长 4**」✗✓
+  --   ⇒ 厚度走 `edge_thickness`（8 → 10，墙门同厚 ✓）；**长度**必须"墙和门都 +4" ⇒ 单独一个旋钮：
+  --       extra 同时加到墙（cw + overlap + extra）与门（cw×ratio + extra）上 ✓
+  --   ⚠️ 不要把它并进 `overlap`：`overlap` 是"墙填缝"专用，门不吃它 ✓
+  --     （并进去的话，门长度一点都不会变 —— 而用户这次要的就是"门也长 4" ✓）
+  local extra_len = (self.cfg.cells and self.cfg.cells.edge_extra_len) or 0
 
     if cw ~= nil then
       for i = 1, #sides do
@@ -15782,9 +15788,13 @@ function Adapter:_apply_edges(id, prefix, flags)
           -- ★ 2026-10-17：用 `size_of`（真机两数 / 模拟器一个数组，两种都认 ✓）
           local w, h = size_of(sub)
           local horiz = (s == "up" or s == "down")
-          -- 目标几何：横边 = 长 cw × 厚 thick；竖边 = 厚 thick × 长 ch
-          -- 门比墙短一点，看起来才像"门"而不是一整面墙
-          local tlen = (prefix == "door") and (cw * door_ratio) or (cw + overlap)
+          -- 目标几何：横边 = 长 × 厚；竖边 = 厚 × 长
+          -- ★ 2026-10-18（v266）：
+          --     · 墙 = cw + overlap(缝补 4) + extra_len(用户要的 +4) = **cw + 8**
+          --     · 门 = cw × door_length_ratio(**0.44**) + extra_len(同样 +4)
+          --   ⇒ 门/墙 = 44/99 ≈ 44% ⇒ 与设计图"门占墙线 44%"同一比例 ✓（见 records/design-layout-measure.md）
+          local tlen = (prefix == "door") and (cw * door_ratio + extra_len)
+            or (cw + overlap + extra_len)
           local tthick = thick
           local base_l = horiz and w or h      -- 基准：编辑器里控件的尺寸
           local base_t = horiz and h or w
@@ -21130,7 +21140,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v265 / 2026-10-18 / 门墙**居中在格线**（pitch/2，墙门共线；删 door_nudge 与死掉的第二套定位）+ 墙加长 4 + 规则与求解器移出运行时 + 第 1 关＝夜盗独行、第 2 关＝双影")
+        print("[murdoku] ===== 构建标记 v266 / 2026-10-18 / 门墙**居中在格线**＋**加粗 10 / 加长 4 / 门长 0.44** + 规则与求解器移出运行时 + 第 1 关＝夜盗独行、第 2 关＝双影")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -21500,11 +21510,24 @@ local function build_adapter()
       --
       -- 前提：墙/门控件的尺寸**别手动改**，让编辑器按素材自动定（= 素材原尺寸）。
       -- 脚本第一次试玩会把基准与倍率打进日志，可以核对：
-      --   [murdoku] 边缘适配 wall.up：基准 24x8 → 目标 135x8（倍率 5.63 / 1.00）
-      edge_thickness = 8,
+      --   [murdoku] 边缘适配 wall.up：基准 80x20 → 目标 99x10（倍率 1.24 / 0.50）
+      --
+      -- ★★★★★ 2026-10-18（v266）用户原话：「**位置对了，再把门墙加粗 2 加长 4**」
+      --   ⇒ 这一版的四个数就是全部真相（改观感只动这四个，不用碰脚本逻辑）：
+      --       厚：8 → **10**（thickness，墙门同厚 ✓）
+      --       长：墙 = 格子 + 缝补 4 + **额外 4** = **格子 + 8**；门 = 格子×0.30 + **额外 4**
+      --   实机一旦再调，只改下面 4 行；`tests/wall_overlap.lua` §③ 钉着这组数 ✓
+      edge_thickness = 10,
       -- 门比墙短一点（占格子边长的比例），看起来才像"门"
       -- ★ 2026-10-17：0.45 → **0.30**（对齐设计图：门只是墙线上的**一小段**橙标 ✓）
-      door_length_ratio = 0.30,
+      -- ★ 2026-10-18（v266）用户原话：「**门也改 0.44**」⇒ 0.30 → **0.44**（设计图实测 44.1–44.5%×格）
+      door_length_ratio = 0.44,
+      -- ★ 缝补：墙在"格子边长"之外多出的长度（相邻两格在角上重叠，填掉缝）
+      --   ★ 2026-10-18 之前是 4；v266 墙再加长 4 是通过下面的 `edge_extra_len` 实现的 ⇒ 这里保持 4
+      edge_overlap = 4,
+      -- ★ v266 用户要的「加长 4」：**墙和门一起** +4 画布 px（墙最终 = 格子 + 4 + 4；门 = 格子×0.30 + 4）
+      --   ⚠️ 不要把它并进 `edge_overlap` —— 那个只作用于墙，并进去门就加不长了 ✓
+      edge_extra_len = 4,
       -- 边缘适配的日志每个方向只打一次（调完可设 false 关掉）
       edge_fit_log = true,
 
