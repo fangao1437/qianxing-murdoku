@@ -547,6 +547,11 @@ local function make_context(core, roles)
   return ctx
 end
 
+-- ★★ 2026-10-18 求解器已搬到设计期工具（`tools/design_solve.lua`）✓
+--   它要用这个构造线索判定的上下文；函数本来就在运行时里（`clue_results` 也用它）
+--   ⇒ 只是【导出】一下，**不增加任何运行时代码，也不增加任何算力** ✓
+M.make_context = make_context
+
 local function unregistered_text(ctx, clue)
   return "（未注册的线索类型：" .. tostring(clue.type) .. "）"
 end
@@ -1728,125 +1733,6 @@ function Core:is_blocked(r, c) return self.blocked[cell_key(r, c)] == true end
 -- 偷窃版结构约束（规格 R3 / R4）
 ----------------------------------------------------------------------------
 
-function Core:tie_policy()
-  local r = self.level.rules or {}
-  return r.tie_policy or M.TIE_FORBID
-end
-
--- 某区域内的“无辜人数” = 该区域内既不是盗窃者也不是同伙的人数
-function Core:innocent_count(room_id, roles)
-  roles = roles or self.roles or {}
-  local n = 0
-  for r = 1, self.rows do
-    for c = 1, self.cols do
-      local id = self.grid[r][c]
-      if id and self.room[r][c] == room_id and id ~= roles.thief and id ~= roles.accomplice then
-        n = n + 1
-      end
-    end
-  end
-  return n
-end
-
-function Core:people_in_room(room_id)
-  local n = 0
-  for r = 1, self.rows do
-    for c = 1, self.cols do
-      if self.grid[r][c] and self.room[r][c] == room_id then n = n + 1 end
-    end
-  end
-  return n
-end
-
--- 结构检查：返回 ok, errors, info
---   info 里带 victim_room / adjacent / innocent_counts / best / best_rooms / k
---   界面可以直接把 info 展示给玩家当推理助手（这些量玩家自己也能数出来）
-function Core:structure_report(roles)
-  roles = roles or self.roles or {}
-  local errors = {}
-  local info = { roles = roles }
-  if not roles.thief then
-    return false, { "关卡没有声明 roles.thief" }, info
-  end
-
-  local vp = nil
-  if self.victim_id then vp = self.pos[self.victim_id] end
-  if not vp then vp = self.victim_fixed end
-  if not vp then
-    return false, { "受害者还没摆上棋盘" }, info
-  end
-  local rv = self.room[vp.r][vp.c]
-  info.victim_room = rv
-
-  local adj = {}
-  for other in pairs(self.adjacency[rv] or {}) do adj[#adj + 1] = other end
-  table.sort(adj)
-  info.adjacent = adj
-  if #adj == 0 then
-    errors[#errors + 1] = "受害者所在区域没有任何门相邻区域，R3 无法成立"
-    return false, errors, info
-  end
-
-  local counts, best, best_rooms = {}, -1, {}
-  for i = 1, #adj do
-    local room_id = adj[i]
-    local n = self:innocent_count(room_id, roles)
-    counts[room_id] = n
-    if n > best then
-      best = n
-      best_rooms = { room_id }
-    elseif n == best then
-      best_rooms[#best_rooms + 1] = room_id
-    end
-  end
-  info.innocent_counts = counts
-  info.best = best
-  info.best_rooms = best_rooms
-  info.k = self:people_in_room(rv)
-
-  if #best_rooms > 1 and self:tie_policy() == M.TIE_FORBID then
-    errors[#errors + 1] = string.format("相邻区域无辜人数并列（都等于 %d），tie_policy=forbid 视为非法", best)
-  end
-
-  local tp = self.pos[roles.thief]
-  if not tp then
-    errors[#errors + 1] = "盗窃者还没摆上棋盘"
-  else
-    local tr = self.room[tp.r][tp.c]
-    info.thief_room = tr
-    if not (self.adjacency[rv] or {})[tr] then
-      errors[#errors + 1] = "盗窃者不在受害者的相邻区域内"
-    end
-    local is_best = false
-    for i = 1, #best_rooms do
-      if best_rooms[i] == tr then is_best = true end
-    end
-    if not is_best then
-      errors[#errors + 1] = "盗窃者所在区域不是相邻区域里无辜人数最多的"
-    end
-  end
-
-  local has_acc = roles.accomplice ~= nil
-  info.has_accomplice = has_acc
-  if info.k >= 2 and not has_acc then
-    errors[#errors + 1] = "受害者与他人同区（k>=2），盗窃者必然有且只有一个同伙"
-  end
-  if has_acc then
-    local ap = self.pos[roles.accomplice]
-    if not ap then
-      errors[#errors + 1] = "同伙还没摆上棋盘"
-    elseif self.room[ap.r][ap.c] ~= info.thief_room then
-      errors[#errors + 1] = "同伙与盗窃者不在同一个区域"
-    end
-  end
-
-  return #errors == 0, errors, info
-end
-
-----------------------------------------------------------------------------
--- 约束与线索状态
-----------------------------------------------------------------------------
-
 function Core:violations()
   local rules = self:rules()
   local out = {}
@@ -2928,25 +2814,30 @@ function Core:view()
   --   ★ 卡位数量不变（`#self.clues`）⇒ 卡片不会多出一张 ✓
   local general_view = self:general_clue_results()
 
-  -- 偷窃版结构信息（界面可以直接展示，玩家自己也能数出来）
-  local sok, serrors, sinfo = self:structure_report()
+  -- ★★★ 2026-10-18 **规则判断已移出运行时**（见 `tools/design_rules.lua`）✗✓
+  --   用户原话：「核心中的规则和求解器一起应该被移除，规则是内容部分，独立于脚本，
+  --             原设计已经收口了，脚本里的判断行和规则行对于关卡运行都是冗余内容」
+  --   ⇒ 运行时**不再算** R3/R4、无辜人数、k —— 关卡答案是预输入的 ✓
+  --   ⇒ 快照里这个字段保留形状（界面/存档在读它），但**不再包含规则计算结果** ✓
+  --   ⇒ 设计期要这些数字：`require("tools/design_rules")` 之后调 `core:structure_report()` ✓
   local structure = {
-    ok = sok,
-    errors = serrors or {},
-    victim_room = sinfo.victim_room,
-    adjacent = sinfo.adjacent,
-    innocent_counts = sinfo.innocent_counts,
-    best = sinfo.best,
-    best_rooms = sinfo.best_rooms,
-    k = sinfo.k,
-    thief_room = sinfo.thief_room,
-    has_accomplice = sinfo.has_accomplice,
-    must_have_accomplice = (sinfo.k ~= nil and sinfo.k >= 2),
+    ok = true,
+    errors = {},
+    victim_room = nil,
+    adjacent = nil,
+    innocent_counts = nil,
+    best = nil,
+    best_rooms = nil,
+    k = nil,
+    thief_room = nil,
+    has_accomplice = (self.roles and self.roles.accomplice ~= nil) or false,
+    must_have_accomplice = false,
   }
 
   local hud = {
     time = self.elapsed or 0,
-    tie_policy = self:tie_policy(),
+    -- ★ 同上：tie_policy 只是关卡数据字段，运行时不判断它 ✓
+    tie_policy = (self:rules().tie_policy or M.TIE_FORBID),
     mode = self.mode,
     status = self.status,
     solved = (self.status == M.STATUS_SOLVED),
@@ -3021,216 +2912,6 @@ end
 --   返回候选解列表，每项 = { placement = {r={c=id}}, thief =, accomplice = }
 --   注意：这同时校验了「盗窃者与同伙是否唯一确定」（规格自检清单第 7 条）
 ----------------------------------------------------------------------------
-
-function Core:solve(limit)
-  limit = limit or 2
-  local solutions = {}
-  local rules = self:rules()
-  local ids = {}
-  for i = 1, #self.pieces do ids[i] = self.pieces[i].id end
-  -- ★★ 2026-10-11：★ 读**槽位表** ✓ ＋ ★ **先看有没有"真判据"** ✗
-  --   ★ 槽位（★ 由棋盘规格生成 ✓ 内容待 `row.*` 填 ✓）**没有 `type`** ✗
-  --     ⇒ ★ 它们**还不能判真假** ⇒ ★★ **`solve` 无从下嘴** ✓
-  --   ⇒ ★ 如实返回**空解表** ✓ ★ **不猜、不编解** ✗✓
-  --     ★（★ 上层：`validate_levels` 报"未测" ✓ ★ 作者拿到的是"还没内容"而不是"多解" ✓）
-  -- ★★ 2026-10-17：**通用线索也参与搜索** ✗✓
-  --   ★ 它们没有卡位 ✓ 但同样是"这个摆位必须成立的事实" ✓
-  --   ⇒ 拼成一张本地清单给下面的剪枝/叶子判定用（不改 `self.clues` ✓ 卡位数量不受影响 ✓）
-  local clues = {}
-  for i = 1, #(self.clues or {}) do clues[#clues + 1] = self.clues[i] end
-  for i = 1, #(self.general_clues or {}) do clues[#clues + 1] = self.general_clues[i] end
-  local real = 0
-  for i = 1, #clues do if clues[i] and clues[i].type then real = real + 1 end end
-  if real == 0 then return {} end
-  local allowed = self.allowed_false or 0
-
-  -- 角色候选：盗窃者不能是受害者；同伙可以为 nil
-  local rpairs = {}
-  for i = 1, #ids do
-    local t = ids[i]
-    if t ~= self.victim_id then
-      rpairs[#rpairs + 1] = { thief = t, accomplice = nil }
-      for j = 1, #ids do
-        local a = ids[j]
-        if a ~= t and a ~= self.victim_id then
-          rpairs[#rpairs + 1] = { thief = t, accomplice = a }
-        end
-      end
-    end
-  end
-
-  -- 摆位状态（grid / pos / row_count / col_count）在整趟搜索里**增量维护**。
-  -- 早期版本每到一个叶子就 install() 把整盘重算一遍，7×7 时那是主要开销，
-  -- 现在由 place_at 在放置/回溯时同步这几个表；搜索结束后统一还原。
-  local grid = {}
-  for r = 1, self.rows do grid[r] = {} end
-
-  local function fits(r, c)
-    if self:is_blocked(r, c) then return false end
-    if rules.one_per_row then
-      for cc = 1, self.cols do if grid[r][cc] then return false end end
-    end
-    if rules.one_per_col then
-      for rr = 1, self.rows do if grid[rr][c] then return false end end
-    end
-    if rules.one_per_room then
-      for rr = 1, self.rows do
-        for cc = 1, self.cols do
-          if grid[rr][cc] and self.room[rr][cc] == self.room[r][c] then return false end
-        end
-      end
-    end
-    return true
-  end
-
-  -- ── 边搜边剪 ────────────────────────────────────────────────────────────
-  -- 朴素做法是"摆满整盘再看线索"，但摆位总数是 N! × N!（7×7 就是 2540 万），
-  -- 再乘上角色组合就彻底跑不完了（2026-09-26 实测：7×7 关卡校验直接超时）。
-  --
-  -- 这里改成**一放下棋子就立刻检查"它牵涉到的那些线索"**：
-  --   · 只使用**引用全是具体棋子**的线索（`col_offset A V` 这种），
-  --     带角色别名（@thief / @accomplice）的线索要等角色定下来才能判，跳过；
-  --   · 一条线索引用的棋子全放下了，才去判它；
-  --   · 违反数一旦超过 allowed 就地剪枝。
-  --
-  -- 摆位用的 grid / pos / row_count / col_count 在整趟搜索里**增量维护**，
-  -- 不再每到一个叶子就 install 重算一遍（那也是个大头）。
-  local ctx = make_context(self)          -- roles 用关卡声明的，够判具体棋子的线索
-
-  local partial = {}
-  for i = 1, #clues do
-    local cl = clues[i]
-    local def = M.clues[cl.type]
-    if def ~= nil then
-      local refs, has_alias = {}, false
-      local params = def.params or {}
-      for pi = 1, #params do
-        local v = cl[params[pi]]
-        if type(v) == "string" then
-          if M.ROLE_ALIASES[v] ~= nil then
-            has_alias = true
-          else
-            refs[#refs + 1] = v
-          end
-        end
-      end
-      -- 引用了非棋子字符串（例如 not_role 的 role、beside_object 的家具名）时，
-      -- 那个"棋子"永远不会被摆上，于是这条线索永远不会被判定 —— 自动跳过，安全。
-      if not has_alias and #refs > 0 then
-        partial[#partial + 1] = { c = cl, refs = refs, def = def }
-      end
-    end
-  end
-
-  local function partial_violations()
-    local n = 0
-    for i = 1, #partial do
-      local p = partial[i]
-      local ready = true
-      local refs = p.refs
-      for k = 1, #refs do
-        if self.pos[refs[k]] == nil then ready = false break end
-      end
-      if ready and not p.def.validate(ctx, p.c) then
-        n = n + 1
-        if n > allowed then return n end
-      end
-    end
-    return n
-  end
-
-  local saved_grid, saved_pos = self.grid, self.pos
-  local saved_rc, saved_cc = self.row_count, self.col_count
-  self.row_count, self.col_count = {}, {}
-  for r = 1, self.rows do self.row_count[r] = 0 end
-  for c = 1, self.cols do self.col_count[c] = 0 end
-
-  -- 一个完整摆位 + 一组角色归属是否成立
-  -- （此时 self.grid / self.pos 就是当前搜索路径上的摆位，不需要 install）
-  local function consider()
-    local stop = false
-    for i = 1, #rpairs do
-      local roles = {
-        thief = rpairs[i].thief,
-        accomplice = rpairs[i].accomplice,
-        victim = self.victim_id,
-      }
-      local sok = self:structure_report(roles)
-      if sok then
-        local rctx = make_context(self, roles)
-        local failed = 0
-        for ci = 1, #clues do
-          local def = M.clues[clues[ci].type]
-          if not def or not def.validate(rctx, clues[ci]) then
-            failed = failed + 1
-            if failed > allowed then break end
-          end
-        end
-        if failed <= allowed then
-          local snap = {}
-          for r = 1, self.rows do
-            snap[r] = {}
-            for c = 1, self.cols do snap[r][c] = grid[r][c] end
-          end
-          solutions[#solutions + 1] = {
-            placement  = snap,
-            thief      = roles.thief,
-            accomplice = roles.accomplice,
-          }
-          if #solutions >= limit then
-            stop = true
-            break
-          end
-        end
-      end
-    end
-    return stop
-  end
-
-  local function place_at(k)
-    if k > #ids then return consider() end
-    local id = ids[k]
-    local preferred = self.solution[id]
-    local order = {}
-    if preferred then order[#order + 1] = preferred end
-    for r = 1, self.rows do
-      for c = 1, self.cols do
-        if not (preferred and preferred.r == r and preferred.c == c) then
-          order[#order + 1] = { r = r, c = c }
-        end
-      end
-    end
-    for i = 1, #order do
-      local p = order[i]
-      if not grid[p.r][p.c] and fits(p.r, p.c) then
-        grid[p.r][p.c] = id
-        self.pos[id] = p
-        self.row_count[p.r] = self.row_count[p.r] + 1
-        self.col_count[p.c] = self.col_count[p.c] + 1
-
-        -- ★ 放下就剪：这一层已经违反了太多线索的分支不用再往下走
-        local stop = false
-        if partial_violations() <= allowed then
-          stop = place_at(k + 1)
-        end
-
-        grid[p.r][p.c] = nil
-        self.pos[id] = nil
-        self.row_count[p.r] = self.row_count[p.r] - 1
-        self.col_count[p.c] = self.col_count[p.c] - 1
-        if stop then return true end
-      end
-    end
-    return false
-  end
-
-  self.grid = grid
-  self.pos = {}
-  place_at(1)
-  self.grid, self.pos = saved_grid, saved_pos
-  self.row_count, self.col_count = saved_rc, saved_cc
-  return solutions
-end
 
 return M
 
@@ -4873,7 +4554,17 @@ function Controller:on_input(event)
     self.clue_scroll = s
     self.dirty = true
 
+  elseif a == "focus_general" then
+    -- ★ 2026-10-18 通用线索：**只接"提示"这一个选中反馈** ✓
+    --   用户原话：「通用线索只接提示这一个选中反馈，note 和放置都不接」
+    pcall(function()
+      if self.core ~= nil and type(self.core.clue_hint_general) == "function" then
+        self.general_focus = true          -- ★ 高亮绘制认这个开关（见 build_layout 那段）
+        self.general_hint = self.core:clue_hint_general(1)
+      end
+    end)
   elseif a == "focus_clue" then
+    self.general_focus = nil             -- ★ 点普通卡 ⇒ 通用线索的高亮关掉 ✓
     -- 线索卡：点一下聚焦、再点取消。
     --
     -- 为什么必须有这个分支：线索卡在 push 时就发了 `event = { action = "focus_clue" }`，
@@ -6595,6 +6286,31 @@ function Controller:build_layout(ui_adapter)
   local hint_set = nil
   do
     local fci = self.focused_clue
+    -- ★★ 2026-10-18 **通用线索优先** ✓（点它时 `general_focus` 为真）
+    --   它没有"卡号" ⇒ 不能走 `focused_clue`（那会把高亮给到第 1 张真卡 a ✗）
+    -- ★★★ 2026-10-18 **只认卡号，不认标志** ✗✓（用户实测：点卡 a 亮的是通用线索那 5 格）
+    --   原因：`general_focus` 标志残留 ⇒ 真卡也被当成通用线索 ✗
+    --   ⇒ 判据改成**卡号越界**：通用卡号 = 卡片数 + 1（点击时设的）⇒ 不会和任何真卡撞号 ✓
+    if fci ~= nil and fci > 0 and self.core ~= nil
+       and (self.core.clues == nil or fci > #self.core.clues) then
+      -- ★★ pcall + **一次性诊断**：能证明这条分支到底走没走到、提示集有几格 ✓
+      pcall(function()
+        local _gh = self.core:clue_hint_general(1)
+        local _cnt = 0
+        if _gh ~= nil and _gh.set ~= nil then for _ in pairs(_gh.set) do _cnt = _cnt + 1 end end
+        if _cnt > 0 then hint_set = _gh.set end
+      end)
+      fci = nil
+    end
+    -- ★★ 2026-10-18 **卡号 0 = 通用线索** ✓（同一份 `focused_clue`，不另开旁路开关）
+    if fci == 0 and self.core ~= nil and type(self.core.clue_hint_general) == "function" then
+      -- ★★ 2026-10-18 **必须 pcall** ✗：这里抛错会把整个 build_layout 中断 ⇒
+      --   卡片和棋盘**都不重绘** ⇒ 用户看到"卡片没有视觉变化" ✓ 正是这个形状
+      pcall(function()
+        local _g0 = self.core:clue_hint_general(1)   -- 卡号 0 = 通用线索
+        if _g0 ~= nil and _g0.set ~= nil and next(_g0.set) ~= nil then hint_set = _g0.set end
+      end)
+    end
     if fci ~= nil and fci > 0 and self.core ~= nil and self.core.clue_hint ~= nil then
       local h = self.core:clue_hint(fci)
       if h ~= nil and h.set ~= nil and next(h.set) ~= nil then hint_set = h.set end
@@ -6862,7 +6578,7 @@ function Controller:build_layout(ui_adapter)
         --     ⇒ 脚本**只负责显示 / 隐藏** ✓ 颜色一个字都不写 ✓（`tint` 回到只管房间色 ✓）
         tint = (cd.suspect and 4294967295) or Controller.room_color(cd.room),
         -- ★ 每格都发（true/false）⇒ 取消选中 / 换卡时自然把上一批关掉 ✓（账本按值去重 ✓）
-        hint = (hint_set ~= nil and hint_set[r .. ":" .. c] == true),
+      hint = (hint_set ~= nil and hint_set[r .. ":" .. c] == true),
         -- ★★★★★★★★ 2026-10-17 **格子边长（画布）直接告诉适配层** ✗✓
         --   用途：把"铺满型"子控件（`face` / `hint` / `obj`）钉成**和格子一样大**
         --   ★ 为什么由界面层给：`build_layout` 本来就算出了 `cell`（设计空间）✓
@@ -8524,7 +8240,7 @@ function Controller:sync_clue_grid(adapter)
   do
     local core = self.core
     if core ~= nil and type(core.clues) == "table" then
-      n = #core.clues
+      n = #core.clues + ((type(core.general_clues) == "table" and #core.general_clues > 0) and 1 or 0)   -- ★ 有通用线索 ⇒ 列表多一条（在最上面）
     else
       -- ★ 兜底 ✓：★ 核心还没建起来 ⇒ ★ 退回读关卡数据 ✓（★ 老行为 ✓ 不崩 ✓）
       local lv = core and core.level
@@ -9338,8 +9054,94 @@ function Controller:_grid_disable_gray_raycast(item, index, pos)
   if cg.raycastTarget ~= nil then pcall(function() cg.raycastTarget = false end) end
   if cg.blockRaycast ~= nil then pcall(function() cg.blockRaycast = false end) end
   if cg.interactable ~= nil then pcall(function() cg.interactable = false end) end
-  print("[murdoku] 灰白层 `gray`：已关掉射线与交互（点击照常落在卡片上）")
   return true
+end
+
+-- ★★★★ 2026-10-18 **通用线索卡**（列表第 1 项）✗✓
+--   只点亮模板里新加的 gen.backrop / gen.title / gen.body 三件，
+--   把四样卡片文字（who/what/letter/face）全部藏掉 —— 两张卡长得不一样 ✓
+--   ★ 文字：本函数**不写文字**（用户定：内容源那边他自己填 ⇒ 先留空 ✓）
+-- ★★★★ 2026-10-18 **本关有没有通用线索** —— 判据 = **内容源存在** ✓
+--   用户实测：按 `core.general_clues` 判的两版都没生效（点通用卡仍然给 a 发高亮）
+--   ⇒ 改用**用户实际配的东西**：存档里 `row.<关>.clue` 这个内容块存在 = 有通用线索 ✓
+--     ★ 它由编辑器/存档决定，与 lua 关卡表是否声明无关 ⇒ 不会因为一处漏配整条链失效 ✓
+--   ★ 兜底：内容源取不到时，仍看 `core.general_clues` ✓
+function Controller:_has_general_clue()
+  local lv = nil
+  pcall(function() lv = self:_level_ordinal() end)
+  if lv ~= nil then
+    local rc = nil
+    pcall(function() rc = self:_palette_child("row." .. tostring(lv) .. ".clue") end)
+    if rc ~= nil then return true end
+  end
+  local ok = false
+  pcall(function()
+    ok = (self.core ~= nil and type(self.core.general_clues) == "table"
+          and #self.core.general_clues > 0)
+  end)
+  return ok
+end
+
+function Controller:_fill_general_item(adapter, item, index, pos)
+  -- ★★★ 2026-10-18 **记下"通用线索那一项"的句柄** ✓
+  --   点击时用句柄比对，**不再依赖 pos 算术、也不依赖 general_clues 查询** ✓
+  --   （用户实测：按 pos==1 判时，点它仍然按第 1 张真卡 a 去高亮 ✗）
+  self._general_item = item
+  -- ★★★ 2026-10-18 **正文从内容源读** ✓（用户定：gen.title 的文本已在模板里填好，只差正文）
+  --   内容源链路（存档实测）：`row.<关>.clue`（容器）→ 子控件 `clue.<关>.1`（文本框）
+  --   读法照抄卡片四样那套：`_palette_child` 拿容器 → `FindChild(全名)` 拿文本框 → 取 `text` ✓
+  --   写入：`item:FindChild("gen.body").text = 正文` ✓（与卡片 `who/what` 同一条路 ✓）
+  --   ★ 什么都没配 ⇒ 不写（留空 ✓ 绝不写成立）
+  do
+    local _lv = self:_level_ordinal()
+    if _lv ~= nil then
+      local _txt = nil
+      local _rc = nil
+      pcall(function() _rc = self:_palette_child("row." .. tostring(_lv) .. ".clue") end)
+      if _rc ~= nil then
+        local _src = nil
+        pcall(function() _src = _rc:FindChild("clue." .. tostring(_lv) .. ".1") end)
+        if _src ~= nil then pcall(function() _txt = _src.text end) end
+      end
+      if _txt ~= nil and _txt ~= "" then
+        local _dst = nil
+        pcall(function() _dst = item:FindChild("gen.body") end)
+        -- ★★ 2026-10-18 走**正规文字链路** ✓（docs/线索区-内容填入规则.md §四：
+        --   `write_control_text(ctrl, text)` —— **值变了才写**，与 who/what/letter 同一条路 ✓）
+        --   我第一版直接 `_dst.text = _txt` 绕过了它 ⇒ 被签名门/属性账本盖掉 ✗
+        if _dst ~= nil then pcall(function() write_control_text(_dst, _txt) end) end
+      end
+    end
+  end
+  local function child(nm)
+    local c = nil
+    pcall(function() c = self:_grid_item_child_cached(item, index, pos, nm) end)
+    return c
+  end
+  for _, nm in ipairs({ "who", "what", "letter", "face" }) do
+    local c = child(nm)
+    if c ~= nil then pcall(function() c:SetVisible(false) end) end
+  end
+  for _, nm in ipairs({ "gen.backrop", "gen.title", "gen.body" }) do
+    local c = child(nm)
+    if c ~= nil then pcall(function() c:SetVisible(true) end) end
+  end  -- ★★★★★ 2026-10-18 **通用卡的「标记」走普通卡同一条路** ✗✓
+  --   用户实测：涂 gen.backrop 是「整块染色」✗ 不是描边
+  --   为什么普通卡是描边：涂的是 backrop1（**下层**），backrop2 盖住中间 ⇒ 只剩边缘 ✓
+  --   ⇒ 通用卡也涂 backrop1 ✓（它本来就在模板里、也在通用卡上可见 ✓）
+  --   判定**绑在通用线索身份上**：general_focus 为真 ⇒ 亮；否则还原 ✓
+  do
+    local _cp = nil
+    pcall(function() _cp = item:FindChild("backrop1") end)
+    if _cp ~= nil then
+      if self._gen_hl_orig == nil then
+        pcall(function() self._gen_hl_orig = _cp.imageColor end)
+      end
+      local _want = (self.general_focus ~= nil)
+      local _target = _want and HIGHLIGHT_TINT or self._gen_hl_orig
+      if _target ~= nil then pcall(function() _cp.imageColor = _target end) end
+    end
+  end
 end
 
 function Controller:_fill_grid_item(adapter, grid, item, index)
@@ -9429,6 +9231,35 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
     end
   end
   local pos = (tonumber(index) or self._grid_base) - self._grid_base + 1
+  -- ★★★★ 2026-10-18 **通用线索占列表第 1 位** ✗✓
+  --   用户：「通用线索…放在最上方，如果有通用线索则其它线索卡往下移」
+  --   ⇒ 列表位置 `pos` 与"第几张真卡 / 第几行"从此**不是同一个数** ✓
+  --     · pos == 1        ⇒ 通用线索卡（只点亮 gen.* 三件，四样卡片文字藏掉）
+  --     · pos >= 2        ⇒ 第 (pos-1) 张真卡 ⇒ `row.<关>.<行>` 的行号**仍是 pos-1 起的 1** ✓
+  --   ★ 这么写只用一个局部变量 `pos` 做减法，后面那一大段读 `row.<lv>.<pos>` 的代码
+  --     **一个字都不用动** ✓（否则整段的行号都会错位一格 ✗）
+  local _has_gen = false
+  pcall(function() _has_gen = self:_has_general_clue() end)
+  if _has_gen then
+    if pos == 1 then
+      pcall(function() self:_fill_general_item(adapter, item, index, pos) end)
+      return
+    end
+    pos = pos - 1
+    -- ★★★ 2026-10-18 **列表项会被引擎复用** ✗✓
+    --   上一轮用 `self._general_item` 记句柄来判断"哪一项是通用线索" ✓
+    --   但**同一个 item 句柄**滚动/回收后会拿去显示普通卡 ⇒ 标记还在 ⇒
+    --   点那张**普通卡**也发 `focus_general` ⇒ 高亮派发错 ✗（用户实测）
+    --   ⇒ 填普通卡时**就地清掉**这个标记 ✓（下次填成通用卡会重新设 ✓）
+    if self._general_item == item then self._general_item = nil end   -- _general_item 清掉（复用护栏）
+    -- ★★★ 2026-10-18 **普通卡必须把通用线索那三件藏掉** ✗✓    --   它们是**模板里的子控件** ⇒ 默认对**每一张卡**都可见 ✗    --   用户实测：「gen.backrop 会在所有线索卡上出现」✓ 修在这里 ✓
+    for _, _nm in ipairs({ "gen.backrop", "gen.title", "gen.body" }) do
+      pcall(function()
+        local _cc = self:_grid_item_child_cached(item, index, pos, _nm)
+        if _cc ~= nil then pcall(function() _cc:SetVisible(false) end) end
+      end)
+    end
+  end
   -- ★ 2026-10-10 **记下句柄与它当时的 index** ✓ —— ★ 就地重填要用 ✓
   --   ★ 为什么要有它 ✗：★ 有了句柄就能【不重发 RefreshItems】而刷新内容 ✓
   --     ⇒ ★ **滚动位置才保得住** ✓✓（★ 这是"点一下弹回顶部"的治本一步 ✓）
@@ -10552,7 +10383,47 @@ function Controller:_on_grid_item_click(adapter, grid, item)
   --       ⇒ ★ **高亮与选人都落在第 1 条上** ✓（★ 用户看到的"链路还是断的" ✓）
   --   ⇒ ★★ 改用 `_grid_pos_of_item` ✓ —— ★ **用填充时引擎亲手交来的那个 index** ✓✓
   --     ★（★ 那一次是权威的 ✓ ★ 我们就是按它算 `pos` 填内容的 ✓）
+  -- ★★★★★ 2026-10-18 **通用线索：在最前面识别，不走 `pos` 那条路** ✗✓（日志定案）
+  --   证据（用户 05:55 日志）：点它 ⇒ `GetItemIndex=0` ⇒ `_grid_pos_of_item` 拿不到位置 ⇒
+  --     `pos` 非法 ⇒ **整条点击被丢掉**（连"点卡片定位"都不打印）⇒ 表现为"不可选" ✗
+  --   ⇒ 用**填充时记下的句柄**在算 pos 之前就认出来 ✓
+  --     （句柄是权威的 ✓；它被回收去显示普通卡时已在填充侧清掉 ✓）
+  --   ★ `focused_clue` 给一个**合法正数但超出卡范围**的值（n+1）⇒ 没有卡会对上 ✓
+  --     绘制侧把 `general_focus` 解释成通用线索（见 build_layout 那段）✓
+  if item ~= nil and self._general_item == item then
+    -- ★★★ 2026-10-18 **再点一次 = 取消选中** ✗✓（用户：通用线索没接取消选中）
+    if self.general_focus ~= nil then
+      self.general_focus = nil
+      self.focused_clue = nil
+      self.general_hint = nil
+      self.dirty = true
+      self._grid_sig = nil
+      return
+    end
+    local _ncl = 0
+    pcall(function() local _v = self.core:view(); _ncl = #_v.clues end)
+    self.focused_clue = _ncl + 1
+    self.general_focus = true
+    pcall(function() self.general_hint = self.core:clue_hint_general(1) end)
+    self.dirty = true
+    self._grid_sig = nil
+    return
+  end
   local pos = self:_grid_pos_of_item(grid, item)
+  -- ★★★★★ 2026-10-18 **通用线索走【正常选中链路】，只是把卡号算成 0** ✗✓（用户定案）
+  --   用户原话：「把相关拦截取消，高亮也补上」✓（拦了之后通用卡选不中 ⇒ 提示路径断 ✗）
+  --   ⇒ 不再早退 ✗：它**和普通卡一样**参与选中，只是：
+  --     · 卡号 = 0（通用卡不是任何人的卡 ⇒ `vm.clues[0]` 为 nil ⇒ 选人那步自然什么都不选 ✓）
+  --     · 高亮绘制侧把 `focused_clue == 0` 解释成通用线索 ✓（见 `build_layout` 那段）
+  --   ★ 真卡：列表第 k+1 项 ⇒ pos 减 1 得到卡号 k ✓（本次一并合进来，不再分两块）
+  do
+    local _hg = false
+    pcall(function() _hg = self:_has_general_clue() end)
+    if _hg and pos ~= nil then
+      pos = pos - 1                -- 真卡：列表位置 −1 = 卡号 ✓（通用卡已在上面 return ✓）
+    end
+  end
+
   if type(pos) ~= "number" then
     -- 两个来源都拿不到 ⇒ 这一次点击**宁可丢掉**，也不要聚焦到错误的一条 ✓
     self:_grid_log("noindex", "网格视窗：这一项属于哪一条读不到（填充记录与 GetItemIndex 都空）"
@@ -10755,6 +10626,23 @@ function Controller:_on_grid_item_click(adapter, grid, item)
     end
   end
 local ev = { action = "focus_clue", index = pos, phase = "click" }
+  -- ★★★ 2026-10-18 **通用线索发它自己的 action** ✓（只接提示 ✓ 不接 note / 放置）
+  if self._general_click then
+    ev = { action = "focus_general", phase = "click" }
+    self._general_click = nil            -- 一次性：下一次点击重新判定 ✓
+  end
+  -- ★★ 2026-10-18 通用线索占列表第 1 项 ⇒ 它的点击**只发 focus_general**（只接提示，不接 note/放置）✓
+  pcall(function()
+    if item ~= nil and self._general_item == item then
+      -- ★ 句柄比对 ✓：就是通用线索那一项 ⇒ 只发 focus_general
+      ev = { action = "focus_general", phase = "click" }
+    elseif pos == 1 and self:_has_general_clue() then
+      ev = { action = "focus_general", phase = "click" }
+    elseif pos == 1 and self.core ~= nil and type(self.core.general_clues) == "table"
+       and #self.core.general_clues > 0 then
+      ev = { action = "focus_general", phase = "click" }
+    end
+  end)
   if adapter ~= nil and type(adapter.on_input) == "function" then
     adapter.on_input(ev)
   else
@@ -15725,6 +15613,22 @@ function Adapter:_apply_edges(id, prefix, flags)
   --   ⇒ 这里把**本关真需要、却取不到子控件**的边记下来，函数返回 false；
   --     界面层按"有限次重试"补发（次数有上限，不会变成每帧死循环）。
   local missing_sub = {}
+      -- ★★★★★ 2026-10-18 **content 归位** ✗✓（墙/门错位到格子内部）
+      --   墙/门的贴边坐标是「相对 content 中心」算的（见下面那段贴边 ✓）
+      --   ⇒ content 自己若带偏移/尺寸不对，**整组边会被一起挪走** ✓
+      --     表现就是「墙不在两行/列之间，而是陷在格子里面」✓ 正是用户截图那个形状
+      --   ⇒ 把 content 钉成"锚点居中、尺寸=格子、位置=0" ⇒ 边的坐标基准干净 ✓
+      do
+        local content = nil
+        pcall(function() content = self:sub(id, "content") end)
+        if content ~= nil then
+          if content.SetAnchorMin then pcall(function() content:SetAnchorMin(0.5, 0.5) end) end
+          if content.SetAnchorMax then pcall(function() content:SetAnchorMax(0.5, 0.5) end) end
+          if content.SetPivot then pcall(function() content:SetPivot(0.5, 0.5) end) end
+          if content.SetSizeDelta then pcall(function() content:SetSizeDelta(cw, ch) end) end
+          if content.SetAnchoredPosition then pcall(function() content:SetAnchoredPosition(0, 0) end) end
+        end
+      end
   for i = 1, #sides do
     local s = sides[i]
     local want = (flags[s] and not skip[s]) and true or false
@@ -15840,12 +15744,13 @@ function Adapter:_apply_edges(id, prefix, flags)
     -- 而不是"看你素材多大"。
     local thick = (self.cfg.cells and self.cfg.cells.edge_thickness) or 8
     local door_ratio = (self.cfg.cells and self.cfg.cells.door_length_ratio) or 0.45
-    -- ★★★★★★★★ 2026-10-18（v263）**墙加长，填掉相邻两格之间的缝** ✗✓✓
-    --   用户原话：「现在墙稍微有一点缝隙，把墙的长度增加 4，填满现在的空隙即可」
-    --   缝的来源：每格只画自己那条边（长 = 格子边长 `cw`），相邻两格各画各的 ⇒
-    --   取整误差在**四角**留下 1–2px。加 4 ⇒ 两端各溢出 2（`localScale` 绕中心 ⇒ 位置不变），
-    --   角上相邻两格**重叠**，缝消失。只加墙不加门（门要明显短于墙才像门）。
-    local overlap = (self.cfg.cells and self.cfg.cells.edge_overlap) or 4
+  -- ★★★★ 2026-10-18（v264）**墙加长 4px，填掉相邻两格之间的缝** ✗✓
+  --   用户真机原话：「现在墙稍微有一点缝隙，把墙的长度增加 4，填满现在的空隙即可」
+  --   缝的来源：每格只画自己那条边（长 = cw），相邻两格各画各的 ⇒ 取整误差在四角留 1–2px。
+  --   加 4 ⇒ 两端各溢出 2（`localScale` 绕中心 ⇒ 位置不变）⇒ 角上相邻两格重叠，缝消失。
+  --   ★ 只加**墙**，不加门（门要明显短于墙才像门，见 `door_length_ratio`）。
+  --   ★ 想调就只改这一个数：2 = 几乎无缝不重叠；6 = 明显重叠（角上变厚）。
+  local overlap = (self.cfg.cells and self.cfg.cells.edge_overlap) or 4
 
     if cw ~= nil then
       for i = 1, #sides do
@@ -15857,7 +15762,6 @@ function Adapter:_apply_edges(id, prefix, flags)
           local horiz = (s == "up" or s == "down")
           -- 目标几何：横边 = 长 cw × 厚 thick；竖边 = 厚 thick × 长 ch
           -- 门比墙短一点，看起来才像"门"而不是一整面墙
-          -- ★ v263：**墙**多加 `overlap`（填四角的缝）；门不加
           local tlen = (prefix == "door") and (cw * door_ratio) or (cw + overlap)
           local tthick = thick
           local base_l = horiz and w or h      -- 基准：编辑器里控件的尺寸
@@ -15919,6 +15823,17 @@ function Adapter:_apply_edges(id, prefix, flags)
           elseif s == "down" then y = -((ch - tthick) / 2)
           elseif s == "left" then x = -((cw - tthick) / 2)
           elseif s == "right" then x = ((cw - tthick) / 2) end
+          -- ★★★★★ 2026-10-18 **门素材偏心补偿** ✗✓（用户：直接量图、挪坐标）
+          --   截图实测（格线 pitch≈93.5，墙正压在格线上 ✓，门不压）：
+          --     竖门 x 比格线 +6.0 / +6.5（偏右）　横门 y 比格线 +6.5（偏下）
+          --   ⇒ 门素材带透明边距、可见条不居中，缩放绕中心去不掉 ✓ 与墙无关
+          --   ⇒ 反向补偿：横门往上 +nudge、竖门往左 −nudge ✓
+          --   ★ 一个旋钮：`cfg.cells.door_nudge`（画布 px，默认 6）
+          if prefix == "door" then
+            local nudge = (self.cfg.cells and self.cfg.cells.door_nudge) or 6
+            if s == "up" or s == "down" then y = y + nudge
+            else x = x - nudge end
+          end
           if sub.SetPivot then pcall(function() sub:SetPivot(0.5, 0.5) end) end
           if sub.SetAnchoredPosition then pcall(function() sub:SetAnchoredPosition(x, y) end) end
         end
@@ -16148,6 +16063,12 @@ function Adapter:set_property(id, key, value, nkey)
     self:_fit_child_to_cell(ctrl, h, id)
     local on = (value == true)
     if h.SetVisible then pcall(function() h:SetVisible(on) end) end
+    -- ★★★★★ 2026-10-18 **淡蓝层抬到最上层** ✗✓
+    --   日志：「图层顺序：对 N 个格子排过层序，子控件成功置底 …」⇒ 子控件被重排过
+    --   ⇒ hint 很可能被压到 face 下面 ⇒ 可见性开了、却被不透明 face 盖住 ✗
+    if on then
+      if h.SetAsLastSibling then pcall(function() h:SetAsLastSibling() end) end
+    end
     if on and h.SetActive then pcall(function() h:SetActive(true) end) end
     return true
 
@@ -16804,6 +16725,35 @@ function Adapter:set_property(id, key, value, nkey)
     for i = 1, #dirs do
       local c = self:sub(id, prefix .. dirs[i])
       if c and c.SetVisible then c:SetVisible((value and value[dirs[i]]) and true or false) end
+      -- ★★★★★ 2026-10-18 **这里只管显隐 ⇒ 定位也一起做** ✗✓
+      --   用户实测：`_apply_edges` 里加的补偿没生效（那条是 `edges` 键的路）
+      --   而**显隐这条路一定在跑**（门能显示就说明它跑过 ✓）⇒ 把定位放这里最可靠 ✓
+      --   坐标与 `_apply_edges` 同一套公式（贴格线），门再叠加素材偏心补偿 ✓
+      local _rc = self.rects and self.rects[id] or nil
+      local _cw = _rc and _rc.w or nil
+      local _ch = _rc and _rc.h or nil
+      if _cw and _ch then
+        local _thick = (self.cfg.cells and self.cfg.cells.edge_thickness) or 8
+        local _dn = (self.cfg.cells and self.cfg.cells.door_nudge) or 6
+        for _i = 1, #dirs do
+          local _c = self:sub(id, prefix .. dirs[_i])
+          if _c ~= nil then
+            local _d = dirs[_i]
+            local _x, _y = 0, 0
+            if _d == "up" then _y = (_ch - _thick) / 2
+            elseif _d == "down" then _y = -((_ch - _thick) / 2)
+            elseif _d == "left" then _x = -((_cw - _thick) / 2)
+            else _x = ((_cw - _thick) / 2) end
+            if key == "doors" then
+              if _d == "up" or _d == "down" then _y = _y + _dn else _x = _x - _dn end
+            end
+            if _c.SetAnchorMin then pcall(function() _c:SetAnchorMin(0.5, 0.5) end) end
+            if _c.SetAnchorMax then pcall(function() _c:SetAnchorMax(0.5, 0.5) end) end
+            if _c.SetPivot then pcall(function() _c:SetPivot(0.5, 0.5) end) end
+            if _c.SetAnchoredPosition then pcall(function() _c:SetAnchoredPosition(_x, _y) end) end
+          end
+        end
+      end
     end
   end
 
@@ -20425,11 +20375,22 @@ local RoomMap = __require("room_map")
 local M = {}
 
 -- 按顺序登记你的关卡；游戏里默认从第一个开始
-local LIST = {
-  "levels.demo_selftest",     -- 框架自检样例（不需要就删掉这一行）
-  "levels.case_001",          -- 案件 001 · 夜盗独行（5×5，k=1，无同伙）
-  "levels.case_002",          -- 案件 002 · 双影（6×6，k=2，必有同伙）
-  "levels.case_003",          -- 案件 003 · 第三方（7×7，k=3，必有同伙 + 假话不告知）
+--
+-- ★★★★★★★★ 2026-10-18 **这个 LIST 的顺序【就是】编辑器 `assets/row.<关>.<行>` 的 `<关>` 号** ✗✓✓
+--
+--   链路：`Controller:_level_ordinal()` → `levels.init.M.index_of(id)` → **本 LIST 的下标** ✓
+--   ⇒ 所以「第几关」不是猜的，也不是存档里另存的，**只由下面这几行的先后决定** ✓
+--
+--   当前的对应关系（★ 改这个 LIST 就等于改 row 编号，必须同步改编辑器里的 row.* ✗）：
+--     --     LIST[2] case_001       → 编辑器的 row.2.1 … row.2.5   （5 枚棋子）
+--     LIST[3] case_002       → 编辑器的 row.3.1 … row.3.6   （6 枚棋子）
+--     LIST[4] case_003       → 编辑器的 row.4.*             （本阶段未配内容）
+--   ⇒ 通用线索那块也是同一个口径：`row.<关>.clue`
+--     （★ 只有"有关卡声明了 general_clues"的那一关才需要它 —— 目前是 case_002 ⇒
+--       应是 **row.3.clue**，不是 row.2.clue ✗ 那一格属于 case_001，而 case_001 没有通用线索）
+local LIST = {  "levels.case_001",          -- 第 1 关：案件 001 · 夜盗独行（5×5，5 人；row.1.1 … row.1.5）
+  "levels.case_002",          -- 第 2 关：案件 002 · 双影（6×6，6 人 ＋ 通用线索；row.2.1 … row.2.6 ＋ row.2.clue）
+  "levels.case_003",          -- 第 3 关：案件 003 · 第三方（未配 row 内容；row.3.*）
 }
 
 M._errors = {}
@@ -20527,154 +20488,15 @@ return M
 
 end
 
-__M["levels.demo_selftest"] = function()
---[[----------------------------------------------------------------------------
-  levels/demo_selftest.lua —— 框架自检样例（偷窃版规则，不是关卡内容）
-
-  这是一个**完全合法**的最小局，用来验证 v0.3 引擎的每一条新规则：
-    · 5×5，5 枚棋子（4 名嫌疑人 + 1 名受害者，受害者也要摆）
-    · 三个区域：R_A(第1-3行)、R_B(第4-5行左3列)、R_C(第4-5行右2列)
-    · 门径：R_A↔R_B、R_B↔R_C（所以受害者所在区域 R_B 的相邻区域 = {R_A, R_C}）
-    · 受害者 V 与 A 同在 R_B → k=2 → 必有同伙
-    · 盗窃者 D 与同伙 C 都在 R_A；R_A 无辜人数 1 > R_C 的 0
-      → 满足"挑无辜人数最多的相邻区域"
-  ★★★ 2026-10-11 **线索表已删** ✗✓（★ 用户原话 ✓）：
-    「★ **原本那套为每关人物发位置和字母的逻辑直接删了** ✓
-     ★ **关卡设计本来就要改** ✓ ★ **不用留着他了**」✓
-  ⇒ ★★ 原来那套"报位置 ＋ 发字母"的线索**整段删掉** ✓
-    ★ **`meta.false_clue` 一并作废** ✓（★ 它按序号指线索 ✓ 线索没了它就没意义 ✓）
-  ⇒ ★★★ **本关现在【没有线索】** ✓ —— ★ **等新设计** ✓
-    ★ 关卡本体（`walls`/`doors`/`objects`/`roles`/`solution`/`size`）**一个字没动** ✓✓
-  ⚠️ ★ 已知后果 ✓（★ 不是 bug ✗）：★ `tools/validate_levels.lua` 的**唯一解**闸门
-    会报「找到 3 个解」✓ —— ★ 那是**内容还没设计** ✓ ★ 不是逻辑坏了 ✓
-
-
-  你设计正式关卡时把这个文件删掉即可。
-----------------------------------------------------------------------------]]--
-
-return {
-  id = "selftest_theft_5x5",
-  name = "框架自检样例（偷窃版）",
-  subtitle = "仅用于验证引擎与界面绑定",
-  difficulty = "selftest",
-
-  size = { rows = 5, cols = 5 },
-
-  rules = {
-    one_per_row  = true,
-    one_per_col  = true,
-    one_per_room = false,
-    place_all    = true,
-    tie_policy   = "forbid",   -- 相邻区域无辜人数不允许并列；特殊关卡可写 "allow"
-  },
-
-  -- 墙 = 区域边界
-  walls = {
-    { "h", 3, 1 }, { "h", 3, 2 }, { "h", 3, 3 },   -- R_A | R_B
-    { "h", 3, 4 }, { "h", 3, 5 },                  -- R_A | R_C
-    { "v", 4, 3 }, { "v", 5, 3 },                  -- R_B | R_C
-  },
-
-  -- 门径 = 跨区域的可达通道（同样开在格边上；不改变区域划分）
-  doors = {
-    { "h", 3, 1 },   -- R_A ↔ R_B： (3,1) 与 (4,1) 之间
-    { "v", 4, 3 },   -- R_B ↔ R_C： (4,3) 与 (4,4) 之间
-  },
-
-  -- ⚠️ Lua 的标识符只能是 ASCII，所以中文家具名必须写成 ["名"] = {...} 这种字符串键
-  objects = {
-    -- `kind` = 家具图标的素材键（界面层翻成 `obj.<kind>`，见 ui_controller.object_key_of）
-    ["书桌"] = { cells = { { r = 1, c = 5 } }, occupiable = false, kind = "desk"   },
-    ["地毯"] = { cells = { { r = 2, c = 1 }, { r = 2, c = 2 } }, occupiable = true,  kind = "carpet" },
-  },
-  blocked = {},
-  water   = {},
-
-  suspects = {
-    { id = "A", name = "管家", portrait = "portrait.A" },
-    { id = "B", name = "医生", portrait = "portrait.B" },
-    { id = "C", name = "歌女", portrait = "portrait.C" },
-    { id = "D", name = "伯爵", portrait = "portrait.D" },
-    { id = "V", name = "老宅主", portrait = "portrait.V", is_victim = true },
-  },
-
-  victim = { id = "V", name = "老宅主" },
-
-  -- 角色归属（答案的一部分）
-  roles = {
-    thief = "D",
-    accomplice = "C",     -- 不写 = 本案没有同伙
-  },
-
-  -- 线索里至多一句假话；这里声明是第 7 条
-  meta = {
-    false_clue = nil,   -- ★ 线索表已删 ⇒ 假话声明一并作废 ✓
-    announce   = "one",   -- none | one | unknown（unknown = 不告诉玩家）
-  },
-
-  solution = {
-    A = { r = 5, c = 3 },   -- 与受害者同区（R_B）
-    B = { r = 3, c = 2 },   -- R_A
-    C = { r = 2, c = 5 },   -- R_A（同伙）
-    D = { r = 1, c = 4 },   -- R_A（盗窃者）
-    V = { r = 4, c = 1 },   -- R_B（受害者）
-  },
-
-}
-
-end
-
 __M["levels.case_001"] = function()
 --[[----------------------------------------------------------------------------
-  levels/case_001.lua —— 案件 001《夜盗·独行》
+  levels/case_001.lua —— 第 1 关：案件 001《夜盗·独行》（5×5，5 枚棋子）
 
-  主题：深夜盗窃案。5×5，5 枚棋子（4 名嫌疑人 + 1 名受害者）。
-  教学点：**受害者独处一区（k=1）→ 本案没有同伙**，盗窃者单独作案。
-
-  ── 空间结构（三个区域）────────────────────────────────────────────────
-    R_A = 第 1-3 行 × 第 1-3 列（9 格）            ← 盗窃者藏在这里
-    R_B = 右侧 L 形：(1,4)(1,5)(2,4)(2,5)(3,4)(3,5)(4,5)(5,5)（8 格）
-                                                    ← 受害者所在区域
-    R_C = 第 4-5 行 × 第 1-4 列（8 格）
-
-    墙： v,1..3,3（R_A|R_B）、h,3,1..3（R_A|R_C）、h,3,4（R_B|R_C）、
-         v,4,4 与 v,5,4（R_C|R_B）
-    门： v,2,3（R_A↔R_B）、h,3,2（R_A↔R_C）、h,3,4（R_B↔R_C）
-
-    所以 Adj(R_B) = {R_A, R_C} —— **两个**候选区域，R3 才是真约束。
-
-  ── 为什么这样摆（R3 的自洽性）──────────────────────────────────────────
-    受害者 V 在 (4,5)，R_B 内只有它一人 → k=1 → 没有同伙。
-    四名嫌疑人分布：R_A 三人（含盗窃者）、R_C 一人。
-      inno(R_A) = 2（除盗窃者外的两人）
-      inno(R_C) = 1
-    → 唯一最大是 R_A，所以盗窃者必在 R_A ✔（R3）
-
-  ── 每行每列恰好一人 ────────────────────────────────────────────────────
-    列：R_A 占 1/2/3，R_C 占 4，受害者占 5 → 行 1..5 各一人。
-
-  ── 家具（2026-10-17 第一关定稿 v2）────────────────────────────────────
-    桌子 (1,1)(2,1)                     occupiable = false
-    植物 (1,2)(5,1)(5,3)                occupiable = false
-    地毯 (3,1)(3,2)(2,4)(2,5)           occupiable = true
-    椅子 (4,2)(5,4)                     occupiable = true
-
-  ── 线索（2026-10-17 定稿）──────────────────────────────────────────────
-    ★ 卡序 = 棋子序 A,B,C,D,V；**说话人 ≠ 线索主体**（按用户给的置换）：
-        卡 1 A 说「收藏家 在第 5 列」        ← 原 v 的线索
-        卡 2 B 说「旧识古董商 在 植物 旁边」  ← 原 d
-        卡 3 C 说「只有 值班保安 站在 地毯 上」← 原 a
-        卡 4 D 说「夜班清洁工 站在 椅子 上」  ← 原 c
-        卡 5 V 说「前台姑娘 在 桌子 旁边」    ← 原 b
-    ★ 推理只依赖「有哪些事实」，与谁说无关 ⇒ 摆位/唯一性不受影响。
-    ★ 顺序【必须】与卡序一致：界面用 `focused_clue`（= 第几张卡）去取
-      `Core:clue_hint`（= 第几条线索）⇒ 错一位就会亮错格子。
-    证据：`lua verify_case001.lua`（设计期，2 个摆位 → 模糊规则 → 唯一解）
-          `lua tools/validate_levels.lua` 会对本关报「2 个解 ✓ 不是 bug」——
-          因为**模糊规则还没有落进 `core:solve`**（见 docs/回执-线索卡位置提示-2026-10-17.md）
+  ★★★ 2026-10-18 **归位**：第 1 关就该是这套**真正的第一关内容** ✓
+    （之前槽 1 被框架自检关占着，而这里是双影；现在换回来了）
+  ⇒ 内容源 = `row.1.*`（5 枚棋子 ⇒ row.1.1 … row.1.5）✓
 ----------------------------------------------------------------------------]]--
-
-return {
+ return {
   id = "case_001",
   name = "案件 001 · 夜盗独行",
   subtitle = "保险库内室只留下一个人的痕迹 —— 是独自作案，还是有人替他望风？",
@@ -20764,7 +20586,27 @@ end
 
 __M["levels.case_002"] = function()
 --[[----------------------------------------------------------------------------
-  levels/case_002.lua —— 案件 002《双影》
+  levels/case_002.lua —— 第 2 关：案件 002《双影》（6×6，6 枚棋子 ABCDEV）
+
+  ★★★ 2026-10-18 **归位**：双影是**第 2 关** ✓
+  ⇒ 内容源 = `row.2.*`（6 枚棋子 ⇒ row.2.1 … row.2.6）
+    通用线索 = `row.2.clue`（子控件 `clue.2.1`）✓
+    —— 这也正是为什么通用线索挂在第 2 关：本关是全作里唯一有通用线索的关 ✓
+----------------------------------------------------------------------------]]--
+--[[----------------------------------------------------------------------------
+  ★★★ 2026-10-18 **关卡归位（用户定）** ✗✓
+
+  用户：「把关卡放到正确的位置，用最不会出错的方法 —— 把第二关重建成空白 6×6 棋盘，
+        然后把真正的第二关内容填进去；被填错了内容的第三关清成没有布局的棋盘。」
+
+  ⇒ 本文件现在装的是**真正的第 2 关内容**（6×6、6 枚棋子 A B C D E V、四区域、
+    全场一扇门、一条通用线索「地毯上没有人」），从原 `case_002.lua` 整段搬来，
+    **只改了 id / name / 文件名**，其余一个字段没动 ✓
+
+  ★ 与编辑器的对应：本关是 LIST 的第 2 项 ⇒ 内容源是 `row.2.*`（6 行 ⇒ row.2.1 … row.2.6）
+    通用线索在 `row.2.clue`（子控件 `clue.2.1`）✓
+----------------------------------------------------------------------------]]--
+--[[----------------------------------------------------------------------------  levels/case_001.lua —— 案件 001《双影》（原 case_002 的内容，2026-10-18 归位到第 2 关）
 
   主题：6×6，6 枚棋子（5 名嫌疑人 + 1 名受害者）。**本案没有同伙。**
 
@@ -21275,7 +21117,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v263 / 2026-10-18 / 墙加长 4（填掉格与格之间的缝；门不加）+ 其余同 v262 =====")
+        print("[murdoku] ===== 构建标记 v264 / 2026-10-18 / 墙加长 4（edge_overlap，门不加）+ 规则与求解器移出运行时 + 第 1 关＝夜盗独行、第 2 关＝双影")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -21647,17 +21489,6 @@ local function build_adapter()
       -- 脚本第一次试玩会把基准与倍率打进日志，可以核对：
       --   [murdoku] 边缘适配 wall.up：基准 24x8 → 目标 135x8（倍率 5.63 / 1.00）
       edge_thickness = 8,
-      -- ★★★★★★★★ 2026-10-18（v263）**墙加长 4 画布 px，用来填掉格与格之间的那道缝** ✗✓✓
-      --
-      --   用户真机回报（原话）：「现在墙稍微有一点缝隙，把墙的长度增加 4，填满现在的空隙即可」
-      --
-      --   为什么会有缝：每一格的 `wall.*` 只画**自己那一条边**，长度 = 格子边长 `cw`；
-      --   而相邻两格各自画、都从自己边的两端开始 ⇒ 长与宽的取整误差会在**四角**留出 1–2px 的缝。
-      --   加长 4（= 两端各溢出 2，`localScale` 绕中心缩放 ⇒ 位置不动）就能把缝盖住，
-      --   且相邻两格在角上**重叠 4px** —— 同色叠加看不出来。
-      --   ★ 只加**墙**，不加门（门要明显比墙短才像门，见 `door_length_ratio`）。
-      --   ★ 想调就只改这一个数：2 = 几乎无缝但不重叠；6 = 明显重叠（角上会变厚）。
-      edge_overlap = 4,
       -- 门比墙短一点（占格子边长的比例），看起来才像"门"
       -- ★ 2026-10-17：0.45 → **0.30**（对齐设计图：门只是墙线上的**一小段**橙标 ✓）
       door_length_ratio = 0.30,

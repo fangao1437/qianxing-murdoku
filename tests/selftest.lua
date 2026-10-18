@@ -15,6 +15,7 @@ package.path = table.concat({
 }, ";")
 
 local Core     = require("murdoku_core")
+require("tools.design_rules")   -- ★ 设计期：把结构规则挂回 Core（运行时没有它 ✓）
 local UIC      = require("ui_controller")
 local Adapters = require("engine_adapter")
 local Level    = require("tests.fixtures").clue_level_5x5()
@@ -79,10 +80,20 @@ check("盗窃者区域是无辜最多的相邻区域", sinfo.thief_room == sinfo
 check("无辜人数 1 > 0（无并列）", sinfo.best == 1 and #sinfo.best_rooms == 1,
       tostring(sinfo.best))
 
-print("== 4. 同伙存在性（R4 叠加）==")
-local s2, e2 = core:structure_report({ thief = "D", accomplice = nil, victim = "V" })
-check("k>=2 时删掉同伙会报错", s2 == false, e2 and table.concat(e2, "; "))
-check("报错信息指向同伙规则", (e2 and table.concat(e2, "; "):find("同伙") ~= nil))
+print("== 4. ★ 同伙规则【已废止】（2026-10-18）==")
+-- 旧断言（已被规则变更取代）：
+--   check("k>=2 时删掉同伙会报错", ...) ／ check("报错信息指向同伙规则", ...)
+-- 现在：k 取任何值都不再要求同伙；只有关卡自己在 roles 里声明了 accomplice 才存在同伙。
+local s2, e2, i2 = core:structure_report({ thief = "D", accomplice = nil, victim = "V" })
+check("k>=2 时没有同伙【不再报错】", s2 == true, e2 and table.concat(e2, "; ") or "")
+check("k 仍然被正确数出来", i2 ~= nil and i2.k >= 2, i2 and tostring(i2.k) or "nil")
+check("info.has_accomplice 反映传进来的 roles（本例无同伙 ⇒ false）",
+      i2 ~= nil and i2.has_accomplice == false, i2 and tostring(i2.has_accomplice) or "nil")
+-- 同伙即便被摆到别的区域，也不再报"不在同一个区域"（该条已废止）
+local s3, e3 = core:structure_report({ thief = "D", accomplice = "C", victim = "V" })
+check("同伙不再被要求与盗窃者同区（本条已废止）",
+      (e3 == nil) or (table.concat(e3, "; "):find("不在同一个区域") == nil),
+      e3 and table.concat(e3, "; ") or "")
 
 print("== 5. 假话规则（至多一句，粒度=整条）==")
 local res = core:clue_results()
@@ -105,8 +116,13 @@ check("引用 @thief 的线索渲染成“盗窃者”", alias_text ~= nil, alia
 local isrole = Core.clues["is_role"]
 check("身份线索已注册", isrole ~= nil)
 
-print("== 7. 求解器（摆位 × 角色归属 + 假话容错）==")
-local sols = core:solve(3)
+print("== 7. ★ 求解器（已搬到设计期工具 tools/design_solve.lua）==")
+-- ★★ 2026-10-18：求解器**不再在运行时核心里**（用户要求）。
+--   本套件仍然测它，但改成显式 require 那份设计期工具 —— 顺带证明"搬出去之后还能用"。
+local Solve = require("tools.design_solve")
+check("运行时核心【没有】solve（求解器已移出运行时代码）", Core.solve == nil,
+      type(Core.solve))
+local sols = Solve.solve(core, 3)
 check("唯一解", #sols == 1, "#sols=" .. tostring(#sols))
 if sols[1] then
   check("解出盗窃者 = D", sols[1].thief == "D", tostring(sols[1].thief))

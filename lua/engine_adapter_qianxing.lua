@@ -4071,6 +4071,22 @@ function Adapter:_apply_edges(id, prefix, flags)
   --   ⇒ 这里把**本关真需要、却取不到子控件**的边记下来，函数返回 false；
   --     界面层按"有限次重试"补发（次数有上限，不会变成每帧死循环）。
   local missing_sub = {}
+      -- ★★★★★ 2026-10-18 **content 归位** ✗✓（墙/门错位到格子内部）
+      --   墙/门的贴边坐标是「相对 content 中心」算的（见下面那段贴边 ✓）
+      --   ⇒ content 自己若带偏移/尺寸不对，**整组边会被一起挪走** ✓
+      --     表现就是「墙不在两行/列之间，而是陷在格子里面」✓ 正是用户截图那个形状
+      --   ⇒ 把 content 钉成"锚点居中、尺寸=格子、位置=0" ⇒ 边的坐标基准干净 ✓
+      do
+        local content = nil
+        pcall(function() content = self:sub(id, "content") end)
+        if content ~= nil then
+          if content.SetAnchorMin then pcall(function() content:SetAnchorMin(0.5, 0.5) end) end
+          if content.SetAnchorMax then pcall(function() content:SetAnchorMax(0.5, 0.5) end) end
+          if content.SetPivot then pcall(function() content:SetPivot(0.5, 0.5) end) end
+          if content.SetSizeDelta then pcall(function() content:SetSizeDelta(cw, ch) end) end
+          if content.SetAnchoredPosition then pcall(function() content:SetAnchoredPosition(0, 0) end) end
+        end
+      end
   for i = 1, #sides do
     local s = sides[i]
     local want = (flags[s] and not skip[s]) and true or false
@@ -4186,12 +4202,13 @@ function Adapter:_apply_edges(id, prefix, flags)
     -- 而不是"看你素材多大"。
     local thick = (self.cfg.cells and self.cfg.cells.edge_thickness) or 8
     local door_ratio = (self.cfg.cells and self.cfg.cells.door_length_ratio) or 0.45
-    -- ★★★★★★★★ 2026-10-18（v263）**墙加长，填掉相邻两格之间的缝** ✗✓✓
-    --   用户原话：「现在墙稍微有一点缝隙，把墙的长度增加 4，填满现在的空隙即可」
-    --   缝的来源：每格只画自己那条边（长 = 格子边长 `cw`），相邻两格各画各的 ⇒
-    --   取整误差在**四角**留下 1–2px。加 4 ⇒ 两端各溢出 2（`localScale` 绕中心 ⇒ 位置不变），
-    --   角上相邻两格**重叠**，缝消失。只加墙不加门（门要明显短于墙才像门）。
-    local overlap = (self.cfg.cells and self.cfg.cells.edge_overlap) or 4
+  -- ★★★★ 2026-10-18（v264）**墙加长 4px，填掉相邻两格之间的缝** ✗✓
+  --   用户真机原话：「现在墙稍微有一点缝隙，把墙的长度增加 4，填满现在的空隙即可」
+  --   缝的来源：每格只画自己那条边（长 = cw），相邻两格各画各的 ⇒ 取整误差在四角留 1–2px。
+  --   加 4 ⇒ 两端各溢出 2（`localScale` 绕中心 ⇒ 位置不变）⇒ 角上相邻两格重叠，缝消失。
+  --   ★ 只加**墙**，不加门（门要明显短于墙才像门，见 `door_length_ratio`）。
+  --   ★ 想调就只改这一个数：2 = 几乎无缝不重叠；6 = 明显重叠（角上变厚）。
+  local overlap = (self.cfg.cells and self.cfg.cells.edge_overlap) or 4
 
     if cw ~= nil then
       for i = 1, #sides do
@@ -4203,7 +4220,6 @@ function Adapter:_apply_edges(id, prefix, flags)
           local horiz = (s == "up" or s == "down")
           -- 目标几何：横边 = 长 cw × 厚 thick；竖边 = 厚 thick × 长 ch
           -- 门比墙短一点，看起来才像"门"而不是一整面墙
-          -- ★ v263：**墙**多加 `overlap`（填四角的缝）；门不加
           local tlen = (prefix == "door") and (cw * door_ratio) or (cw + overlap)
           local tthick = thick
           local base_l = horiz and w or h      -- 基准：编辑器里控件的尺寸
@@ -4265,6 +4281,17 @@ function Adapter:_apply_edges(id, prefix, flags)
           elseif s == "down" then y = -((ch - tthick) / 2)
           elseif s == "left" then x = -((cw - tthick) / 2)
           elseif s == "right" then x = ((cw - tthick) / 2) end
+          -- ★★★★★ 2026-10-18 **门素材偏心补偿** ✗✓（用户：直接量图、挪坐标）
+          --   截图实测（格线 pitch≈93.5，墙正压在格线上 ✓，门不压）：
+          --     竖门 x 比格线 +6.0 / +6.5（偏右）　横门 y 比格线 +6.5（偏下）
+          --   ⇒ 门素材带透明边距、可见条不居中，缩放绕中心去不掉 ✓ 与墙无关
+          --   ⇒ 反向补偿：横门往上 +nudge、竖门往左 −nudge ✓
+          --   ★ 一个旋钮：`cfg.cells.door_nudge`（画布 px，默认 6）
+          if prefix == "door" then
+            local nudge = (self.cfg.cells and self.cfg.cells.door_nudge) or 6
+            if s == "up" or s == "down" then y = y + nudge
+            else x = x - nudge end
+          end
           if sub.SetPivot then pcall(function() sub:SetPivot(0.5, 0.5) end) end
           if sub.SetAnchoredPosition then pcall(function() sub:SetAnchoredPosition(x, y) end) end
         end
@@ -4494,6 +4521,12 @@ function Adapter:set_property(id, key, value, nkey)
     self:_fit_child_to_cell(ctrl, h, id)
     local on = (value == true)
     if h.SetVisible then pcall(function() h:SetVisible(on) end) end
+    -- ★★★★★ 2026-10-18 **淡蓝层抬到最上层** ✗✓
+    --   日志：「图层顺序：对 N 个格子排过层序，子控件成功置底 …」⇒ 子控件被重排过
+    --   ⇒ hint 很可能被压到 face 下面 ⇒ 可见性开了、却被不透明 face 盖住 ✗
+    if on then
+      if h.SetAsLastSibling then pcall(function() h:SetAsLastSibling() end) end
+    end
     if on and h.SetActive then pcall(function() h:SetActive(true) end) end
     return true
 
@@ -5150,6 +5183,35 @@ function Adapter:set_property(id, key, value, nkey)
     for i = 1, #dirs do
       local c = self:sub(id, prefix .. dirs[i])
       if c and c.SetVisible then c:SetVisible((value and value[dirs[i]]) and true or false) end
+      -- ★★★★★ 2026-10-18 **这里只管显隐 ⇒ 定位也一起做** ✗✓
+      --   用户实测：`_apply_edges` 里加的补偿没生效（那条是 `edges` 键的路）
+      --   而**显隐这条路一定在跑**（门能显示就说明它跑过 ✓）⇒ 把定位放这里最可靠 ✓
+      --   坐标与 `_apply_edges` 同一套公式（贴格线），门再叠加素材偏心补偿 ✓
+      local _rc = self.rects and self.rects[id] or nil
+      local _cw = _rc and _rc.w or nil
+      local _ch = _rc and _rc.h or nil
+      if _cw and _ch then
+        local _thick = (self.cfg.cells and self.cfg.cells.edge_thickness) or 8
+        local _dn = (self.cfg.cells and self.cfg.cells.door_nudge) or 6
+        for _i = 1, #dirs do
+          local _c = self:sub(id, prefix .. dirs[_i])
+          if _c ~= nil then
+            local _d = dirs[_i]
+            local _x, _y = 0, 0
+            if _d == "up" then _y = (_ch - _thick) / 2
+            elseif _d == "down" then _y = -((_ch - _thick) / 2)
+            elseif _d == "left" then _x = -((_cw - _thick) / 2)
+            else _x = ((_cw - _thick) / 2) end
+            if key == "doors" then
+              if _d == "up" or _d == "down" then _y = _y + _dn else _x = _x - _dn end
+            end
+            if _c.SetAnchorMin then pcall(function() _c:SetAnchorMin(0.5, 0.5) end) end
+            if _c.SetAnchorMax then pcall(function() _c:SetAnchorMax(0.5, 0.5) end) end
+            if _c.SetPivot then pcall(function() _c:SetPivot(0.5, 0.5) end) end
+            if _c.SetAnchoredPosition then pcall(function() _c:SetAnchoredPosition(_x, _y) end) end
+          end
+        end
+      end
     end
   end
 

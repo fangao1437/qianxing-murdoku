@@ -389,6 +389,11 @@ local function make_context(core, roles)
   return ctx
 end
 
+-- ★★ 2026-10-18 求解器已搬到设计期工具（`tools/design_solve.lua`）✓
+--   它要用这个构造线索判定的上下文；函数本来就在运行时里（`clue_results` 也用它）
+--   ⇒ 只是【导出】一下，**不增加任何运行时代码，也不增加任何算力** ✓
+M.make_context = make_context
+
 local function unregistered_text(ctx, clue)
   return "（未注册的线索类型：" .. tostring(clue.type) .. "）"
 end
@@ -1570,125 +1575,6 @@ function Core:is_blocked(r, c) return self.blocked[cell_key(r, c)] == true end
 -- 偷窃版结构约束（规格 R3 / R4）
 ----------------------------------------------------------------------------
 
-function Core:tie_policy()
-  local r = self.level.rules or {}
-  return r.tie_policy or M.TIE_FORBID
-end
-
--- 某区域内的“无辜人数” = 该区域内既不是盗窃者也不是同伙的人数
-function Core:innocent_count(room_id, roles)
-  roles = roles or self.roles or {}
-  local n = 0
-  for r = 1, self.rows do
-    for c = 1, self.cols do
-      local id = self.grid[r][c]
-      if id and self.room[r][c] == room_id and id ~= roles.thief and id ~= roles.accomplice then
-        n = n + 1
-      end
-    end
-  end
-  return n
-end
-
-function Core:people_in_room(room_id)
-  local n = 0
-  for r = 1, self.rows do
-    for c = 1, self.cols do
-      if self.grid[r][c] and self.room[r][c] == room_id then n = n + 1 end
-    end
-  end
-  return n
-end
-
--- 结构检查：返回 ok, errors, info
---   info 里带 victim_room / adjacent / innocent_counts / best / best_rooms / k
---   界面可以直接把 info 展示给玩家当推理助手（这些量玩家自己也能数出来）
-function Core:structure_report(roles)
-  roles = roles or self.roles or {}
-  local errors = {}
-  local info = { roles = roles }
-  if not roles.thief then
-    return false, { "关卡没有声明 roles.thief" }, info
-  end
-
-  local vp = nil
-  if self.victim_id then vp = self.pos[self.victim_id] end
-  if not vp then vp = self.victim_fixed end
-  if not vp then
-    return false, { "受害者还没摆上棋盘" }, info
-  end
-  local rv = self.room[vp.r][vp.c]
-  info.victim_room = rv
-
-  local adj = {}
-  for other in pairs(self.adjacency[rv] or {}) do adj[#adj + 1] = other end
-  table.sort(adj)
-  info.adjacent = adj
-  if #adj == 0 then
-    errors[#errors + 1] = "受害者所在区域没有任何门相邻区域，R3 无法成立"
-    return false, errors, info
-  end
-
-  local counts, best, best_rooms = {}, -1, {}
-  for i = 1, #adj do
-    local room_id = adj[i]
-    local n = self:innocent_count(room_id, roles)
-    counts[room_id] = n
-    if n > best then
-      best = n
-      best_rooms = { room_id }
-    elseif n == best then
-      best_rooms[#best_rooms + 1] = room_id
-    end
-  end
-  info.innocent_counts = counts
-  info.best = best
-  info.best_rooms = best_rooms
-  info.k = self:people_in_room(rv)
-
-  if #best_rooms > 1 and self:tie_policy() == M.TIE_FORBID then
-    errors[#errors + 1] = string.format("相邻区域无辜人数并列（都等于 %d），tie_policy=forbid 视为非法", best)
-  end
-
-  local tp = self.pos[roles.thief]
-  if not tp then
-    errors[#errors + 1] = "盗窃者还没摆上棋盘"
-  else
-    local tr = self.room[tp.r][tp.c]
-    info.thief_room = tr
-    if not (self.adjacency[rv] or {})[tr] then
-      errors[#errors + 1] = "盗窃者不在受害者的相邻区域内"
-    end
-    local is_best = false
-    for i = 1, #best_rooms do
-      if best_rooms[i] == tr then is_best = true end
-    end
-    if not is_best then
-      errors[#errors + 1] = "盗窃者所在区域不是相邻区域里无辜人数最多的"
-    end
-  end
-
-  local has_acc = roles.accomplice ~= nil
-  info.has_accomplice = has_acc
-  if info.k >= 2 and not has_acc then
-    errors[#errors + 1] = "受害者与他人同区（k>=2），盗窃者必然有且只有一个同伙"
-  end
-  if has_acc then
-    local ap = self.pos[roles.accomplice]
-    if not ap then
-      errors[#errors + 1] = "同伙还没摆上棋盘"
-    elseif self.room[ap.r][ap.c] ~= info.thief_room then
-      errors[#errors + 1] = "同伙与盗窃者不在同一个区域"
-    end
-  end
-
-  return #errors == 0, errors, info
-end
-
-----------------------------------------------------------------------------
--- 约束与线索状态
-----------------------------------------------------------------------------
-
 function Core:violations()
   local rules = self:rules()
   local out = {}
@@ -2770,25 +2656,30 @@ function Core:view()
   --   ★ 卡位数量不变（`#self.clues`）⇒ 卡片不会多出一张 ✓
   local general_view = self:general_clue_results()
 
-  -- 偷窃版结构信息（界面可以直接展示，玩家自己也能数出来）
-  local sok, serrors, sinfo = self:structure_report()
+  -- ★★★ 2026-10-18 **规则判断已移出运行时**（见 `tools/design_rules.lua`）✗✓
+  --   用户原话：「核心中的规则和求解器一起应该被移除，规则是内容部分，独立于脚本，
+  --             原设计已经收口了，脚本里的判断行和规则行对于关卡运行都是冗余内容」
+  --   ⇒ 运行时**不再算** R3/R4、无辜人数、k —— 关卡答案是预输入的 ✓
+  --   ⇒ 快照里这个字段保留形状（界面/存档在读它），但**不再包含规则计算结果** ✓
+  --   ⇒ 设计期要这些数字：`require("tools/design_rules")` 之后调 `core:structure_report()` ✓
   local structure = {
-    ok = sok,
-    errors = serrors or {},
-    victim_room = sinfo.victim_room,
-    adjacent = sinfo.adjacent,
-    innocent_counts = sinfo.innocent_counts,
-    best = sinfo.best,
-    best_rooms = sinfo.best_rooms,
-    k = sinfo.k,
-    thief_room = sinfo.thief_room,
-    has_accomplice = sinfo.has_accomplice,
-    must_have_accomplice = (sinfo.k ~= nil and sinfo.k >= 2),
+    ok = true,
+    errors = {},
+    victim_room = nil,
+    adjacent = nil,
+    innocent_counts = nil,
+    best = nil,
+    best_rooms = nil,
+    k = nil,
+    thief_room = nil,
+    has_accomplice = (self.roles and self.roles.accomplice ~= nil) or false,
+    must_have_accomplice = false,
   }
 
   local hud = {
     time = self.elapsed or 0,
-    tie_policy = self:tie_policy(),
+    -- ★ 同上：tie_policy 只是关卡数据字段，运行时不判断它 ✓
+    tie_policy = (self:rules().tie_policy or M.TIE_FORBID),
     mode = self.mode,
     status = self.status,
     solved = (self.status == M.STATUS_SOLVED),
@@ -2863,215 +2754,5 @@ end
 --   返回候选解列表，每项 = { placement = {r={c=id}}, thief =, accomplice = }
 --   注意：这同时校验了「盗窃者与同伙是否唯一确定」（规格自检清单第 7 条）
 ----------------------------------------------------------------------------
-
-function Core:solve(limit)
-  limit = limit or 2
-  local solutions = {}
-  local rules = self:rules()
-  local ids = {}
-  for i = 1, #self.pieces do ids[i] = self.pieces[i].id end
-  -- ★★ 2026-10-11：★ 读**槽位表** ✓ ＋ ★ **先看有没有"真判据"** ✗
-  --   ★ 槽位（★ 由棋盘规格生成 ✓ 内容待 `row.*` 填 ✓）**没有 `type`** ✗
-  --     ⇒ ★ 它们**还不能判真假** ⇒ ★★ **`solve` 无从下嘴** ✓
-  --   ⇒ ★ 如实返回**空解表** ✓ ★ **不猜、不编解** ✗✓
-  --     ★（★ 上层：`validate_levels` 报"未测" ✓ ★ 作者拿到的是"还没内容"而不是"多解" ✓）
-  -- ★★ 2026-10-17：**通用线索也参与搜索** ✗✓
-  --   ★ 它们没有卡位 ✓ 但同样是"这个摆位必须成立的事实" ✓
-  --   ⇒ 拼成一张本地清单给下面的剪枝/叶子判定用（不改 `self.clues` ✓ 卡位数量不受影响 ✓）
-  local clues = {}
-  for i = 1, #(self.clues or {}) do clues[#clues + 1] = self.clues[i] end
-  for i = 1, #(self.general_clues or {}) do clues[#clues + 1] = self.general_clues[i] end
-  local real = 0
-  for i = 1, #clues do if clues[i] and clues[i].type then real = real + 1 end end
-  if real == 0 then return {} end
-  local allowed = self.allowed_false or 0
-
-  -- 角色候选：盗窃者不能是受害者；同伙可以为 nil
-  local rpairs = {}
-  for i = 1, #ids do
-    local t = ids[i]
-    if t ~= self.victim_id then
-      rpairs[#rpairs + 1] = { thief = t, accomplice = nil }
-      for j = 1, #ids do
-        local a = ids[j]
-        if a ~= t and a ~= self.victim_id then
-          rpairs[#rpairs + 1] = { thief = t, accomplice = a }
-        end
-      end
-    end
-  end
-
-  -- 摆位状态（grid / pos / row_count / col_count）在整趟搜索里**增量维护**。
-  -- 早期版本每到一个叶子就 install() 把整盘重算一遍，7×7 时那是主要开销，
-  -- 现在由 place_at 在放置/回溯时同步这几个表；搜索结束后统一还原。
-  local grid = {}
-  for r = 1, self.rows do grid[r] = {} end
-
-  local function fits(r, c)
-    if self:is_blocked(r, c) then return false end
-    if rules.one_per_row then
-      for cc = 1, self.cols do if grid[r][cc] then return false end end
-    end
-    if rules.one_per_col then
-      for rr = 1, self.rows do if grid[rr][c] then return false end end
-    end
-    if rules.one_per_room then
-      for rr = 1, self.rows do
-        for cc = 1, self.cols do
-          if grid[rr][cc] and self.room[rr][cc] == self.room[r][c] then return false end
-        end
-      end
-    end
-    return true
-  end
-
-  -- ── 边搜边剪 ────────────────────────────────────────────────────────────
-  -- 朴素做法是"摆满整盘再看线索"，但摆位总数是 N! × N!（7×7 就是 2540 万），
-  -- 再乘上角色组合就彻底跑不完了（2026-09-26 实测：7×7 关卡校验直接超时）。
-  --
-  -- 这里改成**一放下棋子就立刻检查"它牵涉到的那些线索"**：
-  --   · 只使用**引用全是具体棋子**的线索（`col_offset A V` 这种），
-  --     带角色别名（@thief / @accomplice）的线索要等角色定下来才能判，跳过；
-  --   · 一条线索引用的棋子全放下了，才去判它；
-  --   · 违反数一旦超过 allowed 就地剪枝。
-  --
-  -- 摆位用的 grid / pos / row_count / col_count 在整趟搜索里**增量维护**，
-  -- 不再每到一个叶子就 install 重算一遍（那也是个大头）。
-  local ctx = make_context(self)          -- roles 用关卡声明的，够判具体棋子的线索
-
-  local partial = {}
-  for i = 1, #clues do
-    local cl = clues[i]
-    local def = M.clues[cl.type]
-    if def ~= nil then
-      local refs, has_alias = {}, false
-      local params = def.params or {}
-      for pi = 1, #params do
-        local v = cl[params[pi]]
-        if type(v) == "string" then
-          if M.ROLE_ALIASES[v] ~= nil then
-            has_alias = true
-          else
-            refs[#refs + 1] = v
-          end
-        end
-      end
-      -- 引用了非棋子字符串（例如 not_role 的 role、beside_object 的家具名）时，
-      -- 那个"棋子"永远不会被摆上，于是这条线索永远不会被判定 —— 自动跳过，安全。
-      if not has_alias and #refs > 0 then
-        partial[#partial + 1] = { c = cl, refs = refs, def = def }
-      end
-    end
-  end
-
-  local function partial_violations()
-    local n = 0
-    for i = 1, #partial do
-      local p = partial[i]
-      local ready = true
-      local refs = p.refs
-      for k = 1, #refs do
-        if self.pos[refs[k]] == nil then ready = false break end
-      end
-      if ready and not p.def.validate(ctx, p.c) then
-        n = n + 1
-        if n > allowed then return n end
-      end
-    end
-    return n
-  end
-
-  local saved_grid, saved_pos = self.grid, self.pos
-  local saved_rc, saved_cc = self.row_count, self.col_count
-  self.row_count, self.col_count = {}, {}
-  for r = 1, self.rows do self.row_count[r] = 0 end
-  for c = 1, self.cols do self.col_count[c] = 0 end
-
-  -- 一个完整摆位 + 一组角色归属是否成立
-  -- （此时 self.grid / self.pos 就是当前搜索路径上的摆位，不需要 install）
-  local function consider()
-    local stop = false
-    for i = 1, #rpairs do
-      local roles = {
-        thief = rpairs[i].thief,
-        accomplice = rpairs[i].accomplice,
-        victim = self.victim_id,
-      }
-      local sok = self:structure_report(roles)
-      if sok then
-        local rctx = make_context(self, roles)
-        local failed = 0
-        for ci = 1, #clues do
-          local def = M.clues[clues[ci].type]
-          if not def or not def.validate(rctx, clues[ci]) then
-            failed = failed + 1
-            if failed > allowed then break end
-          end
-        end
-        if failed <= allowed then
-          local snap = {}
-          for r = 1, self.rows do
-            snap[r] = {}
-            for c = 1, self.cols do snap[r][c] = grid[r][c] end
-          end
-          solutions[#solutions + 1] = {
-            placement  = snap,
-            thief      = roles.thief,
-            accomplice = roles.accomplice,
-          }
-          if #solutions >= limit then
-            stop = true
-            break
-          end
-        end
-      end
-    end
-    return stop
-  end
-
-  local function place_at(k)
-    if k > #ids then return consider() end
-    local id = ids[k]
-    local preferred = self.solution[id]
-    local order = {}
-    if preferred then order[#order + 1] = preferred end
-    for r = 1, self.rows do
-      for c = 1, self.cols do
-        if not (preferred and preferred.r == r and preferred.c == c) then
-          order[#order + 1] = { r = r, c = c }
-        end
-      end
-    end
-    for i = 1, #order do
-      local p = order[i]
-      if not grid[p.r][p.c] and fits(p.r, p.c) then
-        grid[p.r][p.c] = id
-        self.pos[id] = p
-        self.row_count[p.r] = self.row_count[p.r] + 1
-        self.col_count[p.c] = self.col_count[p.c] + 1
-
-        -- ★ 放下就剪：这一层已经违反了太多线索的分支不用再往下走
-        local stop = false
-        if partial_violations() <= allowed then
-          stop = place_at(k + 1)
-        end
-
-        grid[p.r][p.c] = nil
-        self.pos[id] = nil
-        self.row_count[p.r] = self.row_count[p.r] - 1
-        self.col_count[p.c] = self.col_count[p.c] - 1
-        if stop then return true end
-      end
-    end
-    return false
-  end
-
-  self.grid = grid
-  self.pos = {}
-  place_at(1)
-  self.grid, self.pos = saved_grid, saved_pos
-  self.row_count, self.col_count = saved_rc, saved_cc
-  return solutions
-end
 
 return M

@@ -1634,7 +1634,17 @@ function Controller:on_input(event)
     self.clue_scroll = s
     self.dirty = true
 
+  elseif a == "focus_general" then
+    -- ★ 2026-10-18 通用线索：**只接"提示"这一个选中反馈** ✓
+    --   用户原话：「通用线索只接提示这一个选中反馈，note 和放置都不接」
+    pcall(function()
+      if self.core ~= nil and type(self.core.clue_hint_general) == "function" then
+        self.general_focus = true          -- ★ 高亮绘制认这个开关（见 build_layout 那段）
+        self.general_hint = self.core:clue_hint_general(1)
+      end
+    end)
   elseif a == "focus_clue" then
+    self.general_focus = nil             -- ★ 点普通卡 ⇒ 通用线索的高亮关掉 ✓
     -- 线索卡：点一下聚焦、再点取消。
     --
     -- 为什么必须有这个分支：线索卡在 push 时就发了 `event = { action = "focus_clue" }`，
@@ -3356,6 +3366,31 @@ function Controller:build_layout(ui_adapter)
   local hint_set = nil
   do
     local fci = self.focused_clue
+    -- ★★ 2026-10-18 **通用线索优先** ✓（点它时 `general_focus` 为真）
+    --   它没有"卡号" ⇒ 不能走 `focused_clue`（那会把高亮给到第 1 张真卡 a ✗）
+    -- ★★★ 2026-10-18 **只认卡号，不认标志** ✗✓（用户实测：点卡 a 亮的是通用线索那 5 格）
+    --   原因：`general_focus` 标志残留 ⇒ 真卡也被当成通用线索 ✗
+    --   ⇒ 判据改成**卡号越界**：通用卡号 = 卡片数 + 1（点击时设的）⇒ 不会和任何真卡撞号 ✓
+    if fci ~= nil and fci > 0 and self.core ~= nil
+       and (self.core.clues == nil or fci > #self.core.clues) then
+      -- ★★ pcall + **一次性诊断**：能证明这条分支到底走没走到、提示集有几格 ✓
+      pcall(function()
+        local _gh = self.core:clue_hint_general(1)
+        local _cnt = 0
+        if _gh ~= nil and _gh.set ~= nil then for _ in pairs(_gh.set) do _cnt = _cnt + 1 end end
+        if _cnt > 0 then hint_set = _gh.set end
+      end)
+      fci = nil
+    end
+    -- ★★ 2026-10-18 **卡号 0 = 通用线索** ✓（同一份 `focused_clue`，不另开旁路开关）
+    if fci == 0 and self.core ~= nil and type(self.core.clue_hint_general) == "function" then
+      -- ★★ 2026-10-18 **必须 pcall** ✗：这里抛错会把整个 build_layout 中断 ⇒
+      --   卡片和棋盘**都不重绘** ⇒ 用户看到"卡片没有视觉变化" ✓ 正是这个形状
+      pcall(function()
+        local _g0 = self.core:clue_hint_general(1)   -- 卡号 0 = 通用线索
+        if _g0 ~= nil and _g0.set ~= nil and next(_g0.set) ~= nil then hint_set = _g0.set end
+      end)
+    end
     if fci ~= nil and fci > 0 and self.core ~= nil and self.core.clue_hint ~= nil then
       local h = self.core:clue_hint(fci)
       if h ~= nil and h.set ~= nil and next(h.set) ~= nil then hint_set = h.set end
@@ -3623,7 +3658,7 @@ function Controller:build_layout(ui_adapter)
         --     ⇒ 脚本**只负责显示 / 隐藏** ✓ 颜色一个字都不写 ✓（`tint` 回到只管房间色 ✓）
         tint = (cd.suspect and 4294967295) or Controller.room_color(cd.room),
         -- ★ 每格都发（true/false）⇒ 取消选中 / 换卡时自然把上一批关掉 ✓（账本按值去重 ✓）
-        hint = (hint_set ~= nil and hint_set[r .. ":" .. c] == true),
+      hint = (hint_set ~= nil and hint_set[r .. ":" .. c] == true),
         -- ★★★★★★★★ 2026-10-17 **格子边长（画布）直接告诉适配层** ✗✓
         --   用途：把"铺满型"子控件（`face` / `hint` / `obj`）钉成**和格子一样大**
         --   ★ 为什么由界面层给：`build_layout` 本来就算出了 `cell`（设计空间）✓
@@ -5285,7 +5320,7 @@ function Controller:sync_clue_grid(adapter)
   do
     local core = self.core
     if core ~= nil and type(core.clues) == "table" then
-      n = #core.clues
+      n = #core.clues + ((type(core.general_clues) == "table" and #core.general_clues > 0) and 1 or 0)   -- ★ 有通用线索 ⇒ 列表多一条（在最上面）
     else
       -- ★ 兜底 ✓：★ 核心还没建起来 ⇒ ★ 退回读关卡数据 ✓（★ 老行为 ✓ 不崩 ✓）
       local lv = core and core.level
@@ -6099,8 +6134,94 @@ function Controller:_grid_disable_gray_raycast(item, index, pos)
   if cg.raycastTarget ~= nil then pcall(function() cg.raycastTarget = false end) end
   if cg.blockRaycast ~= nil then pcall(function() cg.blockRaycast = false end) end
   if cg.interactable ~= nil then pcall(function() cg.interactable = false end) end
-  print("[murdoku] 灰白层 `gray`：已关掉射线与交互（点击照常落在卡片上）")
   return true
+end
+
+-- ★★★★ 2026-10-18 **通用线索卡**（列表第 1 项）✗✓
+--   只点亮模板里新加的 gen.backrop / gen.title / gen.body 三件，
+--   把四样卡片文字（who/what/letter/face）全部藏掉 —— 两张卡长得不一样 ✓
+--   ★ 文字：本函数**不写文字**（用户定：内容源那边他自己填 ⇒ 先留空 ✓）
+-- ★★★★ 2026-10-18 **本关有没有通用线索** —— 判据 = **内容源存在** ✓
+--   用户实测：按 `core.general_clues` 判的两版都没生效（点通用卡仍然给 a 发高亮）
+--   ⇒ 改用**用户实际配的东西**：存档里 `row.<关>.clue` 这个内容块存在 = 有通用线索 ✓
+--     ★ 它由编辑器/存档决定，与 lua 关卡表是否声明无关 ⇒ 不会因为一处漏配整条链失效 ✓
+--   ★ 兜底：内容源取不到时，仍看 `core.general_clues` ✓
+function Controller:_has_general_clue()
+  local lv = nil
+  pcall(function() lv = self:_level_ordinal() end)
+  if lv ~= nil then
+    local rc = nil
+    pcall(function() rc = self:_palette_child("row." .. tostring(lv) .. ".clue") end)
+    if rc ~= nil then return true end
+  end
+  local ok = false
+  pcall(function()
+    ok = (self.core ~= nil and type(self.core.general_clues) == "table"
+          and #self.core.general_clues > 0)
+  end)
+  return ok
+end
+
+function Controller:_fill_general_item(adapter, item, index, pos)
+  -- ★★★ 2026-10-18 **记下"通用线索那一项"的句柄** ✓
+  --   点击时用句柄比对，**不再依赖 pos 算术、也不依赖 general_clues 查询** ✓
+  --   （用户实测：按 pos==1 判时，点它仍然按第 1 张真卡 a 去高亮 ✗）
+  self._general_item = item
+  -- ★★★ 2026-10-18 **正文从内容源读** ✓（用户定：gen.title 的文本已在模板里填好，只差正文）
+  --   内容源链路（存档实测）：`row.<关>.clue`（容器）→ 子控件 `clue.<关>.1`（文本框）
+  --   读法照抄卡片四样那套：`_palette_child` 拿容器 → `FindChild(全名)` 拿文本框 → 取 `text` ✓
+  --   写入：`item:FindChild("gen.body").text = 正文` ✓（与卡片 `who/what` 同一条路 ✓）
+  --   ★ 什么都没配 ⇒ 不写（留空 ✓ 绝不写成立）
+  do
+    local _lv = self:_level_ordinal()
+    if _lv ~= nil then
+      local _txt = nil
+      local _rc = nil
+      pcall(function() _rc = self:_palette_child("row." .. tostring(_lv) .. ".clue") end)
+      if _rc ~= nil then
+        local _src = nil
+        pcall(function() _src = _rc:FindChild("clue." .. tostring(_lv) .. ".1") end)
+        if _src ~= nil then pcall(function() _txt = _src.text end) end
+      end
+      if _txt ~= nil and _txt ~= "" then
+        local _dst = nil
+        pcall(function() _dst = item:FindChild("gen.body") end)
+        -- ★★ 2026-10-18 走**正规文字链路** ✓（docs/线索区-内容填入规则.md §四：
+        --   `write_control_text(ctrl, text)` —— **值变了才写**，与 who/what/letter 同一条路 ✓）
+        --   我第一版直接 `_dst.text = _txt` 绕过了它 ⇒ 被签名门/属性账本盖掉 ✗
+        if _dst ~= nil then pcall(function() write_control_text(_dst, _txt) end) end
+      end
+    end
+  end
+  local function child(nm)
+    local c = nil
+    pcall(function() c = self:_grid_item_child_cached(item, index, pos, nm) end)
+    return c
+  end
+  for _, nm in ipairs({ "who", "what", "letter", "face" }) do
+    local c = child(nm)
+    if c ~= nil then pcall(function() c:SetVisible(false) end) end
+  end
+  for _, nm in ipairs({ "gen.backrop", "gen.title", "gen.body" }) do
+    local c = child(nm)
+    if c ~= nil then pcall(function() c:SetVisible(true) end) end
+  end  -- ★★★★★ 2026-10-18 **通用卡的「标记」走普通卡同一条路** ✗✓
+  --   用户实测：涂 gen.backrop 是「整块染色」✗ 不是描边
+  --   为什么普通卡是描边：涂的是 backrop1（**下层**），backrop2 盖住中间 ⇒ 只剩边缘 ✓
+  --   ⇒ 通用卡也涂 backrop1 ✓（它本来就在模板里、也在通用卡上可见 ✓）
+  --   判定**绑在通用线索身份上**：general_focus 为真 ⇒ 亮；否则还原 ✓
+  do
+    local _cp = nil
+    pcall(function() _cp = item:FindChild("backrop1") end)
+    if _cp ~= nil then
+      if self._gen_hl_orig == nil then
+        pcall(function() self._gen_hl_orig = _cp.imageColor end)
+      end
+      local _want = (self.general_focus ~= nil)
+      local _target = _want and HIGHLIGHT_TINT or self._gen_hl_orig
+      if _target ~= nil then pcall(function() _cp.imageColor = _target end) end
+    end
+  end
 end
 
 function Controller:_fill_grid_item(adapter, grid, item, index)
@@ -6190,6 +6311,35 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
     end
   end
   local pos = (tonumber(index) or self._grid_base) - self._grid_base + 1
+  -- ★★★★ 2026-10-18 **通用线索占列表第 1 位** ✗✓
+  --   用户：「通用线索…放在最上方，如果有通用线索则其它线索卡往下移」
+  --   ⇒ 列表位置 `pos` 与"第几张真卡 / 第几行"从此**不是同一个数** ✓
+  --     · pos == 1        ⇒ 通用线索卡（只点亮 gen.* 三件，四样卡片文字藏掉）
+  --     · pos >= 2        ⇒ 第 (pos-1) 张真卡 ⇒ `row.<关>.<行>` 的行号**仍是 pos-1 起的 1** ✓
+  --   ★ 这么写只用一个局部变量 `pos` 做减法，后面那一大段读 `row.<lv>.<pos>` 的代码
+  --     **一个字都不用动** ✓（否则整段的行号都会错位一格 ✗）
+  local _has_gen = false
+  pcall(function() _has_gen = self:_has_general_clue() end)
+  if _has_gen then
+    if pos == 1 then
+      pcall(function() self:_fill_general_item(adapter, item, index, pos) end)
+      return
+    end
+    pos = pos - 1
+    -- ★★★ 2026-10-18 **列表项会被引擎复用** ✗✓
+    --   上一轮用 `self._general_item` 记句柄来判断"哪一项是通用线索" ✓
+    --   但**同一个 item 句柄**滚动/回收后会拿去显示普通卡 ⇒ 标记还在 ⇒
+    --   点那张**普通卡**也发 `focus_general` ⇒ 高亮派发错 ✗（用户实测）
+    --   ⇒ 填普通卡时**就地清掉**这个标记 ✓（下次填成通用卡会重新设 ✓）
+    if self._general_item == item then self._general_item = nil end   -- _general_item 清掉（复用护栏）
+    -- ★★★ 2026-10-18 **普通卡必须把通用线索那三件藏掉** ✗✓    --   它们是**模板里的子控件** ⇒ 默认对**每一张卡**都可见 ✗    --   用户实测：「gen.backrop 会在所有线索卡上出现」✓ 修在这里 ✓
+    for _, _nm in ipairs({ "gen.backrop", "gen.title", "gen.body" }) do
+      pcall(function()
+        local _cc = self:_grid_item_child_cached(item, index, pos, _nm)
+        if _cc ~= nil then pcall(function() _cc:SetVisible(false) end) end
+      end)
+    end
+  end
   -- ★ 2026-10-10 **记下句柄与它当时的 index** ✓ —— ★ 就地重填要用 ✓
   --   ★ 为什么要有它 ✗：★ 有了句柄就能【不重发 RefreshItems】而刷新内容 ✓
   --     ⇒ ★ **滚动位置才保得住** ✓✓（★ 这是"点一下弹回顶部"的治本一步 ✓）
@@ -7313,7 +7463,47 @@ function Controller:_on_grid_item_click(adapter, grid, item)
   --       ⇒ ★ **高亮与选人都落在第 1 条上** ✓（★ 用户看到的"链路还是断的" ✓）
   --   ⇒ ★★ 改用 `_grid_pos_of_item` ✓ —— ★ **用填充时引擎亲手交来的那个 index** ✓✓
   --     ★（★ 那一次是权威的 ✓ ★ 我们就是按它算 `pos` 填内容的 ✓）
+  -- ★★★★★ 2026-10-18 **通用线索：在最前面识别，不走 `pos` 那条路** ✗✓（日志定案）
+  --   证据（用户 05:55 日志）：点它 ⇒ `GetItemIndex=0` ⇒ `_grid_pos_of_item` 拿不到位置 ⇒
+  --     `pos` 非法 ⇒ **整条点击被丢掉**（连"点卡片定位"都不打印）⇒ 表现为"不可选" ✗
+  --   ⇒ 用**填充时记下的句柄**在算 pos 之前就认出来 ✓
+  --     （句柄是权威的 ✓；它被回收去显示普通卡时已在填充侧清掉 ✓）
+  --   ★ `focused_clue` 给一个**合法正数但超出卡范围**的值（n+1）⇒ 没有卡会对上 ✓
+  --     绘制侧把 `general_focus` 解释成通用线索（见 build_layout 那段）✓
+  if item ~= nil and self._general_item == item then
+    -- ★★★ 2026-10-18 **再点一次 = 取消选中** ✗✓（用户：通用线索没接取消选中）
+    if self.general_focus ~= nil then
+      self.general_focus = nil
+      self.focused_clue = nil
+      self.general_hint = nil
+      self.dirty = true
+      self._grid_sig = nil
+      return
+    end
+    local _ncl = 0
+    pcall(function() local _v = self.core:view(); _ncl = #_v.clues end)
+    self.focused_clue = _ncl + 1
+    self.general_focus = true
+    pcall(function() self.general_hint = self.core:clue_hint_general(1) end)
+    self.dirty = true
+    self._grid_sig = nil
+    return
+  end
   local pos = self:_grid_pos_of_item(grid, item)
+  -- ★★★★★ 2026-10-18 **通用线索走【正常选中链路】，只是把卡号算成 0** ✗✓（用户定案）
+  --   用户原话：「把相关拦截取消，高亮也补上」✓（拦了之后通用卡选不中 ⇒ 提示路径断 ✗）
+  --   ⇒ 不再早退 ✗：它**和普通卡一样**参与选中，只是：
+  --     · 卡号 = 0（通用卡不是任何人的卡 ⇒ `vm.clues[0]` 为 nil ⇒ 选人那步自然什么都不选 ✓）
+  --     · 高亮绘制侧把 `focused_clue == 0` 解释成通用线索 ✓（见 `build_layout` 那段）
+  --   ★ 真卡：列表第 k+1 项 ⇒ pos 减 1 得到卡号 k ✓（本次一并合进来，不再分两块）
+  do
+    local _hg = false
+    pcall(function() _hg = self:_has_general_clue() end)
+    if _hg and pos ~= nil then
+      pos = pos - 1                -- 真卡：列表位置 −1 = 卡号 ✓（通用卡已在上面 return ✓）
+    end
+  end
+
   if type(pos) ~= "number" then
     -- 两个来源都拿不到 ⇒ 这一次点击**宁可丢掉**，也不要聚焦到错误的一条 ✓
     self:_grid_log("noindex", "网格视窗：这一项属于哪一条读不到（填充记录与 GetItemIndex 都空）"
@@ -7516,6 +7706,23 @@ function Controller:_on_grid_item_click(adapter, grid, item)
     end
   end
 local ev = { action = "focus_clue", index = pos, phase = "click" }
+  -- ★★★ 2026-10-18 **通用线索发它自己的 action** ✓（只接提示 ✓ 不接 note / 放置）
+  if self._general_click then
+    ev = { action = "focus_general", phase = "click" }
+    self._general_click = nil            -- 一次性：下一次点击重新判定 ✓
+  end
+  -- ★★ 2026-10-18 通用线索占列表第 1 项 ⇒ 它的点击**只发 focus_general**（只接提示，不接 note/放置）✓
+  pcall(function()
+    if item ~= nil and self._general_item == item then
+      -- ★ 句柄比对 ✓：就是通用线索那一项 ⇒ 只发 focus_general
+      ev = { action = "focus_general", phase = "click" }
+    elseif pos == 1 and self:_has_general_clue() then
+      ev = { action = "focus_general", phase = "click" }
+    elseif pos == 1 and self.core ~= nil and type(self.core.general_clues) == "table"
+       and #self.core.general_clues > 0 then
+      ev = { action = "focus_general", phase = "click" }
+    end
+  end)
   if adapter ~= nil and type(adapter.on_input) == "function" then
     adapter.on_input(ev)
   else
