@@ -2863,7 +2863,8 @@ function Core:view()
     structure = structure,
     door_graph = self.adjacency,
     title = self.level.name or self.level.id or "未命名奇域",
-    subtitle = self.level.subtitle,
+    -- ★ 2026-10-18：`subtitle` 字段已删 —— 唯一读者（`hud.subtitle` 那条 push）随
+    --   「美术没有副标题位」一起移除（用户指令），关卡文件里也从来没有 `subtitle` 键。
     difficulty = self.level.difficulty,
     rows = self.rows,
     cols = self.cols,
@@ -3190,7 +3191,8 @@ M.EFFECTS = {
   SOLVED    = "solved_flash",
   CLUE_IN   = "clue_box_pop",
   FAIL      = "shake",
-  ROOMWALL  = "roomwall",
+  -- ★ 2026-10-18（优化组 · P0）：`ROOMWALL = "roomwall"` **已删除** —— 全仓零读者
+  --   （适配器 `EFFECTS` 里那个 `roomwall` 条目也随之永不触发，属下一批一起收）。
 }
 
 -- 开屏教程（5 页：怎么破案 / 每行每列一人 / beside 的含义 / 单击双击的区别 / 提交判题）
@@ -3338,11 +3340,12 @@ end
 --       `build_layout` 的离线测试与工具 ✓）⇒ ★ **读的时候是 nil** ✗✓
 --   ★ 修法 ✓：★ 读之前**就地补一个空表** ✓ —— ★ 语义不变 ✓（★ 空表 = 没配字母 ✓）
 --     ★ 用 `rawget` 判 ✓ 避免元表干扰 ✓ ★ 只在 nil 时建 ✓（★ 不覆盖已有内容 ✗）
-function Controller:_ensure_row_maps()
-  if rawget(Controller, "_row_letter") == nil then Controller._row_letter = {} end
-  if rawget(Controller, "_row_face") == nil then Controller._row_face = {} end
-  if rawget(Controller, "_row_text") == nil then Controller._row_text = {} end
-end
+-- ★ 2026-10-18（优化组 · P0 死代码清理）：`Controller:_ensure_row_maps` **已删除** ✗✓
+--   判据：全仓 **0 调用点**（prod / tests / 项目自有 tools 三处都 0）。
+--   它原本是"读 `_row_letter/_row_face/_row_text` 之前补空表"的三重兜底，
+--   但那三张表的**实际初始化点**在 `sync_clue_grid` 里，兜底这句从来没被走到。
+--   ⇒ 真要有"没经过网格视窗就读"的新路径，应当**在那条路径自己**补表，
+--     而不是留一个没人调用的函数在这里（留着反而制造"有人兜底"的错觉 ✗）。
 
 -- ★★★★★★ 2026-10-11 **格子的标记：把【人物 id】换成【那一行的 `letter`】** ✗✓✓
 --
@@ -5020,20 +5023,18 @@ end
 
 -- ★★★★★ 2026-10-05 **A8：提示语（`self.toast`）的出口文案** —— 全项目**唯一**读它的地方。
 --
---   方案甲（用户批准）：**接一个已存在的控件当出口**，一个控件都不加、布局一行不动。
---   出口有两个（为什么是两个，见下面 `hud.subtitle` / `home.title` 两处的说明）：
---     · `hud.subtitle` —— 关卡内（撤销 / 取消 / 揭示 / 回滚 / 提交与结案结果…）；
---     · `home.title`   —— 主页（「商城 / 背包」是在主页点的，而主页上整片 `hud.` 前缀
---                         被 `apply_screen_hide` 藏掉 ⇒ 主页必须另有出口）。
+--   ★ 2026-10-18 更新（用户指令）：**关卡内那条出口已随 `hud.subtitle` 一起删掉**
+--     （原话：「美术布局上目前没有副标题的位置了，把它当死代码处理吧」）⇒
+--     **现在只剩一个出口**：`home.title`（主页的「商城 / 背包」之类的提示）。
+--     ⇒ **关卡内的 toast 目前无处显示**（撤销 / 取消 / 回滚 / 揭示 / 提交与结案结果）。
+--     这是已知的产品缺口，不是 bug；要补请**新开一个控件位**，别再往 `hud.subtitle` 接。
 --
---   ⚠️ 为什么**不**另找控件、也不加控件：`hud.toast` 已经按参考图删了 ——
---      `tools/sim/out/layout-plan.json` 里没有它，**存档里也没有它的记录**
---      （实测 `208-补active.gil`：`hud.toast` **0 条**；`hud.subtitle` / `hud.title` /
---        `hud.timer` / `hud.timer` / `hud.progress` 各 1 条；`legend` / `clues.more` /
---        `room.label.*` / `ruler.*` / `select.*` 也都是 0 条）
---      ⇒ 写一个**不存在**的控件 = `set_property` 静默 no-op = 这场修复白做 ✗。
+--   原始设计留档：2026-10-05 的"方案甲"要求**接一个已存在的控件当出口**，一个控件都不加
+--   （`hud.toast` 已按参考图删掉，`layout-plan.json` 与存档里都没有它的记录 ⇒
+--     写不存在的控件 = `set_property` 静默 no-op = 白做）。
+--
 --   ⚠️ 空串按"没有提示语"处理：出口控件的 `text` 不允许被清成空串之后还赖在计划里
---      （`nil` 时一律回落到控件本来的文案，见那两处 push）。
+--      （`nil` 时回落到控件本来的文案，见 `home.title` 那处 push）。
 function Controller:toast_text()
   local t = self.toast
   if t == nil then return nil end
@@ -5359,29 +5360,22 @@ function Controller:build_layout(ui_adapter)
   -- 工具条容器：与 topbar 同区（视觉上仍是一条顶栏），只是树里分开，HUD 文字不再和按钮混杂。
   push({ id = "toolbar", kind = "container", parent = "root", rect = rect_of(L.topbar), style = "toolbar" })
   push({ id = "hud.title", kind = "text", parent = "topbar", rect = rect_of(L.title), text = vm.title, style = "title" })
-  local announce_text = ""
-  if vm.meta_announce == "one" then
-    announce_text = "　※ 线索中有一句假话"
-  elseif vm.meta_announce == "none" then
-    announce_text = "　※ 线索全部为真"
-  end
-  -- ★★★★★ 2026-10-05 **A8 的出口①（方案甲：接已存在的控件，布局一行不动）**。
+  -- ★★★★★ 2026-10-18 **按用户指令移除 `hud.subtitle`（死代码）** ✗✓
   --
-  --   为什么选中 `hud.subtitle`：
-  --     · `hud.title` = 关卡标题 —— 用户点名**不许用**（覆盖它会破坏「重置后标题不变」）；
-  --     · `hud.timer` / `hud.timer` / `hud.progress` 都是玩家**正在看的计数**（时间/步数/进度），
-  --       而且只有 ~125px 宽 ⇒ 装不下「还没有游玩记录，先从「选关」开始吧」这种 17 字提示 ✗；
-  --     · 本控件是 717px 宽的**副标题行**（标题下面那一行）—— 语义上就是"对玩家说的一句话"，
-  --       而且**存档里真实存在**（`208-补active.gil` 有 `hud.subtitle` 记录 ✓
-  --       —— 这是硬条件：控件不存在 ⇒ `set_property` 静默 no-op ⇒ 等于没修 ✗）。
-  --   ⇒ 有提示语：文字换成提示语、并**强制可见**（有的关卡副标题为空、本来 `visible=false`）；
-  --     提示语到点被 `tick` 清空 ⇒ 这里**自动回落到副标题本身**
-  --     （`build_layout` 每帧重建 ⇒ 不需要"记住原文"的跨帧状态 ✓ 也不会留残字 ✗）。
-  local toast_text = self:toast_text()
-  push({ id = "hud.subtitle", kind = "text", parent = "topbar",
-         rect = { x = L.title.x, y = L.title.y + 48, w = L.title.w + 320, h = 30 },
-         text = toast_text or (tostring(vm.subtitle or "") .. announce_text), style = "subtitle",
-         visible = (toast_text ~= nil) or (vm.subtitle ~= nil or announce_text ~= "") })
+  --   用户原话：「**美术布局上目前没有副标题的位置了，把它当死代码处理吧**」✓
+  --
+  --   历史（为什么它曾经存在，留档备查）：
+  --     · 2026-10-05 的 A8「方案甲」把**关卡内提示语（toast）**接到这条副标题行上
+  --       （理由：`hud.title` 用户点名不许用；`hud.timer`/`hud.progress` 只有 ~125px 装不下；
+  --        副标题行 717px、语义就是"对玩家说的一句话"）。当时的**硬条件**是"控件必须存在"。
+  --     · 而该控件在 v251 那次改档里就没了（`371-v240` 有、`392.4-v251` 起无）⇒ 提示语一直被静默丢弃。
+  --   ⇒ 现在**按美术结论收口**：没有副标题位 ⇒ 这条 push 是纯死代码，删掉。
+  --     ⚠️ 随之消失的还有两样（**已如实告知用户**）：
+  --        ① 关卡内 toast（撤销 / 取消 / 回滚 / 揭示 / 提交与结案结果）无处显示；
+  --        ② `meta.announce` 那行「※ 线索中有一句假话 / 全部为真」（case_001 用的是 `"none"`）。
+  --     ⇒ 以后要恢复**不要**再接回这里 —— 那个位置不留给文字了。
+  --   ⚠️ `toast_text()` 本体**保留**：主页那条出口还在用它（见 `home.title` 的 push）✓
+
 
   -- 顶部工具条（1920 宽内排布：标题 32..512 / 计时步数 520..814 / 工具 840..1246 / 动作 1262..1828）
   --
@@ -5441,162 +5435,33 @@ function Controller:build_layout(ui_adapter)
   --
   --   注：父级从 `toolbar` 改成 `root` —— 右侧竖排的 y 已经超出 toolbar 的高度（104），
   --   挂在 toolbar 下会被裁掉。
-  -- ★★★ 2026-10-01：**右侧三个按钮的深色六边形底图**（参考图里就是六边形）。
+  -- ★ 2026-10-18（优化组 · P0）：**「用基础图元拼六边形按钮底图」整段删除** ✗✓
   --
-  --   数据来源：Miliastra Image Editor（https://qx.070077.xyz）的 **ELEMENTS 导出**。
-  --   我在那个网站上用基础图元摆出六边形，导出 `.lua` 拿到坐标/颜色，
-  --   再照搬到我们自己的界面里（不依赖"导入外部资产"那条路）。
-  --   见 docs/外部资产-怎么用与我做了什么.md。
-  --
-  --   六边形的拼法（**这是实测出来的**）：
-  --     中间一个矩形 + 上面一个三角 + 下面一个三角。
-  --     ⚠️ 别想用"两个三角形"拼 —— 那会得到**八角星**，不是六边形（我踩过）。
-  --
-  --   图元用的是**游戏自带素材**：
-  --     `100001` = 基础形状-矩形 / `100003` = 基础形状-三角
-  --   这两个 id 我们**已经在用**（`wall.right`/`door.*` 就是 `100001`，真机正常），
-  --   而且都在图片素材库的「基础形状」类里（6 个：100001~100006）。
-  --
-  --   ⚠️ 图片 id 必须在**存档里**写好（`tools/gil/sync_plan.mjs` 的 `setImageId`，
-  --   路径 `/#505/#503/#84/#503`）—— 运行时 `SetImage` 换图**不可靠**：
-  --   适配器里有实测记录，读回来的 `imageSource` 和存档里的不是同一个值，会配错图集。
-  local HEX_RECT, HEX_TRI = 100001, 100003
-  local HEX_PARTS = {
-    -- { 图元, dx, dy, w, h, 旋转, 颜色(ARGB) }
-    { HEX_RECT, 0,   0, 176, 102,   0, 0xFF1B2030 },   -- 描边·中
-    { HEX_TRI,  0,  77, 176,  52,   0, 0xFF1B2030 },   -- 描边·上（编辑器里 y 向上）
-    { HEX_TRI,  0, -77, 176,  52, 180, 0xFF1B2030 },   -- 描边·下
-    { HEX_RECT, 0,   0, 156,  90,   0, 0xFF2B3348 },   -- 内芯·中
-    { HEX_TRI,  0,  67, 156,  46,   0, 0xFF2B3348 },   -- 内芯·上
-    { HEX_TRI,  0, -67, 156,  46, 180, 0xFF2B3348 },   -- 内芯·下
-  }
-  -- ★★★★★ 2026-10-03 **第一组：打开「六边形按钮素材」**（用户走完转存后的第一次接入）
-  --
-  --   为什么要打开：索引已按"从 .gil 读出的真实值"登记好
-  --   （`murdoku-btn-hex = 1073742333`，见 `entry_client_script.lua` 的 `prefab_of`），
-  --   而上一轮"实例化失败"的真正原因是**当时转存的是图片素材，不是客户端控件模板** ——
-  --   这一次转存下来的就是控件模板（每个带 2~3 层图形子记录）⇒ 这条路通了。
-  --
-  --   ⚠️ 一个变量原则：**这一轮只开这个开关**，其它一律不动
-  --   （坐标、锚点、可见性都保持基点的样子）。
-  --
-  --   底图挂在哪几个键上：**只挂 `.gil` 里真实存在的三个**
-  --   —— 基点的存档里只有 `action.back`（返回列表）/ `action.redo`（重置关卡）/
-  --      `action.hint`（放大镜）；`action.submit` / `action.undo` **还没有**，
-  --      给不存在的键挂底图只会多出三个孤儿控件。
-  -- ★★★★★ 2026-10-03 **改回 false** —— 真机探针（16:17）实测：
-  --     `InstantiateClientUIControl(1073742333, root)` → **pcall 成功、但返回 nil**
-  --   ⇒ 「按模板索引实例化素材」这条路**走不通**（与当初 1073742321 完全一样）。
-  --
-  --   用户实验得到的两条正确用法：
-  --     ① **素材尺寸在"生成时就定好"** —— 之后改素材尺寸或图片尺寸都不会影响显示；
-  --     ② **图片必须挂在客户端容器之外**（即只能是**服务器控件**）——
-  --        客户端控件容器的子级里，图片加载不了外部资产。
-  --
-  --   ⇒ 正确做法 = **在编辑器里用「图片 → 静态引用」把素材放进一个控件**（用户的 `m`），
-  --     再用 `tools/gil/clone_asset_image.mjs` **克隆那个现成控件**到需要的位置。
-  --     —— 而不是让脚本去实例化索引。
-  local HEX_PREFAB = false         -- false = 走"克隆现成素材控件"那条（见上面注释）
-  local function hex_bg(btnId, cx, cy, size)
-    local s = size / 256
-    for i = 1, #HEX_PARTS do
-      local p = HEX_PARTS[i]
-      local w, h = math.floor(p[4] * s + 0.5), math.floor(p[5] * s + 0.5)
-      push({
-        id = btnId .. ".hex" .. i,
-        kind = "button",
-        parent = btnId,
-        visible = true,
-        image_id = p[1],                       -- 素材 id（存档里会写进 /#505/#503/#84/#503）
-        imageColor = p[7],                     -- 乘算着色
-        -- ★ 真机日志显示：sync_plan 克隆出来的图元是 imageType=Basic（按原始像素铺），
-        --   而正常工作的 bg/face 都是 Stretch。Basic 时若素材本身很小，画出来就等于看不见
-        --   （这很可能就是「截图上什么都没有」的原因）。
-        -- ★★★★★ 2026-10-09 **「imageType 不在存档里」这条【已被证伪】** ✗✓
-        --   ⚠️ 原文（错 ✗）：「比过 wall.left/wall.right，只差 id ⇒ 只能运行时设」
-        --   ★ 实测：它**就在存档里**，路径 **`/505/503/84/504`**（`=1` ⇒ Stretch ✓
-        --     官方枚举 `Basic=0/Stretch=1` ＋ proto3 省略 0 ✓）
-        --     · `229` 里 44 条带图片描述组的记录中 5 条写了它、值恒为 1
-        --     · 那 5 条**恰好**是真机日志里 `type=Enum.ImageType.Stretch id=100108` 的那 5 条 ✓
-        --   ★ 当年为什么没比出来 ✗：`wall.left`/`wall.right` **恰好都缺**这个叶子
-        --     ⇒ 那次比对**结构上就看不见它** ✓（又一个"抽样看不到 ≠ 不存在" ✓）
-        --   ⇒ ★ **两条路都通**：存档能带（`tools/gil/fix_btn_bg_type.mjs` ✓ 产物 `234` ✓），
-        --     运行时也能设（下面这个字段 ✓）⇒ **双保险**，但别再当"只能运行时" ✗
-        --   ⚠️⚠️ **2026-10-09 更正：别把它当成"没图"的原因** ✗
-        --     用户实测否掉了：「**功能图标的图片形式就是基础**，大多数图片也只有基础一种，
-        --     **基础和拉伸绝大多数情况下没有差别**」✓
-        --     ⇒ ★ 我犯的是「**把相关当因果**」✗ ⇒ 四键"没图也没字"的真因**仍待查** ✓
-        imageType = "Stretch",
-        rect = {
-          x = cx + math.floor(p[2] * s + 0.5) - math.floor(w / 2),
-          y = cy + math.floor(p[3] * s + 0.5) - math.floor(h / 2),
-          w = w, h = h,
-        },
-        rot = p[6]
-      })
-    end
-  end
+  --   删的是：`HEX_RECT/HEX_TRI` 常量 + `HEX_PARTS`（6 块拼片）+ `HEX_PREFAB` 开关 + `hex_bg()` 函数。
+  --   判据（三条都要成立才算死代码）：
+  --     ① `hex_bg(` 全文件 **0 个调用点**（只剩注释里的历史写法）；
+  --     ② `HEX_PREFAB` 是 **常量 false**（2026-10-03 真机探针实测：
+  --        `InstantiateClientUIControl(1073742333, root)` pcall 成功但**返回 nil** ⇒
+  --        "按模板索引实例化素材"这条路走不通 ⇒ 之后改走「在编辑器里摆现成图片」
+  --     ③ 三个目标的父控件（`action.back/redo/hint`）**已按用户指令从存档删除** ⇒
+  --        底图节点就算建出来也是悬空节点（正是当年 T3 要避免的那种）。
+  --   ⇒ 现在这三个按钮的外观**全部由存档里的 `hex.*` 图片控件承担**（`ICON_ASSETS` 那条路），
+  --     脚本这一侧不再需要任何"拼图元"的代码 ✓
+  --   ⚠️ 历史理由（六边形怎么拼、"两个三角会得到八角星"那条教训）已在 git 历史与
+  --     `docs/外部资产-怎么用与我做了什么.md` 里，需要时能查回来 ✓
   -- ★★★★★ 2026-10-02 **右上三键 = 提交 / 重置关卡 / 撤销**（用户定稿，见 LAYOUT 尾部那段注释）
   --
   --   原来是「撤销 / 提交 / 揭示」竖排在右侧中部（x=1790, y=390/540/690）。
   --   现在按参考图挪到**右上角**，并把「揭示」换成**重置关卡**（从左上搬来）：
   --     上 → 下：提交 / 重置关卡 / 撤销
   --   右边缘 = `LAYOUT.side_key.right_edge`，**右下角那组（0/6 + 放大镜）也贴这条线**。
-  local SK = L.side_key
-  local sk_x = SK.right_edge - SK.size
-  local sk_y = { SK.top, SK.top + SK.size + SK.gap, SK.top + (SK.size + SK.gap) * 2 }
-  -- 六边形底图（三个键各一层）
-  if HEX_PREFAB then
-    -- ★ 第一组：只给"存档里真实存在"的三个键挂底图。
-    --   ⚠️ 坐标故意留 `nil` —— 由适配器按 `cfg.parent_of` 把它实例化到**父控件**身上，
-    --      位置跟着父控件走。写死 `sk_x/sk_y`（右上角那套）会和 `.gil` 里
-    --      `action.back`/`action.redo` 的真实位置（在 `topbar` 里）对不上 ⇒ 底图飘在别处。
-    -- ★ 2026-10-04：只留 `action.back` —— `action.redo` / `action.hint` **已从存档里删掉**
-    --   （它们与 `hex.redo` / `hex.hint` 重叠且动作重复，用户已批准清理旧控件）。
-    --   父控件没了，这两枚底图节点也就没有意义，一并去掉。
-    -- ★★★★★★ 2026-10-11 **`action.back` 的六边形底图整块删除** ✗✓✓
-    --
-    --   ★★ 用户指令 ✓：「**那个返回菜单也不要，一起删**」✓（★ 控件已删 ⇒ 底图无意义 ✓）
-    --
-    --   ★★★ 理由与本文件 L2354 附近那段【完全同源】✓（★ 当年的先例 ✓）：
-    --     `hex_bg(parent, …)` / `push({ id = parent..".hexbg" })` 都是给**父控件**挂底图 ✓
-    --     ⇒ ★ **父控件没了 ⇒ 底图节点就没有意义** ✓✓
-    --     ★ 当年就是按这条删掉了 `action.redo` / `action.hint` 的底图 ✓
-    --     ★★ 而现在 `action.back` 也走同一条路 ✓ —— ★ 它的功能由 `hex.back` 承担 ✓
-    --
-    --   ★ 删掉的原文（★ 备查 ✓）：
-    --     `local btns = {`
-    --       `{ "action.back" },`
-    --     `}`
-    --     `for i = 1, #btns do … push({ id = b[1] .. ".hexbg", parent = b[1], … }) … end`
-    --     `hex_bg("action.back", sk_x + 55, sk_y[1] + 55, SK.size)`
-    -- ★★★★★ 2026-10-05 **删掉这两行：`action.redo` / `action.hint` 的六边形底图** ✗
-    --
-    --   为什么删（真 bug ✓）：
-    --     `hex_bg(parent, …)` 会给 `parent` 建 6 个子节点（`parent..".hex1"`…`".hex6"` ✓）。
-    --     但 **`action.redo` 与 `action.hint` 这两个父节点，已经在下面 L1718-1740 被删掉了**
-    --     （2026-10-04「旧文字按钮 —— 已删」✓ —— 它们的功能改由 `hex.redo`/`hex.hint`
-    --      贴图节点 + `hit.redo`/`hit.hint` 热区承担 ✓）。
-    --   ⇒ 于是计划里**凭空多了 12 个"父级不存在"的悬空节点** ✗
-    --   ⇒ 后果（实测）：模拟器的 `kit.mjs:74`
-    --       `parentId = (n.parent && idOf[n.parent]) || canvasRoot.id`
-    --     **静默回落到画布根** ✗ ⇒ 父级中心算错 ⇒ 那 12 个 button 又被补上
-    --     `bg`(白图 `100108`) + `label` ⇒ ★ **模拟器里凭空多出 12 个白块** ✗✓
-    --   ⇒ 这**不改变**任何一条断言的通过/失败条数 ✓，但它**持续污染**所有几何类、
-    --     "多余控件"类的断言 ✗（例如 `verify_art.mjs` 的「棋盘区域没有多余控件」✓）
-    --
-    --   ★★★★★★ 2026-10-11 **上面那条"必须保留 `action.back`"已作废** ✗✓（★ 原文备查 ✓）：
-    --     · 原文 ✓：「⚠️ `action.back` 那一行必须保留 —— 它是确实存在于计划里的父节点
-    --         （`layout-plan.json` 实测有 `action.back` 与 `action.back.hex1..6`）✓
-    --         依据：`docs/计划与脚本漂移-根因调查.md` 的 T3 条（提交 73dd2d8 ✓）」
-    --     · ★★ **它作废的原因** ✓：★ **T3 的结论是"父控件存在 ⇒ 底图节点不算悬空"** ✓
-    --        ★ 而现在**用户要求把 `action.back` 整颗删掉** ✓
-    --        ⇒ ★★ **父控件不存在了 ⇒ 再给它挂底图就【正是 T3 要避免的那种悬空节点】** ✗✓
-    --        ⇒ ★★★ **⇒ 所以底图跟着父控件一起删，才符合 T3 的原意** ✓✓
-    --     · ★ 这与上面 `action.redo` / `action.hint` 的处置【完全一致】✓（同一套理由 ✓）
-    --   ⇒ ★★ **这一段 if/else 现在【两条分支都不再建任何节点】** ✓
-    --      ★ 保留外壳是为了让注释与历史可查 ✓；★ 将来若清理，可整段合并 ✓
-  end
+  -- ★ 2026-10-18（优化组 · P0）：`SK` / `sk_x` / `sk_y` 三个 local **已删除** ——
+  --   它们唯一的使用点是上面那段被删掉的六边形底图（`hex_bg("action.back", sk_x + 55, sk_y[1] + 55, …)`）
+  --   判据：删完 HEX 段后全文件对这三个名字的引用为 **0**（含注释）✓
+  -- ★ 2026-10-18（优化组 · P0）：`if HEX_PREFAB then … end` **整段删除** ✗✓
+  --   判据：`HEX_PREFAB` 自 2026-10-03 起是**常量 false**（原因写在下面墓碑里），
+  --     而块内**两条分支都不建任何节点**（注释自己也写着"现在两条分支都不再建任何节点"）
+  --     ⇒ 这段是恒假分支 + 空壳 ✓ 删掉零行为变化 ✓
 
   -- ★★★★★ 2026-10-04 **右上三键（提交 / 重置关卡 / 撤销）的旧文字按钮 —— 已删。**
   --
@@ -6646,8 +6511,10 @@ function Controller:build_layout(ui_adapter)
   --     · 指认凶手 → 顶部工具条的 `action.submit` 就是它
   --   ⇒ 计划里不再声明，脚本也就不会去写不存在的控件。
   --   （以后要做移动端大按钮，可以从 git 历史取回：提交 2f4b1ea）
-  local _ = L.actions    -- 布局表里的坐标先留着，方便将来恢复
-  local _ = L.action_btn
+  -- ★ 2026-10-18（优化组 · P0）：下面这两行空语句**已删除** ✗✓
+  --   原文是 `local _ = L.actions` / `local _ = L.action_btn` —— 纯粹为了"压住未使用变量"
+  --   （它俩零读零写，`L.actions` / `L.action_btn` 这两个 LAYOUT 键也没有别的读者）⇒ 死代码 ✓
+  --   ⚠️ LAYOUT 里那两个键**暂时不动**：`dump_layout` 等工具按表遍历，删键要另做一轮核对。
 
   -- ===== 开屏教程 =====
   if self:is_intro_active() then
@@ -8382,25 +8249,12 @@ function Controller:sync_clue_grid(adapter)
   --     · 若 `scrollProgress` ≠ 0 ⇒ ★ 列表被滚上去了 ⇒ **"第一行"不是第一项** ✓✓
   --     · 若 `GetItemSize()` ≠ 存档里的 360×96 ⇒ ★ 引擎用的不是存档那个尺寸 ⇒ 布点基准不同 ✓
   --   ⇒ ★ 这一行日志能一次分清上面三种 ✓ —— 别再猜 ✓
-  if (self._grid_geom_log or 0) < 3 and print then
-    self._grid_geom_log = (self._grid_geom_log or 0) + 1
-    local _f = function(fn)
-      local vals = nil
-      pcall(function() vals = { fn() } end)
-      if vals == nil then return "读不到" end
-      local out = {}
-      for i = 1, #vals do out[i] = tostring(vals[i]) end
-      return table.concat(out, ",")
-    end
-    local _one = function(k)
-      local v = nil
-      pcall(function() v = cg[k] end)
-      return tostring(v)
-    end
-    local _cg2 = grid
-    if _cg2 == nil then pcall(function() _cg2 = adapter:find("clues.grid") end) end
-  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：网格几何1/2/3　原 L4060..L4077
-  end
+  -- ★ 2026-10-18（优化组 · P0）：**网格几何探针的"空壳"整段删除** ✗✓
+  --   原文是一个 `if (self._grid_geom_log or 0) < 3 and print then … end`：
+  --     里面只声明了 `_f` / `_one` / `_cg2` 三个**从未被读**的 local，
+  --     外加一句"网格几何1/2/3 已删（原 L4060..L4077）"的注释 ⇒ 一段什么也不做的壳。
+  --   判据：三个 local 在本文件**零引用**（只出现在这个 if 体内）⇒ 整块是死代码。
+  --   ⚠️ 真正的网格体检另有实现（`_grid_*` 家族 + `tests/grid_cost.lua` 守着），不受影响。
 
   -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
   -- ★★ 2026-10-06 **绕过规划/账本，直接点亮 `clues.grid`** ✗✓ —— 真凶在此 ✓
@@ -15808,17 +15662,22 @@ function Adapter:_apply_edges(id, prefix, flags)
           --     · 门 = cw × door_length_ratio(**0.44**) + extra_len(同样 +4)
           --   ⇒ 门/墙 = 44/99 ≈ 44% ⇒ 与设计图"门占墙线 44%"同一比例 ✓（见 records/design-layout-measure.md）
           --
-          -- ★★★★★ 2026-10-18（v268）**外框边再包一个厚** ✗✓（用户：「角上还有小台阶」）
-          --   外圈墙是"骑在棋盘最外那条格线"上的 ⇒ 它**向外偏了 厚/2 = 5px**，
-          --   而端头原本只多出 (overlap+extra)/2 = 4px ⇒ **每个角短 1px** = 那一级小台阶 ✓
-          --   ⇒ 外框边长度改成 **cw + 厚**（两端各多 厚/2）：端头正好顶到相邻那条外框墙的**外沿**，
-          --     横竖两段在角上合成一个干净的直角（不多不少，也不靠取整运气）✓
-          --   ⚠️ 只给**墙**；门不在外框上（门只在内部边上），长度公式不动 ✓
+          -- ★★★★★ 2026-10-18（v270）**外框两端多伸「对方半宽 + 2」⇒ 转角互相重叠** ✗✓
+          --
+          --   用户原话：「**小台阶还是存在，让转角处墙重叠，各自延长到对方的宽的边缘，这样一定不会出错**」
+          --   实测（`records/shot-2026-10-18-v269-device.png`，1px 逐点）：
+          --     · 顶臂端头 = x **619.5**、左臂外沿 = x **618.5** ⇒ 外框最角上那 1×1 像素
+          --       **两边都没盖住** ⇒ 露出黑框色 = 你看到的那级小台阶 ✗
+          --     · v269 的端头伸长量正好等于外移量（都是 厚/2 = 5）⇒ 叠/漏取决于取整，**必错** ✗
+          --   ⇒ 端头伸长量 = **厚/2 + 2**（每端各 7）⇒ 每条臂都越过对方外沿 2px、**真的叠上**；
+          --     多出的 2px 落在外框黑边里（黑框 13px 厚），肉眼看不出来 ✓
+          --   ⚠️ 只给**外框边**加：内部边的端头本来就藏在垂直墙的宽度里（4 < 厚/2），
+          --     多伸反而会在格子角上冒出 2px 小尖 ✗
           local tlen
           if prefix == "door" then
             tlen = cw * door_ratio + extra_len
           elseif outer then
-            tlen = cw + thick
+            tlen = cw + thick + 4          -- 两端各 厚/2 + 2
           else
             tlen = cw + overlap + extra_len
           end
@@ -18995,7 +18854,9 @@ function Murdoku.on_update(dt)
       "stage", "board.bg", "cell.1.1",
       "topbar", "toolbar", "right",
       "clues", "clues.bg", "clues.grid",
-      "hud.title", "hud.subtitle", "hud.timer", "hud.progress",
+      -- ★ 2026-10-18（优化组）：`"hud.subtitle"` 已去掉 ✓ —— 副标题位按美术结论移除，
+      --   它不再存在于规划与存档里 ⇒ 列在这里只会每次报"树里没有这个名字" ✗
+      "hud.title", "hud.timer", "hud.progress",
       -- ★ 2026-10-11 `"action.back"` 已去掉 ✓（★ 用户要求整颗删除 ✓
       --   ⇒ ★ 它不再存在于规划里 ⇒ ★ 列在这里只会每次报"树里没有这个名字"✗）
     }
@@ -21171,7 +21032,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v269 / 2026-10-18 / 优化组：两个 opt-in 开关修复（按钮底图上色 cfg.btn_art 的调用写回闸门内，默认不再每局覆盖按钮底图；启动信标 cells_beacon 改读 cfg，默认真的关掉、不再改 cell.1.1 尺寸）＋ 上一版门墙居中（外圈骑格线）/ 加粗 10 / 加长 4 / 门长 0.44 与两关内容原样保留 ＋ **v269：外框墙长度 = 格＋厚（四角直角、去掉角上的小台阶）**")
+        print("[murdoku] ===== 构建标记 v270 / 2026-10-18 / 优化组：副标题位按美术结论移除（hud.subtitle 整条 push 删除；关卡内 toast 暂无出口）＋ 两个 opt-in 开关修复（按钮底图上色 cfg.btn_art 的调用写回闸门内，默认不再每局覆盖按钮底图；启动信标 cells_beacon 改读 cfg，默认真的关掉、不再改 cell.1.1 尺寸）＋ 上一版门墙居中（外圈骑格线）/ 加粗 10 / 加长 4 / 门长 0.44 与两关内容原样保留 ＋ **v270：外框墙两端各多伸 厚/2+2 ⇒ 四角互相重叠**（彻底消除 1×1 漏光）")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

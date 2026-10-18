@@ -191,7 +191,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v269 / 2026-10-18 / 优化组：两个 opt-in 开关修复（按钮底图上色 cfg.btn_art 的调用写回闸门内，默认不再每局覆盖按钮底图；启动信标 cells_beacon 改读 cfg，默认真的关掉、不再改 cell.1.1 尺寸）＋ 上一版门墙居中（外圈骑格线）/ 加粗 10 / 加长 4 / 门长 0.44 与两关内容原样保留 ＋ **v269：外框墙长度 = 格＋厚（四角直角、去掉角上的小台阶）**")
+        print("[murdoku] ===== 构建标记 v270 / 2026-10-18 / 优化组：副标题位按美术结论移除（hud.subtitle 整条 push 删除；关卡内 toast 暂无出口）＋ 两个 opt-in 开关修复（按钮底图上色 cfg.btn_art 的调用写回闸门内，默认不再每局覆盖按钮底图；启动信标 cells_beacon 改读 cfg，默认真的关掉、不再改 cell.1.1 尺寸）＋ 上一版门墙居中（外圈骑格线）/ 加粗 10 / 加长 4 / 门长 0.44 与两关内容原样保留 ＋ **v270：外框墙两端各多伸 厚/2+2 ⇒ 四角互相重叠**（彻底消除 1×1 漏光）")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

@@ -145,12 +145,13 @@ rootCtl._kids[#rootCtl._kids + 1] = cellEdge
 
 a266:set_property("cell.1.1", "walls", { up = true, down = false, left = true, right = false })
 local sxE, syE = wUpEdge._scale()
-ok(near(sxE, (CW266 + 10) / WALL_BASE_L, 1e-6),
-  "v268 外框墙长 = cw + 厚 = " .. tostring(CW266 + 10) .. "（实测倍率 " .. tostring(sxE) .. "）")
-ok(near(syE, 10 / 8, 1e-6), "v268 外框墙厚仍是 10")
+ok(near(sxE, (CW266 + 14) / WALL_BASE_L, 1e-6),
+  "v270 外框墙长 = cw + 厚 + 4（两端各 厚/2+2，转角必重叠）= "
+  .. tostring(CW266 + 14) .. "（实测倍率 " .. tostring(sxE) .. "）")
+ok(near(syE, 10 / 8, 1e-6), "v270 外框墙厚仍是 10")
 local _lxE, lyE = wLfEdge._scale()
-ok(near(lyE, (CW266 + 10) / WALL_BASE_L, 1e-6),
-  "v268 外框竖墙同样多包一个厚（实测倍率 " .. tostring(lyE) .. "）")
+ok(near(lyE, (CW266 + 14) / WALL_BASE_L, 1e-6),
+  "v270 外框竖墙同样向两端多伸（实测倍率 " .. tostring(lyE) .. "）")
 
 print(string.format("\nwall_overlap: %d passed, %d failed", passed, failed))
 os.exit(failed == 0 and 0 or 1)
