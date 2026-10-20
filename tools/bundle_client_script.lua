@@ -84,6 +84,8 @@ local modules = {
   { name = "engine_adapter",           path = "lua/engine_adapter.lua" },
   { name = "engine_adapter_qianxing",  path = "lua/engine_adapter_qianxing.lua" },
   { name = "main",                     path = "lua/main.lua" },
+  -- ★ 2026-10-21（v284）：玩法说明浮层（教程）。控件在存档里（`tut.*`），模块只管显示与翻页。
+  { name = "tutorial_ui",              path = "lua/tutorial_ui.lua" },
   { name = "levels.init",              path = "lua/levels/init.lua" },
 }
 

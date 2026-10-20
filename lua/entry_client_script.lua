@@ -1,4 +1,4 @@
-﻿--[[----------------------------------------------------------------------------
+--[[----------------------------------------------------------------------------
   entry_client_script.lua —— 客户端脚本入口（挂到客户端控件上的那个文件）
 
   用法：在「千星沙箱 → 客户端脚本资源管理器」里新建脚本映射，
@@ -191,7 +191,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v283 / 2026-10-20 / ★ 头像层 `portrait`（家具不再盖住放置的头像：层序 obj→portrait→wall，头像改画 portrait、房间色留在 face）＋ 历史遗留清理：死码4处（pending_click/flush_pending_note、hold_cell 橡皮擦分支、同条件 share 空分支）、调色板硬化（id<=0 不收+空表不缓存）、SYNC_STATE 透传拒绝原因、PERF-1 注释纠正；工具与编码：bump_build_marker 修好、BOM 哨兵 760 文件全过、selene 报告不再入库、超长标记说明搬到 docs/构建标记历史.md")
+        print("[murdoku] ===== 构建标记 v284 / 2026-10-21 / 教程浮层 tut.*（骨架并入主档 + 运行时不创建控件）+ 其余同前一版 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -911,6 +911,40 @@ end
 
 -- ===== 官方生命周期 =====
 
+-- ★★★★★★★★ 2026-10-21（v284）**玩法说明浮层（教程）的接线** ✗✓✓
+--
+--   控件在存档里（`tut.*`，由 `tools/gil/gen_tutorial_into.mjs` 从 477 骨架并入，全部加前缀），
+--   **本处一个控件都不创建**（用户明确的规矩：脚本里不要有创建控件这种操作）。
+--   这里只做三件事：懒加载模块 → 控件就绪后 init（绑按钮 + 藏起来）→ 开局弹一次。
+--
+--   ⚠️ 为什么放在 OnUpdate 里懒初始化：`OnInit` 时控件树还是空的（本项目反复验证过），
+--      在 OnInit 里 init 必定拿到 nil，然后**再也不会重试**。
+local tutorial = nil
+local tutorial_opened_once = false
+
+local function tick_tutorial()
+  if adapter == nil then return end
+  if tutorial == nil then
+    local ok, mod = pcall(require, "tutorial_ui")
+    if not ok or type(mod) ~= "table" or type(mod.new) ~= "function" then
+      if printerr then printerr("[murdoku] 教程模块没加载上：" .. tostring(mod)) end
+      tutorial = false          -- 用 false 记"试过了"，避免每帧重试刷屏
+      return
+    end
+    tutorial = mod.new(adapter)
+    if Murdoku ~= nil then Murdoku.tutorial = tutorial end
+  end
+  if tutorial == false then return end
+  if not tutorial.inited then
+    tutorial:init()             -- 控件没进树时自己会早退，下一帧再来
+    if not tutorial.inited then return end
+  end
+  if not tutorial_opened_once and started then
+    tutorial_opened_once = true
+    pcall(function() tutorial:open_ui() end)   -- 开局弹一次「玩法说明」
+  end
+end
+
 function OnInit()
   -- ① 逐帧更新开关（OnUpdate 全靠它）—— 内部已 pcall
   pcall(enable_update)
@@ -986,6 +1020,8 @@ function OnDisable() end
 
 function OnUpdate(dt)
   if LOAD_ERR ~= nil or Murdoku == nil then return end
+  -- ★ v284：教程浮层的懒初始化 / 首次弹出（内部全程 pcall，失败只影响教程）
+  pcall(tick_tutorial)
   if not started then
     -- 惰性重试：等客户端控件容器/控件就绪后再开局
     retry_elapsed = retry_elapsed + (dt or 0)
