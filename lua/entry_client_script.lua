@@ -191,7 +191,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v270 / 2026-10-18 / 优化组：副标题位按美术结论移除（hud.subtitle 整条 push 删除；关卡内 toast 暂无出口）＋ 两个 opt-in 开关修复（按钮底图上色 cfg.btn_art 的调用写回闸门内，默认不再每局覆盖按钮底图；启动信标 cells_beacon 改读 cfg，默认真的关掉、不再改 cell.1.1 尺寸）＋ 上一版门墙居中（外圈骑格线）/ 加粗 10 / 加长 4 / 门长 0.44 与两关内容原样保留 ＋ **v270：外框墙两端各多伸 厚/2+2 ⇒ 四角互相重叠**（彻底消除 1×1 漏光）")
+        print("[murdoku] ===== 构建标记 v283 / 2026-10-20 / ★ 头像层 `portrait`（家具不再盖住放置的头像：层序 obj→portrait→wall，头像改画 portrait、房间色留在 face）＋ 历史遗留清理：死码4处（pending_click/flush_pending_note、hold_cell 橡皮擦分支、同条件 share 空分支）、调色板硬化（id<=0 不收+空表不缓存）、SYNC_STATE 透传拒绝原因、PERF-1 注释纠正；工具与编码：bump_build_marker 修好、BOM 哨兵 760 文件全过、selene 报告不再入库、超长标记说明搬到 docs/构建标记历史.md")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -605,6 +605,14 @@ local function build_adapter()
         "face",
         "hint",
         "obj",
+        -- ★★★★★ 2026-10-20（v283）**新增 `portrait` 层：放置的头像画在这里** ✗✓
+        --   用户原话：「现在家具图层会盖在放置的头像上，把这个问题解决」
+        --   · 旧：头像走 `image` 落在 **face（最底）** ⇒ 家具 `obj` 压在上面 ✗
+        --   · 新：头像落在 `portrait`，位置 = **obj 之上、wall 之下** ⇒ 头像压住家具、又不压墙 ✓
+        --   房间色仍留在 face（`tint` 写），所以格子底色不会丢 ✓
+        --   ⚠️ 这一层在存档里是**新加的控件**（克隆自 face，两份 content 各一份，
+        --      id 1073743800 / 1073743801，见 `tools/gil/gen_portrait_layer.mjs`）✓
+        "portrait",
         "wall.up", "wall.down", "wall.left", "wall.right",
         "door.up", "door.down", "door.left", "door.right",
         "x",
@@ -660,10 +668,8 @@ local function build_adapter()
     key_control = "root",
     key_control_fallbacks = { "board", "cell.1.1", "topbar" },
 
-    -- ★ 参照格子体检（cell.1.1）：把"类型/射线/子控件/图片来源/光标门控"逐条读出来
-    --   并给 ✅/❌ 与修法。搭界面阶段非常有用，**每个会话只打一次**。
-    --   界面搭完、验收通过之后可以改成 false 让日志干净些。
-    diagnose_cell = true,
+    -- ★ 2026-10-18（优化组 · B 类清理）：`diagnose_cell` 配置项**已删除**
+    --   （配套的适配层体检函数与 main 的调用一起删；结案证据见真机日志「这一格配好了」）
   })
 
   -- ★ 线索卡底条：每条线索一个（最多 18 条），索引 1073742333（murdoku-clue-row）。

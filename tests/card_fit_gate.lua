@@ -61,9 +61,11 @@ local function ctrl(name, kids, fields)
 end
 
 -- ── 一棵与真机存档同构的小树 ──────────────────────────────────────────────
--- 格子：cell.1.1 → content → face（**有** face ⇒ 贴格该生效）
+-- 格子：cell.1.1 → content → { face（房间色板）, portrait（放置头像层，v283 新增）}
 local cellFace = ctrl("face", {}, { imageId = 100001, imageColor = 4294967295 })
-local cellContent = ctrl("content", { cellFace })
+local cellPortrait = ctrl("portrait", {}, { imageId = 100001, imageColor = 4294967295, visible = false })
+local cellObj = ctrl("obj", {}, { imageId = 100001, imageColor = 4294967295, visible = false })
+local cellContent = ctrl("content", { cellFace, cellObj, cellPortrait })
 local cell = ctrl("cell.1.1", { cellContent })
 cell.kind = "button"
 cell.sizeDeltaX, cell.sizeDeltaY = 108, 108
@@ -108,13 +110,17 @@ a:set_property("select.card.1", "tint", { r = 250, g = 244, b = 232 })
 card_untouched("tint")
 
 --------------------------------------------------------------------------------
--- ③ 反向：格子的 face **仍然**被钉成格子大小、居中（别把功能修没了）
+-- ③ 反向：格子的 **portrait 层**（v283 起放头像的那一层）被钉成格子大小、居中
+--    ⚠️ 2026-10-20：头像不再画到 `face`（会被家具盖住）⇒ 贴格判据跟着换成 portrait
 --------------------------------------------------------------------------------
 a:set_property("cell.1.1", "image", 106053)
-ok(cellFace.sizeDeltaX == 108 and cellFace.sizeDeltaY == 108,
-  "格子 face 仍被钉成 108×108（实测 " .. tostring(cellFace.sizeDeltaX) .. "×" .. tostring(cellFace.sizeDeltaY) .. "）")
-ok(cellFace.anchoredPositionX == 0 and cellFace.anchoredPositionY == 0,
-  "格子 face 仍被居中到 (0,0)（实测 " .. tostring(cellFace.anchoredPositionX) .. "," .. tostring(cellFace.anchoredPositionY) .. "）")
+ok(cellPortrait.sizeDeltaX == 108 and cellPortrait.sizeDeltaY == 108,
+  "格子 portrait 被钉成 108×108（实测 " .. tostring(cellPortrait.sizeDeltaX) .. "×" .. tostring(cellPortrait.sizeDeltaY) .. "）")
+ok(cellPortrait.anchoredPositionX == 0 and cellPortrait.anchoredPositionY == 0,
+  "格子 portrait 被居中到 (0,0)（实测 " .. tostring(cellPortrait.anchoredPositionX) .. "," .. tostring(cellPortrait.anchoredPositionY) .. "）")
+ok(cellPortrait.visible == true, "有棋子时 portrait 可见")
+-- 双向：房间色板 face 的图**不许**被头像换掉（底色要留在脸上）
+ok(cellFace.imageId == 100001, "face 仍是房间色板（imageId=" .. tostring(cellFace.imageId) .. "）")
 -- 格子自己不能被当成子控件钉 —— 它自己的位置也不该被改
 ok(cell.anchoredPositionX == 40 and cell.anchoredPositionY == -20,
   "格子自身位置没被改（仍是 40,-20）")

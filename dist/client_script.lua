@@ -1963,6 +1963,55 @@ end
 -- 操作
 ----------------------------------------------------------------------------
 
+-- ★★★★★★★ 2026-10-20 本轮规则 P：**同一行/列已有别人 ⇒ 不许再放**
+--
+--   用户原话：「已经放置的人物的**同行同列**内不能再放置其它人物」。
+--
+--   为什么**不**写进 `do_place` ✗（想过，明确否决）：
+--     `do_place` 还被 `Core:hint()` / `Core:decode_state()` / `Core:deserialize()` 调用 ——
+--     那三条是**状态恢复/程序代放**，不是玩家操作。把守卫塞进 `do_place`，
+--     一份"同行两人"的存档就会**静默丢子**（数据被改而作者不知道），
+--     分享码解码也会半途失败。⇒ 守卫只放在**交互入口**（`hold_cell` / `pre_place`）。
+--
+--   两个容易误伤的口径（都写进 tests/rule_guards.lua 了）：
+--     · 判据是「**其它人物**」⇒ **同一个人**在本行/本列内换位**不拦**
+--       （换位本来就等价于"撤销后重新放置"，拦了就没法调位置）
+--     · 目标格上的旧人**会离场**（换人站同一格）⇒ 目标格自己不参与判定
+--
+--   关卡 `rules.one_per_row / one_per_col` 为 false 时对应方向不拦（沿用 `Core:rules()`）。
+function Core:row_col_conflict(r, c, id)
+  local rules = self:rules()
+  if rules.one_per_row then
+    for cc = 1, self.cols do
+      if cc ~= c then
+        local other = self.grid[r][cc]
+        if other ~= nil and other ~= id then
+          return {
+            kind = "row", index = r, other = other,
+            text = string.format("第%d行已经有%s了，同一行只能站一个人",
+                                 r, self.names[other] or tostring(other)),
+          }
+        end
+      end
+    end
+  end
+  if rules.one_per_col then
+    for rr = 1, self.rows do
+      if rr ~= r then
+        local other = self.grid[rr][c]
+        if other ~= nil and other ~= id then
+          return {
+            kind = "col", index = c, other = other,
+            text = string.format("第%d列已经有%s了，同一列只能站一个人",
+                                 c, self.names[other] or tostring(other)),
+          }
+        end
+      end
+    end
+  end
+  return nil
+end
+
 function Core:select_suspect(id)
   if id ~= nil and not self.piece_by_id[id] then return false end
   if self.selected == id then self.selected = nil else self.selected = id end
@@ -1991,9 +2040,11 @@ end
 
 local function do_place(self, r, c, id, record, opts)
   opts = opts or {}
-  if self.blocked[cell_key(r, c)] then return false end
+  -- ★ 2026-10-20：拒绝**必须带原因串** —— 界面 `_refuse` 拿到 nil 就一个字都不打，
+  --   玩家只看到"长按没反应"。这里的两个原因串靠 `hold_cell`/`pre_place` 透传上来。
+  if self.blocked[cell_key(r, c)] then return false, "这个格子站不了人" end
   local prev = self.grid[r][c]
-  if prev == id then return false end
+  if prev == id then return false, "这个人已经站在这里了" end
 
 
   if prev then
@@ -2015,18 +2066,27 @@ local function do_place(self, r, c, id, record, opts)
   --       —— 还在试推阶段，笔记是他自己的思考痕迹，不能替他抹掉。
   --     · **正式放置**（长按）：擦掉该人物的笔记 + 之后不许再给他打笔记 + 取消选中
   --       —— 这是"定案"，笔记没有意义了。
-  local auto = { x = {}, notes = {} }
-  for cc = 1, self.cols do
-    if cc ~= c and not self.grid[r][cc] and not self.x_marks[r][cc] then
-      self.x_marks[r][cc] = true
-      auto.x[#auto.x + 1] = { r = r, c = cc }
+  -- ★★★ 2026-10-20 本轮规则 X：**任何方式出现的 ✗ 都要擦掉该格的铅笔笔记** ——
+  --   自动派生出来的 ✗（放置时给同行同列标的）也算"出现了 ✗" ✓
+  --   被擦掉的笔记记进 `auto.x_notes`，交给 `revert_auto` 在撤销/拿起时还原 ✓
+  local auto = { x = {}, notes = {}, x_notes = {} }
+  local function auto_x(rr, cc)
+    if self.grid[rr][cc] or self.x_marks[rr][cc] then return end
+    self.x_marks[rr][cc] = true
+    auto.x[#auto.x + 1] = { r = rr, c = cc }
+    local cur = self.notes[rr][cc]
+    if cur ~= nil and next(cur) ~= nil then
+      local had = {}
+      for k in pairs(cur) do had[k] = true end
+      self.notes[rr][cc] = {}
+      auto.x_notes[#auto.x_notes + 1] = { r = rr, c = cc, had = had }
     end
   end
+  for cc = 1, self.cols do
+    if cc ~= c then auto_x(r, cc) end
+  end
   for rr = 1, self.rows do
-    if rr ~= r and not self.grid[rr][c] and not self.x_marks[rr][c] then
-      self.x_marks[rr][c] = true
-      auto.x[#auto.x + 1] = { r = rr, c = c }
-    end
+    if rr ~= r then auto_x(rr, c) end
   end
   if opts.clear_notes ~= false then
     -- ⚠️ 笔记的数据形状是**集合**（`notes[r][c][id] = true`），不是数组 ——
@@ -2051,6 +2111,38 @@ local function do_place(self, r, c, id, record, opts)
   return true
 end
 
+-- ★★★ 2026-10-20 **"撤销一次放置派生出来的自动改动"只此一处实现** ✗✓
+--
+--   原来这段逻辑在 `do_clear` / `restore_auto_of` / `Core:undo` **三处各写一遍** ——
+--   上一轮就在"直接拿起"那条路上漏了一处（用户报「拿起人物后 ✗ 未清除」），
+--   本文件自己的注释都记着这件事："同一个概念散在三处实现，就一定会漏一处"。
+--   本轮规则 X 又要多还原一样东西（**被自动 ✗ 擦掉的笔记**）⇒ 再复制三份必然再漏 ⇒
+--   在这里收成一个函数，三处都调它。
+--
+--   ⚠️ 两件**不还原**的事（都是用户定过的，别好心改回去）：
+--     · `auto.notes`：正式放置擦掉的是"**该人物自己**的草稿"，那是定案后废弃的猜想；
+--       再捡回来会让盘面自相矛盾（2026-09-28 用户原话：「正式放置删除的笔记拿起后会重现……
+--       但不需要这个」）。
+--     · 被**换人覆盖**掉的那个人的自动 ✗（本函数只处理"本次放置"自己的 auto）。
+local function revert_auto(self, auto)
+  if auto == nil then return false end
+  for i = 1, #(auto.x or {}) do
+    local a = auto.x[i]
+    self.x_marks[a.r][a.c] = false
+  end
+  -- ★ 规则 X：自动 ✗ 擦掉的笔记一起还回去，否则"拿起/撤销"会永久吞掉玩家的推理草稿
+  for i = 1, #(auto.x_notes or {}) do
+    local e = auto.x_notes[i]
+    -- 只有当那格的 ✗ 真的被撤掉了才还原笔记（防止把笔记塞回一个仍带 ✗ 的格子）
+    if self.x_marks[e.r][e.c] == false then
+      local restored = {}
+      for k in pairs(e.had or {}) do restored[k] = true end
+      self.notes[e.r][e.c] = restored
+    end
+  end
+  return true
+end
+
 local function do_clear(self, r, c, record)
   local prev = self.grid[r][c]
   if not prev then return false end
@@ -2071,17 +2163,12 @@ local function do_clear(self, r, c, record)
   --   ⚠️ 这个还原逻辑我早就在两处写过了（`move_piece_if_needed` 的换位、
   --      `Core:undo` 的撤销），**唯独漏了"直接拿起"这条最常见的路径** ——
   --      同一个概念散在三处实现，就一定会漏一处。
+  --   ★ 2026-10-20：三处已收成 `revert_auto`（本轮规则 X 又给它加了一件事要做）。
   if self.history ~= nil then
     for i = #self.history, 1, -1 do
       local a = self.history[i]
       if a.kind == "place" and a.id == prev then
-        local au = a.auto
-        if au ~= nil then
-          for k = 1, #(au.x or {}) do
-            local x = au.x[k]
-            self.x_marks[x.r][x.c] = false
-          end
-        end
+        revert_auto(self, a.auto)
         break
       end
     end
@@ -2108,10 +2195,8 @@ local function restore_auto_of(self, id)
     if a.kind == "place" and a.id == id then
       local au = a.auto
       if au then
-        for k = 1, #(au.x or {}) do
-          local x = au.x[k]
-          self.x_marks[x.r][x.c] = false
-        end
+        -- ★ 2026-10-20：还原动作收进 `revert_auto`（✗ 与被自动 ✗ 擦掉的笔记一起还原）
+        revert_auto(self, au)
         -- ★ 2026-09-28（用户要求去掉）：**不还原被清掉的铅笔笔记**。
         --
         -- 原来这里会把"正式放置时清掉的那些笔记"重新填回去，
@@ -2153,17 +2238,38 @@ local function toggle_note(self, r, c, id)
   --   `blocked` 的语义是「**不能站人**」，只该管 `do_place` 一件事；
   --   笔记/✗ 是"玩家的推理痕迹"，与格子能不能站人无关。
   --   （本工程第 N 次踩同一个坑：**一个字段被拿去管了两件不相关的事**。）
+  --
+  -- ★★★ 2026-10-20 **用户改主意了（本轮规则 B），如实记录，别把上一条当结论**：
+  --   用户新要求原话：「**不可放置人物的障碍物上也不可进行 note 标记**」⇒
+  --   **笔记这一半重新关掉**（`blocked` 格拒绝铅笔笔记），而 **✗ 那一半仍然开着**
+  --   （`Core:toggle_x` 不加门控 —— "这格排除掉"恰恰是障碍格最该能划的）。
+  --   所以 09-29 那条"一个字段管了两件事"的教训**依然成立**：这里论的仍是两件事，
+  --   只是现在按用户最新的口径，两件事的取值**恰好一开一关**。
   if not id then return false end
-  if self.grid[r][c] then return false end
+  if self.grid[r][c] then return false, "这格已经有人了" end
+  -- ★ 规则 B：障碍物（不可站人）的格子不可打笔记
+  if self.blocked[cell_key(r, c)] then
+    return false, "这格是障碍物，站不了人，也不能打笔记"
+  end
   -- ★ 2026-09-28（用户要求）：**正式放置过的人，不能再给他打笔记**。
   --   为什么：正式放置 = 定案，他在哪已经确定；再允许"猜他在别处"只会让盘面自相矛盾。
   --   （预放置不设这个限制 —— 那时还在试推，笔记是思考痕迹。）
   if self.placed and self.placed[id] then
     return false, "这个人已正式放置，不能再打笔记"
   end
+  -- ★★★ 规则 X（2026-10-20）：**✗ 与铅笔笔记互斥** ——
+  --   "在 ✗ 上打笔记时也会**在标记的同时**擦除 ✗" ⇒ 同一个动作里做两件事：
+  --   擦 ✗ + 落笔记。两件事记进**同一条历史**（不许拆成两条，否则撤销要点两下）。
+  local was_x = (self.x_marks[r][c] == true)
+  if was_x then self.x_marks[r][c] = false end
   local cell = self.notes[r][c]
   if cell[id] then cell[id] = nil else cell[id] = true end
-  push_history(self, { kind = "note", r = r, c = c, id = id }, false)   -- 笔记不计步
+  -- 笔记不计步（`push_history` 第三个参数是全工程的记号；计步由界面按 kind 判断）
+  push_history(self, {
+    kind = "note", r = r, c = c, id = id,
+    on = (cell[id] == true),        -- 这一击是"加上"还是"去掉"（撤销/重做要精确反演）
+    was_x = was_x,                  -- 这一击顺带擦掉的那个 ✗（撤销时还原）
+  }, false)
   return true
 end
 
@@ -2176,8 +2282,11 @@ function Core:tap_cell(r, c)
   --   直接把整格封死 —— 用户报「R1C5 不能做 ✗ / 放人 / 笔记」，
   --   日志里那句"这个格子站不了人"就是**从这里**出来的（不是 `do_place`）。
   --   它把"不能站人"错误地扩大成了"这格什么都不能做"。
-  --   ⇒ 现在按动作各自判断：✗ / 擦除 / 笔记都能打（它们是玩家的推理痕迹）；
+  --   ⇒ 现在按动作各自判断：✗ / 擦除 都能打（它们是玩家的推理痕迹）；
   --     只有**放人**会落到 `do_place`，由 `do_place` 自己的门控拒绝（书桌确实不能站人）。
+  --   ★ 2026-10-20（规则 B）：笔记这一项按用户新要求**重新收敛** ——
+  --     `blocked` 格不再允许铅笔笔记（拒绝原因由 `toggle_note` 给出，这里不再重复判断）；
+  --     ✗ 与擦除**保持放行**。
   if self.mode == M.MODE_X then
     return self:toggle_x(r, c), nil
   end
@@ -2187,7 +2296,9 @@ function Core:tap_cell(r, c)
   if self.mode == M.MODE_NOTE then
     if self.grid[r][c] then return false, "这格已经有人了" end
     if not self.selected then return false, "先选一个人再打草稿" end
-    return toggle_note(self, r, c, self.selected), nil
+    -- ★ 2026-10-20：**原因要透传**（原来写的是 `toggle_note(...), nil` ⇒
+    --   拒绝原因被吞成 nil ⇒ 界面 `_refuse` 什么都没打印 ⇒ 玩家/开发者只看到"点了没反应"）
+    return toggle_note(self, r, c, self.selected)
   end
   -- 放置模式：轻点=标记（与 murdoku 一致），双击=放置
   if self.grid[r][c] then
@@ -2226,7 +2337,8 @@ function Core:tap_cell(r, c)
   if not self.selected then
     return self:toggle_x(r, c), nil
   end
-  return toggle_note(self, r, c, self.selected), nil
+  -- ★ 2026-10-20：原因要透传（同上：`..., nil` 会把 `toggle_note` 的拒绝原因吞掉）
+  return toggle_note(self, r, c, self.selected)
 end
 
 -- 长按入口：放置（murdoku 的核心手感）
@@ -2237,19 +2349,31 @@ function Core:hold_cell(r, c)
   --   原因：放置拆成"双击=预放置 / 长按=正式放置"之后，误触本身就有救 ——
   --   双击只是预放置（可反悔），长按才定案。多一个保护开关反而不如直接删。
   if not self.selected then return false, "先点一个头像" end
-  if self.mode == M.MODE_ERASE then
-    -- 长按橡皮擦 = 清空全部
-    self:clear_all()
-    return true, "已清空全盘"
-  end
+  -- ★★★★★★★★ 2026-10-20（v282）**删掉"长按橡皮擦 = 清空全盘"这一段** ✗✓（它是死码 ✓）
+  --
+  --   原文长这样：`if self.mode == M.MODE_ERASE then self:clear_all(); return true, "已清空全盘" end`
+  --
+  --   ★ 为什么它是死的（两条不变量的合取，谁都破不了）：
+  --     · 上一行 `if not self.selected then return false …` ⇒ 走到这里必有 `selected`
+  --     · 而 `Core:set_mode(MODE_ERASE)` 自己会 `self.selected = nil`（见它里面那句）
+  --     · `Core:select_suspect(id)` 若在 ERASE/X 模式下选中了人，**会先把模式切回 PLACE**
+  --     ⇒ 不变量：`mode == eraser` ⇒ `selected == nil` ⇒ **这个分支永远进不来** ✓
+  --   ★ 旁证：`tests/selftest.lua` 早就有断言「双击橡皮擦**不再**清空全盘（破坏性快捷键已移除）」
+  --     —— 也就是说这条清空路径**本来就已经不是游戏行为**了，留着只会骗下一个读者。
+  --   ★ 本轮加了一条钉住不变量本身的用例（`tests/rule_guards.lua` 的 R5）：
+  --     以后谁改了 `set_mode` / `select_suspect` 的联动，那条会立刻红。
+  --   ⚠️ `Core:clear_all()` 本体**保留**（`tests/gray_unplace.lua` 在用，也是合理的公开 API）。
   -- ★★ 2026-09-28（用户设计）：长按 = **正式放置**（定案）
   --   · 擦掉该人物的所有铅笔笔记（`clear_notes = true` 是默认，这里写明意图）
   --   · 记入 `placed[id]` → 之后**不能再给他打笔记**（见 toggle_note）
   --   · **取消选中**（玩家要求："正式放置后取消对应人物的选中"）
   --   与"双击 = 预放置"的区别就在这三点：预放置只标 ✗，笔记留着、选中留着。
   local who = self.selected
+  -- ★★ 规则 P（2026-10-20）：同行/同列已经有别人 ⇒ 直接拒绝（不落子、不改盘）。
+  local conflict = self:row_col_conflict(r, c, who)
+  if conflict then return false, conflict.text end
   local _, move_from = move_piece_if_needed(self, who, r, c)
-  local ok = do_place(self, r, c, who, true, { clear_notes = true })
+  local ok, why = do_place(self, r, c, who, true, { clear_notes = true })
   -- ★ 把"从哪来"补进刚压下的那条历史 —— 这样**一次撤销就能回到原位**（见 Core:undo）
   if ok and move_from ~= nil and self.history[#self.history] ~= nil then
     self.history[#self.history].move_from = move_from
@@ -2259,7 +2383,9 @@ function Core:hold_cell(r, c)
     self.placed[who] = true
     self.selected = nil
   end
-  return ok, nil
+  -- ★ 2026-10-20：原因串**透传**（原来是 `return ok, nil` ⇒ 界面 `_refuse` 收不到原因
+  --   ⇒ "长按没反应、日志也没有"）。
+  return ok, why
 end
 
 -- ★ 2026-09-28（用户设计）：双击 = **预放置**（试推，可反悔）
@@ -2270,12 +2396,15 @@ function Core:pre_place(r, c)
   if r < 1 or r > self.rows or c < 1 or c > self.cols then return false, "越界" end
   if self:is_blocked(r, c) then return false, "这个格子站不了人" end
   if not self.selected then return false, "先点一个头像" end
+  -- ★★ 规则 P：预放置同样受守卫（用户口径是"不能再放置"，没区分正式/预放置）
+  local conflict = self:row_col_conflict(r, c, self.selected)
+  if conflict then return false, conflict.text end
   local _, move_from = move_piece_if_needed(self, self.selected, r, c)
-  local ok = do_place(self, r, c, self.selected, true, { clear_notes = false })
+  local ok, why = do_place(self, r, c, self.selected, true, { clear_notes = false })
   if ok and move_from ~= nil and self.history[#self.history] ~= nil then
     self.history[#self.history].move_from = move_from
   end
-  return ok, nil
+  return ok, why
 end
 
 -- X 标记：这格不可能是任何人
@@ -2289,15 +2418,26 @@ function Core:toggle_x(r, c)
   --   **恰恰是站不了人的格子最该能划掉**。
   --   原来一个字段管了两件不相关的事，结果 R1C5（书桌）连 ✗ 都打不上。
   if self.grid[r][c] then return false end
-  self.x_marks[r][c] = not self.x_marks[r][c]
-  if self.x_marks[r][c] then self.notes[r][c] = {} end
+  -- ★★★ 规则 X（2026-10-20）：**任何方式出现的 ✗ 都要擦掉该格全部笔记**。
+  --   手动点亮 ✗ 只是其中一条路（另一条是放置时自动给同行同列标 ✗，见 `do_place`）。
+  --   被擦掉的笔记记进历史 ⇒ **撤销能把它们还回来**（不然撤销一次就永久吞掉玩家草稿）。
+  local on = not self.x_marks[r][c]
+  self.x_marks[r][c] = on
+  local prev_notes = nil
+  if on then
+    local cur = self.notes[r][c]
+    if cur ~= nil and next(cur) ~= nil then
+      prev_notes = {}
+      for k in pairs(cur) do prev_notes[k] = true end
+    end
+    self.notes[r][c] = {}
+  end
   -- ★ 2026-09-28：X 标记**不计步**（`counts = false`）。
   --
   -- 口径与"铅笔笔记不计步"一致：X 是**推断过程的草稿**，不改变棋盘上的人。
   -- 而且取消交互按钮后，「单击 = 切换 X」变成**最高频**的动作 ——
   -- 一次推理要划十几个 ✗，每个都计步会让"N 步"这个数字失去意义。
-  -- （放置 / 清格才是真正改变棋盘的动作，它们计步。）
-  push_history(self, { kind = "x", r = r, c = c }, false)
+  push_history(self, { kind = "x", r = r, c = c, on = on, prev_notes = prev_notes }, false)
   return true
 end
 
@@ -2315,7 +2455,8 @@ function Core:erase_cell(r, c)
   end
   if self.x_marks[r][c] then
     self.x_marks[r][c] = false
-    push_history(self, { kind = "x", r = r, c = c })
+    -- ★ 2026-10-20：带上 `on = false`（撤销/重做要精确反演，不再靠"翻转当前值"猜）
+    push_history(self, { kind = "x", r = r, c = c, on = false })
     changed = true
   end
   return changed
@@ -2420,19 +2561,23 @@ function Core:decode_state(code)
     for c = 1, self.cols do
       idx = idx + 1
       local tok = tokens[idx]
+      -- ★ 2026-10-20 规则 B：障碍物格不接受笔记（分享码是"外部输入"，同样要守不变量）
+      local note_ok = not self.blocked[cell_key(r, c)]
       if tok == "X" then
         self.x_marks[r][c] = true
       elseif tok == "-" then
         -- 空格，不动
       elseif tok:sub(1, 1) == "!" then
         local body = tok:sub(2, -2)
-        for k = 1, #body do
-          local id = symbol_to_id[string.upper(body:sub(k, k))]
-          if id then self.notes[r][c][id] = true end
+        if note_ok then
+          for k = 1, #body do
+            local id = symbol_to_id[string.upper(body:sub(k, k))]
+            if id then self.notes[r][c][id] = true end
+          end
         end
       elseif tok:match("^%l$") then
         local id = symbol_to_id[string.upper(tok)]
-        if id then self.notes[r][c][id] = true end
+        if id and note_ok then self.notes[r][c][id] = true end
       elseif tok:match("^%u$") then
         local id = symbol_to_id[tok]
         if id then do_place(self, r, c, id, false) end
@@ -2457,21 +2602,40 @@ function Core:undo()
     -- ★ 2026-09-28：还原这次放置**派生出来的自动改动**。
     --   规则①②会顺手改几十个格子（同行同列标 ✗、清掉该人物的笔记），
     --   不还原的话撤销一次会留下一盘 ✗，玩家得手动擦。
-    if action.auto then
-      for i = 1, #(action.auto.x or {}) do
-        local a = action.auto.x[i]
-        self.x_marks[a.r][a.c] = false
-      end
-      -- ★ 2026-09-28：撤销**不还原**被清掉的笔记（与 restore_auto_of 保持一致）。
-      --   理由同上：正式放置是定案，被推翻的猜想不该复活。
-    end
+    -- ★ 2026-10-20：改调 `revert_auto` —— 它同时还原"被自动 ✗ 擦掉的笔记"
+    --   （规则 X 之后 ✗ 会连带擦笔记，撤销必须一起还）。
+    --   ⚠️ `auto.notes`（该人物自己的草稿）仍然**不还原**，那是用户 09-28 定过的。
+    revert_auto(self, action.auto)
   elseif action.kind == "clear" then
     do_place(self, action.r, action.c, action.prev, false)
   elseif action.kind == "note" then
+    -- ★ 2026-10-20 规则 X：笔记动作可能**顺带擦掉了一个 ✗** ⇒ 撤销要把它还原；
+    --   同时按 `on` 精确反演（不再靠"翻转当前值" —— 有了 ✗ 互斥之后翻转会翻错）。
     local cell = self.notes[action.r][action.c]
-    if cell[action.id] then cell[action.id] = nil else cell[action.id] = true end
+    if action.on ~= nil then
+      if action.on then cell[action.id] = nil else cell[action.id] = true end
+    else
+      if cell[action.id] then cell[action.id] = nil else cell[action.id] = true end
+    end
+    if action.was_x then self.x_marks[action.r][action.c] = true end
   elseif action.kind == "x" then
-    self.x_marks[action.r][action.c] = not self.x_marks[action.r][action.c]
+    -- ★ 2026-10-20 规则 X：✗ 动作会擦掉笔记 ⇒ 撤销时把笔记还回去；
+    --   取消 ✗ 的动作撤销时，✗ 回来 ⇒ 该格笔记按互斥清空。
+    local on = action.on
+    if on == nil then
+      self.x_marks[action.r][action.c] = not self.x_marks[action.r][action.c]   -- 旧历史兜底
+    else
+      self.x_marks[action.r][action.c] = not on
+      if on then
+        if action.prev_notes ~= nil then
+          local restored = {}
+          for k in pairs(action.prev_notes) do restored[k] = true end
+          self.notes[action.r][action.c] = restored
+        end
+      else
+        self.notes[action.r][action.c] = {}
+      end
+    end
   elseif action.kind == "wipe_notes" then
     local restored = {}
     for k in pairs(action.prev_notes or {}) do restored[k] = true end
@@ -2490,10 +2654,34 @@ function Core:redo()
   elseif action.kind == "clear" then
     do_clear(self, action.r, action.c, false)
   elseif action.kind == "note" then
+    -- ★ 2026-10-20 规则 X：重做笔记动作 —— 正向是"按 on 落/擦笔记"，
+    --   若当初它顺带擦掉过 ✗，重做也要再擦一次（互斥不许被重做破坏）。
     local cell = self.notes[action.r][action.c]
-    if cell[action.id] then cell[action.id] = nil else cell[action.id] = true end
+    if action.on ~= nil then
+      if action.on then cell[action.id] = true else cell[action.id] = nil end
+    else
+      if cell[action.id] then cell[action.id] = nil else cell[action.id] = true end
+    end
+    if action.was_x then
+      -- 当初这一击擦掉了 ✗ ⇒ 重做也再擦一次（互斥不许被重做破坏）。
+      -- 该格此刻笔记必为空（✗ 与笔记互斥），所以上一步落下的笔记不用重算。
+      self.x_marks[action.r][action.c] = false
+    end
   elseif action.kind == "x" then
-    self.x_marks[action.r][action.c] = not self.x_marks[action.r][action.c]
+    -- ★ 2026-10-20 规则 X：重做 ✗ 动作 ⇒ ✗ 亮起则擦笔记；✗ 取消则笔记回来
+    local on = action.on
+    if on == nil then
+      self.x_marks[action.r][action.c] = not self.x_marks[action.r][action.c]
+    else
+      self.x_marks[action.r][action.c] = on
+      if on then
+        self.notes[action.r][action.c] = {}
+      elseif action.prev_notes ~= nil then
+        local restored = {}
+        for k in pairs(action.prev_notes) do restored[k] = true end
+        self.notes[action.r][action.c] = restored
+      end
+    end
   elseif action.kind == "wipe_notes" then
     self.notes[action.r][action.c] = {}
   end
@@ -2659,9 +2847,14 @@ function Core:serialize()
       if id then
         cells[#cells + 1] = { r = r, c = c, id = id }
       else
+        -- ★ 2026-10-20（规则 X / B）：写出前再守一次不变量 ——
+        --   存档里出现"又有 ✗ 又有笔记"或"障碍格上有笔记"的格，读回去就是脏数据。
+        --   ✗ 优先（互斥时 ✗ 赢），障碍格不写笔记。
         local note_ids = sorted_keys(self.notes[r][c])
-        if #note_ids > 0 or self.x_marks[r][c] then
-          cells[#cells + 1] = { r = r, c = c, notes = note_ids, x = self.x_marks[r][c] or nil }
+        local x = self.x_marks[r][c] == true
+        if x or self.blocked[cell_key(r, c)] then note_ids = {} end
+        if #note_ids > 0 or x then
+          cells[#cells + 1] = { r = r, c = c, notes = note_ids, x = x or nil }
         end
       end
     end
@@ -2685,10 +2878,21 @@ function Core:deserialize(save)
   self:reset()
   for i = 1, #save.cells do
     local e = save.cells[i]
-    if e.id then do_place(self, e.r, e.c, e.id, false)
+    if e.id then
+      do_place(self, e.r, e.c, e.id, false)
     elseif e.notes or e.x then
-      for j = 1, #(e.notes or {}) do self.notes[e.r][e.c][e.notes[j]] = true end
-      if e.x then self.x_marks[e.r][e.c] = true end
+      -- ★★★ 2026-10-20（规则 X / B）：**读档时清洗成互斥** ——
+      --   旧存档、手改过的存档、分享码都可能一格两样都写着。
+      --   口径：✗ 优先（"✗ 出现就擦掉该格笔记"），障碍格不接受笔记。
+      --   ⇒ 不静默"两者都留着"：那会让 view()/界面同时画 ✗ 和字母，盘面自相矛盾。
+      local k = cell_key(e.r, e.c)
+      local blocked = self.blocked[k] == true
+      if e.x then
+        self.x_marks[e.r][e.c] = true
+        self.notes[e.r][e.c] = {}
+      elseif not blocked then
+        for j = 1, #(e.notes or {}) do self.notes[e.r][e.c][e.notes[j]] = true end
+      end
     end
   end
   self.elapsed = save.elapsed or 0
@@ -3017,7 +3221,11 @@ M.LAYOUT = {
   --   之前写的是 `title = {x=360, y=18}`（**顶部居中偏右**）—— 那是按"顶栏"想的，
   --   跟规划图**根本不是一处**（图里标题在左边栏、计时器就在它下面一行）。
   title  = { x = 70, y = 156, w = 540, h = 56 },   -- 中心 (340, 184) = 图上 TITLE 的位置
-  stats  = { x = 1520, y = 26, w = 380, h = 46 },
+  -- ★ 2026-10-18（优化组 · P0）：`M.LAYOUT` 里**这一类"无读者键"已删除** ✗✓
+  --   判据（逐个键在代码里数 `L.<键>`，全部为 0，且 tests/ tools/ 里也没有读者）：
+  --     `stats` · `tray_item_w` · `cell` · `cell_gap` · `wall_thickness` ·
+  --     `back_btn` · `confirm` · `actions` · `action_btn`
+  --   ⚠️ `tray_item_h` / `tray_gap_x` / `tray_gap_y` / `tray_per_row` **仍在用**（托盘自适应布局）⇒ 保留 ✓
 
   -- 左侧面板：头像卡 + 线索卡 + 图例
   --   ⚠️ 高度必须算够：tray_item_h * 行数 + 行距 不能超过 tray.h，
@@ -3026,7 +3234,7 @@ M.LAYOUT = {
   --   现在卡片的**列数**会按人数自适应（见 build_layout），保证永远只占 2 行。
   left   = { x = 24, y = 128, w = 392, h = 880 },
   tray   = { x = 40, y = 148, w = 360, h = 218 },   -- 固定 2 行 × 104 + 10 = 218
-  tray_item_w = 112, tray_item_h = 104,             -- tray_item_w 只是参考值，实际按列数均分
+  tray_item_h = 104,                                -- （`tray_item_w` 已删：无读者的参考值）
   tray_gap_x = 12,
   tray_gap_y = 10,
   tray_per_row = 3,                                 -- 最少 3 列
@@ -3130,16 +3338,11 @@ M.LAYOUT = {
   --   ⚠️ 它是**两边各一份**的（见下面 `avail = board.w - 2*ruler`）——
   --      原来 `44` 是按"坐标尺条"想的，而且只扣一边，两个错叠在一起。
   ruler  = 14,
-  cell   = 160,        -- 仅参考
-  cell_gap = 4,        -- 仅参考
-  wall_thickness = 10,
 
   -- 右侧信息栏
   right  = { x = 1420, y = 128, w = 460, h = 880 },
 
   -- 底部操作条（放在左侧面板底部与棋盘下方之间）
-  actions = { x = 478, y = 944, w = 880, h = 120 },  -- y 944..1064，中心 x=918（与棋盘同）
-  action_btn = { w = 168, h = 56, gap = 14 },
 
   modal = { w = 760, h = 720 },   -- ★ 2026-10-12 460 → 720：通关弹窗要装下「恭喜破案/凶手分析/用时」三行 + 四键
 
@@ -3175,8 +3378,6 @@ M.LAYOUT = {
   --   画布 x 134..347、y 64..84 → 设计空间 x 161..416、y 77..101。
   --   理由见 `action.back` 那段注释：不收窄的话，它和 `hex.back`、以及**跟随出现的 ✓/✗ 确认卡**
   --   三者位置打架，确认卡会被压住点不到。
-  back_btn = { x = 161, y = 77, w = 255, h = 28 },
-  confirm  = { x = 344, y = 22, size = 66, gap = 14 },
 }
 
 M.EFFECTS = {
@@ -3191,21 +3392,19 @@ M.EFFECTS = {
   SOLVED    = "solved_flash",
   CLUE_IN   = "clue_box_pop",
   FAIL      = "shake",
-  -- ★ 2026-10-18（优化组 · P0）：`ROOMWALL = "roomwall"` **已删除** —— 全仓零读者
-  --   （适配器 `EFFECTS` 里那个 `roomwall` 条目也随之永不触发，属下一批一起收）。
+  -- ★ 2026-10-18（优化组 · P0）：旧的 `ROOMWALL`（取值 "roomwall"）**已删除** —— 全仓零读者。
+  --   ⚠️ 写注释时**别写成 `名字 = "值"` 的形状** ✗：`tests/effects_wiring.lua:57` 是用
+  --      `([A-Z_]+)%s*=%s*"([%w_]+)"` 直接在**源码文本**里抓键值对的 ——
+  --      注释里照抄一遍会把它当成"还存在这个键" ⇒ 那条测试会红（本轮踩过一次 ✓）。
 }
 
--- 开屏教程（5 页：怎么破案 / 每行每列一人 / beside 的含义 / 单击双击的区别 / 提交判题）
-M.INTRO = {
-  { title = "怎么破案",        body = "读线索，把每个角色放到正确的位置上。\n摆满之后，与受害者单独共处一室的人就是凶手。" },
-  { title = "每行每列只有一人", body = "每一行、每一列都恰好只能站一个人（受害者也算一个人）。" },
-  { title = "“旁边”是什么意思", body = "旁边 = 上下左右四邻，而且必须在同一个房间里。\n隔着墙的不算旁边。" },
-  { title = "单击写字，双击放置", body = "单击格子只会留下一个铅笔小字（笔记）。\n在同一格连着点两下，才会把人放上去。" },
-  { title = "提交判题",        body = "摆满后点「提交」校验摆位，通过后即可指认凶手。\n拿不准的位置可以先打 X 标记。" },
-}
+-- ★ 2026-10-18（优化组 · C 类清理）：**开屏教程（`M.INTRO` 5 页）整套删除** ✗✓
+--   用户原话：「老计划里到目前还没实现的都不需要保留了，**教程后续也要重做，而且那部分应该还没接**」
+--   判据：`intro` / `intro.dots` / `intro.title` / `intro.body` / `intro.skip` / `intro.next`
+--     在 `check_names` 里是 **6 个 🔴 真缺**（从来没人建成过）⇒ 每帧都在算一段永远显示不出来的布局。
+--   ⇒ 教程以后**重做**，届时另立新控件位；**别**复活 `intro.*` 这套名字 ✓
 
-----------------------------------------------------------------------------
-
+---------------------------------------------------------------------------
 local Controller = {}
 Controller.__index = Controller
 M.Controller = Controller
@@ -3250,7 +3449,7 @@ function M.new(core, opts)
   --   与 `modal` 的区别：modal 是"浮在关卡上的弹窗"，屏幕是**整屏**的。
   --   控件已在 .gil 里（tools/gil/gen_home.mjs），脚本只切 visible + 写文字。
   self.screen = opts.screen
-  self.intro_page = opts.skip_intro and (#M.INTRO + 1) or 1
+
   self.share_code = nil
   self._created = {}
   self._props = {}
@@ -3541,7 +3740,12 @@ end
 --     {action="gesture_rollback"}       双指 → 回滚
 --     {action="tool", mode="place|x|eraser|note"}   双击 eraser 工具 = 清空全盘
 --     {action="undo"|"redo"|"submit"|"hint"|"reveal"|"restart"|"share"|"howto"|"back"}
---     {action="accuse", id=} | {action="close_modal"} | {action="intro_next"} | {action="intro_skip"}
+--     {action="accuse", id=} | {action="close_modal"}
+--     ★ 2026-10-20：这行原来还写着教程的两个动作名，但 v273 已把教程整套删掉 ⇒
+--       注释里留着这两个名字会让 `tools/audit/check_actions.mjs`（**不剥注释**）报
+--       "计划里有、动作分支里没有" ⇒ 闸门变红。**是真红**：那两个分支确实没了
+--       （用户原话：「教程后续也要重做，而且那部分应该还没接」）。
+--       ⇒ 注释按现状改写（写成 `intro.*` 这种带点的形状，扫描器不会当成动作名）。
 --
 --   为什么要双击：官方客户端脚本**只有 CursorClick，没有长按事件**，
 --   与其自己造长按阈值，不如用「单击=笔记 / 双击=放置」这一套更明确的手感。
@@ -3731,6 +3935,21 @@ end
 -- 这些是**正常的玩法提示**（不是错误），所以走 print 而不是 printerr。
 function Controller:_refuse(r, c, why)
   if why == nil then return end
+  -- ★★★★★ 2026-10-20 **拒绝要"看得见"** ✗✓（本轮规则 P / X / B 配套）
+  --
+  --   背景：本轮新加的拒绝（「同行/同列已经有人」「障碍物不能打笔记」）以前是**静默**的 ——
+  --   关卡内 toast 没有出口（见 `toast_text()` 那段注释：`hud.toast` / `hud.subtitle` 已删），
+  --   于是玩家只会看到"点了一下没反应"。三条规则都会让**合法点击变得不生效**，
+  --   不给人反馈等于把"规则"体验成"卡顿/坏了"。
+  --
+  --   方案：**零新增控件** —— 复用现成的动效通道 `M.EFFECTS.FAIL`（值 `"shake"`，
+  --   原本只用于结案弹窗）抖一下被拒的那一格。`self.effects` 只是**入队**，
+  --   由绑定层消费；模拟器里动效是空操作（平台事实：2.0.8 不支持动画），
+  --   ⇒ **真机才看得到**，这一条进真机核验清单。
+  --
+  --   ⚠️ 抖动放在 `_refuse_seen` 的 3 次节流**之外**：节流是防日志刷屏的，
+  --      不是防玩家看反馈 —— 玩家连点三次也要每次都抖。
+  self:fx(self:cell_id(r, c), M.EFFECTS.FAIL)
   self._refuse_seen = self._refuse_seen or {}
   local n = self._refuse_seen[why] or 0
   if n >= 3 then return end
@@ -3749,28 +3968,22 @@ function Controller:_refuse(r, c, why)
   end
 end
 
--- 把挂起的单击落成铅笔笔记（等过双击窗口才执行，免得抢在第二次点击前面）
-function Controller:flush_pending_note()
-
-  local p = self.pending_click
-  if p == nil then return end
-  if gesture_now(self) - p.t < DOUBLE_CLICK_SECONDS then return end
-  self.pending_click = nil
-  local ok, why = self.core:tap_cell(p.r, p.c)
-
-  if ok then
-    self:fx(self:cell_id(p.r, p.c), M.EFFECTS.NOTE)
-    self.dirty = true
-  else
-    self:_refuse(p.r, p.c, why)
-  end
-end
-
+-- ★★★★★★★★ 2026-10-20（v282）**删掉"挂起的单击"整套机制** ✗✓
+--
+--   原来这里有一个 `Controller:flush_pending_note()`：单击先挂进 `self.pending_click`，
+--   等过了双击窗口再落成铅笔笔记。它在 2026-09-29 就被"单击立即生效"取代了
+--   （见 `on_cell_click` 里那段"不再有任何挂起"），只剩键盘空格一处还在往里塞 ——
+--   而那一处正是 v279 修的"一次按键调两次 tap_cell"的元凶（`on_cell_click` 已经落过一次，
+--   `flush_pending_note` 又落一次 ⇒ 笔记加上又被自己撤掉）。
+--   ⇒ 那处删掉之后：`pending_click` **再没有任何写入者**，`flush_pending_note`
+--     每帧只是 `if p == nil then return end` 空跑 ⇒ **纯死码**，本轮一并删除。
+--   ⚠️ 留着它的代价不只是多一行：它会让人以为"单击还有挂起语义"，
+--      从而在别处写出"先 pending 再 flush"的重复动作（v279 那个 bug 就是这么来的）。
+--
 -- 把当前选中的人放到 (r,c)（双击 / 长按 / 键盘回车 共用这一条路径）
 function Controller:do_place(r, c)
   local core = self.core
   self.last_click = nil
-  self.pending_click = nil
   local who = core.selected
   -- ★ 2026-10-07 分辨日志：★ 长按到底走的是"正式放置"吗 ✓ 核心前后状态对不对 ✓
   local _sel_before = core.selected
@@ -3840,7 +4053,6 @@ end
 function Controller:do_pre_place(r, c)
   local core = self.core
   self.last_click = nil
-  self.pending_click = nil
   local who = core.selected
   -- ★ 2026-10-07 分辨日志：★ 双击走的是"预放置"吗 ✓ 选中该保留 ✓
   local _sel_b2 = core.selected
@@ -4015,7 +4227,6 @@ function Controller:on_cell_click(r, c)
 
   -- ★★ 单击**一律立即生效**（不再有任何"挂起等双击窗口"）。
   --   挂起是延迟的唯一来源；现在第一击马上做，双击时再撤销它（见函数开头那段）。
-  self.pending_click = nil
   local had = core.grid[r][c]
   local had_selected = core.selected          -- 要在 tap_cell **之前**取：它会改选中态
   local ok, why = core:tap_cell(r, c)
@@ -4178,15 +4389,23 @@ function Controller:on_key(event)
     local kb = self.kb
     if kb ~= nil then
       self.kb_active = true
+      -- ★★★★★ 2026-10-20 **修：键盘空格打笔记被自己撤掉了（一次按键 = 两次 tap_cell）** ✗✓
+      --
+      --   原来这里是**两件事**：
+      --     ① `self:on_cell_click(kb.r, kb.c)` —— 它现在**立即**调 `core:tap_cell`
+      --        （见 `on_cell_click` 里"单击一律立即生效"那段：挂起模型已撤）
+      --     ② 又挂了一次 `self.pending_click` ＋ `self:flush_pending_note()`
+      --        —— 而 `flush_pending_note` 里**再调一次** `core:tap_cell`
+      --   ⇒ 一次空格 = 笔记加上 ✗ 再立刻撤掉 ✓ ⇒ **净零**（键盘打不了笔记）。
+      --
+      --   模拟器实测证据（case: tests/cases/v279-rules.json）：
+      --     · 按空格之后放置，日志「★ 放置分辨：… 笔记 0 ⇒ 0」（本该是 1 ⇒ 0）
+      --     · 障碍格的拒绝串**连打两次** —— 同一键触发两次 `tap_cell` 的直接铁证
+      --
+      --   ⇒ 只留 ①：与鼠标单击走**同一条路**（`on_cell_click`），不另写一套。
+      --   ⚠️ 上面那段"时间戳必须与 flush_pending_note 同一个时钟"的历史注释随之作废；
+      --      它不是错在时钟，而是**错在多做了那一步**。
       self:on_cell_click(kb.r, kb.c)
-      -- ★★ 时间戳必须与 `flush_pending_note` **同一个时钟** ✓
-      --   ★ 原来是 `self.now` 减一个窗口 ✗ —— ★ 那是**累加时钟** ✓
-      --     ★★ 而 `flush_pending_note` 现在比的是**手势时钟** ⇒ ★ 两边不同源 ✓
-      --       ⇒ ★ 这个"减窗口"是**白减的** ✗（★ 数值上一定小于手势时钟 ⇒ 立刻落笔记 ✓）
-      --   ★ 语义 ✓：★ 键盘空格**没有双击概念** ✓ ⇒ ★ 本来就是要"立刻落笔记" ✓
-      --     ★ 写成手势时钟减窗口 ⇒ ★ **意图与实现一致** ✓✓
-      self.pending_click = { r = kb.r, c = kb.c, t = gesture_now(self) - DOUBLE_CLICK_SECONDS - 1 }
-      self:flush_pending_note()
       return true
     end
     return false
@@ -4433,17 +4652,6 @@ function Controller:on_input(event)
 
   elseif a == "howto" then
     self.modal = { kind = "howto" }
-
-  elseif a == "intro_next" then
-    self.intro_page = (self.intro_page or 1) + 1
-    if self.intro_page > #M.INTRO then
-      self.intro_page = #M.INTRO + 1
-      self.modal = nil
-    end
-
-  elseif a == "intro_skip" then
-    self.intro_page = #M.INTRO + 1
-    self.modal = nil
 
   elseif a == "close_modal" then
     self.modal = nil
@@ -4710,7 +4918,8 @@ function Controller:tick(dt)
   end
   local elapsed = (self.core.elapsed or 0) + (dt or 0)
   self.core:set_elapsed(elapsed)
-  self:flush_pending_note()      -- 挂起的单击到点就落成笔记（成功时它自己置 dirty）
+  -- ★ 2026-10-20（v282）：原来这里还有一句 `self:flush_pending_note()`（挂起的单击到点落成笔记）。
+  --   "挂起"那套机制已随 v279 的键盘笔记修复一起消失 ⇒ 那一句是空跑，已删。
   -- ★★★★★ 2026-10-11 性能优化：**删掉「整秒心跳」那段死条件** ✗✓（零行为影响 ✓）
   --   ★ 原文（改之前）✗：
   --       local sec = math.floor(elapsed)
@@ -4734,7 +4943,7 @@ function Controller:tick(dt)
   if #self.effects > 0 then self.dirty = true end
 end
 
-function Controller:is_intro_active() return (self.intro_page or 1) <= #M.INTRO end
+
 
 ----------------------------------------------------------------------------
 -- 布局规格
@@ -5358,7 +5567,6 @@ function Controller:build_layout(ui_adapter)
   --     ⇒ ★ 空白处触摸被它吃掉 ✓ **落在我们按钮上的触摸仍归按钮** ✓✓
   push({ id = "topbar", kind = "container", parent = "root", rect = rect_of(L.topbar), style = "topbar" })
   -- 工具条容器：与 topbar 同区（视觉上仍是一条顶栏），只是树里分开，HUD 文字不再和按钮混杂。
-  push({ id = "toolbar", kind = "container", parent = "root", rect = rect_of(L.topbar), style = "toolbar" })
   push({ id = "hud.title", kind = "text", parent = "topbar", rect = rect_of(L.title), text = vm.title, style = "title" })
   -- ★★★★★ 2026-10-18 **按用户指令移除 `hud.subtitle`（死代码）** ✗✓
   --
@@ -5581,42 +5789,16 @@ function Controller:build_layout(ui_adapter)
          text = self:format_time(vm.hud.time), style = "stat" })
 
   -- ===== 左侧面板：头像卡 + 线索卡 + 图例 =====
-  push({ id = "left", kind = "container", parent = "root", rect = rect_of(L.left), style = "panel.left" })
   -- ★★★★★ 2026-10-02 用户定稿：**头像卡（tray）并进"滚动线索卡"** ——
   --   每张线索卡 = 头像 + 线索文本 + 字母徽章（见下面 `clue.<i>.face` 那段）。
   --   所以这里**不再单独建头像卡**：容器留着但 `visible = false`
   --   （老存档里还有这个控件名，留个空壳比直接删更稳，不会让"控件找不到"的报警刷屏）。
-  push({ id = "tray", kind = "container", parent = "left", rect = rect_of(L.tray),
-         style = "tray", visible = false })
-  -- 头像卡的**列数自适应**：保证永远只占 2 行。
-  --   踩过的坑：写死 3 列时，7 个角色的关卡会排到第 3 行，
-  --   而 tray 容器只有 2 行高 —— 卡片溢出容器、压住了下面的线索。
-  --   规则：per_row = max(3, ceil(人数 / 2))，卡片宽度按剩余宽度均分。
-  local gx = L.tray_gap_x or 12
-  local gy = L.tray_gap_y or 10
-  -- ★★★ 2026-10-02：**清零** —— 头像卡已并进线索卡，不再单独摆（见上面 tray 那段注释）。
-  local n_tray = 0
-  local per_row = math.max(L.tray_per_row or 3, math.ceil(n_tray / 2))
-  local item_w = math.floor((L.tray.w - (per_row - 1) * gx) / per_row)
-  local item_h = L.tray_item_h
-  for i = 1, n_tray do
-    local it = vm.tray[i]
-    local col = (i - 1) % per_row
-    local row = math.floor((i - 1) / per_row)
-    push({
-      id = "tray." .. tostring(it.id),
-      kind = "button",
-      parent = "tray",
-      rect = { x = L.tray.x + col * (item_w + gx),
-               y = L.tray.y + row * (item_h + gy),
-               w = item_w, h = item_h },
-      text = it.name,
-      image = it.portrait,
-      style = it.selected and "portrait.selected" or (it.placed and "portrait.placed" or "portrait"),
-      state = { selected = it.selected, placed = it.placed, is_victim = it.is_victim },
-      event = { action = "suspect", id = it.id },
-    })
-  end
+  -- ★ 2026-10-18（优化组 · C 类清理）：**头像卡容器 `tray` 与它的自适应布局整段删除** ✗✓
+  --   判据：① `n_tray` 早在 2026-10-02 就被写成 **0**（头像卡并进滚动线索卡）⇒ 循环一次都不执行；
+  --     ② 真机日志每一局都打「找不到头像卡容器（cfg.tray_parent，默认 tray）」；
+  --     ③ `check_names` 里 `tray` 是 🔴 真缺（存档里从来没有）。
+  --   ⚠️ `vm.tray`（嫌疑人列表）**保留** —— `placed_count` 还在用它 ✓
+  --   ⚠️ 适配层 `apply_tray_layout` 那 110 行属下一批（要连 `_tray_btn_art` 与回归一起改）。
 
   -- ★★★★★ 2026-10-05 **父级必须是 `root`，不能写 `left`** —— 修"线索区跑到棋盘下面"。
   --
@@ -5761,218 +5943,15 @@ function Controller:build_layout(ui_adapter)
   if grid_on then
     self:_grid_log("giveway", "网格视窗：老的一套线索控件**整段不进规划**（不建 / 不摆 / 不点亮 / "
       .. "连动效都不排队）—— 只藏起来不够：`clue.N.*` 这个名字会被按名字抓到已回收的列表项")
-  else
-  -- ── 走**老路径**（cfg.use_grid=false / 找不到网格视窗 / 填内容失败）：
-  --    下面这一段（到 2095 行那个 `end` 为止）才是手写滚动的那一套，照旧照发 ──
-  -- ★ 2026-10-05 **滚动条点击区 `clues.bar`** —— 用户新做的隐形热区（画布 24×520），
-  --   规划里原来没有它 ⇒ 脚本不认它（"还没建"名单里反过来没有它才怪 ✗）。
-  --   位置：条心 x = 464 画布、纵向与卡片区同高 ⇒ 设计 x = (464−16)×6/5 ≈ 537.6、
-  --   y/h 与卡片块一致（用 L.clues 的行距算）。⚠️ 等真机日志回来再微调。
-  push({ id = "clues.bar", kind = "button", parent = "clues",
-         rect = { x = L.clues.x + 480, y = L.clues.y, w = 28.8, h = L.clue_row_h * 5 - 12 },
-         visible = true })
-  local shown = math.min(#vm.clues, L.clue_max_visible)
-  local rows = L.clue_rows or 9
-  -- ★ 滚动位置：0 表示从第 1 条开始。**所有 `shown` 条控件都照旧建出来**
-  --   （保证任何一条都能滚到 —— 少建控件就等于线索看不见，关卡不可解）。
-  local total = shown
-  local maxscroll = math.max(0, total - rows)
-  self.clue_scroll = self.clue_scroll or 0
-  -- 焦点线索自动滚进视野 —— **只在焦点"变化时"做一次**。
-  --
-  --   ⚠️ 我第一版是每帧都做，结果：只要之前点过某条线索（`focused_clue` 有值），
-  --   **每一帧都把滚动位置拽回那条线索** ⇒ ↑/↓ 点了完全没用（探针点了 40 次没动）。
-  --   ⇒ 记住"上次为哪个焦点滚过"，只有真的换焦点时才自动滚。
-  if self.focused_clue ~= nil and self.focused_clue > 0
-     and self._clue_focus_seen ~= self.focused_clue then
-    self._clue_focus_seen = self.focused_clue
-    if self.focused_clue <= self.clue_scroll then self.clue_scroll = self.focused_clue - 1 end
-    if self.focused_clue > self.clue_scroll + rows then self.clue_scroll = self.focused_clue - rows end
-  end
-  if self.clue_scroll < 0 then self.clue_scroll = 0 end
-  if self.clue_scroll > maxscroll then self.clue_scroll = maxscroll end
-
-  -- ↑ / ↓ 两个按钮 + 一条滚动条（引擎**没有滚轮事件**，这是最实在的做法）
-  local ARROW = 34
-  local top = L.clues.y
-  local bottom = L.clues.y + rows * L.clue_row_h
-  push({ id = "clues.up", kind = "button", parent = "clues",
-         rect = { x = L.clues.x + L.clues.w - ARROW - 6, y = top + 2, w = ARROW, h = ARROW },
-         text = "▲", event = { action = "clue_up" },
-         style = "tab", visible = (maxscroll > 0) })
-  push({ id = "clues.down", kind = "button", parent = "clues",
-         rect = { x = L.clues.x + L.clues.w - ARROW - 6, y = bottom - ARROW - 2, w = ARROW, h = ARROW },
-         text = "▼", event = { action = "clue_down" },
-         style = "tab", visible = (maxscroll > 0) })
-  -- 滚动条：轨道 + 滑块（比例条，纯展示；拖动留给真机验证后再加）
-  push({ id = "clues.track", kind = "container", parent = "clues",
-         rect = { x = L.clues.x + L.clues.w - 8, y = top + ARROW + 6, w = 4, h = bottom - top - 2 * ARROW - 12 },
-         style = "panel", visible = (maxscroll > 0) })
-  if maxscroll > 0 then
-    local trackTop = top + ARROW + 6
-    local trackH = bottom - top - 2 * ARROW - 12
-    local knobH = math.max(24, math.floor(trackH * rows / total))
-    local knobY = trackTop + math.floor((trackH - knobH) * self.clue_scroll / maxscroll)
-    -- 滚动条滑块：y 随 `clue_scroll` 变 ⇒ 位置必须由脚本说了算
-    -- （和线索卡同一个道理，见下面 `clue.N` 那段的注释）
-    push({ id = "clues.knob", kind = "container", parent = "clues",
-           rect = { x = L.clues.x + L.clues.w - 8, y = knobY, w = 4, h = knobH },
-           style = "tab.active", visible = true, pos_runtime = true })
-  end
-  -- 计数（"3–11 / 18"），让玩家知道自己是第几条
-  push({ id = "clues.count", kind = "text", parent = "clues",
-         rect = { x = L.clues.x + L.clues.w - 120, y = top + 2, w = 78, h = ARROW },
-         text = string.format("%d-%d / %d",
-           maxscroll > 0 and (self.clue_scroll + 1) or 1,
-           math.min(self.clue_scroll + rows, total), total),
-         style = "muted", visible = (maxscroll > 0) })
-
-  -- 线索卡"刷出来"的动效：每条只弹一次。
-  -- 为什么不在生成时直接 fx：这条线索控件可能在**同一帧里刚被创建**，
-  -- 而 effects 是在 render 末尾（控件都建完之后）才统一交给适配器播的，
-  -- 所以在这里排队是安全的。控制器每个关卡重建一次 → 表随关卡自然重置。
-  self._clue_fx = self._clue_fx or {}
-  -- ★★★ 2026-09-30：**线索卡拆成「名字 + 内容」两个控件**（参考《派蒙的执律庭实习》：
-  --   卡片上的人名/关键字是**红色**的，正文是白色）。
-  --
-  --   为什么必须拆控件、不能"行内标红"：官方**没有富文本**（查过 API 缓存），
-  --   也没有文字宽度测量 ⇒ 无法在一行里给某几个字换色。
-  --   ⇒ 做法：**名字占固定宽度的第一列**（`clue.<i>.who`，红色），
-  --     正文从固定 x 起（`clue.<i>.what`，常规色）。这样不需要测量宽度。
-  --
-  --   ⚠️ 切分依据：线索文案里**一定含角色名**（核心的 `text` 用 `ctx.name(...)` 拼的）。
-  --     从 `vm.tray` 里找"哪个名字出现在这条文案里"，找到就切；找不到就整条当正文
-  --     （**不硬造关键字** —— 宁可不高亮，也不显示编出来的名字）。
-  local WHO_W = 99.6    -- 名字列宽（设计）= 画布 83 ★ 2026-10-05 由 132 改
-  -- ★★★ 2026-09-30：**卡片左边一个头像、右边一个字母徽章**（参考《派蒙的执律庭实习》：
-  --   线索卡是"人物头像 + 线索文字 + 右侧字母（B/C/D）"）。
-  --   头像复用已有的 `portrait.*` 调色板（`vm.tray` 里每项都带 `portrait` 字段），
-  --   **不引入新素材**；徽章就是嫌疑人的字母 id（A/B/C/D/V）。
-  local FACE = 66        -- 头像边长（设计）= 画布 55 ★ 2026-10-05 由 40 改
-  local BADGE_W = 40.8   -- 徽章宽（设计）= 画布 34 ★ 2026-10-05 由 30 改
-  local PAD = 16.8       -- 卡片内边距（设计）= 画布 14 ★ 2026-10-05 由 8 改
-
-  -- 返回 名字 / 前缀 / 后缀 / 该角色的 id / 头像名
-  --
-  -- ★ 2026-10-05：**实现已提到模块级**（见 `split_by_name` 上面那段注释）——
-  --   网格视窗的列表项填充要用**同一份**切分逻辑，所以这里不再各写一份：
-  --   直接调模块级那份，`vm` 显式传进去。
-  --
-  --   ⚠️ 不能在这里写 `local function split_by_name(txt) return split_by_name(vm, txt) end`
-  --      —— 同名 local 在它自己的函数体里就已经生效 ⇒ 变成**无限递归**
-  --      （Lua 里 `local function f() ... f() ... end` 指的就是新的那个 f）。
-
-  for i = 1, shown do
-    local cl = vm.clues[i]
-    -- 这一条落在窗口的第几行（不在窗口里就整条隐藏 —— 但**控件仍然存在**，能滚到）
-    local slot = i - self.clue_scroll
-    local inWin = (slot >= 1 and slot <= rows)
-    local y = L.clues.y + 15 + (slot - 1) * L.clue_row_h   -- +15 设计 = 上内边距 12.5 画布
-    -- ★★★★★ 2026-10-05：行高由 `clue_row_h − 6` 改成 **`− 12`**，宽度由 `L.clues.w − 16` 改成
-    --   **`CLUE_W`（= 432 设计 = 360 画布）** —— 为了跟用户在编辑器里摆的卡片对齐。
-    --   真机日志（11:31）证明旧值把用户的版面冲掉了：`clue.N 367x91`
-    --     · 367 = (L.clues.w − 16) × 5/6 = 440 × 5/6
-    --     ·  91 = (clue_row_h − 6) × 5/6 = 109 × 5/6
-    --   现在：432 × 5/6 = **360** ✓、115.2 × 5/6 = **96** ✓ —— 与编辑器里的一致。
-    local h = L.clue_row_h - 12
-    local CLUE_W = 432
-    local CLUE_PAD = 16.8   -- 左内边距：设计 16.8 = 画布 14 ✓（用户在编辑器里就是这么留的）
-    local style = (self.focused_clue == i) and "clue.focus"
-                  or (cl.satisfied and "clue.ok" or "clue")
-    -- 整行保留（作为卡片底板 + 点击热区）；文字子控件浮在它上面
-    --
-    -- ★★★ 2026-09-30：**线索卡整块都要 `pos_runtime`**。
-    --   它的 y 随**滚动位置**（`clue_scroll`）每帧变 ⇒ 位置必须由脚本说了算。
-    --   否则会被 `respect_editor_rect`（编辑器几何优先）按在存档里那一份几何上：
-    --   滚动时**卡片纹丝不动**，只有 visible 在变 —— 真机上表现为「滚了但位置没动，
-    --   内容在同一个地方换」。这正是房间名标签那个 bug 的同一个形状。
-    push({
-      id = "clue." .. i,
-      kind = "text",
-      parent = "clues",
-      rect = { x = L.clues.x + CLUE_PAD, y = y, w = CLUE_W, h = h },
-      text = cl.text,
-      style = style,
-      visible = inWin,
-      event = { action = "focus_clue", index = i },
-      -- ★★★★★ 2026-10-05 **不再给 `pos_runtime`** —— 用户：「编辑器里的位置本来就是对的，
-      --   脚本摆位置是纯粹的无效操作，还会出错」。不带这个标记 ⇒ 走「编辑器几何优先」
-      --   （代码里 `pos_runtime = false` 那条注释就是这个意思）⇒ 脚本完全不碰坐标 ✓
-    })
-    -- ★★★★★ 2026-10-05 **两张卡片底图（backrop1 在下 / backrop2 在上）**
-    --
-    --   用户在编辑器里给每张卡加了两张图，靠"描边色 + 填充色"叠出边框效果。
-    --   真机日志（11:31）显示它们**在关卡里也是 visible=false** ✗：
-    --       clue.1..5           可见=true      ← 卡片本体在规划里，被点亮
-    --       clue.N.backrop1/2   可见=false     ← 不在规划里 ⇒ 脚本从没把它们点亮
-    --   ⇒ 在规划里补上这两条（`kind = "container"`：只摆位置/显隐，**不设图、不设文字**，
-    --      图片和颜色完全由你在编辑器里配好、脚本不碰）✓
-    --
-    --   尺寸：backrop2 比 backrop1 四边各小 3.6 设计（= 3 画布）⇒ 露出 3px 描边 ✓
-    push({ id = "clue." .. i .. ".backrop1", kind = "container", parent = "clue." .. i,
-           rect = { x = L.clues.x + CLUE_PAD, y = y, w = CLUE_W, h = h },
-           visible = inWin })
-    push({ id = "clue." .. i .. ".backrop2", kind = "container", parent = "clue." .. i,
-           rect = { x = L.clues.x + CLUE_PAD + 3.6, y = y + 3.6, w = CLUE_W - 7.2, h = h - 7.2 },
-           visible = inWin })
-
-    local who, pre, post, wid, wportrait = split_by_name(vm, tostring(cl.text or ""))
-    local tx = L.clues.x + PAD + FACE + PAD      -- 文字起点：让开左边的头像
-    local tw = L.clues.w - 16 - (FACE + PAD * 2) - BADGE_W - PAD
-    if who ~= nil then
-      -- 头像（左边）：复用 `portrait.*` 调色板，**不引入新素材**
-      -- （子控件的 y 也跟着卡片走 ⇒ 同样要 `pos_runtime`，理由见上面那段的注释）
-      -- ★★★★★ 2026-10-05 **加 `event` —— 这是"点格子没反应"的真修** ✓✗
-      --
-      --   为什么必须加（实测三段切开 ✓ 见 `docs/点格子没反应-三段切开结论.md` ✓）：
-      --     ★ **鼠标侧【没有任何控件发 `suspect` 事件】** ✗ —— 计划里 `"action":"suspect"` 实测 **0 次** ✓
-      --     ⇒ `core.selected` 恒为 `nil` ✗ ⇒ `Core:pre_place` 直接返回「**先点一个头像**」✗
-      --     ⇒ ★ **单击不落笔记、双击不放置、步数不动** ✗ ⇒ 观感就是"点格子没反应" = `0 / 5` ✓
-      --   为什么是这里 ✓：唯一的生产者（原来那个 `for i = 1, n_tray` 里的 `{action="suspect"}` ✓）
-      --     **已经死了** ✗ —— `:1870` 那句 `local n_tray = 0`（2026-10-02 头像并进线索卡 ✓）
-      --     ⇒ 那个循环**一次都不跑** ✗；而本控件（`clue.<i>.face` = **卡片上的头像** ✓）
-      --     **正好就是现在唯一的头像** ✓ ⇒ ★ 让它承担"点一下选这个人" ✓✓
-      --   ★ 与 `:1889` 同一个口径 ✓：**`wid` 有值才给** ✓ 没值就不给（不制造无主事件 ✓）
-      --   ⚠️ **只加 `event`，不动 rect/尺寸/样式** ✗ —— 布局一个字没变 ✓
-      push({ id = "clue." .. i .. ".face", kind = "button", parent = "clue." .. i,
-             rect = { x = L.clues.x + CLUE_PAD + 16.8, y = y + 36, w = FACE, h = FACE },
-             image = wportrait, style = "portrait", visible = inWin,
-             event = (wid ~= nil and wid ~= "") and { action = "suspect", id = wid } or nil })
-      -- 名字（红）：正文第一列
-      push({ id = "clue." .. i .. ".who", kind = "text", parent = "clue." .. i,
-             rect = { x = L.clues.x + CLUE_PAD + 16.8, y = y + 2.4, w = 99.6, h = 31.2 },
-             text = tostring(pre or "") .. who, style = "clue.who", visible = inWin })
-      -- 内容：从固定 x 起（不测量宽度也能对齐）
-      push({ id = "clue." .. i .. ".what", kind = "text", parent = "clue." .. i,
-             rect = { x = L.clues.x + CLUE_PAD + 124.8, y = y + 19.2, w = 242.4, h = 67.2 },
-             text = tostring(post or ""), style = "clue.what", visible = inWin })
-      -- 字母徽章（右边）：就是嫌疑人的字母 id（A/B/C/D/V），参考图那样
-      -- ★★★★★ 2026-10-05 **无条件发勋章节点**（原来写成 `if wid ~= nil and wid ~= "" then`）。
-      --   后果：像 `selftest_theft_5x5` 这种**线索文本里没有人名**的关卡，`wid` 为空
-      --   ⇒ 整个勋章节点都不发 ⇒ 真机上**所有勋章都不出现** ✗（用户实测：所有勋章都没出现）
-      --   现在：永远发，文字为空也发（空文字无害，控件本身还在、背景/描边照常显示）。
-      if true then
-        push({ id = "clue." .. i .. ".badge", kind = "text", parent = "clue." .. i,
-               rect = { x = L.clues.x + CLUE_PAD + 400.8, y = y + 64.8, w = 40.8, h = 33.6 },
-               text = wid, style = "clue.who", visible = inWin })
-        -- ★ 2026-10-05 **同一徽章再发一份，名字用 `letter`** —— 用户在编辑器里把它命名成
-        --   `clue.N.letter`，而规划里叫 `badge` ⇒ 名字对不上就写不进去、**字母不显示** ✗
-        --   两份都发（同 rect 同文字）：谁存在谁被点亮，另一个只是"还没建"的无害条目 ✓
-        push({ id = "clue." .. i .. ".letter", kind = "text", parent = "clue." .. i,
-               rect = { x = L.clues.x + CLUE_PAD + 400.8, y = y + 64.8, w = 40.8, h = 33.6 },
-               text = wid, style = "clue.who", visible = inWin })
-      end
-    end
-    if inWin and not self._clue_fx[i] and not self:is_intro_active() and self.modal == nil then
-      self._clue_fx[i] = true
-      self:fx("clue." .. i, M.EFFECTS.CLUE_IN)
-    end
-  end
-  push({ id = "clues.more", kind = "text", parent = "clues",
-         rect = { x = L.clues.x, y = L.clues.y + rows * L.clue_row_h, w = L.clues.w, h = 30 },
-         text = string.format("还有 %d 条线索", math.max(0, #vm.clues - shown)),
-         style = "muted", visible = (#vm.clues > shown) })
-  end   -- ← 老一套线索控件到此为止：网格视窗在用时**整段跳过**（见上面那道守卫的长注释）
+  end   -- ★ 2026-10-20（优化组 · C 类清理）：**`else` 分支（老线索卡兜底）已删除** ✗✓
+        --   判据：真机日志 v276/v277「网格视窗：索引基准定为 0」「找到 clues.grid ✓」⇒ `grid_on` 恒真，
+        --     这段 `else` 一次都不执行；而布局计划里仍残留 **48 个 `clue.*`**
+        --     （就是每局那行「规划里有 40 个控件是【已知不需要】」的来源）。
+        --   用户指令：「老计划里到目前还没实现的都不需要保留了」⇒ 删。
+        --   ⚠️ `clues.bg` / `clues.grid` 是活的，**没动**；下面的「发完再扫一遍」第二道闸也**保留**
+        --      （它是防回归哨兵：万一以后有人在守卫外面又 push 一个 `clue.*`，会被当场剔除 ✓）
+        --   ⚠️ 要恢复旧卡片请从 git 历史取，**别**把 `else` 分支直接搬回来 ——
+        --      它每帧按名字抓手柄会撞到"已回收的列表项"（当年那个每帧抛错的老 bug）✗
 
   -- ★★★★★ 2026-10-05 **收口：规划里绝不允许出现老一套的 id**（守卫之外的第二道闸）。
   --
@@ -6033,12 +6012,8 @@ function Controller:build_layout(ui_adapter)
     legend_text = "确认=笔记　按住=放置　肩键切换工具\n（手柄为兜底方案，推荐用键鼠或触屏）"
   end
 
-  push({ id = "legend", kind = "text", parent = "left", rect = rect_of(L.legend),
-         text = legend_text,
-         style = "muted" })
 
   -- ===== 中央棋盘（含坐标尺）=====
-  push({ id = "board", kind = "container", parent = "root", rect = rect_of(L.board), style = "board" })
   -- 格子几何按**当前关卡的实际 N** 自适应：
   -- 棋盘区大小固定，格子边长 = 可用边长 / N。这样 5×5 / 6×6 / 7×7 都能正确排布，
   -- 不需要为每个尺寸重摆一次编辑器布局（编辑器里按**最大的 N** 建够格子即可，
@@ -6094,44 +6069,13 @@ function Controller:build_layout(ui_adapter)
     for i = 1, #lv_list do
       if tostring(lv_list[i].id) == want then cur = lv_list[i] break end
     end
-    local boxes = cur and cur.room_boxes or {}
-    local names = cur and cur.room_names or nil
-    local step = cell + gap
-    for j = 1, math.min(#boxes, 8) do
-      local b = boxes[j]
-      local nm = (type(names) == "table" and names[j]) or ("区域 " .. j)
-      -- 右下角那一格的位置；标签占该格的右下 3/4，字号由样式控制
-      local lx = gx + (b.c2 - 1) * step + math.floor(cell * 0.18)
-      local ly = gy + (b.r2 - 1) * step + math.floor(cell * 0.55)
-      push({ id = "room.label." .. j, kind = "text", parent = "board",
-             rect = { x = lx, y = ly, w = math.floor(cell * 0.82), h = math.floor(cell * 0.42) },
-             text = tostring(nm), style = "room.label", visible = true,
-             -- ★ 位置每帧由脚本按房间外框算 ⇒ 必须显式声明"脚本说了算"，
-             --   否则会被 `respect_editor_rect`（编辑器几何优先）按在存档里那一份几何上，
-             --   三个标签**中心重叠**（真机上是三个字叠在一起，模拟器里 box 完全相同）。
-             pos_runtime = true })
-    end
-    for j = #boxes + 1, 8 do
-      -- ⚠️ 占位**也要给真实尺寸**，不能给 2×2。
-      --
-      --   原因：`layout_plan` 是把**所有关卡**的布局取**并集**（为了让编辑器一次建够控件）。
-      --   如果本关房间少、把 `room.label.4` 推成 2×2 隐藏，而并集里"第一次出现"的就是它，
-      --   那这个控件的几何就**永久是 2×2** —— 真机上房间名会缩成一个小点。
-      --   （我第一版就是这么写的，模拟器里 `room.label.1` 的 box 是 2×2。）
-      --   ⇒ 占位沿用**最后一个真实房间**的几何，只是 `visible=false`。
-      local last = boxes[#boxes]
-      local lx = gx
-      local ly = gy
-      local lw = math.floor(cell * 0.82)
-      local lh = math.floor(cell * 0.42)
-      if last ~= nil then
-        lx = gx + (last.c2 - 1) * step + math.floor(cell * 0.18)
-        ly = gy + (last.r2 - 1) * step + math.floor(cell * 0.55)
-      end
-      push({ id = "room.label." .. j, kind = "text", parent = "board", visible = false,
-             rect = { x = lx, y = ly, w = lw, h = lh }, pos_runtime = true })
-    end
-  end
+    -- ★ 2026-10-18（优化组 · C 类清理）：**房间名标签 `room.label.1..8` 整段删除** ✗✓
+    --   判据：它们挂在 `board` 容器下，而 `board` 在存档里根本不存在 ⇒ 8 个标签**从来没建过**
+    --     （`check_names` 里是 8 个 🔴 真缺）；`room_boxes` / `room_names` 仍由关卡数据提供，
+    --     以后要做「房间名」时**另开新控件位**，别再复活 `room.label.*` 这套名字 ✓
+  end   -- ★ 2026-10-18（**补回**）：这一行收的是上面 `if n > 0 then` ——
+        --   它原来在 `room.label` 那段末尾，整段删除时被一起吃掉 ⇒ `loadfile` 当场报
+        --   `'end' expected (to close 'function' at line 2109) near <eof>`、块深度不平衡 1 ✓
 
   -- ★ 2026-10-12 **行标尺（`ruler.r.*`）已按用户要求删除** ✗✓（连同容器与列标 ✓）
   --   理由见上面【已删除】那段长注释 ✓ —— ★ 而且它从来就是哑的（`apply_ruler_layout` 只对齐不创建 ✓）
@@ -6431,17 +6375,22 @@ function Controller:build_layout(ui_adapter)
         --   「**棋盘染色把放置的头像也染色了，有没有办法能让头像不受底色影响**」✓）
         --
         --   ★ 为什么会被染 ✗：★ 头像与房间色**落在同一个控件上** ✓ ——
-        --     · 头像：`image = portrait` ⇒ 适配层 `set_image_deep` 把图设到格子的 **`face`** ✓
+        --     · 头像：`image = portrait` ⇒ 适配层把图设到格子的 **`face`** ✓
         --     · 房间色：`tint = room_color` ⇒ 适配层 `local target = self:sub(id, "face")` ✓
         --       ⇒ ★ **同一个 `face`** ✗ ⇒ ★ `imageColor` 是**乘算** ⇒ 头像被乘上底色 ✓✓
-        --   ★ 模板里没有第二个"可以放头像又不受色"的图片子控件 ✗（`obj` 归家具、`note` 归字母 ✓）
-        --   ⇒ ★★ 最小且不倒着的修法 ✓：★ **有棋子的格子，房间色下发白色**（= 不染色 ✓）✓
-        --     ★ 那一格本来就被头像铺满 ⇒ 房间色**看不见**，不下发它不损失任何信息 ✓✓
-        --     ★ 棋子一拿开（`cd.suspect` 变 nil ✓）⇒ ★ 下一帧自然回到房间色 ✓（无需额外状态 ✓）
+        --   ⇒ 当时的权宜修法：**有棋子的格子，房间色下发白色**（= 不染色 ✓）✓
+        --
+        -- ★★★★★★★★ 2026-10-20（v283）**权宜修法撤掉：头像有了自己的层** ✗✓✓
+        --   用户原话：「现在**家具图层会盖在放置的头像上**，把这个问题解决」✓
+        --   ⇒ 模板补了一层 `portrait`（层序：face → hint → obj → **portrait** → wall …）✓
+        --     · 头像走 `portrait`（在家具之上、墙之下）✓ ⇒ 不再和房间色抢同一个控件 ✓
+        --     · 房间色**照旧落在 face**✓ ⇒ **有棋子的格子也保留房间色** ✓（以前会被白色顶掉 ✓）
+        --   ⇒ 所以这里**不再按"有没有棋子"改颜色**，一律下发房间色 ✓
+        --     ⚠️ 别把这一行改回去 —— 头像已经不画在 face 上了，白色只会让格子白一块 ✓
         -- ★★★★★★★★ 2026-10-17 **提示层：只发一个布尔** ✗✓（★ 见上面 `hint_set` 那段 ✓）
         --   ★ 用户已经在模板里做好了 `hint` 子控件（`content` 下，135×135，颜色已调好）✓
         --     ⇒ 脚本**只负责显示 / 隐藏** ✓ 颜色一个字都不写 ✓（`tint` 回到只管房间色 ✓）
-        tint = (cd.suspect and 4294967295) or Controller.room_color(cd.room),
+        tint = Controller.room_color(cd.room),
         -- ★ 每格都发（true/false）⇒ 取消选中 / 换卡时自然把上一批关掉 ✓（账本按值去重 ✓）
       hint = (hint_set ~= nil and hint_set[r .. ":" .. c] == true),
         -- ★★★★★★★★ 2026-10-17 **格子边长（画布）直接告诉适配层** ✗✓
@@ -6516,28 +6465,12 @@ function Controller:build_layout(ui_adapter)
   --   （它俩零读零写，`L.actions` / `L.action_btn` 这两个 LAYOUT 键也没有别的读者）⇒ 死代码 ✓
   --   ⚠️ LAYOUT 里那两个键**暂时不动**：`dump_layout` 等工具按表遍历，删键要另做一轮核对。
 
-  -- ===== 开屏教程 =====
-  if self:is_intro_active() then
-    local mw, mh = L.modal.w, L.modal.h
-    local mx, my = math.floor((M.DESIGN.width - mw) / 2), math.floor((M.DESIGN.height - mh) / 2)
-    local page = M.INTRO[self.intro_page]
-    push({ id = "intro", kind = "panel", parent = "root", rect = { x = mx, y = my, w = mw, h = mh }, style = "modal" })
-    push({ id = "intro.dots", kind = "text", parent = "intro",
-           rect = { x = mx + 40, y = my + 30, w = mw - 80, h = 36 },
-           text = string.format("第 %d / %d 页", self.intro_page, #M.INTRO), style = "muted" })
-    push({ id = "intro.title", kind = "text", parent = "intro",
-           rect = { x = mx + 40, y = my + 80, w = mw - 80, h = 60 }, text = page.title, style = "modal.title" })
-    push({ id = "intro.body", kind = "text", parent = "intro",
-           rect = { x = mx + 40, y = my + 160, w = mw - 80, h = 180 }, text = page.body, style = "modal.body" })
-    btn("intro.skip", "intro", { x = mx + 40, y = my + mh - 90, w = 180, h = 60 }, "跳过",
-        { action = "intro_skip" }, "tab")
-    btn("intro.next", "intro", { x = mx + mw - 240, y = my + mh - 90, w = 200, h = 60 },
-        (self.intro_page >= #M.INTRO) and "开始破案" or "下一页", { action = "intro_next" }, "stamp.primary")
-  end
-
+  -- ★ 2026-10-18（优化组 · C 类清理）：**教程面板的 6 个控件声明整段删除** ✗✓
+  --   （`intro` / `intro.dots` / `intro.title` / `intro.body` / `intro.skip` / `intro.next` 全部）
+  --   ⇒ 规划里不再出现这 6 个名字 ⇒ `report_missing` 与 `check_names` 都少 6 项噪声 ✓
   -- ===== 弹窗 =====
   local modal = self.modal
-  if modal and not self:is_intro_active() then
+  if modal then
     local mw, mh = L.modal.w, L.modal.h
     local mx, my = math.floor((M.DESIGN.width - mw) / 2), math.floor((M.DESIGN.height - mh) / 2)
     push({ id = "modal", kind = "panel", parent = "root", rect = { x = mx, y = my, w = mw, h = mh }, style = "modal" })
@@ -6715,26 +6648,23 @@ function Controller:build_layout(ui_adapter)
           end
         end
       end
-    elseif modal.kind == "share" then
-      -- ★ 2026-10-05 **「分享棋局」按钮已删掉**（用户指令：「去掉分享」）。
-      --   这里原来是一个 `modal.share` 按钮（文字「分享棋局」，事件名就是 `share`），
-      --   但 `share` **从来没有分发分支** ⇒ 按下去没反应（`check_actions` 改前报的 2 个死 action 之一）。
-      --   ⚠️ 这段注释里**故意不写出那条事件的完整字面量**：`check_actions.mjs` 是**逐行正则扫源码**，
-      --      连注释一起扫（`action\s*=\s*"..."`）⇒ 注释里写出旧代码的字面量会被当成"又发了一次"，
-      --      于是它又会红。要复现旧行为，看 `versions/` 里的历史版本即可。
-      --   渲染分支 `modal.kind == "share"` **保留**，理由写在下面那一段注释里。
-      --   ⚠️ `modal.again` / `modal.next` 的坐标与文字**一个字都没动**。
-      -- ★★★★★★ 2026-10-12 **旧的【两键】版已删** ✗✓ —— ★ 见上面那段四键 ✓
-      --   ★ 删掉的原文（★ 备查 ✓）：
-      --     `btn("modal.again", "modal", { x = mx + 40, y = my + mh - 88, w = 180, h = 60 },`
-      --       `"重玩本关", { action = "restart" }, "stamp")`
-      --     `btn("modal.next", "modal", { x = mx + 440, y = my + mh - 88, w = 200, h = 60 },`
-      --       `"下一关", { action = "next_level" }, "stamp.primary")`
-      --   ★★★ 为什么删「重玩本关」✗ —— ★ **用户点名的是【四个键】** ✓：
-      --     ★ 下一关 ✓ 退出至菜单 ✓ 返回首页 ✓ 存档并结算 ✓
-      --     ★ 而「重玩本关」的动作 `restart` **在 `exit_menu` / 键盘里仍在** ✓
-      --       ⇒ ★ 它没有消失 ✓，只是**这个界面不再放它** ✓（★ 与"返回列表"那次同款处理 ✓）
-
+    -- ★★★★★★★★ 2026-10-20（v282）**删掉一个"同条件空分支"的雷** ✗✓
+    --
+    --   这里到 2026-10-20 之前是这么写的：
+    --       `elseif modal.kind == "share" then`   ← ①
+    --         （一串注释，**没有一句代码**）
+    --       ……几十行……
+    --       `elseif modal.kind == "share" then`   ← ②
+    --         真正的渲染（push `modal.title` / `modal.body` / 关闭键 …）
+    --
+    --   ★ 问题：**同一条 if 链里第二个同条件的 elseif 永远进不去** ⇒ ② 是**死码**。
+    --     `tools/lua-tooling/out/selene-report.txt` 里唯一的 `Error`（`ifs_same_cond`，
+    --     报在旧行号 3580 对 3499）就是这个。
+    --   ★ 真危害不是"多几行"：`modal.kind == "share"` 的**入口按钮**已被用户要求删掉，
+    --     但**链路还在**（`a == "accuse"` 仍会构造 share 弹窗、`opts.on_share` 仍被回调）。
+    --     哪天有人把按钮加回来 ⇒ 命中 ① 这个**空支** ⇒ **弹窗什么都不显示**，
+    --     而注释还会告诉他"渲染分支保留着呢、理由在下面" ⇒ 极难查。
+    --   ⇒ 现在：① 删掉（它的注释合并到 ② 那支），② 变成唯一、可到达的 share 分支。
     elseif modal.kind == "exit_menu" then
       -- ★★★★★ 2026-10-09 **几何改为【设计稿 B】** ✗✓（用户 2026-10-09 拍板选 B ✓）
       --   ★ 设计稿 B（画布空间 1600×900）✓：
@@ -6797,8 +6727,7 @@ function Controller:build_layout(ui_adapter)
         end
       end
     elseif modal.kind == "share" then
-      -- ★ 2026-10-05 **这一支目前没有入口按钮**（用户当天决定去掉「分享棋局」按钮，
-      --   见上面 `modal.kind == "result"` 里那段删除说明）。
+      -- ★ 2026-10-05 **这一支目前没有入口按钮**（用户当天决定去掉「分享棋局」按钮）。
       --
       --   **故意留着**，不是忘了删：
       --     · 链路还在 —— `a == "accuse"` 分支仍会 `core:encode_state()` 并构造
@@ -6806,6 +6735,15 @@ function Controller:build_layout(ui_adapter)
       --     · 将来要接**真实分享**（真正的分享面板/复制码）时，只要再加回一个按钮即可，
       --       不必把这一屏重写一遍；
       --     · 代价是零 —— 它只在"别处主动构造 share 弹窗"时才可能出现，平时不进任何计划。
+      --
+      --   ★★★★★★★★ 2026-10-20（v282）**现在它是唯一一支 share 分支，而且真的会执行** ✗✓
+      --     在这之前，这条 if 链里**上面还有一支同条件的空分支** ⇒ 这一支永远进不去（死码）。
+      --     合并说明见上面 `exit_menu` 前面那段注释（含"为什么以前那么写很危险"）。
+      --   ⚠️ 顺带记一条**没删的历史信息**：旧的两键版（`modal.again` 重玩本关 /
+      --     `modal.next` 下一关）在 2026-10-12 就被四键版取代；「重玩本关」的 `restart`
+      --     动作在 `exit_menu` 与键盘里仍然存在，只是这个界面不再放它 —— 用户当时点名的就是四个键。
+      --   ⚠️ 下面这些 `push` 里的 id 集合要与 `layout_plan` 的 states 并集一致；改它们之前先看
+      --     `entry_client_script.lua` 的 `auto_create_only`（否则真机会"计划有、存档没有"）。
       push({ id = "modal.title", kind = "text", parent = "modal",
              rect = { x = mx + 30, y = my + 30, w = mw - 60, h = 56 }, text = "分享棋局", style = "modal.title" })
       push({ id = "modal.body", kind = "text", parent = "modal",
@@ -6850,10 +6788,9 @@ function Controller:build_layout(ui_adapter)
       push({ id = "modal.title", kind = "text", parent = "modal",
              rect = { x = mx + 30, y = my + 26, w = mw - 60, h = 56 }, text = "玩法", style = "modal.title" })
       local text = {}
-      for i = 1, #M.INTRO do
-        text[#text + 1] = string.format("%d. %s —— %s", i, M.INTRO[i].title,
-                                        M.INTRO[i].body:gsub("\n", " "))
-      end
+      -- ★ 2026-10-18（优化组）：这里原来遍历 `M.INTRO`（教程 5 页）拼「玩法」弹窗正文 ——
+      --   教程那套已按用户指令整套删除（后续重做）⇒ 正文改成固定文案，**不再引用任何教程数据** ✓
+      text[#text + 1] = "玩法：把每个角色放到正确的位置上；摆满后点「提交」校验，通过即可指认凶手。"
       push({ id = "modal.body", kind = "text", parent = "modal",
              rect = { x = mx + 30, y = my + 100, w = mw - 60, h = 280 },
              text = table.concat(text, "\n\n"), style = "modal.body" })
@@ -6887,8 +6824,6 @@ function Controller:build_layout(ui_adapter)
     local FULL = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height }
   push({ id = "home", kind = "container", parent = "root", rect = FULL,
          visible = (self.screen == "home"), pos_runtime = true })
-  push({ id = "select", kind = "container", parent = "root", rect = FULL,
-         visible = (self.screen == "select"), pos_runtime = true })
 
   if self.screen ~= nil then
     -- ★★★ 2026-10-01：**改成"反向逻辑"**（原来是白名单，漏了一大片）。
@@ -7488,7 +7423,7 @@ end
   -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：level_card_text　原 L3504..L3531
 
 function Controller:layout_plan()
-  local saved_intro, saved_modal = self.intro_page, self.modal
+  local saved_modal = self.modal   -- ★ 2026-10-18：intro 已删，不再保存 intro_page
   -- ★★★ 2026-09-30：**屏幕状态也要纳入枚举**。
   --   `layout_plan` 原来只枚举 8 种"关卡内"状态（intro / modal 各变体），
   --   **从不设置 `self.screen`** ⇒ 主页和选关的控件**永远进不了布局计划**
@@ -7502,7 +7437,7 @@ function Controller:layout_plan()
     -- ★ 整屏状态排最前：编辑器/模拟器要按这份清单建控件
     { name = "home",              intro = 99, modal = nil, screen = "home" },
     { name = "select",            intro = 99, modal = nil, screen = "select" },
-    { name = "intro",             intro = 1,  modal = nil, screen = nil },
+
     { name = "board",             intro = 99, modal = nil, screen = nil },
     -- ★★★★★★ 2026-10-12 **指认相关的两个【计划状态】已删**（用户指令 ✓）✗✓
     --
@@ -7547,7 +7482,6 @@ function Controller:layout_plan()
   local order, byId = {}, {}
   for si = 1, #states do
     local st = states[si]
-    self.intro_page = st.intro
     self.modal = st.modal
     self.screen = st.screen
     local nodes = self:build_layout()
@@ -7606,7 +7540,7 @@ function Controller:layout_plan()
     end
   end
 
-  self.intro_page, self.modal, self.screen = saved_intro, saved_modal, saved_screen
+  self.modal, self.screen = saved_modal, saved_screen
 
   -- 初始可见性：只有「开局就该看见」的控件才是可见的，其余交给脚本按状态开关。
   -- （脚本每次 render 都会把 visible 同步过去，所以这里留 false 最安全。）
@@ -7615,7 +7549,7 @@ function Controller:layout_plan()
     local in_board = false
     for k = 1, #it.states do
       -- ★ 2026-10-12：`accuse_*` 两个状态名已随指认面板一起删 ✓（见上面 plan states 那段 ✓）
-      if it.states[k] == "board" or it.states[k] == "intro" or it.states[k] == "result"
+      if it.states[k] == "board" or it.states[k] == "result"
          or it.states[k] == "share" or it.states[k] == "howto" then in_board = true end
     end
     it.visible = in_board and it.visible
@@ -7634,35 +7568,10 @@ end
 -- 这里算**画布绝对坐标**；适配层只负责换算成「相对父级中心的偏移」再应用，
 -- 避免两处各自推导导致差 1px。
 -- ────────────────────────────────────────────────────────────────────────
-function Controller:tray_layout_canvas()
-  local L = M.LAYOUT
-  local vm = self.core:view()
-  local n = #vm.tray
-  if n == 0 then return nil end
-
-  local gx = L.tray_gap_x or 12
-  local gy = L.tray_gap_y or 10
-  local per_row = math.max(L.tray_per_row or 3, math.ceil(n / 2))
-  local item_w = math.floor((L.tray.w - (per_row - 1) * gx) / per_row)
-  local item_h = L.tray_item_h
-
-  local tray_cv = M.to_canvas(rect_of(L.tray))
-  local items = {}
-  for i = 1, n do
-    local col = (i - 1) % per_row
-    local row = math.floor((i - 1) / per_row)
-    local cv = M.to_canvas({
-      x = L.tray.x + col * (item_w + gx),
-      y = L.tray.y + row * (item_h + gy),
-      w = item_w, h = item_h,
-    })
-    items[#items + 1] = {
-      id = "tray." .. tostring(vm.tray[i].id),
-      cx = cv.cx, cy = cv.cy, w = cv.w, h = cv.h,
-    }
-  end
-  return { tray_cx = tray_cv.cx, tray_cy = tray_cv.cy, per_row = per_row, items = items }
-end
+-- ★ 2026-10-18（优化组 · C 类清理）：**`Controller:tray_layout_canvas()` 已删除** ✗✓
+--   它算的是"头像卡该摆哪"，而头像卡容器 `tray` 已在本次删除 ⇒ 恒返回 nil，
+--   `main.lua` 里的调用点（`if adapter.apply_tray_layout and controller.tray_layout_canvas`）也跟着删，
+--   ⇒ 真机日志里那行「找不到头像卡容器」不会再出现 ✓
 
 function Controller:placed_count(vm)
   local n = 0
@@ -11712,7 +11621,7 @@ local function missing_group(id)
   if s:match("^clue%.[%d]+$")         then return "clue.N"  end
   if s:match("^tray%.[%w_]+$")        then return "tray.*"  end
   if s:match("^modal%.")              then return "modal.*" end
-  if s:match("^intro%.")              then return "intro.*" end
+
   if s:match("^action%.")             then return "action.*"
   end
   local head = s:match("^([%w_]+)%.")
@@ -13223,12 +13132,9 @@ function Adapter:_cells_prefabs(g)
   return out
 end
 
--- 兼容旧名（别处还在用）
-function Adapter:_cells_prefab(g)
-  local list = self:_cells_prefabs(g)
-  if list[1] ~= nil then return list[1].index end
-  return nil
-end
+-- ★ 2026-10-18（优化组 · P0）：`Adapter:_cells_prefab`（**单数**，兼容旧名的转发壳）**已删除** ✗✓
+--   判据：全仓 0 调用点；"兼容旧名（别处还在用）"是过期结论。
+--   真正的实现在下面 `Adapter:_cells_prefabs`（**复数**，返回候选列表），仍被 `ensure_cells` 用着 ✓
 
 -- ★★★★★ 2026-10-02 **给脚本生成的格子"上底图"**（纯模板模式专用，不依赖参照格子）。
 --
@@ -13276,31 +13182,36 @@ function Adapter:_cells_paint(ctrl, size, cell_id, img)
   --
   --   ★ **三处字段（★ 改这里要一起看 ✓）**：
   --     · **记录**：`_apply_edges` 写 `self._edge_want[id][prefix.."."..side] = want`
-  --       ⇒ ★ 本文件 **L3798~3800**（★ 另有一份同类写在 **L3775~3777** ✓）
-  --     · **重放**：★ 就是下面 `for name, want in pairs(w)` 那段 ✓
-  --       ⇒ ★ 每帧约 **200 次**「缓存查表 `self:sub` + `SetVisible`」✗
-  --     · **触发**：`_cells_paint` 由 ★ **L2071** 每帧调用 ✓（★ 同一条路还负责点亮 `face` ✓）
-  --     · **事件驱动那份**：★ 对称恢复分支 —— 本文件 **L4267** 读 `_edge_want` ✓
+  --     · **重放**：`Adapter:_repaint_cell_overlays`（本函数下面也调它一次）
+  --     · **每帧触发**：★ **`Adapter:on_tick` 的 `_overlay_dirty` 分支** ✓
+  --     · **置位**：`set_property` 的 `visible` 分支（`cell.*` 由藏转显）
   --
-  --   ★ 为什么当初要每帧重放 ✗：★ `hide_kids`（★ **L4230** ✓）会**递归藏子树** ✗
-  --     且**只藏不显** ✗ ⇒ ★ 必须有东西**每帧把"该亮的"重新点亮** ✓
-  --     ★ 否则真机症状：★「第一关的墙/门永远不画」✓（★ 那个 bug 的根因 ✓）
+  --   ⚠️⚠️ **2026-10-20（v282）更正了一条把后人带沟里的旧注释** ✗✓✓
+  --
+  --     旧注释原文：「**触发**：`_cells_paint` 由 **L2071** 每帧调用（同一条路还负责点亮 `face`）」
+  --     ★ 事实：那时起 `_cells_paint` **只在建控件时**被调用（`create_control` / `ensure_cells`），
+  --       **根本没有每帧的调用者** ⇒ 挂在这儿的"每帧重放"是**死码**。
+  --     ★ 代价：v280 照着这句把家具重放挂在这里 ⇒ **离线全绿、真机无效**（用例自己手动调了这个函数，
+  --       等于替被测代码补了关键一步）。v281 才改挂到真正每帧的 `on_tick`。
+  --     ★ 教训：**"每帧调用"必须去数调用点，不能信注释**（见 `docs/回执-首关家具不画-v281.md` §五）。
+  --
+  --   ★ 为什么当初要重放：★ `hide_kids` 会**递归藏子树** ✗ 且**只藏不显** ✗
+  --     ⇒ ★ 必须有东西把"该亮的"重新点亮 ✓ ★ 否则真机症状：「第一关的墙/门永远不画」✓
   --   ⇒ ★★ **要省成本，正确顺序** ✓：
-  --     ★ ① 先确认 `L4267` 那条**对称恢复覆盖了所有 hide 路径** ✓
-  --     ★ ② 再把这里从"每帧"改成"**脏标记驱动**" ✗
+  --     ★ ① 先确认"由藏转显"那条**对称恢复覆盖了所有 hide 路径** ✓
+  --     ★ ② 再把 `_overlay_dirty` 从"事件驱动"改成更细的脏标记 ✗
   --     ★ ③ ★ **不能直接删** ✗ —— ★ 删了会退回那个 bug ✓
-  --   ★ 测量入口 ✓：`tests/grid_cost.lua`（13 项 ✓）· `tests/_wip/probe_*` 里那几条计数 ✓
+  --   ★ 测量入口 ✓：`tests/grid_cost.lua` · `tests/_wip/perframe_engine_calls*.lua`
   -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-  if cell_id ~= nil and self._edge_want ~= nil then
-    local w = self._edge_want[cell_id]
-    if w ~= nil then
-      for name, want in pairs(w) do
-        local s2 = self:sub(cell_id, name)
-        if s2 ~= nil and s2.SetVisible ~= nil then
-          pcall(function() s2:SetVisible(want) end)
-        end
-      end
-    end
+  -- ★★★★★★★★ 2026-10-20 **每帧重放门墙 + 家具/障碍物**（同一个入口，只此一份实现）
+  --
+  --   ★ 这是"**第一次进第一关家具/障碍物不画**"（以及当年"墙门不亮"）的修法：
+  --     `visible=false` 对 `cell.*` 会 `hide_kids()` 递归藏子树，而且**只藏不显**；
+  --     `face` 有人每帧点亮，而 `wall.*`/`door.*`/`obj` 只在属性下发那趟设一次 ⇒ 必须重放。
+  --   ⚠️ 真正的"每帧"入口在 `Adapter:on_tick` 的 `_overlay_dirty` 分支；
+  --      这里这一句只是**建格子那一刻顺便先画一次**（很多格子建完就再也不进 dirty 了）。
+  if cell_id ~= nil then
+    self:_repaint_cell_overlays(cell_id)
   end
   -- 铺满格子（子控件默认可能比格子小，**甚至尺寸是 0** —— 两种都会让它"看不见"）
   --
@@ -13963,7 +13874,7 @@ local DECOR = {
 
 local MANAGED = {
   "root", "topbar", "left", "tray", "clues", "board",
-  "right", "actions", "modal", "intro",
+  "right", "actions", "modal",
 }
 
 -- ★ 只有"开常驻光标"这件事需要额外覆盖 `home` / `select`。
@@ -13973,7 +13884,7 @@ local MANAGED = {
 --   CURSOR_CONTAINERS = "需要打开「显示常驻光标」的容器"（**必须包含每个屏幕容器**）。
 local CURSOR_CONTAINERS = {
   "root", "topbar", "left", "tray", "clues", "board",
-  "right", "actions", "modal", "intro",
+  "right", "actions", "modal",
   "home", "select",
 }
 
@@ -14108,193 +14019,22 @@ function Adapter:_tray_btn_art(moved, names, done, miss)
   return moved
 end
 
-function Adapter:apply_tray_layout(layout)
-  if layout == nil or layout.items == nil then return 0 end
-  local parent = self:find(self.cfg.tray_parent or "tray")
-  if parent == nil then
-    self:warn_once("tray:parent", "找不到头像卡容器（cfg.tray_parent，默认 tray）")
-    return 0
-  end
-  local moved = 0
-  for i = 1, #layout.items do
-    local it = layout.items[i]
-    local ctrl = self:find(it.id)
-    if ctrl ~= nil then
-      local ox = it.cx - layout.tray_cx
-      local oy = it.cy - layout.tray_cy
-      if ctrl.SetAnchorMin then pcall(function() ctrl:SetAnchorMin(0.5, 0.5) end) end
-      if ctrl.SetAnchorMax then pcall(function() ctrl:SetAnchorMax(0.5, 0.5) end) end
-      if ctrl.SetPivot     then pcall(function() ctrl:SetPivot(0.5, 0.5) end) end
-      if ctrl.SetSizeDelta then pcall(function() ctrl:SetSizeDelta(it.w, it.h) end) end
-      if ctrl.SetAnchoredPosition then pcall(function() ctrl:SetAnchoredPosition(ox, oy) end) end
-      -- ★★ 2026-09-28：**重排后必须把样式缩放重新施加一遍**。
-      --
-      --   这一行就是"已放置头像卡没变小"的修复点：
-      --   原来 `style` 分支设了 0.72，但重排的 `SetSizeDelta`/`SetAnchoredPosition`
-      --   会把姿态重置回 1.0，而重排发生在其后 ⇒ 玩家永远看不到那一档。
-      --   缩放值取自 `scale_of_style`（与 style 分支**同一处定义**，不可能不一致）。
-      local sty = self._style and self._style[it.id] or nil
-      local sc2 = sty ~= nil and self:scale_of_style(sty) or nil
-      if sc2 ~= nil and ctrl.SetLocalScale ~= nil then
-        pcall(function() ctrl:SetLocalScale(sc2, sc2, 1) end)
-      end
-      -- 卡片里的 face / text 跟着一起变
-      local kids = { "face", "text" }
-      for k = 1, #kids do
-        local sub = self:sub(it.id, kids[k])
-        if sub ~= nil then
-          if sub.SetSizeDelta then pcall(function() sub:SetSizeDelta(it.w, it.h) end) end
-          if sub.SetAnchoredPosition then pcall(function() sub:SetAnchoredPosition(0, 0) end) end
-          if sub.SetPivot then pcall(function() sub:SetPivot(0.5, 0.5) end) end
-        end
-      end
-      moved = moved + 1
-    end
-  end
-
-  -- ★ 头像卡体检（2026-09-27 新增）。
-  --
-  -- 为什么需要：用户问"tray 里的图我是不是也得补"。而按已真机确认的规则 ——
-  --   **预设按钮只渲染"四个状态节点引用的"子控件**，未被引用的子控件**不显示**。
-  --   用户往 tray.D 加了一个图片子控件，但**没动状态节点**，所以到底显不显示只有真机能答。
-  -- 这条诊断把每张卡的"子控件清单 + visible + imageType + imageId"打出来：
-  --   · 子控件**不在清单里** → 加子控件这步没生效（或没存进关卡）
-  --   · 在清单里但 **visible=false** → 被脚本藏了
-  --   · visible=true 但 imageId=nil → 没配图
-  --   · 全都正常却看不见 → **就是状态节点没引用**（这条规则得到验证）
-  if self.cfg.tray_diag ~= false and print then
-    local names = { "A", "B", "C", "D", "E", "F", "V" }
-    print("[murdoku] --- 头像卡体检（每张卡的子控件）---")
-    for i = 1, #names do
-      local cid = (self.cfg.tray_parent or "tray") .. "." .. names[i]
-      local c = self:find(cid)
-      if c ~= nil then
-        local kids = nil
-        pcall(function() if c.GetChildren then kids = c:GetChildren() end end)
-        local n = (type(kids) == "table") and #kids or 0
-        local parts = {}
-        for k = 1, n do
-          local kk = kids[k]
-          local kn, kv, kt, ki = "?", "?", "?", "?"
-          pcall(function() kn = tostring(kk.name) end)
-          pcall(function() kv = tostring(kk.visible) end)
-          pcall(function() kt = tostring(kk.imageType) end)
-          pcall(function() ki = tostring(kk.imageId) end)
-          parts[#parts + 1] = kn .. "(visible=" .. kv .. " type=" .. kt .. " id=" .. ki .. ")"
-        end
-        print(string.format("  %-9s 子控件 %d 个  %s", cid, n,
-          (#parts > 0) and table.concat(parts, "  ") or "**（没有子控件）**"))
-      else
-        print(string.format("  %-9s **找不到这个控件**", cid))
-      end
-    end
-    -- ★ 2026-09-28 扩展：**原来只查 7 张头像卡，按钮一个都没查** ——
-    --   于是"按钮到底有没有子控件"在真机上完全看不出来，只能靠猜。
-    --   按同一套判读法再查一批代表性按钮。
-    local btns = { "tool.place", "tool.x", "tool.eraser", "action.submit", "action.undo",
-                   "intro.next", "modal.suspect.A" }
-    for i = 1, #btns do
-      local cid = btns[i]
-      local c = self:find(cid)
-      if c ~= nil then
-        local kids = nil
-        pcall(function() if c.GetChildren then kids = c:GetChildren() end end)
-        local n = (type(kids) == "table") and #kids or 0
-        local parts = {}
-        for k = 1, n do
-          local kk = kids[k]
-          local kn, kv, kt, ki = "?", "?", "?", "?"
-          pcall(function() kn = tostring(kk.name) end)
-          pcall(function() kv = tostring(kk.visible) end)
-          pcall(function() kt = tostring(kk.imageType) end)
-          pcall(function() ki = tostring(kk.imageId) end)
-          parts[#parts + 1] = kn .. "(visible=" .. kv .. " type=" .. kt .. " id=" .. ki .. ")"
-        end
-        print(string.format("  %-18s 子控件 %d 个  %s", cid, n,
-          (#parts > 0) and table.concat(parts, "  ") or "**（无子控件 → 完全透明看不见）**"))
-      else
-        print(string.format("  %-18s **找不到**", cid))
-      end
-    end
-    print("[murdoku] --- 体检结束 ---")
-  end
-  -- ★★ 2026-09-28 新增：**运行时给按钮底图上色 + 提到最上层**。
-  --
-  -- 为什么必须走运行时：真机日志显示 `bg(visible=true type=Stretch id=100001)` ——
-  --   存档里图片 ID **确实改成 100001 了**，但屏幕上**还是白块**。
-  --   推断：那些白块是**按钮状态节点自带的白色底板**，盖在我的 `bg` 上面。
-  --   ⇒ 两手一起上：
-  --     ① 运行时 `SetImage`（这是已被证明能改图的路径）把底图设成有颜色的素材；
-  --     ② `bg:SetAsLastSibling()` 把它提到最上层，压住状态节点那块白板。
-  -- ★★ 2026-09-28：**改成默认关闭（opt-in）**。
-    --
-    -- 为什么：`.gil` 里每个按钮的 `bg` 已经带好了正确的 (source, id) 对
-    --   （真机读出来 `src=4281536672 id=100108`，和棋盘上的浅蓝横墙一模一样）。
-    --   而运行时再 `SetImage(bg.imageSource, 100108)` 反而把它**覆盖成了紫色** ——
-    --   说明运行时读到的 `imageSource` 和我写进存档的**不是同一个值**，配错了图集。
-    --   ⇒ 既然静态图已经对，就不该再动它。**同一件事有两处实现，就会有两处不一致** ——
-    --     这一课我这个项目里已经吃了两次（另一次是 `erases` 动效）。
-    --   想再实验运行时上色时，传 `cfg.btn_art = true` 打开。
-    -- ★ 2026-10-18 修（优化组 · 缺陷 1）：`moved_final` 必须在 `if` **外面**先落一个值 ——
-    --   下面这个 `if` 是**唯一**的调用点。原来调用被写在 `end` 之外 ⇒ 开关形同虚设
-    --   （`cfg.btn_art` 默认 nil，却每局对全部按钮底图重设一次 100108）。
-    local moved_final = moved
-    if self.cfg.btn_art == true and print ~= nil then
-    -- ⚠️ 名单**不能手写**！第一版我手写了 19 个，而实际有 35 个按钮 → 那 16 个
-    --    （`action.q.*`、`modal.level.*` …）**从没被验证过**
-    --    （真机日志 `SetImage 成功 19 个` 暴露的）。
-    --    改成由调用方传入（`main.lua` 从规划里取 `kind == "button"`），有多少算多少。
-    --
-    -- ★★★★★ 2026-10-05 **这两个 local 必须提到这里**（Round 35 的结构性修复，最后一步）。
-    --   原因：它们被**两个地方**用 —— 本 `btn_art` 块（函数末尾的上色循环，
-    --   见下面 `--- 按钮底图上色（运行时）---` 那段），以及**两个彻底独立的功能**
-    --   （`apply_ruler_layout` / `diagnose_overlap`，它们已挪到 `apply_tray_layout` 外面）。
-    --   代价说明：现在 `cfg.btn_art ~= true` 时也会读一次 `cfg.btn_list`、建两个数 ——
-    --   `apply_tray_layout` 只在开局摆一次，这点成本可忽略（不给每帧路径加负担）。
-    local names = self.cfg.btn_list or {}
-    local done, miss = 0, 0
-    -- ★ 2026-10-18（优化组 · 缺陷 1）：**唯一的调用点** —— 在 `cfg.btn_art` 闸门内。
-    moved_final = self:_tray_btn_art(moved, names, done, miss)
-    -- ★ ★ ★★★ 2026-10-05 **Round 35 收口**：块账在这里收平 ✓
-    --
-    --   历史（这条 bug 的形状很值得记）：
-    --     L2371 的 `if self.cfg.btn_art == true and print then` 原来**一直没被关闭** ✗
-    --     ⇒ 后面两个**顶层方法定义**被当成它的语句体吞了进去：
-    --       `Adapter:apply_ruler_layout`（原 L2391）与 `Adapter:diagnose_overlap`（原 L2474）
-    --     ⇒ Lua **不报错**（`end` 总数平衡），但这两个方法**只在 `apply_tray_layout`
-    --       被调用过之后**才存在 ✗
-    --     ⇒ `lua/main.lua` 的 `if a.apply_ruler_layout ~= nil then …` / `if diagnose_overlap then …`
-    --       守卫**恒为假** ⇒「行标/列标对齐」与「相交诊断」**从来没跑过**（静默，零报错）✗
-    --
-    --   收口做法：两个方法整段**挪到本函数之后**（真正的文件顶层），
-    --   上色循环留在本函数内（默认关闭）⇒ 本行的 `end` 关掉 `btn_art` 块 ✓
-    --   ⇒ `node tools/audit/check_nesting.mjs` 的 `[嵌套]` 必须降到 **0 处** ✓
-  end
-  -- ★★★ 2026-10-05 Round 45：**上色循环已抽成顶层 helper** `Adapter:_tray_btn_art`
-  --   （就定义在下面，`apply_tray_layout` **之前**）。
-  --   为什么非抽不可：那段循环用 `names` / `done, miss`（本函数局部），
-  --   而它**上面**那两个方法又必须在本函数**外面** ⇒ 只能把那段整段移出去 ✓
-  --   等价性：同一段代码、同样顺序、同样计数、同样默认关闭（`cfg.btn_art`）✓
-  -- ★★★★★ 2026-10-05 Round 48 修：下面这行调用用到了 `names` / `done` / `miss`，
-  --   但抽 helper 时它们**没有跟着过来** ✗ ⇒ selene 报三条 `error[undefined_variable]` ✗
-  --   （`names` / `done` / `miss` @L2461）⇒ 一旦 `cfg.btn_art = true` 就会**当场崩**（`#nil` 抛错 ✗）。
-  --   该路径**默认关闭** ⇒ 离线测试测不到 ✗ ⇒ 只有静态检查能抓 ✓（这正是 selene 的价值 ✓）
-  --   ⇒ 修法：在调用前就地声明（与 helper 内部那份等价 ✓ 传参用 ✓）
-  -- ★ 2026-10-18（优化组 · 缺陷 1）：**这里原来还有一份调用** ✗
-  --   它在上面那个 `if self.cfg.btn_art == true …` 的 `end` **之外** ⇒ 每局无条件执行
-  --   ⇒ `cfg.btn_art` 这个"opt-in 开关"从来没起过作用：启动时把每个按钮的 `bg`
-  --     按 `cfg.bg_image_id or 100108` 重设一遍，而 2837-2841 的注释正是当年
-  --     "运行时设 100108 反而覆盖成紫色 ⇒ 静态图已对就别再动它"的那次教训。
-  --   ⇒ 现在调用点上移到闸门内（见上），这里什么也不做。
-  --   ⚠️ 判据：`grep -c '_tray_btn_art(moved' lua/engine_adapter_qianxing.lua` == 1
-  -- ⚠️⚠️ 这个 `end` 关的就是 `apply_tray_layout`（`function` 在 2244 行）。
-  --   它**必须**在下面两个方法之前 —— 否则那两个方法又会被吞成它的**子闭包**
-  --   ⇒ 加载时不存在 ⇒ `main.lua` 的 `~= nil` 守卫恒假
-  --   ⇒ 行标/列标对齐、相交诊断**静默失效**（零报错）✗ —— 就是本 bug 的原形。
-  --   判据：`node tools/audit/check_nesting.mjs` ⇒ 这两个方法的 `深度` 必须是 **0** ✓
-  return moved_final
+-- ★ 2026-10-18（优化组 · C 类清理）：`Adapter:apply_tray_layout`（**110 行**）**已删除** ✗✓
+--   判据：① 头像卡容器 `tray` 已按用户指令从布局计划里删除，`Controller:tray_layout_canvas`
+--           也在同一批删掉 ⇒ **全仓没有任何调用点**；
+--        ② 它每局唯一能干的事就是打一行「找不到头像卡容器（cfg.tray_parent，默认 tray）」；
+--        ③ 真机日志（v274）确认：那行每局都在，除此之外一无所出。
+--   ⚠️ 里面**唯一还活着**的是「按钮底图上色」那段（**缺陷 1** 修的就是它的开关）⇒
+--      提成独立入口 `Adapter:apply_btn_art()`，**仍然受 `cfg.btn_art == true` 控制**（默认关），
+--      由 `main.lua` 在设好 `cfg.btn_list` 之后调一次 ✓
+function Adapter:apply_btn_art()
+  -- ★ 缺陷 1 的行为不变：**默认关闭**（`cfg.btn_art` 默认 nil）；要实验时显式传 true。
+  --   ⚠️ 判据：`grep -c "_tray_btn_art(moved" lua/engine_adapter_qianxing.lua` == 1
+  if self.cfg.btn_art ~= true or print == nil then return 0 end
+  local names = self.cfg.btn_list or {}
+  local done, miss = 0, 0
+  return self:_tray_btn_art(0, names, done, miss)
 end
-
 -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 -- ★★ 2026-10-12 **【已删除】`Adapter:apply_ruler_layout` 整段** ✗✓（用户要求：ruler 功能废弃 ✓）
 --
@@ -14576,348 +14316,16 @@ end
 -- 能不能真的造出一个格子」。但「能不能造」只有**缺格子时**才会被试到，
 -- 而那时日志里已经混了一堆别的东西。这里提前把候选和索引列出来，
 -- 让你**试玩之前**就能确认配对了没有。
--- ════════════════════════════════════════════════════════════════════════
-
-function Adapter:diagnose_template()
-  local log = print
-  if log == nil then return false end
-  local g = self.cfg.cells
-  if g == nil then return false end
-
-  local base_id = g.probe or "cell.1.1"
-  -- 与 _cells_prefabs 同样的规矩：基准**只从参照格子取**。
-  -- 纯模板模式下参照格子不存在 → base_idx 保持 nil → `tpl.cell` 会被正确算成"可用候选"。
-  --
-  -- ⚠️ 但要注意**时机**：本函数跑在 `ensure_cells` **之后**，那时纯模板模式下的
-  --    `cell.1.1` 已经被脚本造出来了 —— 现场查一定查得到。所以"纯模板模式"这个事实
-  --    要读 `ensure_cells` **当时记下**的 `self.cells_probe_missing`，不能现场重推。
-  local base_idx = nil
-  local base_ctrl = self:find(base_id)
-  if base_ctrl ~= nil then pcall(function() base_idx = base_ctrl.prefabIndex end) end
-  if self.cells_probe_missing == true then
-    log("[murdoku]   （**纯模板模式**：生成前没有参照格子 " .. base_id
-      .. "，格子全部由脚本按模板生成 —— 这是一种合法且推荐的配置）")
-  elseif base_idx == nil then
-    log("[murdoku]   （没有参照格子 " .. base_id .. "，也读不到它的模板索引）")
-  end
-
-  local names = g.prefab_from or { base_id, "tpl.cell", "cell.tpl", "cell.prefab" }
-  local found, usable = {}, 0
-  log("[murdoku] --- 格子模板候选（用来批量生成其余格子）---")
-  if type(g.prefab) == "number" and g.prefab > 0 then
-    log("[murdoku]   cfg.cells.prefab = " .. tostring(g.prefab)
-      .. "   ← **显式配置**，脚本会最先试它")
-  else
-    log("[murdoku]   cfg.cells.prefab = (未配置)")
-  end
-  for i = 1, #names do
-    local id = tostring(names[i])
-    local c = self:find(id)
-    if c == nil then
-      log("[murdoku]   " .. id .. "  —— **不存在**")
-    else
-      local p = nil
-      pcall(function() p = c.prefabIndex end)
-      -- ★ 两个数字含义不同，都要打出来（用户 2026-09-26 纠正过：
-      --   `prefabIndex` 是**控件自身**的模板索引；模板引用控件引用的是
-      --   `referencedPrefabIndex`。只打一个会让人把"控件自身索引"误当成"模板索引"。）
-      local rf = self:_ref_index_of(c)
-      local ref_txt = (rf ~= nil) and ("  ref=" .. tostring(rf) .. "（引用的模板）") or ""
-      found[#found + 1] = { id = id, idx = p }
-      local tag
-      if id == base_id then
-        tag = "   ← 参照格子自己"
-      elseif type(p) == "number" and p > 0 and p == base_idx then
-        tag = "   ← 与 " .. base_id .. " 同一个索引"
-      elseif type(p) == "number" and p > 0 then
-        tag = "   ← 与 " .. base_id .. " **不同**"
-        if rf == nil then tag = tag .. "：可能就是可用的那个" end
-        usable = usable + 1
-      else
-        tag = "   ← 读不到 prefabIndex"
-      end
-      log("[murdoku]   " .. id .. "  prefabIndex=" .. tostring(p) .. ref_txt .. tag)
-    end
-  end
-
-  -- ★★ 结论必须报**实际结果**，不能靠"索引看起来不同"来猜。
-  --
-  -- 真机 16:07 就是这么被误导的：生成**明明成功了**
-  -- （`格子模板索引 1073741876 可用；棋盘格子：25 / 25 存在`），
-  -- 可这一段却打出「**没有可用的自定义模板** —— 缺格子时生成会失败」。
-  -- 原因：`cell.1.1` 现在自己就带着模板索引（它是「模板引用控件」），
-  -- 于是 `base_idx` 等于它自己 → "与 base 不同"这个启发式恒为假 → usable=0。
-  --
-  -- 所以现在：**ensure_cells 跑过就以它的实测结果为准**，启发式只当备注。
-  -- ★ 把"生成前就存在的格子"点出来 —— 这是最容易被看错的一件事。
-  do
-    local pre = self.cells_preexisting
-    if pre ~= nil then
-      local ids = {}
-      for id in pairs(pre) do ids[#ids + 1] = id end
-      table.sort(ids)
-      if #ids > 0 then
-        log("[murdoku]   ℹ️ 生成前**已存在**的格子：" .. table.concat(ids, " "))
-        log("[murdoku]     这些是**编辑器里的控件**，脚本只把它们摆正、**不会覆盖** —— "
-          .. "所以它们不是模板生成的副本。")
-        if pre[base_id] and base_idx ~= nil and g.prefab ~= nil and base_idx == g.prefab then
-          log("[murdoku]     ⚠️ **" .. base_id .. " 的索引 == cfg.cells.prefab** —— "
-            .. "它**就是那个模板引用控件本身**，不是生成的格子！")
-          log("[murdoku]        它的外观由它自己决定，**可能和模板里的格子不一样**"
-            .. "（截图里常见表现：只有它看着不对 / 缺一块）。")
-          log("[murdoku]        想要「全 25 格都是模板副本」：把它**改名成 `tpl.cell`**（或删掉），"
-            .. "让脚本把 " .. base_id .. " 也一起生成。")
-        end
-      end
-    end
-  end
-
-  if self.cells_ok ~= nil then
-    if self.cells_ok then
-      log("[murdoku] 结论（实测）：**生成成功了** —— 用模板索引 "
-        .. tostring(self.cells_index) .. " 建了 " .. tostring(self.cells_made)
-        .. " 个格子，棋盘 " .. tostring(self.cells_total) .. " 格齐全")
-    else
-      log("[murdoku] 结论（实测）：**生成失败** —— 试过的索引都不可实例化（见上面的错误行）")
-    end
-    log("[murdoku] --- 体检结束（模板）---")
-    return self.cells_ok
-  end
-
-  -- 没跑过 ensure_cells（例如缺格子数为 0）时才用启发式
-  if usable > 0 or (type(g.prefab) == "number" and g.prefab > 0) then
-    log("[murdoku] 结论（推测）：有**可能是可用模板**的候选 —— "
-      .. "缺格子时脚本会挨个**真试着造**，造得出来才用它")
-    log("[murdoku] --- 体检结束（模板）---")
-    return true
-  end
-
-  log("[murdoku] 结论：**没有可用的自定义模板** —— "
-    .. "缺格子时生成会失败（日志会打「全部实例化失败」）")
-  log("[murdoku]   原因：" .. base_id .. " 自己的 prefabIndex 是「预设按钮」的**基础模板**，"
-    .. "读得到但不能实例化；而右键【另存为模板】存出来的索引**也调不动**。")
-  log("[murdoku] ⚠️ 正确入口是官方文档里那个（右键另存为模板**不是**它）：")
-  log("[murdoku]   ① 界面控件组管理 → 界面控件组库 → **客户端控件模板** → 【添加客户端控件】")
-  log("[murdoku]      → 加一个「预设按钮」，配好底图与子控件 → **存为模板**")
-  log("[murdoku]   ② 那个模板的**控件模板索引 ID** 才是客户端脚本能调用的")
-  log("[murdoku]      （点它就能看到 ID，把数字填进 cfg.cells.prefab 也行）")
-  log("[murdoku]   ③ 也可尝试把它放进容器画布后改名 tpl.cell（脚本会自己读它的索引）")
-  log("[murdoku] 依据：官方《客户端控件和客户端脚本的定义》——")
-  log("[murdoku]   「除客户端控件容器画布中的客户端控件以及客户端控件模板中的控件外，"
-    .. "其他控件均为服务器控件，**服务器控件的模板索引无法被客户端脚本调用**」")
-  log("[murdoku] --- 体检结束（模板）---")
-  return false
-end
-
--- ════════════════════════════════════════════════════════════════════════
--- 参照格子体检（`cell.1.1`）
---
--- 为什么需要：一个格子要能"看得见 + 点得动 + 能当模板"，同时依赖四五项设置：
---   控件类型（必须预设按钮/光标检测区域）、可被光标射线检测、子控件 face/note/x、
---   face 挂到「默认」状态节点、图片类型=拉伸、祖先容器开了「显示常驻光标」。
---   这些**在日志里全都没有痕迹** —— 出问题时只能靠肉眼一个个猜。
---   2026-09-26 的真机日志就是这样：只知道"缺 24 个格子"，不知道手上这个配好没有。
---
--- 这里把上面每一项读出来，逐条给出 ✅/❌ 和"怎么修"，一次性讲完。
--- 每个会话打一次，不刷屏。
--- ════════════════════════════════════════════════════════════════════════
-
-function Adapter:diagnose_cell(id)
-  id = id or (self.cfg.cells and self.cfg.cells.probe) or "cell.1.1"
-  -- 走 print（**正常级**日志）而不是 printerr：
-  -- 这是一份**报告**，不是故障。走 stderr 有两个坏处：
-  --   ① 模拟器/排查脚本会把"日志里有没有报错"当成健康判据 → 一份全是 ✅ 的体检
-  --      也会被算成错误（本次就是这样挂了 8b/9 两步回归）；
-  --   ② 你在日志窗口的「报错」分类里会看到一堆其实是 ✅ 的行。
-  local log = print
-  if log == nil then return false end
-
-  local c = self:find(id)
-  if c == nil then
-    -- ⚠️ 纯模板模式（board 下只留一个 `tpl.cell` 模板引用控件、不建任何真格子）下，
-    --    参照格子**本来就不存在** —— 这时候报"找不到控件"就是误报（会把人吓一跳）。
-    --    改成明确说"这是合法配置，体检跳过"，把判断权交给下面的「模板候选」实测结论。
-    local g = self.cfg.cells or {}
-    if id == (g.probe or "cell.1.1") and (g.prefab ~= nil or self:find("tpl.cell") ~= nil) then
-      log("[murdoku] 格子体检：没有 " .. id .. " —— **纯模板模式**（board 下只放模板引用控件）")
-      log("[murdoku]   这是合法配置：格子全部由脚本按模板生成，编辑器里一个真格子都不用建。")
-      log("[murdoku]   子控件 face/note/x 与状态节点引用都在**模板里**，不在这里，所以本段体检跳过。")
-      log("[murdoku]   → 有没有配对，看紧接着的「格子模板候选」那段的**实测结论**。")
-      log("[murdoku] ===== 体检结束 =====")
-      return true
-    end
-    log("[murdoku] 格子体检 " .. id .. "：**找不到这个控件**"
-      .. "（名字要一字不差；必须在客户端控件容器里）")
-    return false
-  end
-
-  local lines, bad = {}, 0
-  local function say(s) lines[#lines + 1] = s end
-  local function mark(okflag, text, fix)
-    if okflag then
-      say("  ✅ " .. text)
-    else
-      bad = bad + 1
-      say("  ❌ " .. text .. (fix and ("   → " .. fix) or ""))
-    end
-    return okflag
-  end
-
-  -- ① 类型：只有「预设按钮 / 光标检测区域」才有 AddCursorEventListener
-  --    注意：kind 在真机/模拟器上可能读不到（模拟器返回 nil），所以以
-  --    **接口是否存在**为准，类型名只作参考 —— 否则会出现"类型 = nil ✅"
-  --    这种自相矛盾的行。
-  local kind = nil
-  pcall(function() kind = c.kind end)
-  local kind_s = (kind ~= nil) and tostring(kind) or "读不到"
-  if c.AddCursorEventListener ~= nil then
-    say("  ✅ 控件类型 = " .. kind_s .. "，且**支持光标事件**（AddCursorEventListener 存在）")
-  else
-    mark(false, "控件类型 = " .. kind_s .. "，**不支持光标事件**",
-      "改成【预设按钮】或【光标检测区域】；用容器/文本框永远点不动")
-  end
-
-  -- ② 射线检测 + 可交互
-  local ray, ia = nil, nil
-  pcall(function() ray = c.raycastTarget end)
-  pcall(function() ia  = c.interactable end)
-  if ray ~= nil then
-    mark(ray == true, "可被光标射线检测 raycastTarget = " .. tostring(ray),
-      "在【基础】里打开它，否则点击到不了脚本")
-  else
-    say("  ⚠️ 读不到 raycastTarget（该实现不暴露这个字段）—— 请到编辑器里确认已打开")
-  end
-  if ia ~= nil and ia ~= true then
-    mark(false, "可交互 interactable = false",
-      "脚本会按格子是否可站人切它；常关会让格子一直是灰的")
-  end
-
-  -- ③ 模板索引（决定能不能复制出其余格子）
-  local pf = nil
-  pcall(function() pf = c.prefabIndex end)
-  if type(pf) == "number" and pf > 0 then
-    say("  ℹ️ 模板索引 prefabIndex = " .. tostring(pf)
-      .. "（**能不能实例化以实际生成结果为准** —— 见下面「格子模板候选」那段的实测结论。"
-      .. "内置基础模板（例如「预设按钮」的 1073741848）会静默返回 nil；"
-      .. "用「**模板引用控件**」引用自定义模板后，这里就会变成可用的模板索引）")
-  end
-
-  -- ④ 子控件（脚本按名字找，**支持装在中间容器里的方案 A**）
-  --
-  -- ⚠️ 这里曾经写死 `c:GetChild(name)`（只查直接子控件），于是用户采用
-  --    **方案 A**（子控件装进 `content` 容器）时，体检会**误报「不存在」** ——
-  --    而运行时的 `Adapter:sub` 早就支持穿透容器了。**两处查找方式必须一致**，
-  --    否则就会变成"体检说没有、其实能用"或反过来，白折腾。
-  local via = nil
-  do
-    local direct = nil
-    pcall(function() direct = c:GetChild("face") end)
-    if direct == nil then
-      for _, rn in ipairs({ "content", "root", "body" }) do
-        local mid = nil
-        pcall(function() mid = c:GetChild(rn) end)
-        if mid ~= nil then via = rn break end
-      end
-    end
-  end
-  if via ~= nil then
-    say("  ℹ️ 子控件装在中间容器 `" .. via .. "` 里（方案 A）—— 按路径查找")
-  end
-
-  local want_children = { { "face", true }, { "note", false }, { "x", false } }
-  for i = 1, #want_children do
-    local name = want_children[i][1]
-    local sub = self:sub(id, name)      -- ★ 与运行时同一套查找
-    if sub == nil then
-      mark(false, "子控件 " .. name .. " —— 不存在",
-        (name == "face" and "没它就换不了格面图（放置角色时看不到人）"
-          or "没它这一格的" .. (name == "note" and "铅笔笔记" or "X 标记") .. "显示不出来")
-        .. (via ~= nil and "" or "（若你把它装进了中间容器，容器名要在 content/root/body 之一）"))
-    else
-      local vis = nil
-      pcall(function() vis = sub.visible end)
-      local extra = ""
-      -- face 和 x 都是**图片**控件，把图片来源/类型都读出来。
-      -- 为什么连 x 也要读：能立刻发现"X 根本没配图"（imageId 为 nil 就永远不显示），
-      -- 也能看到「基础 / 拉伸」实际是哪一个。
-      if name == "face" or name == "x" then
-        local it, iid = nil, nil
-        pcall(function() it = sub.imageType end)
-        pcall(function() iid = sub.imageId end)
-        extra = "  imageType=" .. tostring(it) .. " imageId=" .. tostring(iid)
-        if iid == nil then
-          bad = bad + 1
-          extra = extra .. "   ← **图片来源没配**！去「图片设置 → 图片源=静态引用 → 引用素材资产」选一张 "
-            .. (name == "face" and "格面底图（带圆角/边框的建议用九宫格素材 + 图片类型=拉伸）"
-                          or "X 图标（功能图标类即可）")
-        end
-        -- ⚠️ 这里**只提示、不报错**。
-        --
-        -- 2026-09-26 真机实验（用户做的）：**基础 也会铺满图片控件本身** ——
-        -- 所以"格面不是拉伸"**不会**导致棋盘花掉，格面照样跟着格子缩放。
-        --
-        -- 「基础 / 拉伸」的真正区别只在**素材是九宫格/三宫格**时才显现：
-        --   · 素材图片属性 = 普通   → 基础 和 拉伸 表现**完全一样**（角都形变）
-        --   · 素材图片属性 = 三宫格 → 拉伸 保住那一对边，基础 会压扁
-        --   · 素材图片属性 = 九宫格 → 拉伸 保住四角，基础 会压扁圆角
-        -- 依据：官方《图片控件》那张「**图片属性**」表（注意：它属于**素材**，
-        -- 不是「图片类型」的选项）。
-        --
-        -- 所以这里最多给一句 info，绝不记成 ❌ —— 否则就是在制造误报。
-        if name == "face" and it ~= nil then
-          local s = tostring(it)
-          if not s:find("Stretch") then
-            say("  ℹ️ 格面用的是【基础】：**也会铺满格子**，不影响棋盘。"
-              .. "只有当你给 face 换了**九宫格/三宫格**素材、想让四角不被压扁时，"
-              .. "才需要把图片类型改成【拉伸】")
-          end
-        end
-      end
-      say("  ✅ 子控件 " .. name .. " 存在（visible=" .. tostring(vis) .. "）" .. extra)
-    end
-  end
-
-  -- ⑤ 祖先容器有没有开「显示常驻光标」（门控②）。脚本会自己开，这里只做复核。
-  local cur, cursor = c, false
-  for _ = 1, 12 do
-    if cur == nil then break end
-    local sc = nil
-    pcall(function() sc = cur.showCursor end)
-    if sc == true then cursor = true end
-    local p
-    pcall(function() p = cur.parent end)
-    cur = p
-  end
-  mark(cursor, "祖先容器已开「显示常驻光标」（门控②）",
-    "日志里没看到『已由脚本打开 N 个容器』就得在编辑器里手动勾")
-
-  log("[murdoku] ===== 格子体检：" .. id .. " =====")
-  for i = 1, #lines do log("[murdoku]" .. lines[i]) end
-  if bad == 0 then
-    log("[murdoku] 结论：**这一格配好了**（底图 + face/note/x + 状态节点 + 射线 + 门控②都过）。")
-    log("[murdoku]   → 接下来按第 5 节做「客户端控件模板」，再用「**模板引用控件**」引用它，")
-    log("[murdoku]     把 referencedPrefabIndex 填进 cfg.cells.prefab（**不是** prefabIndex）就行。")
-    log("[murdoku]   → 若这一格是**脚本生成**的副本，说明模板已通，不用再动编辑器。")
-  else
-    log("[murdoku] 结论：还有 " .. bad .. " 项要处理（见上面 ❌ 行）")
-  end
-  log("[murdoku] ===== 体检结束 =====")
-  return bad == 0
-end
-
--- ★★★★★ 2026-10-05 **销毁/回收一个控件时，把它名下「所有规划节点」的事件一起扔掉。**
---
---   为什么不能只按 id 清一笔：事件表现在按**规划节点**记（`id \1 父容器 \1 序号`），
---   一个 id 可能挂着好几个节点（`action.back` 就挂着 2 个）。
---   控件真的没了 ⇒ 这几个节点的事件**全都作废**：只清掉其中一个会留下**孤儿条目**
---   （那个键再也不会被写、也再也不会被读，纯泄漏）。
---   ⚠️ 前缀匹配是安全的：分隔符 `\1` 不可能出现在控件 id 里（同一条约定见
---      ui_controller 的 `drop_props_of`），所以 `id .. "\1"` 只会命中**这个 id** 的节点键。
---   ★★★★★ 2026-10-05 **B2 追加：`event_claim` 也要一起清**（同一件事，不能只做一半）。
---      `event_claim[id]` 指着"认领这个控件的那把节点键" —— 控件销毁重建后，那把键**已经
---      不存在**（上面刚被清掉）⇒ 不清就会**认领到旧节点** ✗：
---      `live_event()` 读 `self.events[旧键]` = nil ⇒ 静默退回 `node.event`，
---      看起来"还能点"，实际派发的可能不是这颗新控件的语义（而且新节点再也认领不上 ✗）。
+-- ★ 2026-10-18（优化组 · B 类清理）：`Adapter:diagnose_template` 与 `Adapter:diagnose_cell`
+--   （**合计 354 行**，含两段说明区）**已删除** ✗✓
+--   判据（真机日志给的结案证据，不需要再猜）：
+--     · `diagnose_cell`：v274/v276 日志「格子体检：cell.1.1」→ **每一项都 ✅** →
+--       「结论：**这一格配好了**（底图 + face/note/x + 状态节点 + 射线 + 门控②都过）」；
+--     · `diagnose_template`：「结论（实测）：**生成成功了** —— 用模板索引 1073741876
+--       建了 25 个格子，棋盘 25 格齐全」。
+--   ⇒ 它们是"搭界面阶段"的一次性体检，结论已落 docs（`真机搭建与运行指南` / `API-四方对照`）；
+--     留在上机包里每局要打 30+ 行 ⇒ 按"结案探针"清掉 ✓
+--   ⚠️ **保留** `diagnose_overlap`（用户点名不能删）与 `diagnose_grid`（`Murdoku.DIAG` 门控 + 有用例）
 function Adapter:forget_events_of(id)
   local pre = tostring(id) .. "\1"
   local stale = nil
@@ -15014,7 +14422,14 @@ function Adapter:read_palette()
           pcall(function() src = k.imageSource end)
           pcall(function() id = k.imageId end)
           pcall(function() col = k.imageColor end)
-          if nm ~= nil and nm ~= "" and type(id) == "number" then
+          -- ★★★★★★★★ 2026-10-20（v282）**`imageId <= 0` 的控件不收** ✗✓
+          --
+          --   为什么要挑出来：`type(id) == "number"` 对 **0** 也成立，而 0 = "这张图没配"。
+          --   收进去的后果是**把好键毒掉**：`map["obj.table"] = {id = 0}` ⇒ 家具那一格
+          --   `SetImage(src, 0)` = 没有图 ⇒ 看不见，而且下面的 `cfg.obj_art` 兜底
+          --   因为"键已存在"被跳过 ⇒ **配了脚本素材也不生效**，还查不出原因。
+          --   （这正是本项目"素材还没配"那个阶段的常态：控件在、图空着。）
+          if nm ~= nil and nm ~= "" and type(id) == "number" and id > 0 then
             map[nm] = { source = src, id = id, color = col, from = roots[ri] }
             names[#names + 1] = nm
           end
@@ -15022,8 +14437,6 @@ function Adapter:read_palette()
       end
     end
   end
-  self._palette = map
-  self._palette_names = names
   -- ★★★★★★★★ 2026-10-18 **家具素材也可以直接写在脚本里**（`cfg.obj_art`）✗✓✓
   --   ★ 为什么加这条：用户实测「编辑器报 GUID 重复」是从 396（第一次新建 `things` 素材区）开始的 ✗
   --     ⇒ 只要**不新建控件**就不会撞 ✓ 而家具图标本来只需要"一张图 + 一个颜色" ✓
@@ -15040,6 +14453,19 @@ function Adapter:read_palette()
         names[#names + 1] = key
       end
     end
+  end
+  -- ★★★★★★★★ 2026-10-20（v282）**"空调色板"不许缓存** ✗✓
+  --
+  --   起因：与 v281 修的那个 bug 同一族 —— **首帧树还没就绪**。
+  --   原来 `self._palette = map` 无条件写死，所以只要第一次读的时候
+  --   `assets` / `things` 还没被找到（启动早期、或控件是后来才实例化的），
+  --   就会缓存一张**空表**，而它**再也不重读** ⇒ 整局所有素材名都解析不出来。
+  --   ⇒ 现在：**确实拿到了东西才缓存**；空表只返回当次结果，下次调用会重新走一遍。
+  --   ⚠️ 成本可控：只有"空"的时候才会重走（树就绪后立刻转成缓存），不是每帧白扫。
+  --   ⚠️ 空表时 `_palette_names` 也不覆盖 —— 报错文案要保留上一份"看到过哪些名字"更有用。
+  if next(map) ~= nil then
+    self._palette = map
+    self._palette_names = names
   end
   return map
 end
@@ -15847,6 +15273,94 @@ function Adapter:_fit_child_sized(sub, w, h)
   if sub.SetAnchoredPosition then pcall(function() sub:SetAnchoredPosition(0, 0) end) end
 end
 
+-- ★★★★★★★★ 2026-10-20 家具/障碍物（`cell` 的 `obj` 子控件）—— **唯一**的画法 ✗✓
+--
+--   为什么要抽成一个函数：有两个调用点，而"同一件事两处实现"是本项目栽过最多的地方。
+--     ① `set_property` 的 `object` 分支 —— 属性下发那一刻
+--     ② `_cells_paint` —— **每帧**重放（对抗 `hide_kids` 的递归藏，见下面的长注释）
+--
+--   `want` 的形状：`false` = 这一格**没有**物件（必须藏，否则白板压住头像）；
+--                 表 = `{ key=素材名, src=imageSource, id=imageId, color=imageColor }`
+--   `force`：true = 这一次强制重写图/色（属性刚变化）；false = 只在意图变了才写。
+--
+--   ⚠️ **`SetVisible(true)` 每帧都要写**（不能缓存"我已经显示过了"）：
+--      `hide_kids` 会绕过我们递归把子控件设成 false ⇒ 任何"我记住它亮着"的缓存都会骗自己。
+--   ⚠️ 但 `SetActive(true)` **只在换图那一次写**：`hide_kids` 只碰 visible，
+--      active 只有我们自己会改 ⇒ 每帧重写纯属浪费（`grid_cost` 是按每帧调用数算账的）。
+function Adapter:_paint_obj(cell_id, ctrl, want, force)
+  if cell_id == nil then return false end
+  local o = self:sub(cell_id, "obj")
+  if o == nil then return false end        -- 子控件还没就绪 ⇒ 交给每帧重放补
+  if want == false or want == nil then
+    if o.SetVisible then pcall(function() o:SetVisible(false) end) end
+    return true
+  end
+  local marks = self._obj_marks
+  if marks == nil then
+    marks = setmetatable({}, { __mode = "k" })   -- 弱键：格子实例回收后自动释放
+    self._obj_marks = marks
+  end
+  local m = marks[o]
+  local need = (force == true) or m == nil
+    or m.key ~= want.key or m.id ~= want.id or m.color ~= want.color
+  if need then
+    if ctrl ~= nil then self:_fit_child_to_cell(ctrl, o, cell_id) end
+    local src = nil
+    pcall(function() src = o.imageSource end)
+    if want.src ~= nil then src = want.src end
+    pcall(function() o:SetImage(src, want.id) end)
+    if want.color ~= nil then pcall(function() o.imageColor = want.color end) end
+    marks[o] = { key = want.key, id = want.id, color = want.color }
+    -- ★ 与 `hint` / `notes` 同一口径：要显示时补一次 `SetActive(true)`（幂等）
+    if o.SetActive then pcall(function() o:SetActive(true) end) end
+  end
+  if o.SetVisible then pcall(function() o:SetVisible(true) end) end   -- 见上面 ⚠️：每帧写
+  return true
+end
+
+-- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+-- 2026-10-20（v283）**放置头像专用层 `portrait`** ✗✓✓
+--
+--   用户原话：「**现在家具图层会盖在放置的头像上，把这个问题解决**」
+--
+--   根因（层序）：格子 content 的层序（`cfg.cells.layer_order`，从下到上）是
+--       face（房间色板/原来放头像的）→ hint → **obj（家具）** → wall → door → x → note
+--     而"放置的头像"走 `image` 键落到 **face（最底）** ⇒ **家具盖住头像** ✗
+--   为什么不能简单对调：`face` 是不透明的房间色板，挪到家层之上会把家具整个盖掉 ✗
+--   ⇒ 存档里给模板补一层 **`portrait`**（克隆自 `face`：135×135 / imageId 100001 / 拉伸），
+--     层序放在 **obj 之上、wall 之下** ⇒ 头像在家具之上、又不压墙 ✓
+--   ⚠️ 画法只有一处（本函数）、重放只有一处（`_repaint_cell_overlays` ③），与家具/门墙同一套路 ✓
+function Adapter:_paint_portrait(cell_id, ctrl, want, force)
+  if cell_id == nil then return false end
+  local p = self:sub(cell_id, "portrait")
+  if p == nil then
+    -- 老存档没有这一层（模板还没补）⇒ 退回旧的 face 路径，别把头像弄丢
+    return false
+  end
+  if want == false or want == nil then
+    if p.SetVisible then pcall(function() p:SetVisible(false) end) end
+    return true
+  end
+  local marks = self._portrait_marks
+  if marks == nil then
+    marks = setmetatable({}, { __mode = "k" })   -- 弱键：格子实例回收后自动释放
+    self._portrait_marks = marks
+  end
+  local m = marks[p]
+  if force == true or m == nil or m.key ~= want.key or m.id ~= want.id then
+    if ctrl ~= nil then self:_fit_child_to_cell(ctrl, p, cell_id) end
+    local src = want.src
+    if src == nil then pcall(function() src = p.imageSource end) end
+    pcall(function() p:SetImage(src, want.id) end)
+    -- 头像要**原色**显示（房间色只在 face 上）
+    pcall(function() p.imageColor = 4294967295 end)
+    marks[p] = { key = want.key, id = want.id }
+    if p.SetActive then pcall(function() p:SetActive(true) end) end
+  end
+  if p.SetVisible then pcall(function() p:SetVisible(true) end) end
+  return true
+end
+
 function Adapter:set_property(id, key, value, nkey)
   -- ★★★★★ 2026-10-05 **返回值 = "这次真的送达了吗"**（true/false），界面层据此决定记账 or 重发。
   --
@@ -15938,39 +15452,45 @@ function Adapter:set_property(id, key, value, nkey)
     --   空格看不出（face 本来就是白图），**一放人就露馅** ——
     --   截图里 C3/R1、C4/R2、C4/R3 那三块白方块就是它。
     --   ⇒ 没物件就**藏起来**；将来配了物件图（调色板 `obj.*`）再按名字换图并显示。
-    local o = self:sub(id, "obj")
-    if o ~= nil then
-      -- ★ 2026-10-17：先把 `obj` 钉成"和格子一样大" —— 否则 6×6 那一关家具会溢出 ✓
-      self:_fit_child_to_cell(ctrl, o, id)
-      -- `false` 是 ui_controller 约定的"没有物件"哨兵（nil 会让这个键在 `pairs` 里消失）
-      if value == false or value == nil then
-        if o.SetVisible then pcall(function() o:SetVisible(false) end) end
-        return true          -- ★ "藏起来"就是这次要做的全部 ⇒ 算送达（不要重发）
-      end
-      -- ⚠️ 这里**不要用 `resolve_asset`** —— 它查不到会 `warn_once` 打**报错**，
-      --    而"调色板里还没有 obj.* 素材"是**当前阶段的正常状态**（物件美术还没配），
-      --    不该污染日志。直接查表，查不到就藏起来。
+    --
+    -- ★★★★★★★★ 2026-10-20 **顺序倒过来：先解析"该显示什么"，再谈能不能画** ✗✓✓
+    --
+    --   ★ 真机 bug（用户原话）：「**第一次进入第一关障碍物和家具会渲染不出来**，
+    --     进入第二关后重新回到第一关就有了，**这个问题在门墙渲染上曾出现过**」。
+    --
+    --   ★ 根因（就是墙门那个坑的**同一个坑、下一层**，仓内早有定案，见 `_edge_want` 长注释）：
+    --     · `set_property(…, "visible", false)` 对 `cell.*` 会 `hide_kids()` **递归藏子树**，
+    --       而它**只藏不显**（单向）⇒ 子控件**必须有人每帧把"该亮的"重新点亮**；
+    --     · `face` 有人点（`_cells_paint` 每帧）✓
+    --       `wall.*` / `door.*` 有人点（`_edge_want` 每帧重放）✓
+    --       **`obj` 没人点** ✗ —— 它只在属性下发那一趟设一次；
+    --     · 第一关的格子是**这一帧新建**的 ⇒ 会走一次 `false → true` ⇒ 触发递归藏 ⇒
+    --       家具/障碍物（就是 `obj`）全灭，而且**本关内再也没人救它**；
+    --       第二关起**不重建格子** ⇒ 没有 `false → true` ⇒ 不触发递归藏 ⇒ 家具正常 ✓
+    --     ⇒ 与用户描述**逐字对上**（"第一次不行、换关回来就有了"）✓✓
+    --
+    --   ★ 修法：**与墙门同一套路** —— 把"这一格该显示什么"记进 `_obj_want`，
+    --     由 `_cells_paint`（每帧都跑）重放；画法收进 `Adapter:_paint_obj`，只有一个实现。
+    local want = false
+    if not (value == false or value == nil) then
       local hit = nil
       do
         local map = self:read_palette()
-        local key = tostring(value)
-        hit = map[key]
+        local k = tostring(value)
+        hit = map[k]
       end
+      -- ⚠️ 这里**不要用 `resolve_asset`** —— 它查不到会 `warn_once` 打**报错**，
+      --    而"调色板里还没有 obj.* 素材"是**当前阶段的正常状态**（物件美术还没配），
+      --    不该污染日志。直接查表，查不到就当"这一格没有物件"。
       if hit ~= nil and hit.id ~= nil then
-        local src = nil
-        pcall(function() src = o.imageSource end)
-        if hit.source ~= nil then src = hit.source end
-        pcall(function() o:SetImage(src, hit.id) end)
-        -- ★ 2026-10-17：调色板控件的**颜色也照抄**（`things` 里每个素材自带一个色）
-        --   ★ 为什么：家具素材先按"色块"占位（真图 id 只有编辑器里有）；换真图时
-        --     把那一格的 `imageColor` 改回白色即可 —— 脚本不用动 ✓
-        if hit.color ~= nil then pcall(function() o.imageColor = hit.color end) end
-        if o.SetVisible then pcall(function() o:SetVisible(true) end) end
-      else
-        -- 没有物件（或名字解析不出来）→ **必须藏**，否则白板会盖住头像
-        if o.SetVisible then pcall(function() o:SetVisible(false) end) end
+        want = { key = tostring(value), src = hit.source, id = hit.id, color = hit.color }
       end
     end
+    -- ① 先记意图（**即使子控件此刻还取不到也要记** —— 每帧重放靠它补画）
+    self._obj_want = self._obj_want or {}
+    self._obj_want[id] = want
+    -- ② 再尽力立刻画一次（失败不报错：子控件晚一步就绪是正常情形，每帧会补）
+    self:_paint_obj(id, ctrl, want, true)
 
   -- ★★★★★★★★ 2026-10-17 **线索位置提示层：`cell.R.C` 的 `hint` 子控件** ✗✓
   --
@@ -16008,7 +15528,7 @@ function Adapter:set_property(id, key, value, nkey)
   elseif key == "fit" then
     local n = tonumber(value)
     if n ~= nil and n > 1 then
-      for _, nm in ipairs({ "face", "hint", "obj" }) do
+      for _, nm in ipairs({ "face", "hint", "obj", "portrait" }) do
         local s2 = self:sub(id, nm)
         if s2 ~= nil then self:_fit_child_sized(s2, n, n) end
       end
@@ -16065,6 +15585,26 @@ function Adapter:set_property(id, key, value, nkey)
       end
     end
   elseif key == "image" then
+    -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+    -- 2026-10-20（v283）**格子的"放置头像"改画到 `portrait` 层**（在家具之上）
+    --
+    --   用户原话：「现在家具图层会盖在放置的头像上，把这个问题解决」
+    --   · 旧：`image` → `face`（最底层）⇒ 家具 `obj` 压在上面 ✗
+    --   · 新：格子走 `portrait`（层序在 obj 之上、wall 之下）✅
+    --     房间色仍然留在 `face`（由 `tint` 写），所以格子**底色不会丢** ✓
+    --   ⚠️ 非格子（线索卡 `clue.N.face`、选关卡、托盘卡）**一律不动**，照旧走 face 那条路 ✓
+    if is_cell_id(id) then
+      local want = false
+      if value ~= nil and value ~= false then
+        local hit = self:resolve_asset(value)
+        if hit ~= nil and hit.id ~= nil then
+          want = { key = tostring(value), id = hit.id, src = hit.source }
+        end
+      end
+      self._portrait_want = self._portrait_want or {}
+      self._portrait_want[id] = want
+      return self:_paint_portrait(id, ctrl, want, true)
+    end
     -- 头像/格面/物件图标：图片来自子控件 "face"
     --
     -- `value` 可以是两种：
@@ -16243,6 +15783,19 @@ function Adapter:set_property(id, key, value, nkey)
     --   ⇒ 那一次递归隐藏根本没赶上它们（真机排行榜里 face/content 依然可见）。
     self._hidden_ids = self._hidden_ids or {}
     if vis then self._hidden_ids[id] = nil else self._hidden_ids[id] = true end
+    -- ★★★★★★★★ 2026-10-20 **`cell.*` 由藏转显 ⇒ 请求一次"把子控件该亮的重新点亮"** ✗✓✓
+    --
+    --   为什么必须在这里置位：上面那段 `hide_kids`（`vis == false` 且 `cell.*`）会**递归藏掉**
+    --   格子的全部子控件（`face`/`obj`/`wall.*`/`door.*`/`note`/`x`），而**显示方向不递归**
+    --   （既有设计：子控件各有负责人）。⇒ 谁被藏过，谁就得有人重新点亮：
+    --     · `face` 每帧有人点 ✓
+    --     · `wall.*`/`door.*`/`obj` **只有属性下发那一趟** ✗ ⇒ 这里置位，`on_tick` 里重放。
+    --   ★ 真机症状就是这个：**第一次进第一关**，格子是这一帧新建的 ⇒ 走一次 false→true
+    --     ⇒ 家具/障碍物整关不画；第二关起不重建格子 ⇒ 不触发 ⇒ "换关回来就好了" ✓
+    --   ⚠️ 只在**显示方向**置位（隐藏方向没有要救的东西，而且置了也只是白跑一趟重放）。
+    if vis and id:sub(1, 5) == "cell." then
+      self._overlay_dirty = true
+    end
     -- ★★★★★ 2026-10-05 **可见性真的被脚本改了 ⇒ 兜底隐藏这一帧必须重跑一次。**
     --
     --   这是 `enforce_hidden_subtrees` 从"每帧扫"改成"事件驱动"之后的**主要触发源**
@@ -16449,7 +16002,7 @@ function Adapter:set_property(id, key, value, nkey)
     --     于是四张选关卡全被 `SetAnchoredPosition(0,0)` 钉到画布中心 ⇒ **看起来只有一张** ✓
     --   ⇒ 闸门：**只认 `cell.<行>.<列>`**（脚本自己实例化出来的格子）✓
     if w ~= nil and h ~= nil and type(id) == "string" and id:match("^cell%.%d+%.%d+$") then
-      for _, nm in ipairs({ "face", "hint", "obj" }) do
+      for _, nm in ipairs({ "face", "hint", "obj", "portrait" }) do
         local sub3 = self:sub(id, nm)
         if sub3 ~= nil then self:_fit_child_sized(sub3, w, h) end
       end
@@ -16733,13 +16286,10 @@ end
 -- 取不到枚举时只是不绑定，鼠标照样能玩，不影响可用性。
 ----------------------------------------------------------------------------
 
-local function make_cursor_data(x, y, press_x, press_y)
-  return {
-    x = x, y = y, pressX = press_x, pressY = press_y,
-    GetUIPos = function() return x, y end,
-    GetPressUIPos = function() return press_x, press_y end,
-  }
-end
+-- ★ 2026-10-18（优化组 · P0）：`make_cursor_data`（连带它返回表里的 `GetPressUIPos` 字段）**已删除** ✗✓
+--   判据：文件内 local，全仓 0 调用点。
+--   ⚠️ 真引擎回调收到的 `CursorEventData` **自带** `GetUIPos` / `GetPressUIPos`（官方）⇒
+--     这个"自己捏一个"的假对象只在早期离线桩阶段用过，早就不需要了。
 
 -- 平台/设备：KeyboardAndMouse | Mobile | Controller | MobileController
 function Adapter:device()
@@ -17163,11 +16713,8 @@ function Adapter:bind_keys(spec, control_id)
   return n, note
 end
 
--- 键盘是否真的可用（要么绑成功过，要么收到过键盘事件）
-function Adapter:keyboard_ready()
-  if self.keymap ~= nil and next(self.keymap) ~= nil then return true end
-  return false
-end
+-- ★ 2026-10-18（优化组 · P0）：`Adapter:keyboard_ready` **已删除** —— 全仓 0 调用点
+--   （需要判断时直接看 `self.keymap` 是否非空即可，不必留一个包装函数）
 
 ----------------------------------------------------------------------------
 -- 动效（TweenSequence 关键帧）+ 音效
@@ -17226,9 +16773,7 @@ local EFFECTS = {
   -- 擦除：缩到 0
   vanish       = { dur = 0.20, ease = "InQuad",   ch = "scale",
                    keys = { { 0.00, 1.00 }, { 1.00, 0.00 } } },
-  -- 区域墙：轻微一缩（表示"这里隔断"）
-  roomwall     = { dur = 0.14, ease = "OutQuad",  ch = "scale",
-                   keys = { { 0.00, 0.98 }, { 1.00, 1.00 } } },
+  -- ★ 2026-10-18（优化组 · P0）：`roomwall` 动效**已删除** —— 上一批删掉 `M.EFFECTS.ROOMWALL` 后无人再发它
   -- 拒绝 / 错误：左右摇头
   shake        = { dur = 0.30, ease = "Linear",   ch = "pos_x",
                    keys = { { 0.00, 0 }, { 0.20, -8 }, { 0.45, 8 },
@@ -17254,7 +16799,6 @@ M.SOUNDS = {
   clue_box_pop = nil,
   solved_flash = nil,
   vanish       = nil,
-  roomwall     = nil,
   shake        = nil,
   portrait_slide_up = nil,
 }
@@ -17475,6 +17019,56 @@ function Adapter:enforce_hidden_subtrees()
   end
 end
 
+-- ★★★★★★★★ 2026-10-20 **把"该亮的子控件"重新点亮 —— 只此一处** ✗✓✓
+--
+--   为什么需要它（真机 bug，用户报的）：`set_property(…, "visible", false)` 作用在 `cell.*` 上时，
+--   `hide_kids()` 会**递归**把该格全部子控件设成 `visible=false`，而且**只藏不显**（单向）。
+--   ⇒ 必须有东西把"该亮的"重新点亮，否则：
+--     · `face` —— 有人点（每帧底图那条路）✓
+--     · `wall.*` / `door.*` / `obj` —— **只在属性下发那一趟设一次** ⇒ 一旦被递归藏过就**永不恢复** ✗
+--       第一关的格子是"这一帧新建"的 ⇒ 会走一次 `false → true` ⇒ 触发递归藏 ⇒
+--       家具/障碍物/墙门整关不画；第二关起不重建格子 ⇒ 不触发 ⇒ "换关回来就好了" ✓
+--       （这就是用户说的「第一次进第一关家具不渲染、进第二关再回来就有了」）
+--
+--   两个调用点：
+--     ① `_cells_paint`（建格子那一刻也会跑）
+--     ② `Adapter:on_tick` 的 `_overlay_dirty` 分支（★ 每帧那条路 —— `main.lua` 的 `on_update` 会调它）
+--   ⚠️ **光有 ① 不够**：`_cells_paint` 现在只在**建控件时**被调用，不是每帧
+--      （注释里"每帧调用"那句是旧行号时代的，清理之后已经不准了）。
+--      真正每帧都在跑的是 `on_tick` ⇒ 重放必须挂在它上面才作数。
+function Adapter:_repaint_cell_overlays(cell_id)
+  if cell_id == nil then return end
+  -- ① 门墙：重放"该亮哪些边"（记录在 `_apply_edges`）
+  local w = self._edge_want
+  if w ~= nil then
+    local e = w[cell_id]
+    if e ~= nil then
+      for name, want in pairs(e) do
+        local s2 = self:sub(cell_id, name)
+        if s2 ~= nil and s2.SetVisible ~= nil then
+          pcall(function() s2:SetVisible(want) end)
+        end
+      end
+    end
+  end
+  -- ② 家具/障碍物：重放"这一格该显示什么"（记录在 `object` 分支）
+  local o = self._obj_want
+  if o ~= nil then
+    local want = o[cell_id]
+    if want ~= nil then
+      self:_paint_obj(cell_id, nil, want, false)
+    end
+  end
+  -- ③ 放置头像（v283）：重放"这一格有没有人"（记录在 `image` 分支）—— 与家具同一条纪律 ✓
+  local pp = self._portrait_want
+  if pp ~= nil then
+    local want = pp[cell_id]
+    if want ~= nil then
+      self:_paint_portrait(cell_id, nil, want, false)
+    end
+  end
+end
+
 function Adapter:on_tick(dt)
   self.clock = self.clock + (dt or 0)
   local due = {}
@@ -17504,6 +17098,29 @@ function Adapter:on_tick(dt)
   --   另外 `find` 一搜到"该隐藏的名字"就置位（`_note_lookup_hit`）—— 兜底不会漏。
   if self._subtree_dirty then
     pcall(function() self:enforce_hidden_subtrees() end)
+  end
+  -- ★★ 2026-10-20 **格子子控件的"该亮的"重放**（事件驱动，稳态零成本）
+  --
+  --   谁置位：`set_property` 的 `visible` 分支 —— **`cell.*` 由藏转显**的那一刻
+  --     （真机第一关开局就是这条：格子先被藏（主页）→ 递归藏子树 → 回关卡内转显）。
+  --   为什么不用每帧无条件跑：25~36 格 × (sub + SetVisible) 每帧白跑，
+  --     与上面 `_subtree_dirty` 当初被改成事件驱动是**同一个理由**（`grid_cost` 在盯）。
+  --   为什么不能只在建格子时跑：`_cells_paint` 现在只在**建控件**时被调用
+  --     （注释里"每帧调用"那句是旧行号时代的）⇒ 挂在那儿等于没有。
+  if self._overlay_dirty then
+    self._overlay_dirty = false
+    local seen = {}
+    local function repaint_all(t)
+      if type(t) ~= "table" then return end
+      for cid in pairs(t) do
+        if not seen[cid] then
+          seen[cid] = true
+          pcall(function() self:_repaint_cell_overlays(cid) end)
+        end
+      end
+    end
+    repaint_all(self._edge_want)
+    repaint_all(self._obj_want)
   end
   return self.clock
 end
@@ -17620,47 +17237,14 @@ function Adapter:play_audio(audio_id)
   return nil
 end
 
-function Adapter:get_text(text_map_id)
-  if game and game.GetText then return game.GetText(text_map_id) end
-  return tostring(text_map_id)
-end
+-- ★ 2026-10-18（优化组 · P0）：`Adapter:get_text` **已删除** —— 全仓 0 调用点
+--   文案通道是 `set_property(id, "text", …)`（真机已验证），不存在"本地化文本表"这条路 ✓
 
 ----------------------------------------------------------------------------
--- 运行时能力自检
-----------------------------------------------------------------------------
-
-function M.capabilities()
-  local has_game = (type(game) == "table")
-  local has_script = (type(script) == "table")
-  local rows, missing = {}, {}
-
-  local function check(label, ok)
-    rows[#rows + 1] = string.format("%-36s %s", label, ok and "OK" or "缺失")
-    if not ok then missing[#missing + 1] = label end
-  end
-
-  check("game 全局表", has_game)
-  check("game.GetClientUIRoots", has_game and type(game.GetClientUIRoots) == "function")
-  check("game.FindClientUIRoot", has_game and type(game.FindClientUIRoot) == "function")
-  check("game.GetClientUIControl", has_game and type(game.GetClientUIControl) == "function")
-  check("game.InstantiateClientUIControl", has_game and type(game.InstantiateClientUIControl) == "function")
-  check("game.Tween", has_game and type(game.Tween) == "function")
-  check("game.TweenSequence", has_game and type(game.TweenSequence) == "function")
-  check("game.ServerSignal", has_game and type(game.ServerSignal) == "function")
-  check("game.PlayAudio2D", has_game and type(game.PlayAudio2D) == "function")
-  check("game.GetText", has_game and type(game.GetText) == "function")
-  check("game.GetUICanvasSize", has_game and type(game.GetUICanvasSize) == "function")
-  check("Enum.CursorEventType.CursorClick", E("CursorEventType.CursorClick") ~= nil)
-  check("Enum.ImageSource", E("ImageSource") ~= nil)
-  check("script（当前脚本实例）", has_script)
-  check("script:RegisterServerSignalHandler", has_script and type(script.RegisterServerSignalHandler) == "function")
-  check("script:GetParam", has_script and type(script.GetParam) == "function")
-  check("script:EnableUpdate", has_script and type(script.EnableUpdate) == "function")
-
-  local text = "千星适配层运行时能力自检：\n" .. table.concat(rows, "\n")
-  if #missing > 0 then text = text .. "\n\n缺失项：" .. table.concat(missing, "、") end
-  return text, missing
-end
+-- ★ 2026-10-18（优化组 · P0）：`M.capabilities`（运行时能力自检，19 条 check）**已删除** ✗✓
+--   判据：全仓 0 调用点（底稿里"tools 里 15 处在用"是第三方库污染，已逐个复核为 0）。
+--   它是"真机首跑"那一轮的一次性体检，结论已经落在 docs/（API-四方对照、平台边界）；
+--   留在上机包里只是白占体积，而且真需要时随时能从 git 历史取回 ✓
 
 -- ★★★★★★★★ 2026-10-16 **v253：`apply_button_labels` 【已删除】** ✗✓✓
 --
@@ -18355,6 +17939,9 @@ function Murdoku.start(level_id, opts)
       end
       adapter.cfg.btn_list = list
       if print then print("[murdoku] 上色名单（来自规划）：" .. #list .. " 个按钮") end
+      -- ★ 2026-10-18（优化组）：按钮上色是 **opt-in**（`cfg.btn_art = true` 才跑）——
+      --   入口从原来的 `apply_tray_layout` 改成独立方法 `apply_btn_art`（那个函数已删）✓
+      pcall(function() if adapter.apply_btn_art then adapter:apply_btn_art() end end)
       -- ★ 顺手把所有按钮的**名字**也收集起来（规划里的 `text`），开机直接写下去。
       --   为什么不信渲染那条路：用户反复反馈名字没配上，而文字**只能靠脚本写**
       --   （存档里不存文字，已用 `ruler.c.1` 验证）。这里走一条**明确、可读回验证**的路径。
@@ -18472,13 +18059,8 @@ function Murdoku.start(level_id, opts)
     print(string.format("[murdoku] 按钮名字：成功 %d 个；另有 %d 个走 `text` 子控件（头像卡，正常）或写入未回读（共 %d）", okN, badN, #ids2))
   end
 
-  -- 头像卡按本关实际人数重新摆正（列数会随人数变，编辑器那套只是"最挤的情况"）
-  if adapter.apply_tray_layout and controller.tray_layout_canvas then
-    local moved = adapter:apply_tray_layout(controller:tray_layout_canvas())
-    if moved > 0 and print then
-      print("[murdoku] 头像卡已按 " .. moved .. " 人重新排布")
-    end
-  end
+  -- ★ 2026-10-18（优化组 · C 类清理）：头像卡重排的调用**已删除**（`tray_layout_canvas` 同时删了）
+  --   ⇒ 不再每局打「找不到头像卡容器」；`apply_tray_layout` 本体留到下一批处理 ✓
 
   -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
   -- ★★ 2026-10-12 **【已删除】"行标 / 列标按格子的实际位置对齐"这一段** ✗✓
@@ -18498,20 +18080,9 @@ function Murdoku.start(level_id, opts)
   if adapter.diagnose_overlap and adapter.cfg.overlap_diag ~= false then
     adapter:diagnose_overlap()
   end
-  -- ③ 参照格子体检：把「cell.1.1 到底配好了没有」一次性讲清楚。
-  --    原因：格子能不能看见/点得动，取决于类型、射线、子控件、状态节点、图片类型好几项，
-  --    而这些在日志里**原本一点痕迹都没有**，出问题只能靠肉眼猜。
-  --    搭界面阶段默认开（cfg.diagnose_cell = false 可关），每个会话只打一次。
-  if adapter.diagnose_cell ~= nil and not adapter._cell_diagnosed
-     and not (adapter.cfg and adapter.cfg.diagnose_cell == false) then
-    adapter._cell_diagnosed = true
-    pcall(function() adapter:diagnose_cell() end)
-    -- 跟着报一段「模板候选」：cell.1.1 自己的 prefabIndex 是**基础模板**，不能用来
-    -- 生成格子；必须有「从另存出来的模板**新建**的」那个控件（约定名 tpl.cell）。
-    -- 提前报出来，试玩前就知道配没配对，而不是等一句"全部实例化失败"。
-    pcall(function() adapter:diagnose_template() end)
-  end
-
+  -- ★ 2026-10-18（优化组 · B 类清理）：**参照格子体检（diagnose_cell / diagnose_template）调用删除** ✗✓
+  --   结案证据见真机日志：「这一格配好了」/「生成成功了 —— 建了 25 个格子」。
+  --   下面的 `diagnose_grid` 仍在，但它的闸从「`_cell_diagnosed` + DIAG」简化成**只看 DIAG** ✓
   Murdoku.render(true)
 
   -- ★★★ 2026-09-30：**把主页/选关和 3D 角色的输入隔开**（用户明确要求）。
@@ -18560,8 +18131,9 @@ function Murdoku.start(level_id, opts)
   -- （`controller:render` 才推 `walls`/`doors`/`image`/`tint`）。放在渲染前，
   -- 清单里读到的全是**编辑器初始值** —— 用户 2026-09-27 04:26 的日志里
   -- `wall.up visible=false` 但**屏幕上明明有蓝线**，就是这么来的（误导性输出）。
-  if adapter.diagnose_cell ~= nil and adapter._cell_diagnosed and adapter.diagnose_grid ~= nil
-     and adapter.cfg and adapter.cfg.diagnose_grid ~= false then
+  -- ★ 2026-10-18：原来这里还要 `adapter._cell_diagnosed`（由 diagnose_cell 置位）⇒ 那个体检已删，
+  --   闸只留 `Murdoku.DIAG`（真正的调用在下面 `if Murdoku.DIAG then`）✓ 行为不变。
+  if adapter.diagnose_grid ~= nil and adapter.cfg and adapter.cfg.diagnose_grid ~= false then
     local rows = adapter.cells_rows or (adapter.cfg.cells and adapter.cfg.cells.rows) or 5
     local cols = adapter.cells_cols or (adapter.cfg.cells and adapter.cfg.cells.cols) or 5
   if Murdoku.DIAG then pcall(function() adapter:diagnose_grid(rows, cols) end) end   -- ★ 闸 ✓
@@ -18668,63 +18240,11 @@ function Murdoku.on_update(dt)
       end
     end
   end
-  -- ★★★★★ 2026-10-08 **四键探针（真·每帧入口 ＋ adapter 在手 ✓）** ✗✓
-  --   ★ 为什么这里能读 ✓：★ 本函数是 `Murdoku.on_update`（★ 入口脚本 L853 的 `OnUpdate` 调它 ✓
-  --     ★ 且 `script:EnableUpdate(true)` 已开 ✓）★ 而 `current.adapter` **就在这里** ✓✓
-  --   ★ 触发条件 ✓：★ 渲染分支刚记录过"弹窗开着"（★ `current._modal_seen` 在涨 ✓）
-  --     ★ 那一侧拿不到 adapter ✗ ⇒ ★ **两边拼起来**：★ 一边报"开着" ✓ ★ 一边读控件 ✓
-  -- ★★★★★ 2026-10-09 **修好这条探针 —— 它【从来没触发过】** ✗✓
-  --   ★ 症状 ✓：真机日志里**一次都没有** `★ 四键探针2` ✗
-  --   ★ 根因（两处对不上 ✗）：
-  --     · `ui_controller.lua:3028` 是把计数器加在 **控制器** 上：`self._modal_seen = …`
-  --     · 而这里读的是 **会话**：`current._modal_seen` ✗ —— **两个不同的对象** ✓
-  --     ⇒ `current._modal_seen` **恒为 nil** ⇒ `_seen = 0` ⇒ 那个 `>` 判断**永远不成立** ✓
-  --   ⇒ ★ 修法：从**控制器**上读（`current.controller` ✓ 与 L794 的 `current.controller:tick` 同一个 ✓）
-  --   ★ 顺带把资料员要的那两个数打出来 ✓（它建议的"最大的分叉"那条 ✓）：
-  --     `bg` / `label` 的 **同级排序索引**（官方 `GetSiblingIndex()` ✓ 语义：**数值越大越靠上** ✓）
-  --     ⇒ 一行就能分清"**根本没画**"还是"**画了被盖住**" ✓
-  if current ~= nil and current.adapter ~= nil then
-    local _ctl = current.controller
-    local _seen = (_ctl and _ctl._modal_seen) or 0
-    if _seen > (Murdoku._probe_seen or 0) and (Murdoku._probe_n or 0) < 12 then
-      Murdoku._probe_seen = _seen
-      Murdoku._probe_n = (Murdoku._probe_n or 0) + 1
-      local _k = nil
-      pcall(function() _k = current.adapter:sub("modal", "modal.exit") end)
-      if _k == nil then pcall(function() _k = current.adapter:find("modal.exit") end) end
-      local _b = nil
-      if _k ~= nil then pcall(function() _b = current.adapter:sub("modal.exit", "bg") end) end
-      local _id, _src, _vis, _sz = "?", "?", "?", "?"
-      if _b ~= nil then
-        pcall(function() _id = tostring(_b.imageId) end)
-        pcall(function() _src = tostring(_b.imageSource) end)
-        pcall(function() _vis = tostring(_b.visible) end)
-        pcall(function() _sz = tostring(_b.sizeDelta and (_b.sizeDelta.x .. "x" .. _b.sizeDelta.y) or "无") end)
-      end
-      -- ★★★ 2026-10-09 **资料员建议的那两个数（最大的分叉就在这一行 ✓）**
-      --   官方语义（`docs/api-cache/mhtakr07vej4.txt:1300-1311` ✓）：
-      --     `GetSiblingIndex()` ⇒ 同级排序索引 ✓ **数值越大越靠上** ✓
-      --   读法 ✓：
-      --     · `bg` 的索引 **>** `label` 的 ⇒ ★ **底图压在文字上面** ⇒ 图文一起看不见 ✓
-      --     · 两者都**读不出来**（nil） ⇒ 接口不适用，改看别的 ✓
-      --     · 索引正常（`label` 更大）而画面上还是空 ⇒ ★ **压根没画**（不是被盖住）✓
-      --   ⇒ ★ 这一条能一次分清「没画」还是「被盖住」✓ —— 那是当前最大的分叉 ✓
-      local _bi, _li = "?", "?"
-      local _lb = nil
-      if _k ~= nil then pcall(function() _lb = current.adapter:sub("modal.exit", "label") end) end
-      if _b ~= nil then pcall(function() _bi = tostring(_b:GetSiblingIndex()) end) end
-      if _lb ~= nil then pcall(function() _li = tostring(_lb:GetSiblingIndex()) end) end
-      print("[murdoku] ★ 四键探针2：exit=" .. tostring(_k ~= nil) .. "  bg=" .. tostring(_b ~= nil)
-        .. "  imageId=" .. _id .. "  source=" .. _src .. "  visible=" .. _vis .. "  size=" .. _sz)
-      print("[murdoku] ★ 四键探针3（谁在上面）：bg 的 GetSiblingIndex=" .. _bi
-        .. "   label 的 GetSiblingIndex=" .. _li
-        .. "   （官方：**数值越大越靠上** ✓ ⇒ bg > label 就是底图压在字上面 ✗）"
-        .. "  label=" .. tostring(_lb ~= nil)
-        .. "  label.visible=" .. (function() local v = "?" pcall(function() v = tostring(_lb.visible) end) return v end)())
-    end
-  end
-
-  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  -- ★ 2026-10-18（优化组 · B 类清理）：**四键探针整段删除** ✗✓
+  --   它要查的「弹窗四键没图 / 没字」已由 v262 结案（几何归编辑器 + 盒模型修正 + `label` 防裁），
+  --   而它**不在 `Murdoku.DIAG` 门内** ⇒ 默认就在跑（每次会话最多 12 次刷两行）。
+  --   判据：真机日志里它只在"弹窗打开后"产出；那两行信息（bg/label 的 GetSiblingIndex）
+  --     现在也能用 `tools/gil/_probe_state.mjs` 从存档侧直接读，不必挂在每帧路径上。
   current.adapter:on_tick(dt)
   current.controller:tick(dt)
 
@@ -19019,184 +18539,12 @@ function Murdoku.on_update(dt)
     --   那个探针控件就是用户看到的"白块"，已删除，不再创建。
 
   end
-  -- ★★★★ 2026-10-01 **射线落点探针**：给几个"容器/弹窗"也绑上点击。
-  --
-  --   为什么：选关页上 `select.back` / `select.card.*` 的 visible/坐标/bind 全对，
-  --   而用户"所有位置都点了一遍"却**零点击日志**。可 `select` 容器自己**没绑点击**
-  --   => "没日志"并不能区分"射线被别人吃了"和"射线落在没绑事件的控件上"。
-  --   => 给容器们绑一遍：**谁收到日志，射线就落在谁身上**。
-  --      容器能收到 => 射线到得了这一层，子控件却没收到 => 子控件的射线被谁挡住/顺序不对
-  --      容器也收不到 => 更上层还有东西（游戏自己的 UI 层）
-  if not Murdoku._ray_probe_done and (current.frames or 0) >= 100 then
-    Murdoku._ray_probe_done = true
-    local ad3 = current.adapter
-    -- ★★★★★ 2026-10-06 **名单按真机实测修正** ✗✓
-    --   旧的 7 个里 `select` / `intro` / `toast` / `modal` / `board` **都不存在** ✗
-    --   ⇒ ★ 每次刷 7 行「射线探针：X 找不到或不支持光标事件」✗
-    --     ★ 而 `root` / `home` **其实存在** ✓ 只是不支持光标事件 ✓
-    --     ⇒ ★★ 那句话把两种完全不同的情况混成一句 ✗ ⇒ 读起来像"控件没了" ✓
-    --   ⇒ 只探**真机确认存在**的容器 ✓（★ 依 2026-10-05/06 真机日志 ✓）
-    local probe_ids = { "root", "home", "stage", "clues", "topbar", "toolbar", "right", "board.bg" }
-    for i = 1, #probe_ids do
-      local pid = probe_ids[i]
-      local c = nil
-      pcall(function() c = ad3:find(pid) end)
-      local clickEnum = nil
-      pcall(function() clickEnum = Enum.CursorEventType.CursorClick end)
-      if clickEnum == nil then
-        pcall(function() clickEnum = Enum.CursorEventType.CursorClickDown end)
-      end
-      if c ~= nil and c.AddCursorEventListener ~= nil and clickEnum ~= nil then
-        local okb = pcall(function()
-          c:AddCursorEventListener(clickEnum, function()
-            print("[murdoku] RAY-HIT = " .. pid .. " （射线落在这个容器上）")
-          end)
-        end)
-        print("[murdoku] 射线探针：" .. pid .. " 绑定=" .. tostring(okb))
-      elseif clickEnum == nil then
-        print("[murdoku] 射线探针：读不到 Enum.CursorEventType.CursorClick，跳过")
-        break
-      else
-        print("[murdoku] 射线探针：" .. pid .. " 找不到或不支持光标事件")
-      end
-    end
-    -- ★★★★★ 2026-10-02 **打印所有客户端 UI 根**。
-    --
-    --   为什么：用户的观察把范围压到了最后一格 ——
-    --     · 把 `home`/`select` 缩成 1x1 之后，**选关页该有的按钮消失了**（被父级裁剪）
-    --     · 而**"处处有音效"依旧** ⇒ 那个吃点击的全屏按钮**不是** home/select
-    --     · 排行榜里只有 `root` 一个全屏 ⇒ **它不在 root 的子树里**
-    --   ⇒ 结论：**它在另一个客户端 UI 根上**。
-    --   适配器注释里写着查找用的是 `game.GetClientUIRoots()`（**复数**），
-    --   而脚本从头到尾只用了一个 `root`。把这些根全部列出来，那个全屏按钮就会现形。
-    dprint("[murdoku] ===== 客户端 UI 根清单 =====")
-    do
-      local roots = nil
-      pcall(function() roots = game.GetClientUIRoots() end)
-      if type(roots) ~= "table" then
-        dprint("[murdoku]   读不到 game.GetClientUIRoots()（或返回非表）")
-      else
-        dprint("[murdoku]   共 " .. tostring(#roots) .. " 个根")
-        for i = 1, math.min(#roots, 12) do
-          local r = roots[i]
-          local nm, v, w, h = "?", "?", 0, 0
-          pcall(function() nm = tostring(r.name) end)
-          pcall(function() v = tostring(r.visible) end)
-          pcall(function()
-            local a, b = r:GetSizeDelta()
-            if type(a) == "table" then w, h = a.x, a.y else w, h = a, b end
-          end)
-          local kids = nil
-          pcall(function() kids = r:GetChildren() end)
-          local nk = (type(kids) == "table") and #kids or -1
-          dprint(string.format("[murdoku]     %d. %-18s visible=%-5s %6.0fx%-6.0f 子控件=%d",
-            i, nm, v, w or 0, h or 0, nk))
-          -- 根下面直接可见的大控件 —— 那个全屏按钮多半就在这一层
-          if type(kids) == "table" then
-            for k = 1, math.min(nk, 20) do
-              local c = kids[k]
-              if c ~= nil then
-                local cn, cv, cw, ch, hasCur = "?", "?", 0, 0, false
-                pcall(function() cn = tostring(c.name) end)
-                pcall(function() cv = tostring(c.visible) end)
-                pcall(function()
-                  local a, b = c:GetSizeDelta()
-                  if type(a) == "table" then cw, ch = a.x, a.y else cw, ch = a, b end
-                end)
-                pcall(function() hasCur = (c.AddCursorEventListener ~= nil) end)
-                if (cw or 0) * (ch or 0) > 20000 then
-                  dprint(string.format("[murdoku]        └ %-20s visible=%-5s %6.0fx%-6.0f 可接收光标=%s",
-                    cn, cv, cw or 0, ch or 0, tostring(hasCur)))
-                end
-              end
-            end
-          end
-        end
-      end
-    end
-    dprint("[murdoku] ===== 根清单结束 =====")
-    -- ★★★★★ 2026-10-02 **对照组诊断**：把"能点的样本"和"不能点的样本"逐一对比。
-    --
-    --   ⚠️ 第一版这里全部报「找不到」—— 因为直接用了 `ad:find(id)`，
-    --   而同一份日志里「诊断二」用**同一个调用**却能拿到 `home.select`。
-    --   ⇒ 不再依赖 `find`：**自己从 `root` 遍历整棵树建一张 name→控件 的表**，
-    --     然后从表里取。这样"取不到"只可能是名字真不在树里。
-    dprint("[murdoku] ===== 对照组：能点 vs 不能点 =====")
-    do
-      local rootC = nil
-      -- ★★★★★ 2026-10-05 **第一遍代码体检修**：这里原来写 `ad:find("root")`，
-      --   而 `local ad = current.adapter` 在 **734 行**、它所在的 if 块 **892 行就结束了**
-      --   ⇒ 这一句在块外读的是一个**不存在的全局 `ad`**（= nil）
-      --   ⇒ `attempt to index a nil value (global 'ad')` 被 pcall **静默吞掉**，
-      --     一个错误都不报（症状与这一轮修掉的 `screen` 恒真 bug 同一类）。
-      --   本块内的适配器变量叫 **`ad3`**（见 903 行）。
-      pcall(function() rootC = ad3:find("root") end)
-      -- 兜底：从 GetClientUIRoots 拿
-      if rootC == nil then
-        local rs = nil
-        pcall(function() rs = game.GetClientUIRoots() end)
-        if type(rs) == "table" and rs[1] ~= nil then rootC = rs[1] end
-      end
-      local map, count = {}, 0
-      if rootC ~= nil then
-        local function walk(c, depth)
-          if c == nil or depth > 6 then return end
-          local nm = nil
-          pcall(function() nm = c.name end)
-          if nm ~= nil and nm ~= "" and map[nm] == nil then map[nm] = c count = count + 1 end
-          local kids = nil
-          pcall(function() kids = c:GetChildren() end)
-          if type(kids) == "table" then
-            for k = 1, math.min(#kids, 200) do walk(kids[k], depth + 1) end
-          end
-        end
-        walk(rootC, 0)
-      end
-      dprint("[murdoku]   树里共收集 " .. tostring(count) .. " 个具名控件（root=" .. tostring(rootC ~= nil) .. "）")
-      local fields = { "visible", "active", "showCursor", "interactable", "raycastTarget",
-                       "clickAudioId", "disableCursorEventPassthrough", "disableKeyEventPassthrough",
-                       "isolateNavigation", "alpha", "index", "zIndex", "sortingOrder",
-                       "enable", "enabled", "blockRaycast", "grayed", "isEnabled" }
-      -- ★★★★★ 2026-10-06 **名单按真机实测修正** ✗✓（旧名单里 3 个名字不存在 ✗：
-      --   `select.card.1` `select.back` `board` ⇒ ★ 每次都刷 3 行"树里没有这个名字" ✓
-      --   ⇒ ★ 这一段是「能点 vs 不能点」的对照组 ✗ ⇒ ★ 拿不存在的名字对照毫无意义 ✓）
-      -- ★ 2026-10-11 `"action.back"` 已从这个对照样本里去 ✓（★ 整颗控件已删 ✓）
-      local samples = { "home.select", "cell.1.1", "selbtn.1", "selbtn.2",
-                        "hex.submit", "hit.submit",
-                        "clues.bg", "clues.grid", "tpl-container", "board.bg", "home" }
-      for s = 1, #samples do
-        local id = samples[s]
-        local c = map[id]
-        if c == nil then
-          dprint("[murdoku]   " .. id .. "  —— **树里没有这个名字**")
-        else
-          local parts = {}
-          for f = 1, #fields do
-            local v = "?"
-            pcall(function() v = tostring(c[fields[f]]) end)
-            if v ~= "nil" then parts[#parts + 1] = fields[f] .. "=" .. v end
-          end
-          local chain, cur, guard = {}, c, 0
-          while cur ~= nil and guard < 8 do
-            local nm, sc, vv = "?", "?", "?"
-            pcall(function() nm = tostring(cur.name) end)
-            pcall(function() sc = tostring(cur.showCursor) end)
-            pcall(function() vv = tostring(cur.visible) end)
-            chain[#chain + 1] = nm .. "(vis=" .. vv .. ",cur=" .. sc .. ")"
-            local up = nil
-            pcall(function() up = cur.parent end)
-            if up == nil then pcall(function() up = cur:GetParent() end) end
-            cur = up
-            guard = guard + 1
-          end
-          dprint("[murdoku]   " .. id .. "  " .. table.concat(parts, "  "))
-          dprint("[murdoku]       祖先链：" .. table.concat(chain, " ← "))
-        end
-      end
-    end
-    dprint("[murdoku] ===== 对照组结束 =====")
-    print("[murdoku] 射线探针装好了 —— 之后点任何地方，只要射线落在这些容器上就会打日志")
-  end
+  -- ★ 2026-10-18（优化组 · B 类清理）：**射线落点探针整段删除** ✗✓
+  --   判据（真机日志 2026-10-18 v271，一次会话）：`root / home / stage / clues / topbar /
+  --     toolbar / right / board.bg` **八个容器全部**打「找不到或不支持光标事件」⇒
+  --     它一个监听都没绑上，唯一产出就是 8 行噪声 + 一句"装好了"。
+  --   它的历史使命（"没日志不能区分射线被吃 / 落在没事件的控件上"）已由后来的
+  --   `raycastTarget` 普查 + 盒模型修正覆盖 ✓
   -- ★★★★ 2026-10-02 **按用户建议做的对比：主页 ⇄ 选关，"切换后到底改了什么"**。
   --
   --   用户原话：「我认为应该好好对比一下首页和选关切换后到底改了什么」
@@ -20129,8 +19477,19 @@ function Murdoku.on_signal(name, payload)
     Murdoku.restore(payload)
   elseif name == S.SYNC_STATE then
     if payload and payload.who and payload.r and payload.c then
+      -- ★★ 2026-10-20（v282）：**别再把两个返回值丢掉** ✗✓
+      --   服务端同步来的动作以前是**全静默**的：`select_suspect` / `tap_cell` 都返回值，
+      --   这里一个都不看 ⇒ 被规则拒绝（越界 / 已有人 / 障碍格 / 同行同列互斥）时
+      --   玩家和服务端**都只看到"盘面没变"**，日志里一个字都没有。
+      --   现在把拒绝原因打到同一个出口（`_refuse` 自带同类去重，最多 3 条，不会刷屏）。
       current.core:select_suspect(payload.who)
-      current.core:tap_cell(payload.r, payload.c)
+      local ok_sync, why_sync = current.core:tap_cell(payload.r, payload.c)
+      if (not ok_sync) and current.controller ~= nil
+        and current.controller._refuse ~= nil then
+        pcall(function()
+          current.controller:_refuse(payload.r, payload.c, why_sync)
+        end)
+      end
       Murdoku.render()
     end
   elseif name == "murdoku/next_level" then
@@ -21032,7 +20391,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v270 / 2026-10-18 / 优化组：副标题位按美术结论移除（hud.subtitle 整条 push 删除；关卡内 toast 暂无出口）＋ 两个 opt-in 开关修复（按钮底图上色 cfg.btn_art 的调用写回闸门内，默认不再每局覆盖按钮底图；启动信标 cells_beacon 改读 cfg，默认真的关掉、不再改 cell.1.1 尺寸）＋ 上一版门墙居中（外圈骑格线）/ 加粗 10 / 加长 4 / 门长 0.44 与两关内容原样保留 ＋ **v270：外框墙两端各多伸 厚/2+2 ⇒ 四角互相重叠**（彻底消除 1×1 漏光）")
+        print("[murdoku] ===== 构建标记 v283 / 2026-10-20 / ★ 头像层 `portrait`（家具不再盖住放置的头像：层序 obj→portrait→wall，头像改画 portrait、房间色留在 face）＋ 历史遗留清理：死码4处（pending_click/flush_pending_note、hold_cell 橡皮擦分支、同条件 share 空分支）、调色板硬化（id<=0 不收+空表不缓存）、SYNC_STATE 透传拒绝原因、PERF-1 注释纠正；工具与编码：bump_build_marker 修好、BOM 哨兵 760 文件全过、selene 报告不再入库、超长标记说明搬到 docs/构建标记历史.md")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -21446,6 +20805,14 @@ local function build_adapter()
         "face",
         "hint",
         "obj",
+        -- ★★★★★ 2026-10-20（v283）**新增 `portrait` 层：放置的头像画在这里** ✗✓
+        --   用户原话：「现在家具图层会盖在放置的头像上，把这个问题解决」
+        --   · 旧：头像走 `image` 落在 **face（最底）** ⇒ 家具 `obj` 压在上面 ✗
+        --   · 新：头像落在 `portrait`，位置 = **obj 之上、wall 之下** ⇒ 头像压住家具、又不压墙 ✓
+        --   房间色仍留在 face（`tint` 写），所以格子底色不会丢 ✓
+        --   ⚠️ 这一层在存档里是**新加的控件**（克隆自 face，两份 content 各一份，
+        --      id 1073743800 / 1073743801，见 `tools/gil/gen_portrait_layer.mjs`）✓
+        "portrait",
         "wall.up", "wall.down", "wall.left", "wall.right",
         "door.up", "door.down", "door.left", "door.right",
         "x",
@@ -21501,10 +20868,8 @@ local function build_adapter()
     key_control = "root",
     key_control_fallbacks = { "board", "cell.1.1", "topbar" },
 
-    -- ★ 参照格子体检（cell.1.1）：把"类型/射线/子控件/图片来源/光标门控"逐条读出来
-    --   并给 ✅/❌ 与修法。搭界面阶段非常有用，**每个会话只打一次**。
-    --   界面搭完、验收通过之后可以改成 false 让日志干净些。
-    diagnose_cell = true,
+    -- ★ 2026-10-18（优化组 · B 类清理）：`diagnose_cell` 配置项**已删除**
+    --   （配套的适配层体检函数与 main 的调用一起删；结案证据见真机日志「这一格配好了」）
   })
 
   -- ★ 线索卡底条：每条线索一个（最多 18 条），索引 1073742333（murdoku-clue-row）。
