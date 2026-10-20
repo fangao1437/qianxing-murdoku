@@ -1,4 +1,4 @@
-// tools/gil/probe_guid_collision.mjs —— ★★ 只读：GUID 撞号的**分类审计**（替换"数多属号"的粗判）
+﻿// tools/gil/probe_guid_collision.mjs —— ★★ 只读：GUID 撞号的**分类审计**（替换"数多属号"的粗判）
 //
 // ════════════════════════════════════════════════════════════════════════════
 // 为什么要有它（2026-10-21）
@@ -55,14 +55,14 @@ const rows = g.recs.map((r) => {
 });
 
 // ── ① 真撞号：两条记录的"自身 GUID"相同 ────────────────────────────────────
+// ★★ 2026-10-21 收窄：只有**顶层 `#501`** 才算"自身 GUID"。
+//   反证：`472` 的 `hud.subtitle` 顶层唯一、`#502/#11/#501` 与 #501 不一致，
+//   而**用户在真机跑过 472 且不报错** ⇒ 编辑器查的是顶层这一处。
 const byOwn = new Map();
 for (const r of rows) {
-  for (const [tag, v] of [['#501', r.own], ['#502/#11/#501', r.inner]]) {
-    if (v == null) continue;
-    const key = v;
-    if (!byOwn.has(key)) byOwn.set(key, []);
-    byOwn.get(key).push({ who: r.name, id: r.id, tag });
-  }
+  if (r.own == null) continue;
+  if (!byOwn.has(r.own)) byOwn.set(r.own, []);
+  byOwn.get(r.own).push({ who: r.name, id: r.id, tag: '#501' });
 }
 const collisions = [...byOwn.entries()].filter(([, list]) => new Set(list.map((x) => x.who + '@' + x.id)).size > 1);
 
@@ -112,7 +112,12 @@ console.log('');
 if (mismatched.length === 0) {
   console.log('✅ ② 自身 GUID 两处一致（#501 == #502/#11/#501）：全部一致');
 } else {
-  console.log('❌ ② 自身 GUID 自相矛盾：' + mismatched.length + ' 条（这是"克隆只改了一半"的残留）：');
+  // ★★ 2026-10-21 **降级为提示，不再判 FAIL** ✗✓✓
+  //   实测反证：`472-头像层-v283.gil` 就是 1 条这种情况（`hud.subtitle`），
+  //   而**用户在真机上跑过 472，编辑器没有报错**。
+  //   ⇒ `#502/#11/#501` 与 `#501` 不一致**不是**编辑器判定"控件 GUID 重复"的依据
+  //     （它更像"模板/母本引用"）。真正的硬判据只有 ①（顶层 `#501` 撞号）。
+  console.log('ℹ️ ② 自身 GUID 两处不一致：' + mismatched.length + ' 条（**提示**：472 实测带这一条也不报错，故不算错）');
   for (const r of mismatched.slice(0, 15)) console.log('   ' + r.name + '#' + r.id + '  #501=' + r.own + '  vs  ' + r.inner);
 }
 console.log('');
@@ -130,7 +135,7 @@ if (dangling.length === 0) {
   for (const r of dangling.slice(0, 15)) console.log('   ' + r.name + '#' + r.id);
 }
 
-const bad = collisions.length + mismatched.length;
+const bad = collisions.length;   // ★ 只认 ①（顶层撞号）；② 为提示（472 实测反证）
 console.log('');
 console.log(bad === 0 ? '★ 结论：干净（真撞号 0、自身 GUID 一致）' : '★ 结论：需要修（' + bad + ' 条硬问题）');
 process.exit(bad === 0 ? 0 : 3);
