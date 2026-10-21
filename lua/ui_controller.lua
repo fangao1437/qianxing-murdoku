@@ -31,6 +31,10 @@ M.DESIGN = { width = 1920, height = 1080 }
 -- ★ 2026-10-22（v300）家具美术数据层（分组 / 锚点 / 六层元素 / 地毯切矩形 / 房间名标签）
 --   单独一个模块，因为它是**纯数据 + 纯几何**，不该和界面状态机混在一起（见 lua/furn_art.lua 文件头）。
 local FurnArt = require("furn_art")
+-- ★ 2026-10-22（v302，第四轮）**外部工具算出的图元拼法**
+--   生成链：原作图标 → qx-img 拼图工具（本地引擎）拟合 → 结果文件 .lua → `gen_art_records.py` 拆解 → 本模块。
+--   每件 148~200 条图元（含旋转/逐图元 RGBA），游戏里由适配层逐条生成图片控件（12 层装不下）。
+local FurnRecords = require("furn_art_records")
 
 -- ════════════════════════════════════════════════════════════════════════
 -- 坐标基准（2026-09-26 实测确认，务必先读这段再动 LAYOUT）
@@ -2146,6 +2150,17 @@ function Controller:build_layout(ui_adapter)
   --   ⇒ `lua/furn_art.lua` 只做数据和几何，这里把结果按格下发（`furn` / `furn_anchor`），
   --     并把标签节点一起 push 出去。绘图仍然只有适配层那一处实现（`_paint_obj`）。
   local furn_art = nil
+  -- ★★★★★★★★ 2026-10-22（v302，第四轮）**家具改成"工具算出的图元拼法"** ✗✓
+  --
+  --   用户原话：「桌子椅子植物依然没有达到参考效果，仓库里有一个能兼容千星的外部图片网站，
+  --     **你先用他把参考拼出来，再按结果文件拆解出正确拼法导入存档**」
+  --   ⇒ 用 `qx-img.070077.xyz` 的本地引擎（1475505/Miliastra-toolbox-primitive-shape）把原作图标
+  --      拟合成图元（每件 148~200 条，含旋转与逐图元 RGBA），结果文件由
+  --      `_work/art-tools/gen_art_records.py` 拆成 `lua/furn_art_records.lua`。
+  --   ⇒ 每件家具 = N 个图片控件，**格子模板的 12 层装不下** ⇒ 走"运行时实例化"（适配层 `_paint_furn_art`）。
+  --   ⇒ 这里只负责把"哪一格放哪件、整件中心相对锚点格偏移多少"算出来；坐标换算在适配层做。
+  --   ⚠️ 地毯例外：它是一块可站人的平面图形，仍走原来的 12 层矩形（`furn`），不生成几百个图元。
+  local furn_recs = nil
   do
     local keys = {}
     for r = 1, vm.rows do
@@ -2167,6 +2182,44 @@ function Controller:build_layout(ui_adapter)
       end
     end
     furn_art = FurnArt.layout(vm, keys, cur_lv and cur_lv.room_names or nil)
+
+    -- ── 图元拼法：把每件家具的"工具结果记录"按锚点格摆好 ────────────────────
+    --   记录里的 dx/dy 是**相对整件包围盒中心**（格）；锚点格中心与整件中心差 (bcx-c, bcy-r) 格，
+    --   所以逐条加上这个偏移，适配层就能"以格子中心为原点"直接画。
+    furn_recs = {}
+    for r = 1, vm.rows do
+      furn_recs[r] = {}
+      for c = 1, vm.cols do furn_recs[r][c] = nil end
+    end
+    for _, p in ipairs(furn_art.pieces or {}) do
+      local kind = p.kind
+      -- ★ 地毯（可站人的平面图形）和**桌子**仍走原来的手搭层：桌子是"黑描边+桌面+桌沿+两腿头"，
+      --   6 层就很干净；而工具是"椭圆拟合"，桌子的直角/长边用椭圆拼会糊（试过，拉伸后更糊）。
+      --   其余四件（椅子/植物/书架/雕塑）走工具图元拼法 —— 它们的形体是圆润的，拟合效果明显更好。
+      if kind ~= "carpet" and kind ~= "table" then
+        local list = FurnRecords and FurnRecords[kind]
+        if list ~= nil then
+          local b = p.box
+          local span_r = b.r2 - b.r1 + 1
+          local span_c = b.c2 - b.c1 + 1
+          local variant = "1"
+          if span_c > 1 then variant = "h2"
+          elseif span_r > 1 then variant = "v2" end
+          local recs = list[variant]
+          if recs ~= nil then
+            local anchor = p.anchor
+            local ox = (b.c1 + b.c2) * 0.5 - anchor.c   -- 整件中心相对锚点格中心（格）
+            local oy = (b.r1 + b.r2) * 0.5 - anchor.r
+            local out = {}
+            for i = 1, #recs do
+              local e = recs[i]
+              out[i] = { e[1], e[2], e[3], e[4] + ox, e[5] + oy, e[6], e[7] }
+            end
+            furn_recs[anchor.r][anchor.c] = out
+          end
+        end
+      end
+    end
   end
 
   -- ★★★★ 2026-10-01 **真机"界面空白"的最后一环：`root` 的尺寸是 0x0。**
@@ -3274,19 +3327,16 @@ function Controller:build_layout(ui_adapter)
         --     渲染循环是 `for k, v in pairs(n)` —— Lua 里 `object = nil` 等于"这个键不存在"，
         --     于是没有物件的格子**永远不会下发 object** ⇒ `obj` 白块永远不被隐藏
         --     （这正是用户报的「人物头像上有异常遮挡」，我第一次没修掉）。
-        -- ★★★★★★★★ 2026-10-22（v300）家具改走 `furn`：**每格最多 6 层元素** ✗✓
+        -- ★★★★★★★★ 2026-10-22（v302，第四轮）家具改走**外部工具算出的图元拼法** ✗✓
         --
-        --   旧：`object = "obj.<kind>"` ⇒ 适配层按名字查调色板 ⇒ 一格只有**一张图**
-        --       ⇒ 家具像色块、而且跨格的那件会被画成两份。
-        --   新：`furn = { {id,color,w,h,dx,dy}, … }`（最多 6 层，见 lua/furn_art.lua）
-        --       · 单格家具：元素以本格中心为原点；
-        --       · **跨格家具**：整件元素只下发给**锚点格**（组的右下格），坐标以锚点格中心为原点，
-        --         `w/h > 1`、`dx/dy` 超过 ±0.5 是**合法**的（越过格线由锚点格整体画出来）；
-        --       · 锚点格要 `furn_anchor = true` ⇒ 适配层把它抬到所有格子之上，
-        --         否则邻格的 `face`（不透明房间色）会盖掉溢出的那半件。
-        --   ⚠️ 不再下发 `object`（老调色板路留给 things_wiring 那套离线用例，生产不再走）。
+        --   历史：v300 是"一格 6 层"，v301 是"一格 12 层"，都被用户打回"没达到参考效果"。
+        --   用户指定路线：「用外部图片网站把参考拼出来，再按结果文件拆解出正确拼法导入存档」
+        --   ⇒ 现在 `furn` 只留给**地毯**（平面图形，3 层矩形，可站人）；
+        --      其余家具走 `furn_art`：每件 148~200 条图元（工具结果），由适配层**运行时实例化**图片控件。
         furn = (furn_art.cell[r] and furn_art.cell[r][c] and furn_art.cell[r][c].els) or false,
         furn_anchor = (furn_art.cell[r] and furn_art.cell[r][c] and furn_art.cell[r][c].anchor) or false,
+        -- 图元拼法（只下发在**锚点格**上；记录已按整件中心→锚点格中心换算过）
+        furn_art = (furn_recs and furn_recs[r] and furn_recs[r][c]) or false,
         -- ★ 每格四边的墙 / 门：数据来自 core 的 `view()`（{up,down,left,right} 布尔表），
         --   适配层靠模板里固定的 `wall.*` / `door.*` 子控件 SetVisible 开关来实现 ——
         --   **不需要为每种墙型做模板**。

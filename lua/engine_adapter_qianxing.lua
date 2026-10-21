@@ -4178,6 +4178,131 @@ function Adapter:_paint_obj(cell_id, ctrl, want, force)
   return all_ready
 end
 
+-- ══════════════════════════════════════════════════════════════════════════
+-- 2026-10-22（v302，第四轮）**图元拼法家具**：按外部工具的结果记录，逐图元生成图片控件
+--
+--   为什么不能再用"模板层"：
+--     · 外部拼图工具算出来的"正确拼法"每件 148~200 条图元（它用几十~几百个半透明椭圆
+--       去逼近原作的渐变与描边），**格子模板里只有 12 层**，差一个数量级；
+--     · 但千星的客户端 API 支持**运行时实例化**（`InstantiateClientUIControl`），
+--       拼图工具自己导出的 Lua 运行时就是这么画的 —— 本函数照它的做法搬过来。
+--
+--   数据（`lua/furn_art_records.lua`，由工具结果文件拆解而来）每条：
+--       { imageId, w, h, dx, dy, rotDeg, colorARGB }
+--     · imageId：100001 矩形 / 100002 椭圆 / 100003 三角形（工具用的就是这三个基础形状）
+--     · w,h / dx,dy：单位 = 格；dx 右为正、**dy 下为正**（因此写 anchoredPosition 时取负）
+--     · rotDeg：直接喂 `SetLocalRotation(0,0,rotDeg)`（与工具运行时同一写法）
+--     · colorARGB：直接喂 `imageColor`（alpha 已在里面）
+--
+--   父级：格子 `content` 下的 `furn` 容器（v302 新增，位置在 obj12 与 x 之间 ⇒
+--     家具压住地板、但仍在墙/门/笔记/头像之下，层序与之前一致）。
+--   ⚠️ 与 `_paint_obj` 同一纪律：**画法只有这一处**，重放只有 `_repaint_cell_overlays` ④。
+-- ══════════════════════════════════════════════════════════════════════════
+local FURN_ART_CAP_DEFAULT = 260   -- 每格最多几条图元（超了截掉：宁缺一点，别把帧率拖死）
+
+function Adapter:_furn_prefab_id()
+  local cfg = self.cfg or {}
+  local id = cfg.furn_prim_prefab
+  if type(id) == "number" and id > 0 then return id end
+  local hit = self:find("tpl.prim")
+  if hit ~= nil then
+    local v = nil
+    pcall(function() v = hit.prefabIndex end)
+    if type(v) == "number" and v > 0 then return v end
+    pcall(function() v = hit.referencedPrefabIndex end)
+    if type(v) == "number" and v > 0 then return v end
+  end
+  return nil
+end
+
+function Adapter:_paint_furn_art(cell_id, ctrl, want, force)
+  if cell_id == nil then return false end
+  local state = self._furn_art_state
+  if state == nil then state = {}; self._furn_art_state = state end
+  local st = state[cell_id]
+  if st == nil then st = { kids = {} }; state[cell_id] = st end
+
+  local recs = want
+  local n = (type(recs) == "table") and #recs or 0
+  local cap = (self.cfg and self.cfg.furn_prim_cap) or FURN_ART_CAP_DEFAULT
+  if n > cap then n = cap end
+
+  -- 没有图元 ⇒ 全部藏起来（实例不销毁：切关/换关时还能复用，避免反复创建）
+  if n == 0 then
+    for i = 1, #st.kids do
+      local k = st.kids[i]
+      if k ~= nil and k.SetVisible ~= nil then pcall(function() k:SetVisible(false) end) end
+    end
+    st.shown = 0
+    return true
+  end
+
+  -- 父容器：`content/furn`（v302 新增）；老存档没有时退回格子本身（会压住墙/头像，但能看见）
+  local parent = self:sub(cell_id, "furn")
+  if parent == nil then parent = ctrl or self:find(cell_id) end
+  if parent == nil then return false end
+
+  local prefab = self:_furn_prefab_id()
+  if prefab == nil then
+    if not self._furn_prefab_warned then
+      self._furn_prefab_warned = true
+      if printerr then
+        printerr("[murdoku] 图元拼法家具画不出来：拿不到「控件模板索引」——"
+          .. "请在存档里放一个『仅存为模板』的图片控件 tpl.prim，或填 cfg.furn_prim_prefab")
+      end
+    end
+    return false
+  end
+
+  local cw, ch = self:_cell_size_of(ctrl, cell_id)
+  if cw == nil or cw <= 0 then cw, ch = 108, 108 end
+
+  local all_ok = true
+  for i = 1, n do
+    local e = recs[i]
+    local k = st.kids[i]
+    if k == nil then
+      local okc, obj = pcall(game.InstantiateClientUIControl, prefab, parent)
+      if okc and obj ~= nil then
+        k = obj
+        st.kids[i] = k
+        -- 一次性布局（之后只改图/色/尺寸/位置/旋转）
+        if k.SetAnchorMin ~= nil then pcall(function() k:SetAnchorMin(0.5, 0.5) end) end
+        if k.SetAnchorMax ~= nil then pcall(function() k:SetAnchorMax(0.5, 0.5) end) end
+        if k.SetPivot ~= nil then pcall(function() k:SetPivot(0.5, 0.5) end) end
+        pcall(function() k.imageType = Enum.ImageType.Stretch end)
+      else
+        all_ok = false
+      end
+    end
+    if k ~= nil then
+      if e ~= nil then
+        if k.SetImage ~= nil then
+          pcall(function() k:SetImage(Enum.ImageSource.StaticReference, e[1]) end)
+        end
+        pcall(function() k.imageColor = e[7] end)   -- imageColor 用 pcall 直接写（假环境里该字段没有默认值）
+        if k.SetSizeDelta ~= nil then pcall(function() k:SetSizeDelta(e[2] * cw, e[3] * ch) end) end
+        if k.SetAnchoredPosition ~= nil then
+          pcall(function() k:SetAnchoredPosition(e[4] * cw, -(e[5] * ch)) end)
+        end
+        local rot = e[6] or 0
+        if rot ~= 0 and k.SetLocalRotation ~= nil then
+          pcall(function() k:SetLocalRotation(0, 0, rot) end)
+        end
+        if k.SetActive ~= nil then pcall(function() k:SetActive(true) end) end
+        if k.SetVisible ~= nil then pcall(function() k:SetVisible(true) end) end
+      end
+    end
+  end
+  -- 多出来的藏掉（图元数会随关卡/变体变化）
+  for i = n + 1, #st.kids do
+    local k = st.kids[i]
+    if k ~= nil and k.SetVisible ~= nil then pcall(function() k:SetVisible(false) end) end
+  end
+  st.shown = n
+  return all_ok
+end
+
 -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 -- 2026-10-20（v283）**放置头像专用层 `portrait`** ✗✓✓
 --
@@ -4312,6 +4437,21 @@ function Adapter:set_property(id, key, value, nkey)
   --                  跨格家具由界面层把整件的元素**只下发给锚点格**（坐标会超出 ±0.5，合法），
   --                  再由 `furn_anchor` 把这个格子抬到所有格子之上。
   --   绘图仍然只有一处实现（`_paint_obj`），与 `object` 完全同一条流水线（含 hide_kids 重放）。
+  -- ★★★★★★★★ 2026-10-22（v302，第四轮）**家具 = 外部工具算出的图元拼法** ✗✓
+  --
+  --   用户原话：「桌子椅子植物依然没有达到参考效果，仓库里有一个能兼容千星的外部图片网站，
+  --     **你先用他把参考拼出来，再按结果文件拆解出正确拼法导入存档**」
+  --   ⇒ 用 `qx-img.070077.xyz` 的本地引擎把原作图标拟合成图元（每件 148~200 条：椭圆/矩形 +
+  --      旋转 + 每图元独立的 RGBA），结果文件拆成 `lua/furn_art_records.lua`。
+  --   ⇒ 一件家具 = N 个图片控件，**格子模板的层数装不下**（12 层 >>> 不够），
+  --      所以走**运行时实例化**：`game.InstantiateClientUIControl(模板索引, 父控件)`
+  --      —— 这正是拼图工具自己导出的 Lua 运行时的做法（它就是这么在千星里画的）。
+  --   value = { {imageId, w, h, dx, dy, rotDeg, colorARGB}, … }（单位 = 格，dy 向下为正）
+  elseif key == "furn_art" then
+    self._furn_art_want = self._furn_art_want or {}
+    self._furn_art_want[id] = (type(value) == "table") and value or false
+    return self:_paint_furn_art(id, ctrl, value, true)
+
   elseif key == "furn" then
     local layers = {}
     if type(value) == "table" then
@@ -5978,6 +6118,15 @@ function Adapter:_repaint_cell_overlays(cell_id)
     local want = pp[cell_id]
     if want ~= nil then
       self:_paint_portrait(cell_id, nil, want, false)
+    end
+  end
+  -- ④ 图元拼法家具（v302）：重放"这一格该画哪几百个图元"（记录在 `furn_art` 分支）
+  --   ★ 与上面三处同一套路：want 记在表里、画法只有 `_paint_furn_art` 一处、这里只负责重放。
+  local fa = self._furn_art_want
+  if fa ~= nil then
+    local want = fa[cell_id]
+    if want ~= nil then
+      self:_paint_furn_art(cell_id, nil, want, false)
     end
   end
 end

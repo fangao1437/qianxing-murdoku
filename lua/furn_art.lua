@@ -380,6 +380,13 @@ function F.layout(vm, keys, room_names)
         info.els = to_anchor(els, b, anchor)
         info.anchor = (span_r > 1 or span_c > 1)
         chosen[#chosen + 1] = string.format("%s@%d,%d[%s]", kind, anchor.r, anchor.c, variant)
+        -- ★ v302（第四轮）：界面层还要按"外部工具算出的图元拼法"给这些件生成 N 个图片控件，
+        --   所以把 kind / 包围盒 / 锚点格 / 变体一起带出去（地毯由界面层自己跳过）。
+        res.pieces = res.pieces or {}
+        res.pieces[#res.pieces + 1] = {
+          kind = kind, box = b, anchor = anchor, variant = variant,
+          cells = p.cells, span_r = span_r, span_c = span_c,
+        }
       end
     end
   end

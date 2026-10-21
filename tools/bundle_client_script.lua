@@ -86,6 +86,10 @@ local modules = {
   --      实测坑：`lua53check --run` 仍然是绿的（顶层 chunk 只注册模块、不跑 require），
   --      要等 `tests/entry_smoke.lua` 这类真跑入口的用例才暴露。
   { name = "furn_art",                 path = "lua/furn_art.lua" },
+  -- ★ 2026-10-22（v302，第四轮）：**外部拼图工具的结果文件拆出来的图元拼法数据**
+  --   （每件 151~200 条：{imageId,w,h,dx,dy,rot,color}；生成脚本 `_work/art-tools/gen_art_records.py`）
+  --   ⚠️ 同 `furn_art` 的坑：必须显式列在这里，否则 bundle 里只有一个悬空的 `__require`。
+  { name = "furn_art_records",         path = "lua/furn_art_records.lua" },
   { name = "ui_controller",            path = "lua/ui_controller.lua" },
   { name = "engine_adapter",           path = "lua/engine_adapter.lua" },
   { name = "engine_adapter_qianxing",  path = "lua/engine_adapter_qianxing.lua" },

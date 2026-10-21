@@ -219,5 +219,123 @@ for i = 1, 6 do if layers[i].visible then any_vis = true end end
 ok(any_vis == false, "D9 没有家具时六层全藏（白板不许压头像/笔记）")
 
 --------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+-- E 图元拼法家具（v302，第四轮：外部拼图工具的结果文件拆解 → 运行时实例化）
+--------------------------------------------------------------------------------
+print("== E 图元拼法（外部工具结果） ==")
+
+local Recs = require("furn_art_records")
+
+-- E1 数据模块本身的合法性：形状 id 只能是三个基础形状；尺寸/偏移有限；条数在预算内
+do
+  local kinds = { "chair", "table", "plant", "shelf", "statue" }
+  local bad = nil
+  local total = 0
+  local min_n, max_n = 1e9, 0
+  for _, kind in ipairs(kinds) do
+    local set = Recs[kind]
+    if type(set) ~= "table" then bad = bad or (kind .. " 缺整组") end
+    for variant, list in pairs(set or {}) do
+      if type(list) ~= "table" or #list < 80 then
+        bad = bad or (kind .. "/" .. variant .. " 图元太少")
+      end
+      total = total + #list
+      if #list < min_n then min_n = #list end
+      if #list > max_n then max_n = #list end
+      for _, e in ipairs(list) do
+        if e[1] ~= 100001 and e[1] ~= 100002 and e[1] ~= 100003 then
+          bad = bad or (kind .. " 出现非基础形状 id=" .. tostring(e[1]))
+        end
+        if type(e[2]) ~= "number" or e[2] <= 0 or e[2] > 3 then bad = bad or (kind .. " w 非法") end
+        if type(e[3]) ~= "number" or e[3] <= 0 or e[3] > 3 then bad = bad or (kind .. " h 非法") end
+        if math.abs(e[4]) > 1.5 or math.abs(e[5]) > 1.5 then bad = bad or (kind .. " 偏移越界") end
+        if type(e[6]) ~= "number" then bad = bad or (kind .. " rot 非数字") end
+      end
+    end
+  end
+  ok(bad == nil, "E1 图元数据合法（id/尺寸/偏移/旋转）" .. tostring(bad or ""))
+  ok(total > 900, "E2 图元总量够（" .. total .. " 条，> 900）")
+  ok(min_n >= 100 and max_n <= 260, "E3 每件图元数在 100..260（实际 " .. min_n .. ".." .. max_n .. "）")
+  ok(#Recs.table["h2"] > 0 and #Recs.table["v2"] > 0, "E4 长桌横放/竖放两套数据都在")
+end
+
+-- E5 适配层：`furn_art` 分支要按记录**逐个实例化**并配置（图/色/尺寸/位置/旋转）
+do
+  local made = {}
+  local function mkctrl(nm)
+    local x = { name = nm, _kids = {} }
+    x.GetChild = function(self, n)
+      for _, k in ipairs(self._kids) do if k.name == n then return k end end
+      return nil
+    end
+    x.GetChildren = function(self) return self._kids end
+    x.SetVisible = function(self, v) self.visible = v end
+    x.SetActive = function(self, v) self.active = v end
+    x.SetImage = function(self, src, id) self.imageSource = src; self.imageId = id end
+    x.SetSizeDelta = function(self, w, h) self.sizeDeltaX, self.sizeDeltaY = w, h end
+    x.SetAnchoredPosition = function(self, px, py) self.anchoredPositionX, self.anchoredPositionY = px, py end
+    x.SetAnchorMin = function() end
+    x.SetAnchorMax = function() end
+    x.SetPivot = function() end
+    x.SetLocalRotation = function(self, rx, ry, rz) self.rotX, self.rotY, self.rotZ = rx, ry, rz end
+    x.SetLocalScale = function() end
+    x.GetSizeDelta = function() return self.sizeDeltaX, self.sizeDeltaY end
+    if x.visible == nil then x.visible = true end
+    if x.active == nil then x.active = true end
+    return x
+  end
+
+  local furn = mkctrl("furn")
+  local content = mkctrl("content")
+  content._kids = { furn }
+  local cell = mkctrl("cell.1.1")
+  cell._kids = { content }
+  cell.kind = "button"
+  cell.sizeDeltaX, cell.sizeDeltaY = 108, 108
+  local rootCtl = mkctrl("root")
+  rootCtl._kids = { cell }
+
+  local inst = 0
+  _G.Enum = { ImageSource = { StaticReference = 0 }, ImageType = { Basic = 0, Stretch = 1 } }
+  _G.game = {
+    GetClientUIRoots = function() return { rootCtl } end,
+    InstantiateClientUIControl = function(prefab, parent)
+      inst = inst + 1
+      local c = mkctrl("prim." .. inst)
+      parent._kids[#parent._kids + 1] = c
+      made[#made + 1] = c
+      return c
+    end,
+  }
+  local a2 = Ad.new({ cells = { rows = 5, cols = 5 }, furn_prim_prefab = 1073746302, furn_prim_cap = 6 })
+  local recs = Recs.chair["1"]
+  local r = a2:set_property("cell.1.1", "furn_art", recs)
+  ok(r == true, "E5 set_property(cell,'furn_art',recs) 返回 true")
+  ok(inst == 6, "E6 按上限实例化了 6 个控件（实际 " .. inst .. "）")
+  local k1 = made[1]
+  ok(k1 ~= nil and k1.imageId == recs[1][1], "E7 第 1 个控件图的 id = 记录里的 id")
+  ok(k1.imageColor == recs[1][7], "E8 第 1 个控件的 imageColor = 记录里的 colorARGB")
+  ok(math.abs(k1.sizeDeltaX - recs[1][2] * 108) < 0.5, "E9 尺寸按格宽换算（w×cell）")
+  ok(math.abs(k1.anchoredPositionX - recs[1][4] * 108) < 0.5, "E10 dx → anchoredPosition.x")
+  ok(math.abs(k1.anchoredPositionY + recs[1][5] * 108) < 0.5, "E11 dy（向下为正）→ anchoredPosition.y 取负")
+  local saw_rot = false
+  for i = 1, 6 do
+    local rot = recs[i] and recs[i][6] or 0
+    if rot ~= 0 and made[i] ~= nil then
+      saw_rot = true
+      ok(math.abs(made[i].rotZ - rot) < 0.5, "E12 旋转角原样传给 SetLocalRotation(0,0,rot)（第 " .. i .. " 条）")
+      break
+    end
+  end
+  ok(saw_rot, "E13 图元里确实有带旋转的（工具结果含旋转）")
+
+  -- 换成"没有家具" ⇒ 已实例化的控件要藏起来（不销毁，切关时复用）
+  a2:set_property("cell.1.1", "furn_art", false)
+  local any_vis = false
+  for i = 1, #made do if made[i].visible then any_vis = true end end
+  ok(any_vis == false, "E14 没有家具时所有已生成控件都藏起来")
+end
+
 print(string.format("\nfurn_art: %d passed, %d failed", passed, failed))
 if failed > 0 then os.exit(1) end
