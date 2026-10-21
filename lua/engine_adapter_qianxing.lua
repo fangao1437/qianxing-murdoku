@@ -1,4 +1,4 @@
-﻿--[[----------------------------------------------------------------------------
+--[[----------------------------------------------------------------------------
   engine_adapter_qianxing.lua —— 千星奇域 7.1 客户端脚本绑定层（按官方 API 实现）
 
   依据：官方《客户端控件API文档》 mhtakr07vej4 与《客户端控件和客户端脚本》 mhbgxf0nynww
@@ -2583,8 +2583,17 @@ local CURSOR_CONTAINERS = {
   "home", "select",
 }
 
+-- ★★★ 2026-10-21（v288）**脚本自管的顶层容器**（不参与 `hide_unlisted` 的"不在计划里就藏"）
+--
+--   目前只有教程浮层 `teach`：它的显隐完全由 `lua/tutorial_ui.lua` 决定
+--   （打开=显示 `teach.lX` + `teach.text.lX`，关闭=隐藏），**永远不会出现在任何屏幕计划里**。
+--   ⇒ 如果不豁免，`hide_unlisted` 每趟都会把整棵教程浮层藏掉（真机实测：教程"打开了"但一片空白）。
+--   ⚠️ 以后新增这种"自管显隐的顶层容器"时，名字要加到这里，并同步 `tutorial_ui` 的配置。
+local SELF_MANAGED_TOP = { teach = true }
+
 function Adapter:hide_unlisted(keep)
   local hidden = 0
+  local skipped_self = 0
   for i = 1, #MANAGED do
     local parent = self:find(MANAGED[i])
     if parent ~= nil and parent.GetChildren ~= nil then
@@ -2595,7 +2604,17 @@ function Adapter:hide_unlisted(keep)
           local name = nil
           pcall(function() name = child.name end)
           if name ~= nil and name ~= "" and not keep[name] and not DECOR[name] then
-            if child.SetVisible ~= nil then
+            -- ★★★ 2026-10-21（v288）**脚本自管的顶层覆盖层一律不藏** ✗✓
+            --
+            --   真机实测（用户 2026-10-21 04:19 日志）：教程控件生成好了、日志也打了
+            --   `[tutorial] 打开 tag=l1（第 1 / 3 页）`、自检 `18/18` 全绿，
+            --   但**屏幕上一片空白** ✓ —— 因为这个函数把 root 下"不在本屏计划里"的
+            --   直接子控件**逐个 SetVisible(false)**，而 `teach` 永远不在任何屏幕计划里 ✓
+            --   ⇒ 整棵教程浮层被它关掉，而且它**只会隐藏、从不恢复** ✗
+            --   ⇒ 修法：这类"脚本自己管显隐"的顶层容器，显式豁免（显隐由 `tutorial_ui` 决定）。
+            if SELF_MANAGED_TOP[name] then
+              skipped_self = skipped_self + 1
+            elseif child.SetVisible ~= nil then
               local ok2 = pcall(function() child:SetVisible(false) end)
               if ok2 then hidden = hidden + 1 end
             end
@@ -2603,6 +2622,12 @@ function Adapter:hide_unlisted(keep)
         end
       end
     end
+  end
+  -- 只喊一次：让"豁免生效"在真机日志里可见（否则这条又是静默的）
+  if skipped_self > 0 and not self._said_self_managed and print then
+    self._said_self_managed = true
+    print("[murdoku] hide_unlisted：跳过 " .. skipped_self
+      .. " 个**脚本自管的顶层容器**（teach，教程浮层 —— 显隐由 tutorial_ui 决定）")
   end
   return hidden
 end
@@ -3138,14 +3163,66 @@ function Adapter:read_palette()
   --   ★ 优先级：**控件里有的优先**（用户若真在编辑器里做了 `things` 区，仍以那边为准 ✓）
   --   ★ 写法：`obj_art = { table = { id = 100001, color = 0xFFB07946 }, … }`
   --     （键 = `kind`，不是控件名；内部拼成 `obj.<kind>` ✓，与 `object_key_of` 对齐 ✓）
+  --   ★★★★★★★★ 2026-10-22 **家具改成「多层拼装」** ✗✓
+  --
+  --   原作（Murdoku）的家具就是**两层白色剪影 + 两个颜色**：
+  --     `obj_<名>.svg`（base 层，染 `obj_color_base_<id>`）
+  --   ＋ `obj_<名>_02.svg`（overlay 层，染 `obj_color_overlay_<id>`）。
+  --   ⇒ 想尽量复刻它，一格家具就不能只有一张图。于是格子模板在 `obj` 之后
+  --     再补了 `obj2` / `obj3` 两层（见 `tools/gil/gen_obj_art.mjs`），
+  --     这里按 **层号** 往调色板里登记同名的键：
+  --       第 1 层 → `obj.<kind>`（= 老的写法，**完全向后兼容**）
+  --       第 2 层 → `obj2.<kind>`
+  --       第 3 层 → `obj3.<kind>`
+  --
+  --   兼容两种写法（同一张表里可以混用）：
+  --     · 单层（老）：`chair = { id = 100001, color = 0xFFE0A040 }`
+  --     · 多层（新）：`chair = { { id = 106053, color = 0xFF8A6A48, w = 0.78, h = 0.78 },
+  --                            { id = 106053, color = 0xFFE3D2AE, w = 0.60, h = 0.60 } }`
+  --   多层里每一项除 `id/color` 外还可以带**格子相对几何**：
+  --     `w, h` = 相对格子边长的比例（默认 1）；`dx, dy` = 相对格子边长的偏移（默认 0，**dy 正 = 向下**）
   local oa = self.cfg.obj_art
   if type(oa) == "table" then
     for k, v in pairs(oa) do
-      local key = (type(k) == "string" and k:match("^obj%.") and k) or ("obj." .. tostring(k))
-      local okk = type(v) == "table" and type(v.id) == "number"
-      if okk and map[key] == nil then
-        map[key] = { source = v.source or "StaticReference", id = v.id, color = v.color, from = "cfg.obj_art" }
-        names[#names + 1] = key
+      -- 键允许写成 `table` 或 `obj.table`（老注释里的两种写法都认）
+      local kind = tostring(k)
+      local pref = kind:match("^(obj%d*)%.") 
+      if pref ~= nil then kind = kind:sub(#pref + 2) end
+      -- 归一成"层数组"
+      local layers = nil
+      if type(v) == "table" and type(v.id) == "number" then
+        layers = { v }                                   -- 老写法 = 单层
+      elseif type(v) == "table" and #v > 0 then
+        layers = v                                       -- 新写法 = 层数组
+      end
+      if layers ~= nil then
+        for i = 1, #layers do
+          local L = layers[i]
+          local key = (i == 1 and ("obj.") or ("obj" .. i .. ".")) .. kind
+          if type(L) == "table" and type(L.id) == "number" then
+            local e = map[key]
+            if e == nil then
+              map[key] = {
+                source = L.source or "StaticReference",
+                id = L.id,
+                color = L.color,
+                w = L.w, h = L.h, dx = L.dx, dy = L.dy,
+                layer = i,
+                from = "cfg.obj_art",
+              }
+              names[#names + 1] = key
+            else
+              -- ★ 控件里已有这一层（编辑器优先：**图与色以控件为准**），
+              --   但**几何只可能来自 cfg**（控件扫描不读尺寸）⇒ 补进去。
+              --   这就是"第 1 层给编辑器改、几何仍由脚本定"的实现。
+              if e.w == nil then e.w = L.w end
+              if e.h == nil then e.h = L.h end
+              if e.dx == nil then e.dx = L.dx end
+              if e.dy == nil then e.dy = L.dy end
+              if e.layer == nil then e.layer = i end
+            end
+          end
+        end
       end
     end
   end
@@ -3982,35 +4059,116 @@ end
 --      `hide_kids` 会绕过我们递归把子控件设成 false ⇒ 任何"我记住它亮着"的缓存都会骗自己。
 --   ⚠️ 但 `SetActive(true)` **只在换图那一次写**：`hide_kids` 只碰 visible，
 --      active 只有我们自己会改 ⇒ 每帧重写纯属浪费（`grid_cost` 是按每帧调用数算账的）。
+-- ★★★★★★★★ 2026-10-22（v299）家具 = **多层拼装**（`obj` / `obj2` / `obj3`）✗✓
+--
+--   为什么加：原作（Murdoku）的家具就是「base 剪影 + overlay 剪影 + 两个颜色」，我们只有
+--   单张官方素材是拼不出扶手椅/长桌这种俯视图的。层由存档模板给（`gen_obj_art.mjs` 加的），
+--   这里只负责**按层画**。
+--
+--   `want` 的形状（v299 起带 `layers`；老路径仍然可用）：
+--     `false`/`nil` = 这一格没有物件（三层全藏）
+--     表 = { key="obj.chair", layers = { 层1, 层2, 层3 } }，
+--          每层 = { id, src, color, w, h, dx, dy }（w/h/dx/dy 可缺省 = 铺满/居中）
+--     ⚠️ 兼容：没有 `layers` 时按老形状 `{ key, src, id, color }` 当**只有第 1 层**。
+--
+--   纪律（与 v281/v283 同一套）：
+--     · **画法只有一份**（本函数），重放只有一份（`_repaint_cell_overlays`）；
+--     · `SetVisible(true)` **每次重放都要写**（`hide_kids` 会绕过我们递归藏子控件）；
+--     · `SetActive(true)` 只在换图那一次写；
+--     · 没有物件的格子**三层都要藏**（否则白板压住头像，那是老 bug）。
+
+local OBJ_LAYER_SUBS = { "obj", "obj2", "obj3" }     -- 从下到上（与 layer_order 同序）
+
+-- 把 `want` 归一成 1..3 层（逐字段填好默认值）。返回 {} 表示"没有物件"。
+function Adapter:obj_layers_of(want)
+  if want == false or want == nil or type(want) ~= "table" then return {} end
+  local out = {}
+  if type(want.layers) == "table" then
+    for i = 1, math.min(#want.layers, #OBJ_LAYER_SUBS) do
+      local L = want.layers[i]
+      if type(L) == "table" and L.id ~= nil then
+        out[#out + 1] = {
+          sub = OBJ_LAYER_SUBS[i],
+          key = L.key or (want.key .. "#" .. i),
+          src = L.src, id = L.id, color = L.color,
+          w = L.w, h = L.h, dx = L.dx, dy = L.dy,
+        }
+      end
+    end
+  elseif want.id ~= nil then
+    -- 老形状：单层
+    out[1] = { sub = "obj", key = want.key, src = want.src, id = want.id, color = want.color }
+  end
+  return out
+end
+
+-- 读格子边长（带兜底：模拟器没有 getter 时用界面层刚发的 rect）
+function Adapter:_cell_size_of(ctrl, cell_id)
+  local w, h = size_of(ctrl)
+  if (type(w) ~= "number" or w <= 1) and cell_id ~= nil and self.rects ~= nil then
+    local r = self.rects[cell_id]
+    if type(r) == "table" then w, h = r.w, r.h end
+  end
+  if type(w) ~= "number" or type(h) ~= "number" or w <= 1 or h <= 1 then return nil, nil end
+  return w, h
+end
+
+-- 按层几何摆一个层子控件（w/h 缺省 = 铺满格子；dx/dy 以格子边长为单位，**dy 正 = 向下**）
+function Adapter:_fit_obj_layer(sub, cw, ch, L)
+  if sub == nil or cw == nil or ch == nil then return end
+  local fw = tonumber(L and L.w) or 1
+  local fh = tonumber(L and L.h) or 1
+  local dx = tonumber(L and L.dx) or 0
+  local dy = tonumber(L and L.dy) or 0
+  if sub.SetAnchorMin then pcall(function() sub:SetAnchorMin(0.5, 0.5) end) end
+  if sub.SetAnchorMax then pcall(function() sub:SetAnchorMax(0.5, 0.5) end) end
+  if sub.SetPivot then pcall(function() sub:SetPivot(0.5, 0.5) end) end
+  if sub.SetSizeDelta then pcall(function() sub:SetSizeDelta(cw * fw, ch * fh) end) end
+  if sub.SetAnchoredPosition then pcall(function() sub:SetAnchoredPosition(dx * cw, -(dy * ch)) end) end
+end
+
 function Adapter:_paint_obj(cell_id, ctrl, want, force)
   if cell_id == nil then return false end
-  local o = self:sub(cell_id, "obj")
-  if o == nil then return false end        -- 子控件还没就绪 ⇒ 交给每帧重放补
-  if want == false or want == nil then
-    if o.SetVisible then pcall(function() o:SetVisible(false) end) end
-    return true
-  end
+  local layers = self:obj_layers_of(want)
   local marks = self._obj_marks
   if marks == nil then
     marks = setmetatable({}, { __mode = "k" })   -- 弱键：格子实例回收后自动释放
     self._obj_marks = marks
   end
-  local m = marks[o]
-  local need = (force == true) or m == nil
-    or m.key ~= want.key or m.id ~= want.id or m.color ~= want.color
-  if need then
-    if ctrl ~= nil then self:_fit_child_to_cell(ctrl, o, cell_id) end
-    local src = nil
-    pcall(function() src = o.imageSource end)
-    if want.src ~= nil then src = want.src end
-    pcall(function() o:SetImage(src, want.id) end)
-    if want.color ~= nil then pcall(function() o.imageColor = want.color end) end
-    marks[o] = { key = want.key, id = want.id, color = want.color }
-    -- ★ 与 `hint` / `notes` 同一口径：要显示时补一次 `SetActive(true)`（幂等）
-    if o.SetActive then pcall(function() o:SetActive(true) end) end
+  local cw, ch = nil, nil
+  local all_ready = true
+  for i = 1, #OBJ_LAYER_SUBS do
+    local sub = self:sub(cell_id, OBJ_LAYER_SUBS[i])
+    local L = layers[i]
+    if sub == nil then
+      -- 层还没就绪（模板是老存档 / 首帧树没齐）⇒ 交给每帧重放补
+      if L ~= nil then all_ready = false end
+    elseif L == nil then
+      -- 没有物件 / 这一层不用 ⇒ 藏掉（**必须**，否则白板压住头像）
+      if sub.SetVisible then pcall(function() sub:SetVisible(false) end) end
+      marks[sub] = nil
+    else
+      local m = marks[sub]
+      local need = (force == true) or m == nil
+        or m.key ~= L.key or m.id ~= L.id or m.color ~= L.color
+        or m.w ~= L.w or m.h ~= L.h or m.dx ~= L.dx or m.dy ~= L.dy
+      if need then
+        if cw == nil and ctrl ~= nil then cw, ch = self:_cell_size_of(ctrl, cell_id) end
+        if cw ~= nil then self:_fit_obj_layer(sub, cw, ch, L) end
+        local src = nil
+        pcall(function() src = sub.imageSource end)
+        if L.src ~= nil then src = L.src end
+        pcall(function() sub:SetImage(src, L.id) end)
+        if L.color ~= nil then pcall(function() sub.imageColor = L.color end) end
+        marks[sub] = { key = L.key, id = L.id, color = L.color,
+                       w = L.w, h = L.h, dx = L.dx, dy = L.dy }
+        -- 与 `hint` / `notes` 同一口径：要显示时补一次 `SetActive(true)`（幂等）
+        if sub.SetActive then pcall(function() sub:SetActive(true) end) end
+      end
+      if sub.SetVisible then pcall(function() sub:SetVisible(true) end) end   -- 见上面 ⚠️：每次都写
+    end
   end
-  if o.SetVisible then pcall(function() o:SetVisible(true) end) end   -- 见上面 ⚠️：每帧写
-  return true
+  return all_ready
 end
 
 -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
@@ -4168,17 +4326,28 @@ function Adapter:set_property(id, key, value, nkey)
     --     由 `_cells_paint`（每帧都跑）重放；画法收进 `Adapter:_paint_obj`，只有一个实现。
     local want = false
     if not (value == false or value == nil) then
-      local hit = nil
-      do
-        local map = self:read_palette()
-        local k = tostring(value)
-        hit = map[k]
+      -- ★ 2026-10-22（v299）：按 **层** 取素材 —— `obj.<kind>` / `obj2.<kind>` / `obj3.<kind>`。
+      --   层数由"调色板里真的有哪几层"决定（编辑器控件优先，其次 cfg.obj_art）⇒
+      --   只有 1 层的老数据/老存档行为**完全不变**（其余层在 `_paint_obj` 里藏掉）。
+      local vkey = tostring(value)
+      local kind = vkey:match("^obj%.(.+)$") or vkey
+      local map = self:read_palette()
+      local layers = {}
+      for li = 1, #OBJ_LAYER_SUBS do
+        local k = (li == 1 and ("obj.") or ("obj" .. li .. ".")) .. kind
+        local hit = map[k]
+        if type(hit) == "table" and type(hit.id) == "number" then
+          layers[#layers + 1] = {
+            key = k, src = hit.source, id = hit.id, color = hit.color,
+            w = hit.w, h = hit.h, dx = hit.dx, dy = hit.dy,
+          }
+        end
       end
       -- ⚠️ 这里**不要用 `resolve_asset`** —— 它查不到会 `warn_once` 打**报错**，
       --    而"调色板里还没有 obj.* 素材"是**当前阶段的正常状态**（物件美术还没配），
       --    不该污染日志。直接查表，查不到就当"这一格没有物件"。
-      if hit ~= nil and hit.id ~= nil then
-        want = { key = tostring(value), src = hit.source, id = hit.id, color = hit.color }
+      if #layers > 0 then
+        want = { key = vkey, layers = layers }
       end
     end
     -- ① 先记意图（**即使子控件此刻还取不到也要记** —— 每帧重放靠它补画）

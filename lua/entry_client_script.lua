@@ -191,7 +191,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v284 / 2026-10-21 / 教程浮层 tut.*（骨架并入主档 + 运行时不创建控件）+ 其余同前一版 =====")
+        print("[murdoku] ===== 构建标记 v299 / 2026-10-22 / 一二关美术：家具改三层拼装（obj/obj2/obj3）+ 房间配色换暖色系 + 新增 tests/obj_layers =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -605,6 +605,12 @@ local function build_adapter()
         "face",
         "hint",
         "obj",
+        -- ★★★★★★★★ 2026-10-22（v299）**家具改成三层拼装** ✗✓
+        --   原作（Murdoku）的家具就是"base 剪影 + overlay 剪影 + 两个颜色"；
+        --   官方单张素材拼不出俯视扶手椅/长桌 ⇒ 模板里在 `obj` 之后补了 `obj2` / `obj3`
+        --   （见 `tools/gil/gen_obj_art.mjs`）。层序：obj < obj2 < obj3 < portrait < wall。
+        --   ⚠️ 老存档没有这两层时 `_paint_obj` / `enforce_layers` 都会自动跳过（幂等）。
+        "obj2", "obj3",
         -- ★★★★★ 2026-10-20（v283）**新增 `portrait` 层：放置的头像画在这里** ✗✓
         --   用户原话：「现在家具图层会盖在放置的头像上，把这个问题解决」
         --   · 旧：头像走 `image` 落在 **face（最底）** ⇒ 家具 `obj` 压在上面 ✗
@@ -640,13 +646,47 @@ local function build_adapter()
     --   ★ 优先级：编辑器里若**真有** `things` / `assets` 下的同名控件，**以控件为准** ✓
     --     （见 `Adapter:read_palette`：控件先扫，这里只补缺 ✓）
     --   ★ 换真素材：把 `id` 换成编辑器素材库里的图即可（不用动存档）✓
+    -- ★★★★★★★★ 2026-10-22（v299）**家具 = 多层拼装（复刻原作的双层剪影美术）** ✗✓
+    --
+    --   原作 Murdoku 的家具是「base 剪影 染 obj_color_base ＋ overlay 剪影 染 obj_color_overlay」，
+    --   两色叠出体积感。官方素材库里没有俯视家具 ⇒ 我们用「官方基础形状 × 3 层」拼：
+    --     L1 = 深色外形（充当描边/木框）  L2 = 主体  L3 = 细节
+    --   层控件由存档模板给（`obj` / `obj2` / `obj3`，见 `tools/gil/gen_obj_art.mjs`）。
+    --
+    --   字段：`id` 官方素材 id；`color` = 0xAARRGGBB（**与素材乘算**，白色底板才上得去亮色）；
+    --        `w/h` = 相对格子边长的比例（缺省 1 = 铺满）；`dx/dy` = 相对格子边长的偏移
+    --        （**dy 正 = 向下**）。
+    --   ★ 第 1 层的图/色仍可在编辑器里改（`things/obj.<kind>` 优先），几何以本表为准。
     obj_art = {
-      table  = { id = 100001, color = 0xFFB07946 },   -- 桌子：木棕
-      plant  = { id = 100001, color = 0xFF4CAF50 },   -- 植物：绿
-      carpet = { id = 100001, color = 0xFFD9C8A6 },   -- 地毯：米
-      chair  = { id = 100001, color = 0xFFE0A040 },   -- 椅子：橙
-      shelf  = { id = 100001, color = 0xFF7A5230 },   -- 书架：深棕
-      statue = { id = 100001, color = 0xFFB8B8C0 },   -- 雕塑：灰
+      table = {   -- 桌子
+        { id = 100001, color = 0xFF4A3524, w = 0.9, h = 0.64 },
+        { id = 100001, color = 0xFFD4CCA0, w = 0.82, h = 0.56 },
+        { id = 100001, color = 0xFFE8E2C0, w = 0.72, h = 0.46 },
+      },
+      chair = {   -- 椅子
+        { id = 106053, color = 0xFF4A3A2A, w = 0.74, h = 0.76, dy = 0.04 },
+        { id = 106053, color = 0xFFF2EBD4, w = 0.66, h = 0.5, dy = 0.13 },
+        { id = 100001, color = 0xFFCBBE97, w = 0.62, h = 0.2, dy = -0.16 },
+      },
+      carpet = {   -- 地毯
+        { id = 100001, color = 0xFF9C8A63, w = 0.92, h = 0.92 },
+        { id = 100001, color = 0xFFDCCBAA, w = 0.84, h = 0.84 },
+      },
+      plant = {   -- 植物
+        { id = 100002, color = 0xFF3E7D3A, w = 0.64, h = 0.52, dy = -0.08 },
+        { id = 106053, color = 0xFF8A6A48, w = 0.32, h = 0.24, dy = 0.26 },
+        { id = 100002, color = 0xFF58A046, w = 0.34, h = 0.26, dy = -0.2 },
+      },
+      shelf = {   -- 书架
+        { id = 100001, color = 0xFF4A3524, w = 0.82, h = 0.66 },
+        { id = 100001, color = 0xFFB4874F, w = 0.76, h = 0.6 },
+        { id = 100001, color = 0xFF4A2E17, w = 0.68, h = 0.07, dy = -0.05 },
+      },
+      statue = {   -- 雕塑
+        { id = 100001, color = 0xFF4E4E56, w = 0.54, h = 0.24, dy = 0.28 },
+        { id = 105090, color = 0xFFC9C9D2, w = 0.6, h = 0.5, dy = 0.02 },
+        { id = 100002, color = 0xFFE2E2E8, w = 0.14, h = 0.1, dy = -0.22 },
+      },
     },
 
     -- 2026-09-27 踩过：我一开始把它们加在 `cells = { … }` 里（挨着 `debug_signal`），
@@ -911,37 +951,266 @@ end
 
 -- ===== 官方生命周期 =====
 
--- ★★★★★★★★ 2026-10-21（v284）**玩法说明浮层（教程）的接线** ✗✓✓
+-- ★★★★★★★★ 2026-10-21（v287）**教程浮层（`teach.*`）的接线：第一关 / 第二关各一套** ✗✓✓
 --
---   控件在存档里（`tut.*`，由 `tools/gil/gen_tutorial_into.mjs` 从 477 骨架并入，全部加前缀），
---   **本处一个控件都不创建**（用户明确的规矩：脚本里不要有创建控件这种操作）。
---   这里只做三件事：懒加载模块 → 控件就绪后 init（绑按钮 + 藏起来）→ 开局弹一次。
+--   控件在存档里（`teach.*`，工具 `tools/gil/gen_tutorial_teach.mjs`，**仍然全部从主档母本克隆**）：
+--     · `teach.l1` / `teach.l2`  两关各一套面板（页面本体 + 上一页 / 下一页 / 关闭；**没有页签**）
+--     · `teach.text.l1` / `teach.text.l2`  文本区域（标题 / 三页正文 / 按钮字）
+--   ★ 文字**全部由编辑器填**（`.gil` 存不下文字，工作约定见 `docs/交接报告.md`）⇒ **本处一个字都不写**，
+--     只做显隐与绑定。**本处也一个控件都不创建**（用户明确的规矩）。
+--   ★ 两关**各自一个实例、各自一段配置**（`TUT_LEVELS`）：内容以后会分叉，不许共用一套。
+--
+--   这里做四件事：懒加载模块 → 两套实例都 init（先各自藏起来）→ 进到哪一关就弹哪一套 → 各跑一次自检。
+--   ★ 自检：`lua/tut_verify.lua` 把"控件在不在 / 重名 / 父对不对 / 尺寸 0"打进日志首屏：
+--       通过 `[tut] 自检 OK N/N`；失败 `[tut] 自检 FAIL N 项: 名字=缺失; …`（只读，不改任何状态）
 --
 --   ⚠️ 为什么放在 OnUpdate 里懒初始化：`OnInit` 时控件树还是空的（本项目反复验证过），
 --      在 OnInit 里 init 必定拿到 nil，然后**再也不会重试**。
-local tutorial = nil
-local tutorial_opened_once = false
+local tutorial_mod_state = nil   -- nil = 还没试 / false = 加载失败 / table = 模块
+local tutorial_inst = {}         -- tag → 实例（每关一个，互不影响）
+local tutorial_seen = {}         -- 关卡 id → 这一局已经弹过
+local tutorial_checked = {}      -- tag → 已经跑过自检
+local tutorial_wait = {}         -- tag → 等了多少帧
+
+-- ★ v289：**三套各自独立**（用户 2026-10-21 晚：首页那套保留，第一关再单独接一套，第二关本来就是自己一套）
+--   每条 = 一个实例 + 一段配置；以后哪一套要改内容/页数，只改自己那一段。
+local TUT_SETS = {
+  home = { tag = "home", root = "teach.home", text = "teach.text.home", pages = 3 },
+  l1   = { tag = "l1",   root = "teach.l1",   text = "teach.text.l1",   pages = 3 },
+  l2   = { tag = "l2",   root = "teach.l2",   text = "teach.text.l2",   pages = 3 },
+}
+
+-- 触发键 → 用哪一套：`home` = 首页；`case_001` / `case_002` = 关卡内
+-- ★ 关键：`Murdoku.current().screen == nil` 才算"真的进了关卡"；首页时 screen = "home"。
+--   v287 那版只看 level.id ⇒ 首页时 level 已经是 case_001 ⇒ 首页就把第一关那套弹掉了，
+--   真进第一关反而"已经弹过"不再弹（用户实测：首页有、第一关没有）。
+local TUT_TRIGGER = { home = "home", case_001 = "l1", case_002 = "l2" }
+
+-- ⚠️ 这里原来还有**另一份** `current_tut_key()`（v289 的"只看 cur.screen"版）。
+--   ★ v298 删掉它：`local function` 后定义者会**盖掉**先定义者 ⇒ 它是一份**死代码**，
+--     但谁要是照着它的位置改（它排在上面），改完**运行时一点效果都没有** ——
+--     这正是"连续两版改错方向"的现成陷阱。**这个文件里 current_tut_key 只允许有一处定义**（见下方 v298 版）。
+
+local function tutorial_module()
+  if tutorial_mod_state ~= nil then
+    if tutorial_mod_state == false then return nil end
+    return tutorial_mod_state
+  end
+  local ok, mod = pcall(require, "tutorial_ui")
+  if not ok or type(mod) ~= "table" or type(mod.new) ~= "function" then
+    if printerr then printerr("[murdoku] 教程模块没加载上：" .. tostring(mod)) end
+    tutorial_mod_state = false     -- 记"试过了"，避免每帧重试刷屏
+    return nil
+  end
+  tutorial_mod_state = mod
+  return mod
+end
+
+-- 取某一关的实例（第一次调用时创建；控件没进树时 init 自己会早退，下次再来）
+local function tutorial_instance(spec)
+  if spec == nil then return nil end
+  local inst = tutorial_inst[spec.tag]
+  if inst ~= nil then return inst end
+  local mod = tutorial_module()
+  if mod == nil or adapter == nil then return nil end
+  local ok, made = pcall(function()
+    return mod.new(adapter, { tag = spec.tag, root = spec.root, text = spec.text, pages = spec.pages })
+  end)
+  if not ok or type(made) ~= "table" then
+    if printerr then printerr("[murdoku] 教程实例建不出来（" .. tostring(spec.tag) .. "）：" .. tostring(made)) end
+    return nil
+  end
+  tutorial_inst[spec.tag] = made
+  return made
+end
+
+-- 教程控件自检（每关一次；全程 pcall，失败只影响"日志少一行"，绝不影响游戏）
+local function verify_tutorial_once(tag)
+  if tutorial_checked[tag] then return end
+  tutorial_checked[tag] = true
+  pcall(function()
+    local ok, mod = pcall(require, "tut_verify")
+    if not ok or type(mod) ~= "table" or type(mod.check) ~= "function" then
+      if printerr then printerr("[murdoku] 自检模块没加载上：" .. tostring(mod)) end
+      return
+    end
+    mod.check({
+      find = function(n) return adapter:find(n) end,
+      -- 注入根表 ⇒ 自检能查全树的"同名多条"（不注入就只能查同级，会在日志里降级说明）
+      roots = function()
+        if game == nil or game.GetClientUIRoots == nil then return nil end
+        return game.GetClientUIRoots()
+      end,
+    })
+  end)
+end
+
+-- ★ v292：**"现在到底在哪一屏"以【看得见的控件】为准**
+--
+--   真机实测（用户 2026-10-21 04:59 日志）：开局那条 `on_start` 之后 `cur.screen` 是 nil，
+--   但屏幕上其实还是**首页**（随后玩家点了 `home.select` 进选关）。
+--   ⇒ v289 直接信 `cur.screen == nil` ⇒ 在首页就把第一关那套弹了一次（然后立刻关掉），
+--     等真进第一关时它已经"弹过" ⇒ 第一关永远看不到教程。
+--   修法：首页判据改成"**`home` 控件可见**"（这是渲染事实，不依赖状态字段的时序），
+--        再叠加"触发键稳定 N 帧才动手"，两道一起挡住过渡期。
+--
+-- ★★★ v298（2026-10-21 22:31 真机日志的证据，用户要求）：**board/stage 不能当"进了关卡"的判据** ✗
+--   · 日志开头**首页阶段**就有 `★ 几何归编辑器：stage 回读 584.0x584.0`
+--     ⇒ `board` / `stage` 是**全屏常驻容器**，首页 / 选关页也**存在** ⇒ "存在即可见"⇒ 一律误判成关卡内
+--   · 选关页时：`cur.screen` 仍是 **nil**、`home` **已隐藏**
+--     ⇒ 所以既不能靠 screen，也不能靠 home 的否定面来判"在哪一屏"
+--   · 选关页**独有**、且**读得到**的是 `select.card.1`（日志里有 `选关卡框 select.card.1：w=209.0 …`）
+--     ⚠️ 而容器名 `select` 本身 `find` 不到（项目自己的诊断也印 `select=**找不到**`）⇒ 只能判**子控件**
+--   ⇒ v298 判据（顺序即优先级，全部以"**可见**"为准，取不到一律按不可见）：
+--       ① `home` 可见                     ⇒ "home"
+--       ② `select.card.1`（退而 `select.title`）可见 ⇒ **选关页 ⇒ nil（不弹）**
+--       ③ `clues` 或 `board` 可见          ⇒ 才认为在关卡里 ⇒ `tostring(cur.level.id)`
+--       ④ 其它                            ⇒ nil
+local function tut_visible(name)
+  if adapter == nil or name == nil then return false end
+  local c = nil
+  pcall(function() c = adapter:find(name) end)
+  if c == nil then return false end
+  local v = nil
+  pcall(function() v = c.visible end)
+  return v == true
+end
+
+local function tutorial_home_visible()
+  return tut_visible("home")
+end
+
+local TUT_STABLE_NEED = 20   -- 触发键连续稳定 20 帧（≈0.67s）才弹，躲开切屏过渡
+local TUT_KEEP_NEED = 10     -- 面板出现后还要稳 10 帧才算"真的弹成了"（才记 seen）
+local tut_key_prev = nil
+local tut_key_frames = 0
+local tut_shown_frames = 0
+local tut_key_logged = false -- v298：触发键诊断日志是否已经打过（首帧那行也要打）
+local tut_miss_frames = {}   -- tag -> 连续不该弹的帧数（>=10 才关，抗抖动）
+
+-- 当前触发键 + 一份**判据快照**（诊断日志用）。
+--   ★ 同一帧只读一次可见性 ⇒ "日志里看到的值"和"实际用来判的值"**一定是同一份**（不做二次读）。
+--   ★ 返回 `(key, probe)`；`key == nil` = 现在不该弹任何一套。
+local function tut_key_and_probe()
+  local cur = nil
+  pcall(function()
+    if Murdoku ~= nil and Murdoku.current ~= nil then cur = Murdoku.current() end
+  end)
+
+  -- 三个判据各读一次（`tut_visible` 内部全 pcall，取不到 = false）
+  local home  = tut_visible("home")
+  local card1 = tut_visible("select.card.1")
+  if not card1 then card1 = tut_visible("select.title") end   -- 兜底：选关页标题，同样是选关页独有
+  local clues = tut_visible("clues")
+  local board = tut_visible("board")
+
+  local scr, id = nil, nil
+  if cur ~= nil then
+    pcall(function() scr = cur.screen end)
+    pcall(function() id = cur.level and cur.level.id end)
+  end
+
+  local key = nil
+  if cur ~= nil then
+    if home then
+      key = "home"                       -- ① 首页
+    elseif card1 then
+      key = nil                          -- ② 选关页：**不弹**（log 里 card1=true 一眼能看出来）
+    elseif clues or board then
+      if id ~= nil then key = tostring(id) end   -- ③ 关卡内
+    end
+    -- ④ 其它（过渡态 / 未知屏）：key 保持 nil
+  end
+
+  return key, { home = home, card1 = card1, clues = clues, board = board, scr = scr, id = id }
+end
+
+-- 当前触发键（拿不到返回 nil）—— 对外保持这个名字：本文件里**只有这一处定义**。
+--   ★ 判据快照随手存进 `tut_last_probe`：调用方要打诊断日志就读它，
+--     **不要为日志再读一次可见性**（否则"日志里的值"和"实际判的值"可能不是同一帧的）。
+local tut_last_probe = nil
+local function current_tut_key()
+  local key, probe = tut_key_and_probe()
+  tut_last_probe = probe
+  return key
+end
 
 local function tick_tutorial()
   if adapter == nil then return end
-  if tutorial == nil then
-    local ok, mod = pcall(require, "tutorial_ui")
-    if not ok or type(mod) ~= "table" or type(mod.new) ~= "function" then
-      if printerr then printerr("[murdoku] 教程模块没加载上：" .. tostring(mod)) end
-      tutorial = false          -- 用 false 记"试过了"，避免每帧重试刷屏
-      return
+  if tutorial_module() == nil then return end
+
+  -- ① 三套实例都做惰性 init：谁先就绪谁先被藏起来（避免教程面板在别的界面露出来）
+  for _, spec in pairs(TUT_SETS) do
+    local inst = tutorial_instance(spec)
+    if inst ~= nil and not inst.inited then
+      pcall(function() inst:init() end)
+      if not inst.inited then
+        -- ★ 兜底：根容器迟迟没进树 ⇒ 这条失败路径原来是纯静默的；约 2 秒后照样跑一次自检
+        tutorial_wait[spec.tag] = (tutorial_wait[spec.tag] or 0) + 1
+        if tutorial_wait[spec.tag] >= 120 then verify_tutorial_once(spec.tag) end
+      else
+        verify_tutorial_once(spec.tag)
+      end
     end
-    tutorial = mod.new(adapter)
-    if Murdoku ~= nil then Murdoku.tutorial = tutorial end
   end
-  if tutorial == false then return end
-  if not tutorial.inited then
-    tutorial:init()             -- 控件没进树时自己会早退，下一帧再来
-    if not tutorial.inited then return end
+
+  -- ② 只在"该出现的那一屏"弹对应那一套；离开就收起
+  --   ★ v292：**触发键稳定 20 帧才动手**，并且**面板稳 10 帧才记 seen**
+  --     真机实测：开局 `cur.screen` 会短暂为 nil 而屏幕其实还是首页 ⇒ 旧逻辑在那一刻就把 l1 弹掉并记 seen，
+  --     真进第一关时反而"已弹过"，第一关永远看不到教程。
+  local key, probe = nil, nil
+  if started then
+    key = current_tut_key()          -- ★ 唯一入口：判据在 `tut_key_and_probe` 里
+    probe = tut_last_probe           -- ★ 同一帧的那份快照（诊断日志用，不二次读）
   end
-  if not tutorial_opened_once and started then
-    tutorial_opened_once = true
-    pcall(function() tutorial:open_ui() end)   -- 开局弹一次「玩法说明」
+  local key_changed = (key ~= tut_key_prev)
+  if not key_changed then
+    tut_key_frames = tut_key_frames + 1
+  else
+    tut_key_prev = key
+    tut_key_frames = 0
+    tut_shown_frames = 0
+  end
+  -- ★★★ v298 诊断（用户要求"一行定位"）：触发键**一变**就打一行；**首次评估**（就算结果是 nil）也打一行。
+  --   值全部来自这一帧**运行时读到的**可见性/字段（`probe` 与"实际用来判的"是同一份，不二次读）。
+  --   真机日志里看到的样子：
+  --     [tutorial] 触发键 -> home  (home=true card1=false clues=false board=false scr=nil)
+  --     [tutorial] 触发键 -> nil   (home=false card1=true clues=false board=false scr=nil)   ← 选关页：不弹
+  --     [tutorial] 触发键 -> case_001  (home=false card1=false clues=true board=true scr=nil)  ← 关卡内
+  if print and probe ~= nil and (key_changed or not tut_key_logged) then
+    tut_key_logged = true
+    print("[tutorial] 触发键 -> " .. tostring(key)
+      .. "  (home=" .. tostring(probe.home)
+      .. " card1=" .. tostring(probe.card1)
+      .. " clues=" .. tostring(probe.clues)
+      .. " board=" .. tostring(probe.board)
+      .. " scr=" .. tostring(probe.scr) .. ")")
+  end
+  local want_tag = nil
+  if key ~= nil and tut_key_frames >= TUT_STABLE_NEED then want_tag = TUT_TRIGGER[key] end
+  for tag, spec in pairs(TUT_SETS) do
+    local inst = tutorial_inst[spec.tag]
+    if inst ~= nil and inst.inited then
+      if want_tag == tag then
+        tut_miss_frames[tag] = 0
+        -- ★ v293：**只有"还没弹过"才自动打开** —— 否则玩家点了关闭，下一帧又被自动打开（真机实测：关不掉）
+        if not tutorial_seen[tag] then
+          if not inst.open then
+            pcall(function() inst:open_ui() end)
+          end
+          tut_shown_frames = tut_shown_frames + 1
+          -- 面板真的稳住了才记"已弹过"（弹一下就被关不记账 —— 那是 v291 第一关丢失的形态）
+          if tut_shown_frames >= TUT_KEEP_NEED then tutorial_seen[tag] = true end
+        end
+      else
+        -- ★ v293：**抗抖动**：连续 10 帧都不是这一套才关；单帧闪烁不关
+        tut_miss_frames[tag] = (tut_miss_frames[tag] or 0) + 1
+        if inst.open and tut_miss_frames[tag] >= TUT_KEEP_NEED then
+          pcall(function() inst:close() end)
+          tut_miss_frames[tag] = 0
+        end
+      end
+    end
   end
 end
 
@@ -1069,3 +1338,4 @@ function OnDestroy()
   Murdoku.on_destroy()
   if print then print("[murdoku] destroyed") end
 end
+

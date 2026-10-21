@@ -311,13 +311,24 @@ local ok6, err6 = pcall(function()
 end)
 ok(ok6, "纯模板模式不抛错", err6)
 ok(has("started") ~= nil, "纯模板模式下也能开局", has("started"))
-ok(has("纯模板模式") ~= nil, "明确识别为**纯模板模式**（而不是报「找不到控件」）",
+-- ★★★★★ 2026-10-18（优化组 · B 类清理）：**这两条断言反转成哨兵** ✗✓
+--   原来断言「日志里有 纯模板模式 / 体检结束」—— 那是 `diagnose_template` / `diagnose_cell` 的输出。
+--   而这两个体检已按"结案探针"删除（结案证据：真机日志「这一格配好了」/「生成成功了 —— 建了 25 个格子」）。
+--   ⇒ 现在断言它们**不再出现**：万一有人把体检加回来，这里立刻红 ✓
+--   ⚠️ 纯模板模式本身仍要能开局 —— 那一条在上面（`started`），不受体检删除影响 ✓
+ok(has("体检结束") == nil, "格子体检已按结案删除（日志里不该再有「体检结束」）",
+  has("体检结束"))
+ok(has("纯模板模式") == nil, "模板体检已按结案删除（日志里不该再有「纯模板模式」那一行）",
   has("纯模板模式"))
-ok(has("体检结束") ~= nil, "体检正常跑完")
 -- 反例：绝不能再出现"找不到这个控件"这种误报
 ok(has("格子体检 cell.1.1：**找不到这个控件**") == nil,
   "**没有**把「没有 cell.1.1」报成「找不到控件」（误报回归）")
-ok(has("参照格子") ~= nil, "说明了「没有参照格子 → 不做图片盖章」这条正常代价")
+-- ★ 2026-10-18（优化组 · B 类清理）：原来这里断言「说明了『没有参照格子 → 不做图片盖章』」——
+--   那句话其实是 `diagnose_template` 打的（已按结案删除）⇒ 断言随之失效，删掉 ✓
+--   ⚠️ 顺带查出一个**死条件**（记进台账，本批没动它）：
+--     `ensure_cells` 里那段 `if ref == nil and made > 0 then self:warn_once("cells:noref", …)`
+--     —— `made` 在那个位置**还是 0**（创建循环在后面才开始）⇒ 这句"纯模板模式的正常代价"
+--     **从来没打出来过**。属"恒假分支"，等下一批连它一起处理。
 
 -- ── 6b. ★ 引用控件占着 `cell.1.1` 这个名字 ────────────────────────────────
 --
@@ -449,6 +460,15 @@ face.__visible = true
 face.SetVisible = function(_, v) face.__visible = v end
 -- 假控件也要有 SetImage（适配层会调它把调色板里的 id 套上来）
 face.SetImage = function(_, src, id) face.imageSource = src; face.imageId = id end
+-- ★★ 2026-10-22（v299）**结构性补课**：v283 起格子的「放置头像」改画在 `portrait` 层
+--   （`set_property(…, "image", …)` 对 `cell.*` 走的是 `_paint_portrait`，不再动 `face`）
+--   ⇒ 下面 ① 那条断言必须验 `portrait`，否则假红；`face` 只保留房间色（② 染色那条验它）。
+local portrait = make_ctrl("portrait")
+portrait.imageSource = "StaticReference"
+portrait.imageId = 100001
+portrait.__visible = true
+portrait.SetVisible = function(_, v) portrait.__visible = v end
+portrait.SetImage = function(_, src, id) portrait.imageSource = src; portrait.imageId = id end
 local wallup = make_ctrl("wall.up"); wallup.__visible = true
 wallup.SetVisible = function(_, v) wallup.__visible = v end
 local doorl = make_ctrl("door.left"); doorl.__visible = true
@@ -456,7 +476,7 @@ doorl.SetVisible = function(_, v) doorl.__visible = v end
 local content = make_ctrl("content")
 content.disableCursorEventPassthrough = true     -- 故意开着：脚本必须把它关掉
 content.disableKeyEventPassthrough = true
-content.__kids = { face, wallup, doorl }
+content.__kids = { face, portrait, wallup, doorl }
 cellc.__kids = { content }
 local root6d = tree_root({ cellc })
 roots = { root6d, pal }
@@ -479,7 +499,9 @@ local ok6d, err6d = pcall(function()
 end)
 ok(ok6d, "调色板/染色/墙门 不抛错", err6d)
 if __murdoku_debug ~= nil and __murdoku_debug.adapter ~= nil then
-  ok(face.imageId == 424242, "① 按素材名换图成功（face.imageId = " .. tostring(face.imageId) .. "）")
+  ok(portrait.imageId == 424242, "① 按素材名换图成功（portrait.imageId = " .. tostring(portrait.imageId) .. "）")
+  ok(face.imageId == 106053, "①b 换头像图**不动**房间色底图（face.imageId 仍是 106053）")
+  ok(portrait.__visible == true, "①c 头像层被点亮了（visible=true）")
   ok(wallup.__visible == false, "③ wall.up 按数据关掉了（visible=" .. tostring(wallup.__visible) .. "）")
   ok(doorl.__visible == false, "③ door.left 按数据关掉了（visible=" .. tostring(doorl.__visible) .. "）")
   ok(content.disableCursorEventPassthrough == false,

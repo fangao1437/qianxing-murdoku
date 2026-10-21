@@ -7588,13 +7588,23 @@ end
 -- 适配层会把它落到格子的 `face` 子控件上（见 set_property 的 "tint" 分支）。
 --
 -- 改这里就能换配色；不想要染色就把整张表清空（返回 nil → 适配层跳过）。
+--
+-- ★★★★★★★★ 2026-10-22（v299）**房间配色换成"室内木地板/石面"那一族** ✗✓
+--
+--   美术资源组这一轮的基准是原作 Murdoku 的截图：房间都是有「暖木/石面/草地」底色的
+--   平面图，而不是高饱和色块。旧表（暖木 / 冷灰蓝 / 淡紫 / 淡绿 / 陶土 / 石板）里
+--   第 3 个「淡紫」和第 2 个「冷灰蓝」放在室内像"卡通风"，与家具的木质棕/米白打架。
+--   ⇒ 这一版把 6 个值统一**降饱和 + 偏暖**，并把「淡紫」换成「暖灰」——
+--     这样 3 个房间并排时像一间屋子的三块地面。
+--   证据：`_work/art-work/v7-*`（旧色）与 `v8-*`（新色）的整盘预览对照。
+--   ⚠️ 这张表同时被「选关卡片缩略图」用（见 L4256 那段），所以换色两边一起变 —— 这是有意的。
 Controller.ROOM_COLORS = {
-  { r = 214, g = 196, b = 160 },   -- 1 暖木色
-  { r = 178, g = 200, b = 208 },   -- 2 冷灰蓝
-  { r = 206, g = 178, b = 200 },   -- 3 淡紫
-  { r = 190, g = 206, b = 176 },   -- 4 淡绿
-  { r = 220, g = 190, b = 170 },   -- 5 陶土
-  { r = 186, g = 190, b = 210 },   -- 6 石板
+  { r = 217, g = 205, b = 180 },   -- 1 暖米（木地板）
+  { r = 195, g = 205, b = 212 },   -- 2 冷灰蓝（石材）
+  { r = 212, g = 200, b = 188 },   -- 3 暖灰（灰泥）
+  { r = 190, g = 207, b = 176 },   -- 4 淡绿（草地）
+  { r = 224, g = 200, b = 176 },   -- 5 沙色
+  { r = 198, g = 198, b = 210 },   -- 6 石板
 }
 
 -- 注意：这是**普通函数**不是方法（同 portrait_of 的坑）
@@ -13888,8 +13898,17 @@ local CURSOR_CONTAINERS = {
   "home", "select",
 }
 
+-- ★★★ 2026-10-21（v288）**脚本自管的顶层容器**（不参与 `hide_unlisted` 的"不在计划里就藏"）
+--
+--   目前只有教程浮层 `teach`：它的显隐完全由 `lua/tutorial_ui.lua` 决定
+--   （打开=显示 `teach.lX` + `teach.text.lX`，关闭=隐藏），**永远不会出现在任何屏幕计划里**。
+--   ⇒ 如果不豁免，`hide_unlisted` 每趟都会把整棵教程浮层藏掉（真机实测：教程"打开了"但一片空白）。
+--   ⚠️ 以后新增这种"自管显隐的顶层容器"时，名字要加到这里，并同步 `tutorial_ui` 的配置。
+local SELF_MANAGED_TOP = { teach = true }
+
 function Adapter:hide_unlisted(keep)
   local hidden = 0
+  local skipped_self = 0
   for i = 1, #MANAGED do
     local parent = self:find(MANAGED[i])
     if parent ~= nil and parent.GetChildren ~= nil then
@@ -13900,7 +13919,17 @@ function Adapter:hide_unlisted(keep)
           local name = nil
           pcall(function() name = child.name end)
           if name ~= nil and name ~= "" and not keep[name] and not DECOR[name] then
-            if child.SetVisible ~= nil then
+            -- ★★★ 2026-10-21（v288）**脚本自管的顶层覆盖层一律不藏** ✗✓
+            --
+            --   真机实测（用户 2026-10-21 04:19 日志）：教程控件生成好了、日志也打了
+            --   `[tutorial] 打开 tag=l1（第 1 / 3 页）`、自检 `18/18` 全绿，
+            --   但**屏幕上一片空白** ✓ —— 因为这个函数把 root 下"不在本屏计划里"的
+            --   直接子控件**逐个 SetVisible(false)**，而 `teach` 永远不在任何屏幕计划里 ✓
+            --   ⇒ 整棵教程浮层被它关掉，而且它**只会隐藏、从不恢复** ✗
+            --   ⇒ 修法：这类"脚本自己管显隐"的顶层容器，显式豁免（显隐由 `tutorial_ui` 决定）。
+            if SELF_MANAGED_TOP[name] then
+              skipped_self = skipped_self + 1
+            elseif child.SetVisible ~= nil then
               local ok2 = pcall(function() child:SetVisible(false) end)
               if ok2 then hidden = hidden + 1 end
             end
@@ -13908,6 +13937,12 @@ function Adapter:hide_unlisted(keep)
         end
       end
     end
+  end
+  -- 只喊一次：让"豁免生效"在真机日志里可见（否则这条又是静默的）
+  if skipped_self > 0 and not self._said_self_managed and print then
+    self._said_self_managed = true
+    print("[murdoku] hide_unlisted：跳过 " .. skipped_self
+      .. " 个**脚本自管的顶层容器**（teach，教程浮层 —— 显隐由 tutorial_ui 决定）")
   end
   return hidden
 end
@@ -14443,14 +14478,66 @@ function Adapter:read_palette()
   --   ★ 优先级：**控件里有的优先**（用户若真在编辑器里做了 `things` 区，仍以那边为准 ✓）
   --   ★ 写法：`obj_art = { table = { id = 100001, color = 0xFFB07946 }, … }`
   --     （键 = `kind`，不是控件名；内部拼成 `obj.<kind>` ✓，与 `object_key_of` 对齐 ✓）
+  --   ★★★★★★★★ 2026-10-22 **家具改成「多层拼装」** ✗✓
+  --
+  --   原作（Murdoku）的家具就是**两层白色剪影 + 两个颜色**：
+  --     `obj_<名>.svg`（base 层，染 `obj_color_base_<id>`）
+  --   ＋ `obj_<名>_02.svg`（overlay 层，染 `obj_color_overlay_<id>`）。
+  --   ⇒ 想尽量复刻它，一格家具就不能只有一张图。于是格子模板在 `obj` 之后
+  --     再补了 `obj2` / `obj3` 两层（见 `tools/gil/gen_obj_art.mjs`），
+  --     这里按 **层号** 往调色板里登记同名的键：
+  --       第 1 层 → `obj.<kind>`（= 老的写法，**完全向后兼容**）
+  --       第 2 层 → `obj2.<kind>`
+  --       第 3 层 → `obj3.<kind>`
+  --
+  --   兼容两种写法（同一张表里可以混用）：
+  --     · 单层（老）：`chair = { id = 100001, color = 0xFFE0A040 }`
+  --     · 多层（新）：`chair = { { id = 106053, color = 0xFF8A6A48, w = 0.78, h = 0.78 },
+  --                            { id = 106053, color = 0xFFE3D2AE, w = 0.60, h = 0.60 } }`
+  --   多层里每一项除 `id/color` 外还可以带**格子相对几何**：
+  --     `w, h` = 相对格子边长的比例（默认 1）；`dx, dy` = 相对格子边长的偏移（默认 0，**dy 正 = 向下**）
   local oa = self.cfg.obj_art
   if type(oa) == "table" then
     for k, v in pairs(oa) do
-      local key = (type(k) == "string" and k:match("^obj%.") and k) or ("obj." .. tostring(k))
-      local okk = type(v) == "table" and type(v.id) == "number"
-      if okk and map[key] == nil then
-        map[key] = { source = v.source or "StaticReference", id = v.id, color = v.color, from = "cfg.obj_art" }
-        names[#names + 1] = key
+      -- 键允许写成 `table` 或 `obj.table`（老注释里的两种写法都认）
+      local kind = tostring(k)
+      local pref = kind:match("^(obj%d*)%.") 
+      if pref ~= nil then kind = kind:sub(#pref + 2) end
+      -- 归一成"层数组"
+      local layers = nil
+      if type(v) == "table" and type(v.id) == "number" then
+        layers = { v }                                   -- 老写法 = 单层
+      elseif type(v) == "table" and #v > 0 then
+        layers = v                                       -- 新写法 = 层数组
+      end
+      if layers ~= nil then
+        for i = 1, #layers do
+          local L = layers[i]
+          local key = (i == 1 and ("obj.") or ("obj" .. i .. ".")) .. kind
+          if type(L) == "table" and type(L.id) == "number" then
+            local e = map[key]
+            if e == nil then
+              map[key] = {
+                source = L.source or "StaticReference",
+                id = L.id,
+                color = L.color,
+                w = L.w, h = L.h, dx = L.dx, dy = L.dy,
+                layer = i,
+                from = "cfg.obj_art",
+              }
+              names[#names + 1] = key
+            else
+              -- ★ 控件里已有这一层（编辑器优先：**图与色以控件为准**），
+              --   但**几何只可能来自 cfg**（控件扫描不读尺寸）⇒ 补进去。
+              --   这就是"第 1 层给编辑器改、几何仍由脚本定"的实现。
+              if e.w == nil then e.w = L.w end
+              if e.h == nil then e.h = L.h end
+              if e.dx == nil then e.dx = L.dx end
+              if e.dy == nil then e.dy = L.dy end
+              if e.layer == nil then e.layer = i end
+            end
+          end
+        end
       end
     end
   end
@@ -15287,35 +15374,116 @@ end
 --      `hide_kids` 会绕过我们递归把子控件设成 false ⇒ 任何"我记住它亮着"的缓存都会骗自己。
 --   ⚠️ 但 `SetActive(true)` **只在换图那一次写**：`hide_kids` 只碰 visible，
 --      active 只有我们自己会改 ⇒ 每帧重写纯属浪费（`grid_cost` 是按每帧调用数算账的）。
+-- ★★★★★★★★ 2026-10-22（v299）家具 = **多层拼装**（`obj` / `obj2` / `obj3`）✗✓
+--
+--   为什么加：原作（Murdoku）的家具就是「base 剪影 + overlay 剪影 + 两个颜色」，我们只有
+--   单张官方素材是拼不出扶手椅/长桌这种俯视图的。层由存档模板给（`gen_obj_art.mjs` 加的），
+--   这里只负责**按层画**。
+--
+--   `want` 的形状（v299 起带 `layers`；老路径仍然可用）：
+--     `false`/`nil` = 这一格没有物件（三层全藏）
+--     表 = { key="obj.chair", layers = { 层1, 层2, 层3 } }，
+--          每层 = { id, src, color, w, h, dx, dy }（w/h/dx/dy 可缺省 = 铺满/居中）
+--     ⚠️ 兼容：没有 `layers` 时按老形状 `{ key, src, id, color }` 当**只有第 1 层**。
+--
+--   纪律（与 v281/v283 同一套）：
+--     · **画法只有一份**（本函数），重放只有一份（`_repaint_cell_overlays`）；
+--     · `SetVisible(true)` **每次重放都要写**（`hide_kids` 会绕过我们递归藏子控件）；
+--     · `SetActive(true)` 只在换图那一次写；
+--     · 没有物件的格子**三层都要藏**（否则白板压住头像，那是老 bug）。
+
+local OBJ_LAYER_SUBS = { "obj", "obj2", "obj3" }     -- 从下到上（与 layer_order 同序）
+
+-- 把 `want` 归一成 1..3 层（逐字段填好默认值）。返回 {} 表示"没有物件"。
+function Adapter:obj_layers_of(want)
+  if want == false or want == nil or type(want) ~= "table" then return {} end
+  local out = {}
+  if type(want.layers) == "table" then
+    for i = 1, math.min(#want.layers, #OBJ_LAYER_SUBS) do
+      local L = want.layers[i]
+      if type(L) == "table" and L.id ~= nil then
+        out[#out + 1] = {
+          sub = OBJ_LAYER_SUBS[i],
+          key = L.key or (want.key .. "#" .. i),
+          src = L.src, id = L.id, color = L.color,
+          w = L.w, h = L.h, dx = L.dx, dy = L.dy,
+        }
+      end
+    end
+  elseif want.id ~= nil then
+    -- 老形状：单层
+    out[1] = { sub = "obj", key = want.key, src = want.src, id = want.id, color = want.color }
+  end
+  return out
+end
+
+-- 读格子边长（带兜底：模拟器没有 getter 时用界面层刚发的 rect）
+function Adapter:_cell_size_of(ctrl, cell_id)
+  local w, h = size_of(ctrl)
+  if (type(w) ~= "number" or w <= 1) and cell_id ~= nil and self.rects ~= nil then
+    local r = self.rects[cell_id]
+    if type(r) == "table" then w, h = r.w, r.h end
+  end
+  if type(w) ~= "number" or type(h) ~= "number" or w <= 1 or h <= 1 then return nil, nil end
+  return w, h
+end
+
+-- 按层几何摆一个层子控件（w/h 缺省 = 铺满格子；dx/dy 以格子边长为单位，**dy 正 = 向下**）
+function Adapter:_fit_obj_layer(sub, cw, ch, L)
+  if sub == nil or cw == nil or ch == nil then return end
+  local fw = tonumber(L and L.w) or 1
+  local fh = tonumber(L and L.h) or 1
+  local dx = tonumber(L and L.dx) or 0
+  local dy = tonumber(L and L.dy) or 0
+  if sub.SetAnchorMin then pcall(function() sub:SetAnchorMin(0.5, 0.5) end) end
+  if sub.SetAnchorMax then pcall(function() sub:SetAnchorMax(0.5, 0.5) end) end
+  if sub.SetPivot then pcall(function() sub:SetPivot(0.5, 0.5) end) end
+  if sub.SetSizeDelta then pcall(function() sub:SetSizeDelta(cw * fw, ch * fh) end) end
+  if sub.SetAnchoredPosition then pcall(function() sub:SetAnchoredPosition(dx * cw, -(dy * ch)) end) end
+end
+
 function Adapter:_paint_obj(cell_id, ctrl, want, force)
   if cell_id == nil then return false end
-  local o = self:sub(cell_id, "obj")
-  if o == nil then return false end        -- 子控件还没就绪 ⇒ 交给每帧重放补
-  if want == false or want == nil then
-    if o.SetVisible then pcall(function() o:SetVisible(false) end) end
-    return true
-  end
+  local layers = self:obj_layers_of(want)
   local marks = self._obj_marks
   if marks == nil then
     marks = setmetatable({}, { __mode = "k" })   -- 弱键：格子实例回收后自动释放
     self._obj_marks = marks
   end
-  local m = marks[o]
-  local need = (force == true) or m == nil
-    or m.key ~= want.key or m.id ~= want.id or m.color ~= want.color
-  if need then
-    if ctrl ~= nil then self:_fit_child_to_cell(ctrl, o, cell_id) end
-    local src = nil
-    pcall(function() src = o.imageSource end)
-    if want.src ~= nil then src = want.src end
-    pcall(function() o:SetImage(src, want.id) end)
-    if want.color ~= nil then pcall(function() o.imageColor = want.color end) end
-    marks[o] = { key = want.key, id = want.id, color = want.color }
-    -- ★ 与 `hint` / `notes` 同一口径：要显示时补一次 `SetActive(true)`（幂等）
-    if o.SetActive then pcall(function() o:SetActive(true) end) end
+  local cw, ch = nil, nil
+  local all_ready = true
+  for i = 1, #OBJ_LAYER_SUBS do
+    local sub = self:sub(cell_id, OBJ_LAYER_SUBS[i])
+    local L = layers[i]
+    if sub == nil then
+      -- 层还没就绪（模板是老存档 / 首帧树没齐）⇒ 交给每帧重放补
+      if L ~= nil then all_ready = false end
+    elseif L == nil then
+      -- 没有物件 / 这一层不用 ⇒ 藏掉（**必须**，否则白板压住头像）
+      if sub.SetVisible then pcall(function() sub:SetVisible(false) end) end
+      marks[sub] = nil
+    else
+      local m = marks[sub]
+      local need = (force == true) or m == nil
+        or m.key ~= L.key or m.id ~= L.id or m.color ~= L.color
+        or m.w ~= L.w or m.h ~= L.h or m.dx ~= L.dx or m.dy ~= L.dy
+      if need then
+        if cw == nil and ctrl ~= nil then cw, ch = self:_cell_size_of(ctrl, cell_id) end
+        if cw ~= nil then self:_fit_obj_layer(sub, cw, ch, L) end
+        local src = nil
+        pcall(function() src = sub.imageSource end)
+        if L.src ~= nil then src = L.src end
+        pcall(function() sub:SetImage(src, L.id) end)
+        if L.color ~= nil then pcall(function() sub.imageColor = L.color end) end
+        marks[sub] = { key = L.key, id = L.id, color = L.color,
+                       w = L.w, h = L.h, dx = L.dx, dy = L.dy }
+        -- 与 `hint` / `notes` 同一口径：要显示时补一次 `SetActive(true)`（幂等）
+        if sub.SetActive then pcall(function() sub:SetActive(true) end) end
+      end
+      if sub.SetVisible then pcall(function() sub:SetVisible(true) end) end   -- 见上面 ⚠️：每次都写
+    end
   end
-  if o.SetVisible then pcall(function() o:SetVisible(true) end) end   -- 见上面 ⚠️：每帧写
-  return true
+  return all_ready
 end
 
 -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
@@ -15473,17 +15641,28 @@ function Adapter:set_property(id, key, value, nkey)
     --     由 `_cells_paint`（每帧都跑）重放；画法收进 `Adapter:_paint_obj`，只有一个实现。
     local want = false
     if not (value == false or value == nil) then
-      local hit = nil
-      do
-        local map = self:read_palette()
-        local k = tostring(value)
-        hit = map[k]
+      -- ★ 2026-10-22（v299）：按 **层** 取素材 —— `obj.<kind>` / `obj2.<kind>` / `obj3.<kind>`。
+      --   层数由"调色板里真的有哪几层"决定（编辑器控件优先，其次 cfg.obj_art）⇒
+      --   只有 1 层的老数据/老存档行为**完全不变**（其余层在 `_paint_obj` 里藏掉）。
+      local vkey = tostring(value)
+      local kind = vkey:match("^obj%.(.+)$") or vkey
+      local map = self:read_palette()
+      local layers = {}
+      for li = 1, #OBJ_LAYER_SUBS do
+        local k = (li == 1 and ("obj.") or ("obj" .. li .. ".")) .. kind
+        local hit = map[k]
+        if type(hit) == "table" and type(hit.id) == "number" then
+          layers[#layers + 1] = {
+            key = k, src = hit.source, id = hit.id, color = hit.color,
+            w = hit.w, h = hit.h, dx = hit.dx, dy = hit.dy,
+          }
+        end
       end
       -- ⚠️ 这里**不要用 `resolve_asset`** —— 它查不到会 `warn_once` 打**报错**，
       --    而"调色板里还没有 obj.* 素材"是**当前阶段的正常状态**（物件美术还没配），
       --    不该污染日志。直接查表，查不到就当"这一格没有物件"。
-      if hit ~= nil and hit.id ~= nil then
-        want = { key = tostring(value), src = hit.source, id = hit.id, color = hit.color }
+      if #layers > 0 then
+        want = { key = vkey, layers = layers }
       end
     end
     -- ① 先记意图（**即使子控件此刻还取不到也要记** —— 每帧重放靠它补画）
@@ -19625,62 +19804,89 @@ end
 
 __M["tutorial_ui"] = function()
 --[[----------------------------------------------------------------------------
-  lua/tutorial_ui.lua —— 玩法说明（教程）浮层 · v284
+  lua/tutorial_ui.lua —— 玩法说明（教程）浮层 · v290（视觉升级版）
 
-  ★ 控件来源：`478-教程UI并入-v284.gil`
-    由 `tools/gil/gen_tutorial_into.mjs` 把 `477-教程UI骨架-独立号段.gil` 的
-    **场景层**并入主档，**全部加了 `tut.` 前缀**（骨架原名 `hud.title` / `bg` / `label`
-    会和主档同名控件撞名），`tut.app.root` 撑成 1600×900 满画布（骨架里是 0×0，
-    引擎按父级矩形裁剪 ⇒ 0×0 会把整片教程裁没）。
+  ★ 控件来源：`486-教程teach-v290.gil`（`tools/gil/gen_tutorial_teach.mjs`
+    从 472 母本克隆，号段 1073743900…1073743994，466 条）。结构（名字**逐字一致**，改存档要同步这里）：
 
-  ★ 控件表（都按名字取，改名要同步这里）：
-      tut.app.root        根容器（满画布）
-      └ tut.screen.demo   浮层主体
-        ├ tut.hud.title   标题
-        ├ tut.hud.pager   页码「第 N / 3 页」
-        ├ tut.tab.p1..p3  三个页签（选中态子控件 state.sel / state.off）
-        ├ tut.btn.prev / tut.btn.next / tut.btn.reset / tut.btn.close
-        └ tut.page.p1..p3 三页内容（子控件 tut.bg 底 + tut.label 正文）
+      teach                            容器 1600×900（父 = root）
+      ├ teach.<t>                      每一套（t = home | l1 | l2）1240×780
+      │   ├ teach.<t>.bg
+      │   ├ teach.<t>.page             页面本体（几何没动）
+      │   ├ teach.<t>.btn.prev / .next  180×158 贴左/右边缘 ← 脚本绑（翻页）
+      │   │   └ icon                    40×40 三角图（100003，旋转 ±90°）
+      │   ├ teach.<t>.btn.close        48×48 右上角 ← 脚本绑（收起）
+      │   │   └ x                       22×22 叉图（100151，米白）
+      │   ├ teach.<t>.btn.click        180×52 底部 ← 脚本绑（**等价于 next()**）
+      │   └ teach.<t>.dot.1..3.on/.off 菱形页标 ← 脚本**只切显隐**（当前页 on，其余 off）
+      └ teach.text                     文本区域 1600×900
+          ├ teach.text.<t>             文本分区（1600×900）
+          │   ├ teach.text.<t>.title
+          │   ├ teach.text.<t>.subtitle            （v290 新增，编辑器填）
+          │   ├ teach.text.<t>.body.1 / .2 / .3    ← 脚本**只切显隐**
+          │   └ teach.text.<t>.btn.prev / .next / .close / .click   （按钮字，脚本不碰）
+          └ …
 
-  ★ 约定（与主工程一致）：
-    · 引擎调用一律 **点号** `game.X(...)`；控件方法用**冒号**；
-    · 全流程 `pcall` 兜住：任何一个控件缺失都只降级（少一块），**不许整条链崩**；
-    · `.gil` **存不下文字** ⇒ 三页正文由本模块在运行时写进去；
-    · 不创建任何控件（用户明确要求：脚本里不要有创建控件这种操作）。
-----------------------------------------------------------------------------]]--
+  ★★ 本模块的规矩（v287 起，v290 不变）：
+    · **脚本一个字都不写**：不做 `ctrl.text = …`、不调 `SetText(…)`。
+      标题 / 副标题 / 正文 / 按钮字**全部由编辑器填**（`.gil` 存不下文字 —— 项目已多次实测）；
+      脚本只做两件事：**显隐** + **绑点击**。
+    · **页标的"选中"是两套图互斥显隐**（存档里 `dot.i.on` / `dot.i.off` 各一条记录）：
+      参考资产（`assets/教程UI系统_翻页单击活动样式.gia`）的页签控件也是"换素材组"，
+      翻译到 Lua 侧就是 `SetVisible` 互斥 —— 见 `docs/gia教程UI-翻译规格.md` §1.5 / T5。
+    · **每关一个实例，不共用**：
+        local l1 = M.new(adapter, { tag="l1", root="teach.l1", text="teach.text.l1", pages=3 })
+        local l2 = M.new(adapter, { tag="l2", root="teach.l2", text="teach.text.l2", pages=3 })
+      两关内容将来会分叉 ⇒ 数据结构上就不允许"一套接两处"。
+    · **页数不从代码写死**：`pages` 由入口按关卡传（现在三套都是 3）。
+      `pages` 比存档里的 body / dot 条数少时，多出来的**不归本模块管**（编辑器里留空即可）。
+    · **不创建任何控件**（用户明确要求：脚本里不要有创建控件这种操作）。
+    · 全程 pcall 兜住：任何控件缺失都只降级（少一块 / 少一次翻页 / 少一次高亮），**不许整条链崩**。
+
+  ★ 两个 API 命名上的坑（v287 实测，别改回去）：
+    ① `goto` 是 Lua 5.3 的**保留字** ⇒ `function M:goto(n)` / `inst:goto(n)` **编译不过**
+       （`<name> expected near 'goto'`；lua.exe 5.4 与 tools/lua53check(5.3) 两处都验过）
+       ⇒ 方法名用 **`inst:go(n)`**；同一函数另挂在 `M["goto"]` 上
+         （真要原名就 `inst["goto"](inst, n)`）。
+    ② `inst:open()` 与字段 `inst.open` **不能共存**：实例上已有 `open` 布尔字段，
+       查找时字段优先 ⇒ `inst.open` 是布尔值，`inst:open()` 会报
+       "attempt to call a boolean value" ⇒ 显示方法用 **`inst:open_ui()`**。
+
+  ★ 取控件（两种写法都是项目里验证过的）：
+    · 顶层控件一律 `adapter:find(全名)`（`teach.l1` / `teach.text.l1.body.1` …）；
+    · 页正文的取法见 `_body()`：**先 `find(全名)`**（走适配层的缓存 + 失效代，语义最稳），
+      失败才 `sub(text, 全名)`（官方 `GetChild(name)` 精确名匹配）。
+      ⚠️ 别写成 `sub(text, "body.1")` —— 存档里子控件名**就是全名**
+      （`teach.text.l1.body.1` 是自己的名字），短的 `body.1` 命中不了，这是预期。
+    · 页标 `dot.i.on/.off` 同理用 `find(全名)`：它们是 `teach.<t>` 的**直接子控件**、
+      名字自带点号（**不是** `dot.i` 容器再套 on/off）—— 这样适配层的 `sub()` 一级子名也够用。
+-----------------------------------------------------------------------------]]--
 
 local M = {}
 
-M.PAGES = {
-  {
-    title = "目标",
-    body = "把 4 名嫌疑人和 1 名受害者摆进棋盘：每行、每列各一人。\n"
-      .. "线索全部为真（至多一句假话，界面会提示）。推理出谁是小偷后提交。",
-  },
-  {
-    title = "操作",
-    body = "点空格子 = 放下当前选中的人；再点一次 = 取消。\n"
-      .. "左侧线索卡点一下，棋盘上会点亮「这条线索允许出现的位置」。\n"
-      .. "底部按钮：提交 / 重做 / 撤销。",
-  },
-  {
-    title = "区域与门窗",
-    body = "墙把棋盘切成几个区域，门连接相邻区域。\n"
-      .. "受害者所在区域里的人数决定了「有没有同伙」，这是破案的关键。",
-  },
-}
+local DEFAULT_PAGES = 3
 
-local ROOT_NAME = "tut.app.root"
-local SCREEN_NAME = "tut.screen.demo"
+-- 构造。opts：
+--   tag    实例标签（日志用；l1 / l2）
+--   root   面板控件名（teach.l1 / teach.l2）
+--   text   文本区域控件名（teach.text.l1 / teach.text.l2）
+--   pages  页数（入口按关卡传；当前两关都是 3）
+function M.new(adapter, opts)
+  if type(opts) ~= "table" then opts = {} end
+  local pages = tonumber(opts.pages) or DEFAULT_PAGES
+  if pages < 1 then pages = 1 end
 
-function M.new(adapter)
   local self = {
-    adapter = adapter,
-    page = 1,
-    open = false,
-    bound = {},          -- 控件对象 → true（防双绑；★ 不按 id 记，见适配器里的同款教训）
-    inited = false,
-    log = {},
+    adapter   = adapter,
+    tag       = tostring(opts.tag or "?"),
+    root_name = tostring(opts.root or "teach"),
+    text_name = tostring(opts.text or "teach.text"),
+    pages     = pages,
+    page      = 1,
+    open      = false,      -- ★ 状态字段（不能同时有同名方法 open()，见文件头 ②）
+    inited    = false,
+    bound     = {},         -- 控件对象 → true（防双绑；★ 不按 id 记，控件换代后对象会变）
+    log       = {},
   }
   return setmetatable(self, { __index = M })
 end
@@ -19696,39 +19902,28 @@ function M:_find(name)
   return ctrl
 end
 
+function M:_sub(parent_name, child_name)
+  local ctrl = nil
+  pcall(function() ctrl = self.adapter:sub(parent_name, child_name) end)
+  return ctrl
+end
+
+-- 显隐：只调 SetVisible（+ 显示时顺手 SetActive(true)）。
+-- ★ 不写文字、不改尺寸/父级 —— 本模块对控件的写操作只有这两种。
 function M:_set_visible(name, want)
   local ctrl = self:_find(name)
   if ctrl == nil then return false end
-  local ok = true
   pcall(function() ctrl:SetVisible(want and true or false) end)
   if want then pcall(function() ctrl:SetActive(true) end) end
-  return ok
-end
-
-function M:_set_text(name, text)
-  local ctrl = self:_find(name)
-  if ctrl == nil then return false end
-  local done = false
-  pcall(function() ctrl.text = text; done = true end)
-  if done then
-    -- 写进去还要读回来（本项目的老规矩：调用成功 ≠ 生效）
-    local got = nil
-    pcall(function() got = ctrl.text end)
-    if tostring(got) ~= tostring(text) and ctrl.SetText ~= nil then
-      pcall(function() ctrl:SetText(text) end)
-    end
-  else
-    pcall(function() ctrl:SetText(text) end)
-  end
   return true
 end
 
--- 点一下（只绑一次；控件换代后对象变了会重新绑，与适配器的 bound 语义一致）
-function M:_bind(name, fn)
-  local ctrl = self:_find(name)
+-- 点一下（只绑一次；控件换代后对象变了会重新绑，与旧版 bound 语义一致）
+function M:_bind(ctrl_name, fn)
+  local ctrl = self:_find(ctrl_name)
   if ctrl == nil then return false end
   if ctrl.AddCursorEventListener == nil then
-    self:_note("控件 " .. name .. " 不支持光标事件（需要「预设按钮」/「光标检测区域」）")
+    self:_note("控件 " .. ctrl_name .. " 不支持光标事件（需要「预设按钮」）")
     return false
   end
   if self.bound[ctrl] then return true end
@@ -19738,93 +19933,607 @@ function M:_bind(name, fn)
     if ev == nil then error("Enum.CursorEventType 不可用") end
     ctrl:AddCursorEventListener(ev, function() fn() end)
   end)
-  if not ok then self:_note("绑定 " .. name .. " 失败") end
+  if not ok then self:_note("绑定 " .. ctrl_name .. " 失败") end
   return ok
 end
 
--- 页签选中态：sel 亮 / off 灭；其余页签反过来
-function M:_paint_tabs()
-  for i = 1, #M.PAGES do
-    local tab = "tut.tab.p" .. i
-    local sel = nil
-    pcall(function() sel = self.adapter:sub(tab, "state.sel") end)
-    local off = nil
-    pcall(function() off = self.adapter:sub(tab, "state.off") end)
-    if sel ~= nil then pcall(function() sel:SetVisible(i == self.page) end) end
-    if off ~= nil then pcall(function() off:SetVisible(i ~= self.page) end) end
-  end
+-- 取第 i 页的正文控件。两级尝试（全 pcall）：
+--   ① `find(text .. ".body.i")` —— **优先**：走适配层的按名查找（有缓存 + 失效代，语义最稳）；
+--   ② `sub(text, text .. ".body.i")` —— 兜底：官方 `GetChild(name)` 是**精确名匹配**
+--      （存档里子控件名是全名，所以这里也要传全名）。
+--   ⚠️ 不要写 `sub(text, "body." .. i)`：子控件不叫短名，注定不命中（预期行为）。
+function M:_body(i)
+  local full = self.text_name .. ".body." .. tostring(i)
+  local ctrl = self:_find(full)
+  if ctrl == nil then ctrl = self:_sub(self.text_name, full) end
+  return ctrl
 end
 
--- 把当前页刷到界面上
-function M:refresh()
-  for i = 1, #M.PAGES do
-    self:_set_visible("tut.page.p" .. i, i == self.page)
-  end
-  self:_set_text("tut.hud.title", M.PAGES[self.page] and M.PAGES[self.page].title or "")
-  self:_set_text("tut.hud.pager", "第 " .. self.page .. " / " .. #M.PAGES .. " 页")
-  -- ★ 正文写在页片的 `label` 子控件上：用 `sub(父名, 子名)` 取（与页签的 state.* 同一种取法），
-  --   不写成 "tut.page.p1.label" 这种点号全名 —— 子控件名重复度高（label 有 27 个），按父级限定更稳
-  do
-    local label = nil
-    pcall(function() label = self.adapter:sub("tut.page.p" .. self.page, "label") end)
-    local body = M.PAGES[self.page] and M.PAGES[self.page].body or ""
-    if label ~= nil then
-      local done = pcall(function() label.text = body end)
-      if not done and label.SetText ~= nil then pcall(function() label:SetText(body) end) end
+-- 把「第 page 页」刷到正文区：只切 body 的显隐，**不碰 root / text**。
+function M:_paint_bodies()
+  for i = 1, self.pages do
+    local ctrl = self:_body(i)
+    if ctrl ~= nil then
+      pcall(function() ctrl:SetVisible(i == self.page) end)
     end
   end
-  self:_paint_tabs()
+  return self
 end
 
-function M:go_page(page)
-  local n = tonumber(page) or 1
-  if n < 1 then n = 1 end
-  if n > #M.PAGES then n = #M.PAGES end
-  self.page = n
-  self:refresh()
+-- 页标（v290 新增）：第 page 页那颗菱形用 `dot.i.on`、其余用 `dot.i.off` —— **两套图互斥显隐**。
+--   ★ 这是参考资产「页签控件 + 选中/未选中两套素材组」在 Lua 侧的等价物（规格 §1.5 / §3.4 T5-T6）：
+--     页签控件我们不建（模拟器对它支持不确定），**只留显隐**。
+--   ★ 依旧**不写字、不创建控件**；控件缺失时 `_set_visible` 返回 false，静默降级（只是少颗点）。
+function M:_paint_dots()
+  for i = 1, self.pages do
+    local cur = (i == self.page)
+    self:_set_visible(self.root_name .. ".dot." .. tostring(i) .. ".on", cur)
+    self:_set_visible(self.root_name .. ".dot." .. tostring(i) .. ".off", not cur)
+  end
+  return self
 end
 
-function M:next() self:go_page(self.page + 1) end
-function M:prev() self:go_page(self.page - 1) end
-function M:reset() self:go_page(1) end
-
-function M:open_ui()
-  self.open = true
-  self:go_page(self.page)
-  self:_set_visible(ROOT_NAME, true)
-  self:_note("打开（第 " .. self.page .. " 页）")
-end
-
-function M:close()
-  self.open = false
-  self:_set_visible(ROOT_NAME, false)
-  self:_note("关闭")
-end
-
-function M:toggle()
-  if self.open then self:close() else self:open_ui() end
-end
-
--- 首次初始化：绑按钮、刷一页、藏起来
+-- 首次初始化：绑四个按钮、把面板与文本区域一起藏起来。只跑一次。
 function M:init()
   if self.inited then return self end
-  local root = self:_find(ROOT_NAME)
-  if root == nil then
-    -- 还没有就等下一帧（控件可能晚一帧才进树）
-    return self
+  if self:_find(self.root_name) == nil then
+    return self                 -- 控件还没进树：入口每帧调，下一帧再试
   end
+
   self.inited = true
-  self:_bind("tut.btn.prev", function() self:prev() end)
-  self:_bind("tut.btn.next", function() self:next() end)
-  self:_bind("tut.btn.reset", function() self:reset() end)
-  self:_bind("tut.btn.close", function() self:close() end)
-  for i = 1, #M.PAGES do
-    self:_bind("tut.tab.p" .. i, function() self:go_page(i) end)
+  self:_bind(self.root_name .. ".btn.prev", function() self:prev() end)
+  self:_bind(self.root_name .. ".btn.next", function() self:next() end)
+  self:_bind(self.root_name .. ".btn.close", function() self:close() end)
+  -- ★ v290：底部那颗「点击继续」= **同一个 next()**（双通道，参考资产是"点击阅览/翻页阅览"两种模式，
+  --   本工程按规格 §4.4 折成"两个入口都指向同一动作"，不做模式开关）
+  self:_bind(self.root_name .. ".btn.click", function() self:next() end)
+
+  -- ★ root 与 text 在存档里是两棵（面板 / 文本区域）⇒ 一起隐藏，少藏一个都会露半块
+  self:_set_visible(self.root_name, false)
+  self:_set_visible(self.text_name, false)
+  if self:_find(self.text_name) == nil then
+    self:_note("文本区域 " .. self.text_name .. " 没找到（只显示面板，正文不会出现）")
   end
-  self:refresh()
-  self:close()                      -- 默认收起
-  self:_note("init 完成")
+
+  self.page = 1
+  self:_note("init 完成 tag=" .. self.tag .. " root=" .. self.root_name
+    .. " text=" .. self.text_name .. " pages=" .. tostring(self.pages))
   return self
+end
+
+-- 显示：面板 + 文本区域 + 当前页正文 + 当前页页标。
+-- ★ 方法名是 `open_ui` 不是 `open`（字段 `self.open` 会遮住同名方法，见文件头 ②）。
+function M:open_ui()
+  self.open = true
+  self:_set_visible(self.root_name, true)
+  self:_set_visible(self.text_name, true)
+  self:_paint_bodies()
+  self:_paint_dots()
+  self:_note("打开 tag=" .. self.tag .. "（第 " .. tostring(self.page)
+    .. " / " .. tostring(self.pages) .. " 页）")
+  return self
+end
+
+-- 收起：面板与文本区域一起藏。
+function M:close()
+  self.open = false
+  self:_set_visible(self.root_name, false)
+  self:_set_visible(self.text_name, false)
+  self:_note("关闭 tag=" .. self.tag)
+  return self
+end
+
+-- 跳到第 n 页：**只切 body 与页标的显隐**，并把 n 夹紧到 1..pages。
+-- ★ 方法名是 `go`：`goto` 是保留字（见文件头 ①）；`M["goto"]` 是同一函数的别名。
+function M:go(n)
+  local p = tonumber(n) or 1
+  if p < 1 then p = 1 end
+  if p > self.pages then p = self.pages end
+  self.page = p
+  self:_paint_bodies()
+  self:_paint_dots()
+  return self
+end
+
+function M:next() return self:go(self.page + 1) end
+function M:prev() return self:go(self.page - 1) end
+
+-- 别名：契约里写的是 `goto`，但 `inst:goto(n)` 在 Lua 5.3 是语法错误
+-- （`goto` 是保留字）。这里只保留"能拿得到同一个函数"：
+--   inst["goto"](inst, 2)   -- 等价于 inst:go(2)
+M["goto"] = M.go
+
+return M
+
+end
+
+__M["tut_verify"] = function()
+--[[----------------------------------------------------------------------------
+  lua/tut_verify.lua —— 教程控件（`teach.*`）运行期自检 · v2（2026-10-21）
+
+  为什么要有这个文件（要解决的具体事故）：
+    「教程 UI 并入存档」这条线反复返工，而失败形态**全都是静默的**：
+      · 控件没进树   ⇒ `find` 拿到 nil ⇒ 上游 pcall 降级（少一块）⇒ 玩家看到空白；
+      · 同名控件多条 ⇒ 编辑器报「界面控件里的开关控件GUID重复」，
+        脚本 `find` 取到哪一条**看遍历顺序**；
+      · 父级挂错     ⇒ 控件在，但被父级的 0×0 / 隐藏 / 裁剪吃掉；
+      · 尺寸 0       ⇒ 引擎按父级矩形裁剪 ⇒ 整片教程被裁没（477 骨架踩过这个坑）；
+      · 该显示却没显示 ⇒ `tutorial:open_ui()` 明明调过，画面还是一片空。
+    ⇒ 本模块把「教程控件树应该长什么样」写成一张**期望清单**，在运行期逐条核对，
+      用**一行日志**把结论喊出来（真机日志首屏就能看到），而不是等人看画面猜。
+
+  ★★★ 本模块**绝不创建任何控件**（用户明确要求：脚本里不要有创建控件这种操作）★★★
+    具体到代码：本文件里**没有**、也**不许**出现下面这些调用 ——
+      · `game.InstantiateClientUIControl(...)`（按模板索引造控件）
+      · 任何 `game.*ClientUIControl*` 的创建 / 克隆接口
+      · 控件自己的 `Clone()` / `Instantiate()` 之类
+    **为什么这条必须是硬的**：自检的唯一用途是「**证明存档里已经有这棵树**」。
+    一旦自检自己能造控件，它就会把"缺控件"验成"通过"（临时造一个补上再核对）
+    ⇒ 自检变成**假绿发生器**，比没有自检更糟。所以：
+      · 取控件的能力由调用方**注入**（`find`），模块连 `game` 全局都不读；
+      · 离线测试里挂一个"一调就报错"的假 `game.InstantiateClientUIControl`，
+        跑完断言调用次数 = **0**（`tests/tut_verify.lua` 用例 ⑦）。
+
+  ★ 只读：除了 `M.log` 的那一行 `print`，本模块**不写任何控件属性**
+    （不改尺寸 / 显隐 / 文本 / 父级 / 层级）⇒ 可以随时反复跑，没有副作用。
+
+  ★ 依赖：无。不 require、不用 io/os/debug，Lua 5.3 语法。
+    （本地 lua.exe 是 5.4，沙箱是 5.3 —— 本文件两边都能过：
+      `node tools/lua53check/check.cjs lua/tut_verify.lua --run`）
+
+  ────────────────────────────────────────────────────────────────────────────
+  API（详见 docs/脚本侧检查-教程控件-2026-10-21.md）：
+    M.run(opts)    -> res            纯计算，不打日志
+    M.log(res)     -> line           打**一行**结论（OK / FAIL），返回这行原文
+    M.check(opts)  -> res            run + log；有警告时再补一行警告
+    M.TUTORIAL_EXPECT                内置清单（62 条 `teach.*`，来自 486 的生成器结构）
+
+    opts = {
+      find  = function(name) -> ctrl|nil   必填（也接受带 `:find(name)` 的对象，例如适配器）
+      all   = function(name) -> {ctrl,...} 可选：同名**全部**控件（判重名最准）
+      roots = function() -> {root,...}     可选：客户端控件树根表；没给 all 时用它自己走树
+      expect = { {name=, parent=, visible=, min_size=}, ... }   可选（默认 TUTORIAL_EXPECT）
+    }
+    res = {
+      ok = boolean,                 -- 没有 error 就是 true
+      errors = { {name=, kind=, text=}, ... },     -- 每条都带控件名
+      warnings = { {name=, kind=, text=}, ... },
+      found = number,               -- 找得到的期望条目数（重名也算找到）
+      total = number,               -- 期望清单条目数
+    }
+----------------------------------------------------------------------------]]--
+
+local M = {}
+
+M.VERSION = "v3-2026-10-21"     -- v3：清单换成 486/v290 的 62 条（页标 / 按钮图元 / 副标题 / 点击继续）
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 内置期望清单：教程控件（`teach.*`）62 条
+--
+-- 名字 / 父级的来源（两个独立来源对上了，不是猜的）：
+--   ① `lua/tutorial_ui.lua` 头部那张控件表（模块实际按这些名字取控件）；
+--   ② `tools/gil/gen_tutorial_teach.mjs` 里每条 `add({ name=…, parent=… })`
+--      （存档里的控件名**就是全名**：`teach.text.l1.body.1` 是自己的名字，
+--        所以这里按全名登记；父级 = 生成器里那份 parent 链）。
+--   ★ v290 新增的 36 条（三套 × 12）全部来自 `486-教程teach-v290.gil`：
+--     页标 `dot.i.on/.off`（6）、`btn.click`（1）、`btn.prev.icon` / `btn.next.icon` / `btn.close.x`（3）、
+--     文本区 `subtitle` / `btn.click`（2）。
+--
+-- 字段（都可选，除 name）：
+--   name      string              控件名（**必须与存档逐字一致**，改名两处一起改）
+--   parent    string              期望父控件名
+--   visible   boolean             true ⇒ 必须可见；false ⇒ 必须隐藏（按 warning 处理）
+--   min_size  number | {w=,h=}    最小尺寸（不写就只查"尺寸 0"）
+--
+-- ★ 这里**故意不写 visible / min_size**：
+--   · 显隐随运行时状态变（open_ui / close / 翻页 / 页标高亮）；
+--   · 尺寸以**编辑器实测**为准，写死会在换画布 / 换分辨率时变成假警报。
+--   要加就在调用处传自己的清单（`run{ expect = {...} }`），或用
+--   `{ name = "teach", parent = "root", min_size = { w = 1200, h = 700 } }` 这种写法。
+--   ⚠️ 但"尺寸 0"是**无条件**查的（哪怕没写 min_size）—— 那正是把整片教程裁没的坑。
+-- ─────────────────────────────────────────────────────────────────────────────
+M.TUTORIAL_EXPECT = (function()
+  local out = {
+    { name = "teach", parent = "root" },
+    { name = "teach.text", parent = "teach" },
+  }
+  -- ★ 三套各自独立（首页 home / 第一关 l1 / 第二关 l2）——每套都查按钮、页标、图元与三页正文
+  for _, tag in ipairs({ "home", "l1", "l2" }) do
+    local base = "teach." .. tag
+    local txt = "teach.text." .. tag
+    local list = {
+      { name = base, parent = "teach" },
+      { name = base .. ".btn.prev", parent = base },
+      { name = base .. ".btn.next", parent = base },
+      { name = base .. ".btn.close", parent = base },
+      -- v290：底部「点击继续」按钮（等价 next()）
+      { name = base .. ".btn.click", parent = base },
+      -- v290：按钮里的图元（箭头 / 关闭小 x）—— 父级是**按钮**，不是面板
+      { name = base .. ".btn.prev.icon", parent = base .. ".btn.prev" },
+      { name = base .. ".btn.next.icon", parent = base .. ".btn.next" },
+      { name = base .. ".btn.close.x", parent = base .. ".btn.close" },
+      -- 文本区
+      { name = txt, parent = "teach.text" },
+      { name = txt .. ".body.1", parent = txt },
+      { name = txt .. ".body.2", parent = txt },
+      { name = txt .. ".body.3", parent = txt },
+      -- v290：副标题 + 「点击继续」的按钮字
+      { name = txt .. ".subtitle", parent = txt },
+      { name = txt .. ".btn.click", parent = txt },
+    }
+    -- v290：三颗菱形页标，每颗两条记录（当前页 on / 其它页 off）
+    for i = 1, 3 do
+      list[#list + 1] = { name = base .. ".dot." .. i .. ".on", parent = base }
+      list[#list + 1] = { name = base .. ".dot." .. i .. ".off", parent = base }
+    end
+    for _, e in ipairs(list) do out[#out + 1] = e end
+  end
+  return out
+end)()
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 小工具
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- 日志里打数字一律 `%.0f`，**绝不用 `%d`**：
+--   本项目的真机事故 —— `GetSizeDelta()` / `GetUICanvasSize()` 给回来的是**浮点**，
+--   而 Lua 5.3 的 `string.format("%d", 108.0)` 直接抛
+--   `bad argument #2 to 'format' (number has no integer representation)`。
+--   自检本来就是为了"出事时喊一句"，它自己绝不能因为格式化而抛。
+local function num(v)
+  if type(v) ~= "number" then return tostring(v) end
+  if v ~= v then return "nan" end          -- NaN（math.isnan 不可假设存在）
+  return string.format("%.0f", v)
+end
+
+-- 一行日志的纪律：任何注入回来的错误字符串都可能带换行 → 压成一行再截断，
+-- 否则 FAIL 那行会被拆散，真机首屏就看不全了。
+local function oneline(s)
+  s = tostring(s == nil and "" or s):gsub("[\r\n]+", " ")
+  if #s > 80 then s = s:sub(1, 80) .. "…" end
+  return s
+end
+
+local function push_err(res, name, kind, detail)
+  local text = tostring(name) .. "=" .. tostring(kind)
+  if detail ~= nil and detail ~= "" then text = text .. "(" .. oneline(detail) .. ")" end
+  res.errors[#res.errors + 1] = { name = tostring(name), kind = tostring(kind), text = text }
+  return text
+end
+
+local function push_warn(res, name, kind, detail)
+  local text = tostring(name) .. "=" .. tostring(kind)
+  if detail ~= nil and detail ~= "" then text = text .. "(" .. oneline(detail) .. ")" end
+  res.warnings[#res.warnings + 1] = { name = tostring(name), kind = tostring(kind), text = text }
+  return text
+end
+
+-- 两个"转调"小函数：让 pcall 能带着变参去调（Lua 5.3 里 `...` 不能出现在
+-- 非变参的嵌套闭包里 —— 踩过：`pcall(function() return fn(v, ...) end)` 直接编译不过）。
+local function call_vararg(target, ...) return target(...) end
+local function call_method(fn, self, ...) return fn(self, ...) end
+
+-- 注入值 → "调用它就会返回值" 的普通函数。两种写法都认：
+--   · 普通函数                      → 直接调（`find(name)`）
+--   · 表（带同名方法，例如适配器）   → 冒号调（`Adapter:find(name)`）
+-- 返回 nil = 这个能力没注入（只有 find 是必填的）。
+local function make_callable(v, method_names)
+  if type(v) == "function" then
+    return function(...)
+      local ok, a, b = pcall(call_vararg, v, ...)
+      if not ok then return nil, tostring(a) end
+      return a, b
+    end
+  end
+  if type(v) == "table" then
+    for i = 1, #method_names do
+      local m = method_names[i]
+      local okm, fn = pcall(function() return v[m] end)
+      if okm and type(fn) == "function" then
+        return function(...)
+          local ok, a, b = pcall(call_method, fn, v, ...)
+          if not ok then return nil, tostring(a) end
+          return a, b
+        end
+      end
+    end
+  end
+  return nil
+end
+
+local function ctrl_name(c)
+  local nm
+  pcall(function() nm = c.name end)
+  if type(nm) == "string" and nm ~= "" then return nm end
+  return "?"
+end
+
+-- 可见性：项目里**验证过可读**的写法就是 `ctrl.visible`（字段，不是方法）。
+-- 读不到（没这字段 / 抛错）时返回 nil + 原因 —— 只降级成警告，不判红：
+-- 不同控件类型暴露的字段可能不一样，凭这个报错会变成假警报。
+local function read_visible(c)
+  local v
+  local ok = pcall(function() v = c.visible end)
+  if not ok then return nil, "visible 读取抛错" end
+  if v == nil then return nil, "控件没暴露 visible" end
+  if v == true then return true end
+  if v == false then return false end
+  return (v and true or false)             -- 非布尔但可当真值用的，按真处理
+end
+
+-- 尺寸：项目里的两种形态都要认（**不许发明新接口**）：
+--   · 真机：`local w, h = ctrl:GetSizeDelta()`，返回浮点数；
+--   · 模拟器桥接：返回**表** `{x=w, y=h}`（main.lua:92 与适配器 L130 都写了这个分支）。
+local function read_size(c)
+  local fn = nil
+  pcall(function() fn = c.GetSizeDelta end)
+  if type(fn) ~= "function" then return nil, nil, "控件没有 GetSizeDelta" end
+  local a, b
+  local ok = pcall(function() a, b = c:GetSizeDelta() end)
+  if not ok then return nil, nil, "GetSizeDelta 抛错" end
+  if type(a) == "table" then a, b = a.x, a.y end
+  local w, h = tonumber(a), tonumber(b)
+  if w == nil or h == nil then return nil, nil, "GetSizeDelta 返回值不是数字" end
+  return w, h
+end
+
+-- 父控件：项目里的读法（main.lua:1231-1233 同款）——
+-- 先读字段 `parent`，读不到再试 `GetParent()`。
+local function read_parent(c)
+  local up
+  pcall(function() up = c.parent end)
+  if up == nil then pcall(function() up = c:GetParent() end) end
+  return up
+end
+
+-- 往上找"第一个明确被隐藏的祖先"，返回它的名字（找不到 → nil）。
+-- 为什么要查祖先：本项目踩过 —— 控件自己 visible=true，父级被关掉，
+-- 画面上依然什么都没有（"主页整个消失"就是这么来的）。
+local function hidden_ancestor(c, max_depth)
+  local cur = read_parent(c)
+  local d = 0
+  while cur ~= nil and d < (max_depth or 8) do
+    local vis
+    pcall(function() vis = cur.visible end)
+    if vis == false then return ctrl_name(cur) end
+    cur = read_parent(cur)
+    d = d + 1
+  end
+  return nil
+end
+
+-- 整棵（多根）树里数这个名字出现几次（重名判据的兜底路）。
+-- 只靠项目里验证过的两个读法：`ctrl.name` 与 `ctrl:GetChildren()`。
+local function count_in_tree(roots, want)
+  local n = 0
+  local function walk(c, depth)
+    if c == nil or depth > 24 then return end
+    local nm
+    pcall(function() nm = c.name end)
+    if nm == want then n = n + 1 end
+    local kids
+    pcall(function() kids = c:GetChildren() end)
+    if type(kids) == "table" then
+      for i = 1, #kids do walk(kids[i], depth + 1) end
+    end
+  end
+  if type(roots) == "table" then
+    for i = 1, #roots do walk(roots[i], 0) end
+  end
+  return n
+end
+
+-- 只给 find 时的兜底：在**同一个父级**下数同名子控件。
+-- （存档并入 / 手工复制 造成的重名，绝大多数就是同级两份。）
+local function count_siblings(c, want)
+  local up = read_parent(c)
+  if up == nil then return nil end
+  local kids
+  pcall(function() kids = up:GetChildren() end)
+  if type(kids) ~= "table" then return nil end
+  local n = 0
+  for i = 1, #kids do
+    local nm
+    pcall(function() nm = kids[i].name end)
+    if nm == want then n = n + 1 end
+  end
+  return n
+end
+
+local function parse_min(v)
+  if type(v) == "number" then return v, v end
+  if type(v) == "table" then
+    local w = v.w or v.width or v[1]
+    local h = v.h or v.height or v[2]
+    if h == nil then h = w end
+    if type(w) == "number" and type(h) == "number" then return w, h end
+  end
+  return nil, nil
+end
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- M.run —— 逐条核对，返回结构化结果（不打日志）
+-- ─────────────────────────────────────────────────────────────────────────────
+function M.run(opts)
+  if type(opts) ~= "table" then opts = {} end
+
+  local res = { ok = false, errors = {}, warnings = {}, found = 0, total = 0 }
+
+  local find = make_callable(opts.find, { "find", "Find" })
+  if find == nil then
+    push_err(res, "(opts.find)", "配置错误", "必须注入 find(name) 或带 :find 的对象")
+    return res
+  end
+
+  local expect = opts.expect
+  if expect == nil then expect = M.TUTORIAL_EXPECT end
+  if type(expect) ~= "table" then
+    push_err(res, "(opts.expect)", "配置错误", "期望清单必须是数组")
+    return res
+  end
+  res.total = #expect
+  if res.total == 0 then
+    -- 空清单 ⇒ 0/0 的"全绿"是假绿，必须判红（自检最怕的就是报平安）
+    push_err(res, "(opts.expect)", "配置错误", "期望清单为空")
+    return res
+  end
+
+  -- 判重名的三档能力：all（最准）> roots（自己走树）> 只查同级（兜底）
+  local all = make_callable(opts.all, { "all", "find_all", "FindAll" })
+  local roots = make_callable(opts.roots, { "roots", "get_roots", "GetRoots" })
+  local dupe_mode = "siblings"
+  if all ~= nil then
+    dupe_mode = "all"
+  elseif roots ~= nil then
+    dupe_mode = "roots"
+  else
+    push_warn(res, "(配置)", "重名只查同级",
+      "注入 all(名)->列表 或 roots()->根表 才能查全树的重名")
+  end
+
+  local seen = {}
+  for i = 1, #expect do
+    local e = expect[i]
+    local name = nil
+    if type(e) == "table" then name = e.name end
+
+    if type(name) ~= "string" or name == "" then
+      push_warn(res, "(expect[" .. i .. "])", "清单条目没名字", "跳过")
+    elseif seen[name] then
+      push_warn(res, name, "清单重复登记", "同一名字只查一次")
+    else
+      seen[name] = true
+
+      local ctrl, ferr = find(name)
+      if ferr ~= nil then
+        push_err(res, name, "取控件抛错", ferr)
+      elseif ctrl == nil then
+        push_err(res, name, "缺失")
+      else
+        res.found = res.found + 1
+
+        -- ① 重名：同名多条 ⇒ 脚本取到哪一条不确定（编辑器报 GUID 重复就是这个）
+        local ndup = nil
+        if dupe_mode == "all" then
+          local list = all(name)
+          if type(list) == "table" then ndup = #list end
+        elseif dupe_mode == "roots" then
+          local rs = roots()
+          if type(rs) == "table" then ndup = count_in_tree(rs, name) end
+        else
+          ndup = count_siblings(ctrl, name)
+        end
+        if ndup ~= nil and ndup > 1 then
+          push_err(res, name, "重名", ndup .. " 条")
+        end
+
+        -- ② 父级：挂错父级 ⇒ 被父级的 0×0 / 隐藏 / 裁剪吃掉
+        if type(e.parent) == "string" and e.parent ~= "" then
+          local up = read_parent(ctrl)
+          local actual = nil
+          if up ~= nil then actual = ctrl_name(up) end
+          if actual ~= e.parent then
+            push_err(res, name, "父不对",
+              "期望 " .. e.parent .. " 实际 " .. tostring(actual or "(无父控件)"))
+          end
+        end
+
+        -- ③ 尺寸：0 尺寸是被"按父级矩形裁剪"吃掉的元凶；min_size 是可选的下限
+        local w, h, why = read_size(ctrl)
+        if w == nil then
+          push_warn(res, name, "读不到尺寸", why)
+        elseif w <= 0 or h <= 0 then
+          push_err(res, name, "尺寸 0", num(w) .. "x" .. num(h))
+        else
+          local mw, mh = parse_min(e.min_size)
+          if mw ~= nil and (w < mw - 0.01 or h < mh - 0.01) then
+            push_err(res, name, "尺寸不足",
+              num(w) .. "x" .. num(h) .. " < " .. num(mw) .. "x" .. num(mh))
+          end
+        end
+
+        -- ④ 显隐：期望可见却看不见（含"自己可见但祖先被关"这一层）
+        if e.visible == true then
+          local vis, vwhy = read_visible(ctrl)
+          if vis == nil then
+            push_warn(res, name, "读不到可见性", vwhy)
+          elseif vis == false then
+            push_err(res, name, "不可见")
+          else
+            local anc = hidden_ancestor(ctrl, 8)
+            if anc ~= nil then
+              push_err(res, name, "不可见", "祖先 " .. anc .. " 隐藏")
+            end
+          end
+        elseif e.visible == false then
+          local vis = read_visible(ctrl)
+          if vis == true then
+            -- "该藏没藏"只是多显示一块，不影响功能 ⇒ 警告
+            push_warn(res, name, "该藏没藏")
+          end
+        end
+      end
+    end
+  end
+
+  res.ok = (#res.errors == 0)
+  return res
+end
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- M.log —— 一行结论（真机日志首屏要能一眼看到）
+--   通过：[tut] 自检 OK 14/14
+--   失败：[tut] 自检 FAIL 2 项: frame.btn=缺失; frame.tab=父不对(期望 frame.panel 实际 frame.root)
+--   只 print，不 printerr：这不是引擎错误，是"存档和脚本对不上"的诊断。
+-- ─────────────────────────────────────────────────────────────────────────────
+local MAX_ERR_ITEMS = 8      -- 一行太长真机日志会被截断；多出来的只报条数
+
+function M.log(res)
+  if type(res) ~= "table" then return nil end
+
+  local line
+  if res.ok then
+    line = string.format("[tut] 自检 OK %d/%d", res.found or 0, res.total or 0)
+  else
+    local errs = res.errors or {}
+    local parts = {}
+    local shown = 0
+    for i = 1, #errs do
+      shown = shown + 1
+      if i <= MAX_ERR_ITEMS then
+        parts[#parts + 1] = tostring(errs[i].text or errs[i].name or "?")
+      end
+    end
+    if shown > MAX_ERR_ITEMS then
+      parts[#parts + 1] = "…另有 " .. (shown - MAX_ERR_ITEMS) .. " 项"
+    end
+    line = "[tut] 自检 FAIL " .. shown .. " 项: " .. table.concat(parts, "; ")
+  end
+
+  if print then print(line) end
+  return line
+end
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- M.check —— run + log（入口最省事的一行式接线）
+--   警告单独一行，最多列 3 条：警告不判红，但"重名只查了同级"这种话
+--   必须出现在日志里，否则又是一次静默降级。
+-- ─────────────────────────────────────────────────────────────────────────────
+function M.check(opts)
+  local res = M.run(opts)
+  M.log(res)
+
+  local ws = res.warnings or {}
+  if #ws > 0 and print then
+    local parts = {}
+    for i = 1, math.min(#ws, 3) do
+      parts[#parts + 1] = tostring(ws[i].text or "?")
+    end
+    local tail = ""
+    if #ws > 3 then tail = "（另有 " .. (#ws - 3) .. " 条）" end
+    print("[tut] 自检 警告 " .. #ws .. " 条: " .. table.concat(parts, "; ") .. tail)
+  end
+  return res
 end
 
 return M
@@ -20599,7 +21308,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v284 / 2026-10-21 / 教程浮层 tut.*（骨架并入主档 + 运行时不创建控件）+ 其余同前一版 =====")
+        print("[murdoku] ===== 构建标记 v299 / 2026-10-22 / 一二关美术：家具改三层拼装（obj/obj2/obj3）+ 房间配色换暖色系 + 新增 tests/obj_layers =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -21013,6 +21722,12 @@ local function build_adapter()
         "face",
         "hint",
         "obj",
+        -- ★★★★★★★★ 2026-10-22（v299）**家具改成三层拼装** ✗✓
+        --   原作（Murdoku）的家具就是"base 剪影 + overlay 剪影 + 两个颜色"；
+        --   官方单张素材拼不出俯视扶手椅/长桌 ⇒ 模板里在 `obj` 之后补了 `obj2` / `obj3`
+        --   （见 `tools/gil/gen_obj_art.mjs`）。层序：obj < obj2 < obj3 < portrait < wall。
+        --   ⚠️ 老存档没有这两层时 `_paint_obj` / `enforce_layers` 都会自动跳过（幂等）。
+        "obj2", "obj3",
         -- ★★★★★ 2026-10-20（v283）**新增 `portrait` 层：放置的头像画在这里** ✗✓
         --   用户原话：「现在家具图层会盖在放置的头像上，把这个问题解决」
         --   · 旧：头像走 `image` 落在 **face（最底）** ⇒ 家具 `obj` 压在上面 ✗
@@ -21048,13 +21763,47 @@ local function build_adapter()
     --   ★ 优先级：编辑器里若**真有** `things` / `assets` 下的同名控件，**以控件为准** ✓
     --     （见 `Adapter:read_palette`：控件先扫，这里只补缺 ✓）
     --   ★ 换真素材：把 `id` 换成编辑器素材库里的图即可（不用动存档）✓
+    -- ★★★★★★★★ 2026-10-22（v299）**家具 = 多层拼装（复刻原作的双层剪影美术）** ✗✓
+    --
+    --   原作 Murdoku 的家具是「base 剪影 染 obj_color_base ＋ overlay 剪影 染 obj_color_overlay」，
+    --   两色叠出体积感。官方素材库里没有俯视家具 ⇒ 我们用「官方基础形状 × 3 层」拼：
+    --     L1 = 深色外形（充当描边/木框）  L2 = 主体  L3 = 细节
+    --   层控件由存档模板给（`obj` / `obj2` / `obj3`，见 `tools/gil/gen_obj_art.mjs`）。
+    --
+    --   字段：`id` 官方素材 id；`color` = 0xAARRGGBB（**与素材乘算**，白色底板才上得去亮色）；
+    --        `w/h` = 相对格子边长的比例（缺省 1 = 铺满）；`dx/dy` = 相对格子边长的偏移
+    --        （**dy 正 = 向下**）。
+    --   ★ 第 1 层的图/色仍可在编辑器里改（`things/obj.<kind>` 优先），几何以本表为准。
     obj_art = {
-      table  = { id = 100001, color = 0xFFB07946 },   -- 桌子：木棕
-      plant  = { id = 100001, color = 0xFF4CAF50 },   -- 植物：绿
-      carpet = { id = 100001, color = 0xFFD9C8A6 },   -- 地毯：米
-      chair  = { id = 100001, color = 0xFFE0A040 },   -- 椅子：橙
-      shelf  = { id = 100001, color = 0xFF7A5230 },   -- 书架：深棕
-      statue = { id = 100001, color = 0xFFB8B8C0 },   -- 雕塑：灰
+      table = {   -- 桌子
+        { id = 100001, color = 0xFF4A3524, w = 0.9, h = 0.64 },
+        { id = 100001, color = 0xFFD4CCA0, w = 0.82, h = 0.56 },
+        { id = 100001, color = 0xFFE8E2C0, w = 0.72, h = 0.46 },
+      },
+      chair = {   -- 椅子
+        { id = 106053, color = 0xFF4A3A2A, w = 0.74, h = 0.76, dy = 0.04 },
+        { id = 106053, color = 0xFFF2EBD4, w = 0.66, h = 0.5, dy = 0.13 },
+        { id = 100001, color = 0xFFCBBE97, w = 0.62, h = 0.2, dy = -0.16 },
+      },
+      carpet = {   -- 地毯
+        { id = 100001, color = 0xFF9C8A63, w = 0.92, h = 0.92 },
+        { id = 100001, color = 0xFFDCCBAA, w = 0.84, h = 0.84 },
+      },
+      plant = {   -- 植物
+        { id = 100002, color = 0xFF3E7D3A, w = 0.64, h = 0.52, dy = -0.08 },
+        { id = 106053, color = 0xFF8A6A48, w = 0.32, h = 0.24, dy = 0.26 },
+        { id = 100002, color = 0xFF58A046, w = 0.34, h = 0.26, dy = -0.2 },
+      },
+      shelf = {   -- 书架
+        { id = 100001, color = 0xFF4A3524, w = 0.82, h = 0.66 },
+        { id = 100001, color = 0xFFB4874F, w = 0.76, h = 0.6 },
+        { id = 100001, color = 0xFF4A2E17, w = 0.68, h = 0.07, dy = -0.05 },
+      },
+      statue = {   -- 雕塑
+        { id = 100001, color = 0xFF4E4E56, w = 0.54, h = 0.24, dy = 0.28 },
+        { id = 105090, color = 0xFFC9C9D2, w = 0.6, h = 0.5, dy = 0.02 },
+        { id = 100002, color = 0xFFE2E2E8, w = 0.14, h = 0.1, dy = -0.22 },
+      },
     },
 
     -- 2026-09-27 踩过：我一开始把它们加在 `cells = { … }` 里（挨着 `debug_signal`），
@@ -21319,37 +22068,266 @@ end
 
 -- ===== 官方生命周期 =====
 
--- ★★★★★★★★ 2026-10-21（v284）**玩法说明浮层（教程）的接线** ✗✓✓
+-- ★★★★★★★★ 2026-10-21（v287）**教程浮层（`teach.*`）的接线：第一关 / 第二关各一套** ✗✓✓
 --
---   控件在存档里（`tut.*`，由 `tools/gil/gen_tutorial_into.mjs` 从 477 骨架并入，全部加前缀），
---   **本处一个控件都不创建**（用户明确的规矩：脚本里不要有创建控件这种操作）。
---   这里只做三件事：懒加载模块 → 控件就绪后 init（绑按钮 + 藏起来）→ 开局弹一次。
+--   控件在存档里（`teach.*`，工具 `tools/gil/gen_tutorial_teach.mjs`，**仍然全部从主档母本克隆**）：
+--     · `teach.l1` / `teach.l2`  两关各一套面板（页面本体 + 上一页 / 下一页 / 关闭；**没有页签**）
+--     · `teach.text.l1` / `teach.text.l2`  文本区域（标题 / 三页正文 / 按钮字）
+--   ★ 文字**全部由编辑器填**（`.gil` 存不下文字，工作约定见 `docs/交接报告.md`）⇒ **本处一个字都不写**，
+--     只做显隐与绑定。**本处也一个控件都不创建**（用户明确的规矩）。
+--   ★ 两关**各自一个实例、各自一段配置**（`TUT_LEVELS`）：内容以后会分叉，不许共用一套。
+--
+--   这里做四件事：懒加载模块 → 两套实例都 init（先各自藏起来）→ 进到哪一关就弹哪一套 → 各跑一次自检。
+--   ★ 自检：`lua/tut_verify.lua` 把"控件在不在 / 重名 / 父对不对 / 尺寸 0"打进日志首屏：
+--       通过 `[tut] 自检 OK N/N`；失败 `[tut] 自检 FAIL N 项: 名字=缺失; …`（只读，不改任何状态）
 --
 --   ⚠️ 为什么放在 OnUpdate 里懒初始化：`OnInit` 时控件树还是空的（本项目反复验证过），
 --      在 OnInit 里 init 必定拿到 nil，然后**再也不会重试**。
-local tutorial = nil
-local tutorial_opened_once = false
+local tutorial_mod_state = nil   -- nil = 还没试 / false = 加载失败 / table = 模块
+local tutorial_inst = {}         -- tag → 实例（每关一个，互不影响）
+local tutorial_seen = {}         -- 关卡 id → 这一局已经弹过
+local tutorial_checked = {}      -- tag → 已经跑过自检
+local tutorial_wait = {}         -- tag → 等了多少帧
+
+-- ★ v289：**三套各自独立**（用户 2026-10-21 晚：首页那套保留，第一关再单独接一套，第二关本来就是自己一套）
+--   每条 = 一个实例 + 一段配置；以后哪一套要改内容/页数，只改自己那一段。
+local TUT_SETS = {
+  home = { tag = "home", root = "teach.home", text = "teach.text.home", pages = 3 },
+  l1   = { tag = "l1",   root = "teach.l1",   text = "teach.text.l1",   pages = 3 },
+  l2   = { tag = "l2",   root = "teach.l2",   text = "teach.text.l2",   pages = 3 },
+}
+
+-- 触发键 → 用哪一套：`home` = 首页；`case_001` / `case_002` = 关卡内
+-- ★ 关键：`Murdoku.current().screen == nil` 才算"真的进了关卡"；首页时 screen = "home"。
+--   v287 那版只看 level.id ⇒ 首页时 level 已经是 case_001 ⇒ 首页就把第一关那套弹掉了，
+--   真进第一关反而"已经弹过"不再弹（用户实测：首页有、第一关没有）。
+local TUT_TRIGGER = { home = "home", case_001 = "l1", case_002 = "l2" }
+
+-- ⚠️ 这里原来还有**另一份** `current_tut_key()`（v289 的"只看 cur.screen"版）。
+--   ★ v298 删掉它：`local function` 后定义者会**盖掉**先定义者 ⇒ 它是一份**死代码**，
+--     但谁要是照着它的位置改（它排在上面），改完**运行时一点效果都没有** ——
+--     这正是"连续两版改错方向"的现成陷阱。**这个文件里 current_tut_key 只允许有一处定义**（见下方 v298 版）。
+
+local function tutorial_module()
+  if tutorial_mod_state ~= nil then
+    if tutorial_mod_state == false then return nil end
+    return tutorial_mod_state
+  end
+  local ok, mod = pcall(__require, "tutorial_ui")
+  if not ok or type(mod) ~= "table" or type(mod.new) ~= "function" then
+    if printerr then printerr("[murdoku] 教程模块没加载上：" .. tostring(mod)) end
+    tutorial_mod_state = false     -- 记"试过了"，避免每帧重试刷屏
+    return nil
+  end
+  tutorial_mod_state = mod
+  return mod
+end
+
+-- 取某一关的实例（第一次调用时创建；控件没进树时 init 自己会早退，下次再来）
+local function tutorial_instance(spec)
+  if spec == nil then return nil end
+  local inst = tutorial_inst[spec.tag]
+  if inst ~= nil then return inst end
+  local mod = tutorial_module()
+  if mod == nil or adapter == nil then return nil end
+  local ok, made = pcall(function()
+    return mod.new(adapter, { tag = spec.tag, root = spec.root, text = spec.text, pages = spec.pages })
+  end)
+  if not ok or type(made) ~= "table" then
+    if printerr then printerr("[murdoku] 教程实例建不出来（" .. tostring(spec.tag) .. "）：" .. tostring(made)) end
+    return nil
+  end
+  tutorial_inst[spec.tag] = made
+  return made
+end
+
+-- 教程控件自检（每关一次；全程 pcall，失败只影响"日志少一行"，绝不影响游戏）
+local function verify_tutorial_once(tag)
+  if tutorial_checked[tag] then return end
+  tutorial_checked[tag] = true
+  pcall(function()
+    local ok, mod = pcall(__require, "tut_verify")
+    if not ok or type(mod) ~= "table" or type(mod.check) ~= "function" then
+      if printerr then printerr("[murdoku] 自检模块没加载上：" .. tostring(mod)) end
+      return
+    end
+    mod.check({
+      find = function(n) return adapter:find(n) end,
+      -- 注入根表 ⇒ 自检能查全树的"同名多条"（不注入就只能查同级，会在日志里降级说明）
+      roots = function()
+        if game == nil or game.GetClientUIRoots == nil then return nil end
+        return game.GetClientUIRoots()
+      end,
+    })
+  end)
+end
+
+-- ★ v292：**"现在到底在哪一屏"以【看得见的控件】为准**
+--
+--   真机实测（用户 2026-10-21 04:59 日志）：开局那条 `on_start` 之后 `cur.screen` 是 nil，
+--   但屏幕上其实还是**首页**（随后玩家点了 `home.select` 进选关）。
+--   ⇒ v289 直接信 `cur.screen == nil` ⇒ 在首页就把第一关那套弹了一次（然后立刻关掉），
+--     等真进第一关时它已经"弹过" ⇒ 第一关永远看不到教程。
+--   修法：首页判据改成"**`home` 控件可见**"（这是渲染事实，不依赖状态字段的时序），
+--        再叠加"触发键稳定 N 帧才动手"，两道一起挡住过渡期。
+--
+-- ★★★ v298（2026-10-21 22:31 真机日志的证据，用户要求）：**board/stage 不能当"进了关卡"的判据** ✗
+--   · 日志开头**首页阶段**就有 `★ 几何归编辑器：stage 回读 584.0x584.0`
+--     ⇒ `board` / `stage` 是**全屏常驻容器**，首页 / 选关页也**存在** ⇒ "存在即可见"⇒ 一律误判成关卡内
+--   · 选关页时：`cur.screen` 仍是 **nil**、`home` **已隐藏**
+--     ⇒ 所以既不能靠 screen，也不能靠 home 的否定面来判"在哪一屏"
+--   · 选关页**独有**、且**读得到**的是 `select.card.1`（日志里有 `选关卡框 select.card.1：w=209.0 …`）
+--     ⚠️ 而容器名 `select` 本身 `find` 不到（项目自己的诊断也印 `select=**找不到**`）⇒ 只能判**子控件**
+--   ⇒ v298 判据（顺序即优先级，全部以"**可见**"为准，取不到一律按不可见）：
+--       ① `home` 可见                     ⇒ "home"
+--       ② `select.card.1`（退而 `select.title`）可见 ⇒ **选关页 ⇒ nil（不弹）**
+--       ③ `clues` 或 `board` 可见          ⇒ 才认为在关卡里 ⇒ `tostring(cur.level.id)`
+--       ④ 其它                            ⇒ nil
+local function tut_visible(name)
+  if adapter == nil or name == nil then return false end
+  local c = nil
+  pcall(function() c = adapter:find(name) end)
+  if c == nil then return false end
+  local v = nil
+  pcall(function() v = c.visible end)
+  return v == true
+end
+
+local function tutorial_home_visible()
+  return tut_visible("home")
+end
+
+local TUT_STABLE_NEED = 20   -- 触发键连续稳定 20 帧（≈0.67s）才弹，躲开切屏过渡
+local TUT_KEEP_NEED = 10     -- 面板出现后还要稳 10 帧才算"真的弹成了"（才记 seen）
+local tut_key_prev = nil
+local tut_key_frames = 0
+local tut_shown_frames = 0
+local tut_key_logged = false -- v298：触发键诊断日志是否已经打过（首帧那行也要打）
+local tut_miss_frames = {}   -- tag -> 连续不该弹的帧数（>=10 才关，抗抖动）
+
+-- 当前触发键 + 一份**判据快照**（诊断日志用）。
+--   ★ 同一帧只读一次可见性 ⇒ "日志里看到的值"和"实际用来判的值"**一定是同一份**（不做二次读）。
+--   ★ 返回 `(key, probe)`；`key == nil` = 现在不该弹任何一套。
+local function tut_key_and_probe()
+  local cur = nil
+  pcall(function()
+    if Murdoku ~= nil and Murdoku.current ~= nil then cur = Murdoku.current() end
+  end)
+
+  -- 三个判据各读一次（`tut_visible` 内部全 pcall，取不到 = false）
+  local home  = tut_visible("home")
+  local card1 = tut_visible("select.card.1")
+  if not card1 then card1 = tut_visible("select.title") end   -- 兜底：选关页标题，同样是选关页独有
+  local clues = tut_visible("clues")
+  local board = tut_visible("board")
+
+  local scr, id = nil, nil
+  if cur ~= nil then
+    pcall(function() scr = cur.screen end)
+    pcall(function() id = cur.level and cur.level.id end)
+  end
+
+  local key = nil
+  if cur ~= nil then
+    if home then
+      key = "home"                       -- ① 首页
+    elseif card1 then
+      key = nil                          -- ② 选关页：**不弹**（log 里 card1=true 一眼能看出来）
+    elseif clues or board then
+      if id ~= nil then key = tostring(id) end   -- ③ 关卡内
+    end
+    -- ④ 其它（过渡态 / 未知屏）：key 保持 nil
+  end
+
+  return key, { home = home, card1 = card1, clues = clues, board = board, scr = scr, id = id }
+end
+
+-- 当前触发键（拿不到返回 nil）—— 对外保持这个名字：本文件里**只有这一处定义**。
+--   ★ 判据快照随手存进 `tut_last_probe`：调用方要打诊断日志就读它，
+--     **不要为日志再读一次可见性**（否则"日志里的值"和"实际判的值"可能不是同一帧的）。
+local tut_last_probe = nil
+local function current_tut_key()
+  local key, probe = tut_key_and_probe()
+  tut_last_probe = probe
+  return key
+end
 
 local function tick_tutorial()
   if adapter == nil then return end
-  if tutorial == nil then
-    local ok, mod = pcall(__require, "tutorial_ui")
-    if not ok or type(mod) ~= "table" or type(mod.new) ~= "function" then
-      if printerr then printerr("[murdoku] 教程模块没加载上：" .. tostring(mod)) end
-      tutorial = false          -- 用 false 记"试过了"，避免每帧重试刷屏
-      return
+  if tutorial_module() == nil then return end
+
+  -- ① 三套实例都做惰性 init：谁先就绪谁先被藏起来（避免教程面板在别的界面露出来）
+  for _, spec in pairs(TUT_SETS) do
+    local inst = tutorial_instance(spec)
+    if inst ~= nil and not inst.inited then
+      pcall(function() inst:init() end)
+      if not inst.inited then
+        -- ★ 兜底：根容器迟迟没进树 ⇒ 这条失败路径原来是纯静默的；约 2 秒后照样跑一次自检
+        tutorial_wait[spec.tag] = (tutorial_wait[spec.tag] or 0) + 1
+        if tutorial_wait[spec.tag] >= 120 then verify_tutorial_once(spec.tag) end
+      else
+        verify_tutorial_once(spec.tag)
+      end
     end
-    tutorial = mod.new(adapter)
-    if Murdoku ~= nil then Murdoku.tutorial = tutorial end
   end
-  if tutorial == false then return end
-  if not tutorial.inited then
-    tutorial:init()             -- 控件没进树时自己会早退，下一帧再来
-    if not tutorial.inited then return end
+
+  -- ② 只在"该出现的那一屏"弹对应那一套；离开就收起
+  --   ★ v292：**触发键稳定 20 帧才动手**，并且**面板稳 10 帧才记 seen**
+  --     真机实测：开局 `cur.screen` 会短暂为 nil 而屏幕其实还是首页 ⇒ 旧逻辑在那一刻就把 l1 弹掉并记 seen，
+  --     真进第一关时反而"已弹过"，第一关永远看不到教程。
+  local key, probe = nil, nil
+  if started then
+    key = current_tut_key()          -- ★ 唯一入口：判据在 `tut_key_and_probe` 里
+    probe = tut_last_probe           -- ★ 同一帧的那份快照（诊断日志用，不二次读）
   end
-  if not tutorial_opened_once and started then
-    tutorial_opened_once = true
-    pcall(function() tutorial:open_ui() end)   -- 开局弹一次「玩法说明」
+  local key_changed = (key ~= tut_key_prev)
+  if not key_changed then
+    tut_key_frames = tut_key_frames + 1
+  else
+    tut_key_prev = key
+    tut_key_frames = 0
+    tut_shown_frames = 0
+  end
+  -- ★★★ v298 诊断（用户要求"一行定位"）：触发键**一变**就打一行；**首次评估**（就算结果是 nil）也打一行。
+  --   值全部来自这一帧**运行时读到的**可见性/字段（`probe` 与"实际用来判的"是同一份，不二次读）。
+  --   真机日志里看到的样子：
+  --     [tutorial] 触发键 -> home  (home=true card1=false clues=false board=false scr=nil)
+  --     [tutorial] 触发键 -> nil   (home=false card1=true clues=false board=false scr=nil)   ← 选关页：不弹
+  --     [tutorial] 触发键 -> case_001  (home=false card1=false clues=true board=true scr=nil)  ← 关卡内
+  if print and probe ~= nil and (key_changed or not tut_key_logged) then
+    tut_key_logged = true
+    print("[tutorial] 触发键 -> " .. tostring(key)
+      .. "  (home=" .. tostring(probe.home)
+      .. " card1=" .. tostring(probe.card1)
+      .. " clues=" .. tostring(probe.clues)
+      .. " board=" .. tostring(probe.board)
+      .. " scr=" .. tostring(probe.scr) .. ")")
+  end
+  local want_tag = nil
+  if key ~= nil and tut_key_frames >= TUT_STABLE_NEED then want_tag = TUT_TRIGGER[key] end
+  for tag, spec in pairs(TUT_SETS) do
+    local inst = tutorial_inst[spec.tag]
+    if inst ~= nil and inst.inited then
+      if want_tag == tag then
+        tut_miss_frames[tag] = 0
+        -- ★ v293：**只有"还没弹过"才自动打开** —— 否则玩家点了关闭，下一帧又被自动打开（真机实测：关不掉）
+        if not tutorial_seen[tag] then
+          if not inst.open then
+            pcall(function() inst:open_ui() end)
+          end
+          tut_shown_frames = tut_shown_frames + 1
+          -- 面板真的稳住了才记"已弹过"（弹一下就被关不记账 —— 那是 v291 第一关丢失的形态）
+          if tut_shown_frames >= TUT_KEEP_NEED then tutorial_seen[tag] = true end
+        end
+      else
+        -- ★ v293：**抗抖动**：连续 10 帧都不是这一套才关；单帧闪烁不关
+        tut_miss_frames[tag] = (tut_miss_frames[tag] or 0) + 1
+        if inst.open and tut_miss_frames[tag] >= TUT_KEEP_NEED then
+          pcall(function() inst:close() end)
+          tut_miss_frames[tag] = 0
+        end
+      end
+    end
   end
 end
 
@@ -21477,3 +22455,4 @@ function OnDestroy()
   Murdoku.on_destroy()
   if print then print("[murdoku] destroyed") end
 end
+
