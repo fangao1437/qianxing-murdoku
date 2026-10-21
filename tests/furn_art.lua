@@ -74,18 +74,41 @@ ok(tbl ~= nil and type(tbl.els) == "table", "A1 竖两格桌子：元素落在�
 ok(view.cell[1][1].els == false, "A2 另一格 (1,1) 不再画家具（不会出现两张小桌子）")
 ok(tbl.anchor == true, "A3 跨格家具的锚点格要标记 anchor=true")
 ok(view.cell[4][2].anchor == false, "A4 单格家具不需要 anchor")
-ok(#tbl.els <= 6, "A5 跨格桌子的层数 ≤ 6（模板只有 obj..obj6），实际 " .. tostring(#tbl.els))
--- 桌子最外层（第 2 个元素 = 描边）应该是竖着的：高 > 宽
+ok(#tbl.els <= 12, "A5 跨格桌子的层数 ≤ 12（模板 obj..obj12），实际 " .. tostring(#tbl.els))
+-- 第 2 个元素 = 黑描边。第三轮起**横桌竖桌各一套变体**，竖放用 v2 ⇒ 高 > 宽（不再交换坐标轴）
 local outline = tbl.els[2]
-ok(outline.h > outline.w, "A6 竖放的桌子：外形元素高 > 宽（轴已交换）：" ..
+ok(outline.h > outline.w, "A6 竖放桌子用 v2 变体：描边元素高 > 宽：" ..
   string.format("%.2f x %.2f", outline.w, outline.h))
 ok(math.abs((outline.dy or 0) + 0.5) < 0.01, "A7 竖放时锚点格中心在整件中心下方半格（dy = -0.5）")
--- 横跨两格元素的“越界”能力：外形高度 1.90 格 > 1 格
 ok(outline.h > 1.5, "A8 跨格元素允许 > 1 格（h = " .. string.format("%.2f", outline.h) .. "）")
+-- 变体选择要能被看见（离线预览/日志据此核对"横竖是否各用各的"）
+do
+  local chosen = table.concat(view.chosen or {}, " ")
+  ok(chosen:find("table@2,1%[v2%]") ~= nil, "A8b 竖放桌子选中的是 v2 变体（chosen=" .. chosen .. "）")
+  ok(chosen:find("chair@4,2%[1%]") ~= nil, "A8c 单格椅子选中的是单格变体")
+end
+-- 阴影层：用户明确"其它家具的细节保留（包括阴影）"⇒ 五件的第 1 层都必须是柔光投影
+do
+  local has_shadow = true
+  for _, kind in ipairs({ "table", "chair", "plant", "shelf", "statue" }) do
+    local e = F.ART[kind] and F.ART[kind]["1"] and F.ART[kind]["1"][1]
+    if e == nil or e.id ~= 106056 then has_shadow = false end
+  end
+  ok(has_shadow, "A8d 五件家具的第 1 层都是柔光投影（106056）")
+end
+-- 横放 vs 竖放确实是两套数据（不是同一份交换轴）
+do
+  local h2els = F.ART.table["h2"]
+  local v2els = F.ART.table["v2"]
+  local h2 = h2els[2]
+  local v2 = v2els[2]
+  ok(h2.w > h2.h and v2.h > v2.w, "A8e 长桌两套变体朝向相反（h2 宽>高 / v2 高>宽）")
+  ok(#h2els > 0 and #v2els > 0, "A8f 长桌横竖两套变体都存在")
+end
 
 -- 椅子单格：元素居中在本格
 local chair = view.cell[4][2]
-ok(chair ~= nil and type(chair.els) == "table" and #chair.els <= 6, "A9 单格椅子有元素且 ≤ 6 层")
+ok(chair ~= nil and type(chair.els) == "table" and #chair.els <= 12, "A9 单格椅子有元素且 ≤ 6 层")
 local max_off = 0
 for _, e in ipairs(chair.els) do
   max_off = math.max(max_off, math.abs(e.dx or 0), math.abs(e.dy or 0))
@@ -159,7 +182,7 @@ end
 
 local CELL = 108
 local layers = {}
-for i = 1, 6 do
+for i = 1, 12 do
   local nm = (i == 1) and "obj" or ("obj" .. i)
   layers[i] = ctrl(nm, {}, { imageId = 100001, imageColor = 4294967295, visible = false })
 end
@@ -176,11 +199,11 @@ local r1 = a:set_property("cell.1.1", "furn", els)
 ok(r1 == true, "D1 set_property(cell,'furn',els) 返回 true")
 local vis = 0
 for i = 1, #els do if layers[i] and layers[i].visible then vis = vis + 1 end end
-ok(vis == #els, "D2 六个部件都点亮了（" .. vis .. "/" .. #els .. "）")
-if #els < 6 then
-  ok(layers[#els + 1].visible == false, "D3 没用到的第 " .. (#els + 1) .. " 层必须藏着")
+ok(vis == #els, "D2 十二层里该用的部件都点亮了（" .. vis .. "/" .. #els .. "）")
+if #els < 12 then
+  ok(layers[#els + 1].visible == false, "D3 没用到的第 " .. (#els + 1) .. " 层必须藏着（共 12 层）")
 else
-  ok(true, "D3 元素正好用满 6 层（无多余层可藏）")
+  ok(true, "D3 元素正好用满 12 层（无多余层可藏）")
 end
 ok(layers[1].imageId == els[1].id, "D4 第 1 层图 = 元素表第 1 个 id")
 ok(layers[1].imageColor == els[1].color, "D5 第 1 层色 = 元素表第 1 个色")

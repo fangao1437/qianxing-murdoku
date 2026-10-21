@@ -1,173 +1,205 @@
 --[[----------------------------------------------------------------------------
-  lua/furn_art.lua —— 第一二关的「家具美术」数据与分组（v300，2026-10-22 第二轮）
+  lua/furn_art.lua —— 第一二关的「家具美术」数据与分组（v301，2026-10-22 第三轮）
 
-  为什么要这个模块（用户 2026-10-22 打回第一版的判词）：
-    ① **复刻效果不佳**：第一版每件家具只有 3 层、全靠矩形/圆叠，像"色块图解"，不像原作那种
-       带深色描边的平面图标；
-    ② **跨格家具不许拆成两格**：第一关的桌子占 (1,1)+(2,1)、第二关占 (1,2)+(1,3)，
-       第一版按格各画一份 ⇒ 屏幕上像"两张小桌子"而不是一张长桌。
+  三轮的来龙去脉（用户判词一次比一次具体）：
+    · 第一轮（v299）：每件家具 3 层基础形状 ⇒ 用户：「复刻效果不佳，与原作差距过大，
+      至少要达到参考图的水准；跨格家具不许拆成两格」；
+    · 第二轮（v300）：6 层 + 跨格整件 + 房间名 ⇒ 用户：「重新参考原作的桌子和椅子、书架、植物，
+      详细的参考它们的细节，先把你抓到的参考给我」⇒ 交出四张参考图后用户确认：
+        「底板参考先暂时保留素材，不做修改，植物减少一些叶片可以，其它家具的细节保留（包括阴影，
+          横桌竖桌明显需要分开做）图层3是肯定不够了，你可以任意添加」
+    · 第三轮（v301，本文件）：**按原作的部件表逐件照搭**，层数上限给到 **12 层**（`obj`…`obj12`），
+      横放长桌 / 竖放长桌**各做一套**（不再靠交换坐标轴），阴影全部保留。
 
-  本轮的做法（不动格子模板之外的结构）：
-    · **每格 6 层**（模板里的 `obj`/`obj2`/…/`obj6`）⇒ 一件家具最多用 6 个官方基础形状叠出来：
-      L1 深色外形（等价于原作的黑色描边）→ L2 主体 → L3 内面 → L4..L6 细节（木纹/靠背/扶手/书本…）；
-    · **跨格家具合并成一件**：按 `object` 键把 4 邻接的同种格子做**连通分组**，
-      整件美术**只画在锚点格（组的右下格，见 `anchor_of`）**，元素坐标以「整件包围盒中心」为原点，
-      允许 `w/h > 1`、`dx/dy` 超过 ±0.5 —— 越过格子边界由锚点格整体绘制（脚本会把它抬到最上层，
-      见适配层 `furn_anchor`），因此屏幕上**是一整件**，且会压住两格之间的格线（原作也是对象压墙线）；
-    · **地毯**平铺且可站人（人/笔记要压在它上面）⇒ 地毯**不溢出**：按整块地毯的包围盒
-      逐格"切矩形"（外框 + 内面），所以多格地毯看起来是一整块、没有格线，但仍在各自格子里；
-    · **房间名标签**：`labels` 容器里的 7 个文本框由界面层按房间外框摆位（见 `F.room_boxes`）。
+  原作的实测依据（`_work/art-ref/家具几何分解.md` + `_work/art-ref/review/refB|refC-*.png`）：
+    · 每件 = base 白剪影 + overlay 白剪影，两层分别乘关卡两色；明暗来自 base 内部灰阶（不是第三层）；
+    · 黑描边是素材里的**黑色填充块**：桌 ≈2.5% 格、书架 **5%**、植物 1~1.5%；
+    · **椅子没有黑描边**（轮廓是 overlay 线画层，棕金色）；
+    · 桌子**没有 overlay**；俯视略前倾 ⇒ 看得见**下沿深灰桌沿 + 端部两个腿头**，中段无腿；
+    · 书架是**正面立面**画法：粗黑框 + 内凹黑框 + 2 道隔板 + 一排竖书脊（书脊 = overlay 青）；
+    · 植物是**俯视放射**：8~10 片尖叶（每片黑叶缘）+ 上宽下窄盆 + 盆沿高光 + 盆底投影。
 
-  配色（就近换算自原作 `puzzle-24h-delivery-easy` 的暖色房屋系；原作双色见
-  `murdoku-project/美术实现-一二关-2026-10-22/原作美术参考-2026-10-22.md`）：
-    描边/深色 #6B5B45 · 木面 #C9A96E · 浅木面 #DCC08C · 奶白 #EFE5C8 · 靠背 #DFD2AE
-    地毯外框 #B89A62 · 地毯内面 #DCC684 · 叶 #5E9E4A / 暗叶 #3E6E36 · 陶盆 #8A5A3A / 盆暗 #5A3A26
+  结构不变的部分（第二轮已经定稿、本轮不改）：
+    · **跨格家具合并成一件**：按 `object` 键 4 邻接分组（只有 table/carpet 参与合并），
+      整件只画在**锚点格（右下格）**，元素允许越出格子（适配层把它 `SetAsLastSibling` 抬到最上层）；
+    · **地毯按整块包围盒逐格切矩形**（可站人、视觉连续）；
+    · **房间名标签**按房间外框摆位（优先没有家具的格）；
+    · 底板/地板**沿用现有素材，不改**（用户明确：底板参考先暂时保留素材）。
 
-  坐标单位一律 = **格子**（格边长 = 1），y **向下**为正。
+  坐标单位一律 = **格子**（格边长 = 1），`dx` 右为正、`dy` **下**为正；颜色 `0xAARRGGBB` 与白色底板**乘算**。
 ----------------------------------------------------------------------------]]--
 
 local F = {}
 
-F.MAX_LAYERS = 6
+-- 模板里每格的家具层数（`obj` … `obj12`），由 `tools/gil/gen_art_containers.mjs` 的 v2 版生成
+F.MAX_LAYERS = 12
 
 -- ══════════════════════════════════════════════════════════════════════════
--- 调色板（0xAARRGGBB；与白色底板素材【乘算】）
+-- 调色板：**直接用原作实测的颜色**（24h-delivery / House Party 关的 obj_color）
+--   原作两色机制的对应关系：base 色 = 主体、overlay 色 = 第二色部件、灰阶暗部 = 本色×灰阶。
 -- ══════════════════════════════════════════════════════════════════════════
 local C = {
-  ink      = 0xFF6B5B45,   -- 深棕：本色当"描边"
-  ink_dark = 0xFF4A3E2E,   -- 更深的缝/层板
-  wood     = 0xFFC9A96E,   -- 木面
-  wood_lt  = 0xFFDCC08C,   -- 浅木面
-  wood_hi  = 0xFFE8D2A4,   -- 高光木
-  cream    = 0xFFEFE5C8,   -- 奶白（坐垫/床单）
-  cream_lt = 0xFFF7EFD8,   -- 更亮奶白
-  tan      = 0xFFDFD2AE,   -- 浅棕（靠背）
-  tan_dk   = 0xFFC6B183,   -- 深一档的棕（坐垫/扶手，用来和奶白主体拉开明度）
-  rug_rim  = 0xFFB89A62,   -- 地毯外框
-  rug_in   = 0xFFDCC684,   -- 地毯内面
-  rug_mid  = 0xFFC9B072,   -- 地毯内框线（中间调）
-  rug_hi   = 0xFFEBD9A8,   -- 地毯高光条
-  pot      = 0xFF8A5A3A,   -- 陶盆
-  pot_dk   = 0xFF5A3A26,   -- 陶盆暗
-  leaf     = 0xFF5E9E4A,   -- 叶
-  leaf_dk  = 0xFF3E6E36,   -- 叶暗
-  leaf_hi  = 0xFF8FCF74,   -- 叶高光
-  stone    = 0xFF8E8E9A,   -- 石座
-  stone_dk = 0xFF4E4E56,   -- 石座暗
-  stone_db = 0xFF7A7A86,   -- 石座压边（暗一档）
-  bust     = 0xFFC9C9D2,   -- 雕塑主体
-  bust_hi  = 0xFFE2E2E8,   -- 雕塑高光
-  book1    = 0xFF8A6A48,
-  book2    = 0xFFA08050,
-  book3    = 0xFF6E8A9A,
+  -- 黑描边（原作是素材里的黑色填充块，不是 stroke）
+  ink      = 0xFF1F1A14,
+  ink_soft = 0xFF3A322A,
+  -- 桌子：base #e0ce7b / 深一档 #ad9c67（原作不画 overlay，这一档当桌沿/暗部）
+  table    = 0xFFE0CE7B,
+  table_dk = 0xFFAD9C67,
+  table_hi = 0xFFEFE3A0,
+  leg      = 0xFFA89A5E,   -- 腿头（比桌面深一档，才看得出来）
+  -- 椅子：base #fef7e4 / overlay #fbd592
+  chair    = 0xFFFEF7E4,
+  chair_dk = 0xFFE9D9B2,   -- base×灰阶（靠背内区/扶手）
+  chair_hi = 0xFFFBF2DA,   -- 前缘亮面
+  chair_ov = 0xFFFBD592,   -- overlay（靠背顶带）
+  chair_ln = 0xFFD9C08A,   -- 原作 overlay 线画的平均色（当"棕金描边"）
+  -- 书架：base #d0b0d9 / overlay #b2dbeb
+  shelf    = 0xFFD0B0D9,
+  shelf_hi = 0xFFE4CBE9,   -- 顶板 / 隔板
+  shelf_ln = 0xFFB49CC0,   -- 柜体暗缝
+  book_a   = 0xFFB2DBEB,   -- overlay 书脊
+  book_b   = 0xFF9CCFE6,
+  book_c   = 0xFFC7E7F2,
+  -- 植物：盆 base #fca161 / 叶 overlay #79cfa1
+  pot      = 0xFFFCA161,
+  pot_hi   = 0xFFFFB782,
+  pot_dk   = 0xFFD97F3F,
+  leaf     = 0xFF79CFA1,
+  leaf_dk  = 0xFF5FB884,
+  leaf_hi  = 0xFFA8E6C4,
+  leaf_ink = 0xFF1E2A18,   -- 原作黑叶缘（1~1.5% 格）
+  -- 雕塑：base #ffffff / overlay #c0c0c0（The Secret Lab 的蓝灰石色）
+  stone    = 0xFFC9C9D2,
+  stone_hi = 0xFFE2E2E8,
+  stone_dk = 0xFF8E8E9A,
+  stone_ink= 0xFF3E3E48,
+  -- 地毯：只用 overlay #fee08e，外圈是固有深色 #39484d × overlay
+  rug_rim  = 0xFFB89A62,
+  rug_in   = 0xFFDCC684,
+  rug_mid  = 0xFFC9B072,
+  -- 通用
+  shadow   = 0x44000000,   -- 柔和投影（乘在 106056 白心柔光圆上）
 }
 
--- 官方素材 id 速查（详见 murdoku-project/美术实现-一二关-2026-10-22/README.md §2.2）
---
---   ★ 2026-10-22 第二轮按 `_work/art-slot/零件词表-v2.md`（asset-hunt 逐张实测）换过一轮：
---     106xxx 的圆角矩形**四角半径不一致、带撕裂/缺口**（106046 底边 1.7% 缺口、106045 四角 r≈0~2.4），
---     真正"边缘干净"的圆角矩形在 107xxx；所以主体/台面改用 107102 / 107002，阴影用 106056。
+-- 官方素材 id 速查（白模；换色靠 imageColor 乘算）
 local IMG = {
-  rect   = 100001,   -- 基础形状·矩形（纯白 256²，直角；线/条/书脊都用它拉）
-  circle = 100002,   -- 基础形状·圆形（纯白 256²）
-  ring   = 100006,   -- 基础形状·圆环（线宽≈6.9%，当"描边圈"）
-  plate  = 100001,   -- 底板-彩色·近白方板 96×96（四角 r≈6，RGB254，边缘干净）
-  panel  = 100001,   -- 底板-彩色·近白圆角板 336×256（四角 r≈12，自带一圈细边=缝线）
-  grain  = 107088,   -- 底板-彩色·横木纹条 660×68（深棕；低透明度叠在桌面上当木纹）
-  soft   = 106056,   -- 底板-单色·柔光圆 96²（白心向外渐隐；染深=柔和投影）
-  urn    = 105090,   -- 装饰图案·奶白瓮 176×112（近白可染）
+  rect   = 100001,   -- 基础形状·矩形（纯白 256²，直角、可任意拉伸）
+  circle = 100002,   -- 基础形状·圆形（纯白 256²；拉伸成椭圆=叶/肩）
+  plate  = 100001,   -- 圆角板也行，但 106xxx 有手绘缺口 ⇒ 统一用直角矩形 + 深色垫底当描边
+  soft   = 106056,   -- 柔光圆 96²（白心向外渐隐 ⇒ 染深色=柔和投影）
 }
 
 -- ══════════════════════════════════════════════════════════════════════════
--- 美术：kind → 变体（按"长边格数"分；`[1]` = 单格，`[2]` = 跨两格，长轴 = X）
+-- 美术数据：`F.ART[kind][variant] = { 从下往上的元素数组 }`
 --
---   每个元素：{ id, color, w, h, dx, dy }   —— 单位 = 格子，dx 右 / dy 下为正
---   数组顺序 = **从下往上** 的层序（第 i 个元素落到第 i 层 `obj`…`obj6`）。
---   `[2]` 变体只按"长轴 = X"画；实际是竖着的（包围盒高 > 宽）时由 `orient_els` 交换 dx/dy 与 w/h。
+--   variant：
+--     "1"  = 单格
+--     "h2" = **横放**两格长桌（长轴 = X，宽 ≈1.9 格）
+--     "v2" = **竖放**两格长桌（长轴 = Y，高 ≈1.9 格）—— 用户明确要求横竖分开做
+--   元素：{ id, color, w, h, dx, dy }，单位 = 格；dx 右、dy 下为正。
+--   ⚠️ 每个 kind 的元素数 ≤ F.MAX_LAYERS(12)；超出部分会被适配层静默截掉。
 -- ══════════════════════════════════════════════════════════════════════════
 F.ART = {
-  -- 椅子（俯视扶手椅）：深色外形 + 奶白主体 + **更深的坐垫** + 靠背条 + **两条竖扶手**
-  --
-  --  ★ 2026-10-22 第二轮第二版（art-preview 独立校验的反馈）：第一版坐垫与主体同色（奶白×奶白），
-  --    整件叠成一个"圆角托盘/枕头"，两条 0.10 宽的扶手被身体颜色吃掉。
-  --    这一版：坐垫改 tan（与奶白主体拉开明度）、扶手加宽到 0.12 且**贴到身体内侧边缘**、
-  --    靠背条压在上沿 ⇒ 俯视时能读出"上沿靠背 + 左右扶手 + 中间坐垫"的扶手椅结构。
-  chair = {
-    [1] = {
-      { id = IMG.plate,  color = C.ink,      w = 0.90, h = 0.92, dy =  0.02 },
-      { id = IMG.plate,  color = C.cream,    w = 0.82, h = 0.84, dy =  0.02 },
-      { id = IMG.plate,  color = C.tan_dk,   w = 0.54, h = 0.46, dy =  0.13 },
-      { id = IMG.rect,   color = C.cream_lt, w = 0.62, h = 0.12, dy = -0.29 },
-      { id = IMG.rect,   color = C.tan_dk,   w = 0.13, h = 0.52, dx = -0.345, dy =  0.03 },
-      { id = IMG.rect,   color = C.tan_dk,   w = 0.13, h = 0.52, dx =  0.345, dy =  0.03 },
-    },
-  },
-
-  -- 桌子（俯视桌/餐桌）：单格 = 方桌；两格 = 长桌（**一整件**，不是两张）
+  -- ── 桌子（照原作 12 部件里"俯视看得见"的 7 个：桌面 / 桌沿 / 两腿头 / 黑描边 / 投影）──
   table = {
-    [1] = {
-      { id = IMG.soft,   color = 0x40000000, w = 1.00, h = 0.98, dy =  0.06 },
-      { id = IMG.plate,  color = C.ink,      w = 0.90, h = 0.86 },
-      { id = IMG.plate,  color = C.wood,     w = 0.82, h = 0.78 },
-      { id = IMG.plate,  color = C.wood_lt,  w = 0.66, h = 0.60 },
-      { id = IMG.rect,   color = C.ink,      w = 0.56, h = 0.02, dy = -0.12 },
-      { id = IMG.rect,   color = C.ink,      w = 0.56, h = 0.02, dy =  0.12 },
+    ["1"] = {
+      { id = IMG.soft,   color = C.shadow,   w = 1.00, h = 0.98, dy =  0.10 },   -- ① 投影
+      { id = IMG.rect,   color = C.ink,      w = 0.92, h = 0.86 },               -- ② 黑描边
+      { id = IMG.rect,   color = C.table,    w = 0.86, h = 0.80 },               -- ③ 桌面
+      { id = IMG.rect,   color = C.table_dk, w = 0.88, h = 0.12, dy =  0.31 },   -- ⑤ 桌沿（下沿深色）
+      { id = IMG.rect,   color = C.leg,      w = 0.09, h = 0.12, dx = -0.36, dy = 0.47 }, -- ⑥ 左腿头
+      { id = IMG.rect,   color = C.leg,      w = 0.09, h = 0.12, dx =  0.36, dy = 0.47 }, -- ⑦ 右腿头
     },
-    [2] = {
-      { id = IMG.soft,   color = 0x40000000, w = 2.00, h = 0.98, dy =  0.06 },
-      { id = IMG.plate,  color = C.ink,      w = 1.90, h = 0.86 },
-      { id = IMG.plate,  color = C.wood,     w = 1.82, h = 0.78 },
-      { id = IMG.plate,  color = C.wood_lt,  w = 1.66, h = 0.58 },
-      { id = IMG.rect,   color = C.ink,      w = 1.50, h = 0.02, dy = -0.13 },
-      { id = IMG.rect,   color = C.ink,      w = 1.50, h = 0.02, dy =  0.13 },
+    -- 横放长桌（第二关 (1,2)+(1,3)）：桌沿在长边下方、腿头在两端
+    ["h2"] = {
+      { id = IMG.soft,   color = C.shadow,   w = 2.00, h = 0.98, dy =  0.10 },
+      { id = IMG.rect,   color = C.ink,      w = 1.92, h = 0.86 },
+      { id = IMG.rect,   color = C.table,    w = 1.86, h = 0.80 },
+      { id = IMG.rect,   color = C.table_dk, w = 1.88, h = 0.12, dy =  0.31 },
+      { id = IMG.rect,   color = C.leg,      w = 0.09, h = 0.12, dx = -0.90, dy = 0.47 },
+      { id = IMG.rect,   color = C.leg,      w = 0.09, h = 0.12, dx =  0.90, dy = 0.47 },
     },
-  },
-
-  -- 植物（盆栽）：柔和投影 + 陶盆 + 叶簇 + 高光
-  plant = {
-    [1] = {
-      { id = IMG.soft,   color = 0x42000000, w = 0.92, h = 0.92, dy =  0.14 },
-      { id = IMG.plate,  color = C.pot_dk,   w = 0.48, h = 0.38, dy =  0.25 },
-      { id = IMG.plate,  color = C.pot,      w = 0.40, h = 0.30, dy =  0.26 },
-      { id = IMG.circle, color = C.leaf_dk,  w = 0.70, h = 0.58, dy = -0.10 },
-      { id = IMG.circle, color = C.leaf,     w = 0.58, h = 0.46, dy = -0.08 },
-      { id = IMG.circle, color = C.leaf_hi,  w = 0.26, h = 0.20, dx = -0.10, dy = -0.18 },
+    -- 竖放长桌（第一关 (1,1)+(2,1)）：**单独一套**，长轴 = Y；桌沿与两只腿头都在底边
+    ["v2"] = {
+      { id = IMG.soft,   color = C.shadow,   w = 0.98, h = 2.00, dy =  0.06 },
+      { id = IMG.rect,   color = C.ink,      w = 0.86, h = 1.92 },
+      { id = IMG.rect,   color = C.table,    w = 0.80, h = 1.86 },
+      { id = IMG.rect,   color = C.table_dk, w = 0.84, h = 0.12, dy =  0.90 },   -- 下沿桌沿（贴底边）
+      { id = IMG.rect,   color = C.leg,      w = 0.09, h = 0.12, dx = -0.24, dy = 1.00 },
+      { id = IMG.rect,   color = C.leg,      w = 0.09, h = 0.12, dx =  0.24, dy = 1.00 },
     },
   },
 
-  -- 书架/柜：**粗黑外框（原作特征，5%/边）** + 木柜体 + 两条层板 + 两组书脊
+  -- ── 椅子（照原作 8 部件：主体 / 靠背内区 / 靠背顶带 / 坐垫 / 前缘 / 两扶手 + 棕金轮廓）──
+  chair = {
+    ["1"] = {
+      { id = IMG.soft,   color = C.shadow,   w = 0.92, h = 0.92, dy =  0.10 },   -- ① 投影
+      { id = IMG.rect,   color = C.chair_ln, w = 0.90, h = 0.92, dy =  0.02 },   -- ② 棕金轮廓（原作 overlay 线画的近似）
+      { id = IMG.rect,   color = C.chair,    w = 0.82, h = 0.84, dy =  0.02 },   -- ③ 主体剪影
+      { id = IMG.rect,   color = C.chair_dk, w = 0.58, h = 0.26, dy = -0.24 },   -- ④ 靠背内区
+      { id = IMG.rect,   color = C.chair_ov, w = 0.64, h = 0.14, dy = -0.32 },   -- ⑤ 靠背顶带（overlay 色）
+      { id = IMG.rect,   color = C.chair,    w = 0.48, h = 0.30, dy =  0.10 },   -- ⑥ 坐垫（比内区亮）
+      { id = IMG.rect,   color = C.chair_hi, w = 0.68, h = 0.12, dy =  0.35 },   -- ⑦ 前缘亮面
+      { id = IMG.rect,   color = C.chair_dk, w = 0.12, h = 0.34, dx = -0.33, dy = 0.03 }, -- ⑧ 左扶手
+      { id = IMG.rect,   color = C.chair_dk, w = 0.12, h = 0.34, dx =  0.33, dy = 0.03 }, -- ⑨ 右扶手
+    },
+  },
+
+  -- ── 书架（照原作 7 部件：粗黑外框 / 顶板 / 柜体 / 内凹黑框 / 两道隔板 / 一排书脊 + 底影）──
   shelf = {
-    [1] = {
-      { id = IMG.rect,   color = C.ink,      w = 0.90, h = 0.80 },
-      { id = IMG.rect,   color = C.wood,     w = 0.80, h = 0.70 },
-      { id = IMG.rect,   color = C.ink_dark, w = 0.70, h = 0.05, dy = -0.12 },
-      { id = IMG.rect,   color = C.ink_dark, w = 0.70, h = 0.05, dy =  0.12 },
-      { id = IMG.rect,   color = C.book1,    w = 0.14, h = 0.16, dx = -0.19, dy =  0.00 },
-      { id = IMG.rect,   color = C.book3,    w = 0.14, h = 0.16, dx =  0.15, dy =  0.00 },
+    ["1"] = {
+      { id = IMG.soft,   color = C.shadow,   w = 0.90, h = 0.50, dy =  0.42 },   -- ① 底部投影
+      { id = IMG.rect,   color = C.ink,      w = 0.92, h = 0.86 },               -- ② 粗黑外框（≈5%/边）
+      { id = IMG.rect,   color = C.shelf,    w = 0.82, h = 0.76, dy = -0.01 },   -- ③ 柜体
+      { id = IMG.rect,   color = C.shelf_hi, w = 0.80, h = 0.10, dy = -0.35 },   -- ④ 顶板
+      { id = IMG.rect,   color = C.ink,      w = 0.70, h = 0.56, dy = -0.01 },   -- ⑤ 内凹黑框
+      { id = IMG.rect,   color = C.shelf_hi, w = 0.72, h = 0.06, dy = -0.06 },   -- ⑥ 隔板 1
+      { id = IMG.rect,   color = C.shelf_hi, w = 0.72, h = 0.06, dy =  0.24 },   -- ⑦ 隔板 2
+      { id = IMG.rect,   color = C.book_a,   w = 0.08, h = 0.20, dx = -0.26, dy = -0.20 }, -- ⑧ 书脊 1（上层）
+      { id = IMG.rect,   color = C.book_b,   w = 0.08, h = 0.15, dx = -0.16, dy = -0.18 }, -- ⑨ 书脊 2
+      { id = IMG.rect,   color = C.book_c,   w = 0.08, h = 0.18, dx = -0.06, dy = -0.19 }, -- ⑩ 书脊 3
+      { id = IMG.rect,   color = C.book_a,   w = 0.08, h = 0.14, dx = -0.22, dy =  0.06 }, -- ⑪ 书脊 4（下层）
+      { id = IMG.rect,   color = C.book_b,   w = 0.08, h = 0.17, dx = -0.12, dy =  0.05 }, -- ⑫ 书脊 5（下层）
     },
   },
 
-  -- 雕塑：柔和投影 + 石座（两级）+ **肩 + 头（两个圆）** —— 读成"台座上的半身像"
-  --
-  --  ★ 2026-10-22 第二轮第二版（art-preview 反馈"像台灯/棋子"）：第一版是"柱子 + 一个圆头"，
-  --    这一版把"肩"（宽扁圆）和"头"（小圆）分开，并把石座做成两级台阶 ⇒ 半身像的体块出来了。
+  -- ── 植物（照原作俯视放射：每片叶"黑叶缘垫底 + 叶本色"成对，共 4 片 + 盆沿/盆身/盆底暗 + 投影）──
+  --   ★ 用户已同意"减少一些叶片"（原作 8~10 片）；每片叶要 2 层（黑边+叶）⇒ 4 片刚好 12 层用满。
+  plant = {
+    ["1"] = {
+      { id = IMG.soft,   color = C.shadow,   w = 0.94, h = 0.94, dy =  0.18 },   -- ① 投影
+      { id = IMG.circle, color = C.leaf_ink, w = 0.15, h = 0.50, dx = -0.24, dy = -0.06 }, -- ② 叶 L 黑边
+      { id = IMG.circle, color = C.leaf,     w = 0.10, h = 0.44, dx = -0.24, dy = -0.07 }, -- ③ 叶 L
+      { id = IMG.circle, color = C.leaf_ink, w = 0.15, h = 0.48, dx =  0.24, dy = -0.05 }, -- ④ 叶 R 黑边
+      { id = IMG.circle, color = C.leaf,     w = 0.10, h = 0.42, dx =  0.24, dy = -0.06 }, -- ⑤ 叶 R
+      { id = IMG.circle, color = C.leaf_ink, w = 0.15, h = 0.52, dx = -0.05, dy = -0.14 }, -- ⑥ 叶 M1 黑边
+      { id = IMG.circle, color = C.leaf,     w = 0.10, h = 0.46, dx = -0.05, dy = -0.15 }, -- ⑦ 叶 M1
+      { id = IMG.circle, color = C.leaf_ink, w = 0.14, h = 0.44, dx =  0.12, dy = -0.09 }, -- ⑧ 叶 M2 黑边
+      { id = IMG.circle, color = C.leaf_hi,  w = 0.08, h = 0.36, dx =  0.12, dy = -0.10 }, -- ⑨ 叶 M2（亮）
+      { id = IMG.rect,   color = C.pot_hi,   w = 0.46, h = 0.10, dy =  0.13 },   -- ⑩ 盆沿
+      { id = IMG.rect,   color = C.pot,      w = 0.36, h = 0.24, dy =  0.25 },   -- ⑪ 盆身
+      { id = IMG.rect,   color = C.pot_dk,   w = 0.36, h = 0.06, dy =  0.35 },   -- ⑫ 盆底暗
+    },
+  },
+
+  -- ── 雕塑（原作 8 部件：投影 / 两级台座 / 台柱 / 肩 / 头 / 高光 / 台座线）──
   statue = {
-    [1] = {
-      { id = IMG.soft,   color = 0x4A000000, w = 0.86, h = 0.86, dy =  0.20 },
-      { id = IMG.rect,   color = C.stone_dk, w = 0.58, h = 0.22, dy =  0.32 },
-      { id = IMG.rect,   color = C.stone,    w = 0.50, h = 0.13, dy =  0.26 },
-      { id = IMG.circle, color = C.bust,     w = 0.40, h = 0.28, dy = -0.01 },
-      { id = IMG.circle, color = C.bust_hi,  w = 0.22, h = 0.20, dy = -0.19 },
-      { id = IMG.rect,   color = C.stone,    w = 0.30, h = 0.035, dy =  0.16 },
+    ["1"] = {
+      { id = IMG.soft,   color = C.shadow,   w = 0.86, h = 0.86, dy =  0.20 },   -- ① 投影
+      { id = IMG.rect,   color = C.stone_ink,w = 0.64, h = 0.16, dy =  0.40 },   -- ② 台座底（黑边）
+      { id = IMG.rect,   color = C.stone_dk,w = 0.58, h = 0.12, dy =  0.38 },   -- ③ 台座底
+      { id = IMG.rect,   color = C.stone_dk,w = 0.46, h = 0.10, dy =  0.28 },   -- ④ 台座上层
+      { id = IMG.rect,   color = C.stone,   w = 0.24, h = 0.18, dy =  0.16 },   -- ⑤ 台柱
+      { id = IMG.circle, color = C.stone,   w = 0.40, h = 0.26, dy = -0.02 },   -- ⑥ 肩
+      { id = IMG.circle, color = C.stone_hi, w = 0.22, h = 0.20, dy = -0.20 },  -- ⑦ 头
+      { id = IMG.circle, color = C.stone_hi, w = 0.10, h = 0.08, dx = -0.04, dy = -0.24 }, -- ⑧ 头高光
     },
   },
 }
 
 -- ══════════════════════════════════════════════════════════════════════════
--- 地毯：**按整块地毯的包围盒逐格切矩形**（不溢出格子，所以可站人、笔记压得住）
---
---   元素语义：外框（整块地毯底色）+ 内面（向内缩 0.10 格）+ 高光条（仅当该格在整块的第一行）
---   ⇒ 组内相邻格之间没有"每格一条边"，看起来是**一整块**。
+-- 地毯：按整块包围盒逐格切矩形（外框 / 内面 / 内框线），可站人、视觉连续。
+--   ⚠️ 用户 2026-10-22 第三轮：底板（地板）素材**不动**，所以地毯仍铺在现有格子色上。
 -- ══════════════════════════════════════════════════════════════════════════
 F.RUG_INSET = 0.12   -- 内面相对包围盒内缩（格）
 F.RUG_LINE  = 0.20   -- 内框线再往里缩（格）
@@ -178,7 +210,6 @@ local function clamp(v, lo, hi)
   return v
 end
 
--- 区间 [a,b]（格坐标，格 i 占 [i-0.5, i+0.5]）与格 i 的交集，返回相对格中心的比例宽度与偏移
 local function slice_axis(a, b, i)
   local lo = math.max(a, i - 0.5)
   local hi = math.min(b, i + 0.5)
@@ -188,12 +219,7 @@ local function slice_axis(a, b, i)
   return w, center - i
 end
 
--- 生成某块地毯在某一格上的元素（按整块包围盒切矩形 ⇒ 组内无"每格一条边"）
---
---   ★ 2026-10-22 第二版：去掉"只在首行出现的一条高光"（第一版看起来像一条压边胶带），
---     改成**三层矩形**：外框（深）→ 内面（浅）→ 内框线（中）——
---     每层都是"整块矩形与该格的交集"，所以多格地毯拼起来就是**一整块带双线边框的地毯**，
---     而且外框贴满整格、格线会在它上面透出来（原作的地毯上就压着全局网格线）。
+-- 生成某块地毯在某一格上的元素（三层矩形，都是"整块矩形 ∩ 本格"）
 function F.rug_cell_els(bbox, r, c)
   local els = {}
   local function slice_rect(inset, color)
@@ -202,15 +228,11 @@ function F.rug_cell_els(bbox, r, c)
     local w, dx = slice_axis(xa, xb, c)
     local h, dy = slice_axis(ya, yb, r)
     if w == nil or h == nil then return nil end
-    -- 各方向多铺 0.02 格：与邻格同色重叠，接缝不露白
     return { id = IMG.rect, color = color, w = w + 0.04, h = h + 0.04, dx = dx, dy = dy }
   end
-  -- ① 外框（贴满整格）
   els[#els + 1] = { id = IMG.rect, color = C.rug_rim, w = 1.0, h = 1.0 }
-  -- ② 内面
   local inner = slice_rect(F.RUG_INSET, C.rug_in)
   if inner ~= nil then els[#els + 1] = inner end
-  -- ③ 内框线（再往里一圈、用中间色 ⇒ 地毯有"双层边"的层次）
   local line = slice_rect(F.RUG_LINE, C.rug_mid)
   if line ~= nil then els[#els + 1] = line end
   return els
@@ -220,26 +242,15 @@ end
 -- 分组 / 摆位
 -- ══════════════════════════════════════════════════════════════════════════
 
--- ══════════════════════════════════════════════════════════════════════════
--- 分组规则：**哪些家具会合并成"一件"**
---
---   ★ 这里踩过一次（2026-10-22 第一版预览就露馅）：
---     一开始"相邻同种就合并"，结果第二关的**两盆植物 (5,4)+(6,4)** 被并成一件
---     ⇒ 花盆被转了 90°、还只剩一盆。
---   ⇒ 只有"本来就该跨格"的家具才合并：
---       · `table`  —— 长桌（第一关竖两格、第二关横两格）
---       · `carpet` —— 地毯（按整块切矩形，视觉连续）
---     其它（chair / plant / shelf / statue）**一格一件**，相邻也各画各的。
--- ══════════════════════════════════════════════════════════════════════════
+-- 只有"本来就该跨格"的家具才合并；其它一格一件（两盆相邻的植物是两盆，不是一件）
 local COMBINE = { table = true, carpet = true }
 
--- 锚点格：整件美术画在这一格里（取组的**右下格**：行最大、行相同取列最大）
+-- 锚点格：整件美术画在这一格里（组的**右下格**）
 local function anchor_of(bbox)
   return { r = bbox.r2, c = bbox.c2 }
 end
 
--- 房间名标签落在哪一格：**优先"最后一行里没有家具的格"**（字压在空地上才清楚），
--- 其次房间最后一行任意格，再不行就取房间中心。
+-- 房间名标签落在哪一格：优先"最后一行里没有家具的格"，其次房间最后一行任意空格，最后取房间中心
 local function pick_label_cell(box, keys)
   for c = box.c1, box.c2 do
     if not (keys and keys[box.r2] and keys[box.r2][c]) then
@@ -256,49 +267,49 @@ local function pick_label_cell(box, keys)
   return { r = box.r2, c = box.c1 }
 end
 
+-- 取变体：单格 / 横放两格 / 竖放两格
+--   ★ 2026-10-22 第三轮：**横桌竖桌各做一套**（用户明确要求），不再靠交换坐标轴；
+--     只有"变体缺失"时才退回单格（不是几何错误，只是明显不对，用来在日志里被发现）。
+function F.variant(kind, span_r, span_c)
+  local set = F.ART[kind]
+  if type(set) ~= "table" then return nil, nil end
+  if span_r > 1 and span_c > 1 then
+    -- L 形/方块：两个方向都跨 —— 本关没有；退回横放
+    return set["h2"] or set["1"], "h2"
+  elseif span_c > 1 then
+    return set["h2"] or set["1"], "h2"
+  elseif span_r > 1 then
+    return set["v2"] or set["1"], "v2"
+  end
+  return set["1"], "1"
+end
+
 -- 把"以整件包围盒中心为原点"的元素换算成"以锚点格中心为原点"
---   bbox 中心（格坐标）= ((c1+c2)/2, (r1+r2)/2)；锚点格中心 = (c2, r2)
-local function to_anchor(els, bbox, anchor, vertical)
+local function to_anchor(els, bbox, anchor)
   local out = {}
   local bcx = (bbox.c1 + bbox.c2) * 0.5
   local bcy = (bbox.r1 + bbox.r2) * 0.5
   for i = 1, #els do
     local e = els[i]
-    local x, y = e.dx or 0, e.dy or 0
-    local w, h = e.w or 1, e.h or 1
-    if vertical then
-      -- 长轴在 Y：把"长轴=X"的美术转 90°（只交换轴，不旋转控件）
-      x, y = y, x
-      w, h = h, w
-      -- 交换后，原 dx 是沿长轴的偏移 ⇒ 现在应沿 y；用交换后的 x,y 即可
-    end
     out[#out + 1] = {
       id = e.id,
       color = e.color,
-      w = w,
-      h = h,
-      dx = (bcx + x) - anchor.c,
-      dy = (bcy + y) - anchor.r,
+      w = e.w or 1,
+      h = e.h or 1,
+      dx = (bcx + (e.dx or 0)) - anchor.c,
+      dy = (bcy + (e.dy or 0)) - anchor.r,
     }
   end
   return out
 end
 
--- 取变体：有对应长边格数的就用它，否则退回单格
-function F.variant(kind, span)
-  local set = F.ART[kind]
-  if type(set) ~= "table" then return nil end
-  return set[span] or set[1]
-end
-
 --[[
   layout(vm, keys, room_names) -> {
       cell  = { [r] = { [c] = { els = <数组或false>, anchor = bool } } },
-      boxes = { [room] = { r1=,r2=,c1=,c2=, n= } },
-      labels = { { room=, text=, box= } ... }
+      boxes = { [room] = { r1,r2,c1,c2,n } },
+      labels = { { room, text, box, cell } ... }
   }
-  `keys[r][c]` = 该格的 `obj.<kind>` 字符串或 false（界面层已用 `Controller.object_key_of` 算好）
-  `room_names` = 关卡数据里的数组（真名）或 nil（显示"区域N"）
+  `keys[r][c]` = 该格的 `obj.<kind>` 字符串或 false（界面层用 `Controller.object_key_of` 算好）
 ]]
 function F.layout(vm, keys, room_names)
   local res = { cell = {}, boxes = {}, labels = {} }
@@ -309,7 +320,7 @@ function F.layout(vm, keys, room_names)
     for c = 1, cols do res.cell[r][c] = { els = false, anchor = false } end
   end
 
-  -- ── ① 分组：**只有 COMBINE 里的种类才做 4 邻接合并**，其余一格一件 ──────────
+  -- ── ① 分组（只有 COMBINE 里的种类做 4 邻接合并）──────────────────────────
   local seen = {}
   local pieces = {}
   local dirs = { { 0, 1 }, { 1, 0 }, { 0, -1 }, { -1, 0 } }
@@ -320,7 +331,6 @@ function F.layout(vm, keys, room_names)
         local kind = key:match("^obj%.(.+)$") or key
         local group, r1, r2, c1, c2 = {}, r, r, c, c
         if COMBINE[kind] then
-          -- BFS：相邻同 key 视为同一件
           local stack = { { r, c } }
           seen[r .. ":" .. c] = true
           while #stack > 0 do
@@ -341,46 +351,41 @@ function F.layout(vm, keys, room_names)
             end
           end
         else
-          -- 一格一件（两盆相邻的植物是**两盆**，不是一件两格家具）
           seen[r .. ":" .. c] = true
           group[1] = { r, c }
         end
         pieces[#pieces + 1] = {
-          key = key,
-          kind = kind,
-          cells = group,
+          key = key, kind = kind, cells = group,
           box = { r1 = r1, r2 = r2, c1 = c1, c2 = c2 },
-          occupiable = nil,
         }
       end
     end
   end
 
   -- ── ② 逐件分配美术 ────────────────────────────────────────────────────
+  local chosen = {}
   for _, p in ipairs(pieces) do
     local b = p.box
     local kind = p.kind
     local span_r, span_c = b.r2 - b.r1 + 1, b.c2 - b.c1 + 1
-    local span = math.max(span_r, span_c)
-    local vertical = span_r > span_c
     if kind == "carpet" then
-      -- 地毯：逐格切（不溢出、可站人）
       for _, cell in ipairs(p.cells) do
         res.cell[cell[1]][cell[2]].els = F.rug_cell_els(b, cell[1], cell[2])
       end
     else
-      local els = F.variant(kind, span)
+      local els, variant = F.variant(kind, span_r, span_c)
       if els ~= nil then
         local anchor = anchor_of(b)
-        local local_els = to_anchor(els, b, anchor, vertical)
         local info = res.cell[anchor.r][anchor.c]
-        info.els = local_els
-        info.anchor = (span_r > 1 or span_c > 1)   -- 只有跨格才需要抬层
+        info.els = to_anchor(els, b, anchor)
+        info.anchor = (span_r > 1 or span_c > 1)
+        chosen[#chosen + 1] = string.format("%s@%d,%d[%s]", kind, anchor.r, anchor.c, variant)
       end
     end
   end
+  res.chosen = chosen   -- 给离线用例/预览核对"横竖是否各用各的变体"
 
-  -- ── ③ 房间外框（给"房间名标签"摆位用）────────────────────────────────
+  -- ── ③ 房间外框（给房间名标签摆位用）──────────────────────────────────
   for r = 1, rows do
     for c = 1, cols do
       local cd = vm.cells[r] and vm.cells[r][c]
@@ -409,7 +414,7 @@ function F.layout(vm, keys, room_names)
     if type(name) ~= "string" or name == "" then name = "区域 " .. tostring(room) end
     res.labels[#res.labels + 1] = {
       room = room, text = name, box = box,
-      cell = pick_label_cell(box, keys),   -- 标签落在哪一格（见下）
+      cell = pick_label_cell(box, keys),
     }
   end
 
