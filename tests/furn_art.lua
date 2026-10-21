@@ -350,5 +350,42 @@ do
   ok(any_vis == false, "E14 没有家具时所有已生成控件都藏起来")
 end
 
+
+--------------------------------------------------------------------------------
+-- F 静态烘焙模式（v306）：`baked_level` 只切 `fart.<关卡>` 两个容器的显隐
+--------------------------------------------------------------------------------
+print("== F 静态烘焙 ==")
+do
+  local function mk(name)
+    local x = { name = name, _kids = {} }
+    x.GetChild = function(self, n)
+      for _, k in ipairs(self._kids) do if k.name == n then return k end end
+      return nil
+    end
+    x.GetChildren = function(self) return self._kids end
+    x.SetVisible = function(self, v) self.visible = v end
+    x.SetActive = function(self, v) self.active = v end
+    if x.visible == nil then x.visible = true end
+    return x
+  end
+  local b1 = mk("fart.case_001")
+  local b2 = mk("fart.case_002")
+  b1.visible, b2.visible = false, false
+  local rootCtl = mk("root")
+  rootCtl._kids = { b1, b2 }
+  _G.game = { GetClientUIRoots = function() return { rootCtl } end }
+  local a3 = Ad.new({ cells = { rows = 5, cols = 5 } })
+
+  ok(a3:set_property("root", "baked_level", "case_001") == true, "F1 baked_level 属性被接受")
+  ok(b1.visible == true, "F2 当前关卡的烘焙容器打开（case_001）")
+  ok(b2.visible == false, "F3 另一关的烘焙容器保持隐藏（case_002）")
+
+  a3:set_property("root", "baked_level", "case_002")
+  ok(b1.visible == false and b2.visible == true, "F4 切关时两个容器对调（case_002 开、case_001 关）")
+
+  a3:set_property("root", "baked_level", false)
+  ok(b1.visible == false and b2.visible == false, "F5 烘焙模式关掉时两个容器都隐藏")
+end
+
 print(string.format("\nfurn_art: %d passed, %d failed", passed, failed))
 if failed > 0 then os.exit(1) end

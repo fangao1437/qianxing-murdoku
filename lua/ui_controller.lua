@@ -28,6 +28,16 @@ end
 
 M.DESIGN = { width = 1920, height = 1080 }
 
+-- ★★★★★★★★ 2026-10-22（v306，第八轮）**家具图元改走"静态烘焙"** ✗✓
+--
+--   用户真机验证后的判断：网站（拼图工具）导出的内容能在真机显示，是因为它把图元写成
+--   **存档里的静态图片控件**；我们走运行时实例化，链路长、真机上表现不稳。
+--   ⇒ 本轮起：椅子/植物/雕像的图元由 integrator 直接烘成存档里的静态控件
+--     （`root/fart.case_001`、`root/fart.case_002` 两个容器，默认隐藏），
+--     脚本只负责"按当前关卡打开对应容器" ⇒ **完全不再调用 InstantiateClientUIControl**。
+--   ⚠️ 关掉这个开关会退回旧的"运行时实例化"路径（`furn_art` 分支），方便 A/B 对比。
+M.FURN_BAKED = true
+
 -- ★ 2026-10-22（v300）家具美术数据层（分组 / 锚点 / 六层元素 / 地毯切矩形 / 房间名标签）
 --   单独一个模块，因为它是**纯数据 + 纯几何**，不该和界面状态机混在一起（见 lua/furn_art.lua 文件头）。
 local FurnArt = require("furn_art")
@@ -2161,6 +2171,7 @@ function Controller:build_layout(ui_adapter)
   --   ⇒ 这里只负责把"哪一格放哪件、整件中心相对锚点格偏移多少"算出来；坐标换算在适配层做。
   --   ⚠️ 地毯例外：它是一块可站人的平面图形，仍走原来的 12 层矩形（`furn`），不生成几百个图元。
   local furn_recs = nil
+  local level_id = nil        -- 当前关卡 id（静态烘焙按关卡切容器用）
   do
     local keys = {}
     for r = 1, vm.rows do
@@ -2182,6 +2193,7 @@ function Controller:build_layout(ui_adapter)
       end
     end
     furn_art = FurnArt.layout(vm, keys, cur_lv and cur_lv.room_names or nil)
+    level_id = cur_lv and cur_lv.id or nil
 
     -- ── 图元拼法：把每件家具的"工具结果记录"按锚点格摆好 ────────────────────
     --   记录里的 dx/dy 是**相对整件包围盒中心**（格）；锚点格中心与整件中心差 (bcx-c, bcy-r) 格，
@@ -2193,6 +2205,7 @@ function Controller:build_layout(ui_adapter)
     end
     for _, p in ipairs(furn_art.pieces or {}) do
       local kind = p.kind
+      if M.FURN_BAKED then break end   -- 静态烘焙模式：不生成图元记录（由存档里的静态控件画）
       -- ★ 2026-10-22 第五轮（v303）**按件决定画法** ✗✓
       --   走工具图元（椭圆拟合）的：**椅子 / 植物 / 雕像** —— 形体圆润，用户已确认"椅子和植物对了"。
       --   走手搭层的：**桌子**（直角/直线，椭圆拟合会糊 ⇒ 本轮照原作再加工：圆角外形+桌沿+带黑边的腿）、
@@ -2244,6 +2257,8 @@ function Controller:build_layout(ui_adapter)
   nodes[#nodes + 1] = {
     id = "root", kind = "container", parent = nil, visible = true,
     rect = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height },
+    -- ★ v306：静态烘焙的关卡名（适配层据此只显示 `fart.<关卡>` 一个容器）
+    baked_level = (M.FURN_BAKED and level_id) or false,
     pos_runtime = true,
   }
   
@@ -3399,7 +3414,10 @@ function Controller:build_layout(ui_adapter)
     -- ★ 先把 `labels` 容器本身写进计划：**位置换算必须知道父级中心**
     --   （适配层算的是 "节点中心 − 规划父级中心"；父级不在计划里就只能当 (0,0)，标签会整体偏移）。
     --   它的 rect 和 `root` 那条一样（整画布），因为存档里那个容器是"锚点居中、画布中心"的。
-    push({ id = "labels", kind = "container", parent = "root",
+    -- ★ v306：**容器本身也要由脚本摆正** —— 存档里它是"700×700 @(0,0)"，那个 (0,0) 是画布
+    --   左下角而不是画布中心 ⇒ 子控件会整体偏到屏幕外（真机上"房间名看不见"就是这个原因）。
+    --   ⇒ 用 `pos_runtime` 强制把容器撑成**整画布、居中**（只有 1 个控件，代价极小）。
+    push({ id = "labels", kind = "container", parent = "root", pos_runtime = true,
            rect = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height } })
     local in_level = (self.screen == nil or self.screen == "level")
     for i = 1, 7 do

@@ -4437,6 +4437,26 @@ function Adapter:set_property(id, key, value, nkey)
   --                  跨格家具由界面层把整件的元素**只下发给锚点格**（坐标会超出 ±0.5，合法），
   --                  再由 `furn_anchor` 把这个格子抬到所有格子之上。
   --   绘图仍然只有一处实现（`_paint_obj`），与 `object` 完全同一条流水线（含 hide_kids 重放）。
+  -- ★★★★★★★★ 2026-10-22（v306，第八轮）**静态烘焙的图元家具：只切容器显隐** ✗✓
+  --
+  --   用户判断（真机验证后）：「网站导出的内容能实机显示，因为它把图元写成存档里的静态控件；
+  --   官方必然提供了和图元等价的素材（= 基础形状 100001/100002/100003），找到它们就能绕开这层」。
+  --   ⇒ 图元由 integrator 直接烘成存档里的静态图片控件：`root/fart.case_001`、`root/fart.case_002`，
+  --     默认 `visible=false`；本分支只按"当前关卡"打开其中一个、关掉另一个。
+  --   value = 关卡 id（如 "case_001"）；false = 两个都关。
+  --   ⚠️ 这条路径**完全不调用** `InstantiateClientUIControl`，也不碰格子模板层数。
+  elseif key == "baked_level" then
+    self._baked_level = value or false
+    local levels = (self.cfg and self.cfg.baked_levels) or { "case_001", "case_002" }
+    for i = 1, #levels do
+      local lv = levels[i]
+      local box = self:find("fart." .. lv)
+      if box ~= nil and box.SetVisible ~= nil then
+        pcall(function() box:SetVisible(value == lv) end)
+      end
+    end
+    return true
+
   -- ★★★★★★★★ 2026-10-22（v302，第四轮）**家具 = 外部工具算出的图元拼法** ✗✓
   --
   --   用户原话：「桌子椅子植物依然没有达到参考效果，仓库里有一个能兼容千星的外部图片网站，
