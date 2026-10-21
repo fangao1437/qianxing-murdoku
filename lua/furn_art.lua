@@ -78,7 +78,7 @@ local C = {
   rug_in   = 0xFFDCC684,
   rug_mid  = 0xFFC9B072,
   -- 通用
-  shadow   = 0x44000000,   -- 柔和投影（乘在 106056 白心柔光圆上）
+  shadow   = 0x9A000000,   -- 柔和投影（乘在 106056 白心柔光圆上；桌子加了"下偏移"，需比原来实一点）
 }
 
 -- 官方素材 id 速查（白模；换色靠 imageColor 乘算）
@@ -111,7 +111,7 @@ F.ART = {
   table = {
     -- 单格方桌：整件 bbox = 0.73 × 0.836 格（= 原作"长边占格 0.836、宽高比 0.87"）
     ["1"] = {
-      { id = IMG.soft,  color = C.shadow,   w = 0.76, h = 0.80, dy =  0.04 },   -- ① 投影
+      { id = IMG.soft,  color = C.shadow,   w = 0.73, h = 0.96, dy =  0.22 },   -- ① 投影（往下偏，从桌沿/腿下方露出）
       { id = IMG.round, color = C.ink,      w = 0.730, h = 0.700, dy = -0.068 }, -- ② 黑描边（圆角）
       { id = IMG.round, color = C.table,    w = 0.680, h = 0.650, dy = -0.068 }, -- ③ 桌面
       { id = IMG.rect,  color = C.ink,      w = 0.680, h = 0.028, dy =  0.272 }, -- ④ 黑分隔线
@@ -124,20 +124,20 @@ F.ART = {
     },
     -- 横放两格：长轴 = X，长边 = 1.672 格（= 2×0.836），宽 0.73 格；桌沿沿长边、腿在两端
     ["h2"] = {
-      { id = IMG.soft,  color = C.shadow,   w = 1.90, h = 0.80, dy =  0.04 },
+      { id = IMG.soft,  color = C.shadow,   w = 1.68, h = 1.10, dy =  0.26 },
       { id = IMG.round, color = C.ink,      w = 1.672, h = 0.700, dy = -0.068 },
       { id = IMG.round, color = C.table,    w = 1.622, h = 0.650, dy = -0.068 },
       { id = IMG.rect,  color = C.ink,      w = 1.622, h = 0.028, dy =  0.272 },
       { id = IMG.rect,  color = C.table_dk, w = 1.622, h = 0.055, dy =  0.309 },
       { id = IMG.rect,  color = C.ink,      w = 1.622, h = 0.022, dy =  0.348 },
-      { id = IMG.rect,  color = C.ink,      w = 0.070, h = 0.070, dx = -0.736, dy = 0.375 },
-      { id = IMG.rect,  color = C.leg,      w = 0.046, h = 0.046, dx = -0.736, dy = 0.375 },
-      { id = IMG.rect,  color = C.ink,      w = 0.070, h = 0.070, dx =  0.736, dy = 0.375 },
-      { id = IMG.rect,  color = C.leg,      w = 0.046, h = 0.046, dx =  0.736, dy = 0.375 },
+      { id = IMG.rect,  color = C.ink,      w = 0.070, h = 0.070, dx = -0.600, dy = 0.375 },
+      { id = IMG.rect,  color = C.leg,      w = 0.046, h = 0.046, dx = -0.600, dy = 0.375 },
+      { id = IMG.rect,  color = C.ink,      w = 0.070, h = 0.070, dx =  0.600, dy = 0.375 },
+      { id = IMG.rect,  color = C.leg,      w = 0.046, h = 0.046, dx =  0.600, dy = 0.375 },
     },
     -- 竖放两格：**单独一套**，长轴 = Y，长边 1.672、宽 0.73；桌沿/腿在底边
     ["v2"] = {
-      { id = IMG.soft,  color = C.shadow,   w = 0.80, h = 1.90, dy =  0.02 },
+      { id = IMG.soft,  color = C.shadow,   w = 0.73, h = 1.76, dy =  0.22 },
       { id = IMG.round, color = C.ink,      w = 0.730, h = 1.672 },
       { id = IMG.round, color = C.table,    w = 0.680, h = 1.622 },
       { id = IMG.rect,  color = C.ink,      w = 0.680, h = 0.028, dy =  0.700 },
