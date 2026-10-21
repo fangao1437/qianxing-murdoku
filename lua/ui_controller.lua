@@ -2193,10 +2193,14 @@ function Controller:build_layout(ui_adapter)
     end
     for _, p in ipairs(furn_art.pieces or {}) do
       local kind = p.kind
-      -- ★ 地毯（可站人的平面图形）和**桌子**仍走原来的手搭层：桌子是"黑描边+桌面+桌沿+两腿头"，
-      --   6 层就很干净；而工具是"椭圆拟合"，桌子的直角/长边用椭圆拼会糊（试过，拉伸后更糊）。
-      --   其余四件（椅子/植物/书架/雕塑）走工具图元拼法 —— 它们的形体是圆润的，拟合效果明显更好。
-      if kind ~= "carpet" and kind ~= "table" then
+      -- ★ 2026-10-22 第五轮（v303）**按件决定画法** ✗✓
+      --   走工具图元（椭圆拟合）的：**椅子 / 植物 / 雕像** —— 形体圆润，用户已确认"椅子和植物对了"。
+      --   走手搭层的：**桌子**（直角/直线，椭圆拟合会糊 ⇒ 本轮照原作再加工：圆角外形+桌沿+带黑边的腿）、
+      --               **书架**（用户："书架现条扭曲…处理不了就退回上一版"——工具把层板/书脊拟合成旋转细椭圆，
+      --                 在线宽只有 1~2px 的层板上必然扭 ⇒ 退回 v301 手搭 12 层）、
+      --               **地毯**（可站人的平面图形，3 层矩形）。
+      local FITTED_KINDS = { chair = true, plant = true, statue = true }
+      if kind ~= "carpet" and FITTED_KINDS[kind] then
         local list = FurnRecords and FurnRecords[kind]
         if list ~= nil then
           local b = p.box

@@ -43,10 +43,10 @@ local C = {
   ink      = 0xFF1F1A14,
   ink_soft = 0xFF3A322A,
   -- 桌子：base #e0ce7b / 深一档 #ad9c67（原作不画 overlay，这一档当桌沿/暗部）
-  table    = 0xFFE0CE7B,
-  table_dk = 0xFFAD9C67,
+  table    = 0xFFAD9C67,   -- 原作图标实测像素 #AD9C67（不是 #E0CE7B，那是关卡 base 色）
+  table_dk = 0xFF8C7F52,   -- 桌沿：比桌面深一档
   table_hi = 0xFFEFE3A0,
-  leg      = 0xFFA89A5E,   -- 腿头（比桌面深一档，才看得出来）
+  leg      = 0xFFA08F5C,   -- 桌腿   -- 腿头（比桌面深一档，才看得出来）
   -- 椅子：base #fef7e4 / overlay #fbd592
   chair    = 0xFFFEF7E4,
   chair_dk = 0xFFE9D9B2,   -- base×灰阶（靠背内区/扶手）
@@ -85,7 +85,8 @@ local C = {
 local IMG = {
   rect   = 100001,   -- 基础形状·矩形（纯白 256²，直角、可任意拉伸）
   circle = 100002,   -- 基础形状·圆形（纯白 256²；拉伸成椭圆=叶/肩）
-  plate  = 100001,   -- 圆角板也行，但 106xxx 有手绘缺口 ⇒ 统一用直角矩形 + 深色垫底当描边
+  plate  = 100001,   -- 直角矩形（层板/分隔线/腿）
+  round  = 107102,   -- 近白圆角方板 96²（r≈6、边缘干净；106053 四边中点有手绘缺口，拉长后像"咬边"）
   soft   = 106056,   -- 柔光圆 96²（白心向外渐隐 ⇒ 染深色=柔和投影）
 }
 
@@ -100,33 +101,52 @@ local IMG = {
 --   ⚠️ 每个 kind 的元素数 ≤ F.MAX_LAYERS(12)；超出部分会被适配层静默截掉。
 -- ══════════════════════════════════════════════════════════════════════════
 F.ART = {
-  -- ── 桌子（照原作 12 部件里"俯视看得见"的 7 个：桌面 / 桌沿 / 两腿头 / 黑描边 / 投影）──
+  -- ── 桌子（照原作图标再加工：圆角外形 / 桌面 / 底部黑分隔线 / 深色桌沿 / 两条带黑边的腿）──
+  --   ★ 2026-10-22 第五轮：用户「桌子略显粗糙，进一步照原作加工」。
+  --   原作图标的俯视构成（实测 bbox 396×455，竖长 0.87）：
+  --     · 桌面占高度 ~81%，四角小圆角、外圈黑描边 ≈2.5%/边
+  --     · 下面一条**黑色分隔线**，再往下一条**深色桌沿**（灰阶乘 base ⇒ 深橄榄）
+  --     · 最下面**两条腿**（各带黑边，腿比桌沿更靠内）
+  --   尺寸按原作比例：单格长边 0.836 格 ⇒ 宽 0.73 / 高 0.836；两格长桌长边 1.75 格。
   table = {
+    -- 单格方桌：整件 bbox = 0.73 × 0.836 格（= 原作"长边占格 0.836、宽高比 0.87"）
     ["1"] = {
-      { id = IMG.soft,   color = C.shadow,   w = 1.00, h = 0.98, dy =  0.10 },   -- ① 投影
-      { id = IMG.rect,   color = C.ink,      w = 0.92, h = 0.86 },               -- ② 黑描边
-      { id = IMG.rect,   color = C.table,    w = 0.86, h = 0.80 },               -- ③ 桌面
-      { id = IMG.rect,   color = C.table_dk, w = 0.88, h = 0.12, dy =  0.31 },   -- ⑤ 桌沿（下沿深色）
-      { id = IMG.rect,   color = C.leg,      w = 0.09, h = 0.12, dx = -0.36, dy = 0.47 }, -- ⑥ 左腿头
-      { id = IMG.rect,   color = C.leg,      w = 0.09, h = 0.12, dx =  0.36, dy = 0.47 }, -- ⑦ 右腿头
+      { id = IMG.soft,  color = C.shadow,   w = 0.76, h = 0.80, dy =  0.04 },   -- ① 投影
+      { id = IMG.round, color = C.ink,      w = 0.730, h = 0.700, dy = -0.068 }, -- ② 黑描边（圆角）
+      { id = IMG.round, color = C.table,    w = 0.680, h = 0.650, dy = -0.068 }, -- ③ 桌面
+      { id = IMG.rect,  color = C.ink,      w = 0.680, h = 0.028, dy =  0.272 }, -- ④ 黑分隔线
+      { id = IMG.rect,  color = C.table_dk, w = 0.680, h = 0.055, dy =  0.309 }, -- ⑤ 桌沿（深色）
+      { id = IMG.rect,  color = C.ink,      w = 0.680, h = 0.022, dy =  0.348 }, -- ⑥ 桌沿下黑线
+      { id = IMG.rect,  color = C.ink,      w = 0.070, h = 0.070, dx = -0.235, dy = 0.375 }, -- ⑦ 左腿黑边
+      { id = IMG.rect,  color = C.leg,      w = 0.046, h = 0.046, dx = -0.235, dy = 0.375 }, -- ⑧ 左腿
+      { id = IMG.rect,  color = C.ink,      w = 0.070, h = 0.070, dx =  0.235, dy = 0.375 }, -- ⑨ 右腿黑边
+      { id = IMG.rect,  color = C.leg,      w = 0.046, h = 0.046, dx =  0.235, dy = 0.375 }, -- ⑩ 右腿
     },
-    -- 横放长桌（第二关 (1,2)+(1,3)）：桌沿在长边下方、腿头在两端
+    -- 横放两格：长轴 = X，长边 = 1.672 格（= 2×0.836），宽 0.73 格；桌沿沿长边、腿在两端
     ["h2"] = {
-      { id = IMG.soft,   color = C.shadow,   w = 2.00, h = 0.98, dy =  0.10 },
-      { id = IMG.rect,   color = C.ink,      w = 1.92, h = 0.86 },
-      { id = IMG.rect,   color = C.table,    w = 1.86, h = 0.80 },
-      { id = IMG.rect,   color = C.table_dk, w = 1.88, h = 0.12, dy =  0.31 },
-      { id = IMG.rect,   color = C.leg,      w = 0.09, h = 0.12, dx = -0.90, dy = 0.47 },
-      { id = IMG.rect,   color = C.leg,      w = 0.09, h = 0.12, dx =  0.90, dy = 0.47 },
+      { id = IMG.soft,  color = C.shadow,   w = 1.90, h = 0.80, dy =  0.04 },
+      { id = IMG.round, color = C.ink,      w = 1.672, h = 0.700, dy = -0.068 },
+      { id = IMG.round, color = C.table,    w = 1.622, h = 0.650, dy = -0.068 },
+      { id = IMG.rect,  color = C.ink,      w = 1.622, h = 0.028, dy =  0.272 },
+      { id = IMG.rect,  color = C.table_dk, w = 1.622, h = 0.055, dy =  0.309 },
+      { id = IMG.rect,  color = C.ink,      w = 1.622, h = 0.022, dy =  0.348 },
+      { id = IMG.rect,  color = C.ink,      w = 0.070, h = 0.070, dx = -0.736, dy = 0.375 },
+      { id = IMG.rect,  color = C.leg,      w = 0.046, h = 0.046, dx = -0.736, dy = 0.375 },
+      { id = IMG.rect,  color = C.ink,      w = 0.070, h = 0.070, dx =  0.736, dy = 0.375 },
+      { id = IMG.rect,  color = C.leg,      w = 0.046, h = 0.046, dx =  0.736, dy = 0.375 },
     },
-    -- 竖放长桌（第一关 (1,1)+(2,1)）：**单独一套**，长轴 = Y；桌沿与两只腿头都在底边
+    -- 竖放两格：**单独一套**，长轴 = Y，长边 1.672、宽 0.73；桌沿/腿在底边
     ["v2"] = {
-      { id = IMG.soft,   color = C.shadow,   w = 0.98, h = 2.00, dy =  0.06 },
-      { id = IMG.rect,   color = C.ink,      w = 0.86, h = 1.92 },
-      { id = IMG.rect,   color = C.table,    w = 0.80, h = 1.86 },
-      { id = IMG.rect,   color = C.table_dk, w = 0.84, h = 0.12, dy =  0.90 },   -- 下沿桌沿（贴底边）
-      { id = IMG.rect,   color = C.leg,      w = 0.09, h = 0.12, dx = -0.24, dy = 1.00 },
-      { id = IMG.rect,   color = C.leg,      w = 0.09, h = 0.12, dx =  0.24, dy = 1.00 },
+      { id = IMG.soft,  color = C.shadow,   w = 0.80, h = 1.90, dy =  0.02 },
+      { id = IMG.round, color = C.ink,      w = 0.730, h = 1.672 },
+      { id = IMG.round, color = C.table,    w = 0.680, h = 1.622 },
+      { id = IMG.rect,  color = C.ink,      w = 0.680, h = 0.028, dy =  0.700 },
+      { id = IMG.rect,  color = C.table_dk, w = 0.680, h = 0.055, dy =  0.737 },
+      { id = IMG.rect,  color = C.ink,      w = 0.680, h = 0.022, dy =  0.776 },
+      { id = IMG.rect,  color = C.ink,      w = 0.070, h = 0.070, dx = -0.235, dy = 0.800 },
+      { id = IMG.rect,  color = C.leg,      w = 0.046, h = 0.046, dx = -0.235, dy = 0.800 },
+      { id = IMG.rect,  color = C.ink,      w = 0.070, h = 0.070, dx =  0.235, dy = 0.800 },
+      { id = IMG.rect,  color = C.leg,      w = 0.046, h = 0.046, dx =  0.235, dy = 0.800 },
     },
   },
 

@@ -229,7 +229,7 @@ local Recs = require("furn_art_records")
 
 -- E1 数据模块本身的合法性：形状 id 只能是三个基础形状；尺寸/偏移有限；条数在预算内
 do
-  local kinds = { "chair", "table", "plant", "shelf", "statue" }
+  local kinds = { "chair", "table", "plant", "statue" }   -- 书架 v303 起退回手搭，不在这份数据里
   local bad = nil
   local total = 0
   local min_n, max_n = 1e9, 0
@@ -255,9 +255,22 @@ do
     end
   end
   ok(bad == nil, "E1 图元数据合法（id/尺寸/偏移/旋转）" .. tostring(bad or ""))
-  ok(total > 900, "E2 图元总量够（" .. total .. " 条，> 900）")
+  -- v303：书架退回手搭 + 丢了越界/极细图元 ⇒ 总量按"四件"重算（>700 仍远够用）
+  ok(total > 700, "E2 图元总量够（" .. total .. " 条，> 700）")
   ok(min_n >= 100 and max_n <= 260, "E3 每件图元数在 100..260（实际 " .. min_n .. ".." .. max_n .. "）")
   ok(#Recs.table["h2"] > 0 and #Recs.table["v2"] > 0, "E4 长桌横放/竖放两套数据都在")
+  -- v303：书架**退回手搭 12 层**（用户允许）；数据里不应再有 shelf 组
+  ok(Recs.shelf == nil, "E4b 书架不再走工具图元（退回手搭）")
+  -- v303：桌子/书架/地毯走手搭层 ⇒ `furn` 里必须有它们的元素
+  do
+    local vm2, keys2 = make_vm()
+    local view2 = F.layout(vm2, keys2, { "大屋", "内室", "外间" })
+    local tbl_els = view2.cell[2] and view2.cell[2][1] and view2.cell[2][1].els
+    ok(type(tbl_els) == "table" and #tbl_els >= 8, "E4c 桌子在手搭层里有元素（" .. tostring(tbl_els and #tbl_els) .. " 层）")
+    local outline = tbl_els and tbl_els[2]
+    ok(outline ~= nil and outline.h > outline.w, "E4d 竖放长桌用手搭 v2 变体（描边高>宽）")
+    ok(F.ART.shelf ~= nil and F.ART.shelf["1"] ~= nil, "E4e 书架手搭数据仍在（12 层）")
+  end
 end
 
 -- E5 适配层：`furn_art` 分支要按记录**逐个实例化**并配置（图/色/尺寸/位置/旋转）
