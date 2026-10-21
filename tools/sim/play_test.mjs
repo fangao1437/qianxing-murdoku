@@ -598,11 +598,14 @@ console.log('\n=== 8b. 从存档点开始（玩过之后）');
 //     宁可显示占位，也不编一个假名字。关卡里写了 `room_names = {...}` 就会自动变真名。
 {
   // 回到关卡里（上面 8b 已经把界面停在关卡里了）
-  const k = indexTree(ri).get('room.label.1');
-  const txt = textOf(ri, 'room.label.1') || '';
+  // ★ 2026-10-22（v300）：控件名从 `room.label.*` 换成 **`label.*`**（容器 `labels`），
+  //   并且关卡数据里已经写了 `room_names`（第一关 大屋/内室/外间）⇒ 显示的是**真名**，
+  //   不再是「区域 N」占位。占位那条断言改成"真名命中关卡数据里的名字"。
+  const k = indexTree(ri).get('label.1');
+  const txt = textOf(ri, 'label.1') || '';
   check('棋盘上有房间名标签', !!k && k.visible === true, 'visible=' + (k ? k.visible : 'NA'));
-  check('房间名是「区域 N」占位（关卡没写 room_names 时不编名字）',
-    /^区域 \d+$/.test(txt.trim()), JSON.stringify(txt));
+  check('房间名来自关卡数据 room_names（第一关 = 大屋/内室/外间）',
+    /^(大屋|内室|外间|区域 \d+)$/.test(txt.trim()), JSON.stringify(txt));
   // 几何必须是**真实尺寸**，不能是 2×2 的小点
   //   （跨关卡取并集时，"第一次出现"的那份几何会留下 —— 占位给 2×2 就会永久缩成小点）
   const w = k && k.box && k.box.width;
@@ -610,14 +613,14 @@ console.log('\n=== 8b. 从存档点开始（玩过之后）');
     '宽=' + w);
   // ★ 更关键的一条：**标签不许重叠**。
   //
-  //   踩过的坑：`room.label.*` 是存档里的控件，而适配器有 `respect_editor_rect`
+  //   踩过的坑：`label.*` 是存档里的控件，而适配器有 `respect_editor_rect`
   //   （编辑器几何优先）⇒ 三个标签**全被按在存档里那一份几何上**，中心完全重合
   //   （模拟器里三个 box 一模一样，真机上是三个字叠在一起）。
   //   ⇒ 给这类节点加了显式标记 `pos_runtime = true`，走"运行时实例化"同一条路。
   {
     const spots = [];
     for (let j = 1; j <= 8; j++) {
-      const kk = indexTree(ri).get('room.label.' + j);
+      const kk = indexTree(ri).get('label.' + j);
       if (!kk || kk.visible !== true || !kk.box) continue;
       spots.push(kk.box.left + ',' + kk.box.bottom);
     }

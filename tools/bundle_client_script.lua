@@ -80,12 +80,20 @@ local modules = {
   -- ★ room_map 放最前：它是纯函数模块，murdoku_core 与 levels.init 都要 require 它
   { name = "room_map",                 path = "lua/room_map.lua" },
   { name = "murdoku_core",             path = "lua/murdoku_core.lua" },
+  -- ★ 2026-10-22（v300）：家具美术数据层（分组 / 锚点 / 六层元素 / 地毯切矩形 / 房间名标签）。
+  --   ⚠️ 必须**显式**列在这里 —— 打包器只会自动补 `levels.*` 那批，普通模块漏了就会打出
+  --      "bundle 里有 __require('furn_art') 但没有模块定义" ⇒ 运行时 module not found。
+  --      实测坑：`lua53check --run` 仍然是绿的（顶层 chunk 只注册模块、不跑 require），
+  --      要等 `tests/entry_smoke.lua` 这类真跑入口的用例才暴露。
+  { name = "furn_art",                 path = "lua/furn_art.lua" },
   { name = "ui_controller",            path = "lua/ui_controller.lua" },
   { name = "engine_adapter",           path = "lua/engine_adapter.lua" },
   { name = "engine_adapter_qianxing",  path = "lua/engine_adapter_qianxing.lua" },
   { name = "main",                     path = "lua/main.lua" },
   -- ★ 2026-10-21（v284）：玩法说明浮层（教程）。控件在存档里（`tut.*`），模块只管显示与翻页。
   { name = "tutorial_ui",              path = "lua/tutorial_ui.lua" },
+  -- ★ 2026-10-21（v286）：教程控件的**运行期自检**（只读：缺失 / 重名 / 父错 / 尺寸 0 / 该显示却没显示）
+  { name = "tut_verify",               path = "lua/tut_verify.lua" },
   { name = "levels.init",              path = "lua/levels/init.lua" },
 }
 

@@ -4077,7 +4077,7 @@ end
 --     · `SetActive(true)` 只在换图那一次写；
 --     · 没有物件的格子**三层都要藏**（否则白板压住头像，那是老 bug）。
 
-local OBJ_LAYER_SUBS = { "obj", "obj2", "obj3" }     -- 从下到上（与 layer_order 同序）
+local OBJ_LAYER_SUBS = { "obj", "obj2", "obj3", "obj4", "obj5", "obj6" }   -- 从下到上（与 layer_order 同序）
 
 -- 把 `want` 归一成 1..3 层（逐字段填好默认值）。返回 {} 表示"没有物件"。
 function Adapter:obj_layers_of(want)
@@ -4295,6 +4295,48 @@ function Adapter:set_property(id, key, value, nkey)
     --   真机意义：按钮文案是运行时填的（不进 .gly），首帧"label 子控件还没就绪"时
     --   这里会返回 false，界面层就会**下一帧再补一次** —— 而不是让按钮永远空着。
     return done
+
+  -- ★★★★★★★★ 2026-10-22（v300）**家具美术：界面层直接给"六层元素"** ✗✓
+  --
+  --   与 `object`（按名字查调色板 ⇒ 一格一张图）的分工：
+  --     · `object` = 老路，保留给离线用例/兼容；生产不再下发；
+  --     · `furn`   = 新路：value 是**元素数组**（最多 6 个），每个 { id, color, w, h, dx, dy }，
+  --                  w/h/dx/dy 单位 = 格子（dx 右、dy 下为正），元素坐标以**本格中心**为原点。
+  --                  跨格家具由界面层把整件的元素**只下发给锚点格**（坐标会超出 ±0.5，合法），
+  --                  再由 `furn_anchor` 把这个格子抬到所有格子之上。
+  --   绘图仍然只有一处实现（`_paint_obj`），与 `object` 完全同一条流水线（含 hide_kids 重放）。
+  elseif key == "furn" then
+    local layers = {}
+    if type(value) == "table" then
+      for i = 1, math.min(#value, #OBJ_LAYER_SUBS) do
+        local e = value[i]
+        if type(e) == "table" and type(e.id) == "number" then
+          layers[#layers + 1] = {
+            key = "furn." .. i,
+            id = e.id,
+            color = e.color,
+            w = e.w, h = e.h, dx = e.dx, dy = e.dy,
+          }
+        end
+      end
+    end
+    local want = false
+    if #layers > 0 then want = { key = "furn", layers = layers } end
+    self._obj_want = self._obj_want or {}
+    self._obj_want[id] = want
+    return self:_paint_obj(id, ctrl, want, true)
+
+  -- ★ 跨格家具的锚点格：把这一格抬到 `stage` 子列表的**最后**（= 最上层），
+  --   否则邻格的 `face`（不透明房间色）会盖掉越过格线的那半件家具。
+  --   只在"跨格"时下发（见 `lua/furn_art.lua` 的 `anchor` 字段）。
+  elseif key == "furn_anchor" then
+    if value == true and ctrl ~= nil and ctrl.SetAsLastSibling ~= nil then
+      local ok = pcall(function() ctrl:SetAsLastSibling() end)
+      if not ok then return false end
+      self._furn_anchors = self._furn_anchors or {}
+      self._furn_anchors[id] = true
+    end
+    return true
 
   elseif key == "object" then
     -- ★★ 2026-09-28 新增：**物件图标的显隐**。

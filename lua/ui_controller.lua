@@ -28,6 +28,10 @@ end
 
 M.DESIGN = { width = 1920, height = 1080 }
 
+-- ★ 2026-10-22（v300）家具美术数据层（分组 / 锚点 / 六层元素 / 地毯切矩形 / 房间名标签）
+--   单独一个模块，因为它是**纯数据 + 纯几何**，不该和界面状态机混在一起（见 lua/furn_art.lua 文件头）。
+local FurnArt = require("furn_art")
+
 -- ════════════════════════════════════════════════════════════════════════
 -- 坐标基准（2026-09-26 实测确认，务必先读这段再动 LAYOUT）
 --
@@ -2132,6 +2136,39 @@ function Controller:build_layout(ui_adapter)
   local L = M.LAYOUT
   local nodes = {}
 
+  -- ★★★★★★★★ 2026-10-22（v300）**家具美术：先把"分组 + 六层元素"算出来** ✗✓
+  --
+  --   为什么要在这里算（而不是在适配层逐格算）：
+  --     · 跨格家具（第一关的桌子 (1,1)+(2,1)、第二关的 (1,2)+(1,3)）必须**整件只画一次**，
+  --       而"哪几格是一件"是**棋盘层面**的信息（相邻同种 + 包围盒 + 锚点格），
+  --       只有界面层手里有完整 `vm.cells`；适配层是按格收属性的，看不到全局；
+  --     · 房间名标签要按"房间外框"摆位，同样是棋盘层面的事。
+  --   ⇒ `lua/furn_art.lua` 只做数据和几何，这里把结果按格下发（`furn` / `furn_anchor`），
+  --     并把标签节点一起 push 出去。绘图仍然只有适配层那一处实现（`_paint_obj`）。
+  local furn_art = nil
+  do
+    local keys = {}
+    for r = 1, vm.rows do
+      keys[r] = {}
+      for c = 1, vm.cols do
+        keys[r][c] = Controller.object_key_of(vm, vm.cells[r][c]) or false
+      end
+    end
+    -- 当前关卡对象（为了拿 `room_names`：关卡数据里可选填，没填就显示"区域N"）
+    local cur_lv = nil
+    do
+      local lv_list = self.opts.levels
+      local arr = {}
+      if type(lv_list) == "function" then arr = lv_list() or {}
+      elseif type(lv_list) == "table" then arr = lv_list end
+      local want = tostring(self.opts.current_level or "")
+      for i = 1, #arr do
+        if tostring(arr[i].id) == want then cur_lv = arr[i] break end
+      end
+    end
+    furn_art = FurnArt.layout(vm, keys, cur_lv and cur_lv.room_names or nil)
+  end
+
   -- ★★★★ 2026-10-01 **真机"界面空白"的最后一环：`root` 的尺寸是 0x0。**
   --
   --   真机诊断读回来：
@@ -3237,7 +3274,19 @@ function Controller:build_layout(ui_adapter)
         --     渲染循环是 `for k, v in pairs(n)` —— Lua 里 `object = nil` 等于"这个键不存在"，
         --     于是没有物件的格子**永远不会下发 object** ⇒ `obj` 白块永远不被隐藏
         --     （这正是用户报的「人物头像上有异常遮挡」，我第一次没修掉）。
-        object = Controller.object_key_of(vm, cd) or false,
+        -- ★★★★★★★★ 2026-10-22（v300）家具改走 `furn`：**每格最多 6 层元素** ✗✓
+        --
+        --   旧：`object = "obj.<kind>"` ⇒ 适配层按名字查调色板 ⇒ 一格只有**一张图**
+        --       ⇒ 家具像色块、而且跨格的那件会被画成两份。
+        --   新：`furn = { {id,color,w,h,dx,dy}, … }`（最多 6 层，见 lua/furn_art.lua）
+        --       · 单格家具：元素以本格中心为原点；
+        --       · **跨格家具**：整件元素只下发给**锚点格**（组的右下格），坐标以锚点格中心为原点，
+        --         `w/h > 1`、`dx/dy` 超过 ±0.5 是**合法**的（越过格线由锚点格整体画出来）；
+        --       · 锚点格要 `furn_anchor = true` ⇒ 适配层把它抬到所有格子之上，
+        --         否则邻格的 `face`（不透明房间色）会盖掉溢出的那半件。
+        --   ⚠️ 不再下发 `object`（老调色板路留给 things_wiring 那套离线用例，生产不再走）。
+        furn = (furn_art.cell[r] and furn_art.cell[r][c] and furn_art.cell[r][c].els) or false,
+        furn_anchor = (furn_art.cell[r] and furn_art.cell[r][c] and furn_art.cell[r][c].anchor) or false,
         -- ★ 每格四边的墙 / 门：数据来自 core 的 `view()`（{up,down,left,right} 布尔表），
         --   适配层靠模板里固定的 `wall.*` / `door.*` 子控件 SetVisible 开关来实现 ——
         --   **不需要为每种墙型做模板**。
@@ -3278,6 +3327,50 @@ function Controller:build_layout(ui_adapter)
         enabled = true,   -- 不可站人的格子也要能点（用于打 X / 提示原因）
         event = { action = "click", r = r, c = c },
       })
+    end
+  end
+
+  -- ★★★★★★★★ 2026-10-22（v300）**房间名标签**（`labels` 容器下的 `label.1..7`）✗✓
+  --
+  --   原作每个房间角落写着房间名（BEDROOM/KITCHEN…），这是"平面图感"的一半。
+  --   项目早期有一版 `room.label.*`，但挂在一个**存档里根本不存在的 `board`** 容器下 ⇒ 从来没显示过，
+  --   v269 整段删掉时留了话："以后要做房间名，另开新控件位，别复活 room.label.*"。
+  --   本版就按那句话另开：容器 `labels`（父 `root`、排在 `stage` 之后）+ 文本框 `label.1..7`。
+  --
+  --   摆位规则：按房间外框，**底边中点**、再往里收 0.38 格；
+  --   名字来自关卡数据 `room_names = { "大屋", "内室", … }`（没填就显示"区域 N"）。
+  --   ⚠️ 位置必须由脚本算（`pos_runtime = true`），否则 8 个标签会在编辑器里叠成一处。
+  --   ⚠️ 但**节点每屏都要 push**（哪怕 visible=false）—— 否则离开关卡时没人把标签关掉。
+  do
+    -- ★ 先把 `labels` 容器本身写进计划：**位置换算必须知道父级中心**
+    --   （适配层算的是 "节点中心 − 规划父级中心"；父级不在计划里就只能当 (0,0)，标签会整体偏移）。
+    --   它的 rect 和 `root` 那条一样（整画布），因为存档里那个容器是"锚点居中、画布中心"的。
+    push({ id = "labels", kind = "container", parent = "root",
+           rect = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height } })
+    local in_level = (self.screen == nil or self.screen == "level")
+    for i = 1, 7 do
+      local lb = (in_level and furn_art.labels) and furn_art.labels[i] or nil
+      local node = {
+        id = "label." .. i,
+        kind = "textbox",
+        parent = "labels",
+        pos_runtime = true,
+        visible = (lb ~= nil),
+        text = (lb ~= nil) and lb.text or "",
+      }
+      -- ⚠️ 每个节点**必须有 rect**：布局计划会对每个节点做 `to_canvas(n.rect)`
+      --   （没有 rect 就 "attempt to index a nil value" —— 本函数第一版就是这么崩的）。
+      local rx, ry, rw, rh = 0, 0, 1, 1
+      if lb ~= nil then
+        -- 落在 `furn_art` 选好的那一格中心（优先"最后一行没有家具的格"），
+        -- 这样字不会压在家具图案上（见 lua/furn_art.lua 的 pick_label_cell）。
+        local ac = lb.cell or { r = lb.box.r2, c = lb.box.c1 }
+        rw, rh = math.floor(cell * 2.2), math.floor(cell * 0.40)
+        rx = math.floor(gx + (ac.c - 1) * pitch + cell * 0.5 - rw * 0.5)
+        ry = math.floor(gy + (ac.r - 1) * pitch + cell * 0.5 - rh * 0.5)
+      end
+      node.rect = { x = rx, y = ry, w = rw, h = rh }
+      push(node)
     end
   end
 

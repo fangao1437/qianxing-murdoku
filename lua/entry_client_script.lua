@@ -191,7 +191,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v299 / 2026-10-22 / 一二关美术：家具改三层拼装（obj/obj2/obj3）+ 房间配色换暖色系 + 新增 tests/obj_layers =====")
+        print("[murdoku] ===== 构建标记 v300 / 2026-10-22 / 一二关美术二轮：家具六层拼装 + 跨格整件（锚点格溢出）+ 房间名标签 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -605,12 +605,14 @@ local function build_adapter()
         "face",
         "hint",
         "obj",
-        -- ★★★★★★★★ 2026-10-22（v299）**家具改成三层拼装** ✗✓
-        --   原作（Murdoku）的家具就是"base 剪影 + overlay 剪影 + 两个颜色"；
-        --   官方单张素材拼不出俯视扶手椅/长桌 ⇒ 模板里在 `obj` 之后补了 `obj2` / `obj3`
-        --   （见 `tools/gil/gen_obj_art.mjs`）。层序：obj < obj2 < obj3 < portrait < wall。
-        --   ⚠️ 老存档没有这两层时 `_paint_obj` / `enforce_layers` 都会自动跳过（幂等）。
-        "obj2", "obj3",
+        -- ★★★★★★★★ 2026-10-22（v300）**家具 = 六层拼装**（第二轮美术）✗✓
+        --   第一轮是三层（obj/obj2/obj3），用户打回"像色块 + 跨格家具被拆成两格"之后改成：
+        --   一件家具最多 6 个官方基础形状叠出来（深色外形=描边 → 主体 → 内面 → 木纹/靠背/扶手/书脊），
+        --   跨格家具**整件只画在锚点格**（元素允许越出格子 ±0.5 以上，由锚点格整体绘制，
+        --   该格再由 `furn_anchor` 抬到所有格子之上）。
+        --   数据在 `lua/furn_art.lua`；六层控件由存档模板给（`tools/gil/gen_art_containers.mjs`）。
+        --   ⚠️ 老存档只有 3 层时 `_paint_obj` / `enforce_layers` 都会自动跳过缺失层（幂等）。
+        "obj2", "obj3", "obj4", "obj5", "obj6",
         -- ★★★★★ 2026-10-20（v283）**新增 `portrait` 层：放置的头像画在这里** ✗✓
         --   用户原话：「现在家具图层会盖在放置的头像上，把这个问题解决」
         --   · 旧：头像走 `image` 落在 **face（最底）** ⇒ 家具 `obj` 压在上面 ✗
