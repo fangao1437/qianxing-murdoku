@@ -191,7 +191,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v309 / 2026-10-22 / 一二关美术十二轮：家具统一走桌子/地毯那套手搭层（椅子/植物/雕像改成圆角矩形+椭圆色块） =====")
+        print("[murdoku] ===== 构建标记 v310 / 2026-10-22 / 一二关美术十三轮：家具改模板化构建（7 个客户端控件模板，像 cell 一样实例化） =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -652,6 +652,22 @@ local function build_adapter()
     --     家具压住地板、但仍在墙/门/笔记/头像之下）。
     furn_prim_prefab = 1073746302,
     furn_prim_cap = 260,
+
+    -- ★★★★★★★★ 2026-10-22（v310，第十三轮）**家具模板（客户端控件模板）** ✗✓
+    --   用户：「采用模板来手搭构建，模板里放多少层都可以（一个模板引用控件只算一层），
+    --   然后像 cell 一样把模板创建出来」。
+    --   键与 `FurnArt.layout().pieces` 对齐：chair / plant / statue / shelf 单格；table 有 1/h2/v2。
+    furn_tpl_prefab = {
+      chair    = 1073746900,
+      plant    = 1073746902,
+      statue   = 1073746904,
+      table    = 1073746906,
+      table_h2 = 1073746908,
+      table_v2 = 1073746910,
+      shelf    = 1073746912,
+    },
+    furn_parent = "fart.furn",   -- 实例挂载容器（root 下，默认隐藏；关卡内由脚本打开）
+    furn_tpl_base = 108,         -- 模板层基准画布像素（1 格 = 108px）
 
     -- ★★★★★★★★ 2026-10-18 **家具/障碍物素材：直接写在脚本里，不新建控件** ✗✓✓
     --

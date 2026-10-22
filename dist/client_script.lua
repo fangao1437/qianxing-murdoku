@@ -4500,6 +4500,16 @@ M.DESIGN = { width = 1920, height = 1080 }
 --   ⚠️ 关掉这个开关会退回旧的"运行时实例化"路径（`furn_art` 分支），方便 A/B 对比。
 M.FURN_BAKED = false
 
+-- ★★★★★★★★ 2026-10-22（v310，第十三轮）**家具改"模板化手搭"** ✗✓
+--   用户：「采用模板来手搭构建，模板里放多少层都可以（一个模板引用控件只算一层），
+--   然后像 cell 一样把模板创建出来」。
+--   ⇒ 每件家具一个"客户端控件模板"（`furn.chair` / `furn.plant` / `furn.statue` /
+--     `furn.table.1` / `furn.table.h2` / `furn.table.v2` / `furn.shelf`），
+--     脚本按 `FurnArt.layout()` 给出的"哪一格是哪件"在锚点格实例化模板，尺寸 = 跨格数 × 格子尺寸。
+--   ⚠️ `M.FURN_TPL=false` 时回落 v309 的 12 层手搭（家具画进模板层）。
+--   模板 prefabIndex 由 integrator 提供后填进 `entry_client_script.lua` 的 `cfg.furn_tpl_prefab`。
+M.FURN_TPL = true
+
 -- ★★★★★★★★ 2026-10-22（v309，第十二轮）**家具统一走"桌子/地毯"那套手搭层链路** ✗✓
 --   用户：「既然已经有了图元素材，不如就把它们按桌子地毯等家具的搭建流程统一构造」。
 --   ⇒ 椅子/植物/雕像 也改成手搭层（`FurnArt.ART`，≤12 层、全轴对齐色块），
@@ -6673,6 +6683,39 @@ function Controller:build_layout(ui_adapter)
     end
     level_id = cur_lv and cur_lv.id or nil
 
+    -- ── ★ v310：模板化家具 —— "锚点格 → 模板键 / 跨格数" ──────────────────────────
+    --   模板里层数不受 12 层限制（一个模板引用控件只算一层，用户要求）。
+    local TPL_KEY = {
+      chair = "furn.chair", plant = "furn.plant", statue = "furn.statue",
+      shelf = "furn.shelf",
+      table = { ["1"] = "furn.table", h2 = "furn.table.h2", v2 = "furn.table.v2" },
+    }
+    local furn_tpl, furn_span, furn_offset = {}, {}, {}
+    for r = 1, vm.rows do
+      furn_tpl[r], furn_span[r], furn_offset[r] = {}, {}, {}
+      for c = 1, vm.cols do furn_tpl[r][c], furn_span[r][c], furn_offset[r][c] = false, false, false end
+    end
+    for _, p in ipairs(furn_art.pieces or {}) do
+      local kind = p.kind
+      if kind ~= "carpet" and p.anchor ~= nil then
+        local variant = "1"
+        if (p.span_c or 1) > 1 then variant = "h2"
+        elseif (p.span_r or 1) > 1 then variant = "v2" end
+        local tk = TPL_KEY[kind]
+        if type(tk) == "table" then tk = tk[variant] end
+        if tk ~= nil then
+          local b = p.box or { r1 = p.anchor.r, r2 = p.anchor.r, c1 = p.anchor.c, c2 = p.anchor.c }
+          furn_tpl[p.anchor.r][p.anchor.c] = tk
+          furn_span[p.anchor.r][p.anchor.c] = { r = p.span_r or 1, c = p.span_c or 1 }
+          -- 整件中心相对锚点格中心（格）：实例就放在这个偏移上
+          furn_offset[p.anchor.r][p.anchor.c] = {
+            dx = (b.c1 + b.c2) * 0.5 - p.anchor.c,
+            dy = (b.r1 + b.r2) * 0.5 - p.anchor.r,
+          }
+        end
+      end
+    end
+
     -- ── 图元拼法：把每件家具的"工具结果记录"按锚点格摆好 ────────────────────
     --   记录里的 dx/dy 是**相对整件包围盒中心**（格）；锚点格中心与整件中心差 (bcx-c, bcy-r) 格，
     --   所以逐条加上这个偏移，适配层就能"以格子中心为原点"直接画。
@@ -6739,6 +6782,10 @@ function Controller:build_layout(ui_adapter)
     -- ★★★★★★★★ 2026-10-22（v309）**只有"关卡内"才显示烘焙图元** ✗✓（问题 1 的真因）
     --   旧写法只看 `level_id` ⇒ 主页/选关/结算时**关卡 id 还在** ⇒ 容器一直显示 ✗
     --   （用户：「主页/选关/结算能看到家具图元」）⇒ 非关卡内一律下发 `false` = 两个容器都藏 ✓
+    -- ★★★★★★★★ 2026-10-22（v310）**模板化家具：当前关卡** ✗✓
+    --   适配层据此：打开 `fart.furn` 容器（关卡内）/ 关掉（关卡外），并在切关时销毁上一关的模板实例。
+    furn_level = (level_id and self.screen == nil) or false,
+    -- ★ v306–v308 的静态烘焙（`fart.case_*`）保留回退开关，默认关
     baked_level = (M.FURN_BAKED and level_id and self.screen == nil) or false,
     pos_runtime = true,
   }
@@ -7847,6 +7894,14 @@ function Controller:build_layout(ui_adapter)
         furn_anchor = (furn_art.cell[r] and furn_art.cell[r][c] and furn_art.cell[r][c].anchor) or false,
         -- 图元拼法（只下发在**锚点格**上；记录已按整件中心→锚点格中心换算过）
         furn_art = (furn_recs and furn_recs[r] and furn_recs[r][c]) or false,
+        -- ★★★★★★★★ 2026-10-22（v310，第十三轮）**模板化家具** ✗✓
+        --   用户：「采用模板来手搭构建，模板里放多少层都可以（一个模板引用控件只算一层），
+        --   然后像 cell 一样把模板创建出来」。
+        --   锚点格下发模板键（如 "furn.chair" / "furn.table.h2"）与跨格数；适配层据此
+        --   `InstantiateClientUIControl(模板源, fart.furn)` 并设尺寸/位置 ⇒ `furn` 手搭层可退掉。
+        furn_tpl = (furn_tpl and furn_tpl[r] and furn_tpl[r][c]) or false,
+        furn_span = (furn_span and furn_span[r] and furn_span[r][c]) or false,
+        furn_offset = (furn_offset and furn_offset[r] and furn_offset[r][c]) or false,
         -- ★ 每格四边的墙 / 门：数据来自 core 的 `view()`（{up,down,left,right} 布尔表），
         --   适配层靠模板里固定的 `wall.*` / `door.*` 子控件 SetVisible 开关来实现 ——
         --   **不需要为每种墙型做模板**。
@@ -17064,6 +17119,132 @@ function Adapter:_furn_prefab_id()
   return nil
 end
 
+-- ══════════════════════════════════════════════════════════════════════════
+-- ★★★★★★★★ 2026-10-22（v310）**模板化家具**：像 cell 一样实例化"客户端控件模板"
+--
+--   用户：「模板里放多少层都可以（一个模板引用控件只算一层），然后像 cell 一样把模板创建出来」。
+--   实例挂在**锚点格的 `content/furn`** 下：位置 = 整件中心相对该格中心（`furn_offset`，格），
+--   尺寸 = span×格子；模板内部层按 f = 格子/模板基准 缩放（模板不会随根自动缩放，cell 也是如此）。
+-- ══════════════════════════════════════════════════════════════════════════
+
+local function _num(v, d) local n = tonumber(v) return n or d end
+
+function Adapter:_furn_destroy(ctrl)
+  if ctrl == nil then return end
+  if game ~= nil and game.DestroyClientUIControl ~= nil then
+    pcall(game.DestroyClientUIControl, ctrl)
+  elseif ctrl.Destroy ~= nil then
+    pcall(function() ctrl:Destroy() end)
+  end
+end
+
+-- 关卡切换 / 屏幕切换：销毁上一关实例、清缓存
+function Adapter:_apply_furn_level()
+  if self._furn_inst ~= nil then
+    for _, v in pairs(self._furn_inst) do self:_furn_destroy(v) end
+  end
+  self._furn_inst = {}
+  self._furn_scaled = {}
+  local c = self:find((self.cfg and self.cfg.furn_parent) or "board")
+  local prefabs_cfg = self.cfg and self.cfg.furn_tpl_prefab
+  -- 有"模板配置"才走模板路；没有（老存档/导入未带模板）⇒ `furn` 手搭层照旧画（v309 行为）
+  self._furn_tpl_ok = (prefabs_cfg ~= nil and next(prefabs_cfg) ~= nil)
+  if print then
+    print("[murdoku] 模板化家具：关卡=" .. tostring(self._furn_level) .. "（实例缓存已清）")
+  end
+  return true
+end
+
+-- 取（或造）某格家具模板实例，并按 span/offset 摆好；同格同模板只造一次
+function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
+  if cell_id == nil or type(name) ~= "string" then return false end
+  local cfg = self.cfg or {}
+  local prefabs = cfg.furn_tpl_prefab or {}
+  local prefab = prefabs[name]
+  if prefab == nil then
+    -- 模板索引还没配（存档没这 7 个模板）⇒ 回落 `furn` 手搭层（v309 行为）
+    self._furn_tpl_ok = false
+    return false
+  end
+  local cw, ch = self:_cell_size_of(ctrl, cell_id)
+  if cw == nil then return false end          -- 格子还没就绪，下一帧再来
+
+  self._furn_inst = self._furn_inst or {}
+  local inst = self._furn_inst[cell_id]
+  if inst == nil then
+    local parent = self:sub(cell_id, "furn") or self:sub(cell_id, "content") or ctrl
+    local ok, obj = pcall(game.InstantiateClientUIControl, prefab, parent)
+    if not ok or obj == nil then
+      self._furn_tpl_ok = false
+      self:warn_once("furn:tpl", "家具模板实例化失败（" .. tostring(name) .. " / " .. tostring(prefab)
+        .. " 返回 nil）⇒ 回落 `furn` 手搭层。")
+      return false
+    end
+    pcall(function() obj.name = "furni." .. cell_id end)
+    inst = obj
+    self._furn_inst[cell_id] = inst
+    self.instantiated = self.instantiated or {}
+    self.instantiated["furni." .. cell_id] = true
+    -- 模板层按"基准 px"写死 ⇒ 首次实例化后按 f 缩放一遍子层
+    self:_furn_scale_layers(inst, cw)
+  end
+
+  local span = (self._furn_span and self._furn_span[cell_id]) or { r = 1, c = 1 }
+  local off = (self._furn_off and self._furn_off[cell_id]) or { dx = 0, dy = 0 }
+  pcall(function()
+    if inst.SetAnchorMin then inst:SetAnchorMin(0.5, 0.5) end
+    if inst.SetAnchorMax then inst:SetAnchorMax(0.5, 0.5) end
+    if inst.SetPivot then inst:SetPivot(0.5, 0.5) end
+    if inst.SetSizeDelta then
+      inst:SetSizeDelta(cw * _num(span.c, 1), ch * _num(span.r, 1))
+    end
+    if inst.SetAnchoredPosition then
+      inst:SetAnchoredPosition(_num(off.dx, 0) * cw, -(_num(off.dy, 0) * ch))
+    end
+    if inst.SetVisible then inst:SetVisible(self._furn_level ~= false) end
+    if inst.SetActive then inst:SetActive(self._furn_level ~= false) end
+  end)
+  return true
+end
+
+-- 模板实例里的层按 f = 格子宽 / 模板基准 缩放一次（记下基值，重复调用不漂移）
+function Adapter:_furn_scale_layers(inst, cw)
+  local base = (self.cfg and self.cfg.furn_tpl_base) or 108
+  local f = cw / base
+  if f == nil or f <= 0 then return end
+  local kids = nil
+  if inst.GetChildren ~= nil then pcall(function() kids = inst:GetChildren() end) end
+  if type(kids) ~= "table" then return end
+  self._furn_base_vals = self._furn_base_vals or setmetatable({}, { __mode = "k" })
+  for i = 1, #kids do
+    local ch = kids[i]
+    if ch ~= nil then
+      local w0, h0 = nil, nil
+      if ch.GetSizeDelta ~= nil then pcall(function() local a, b = ch:GetSizeDelta() w0, h0 = a, b end) end
+      local dx0, dy0 = nil, nil
+      if ch.GetAnchoredPosition ~= nil then
+        pcall(function() local a, b = ch:GetAnchoredPosition() dx0, dy0 = a, b end)
+      end
+      local key = tostring(i)
+      local memo = self._furn_base_vals[inst]
+      if memo == nil then memo = {} self._furn_base_vals[inst] = memo end
+      if memo[key] == nil and w0 ~= nil and h0 ~= nil then
+        memo[key] = { w = w0, h = h0, dx = dx0 or 0, dy = dy0 or 0, f = 1 }
+      end
+      local b = memo[key]
+      if b ~= nil then
+        if math.abs((b.f or 1) - f) > 0.001 then
+          pcall(function()
+            if ch.SetSizeDelta then ch:SetSizeDelta(b.w * f, b.h * f) end
+            if ch.SetAnchoredPosition then ch:SetAnchoredPosition(b.dx * f, b.dy * f) end
+          end)
+          b.f = f
+        end
+      end
+    end
+  end
+end
+
 function Adapter:_paint_furn_art(cell_id, ctrl, want, force)
   if cell_id == nil then return false end
   local state = self._furn_art_state
@@ -17394,6 +17575,45 @@ function Adapter:set_property(id, key, value, nkey)
     self._baked_level = value or false
     return self:_apply_baked(true)
 
+  -- ★★★★★★★★ 2026-10-22（v310，第十三轮）**模板化家具** ✗✓
+  --
+  --   用户：「采用模板来手搭构建，模板里放多少层都可以（一个模板引用控件只算一层），
+  --   然后像 cell 一样把模板创建出来」。
+  --   ⇒ 每件家具一个客户端控件模板（`furn.chair` / `furn.table.h2` …），
+  --     锚点格下发 `furn_tpl`（模板键）+ `furn_span`（跨几格），这里：
+  --       ① `InstantiateClientUIControl(cfg.furn_tpl_prefab[key], cfg.furn_parent 容器)`
+  --       ② 尺寸 = span × 格子；位置 = 整件中心（相对容器中心，Y 向上）
+  --       ③ 模板里的层按 f = 格子尺寸 / cfg.furn_tpl_base 缩放（模板不随根自动缩放）
+  --       ④ 按行号排 SiblingIndex（下排压上排）；同格同模板缓存复用
+  --   `furn_level`（root 下发）负责开关 `fart.furn` 容器 + 切关销毁旧实例。
+  elseif key == "furn_level" then
+    self._furn_level = value or false
+    return self:_apply_furn_level()
+
+  elseif key == "furn_tpl" then
+    self._furn_want = self._furn_want or {}
+    self._furn_want[id] = type(value) == "string" and value or false
+    if self._furn_tpl_ok then
+      return self:_spawn_furn_tpl(id, ctrl, value)
+    end
+    return false
+
+  elseif key == "furn_span" then
+    self._furn_span = self._furn_span or {}
+    self._furn_span[id] = (type(value) == "table") and value or false
+    if self._furn_tpl_ok and self._furn_want and self._furn_want[id] then
+      return self:_spawn_furn_tpl(id, ctrl, self._furn_want[id])
+    end
+    return false
+
+  elseif key == "furn_offset" then
+    self._furn_off = self._furn_off or {}
+    self._furn_off[id] = (type(value) == "table") and value or false
+    if self._furn_tpl_ok and self._furn_want and self._furn_want[id] then
+      return self:_spawn_furn_tpl(id, ctrl, self._furn_want[id])
+    end
+    return false
+
   -- ★★★★★★★★ 2026-10-22（v302，第四轮）**家具 = 外部工具算出的图元拼法** ✗✓
   --
   --   用户原话：「桌子椅子植物依然没有达到参考效果，仓库里有一个能兼容千星的外部图片网站，
@@ -17410,6 +17630,8 @@ function Adapter:set_property(id, key, value, nkey)
     return self:_paint_furn_art(id, ctrl, value, true)
 
   elseif key == "furn" then
+    -- ★ v310：模板模式生效时不再画手搭层（家具由模板实例负责）；模板不可用时自动回落
+    if self._furn_tpl_ok then return true end
     local layers = {}
     if type(value) == "table" then
       for i = 1, math.min(#value, #OBJ_LAYER_SUBS) do
@@ -23170,7 +23392,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v309 / 2026-10-22 / 一二关美术十二轮：家具统一走桌子/地毯那套手搭层（椅子/植物/雕像改成圆角矩形+椭圆色块） =====")
+        print("[murdoku] ===== 构建标记 v310 / 2026-10-22 / 一二关美术十三轮：家具改模板化构建（7 个客户端控件模板，像 cell 一样实例化） =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -23631,6 +23853,22 @@ local function build_adapter()
     --     家具压住地板、但仍在墙/门/笔记/头像之下）。
     furn_prim_prefab = 1073746302,
     furn_prim_cap = 260,
+
+    -- ★★★★★★★★ 2026-10-22（v310，第十三轮）**家具模板（客户端控件模板）** ✗✓
+    --   用户：「采用模板来手搭构建，模板里放多少层都可以（一个模板引用控件只算一层），
+    --   然后像 cell 一样把模板创建出来」。
+    --   键与 `FurnArt.layout().pieces` 对齐：chair / plant / statue / shelf 单格；table 有 1/h2/v2。
+    furn_tpl_prefab = {
+      chair    = 1073746900,
+      plant    = 1073746902,
+      statue   = 1073746904,
+      table    = 1073746906,
+      table_h2 = 1073746908,
+      table_v2 = 1073746910,
+      shelf    = 1073746912,
+    },
+    furn_parent = "fart.furn",   -- 实例挂载容器（root 下，默认隐藏；关卡内由脚本打开）
+    furn_tpl_base = 108,         -- 模板层基准画布像素（1 格 = 108px）
 
     -- ★★★★★★★★ 2026-10-18 **家具/障碍物素材：直接写在脚本里，不新建控件** ✗✓✓
     --

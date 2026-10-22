@@ -38,6 +38,16 @@ M.DESIGN = { width = 1920, height = 1080 }
 --   ⚠️ 关掉这个开关会退回旧的"运行时实例化"路径（`furn_art` 分支），方便 A/B 对比。
 M.FURN_BAKED = false
 
+-- ★★★★★★★★ 2026-10-22（v310，第十三轮）**家具改"模板化手搭"** ✗✓
+--   用户：「采用模板来手搭构建，模板里放多少层都可以（一个模板引用控件只算一层），
+--   然后像 cell 一样把模板创建出来」。
+--   ⇒ 每件家具一个"客户端控件模板"（`furn.chair` / `furn.plant` / `furn.statue` /
+--     `furn.table.1` / `furn.table.h2` / `furn.table.v2` / `furn.shelf`），
+--     脚本按 `FurnArt.layout()` 给出的"哪一格是哪件"在锚点格实例化模板，尺寸 = 跨格数 × 格子尺寸。
+--   ⚠️ `M.FURN_TPL=false` 时回落 v309 的 12 层手搭（家具画进模板层）。
+--   模板 prefabIndex 由 integrator 提供后填进 `entry_client_script.lua` 的 `cfg.furn_tpl_prefab`。
+M.FURN_TPL = true
+
 -- ★★★★★★★★ 2026-10-22（v309，第十二轮）**家具统一走"桌子/地毯"那套手搭层链路** ✗✓
 --   用户：「既然已经有了图元素材，不如就把它们按桌子地毯等家具的搭建流程统一构造」。
 --   ⇒ 椅子/植物/雕像 也改成手搭层（`FurnArt.ART`，≤12 层、全轴对齐色块），
@@ -2211,6 +2221,39 @@ function Controller:build_layout(ui_adapter)
     end
     level_id = cur_lv and cur_lv.id or nil
 
+    -- ── ★ v310：模板化家具 —— "锚点格 → 模板键 / 跨格数" ──────────────────────────
+    --   模板里层数不受 12 层限制（一个模板引用控件只算一层，用户要求）。
+    local TPL_KEY = {
+      chair = "furn.chair", plant = "furn.plant", statue = "furn.statue",
+      shelf = "furn.shelf",
+      table = { ["1"] = "furn.table", h2 = "furn.table.h2", v2 = "furn.table.v2" },
+    }
+    local furn_tpl, furn_span, furn_offset = {}, {}, {}
+    for r = 1, vm.rows do
+      furn_tpl[r], furn_span[r], furn_offset[r] = {}, {}, {}
+      for c = 1, vm.cols do furn_tpl[r][c], furn_span[r][c], furn_offset[r][c] = false, false, false end
+    end
+    for _, p in ipairs(furn_art.pieces or {}) do
+      local kind = p.kind
+      if kind ~= "carpet" and p.anchor ~= nil then
+        local variant = "1"
+        if (p.span_c or 1) > 1 then variant = "h2"
+        elseif (p.span_r or 1) > 1 then variant = "v2" end
+        local tk = TPL_KEY[kind]
+        if type(tk) == "table" then tk = tk[variant] end
+        if tk ~= nil then
+          local b = p.box or { r1 = p.anchor.r, r2 = p.anchor.r, c1 = p.anchor.c, c2 = p.anchor.c }
+          furn_tpl[p.anchor.r][p.anchor.c] = tk
+          furn_span[p.anchor.r][p.anchor.c] = { r = p.span_r or 1, c = p.span_c or 1 }
+          -- 整件中心相对锚点格中心（格）：实例就放在这个偏移上
+          furn_offset[p.anchor.r][p.anchor.c] = {
+            dx = (b.c1 + b.c2) * 0.5 - p.anchor.c,
+            dy = (b.r1 + b.r2) * 0.5 - p.anchor.r,
+          }
+        end
+      end
+    end
+
     -- ── 图元拼法：把每件家具的"工具结果记录"按锚点格摆好 ────────────────────
     --   记录里的 dx/dy 是**相对整件包围盒中心**（格）；锚点格中心与整件中心差 (bcx-c, bcy-r) 格，
     --   所以逐条加上这个偏移，适配层就能"以格子中心为原点"直接画。
@@ -2277,6 +2320,10 @@ function Controller:build_layout(ui_adapter)
     -- ★★★★★★★★ 2026-10-22（v309）**只有"关卡内"才显示烘焙图元** ✗✓（问题 1 的真因）
     --   旧写法只看 `level_id` ⇒ 主页/选关/结算时**关卡 id 还在** ⇒ 容器一直显示 ✗
     --   （用户：「主页/选关/结算能看到家具图元」）⇒ 非关卡内一律下发 `false` = 两个容器都藏 ✓
+    -- ★★★★★★★★ 2026-10-22（v310）**模板化家具：当前关卡** ✗✓
+    --   适配层据此：打开 `fart.furn` 容器（关卡内）/ 关掉（关卡外），并在切关时销毁上一关的模板实例。
+    furn_level = (level_id and self.screen == nil) or false,
+    -- ★ v306–v308 的静态烘焙（`fart.case_*`）保留回退开关，默认关
     baked_level = (M.FURN_BAKED and level_id and self.screen == nil) or false,
     pos_runtime = true,
   }
@@ -3385,6 +3432,14 @@ function Controller:build_layout(ui_adapter)
         furn_anchor = (furn_art.cell[r] and furn_art.cell[r][c] and furn_art.cell[r][c].anchor) or false,
         -- 图元拼法（只下发在**锚点格**上；记录已按整件中心→锚点格中心换算过）
         furn_art = (furn_recs and furn_recs[r] and furn_recs[r][c]) or false,
+        -- ★★★★★★★★ 2026-10-22（v310，第十三轮）**模板化家具** ✗✓
+        --   用户：「采用模板来手搭构建，模板里放多少层都可以（一个模板引用控件只算一层），
+        --   然后像 cell 一样把模板创建出来」。
+        --   锚点格下发模板键（如 "furn.chair" / "furn.table.h2"）与跨格数；适配层据此
+        --   `InstantiateClientUIControl(模板源, fart.furn)` 并设尺寸/位置 ⇒ `furn` 手搭层可退掉。
+        furn_tpl = (furn_tpl and furn_tpl[r] and furn_tpl[r][c]) or false,
+        furn_span = (furn_span and furn_span[r] and furn_span[r][c]) or false,
+        furn_offset = (furn_offset and furn_offset[r] and furn_offset[r][c]) or false,
         -- ★ 每格四边的墙 / 门：数据来自 core 的 `view()`（{up,down,left,right} 布尔表），
         --   适配层靠模板里固定的 `wall.*` / `door.*` 子控件 SetVisible 开关来实现 ——
         --   **不需要为每种墙型做模板**。
