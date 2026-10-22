@@ -98,6 +98,8 @@ local modules = {
   { name = "tutorial_ui",              path = "lua/tutorial_ui.lua" },
   -- ★ 2026-10-21（v286）：教程控件的**运行期自检**（只读：缺失 / 重名 / 父错 / 尺寸 0 / 该显示却没显示）
   { name = "tut_verify",               path = "lua/tut_verify.lua" },
+  -- ★ 2026-10-22（v311）：**模板探针**（只读实验：模板嵌套 / 运行时改引用；结果只在日志）
+  { name = "tpl_probe",                path = "lua/tpl_probe.lua" },
   { name = "levels.init",              path = "lua/levels/init.lua" },
 }
 

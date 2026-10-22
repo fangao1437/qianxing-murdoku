@@ -191,7 +191,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v310 / 2026-10-22 / 一二关美术十三轮：家具改模板化构建（7 个客户端控件模板，像 cell 一样实例化） =====")
+        print("[murdoku] ===== 构建标记 v311 / 2026-10-22 / 模板探针：验证模板嵌套 + 运行时改引用（v311） =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -667,7 +667,17 @@ local function build_adapter()
       shelf    = 1073746912,
     },
     furn_parent = "fart.furn",   -- 实例挂载容器（root 下，默认隐藏；关卡内由脚本打开）
-    furn_tpl_base = 108,         -- 模板层基准画布像素（1 格 = 108px）
+    furn_tpl_base = 108,
+
+    -- ★ 2026-10-22（v311）**模板探针**：只回答两个问题，结果全在日志（前缀 `[tplprobe]`）
+    --   ① 模板里的模板引用控件（第二层）能不能正常展开；
+    --   ② 客户端脚本能不能在运行时改引用控件引用的模板。
+    --   测试存档里把 tpl_probe 改 true；GUID 由 integrator 的 516 存档给出后填。
+    tpl_probe = false,
+    tpl_probe_ref_name = "furn",      -- 要摸的模板引用控件名（cell.1.1/content/furn）
+    tpl_probe_plant_src = 1073747081,   -- furn.plant 的**源** GUID（integrator 516 实测：引用值指向源）
+    tpl_probe_nest_src = 1073747096,    -- furn.nest 的源 GUID
+    tpl_probe_parent = "board",         -- 模板层基准画布像素（1 格 = 108px）
 
     -- ★★★★★★★★ 2026-10-18 **家具/障碍物素材：直接写在脚本里，不新建控件** ✗✓✓
     --
@@ -1249,6 +1259,8 @@ local function tick_tutorial()
   end
 end
 
+local TPL_PROBE_DONE = false   -- v311 模板探针只跑一次
+
 function OnInit()
   -- ① 逐帧更新开关（OnUpdate 全靠它）—— 内部已 pcall
   pcall(enable_update)
@@ -1323,6 +1335,24 @@ function OnEnable() end
 function OnDisable() end
 
 function OnUpdate(dt)
+  -- ★ 2026-10-22（v311）**模板探针**：等格子实例建出来之后跑一次（OnInit 时格子还没建）。
+  --   结果只在日志（前缀 `[tplprobe]`）；`cfg.tpl_probe = false` 可关。
+  if cfg.tpl_probe and not TPL_PROBE_DONE and adapter ~= nil then
+    local cell = nil
+    pcall(function() cell = adapter:find("cell.1.1") end)
+    if cell ~= nil then
+      TPL_PROBE_DONE = true
+      pcall(function()
+        local okp, probe = pcall(require, "tpl_probe")
+        if okp and probe ~= nil and probe.run ~= nil then
+          pcall(probe.run, cfg)
+        elseif print then
+          print("[tplprobe] 载入失败：" .. tostring(probe))
+        end
+      end)
+    end
+  end
+
   if LOAD_ERR ~= nil or Murdoku == nil then return end
   -- ★ v284：教程浮层的懒初始化 / 首次弹出（内部全程 pcall，失败只影响教程）
   pcall(tick_tutorial)
