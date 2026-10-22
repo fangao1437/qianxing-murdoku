@@ -606,11 +606,14 @@ function main() {
   console.log('  输入 ' + basenameOf(inAbs) + '（' + g.src.length + ' 字节，记录 ' + g.recs.length + ' 条，maxId=' + g.maxId + '）');
   console.log('  输出 ' + basenameOf(outAbs) + '（' + (DRY ? '--dry 只预测不写' : '写') + '）');
   // 记录预算：以"还差多少条"算（幂等复跑时输入里已有这批控件 ⇒ projected = 现有条数）
+  const existingContainers = g.recs.filter((r) => /^fart\.case_\d+$/.test(r.name || '')).length;
   const existingFart = g.recs.filter((r) => (r.name || '').startsWith(FART_PREFIX)).length;
-  const missing = Math.max(0, (data.levels.length + data.total) - existingFart);
+  const missingContainers = Math.max(0, data.levels.length - existingContainers);
+  const missingControls = Math.max(0, data.total - (existingFart - existingContainers));
+  const missing = missingContainers + missingControls;
   const projected = g.recs.length + missing;
-  console.log('  · 记录预算：' + g.recs.length + ' + ' + missing + '（还需补 2 容器 + '
-    + Math.max(0, data.total - (existingFart - data.levels.length)) + ' 控件）= '
+  console.log('  · 记录预算：' + g.recs.length + ' + ' + missing + '（还需补 ' + missingContainers + ' 容器 + '
+    + missingControls + ' 控件）= '
     + projected + (projected < 1000 ? '（< 1000 ✓）' : '（≥ 1000 ✗ 需回报 lead 降 N_PER_PIECE）'));
   if (projected >= 1000) fatal('控件数 ' + projected + ' ≥ 1000，按 lead 要求停下报数，不写文件', 2);
 

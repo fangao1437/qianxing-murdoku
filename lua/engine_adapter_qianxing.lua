@@ -4451,8 +4451,28 @@ function Adapter:set_property(id, key, value, nkey)
     for i = 1, #levels do
       local lv = levels[i]
       local box = self:find("fart." .. lv)
-      if box ~= nil and box.SetVisible ~= nil then
-        pcall(function() box:SetVisible(value == lv) end)
+      if box ~= nil then
+        local show = (value == lv)
+        if box.SetVisible ~= nil then
+          pcall(function() box:SetVisible(show) end)
+        end
+        if not show and box.SetActive ~= nil then
+          pcall(function() box:SetActive(false) end)
+        elseif show and box.SetActive ~= nil then
+          pcall(function() box:SetActive(true) end)
+        end
+        -- ★ v307：真机上"父容器隐藏"不一定级联到子控件（用户实测：关卡外还能看到图元）
+        --   ⇒ 这里**逐个子控件**也设一遍 visible（455 个，只在切屏时跑一遍，可接受）。
+        local kids = nil
+        if box.GetChildren ~= nil then pcall(function() kids = box:GetChildren() end) end
+        if type(kids) == "table" then
+          for k = 1, #kids do
+            local ch = kids[k]
+            if ch ~= nil and ch.SetVisible ~= nil then
+              pcall(function() ch:SetVisible(show) end)
+            end
+          end
+        end
       end
     end
     return true

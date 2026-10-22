@@ -2193,6 +2193,15 @@ function Controller:build_layout(ui_adapter)
       end
     end
     furn_art = FurnArt.layout(vm, keys, cur_lv and cur_lv.room_names or nil)
+    -- ★ v307：把"每格是什么件"一起带出来（烘焙模式要按件决定关不关旧图层）
+    furn_art.kind_of = {}
+    for r = 1, vm.rows do
+      furn_art.kind_of[r] = {}
+      for c = 1, vm.cols do
+        local k = keys[r] and keys[r][c]
+        furn_art.kind_of[r][c] = k and (k:match("^obj%.(.+)$") or k) or nil
+      end
+    end
     level_id = cur_lv and cur_lv.id or nil
 
     -- ── 图元拼法：把每件家具的"工具结果记录"按锚点格摆好 ────────────────────
@@ -3352,7 +3361,17 @@ function Controller:build_layout(ui_adapter)
         --   用户指定路线：「用外部图片网站把参考拼出来，再按结果文件拆解出正确拼法导入存档」
         --   ⇒ 现在 `furn` 只留给**地毯**（平面图形，3 层矩形，可站人）；
         --      其余家具走 `furn_art`：每件 148~200 条图元（工具结果），由适配层**运行时实例化**图片控件。
-        furn = (furn_art.cell[r] and furn_art.cell[r][c] and furn_art.cell[r][c].els) or false,
+        -- ★ v307：烘焙模式下**旧家具图层要关掉**（否则两代产物叠在一起：旧椅子压在静态烘焙的椅子下面）。
+        --   只保留"本来就是手搭这一代"的三类：桌子 / 书架 / 地毯。
+        furn = (function()
+          local info = furn_art.cell[r] and furn_art.cell[r][c]
+          if info == nil or info.els == nil then return false end
+          if M.FURN_BAKED then
+            local k = furn_art.kind_of and furn_art.kind_of[r] and furn_art.kind_of[r][c]
+            if k ~= "table" and k ~= "shelf" and k ~= "carpet" then return false end
+          end
+          return info.els
+        end)(),
         furn_anchor = (furn_art.cell[r] and furn_art.cell[r][c] and furn_art.cell[r][c].anchor) or false,
         -- 图元拼法（只下发在**锚点格**上；记录已按整件中心→锚点格中心换算过）
         furn_art = (furn_recs and furn_recs[r] and furn_recs[r][c]) or false,
