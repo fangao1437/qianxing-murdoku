@@ -4437,32 +4437,48 @@ function Adapter:set_property(id, key, value, nkey)
   --                  跨格家具由界面层把整件的元素**只下发给锚点格**（坐标会超出 ±0.5，合法），
   --                  再由 `furn_anchor` 把这个格子抬到所有格子之上。
   --   绘图仍然只有一处实现（`_paint_obj`），与 `object` 完全同一条流水线（含 hide_kids 重放）。
-  -- ★★★★★★★★ 2026-10-22（v306，第八轮）**静态烘焙的图元家具：只切容器显隐** ✗✓
+  -- ★★★★★★★★ 2026-10-22（v306/v308）**静态烘焙的图元家具：只切容器显隐** ✗✓
   --
-  --   用户判断（真机验证后）：「网站导出的内容能实机显示，因为它把图元写成存档里的静态控件；
+  --   用户判断：「网站导出的内容能实机显示，因为它把图元写成存档里的静态控件；
   --   官方必然提供了和图元等价的素材（= 基础形状 100001/100002/100003），找到它们就能绕开这层」。
-  --   ⇒ 图元由 integrator 直接烘成存档里的静态图片控件：`root/fart.case_001`、`root/fart.case_002`，
-  --     默认 `visible=false`；本分支只按"当前关卡"打开其中一个、关掉另一个。
-  --   value = 关卡 id（如 "case_001"）；false = 两个都关。
-  --   ⚠️ 这条路径**完全不调用** `InstantiateClientUIControl`，也不碰格子模板层数。
+  --   ⇒ 图元由 integrator 烘成存档里的静态图片控件：`root/fart.case_001`、`root/fart.case_002`。
+  --
+  --   ⚠️ v308 的两处加固（真机教训）：
+  --     · 存档里子控件默认 `visible=false`（新烘焙）——脚本没跑对时**不会外泄**；
+  --     · 真机上"父容器隐藏"**不保证级联**到子控件 ⇒ 这里**逐个子控件**设一遍 visible；
+  --     · 加设备日志：把"找没找到容器 / 切了几个子控件"打出来，下次真机一眼定位。
   elseif key == "baked_level" then
     self._baked_level = value or false
     local levels = (self.cfg and self.cfg.baked_levels) or { "case_001", "case_002" }
+    local root = self:find("root")
     for i = 1, #levels do
       local lv = levels[i]
       local box = self:find("fart." .. lv)
+      if box == nil and root ~= nil and root.GetChildren ~= nil then
+        -- 整名找不到 ⇒ 遍历 root 子控件按前缀匹配（防名字被引擎加后缀/大小写差异）
+        local kids = nil
+        pcall(function() kids = root:GetChildren() end)
+        if type(kids) == "table" then
+          for k = 1, #kids do
+            local ch = kids[k]
+            local nm = nil
+            if ch ~= nil and ch.GetName ~= nil then pcall(function() nm = ch:GetName() end) end
+            if type(nm) == "string" and nm:find("fart", 1, true) and nm:find(lv, 1, true) then
+              box = ch
+              break
+            end
+          end
+        end
+      end
+      local show = (value == lv)
+      local touched = 0
       if box ~= nil then
-        local show = (value == lv)
-        if box.SetVisible ~= nil then
-          pcall(function() box:SetVisible(show) end)
+        if box.SetVisible ~= nil then pcall(function() box:SetVisible(show) end) end
+        if show then
+          if box.SetActive ~= nil then pcall(function() box:SetActive(true) end) end
+        else
+          if box.SetActive ~= nil then pcall(function() box:SetActive(false) end) end
         end
-        if not show and box.SetActive ~= nil then
-          pcall(function() box:SetActive(false) end)
-        elseif show and box.SetActive ~= nil then
-          pcall(function() box:SetActive(true) end)
-        end
-        -- ★ v307：真机上"父容器隐藏"不一定级联到子控件（用户实测：关卡外还能看到图元）
-        --   ⇒ 这里**逐个子控件**也设一遍 visible（455 个，只在切屏时跑一遍，可接受）。
         local kids = nil
         if box.GetChildren ~= nil then pcall(function() kids = box:GetChildren() end) end
         if type(kids) == "table" then
@@ -4470,9 +4486,18 @@ function Adapter:set_property(id, key, value, nkey)
             local ch = kids[k]
             if ch ~= nil and ch.SetVisible ~= nil then
               pcall(function() ch:SetVisible(show) end)
+              touched = touched + 1
             end
           end
         end
+      end
+      -- 只在状态真的变了才打日志（避免每帧刷屏）
+      local prev = self._baked_logged and self._baked_logged[lv]
+      if prev ~= show then
+        if self._baked_logged == nil then self._baked_logged = {} end
+        self._baked_logged[lv] = show
+        print(string.format("[murdoku] 烘焙容器 %s：找到=%s 目标=%s 子控件=%d",
+          lv, tostring(box ~= nil), show and "显示" or "隐藏", touched))
       end
     end
     return true

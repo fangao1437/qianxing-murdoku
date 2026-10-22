@@ -17,7 +17,8 @@
 //   本工具做：两份容器 `fart.case_001` / `fart.case_002`（root 下、labels 之后 home 之前，
 //   1600×900 @(0,0)、锚点/中心 0.5、**visible=false**、无遮罩）+ 455 条静态图片控件
 //   （`fart.<level>.<i>`，i 从 1 连续；imageId/imageColor 照数据；imageType=Stretch；
-//     w×h 像素尺寸；中心 = 画布坐标换算；**visible=true**；旋转写状态块 `#508`）。
+//     w×h 像素尺寸；中心 = 画布坐标换算；**visible 由 `--child-visible` 定**
+//     （默认 true = v4/v5；v6 起传 false：真机确认"父容器隐藏不级联"⇒ 子控件默认全关，脚本逐个打开）；旋转写状态块 `#508`）。
 //
 // ── 坐标换算（本轮最关键的一步，已在回执里写清）────────────────────────────────
 //   数据 x,y 是「画布 1600×900、左上原点、Y 向下」的**中心点**（与 `_work/art-preview/render_board.py`
@@ -77,6 +78,9 @@ const GUID_BASE = Number(argOf('guid-base', '1073746400'));
 const CONTAINER_POS = argOf('container-pos', 'zero');
 // 旋转符号：数据 rot 与引擎 `#508/#3` 的 z 度同号（拟合工具口径：逆时针为正）。真机若方向相反，`--rot-sign=-1` 一键翻转。
 const ROT_SIGN = Number(argOf('rot-sign', '1')) === -1 ? -1 : 1;
+// 子控件默认可见性：true（v4/v5 口径）| false（v6：真机确认"父容器隐藏不级联" ⇒ 默认全关，脚本逐个子控件打开）。
+// 默认 true 以保持 507/509 可复现；v6 出包时传 --child-visible=false。
+const CHILD_VISIBLE = String(argOf('child-visible', 'true')).toLowerCase() !== 'false';
 
 const ID_LO_NUM = Number(ID_LO), ID_HI_NUM = Number(ID_HI);
 const CANVAS_W = 1600, CANVAS_H = 900;
@@ -437,8 +441,8 @@ function buildControls(g, alloc, data, containerIds, containerFields) {
       setImgLeaf(img.node, 504, IMG_TYPE_STRETCH);
       const rot = Number(c.rot || 0) * ROT_SIGN;
       applyRotation(clone, rot);
-      // 子控件 visible=true（容器隐藏即可）
-      setHiddenRec(clone, false);
+      // 子控件默认可见性：--child-visible=true（默认，v4/v5）| false（v6：默认全关，脚本逐个子控件打开）
+      setHiddenRec(clone, !CHILD_VISIBLE);
       g.recHolder.push(clone);
       ids.push(nid);
       re.added.push({ name, id: nid, parent: cid, level: lv.name, idx: n });
@@ -491,7 +495,9 @@ function assertControls(g2, re) {
       const rots = readRotZ(r.field);
       const wantRot = Math.round(Number(c.rot || 0) * 1000) / 1000;
       for (const rz of rots) if (Math.abs(rz - wantRot) > 0.02) bad.push(name + ' rotation=' + rz + '（预期 ' + wantRot + '）');
-      if (isHiddenRec(r.field)) bad.push(name + ' 可见性=隐藏（子控件要求 visible=true）');
+      if (CHILD_VISIBLE ? isHiddenRec(r.field) : !isHiddenRec(r.field)) {
+        bad.push(name + ' 可见性=' + (isHiddenRec(r.field) ? '隐藏' : '可见') + '（本轮要求 visible=' + CHILD_VISIBLE + '）');
+      }
     }
   }
   if (g2.recs.length !== re.expectedRecs) bad.push('记录数 ' + g2.recs.length + '（预期 ' + re.expectedRecs + '）');
@@ -500,8 +506,8 @@ function assertControls(g2, re) {
   const need = Object.values(PROTECTED);
   for (const nm of need) if (!g2.recs.some((r) => r.name === nm)) bad.push('旧路径 ' + nm + ' 不见了（要求保留作回退）');
   if (bad.length) return '✗ 控件断言失败：\n  ' + bad.join('\n  ');
-  console.log('  ✅ 控件断言：' + checked + ' 条静态图片控件全部回读一致（imageId/色/Stretch/位置/尺寸/旋转/visible=true；'
-    + '容器子列表顺序 = 数据顺序；content/furn 与 tpl.prim 保留）');
+  console.log('  ✅ 控件断言：' + checked + ' 条静态图片控件全部回读一致（imageId/色/Stretch/位置/尺寸/旋转/visible='
+    + CHILD_VISIBLE + '；容器子列表顺序 = 数据顺序；content/furn 与 tpl.prim 保留）');
   return true;
 }
 
@@ -600,6 +606,8 @@ function main() {
   const inAbs = P(IN), outAbs = P(OUT);
   if (!fs.existsSync(inAbs)) fatal('找不到输入存档：' + inAbs, 1);
   console.log('══ gen_bake_art —— 图元家具静态烘焙（fart.case_001 / fart.case_002 + 静态图片控件）══');
+  console.log('  · 子控件默认可见性：' + CHILD_VISIBLE + '（容器始终 visible=false；'
+    + (CHILD_VISIBLE ? 'v4/v5 口径' : 'v6 口径：默认全关，脚本逐个子控件打开') + '）');
   const data = loadBakeData();
   const budget = 500 + data.total;   // 仅用于打印（真实以基线为准）
   const g = readGil(inAbs);
