@@ -150,18 +150,19 @@ F.ART = {
     },
   },
 
-  -- ── 椅子（照原作 8 部件：主体 / 靠背内区 / 靠背顶带 / 坐垫 / 前缘 / 两扶手 + 棕金轮廓）──
+  -- ── 椅子（v309：与桌子/地毯同一套手搭流程；**圆角矩形 + 椭圆**大色块，9 层）──
+  --   原作：方中带圆的高背扶手椅；尺寸：长边 0.836 格 / 宽 0.69 格。
   chair = {
     ["1"] = {
-      { id = IMG.soft,   color = C.shadow,   w = 0.92, h = 0.92, dy =  0.10 },   -- ① 投影
-      { id = IMG.rect,   color = C.chair_ln, w = 0.90, h = 0.92, dy =  0.02 },   -- ② 棕金轮廓（原作 overlay 线画的近似）
-      { id = IMG.rect,   color = C.chair,    w = 0.82, h = 0.84, dy =  0.02 },   -- ③ 主体剪影
-      { id = IMG.rect,   color = C.chair_dk, w = 0.58, h = 0.26, dy = -0.24 },   -- ④ 靠背内区
-      { id = IMG.rect,   color = C.chair_ov, w = 0.64, h = 0.14, dy = -0.32 },   -- ⑤ 靠背顶带（overlay 色）
-      { id = IMG.rect,   color = C.chair,    w = 0.48, h = 0.30, dy =  0.10 },   -- ⑥ 坐垫（比内区亮）
-      { id = IMG.rect,   color = C.chair_hi, w = 0.68, h = 0.12, dy =  0.35 },   -- ⑦ 前缘亮面
-      { id = IMG.rect,   color = C.chair_dk, w = 0.12, h = 0.34, dx = -0.33, dy = 0.03 }, -- ⑧ 左扶手
-      { id = IMG.rect,   color = C.chair_dk, w = 0.12, h = 0.34, dx =  0.33, dy = 0.03 }, -- ⑨ 右扶手
+      { id = IMG.soft,   color = C.shadow,   w = 0.74, h = 0.80, dy =  0.06 },   -- ① 投影
+      { id = IMG.round,  color = C.chair_ln, w = 0.66, h = 0.74, dy =  0.00 },   -- ② 棕金轮廓（圆角，露一圈边）
+      { id = IMG.round,  color = C.chair,    w = 0.60, h = 0.68, dy =  0.00 },   -- ③ 主体（奶白圆角）
+      { id = IMG.circle, color = C.chair_dk, w = 0.42, h = 0.22, dy = -0.21 },   -- ④ 靠背内区（椭圆）
+      { id = IMG.round,  color = C.chair_ov, w = 0.46, h = 0.11, dy = -0.29 },   -- ⑤ 靠背顶带
+      { id = IMG.round,  color = C.chair_hi, w = 0.38, h = 0.20, dy =  0.09 },   -- ⑥ 坐垫亮面
+      { id = IMG.round,  color = C.chair_dk, w = 0.48, h = 0.10, dy =  0.29 },   -- ⑦ 前缘暗带
+      { id = IMG.round,  color = C.chair_dk, w = 0.10, h = 0.26, dx = -0.27, dy = 0.00 }, -- ⑧ 左扶手
+      { id = IMG.round,  color = C.chair_dk, w = 0.10, h = 0.26, dx =  0.27, dy = 0.00 }, -- ⑨ 右扶手
     },
   },
 
@@ -183,38 +184,40 @@ F.ART = {
     },
   },
 
-  -- ── 植物（照原作俯视放射：每片叶"黑叶缘垫底 + 叶本色"成对，共 4 片 + 盆沿/盆身/盆底暗 + 投影）──
-  --   ★ 用户已同意"减少一些叶片"（原作 8~10 片）；每片叶要 2 层（黑边+叶）⇒ 4 片刚好 12 层用满。
+  -- ── 植物（v309：同一套手搭流程；盆 + 放射叶，椭圆/矩形大色块，10 层）──
+  --   原作：橙盆 + 墨绿放射叶；尺寸：长边 0.760 格 / 宽 0.57 格。
   plant = {
     ["1"] = {
-      { id = IMG.soft,   color = C.shadow,   w = 0.94, h = 0.94, dy =  0.18 },   -- ① 投影
-      { id = IMG.circle, color = C.leaf_ink, w = 0.15, h = 0.50, dx = -0.24, dy = -0.06 }, -- ② 叶 L 黑边
-      { id = IMG.circle, color = C.leaf,     w = 0.10, h = 0.44, dx = -0.24, dy = -0.07 }, -- ③ 叶 L
-      { id = IMG.circle, color = C.leaf_ink, w = 0.15, h = 0.48, dx =  0.24, dy = -0.05 }, -- ④ 叶 R 黑边
-      { id = IMG.circle, color = C.leaf,     w = 0.10, h = 0.42, dx =  0.24, dy = -0.06 }, -- ⑤ 叶 R
-      { id = IMG.circle, color = C.leaf_ink, w = 0.15, h = 0.52, dx = -0.05, dy = -0.14 }, -- ⑥ 叶 M1 黑边
-      { id = IMG.circle, color = C.leaf,     w = 0.10, h = 0.46, dx = -0.05, dy = -0.15 }, -- ⑦ 叶 M1
-      { id = IMG.circle, color = C.leaf_ink, w = 0.14, h = 0.44, dx =  0.12, dy = -0.09 }, -- ⑧ 叶 M2 黑边
-      { id = IMG.circle, color = C.leaf_hi,  w = 0.08, h = 0.36, dx =  0.12, dy = -0.10 }, -- ⑨ 叶 M2（亮）
-      { id = IMG.rect,   color = C.pot_hi,   w = 0.46, h = 0.10, dy =  0.13 },   -- ⑩ 盆沿
-      { id = IMG.rect,   color = C.pot,      w = 0.36, h = 0.24, dy =  0.25 },   -- ⑪ 盆身
-      { id = IMG.rect,   color = C.pot_dk,   w = 0.36, h = 0.06, dy =  0.35 },   -- ⑫ 盆底暗
+      { id = IMG.soft,   color = C.shadow,   w = 0.56, h = 0.56, dy =  0.24 },   -- ① 投影
+      { id = IMG.circle, color = C.leaf_ink, w = 0.34, h = 0.24, dy = -0.04 },   -- ② 叶簇暗底（缝隙铺开）
+      { id = IMG.circle, color = C.leaf_ink, w = 0.12, h = 0.34, dx = -0.20, dy = -0.10 }, -- ③ 叶 L 黑边
+      { id = IMG.circle, color = C.leaf,     w = 0.08, h = 0.28, dx = -0.20, dy = -0.11 }, -- ④ 叶 L
+      { id = IMG.circle, color = C.leaf_ink, w = 0.12, h = 0.34, dx =  0.20, dy = -0.10 }, -- ⑤ 叶 R 黑边
+      { id = IMG.circle, color = C.leaf,     w = 0.08, h = 0.28, dx =  0.20, dy = -0.11 }, -- ⑥ 叶 R
+      { id = IMG.circle, color = C.leaf_ink, w = 0.13, h = 0.40, dx = -0.04, dy = -0.14 }, -- ⑦ 叶 M 黑边
+      { id = IMG.circle, color = C.leaf_hi,  w = 0.09, h = 0.32, dx = -0.04, dy = -0.15 }, -- ⑧ 叶 M（亮）
+      { id = IMG.rect,   color = C.pot_hi,   w = 0.40, h = 0.09, dy =  0.17 },   -- ⑨ 盆沿
+      { id = IMG.rect,   color = C.pot,      w = 0.32, h = 0.22, dy =  0.29 },   -- ⑩ 盆身
     },
   },
 
-  -- ── 雕塑（原作 8 部件：投影 / 两级台座 / 台柱 / 肩 / 头 / 高光 / 台座线）──
+  -- ── 雕塑（v309：同一套手搭流程；两级台座 + 身 + 肩 + 头，椭圆/矩形，10 层）──
+  --   原作：石像立在两级台座上；尺寸：长边 0.912 格 / 宽 0.56 格。
   statue = {
     ["1"] = {
-      { id = IMG.soft,   color = C.shadow,   w = 0.86, h = 0.86, dy =  0.20 },   -- ① 投影
-      { id = IMG.rect,   color = C.stone_ink,w = 0.64, h = 0.16, dy =  0.40 },   -- ② 台座底（黑边）
-      { id = IMG.rect,   color = C.stone_dk,w = 0.58, h = 0.12, dy =  0.38 },   -- ③ 台座底
-      { id = IMG.rect,   color = C.stone_dk,w = 0.46, h = 0.10, dy =  0.28 },   -- ④ 台座上层
-      { id = IMG.rect,   color = C.stone,   w = 0.24, h = 0.18, dy =  0.16 },   -- ⑤ 台柱
-      { id = IMG.circle, color = C.stone,   w = 0.40, h = 0.26, dy = -0.02 },   -- ⑥ 肩
-      { id = IMG.circle, color = C.stone_hi, w = 0.22, h = 0.20, dy = -0.20 },  -- ⑦ 头
-      { id = IMG.circle, color = C.stone_hi, w = 0.10, h = 0.08, dx = -0.04, dy = -0.24 }, -- ⑧ 头高光
+      { id = IMG.soft,   color = C.shadow,   w = 0.62, h = 0.62, dy =  0.34 },   -- ① 投影
+      { id = IMG.rect,   color = C.stone_ink,w = 0.62, h = 0.14, dy =  0.42 },   -- ② 台座底（黑边）
+      { id = IMG.rect,   color = C.stone_dk,w = 0.56, h = 0.09, dy =  0.41 },    -- ③ 台座底
+      { id = IMG.rect,   color = C.stone_dk,w = 0.44, h = 0.09, dy =  0.30 },    -- ④ 台座上层
+      { id = IMG.circle, color = C.stone,   w = 0.32, h = 0.44, dy =  0.03 },    -- ⑤ 身体
+      { id = IMG.circle, color = C.stone_dk,w = 0.22, h = 0.36, dx =  0.05, dy = 0.04 }, -- ⑥ 身体暗面
+      { id = IMG.circle, color = C.stone,   w = 0.38, h = 0.20, dy = -0.06 },    -- ⑦ 肩
+      { id = IMG.circle, color = C.stone_hi,w = 0.18, h = 0.16, dy = -0.23 },    -- ⑧ 头
+      { id = IMG.rect,   color = C.stone,   w = 0.12, h = 0.05, dy = -0.31 },    -- ⑨ 冠
+      { id = IMG.rect,   color = C.stone_dk,w = 0.26, h = 0.10, dy =  0.18 },    -- ⑩ 衣摆暗部
     },
   },
+
 }
 
 -- ══════════════════════════════════════════════════════════════════════════
