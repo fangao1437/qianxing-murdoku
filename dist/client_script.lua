@@ -6726,7 +6726,10 @@ function Controller:build_layout(ui_adapter)
     id = "root", kind = "container", parent = nil, visible = true,
     rect = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height },
     -- ★ v306：静态烘焙的关卡名（适配层据此只显示 `fart.<关卡>` 一个容器）
-    baked_level = (M.FURN_BAKED and level_id) or false,
+    -- ★★★★★★★★ 2026-10-22（v309）**只有"关卡内"才显示烘焙图元** ✗✓（问题 1 的真因）
+    --   旧写法只看 `level_id` ⇒ 主页/选关/结算时**关卡 id 还在** ⇒ 容器一直显示 ✗
+    --   （用户：「主页/选关/结算能看到家具图元」）⇒ 非关卡内一律下发 `false` = 两个容器都藏 ✓
+    baked_level = (M.FURN_BAKED and level_id and self.screen == nil) or false,
     pos_runtime = true,
   }
   
@@ -13387,6 +13390,9 @@ function Adapter:invalidate_lookups(why)
   --   ★ 所以 ✓：★ **作废时连命中缓存一起清** ✓ ⇒ ★ 下次 `find` 会真的重新深搜 ✓
   self.controls = {}
   self._subtree_dirty = true
+  -- ★ 2026-10-22（v309）：切屏/换关 = "图元容器该重新裁一次"的权威事件
+  --   （真正的重放在 `on_tick` 的 `_baked_dirty` 分支；与门墙/家具的重放同一个判据）
+  self._baked_dirty = true
   self._lookup_gen = (self._lookup_gen or 0) + 1
   if self.cfg and self.cfg.debug_lookup and print then
     print(PREFIX .. "控件名缓存作废（第 " .. tostring(self._lookup_gen) .. " 代）："
@@ -17179,6 +17185,99 @@ function Adapter:_paint_portrait(cell_id, ctrl, want, force)
   return true
 end
 
+-- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+-- 2026-10-22（v309）**静态烘焙图元家具：显隐的唯一实现** ✗✓
+--
+--   美术侧《渲染问题交接报告-2026-10-22》§4 的三个真机现象：
+--     问题 1 主页/选关/结算能看到图元 ⇒ `baked_level` 只看关卡 id、离开关卡没被关掉 ✗（已在界面层修成 screen==nil）
+--     问题 2 两关图元同屏叠加 ⇒ 切换只在"值变化"那一次发生，之后任何一次隐藏/树变动都可能把状态弄脏
+--     问题 3 房间名不显示 ⇒ `labels` 容器与层序（见 `rect` 分支里的 `SetAsLastSibling`）
+--   本函数把"该显示哪个容器 / 它的子控件"做成**幂等的一趟**：
+--     · 容器：`SetVisible` + `SetActive` 都写（真机上"父隐藏"不保证级联）
+--     · 子控件：**递归**逐个 `SetVisible`（case_001=199 / case_002=256 条，只在事件时跑）
+--     · 名字兜底：读 `ch.name` **字段**（官方没有 `GetName()`；v308 那版兜底因此永远不生效 ✗）
+--   ⇒ 重放入口三处：`baked_level` 属性变化 · `invalidate_lookups`（切屏/换关）· `on_tick` 的 `_baked_dirty`
+function Adapter:_set_visible_deep(ctrl, show)
+  local n = 0
+  if ctrl == nil or ctrl.GetChildren == nil then return 0 end
+  local kids = nil
+  pcall(function() kids = ctrl:GetChildren() end)
+  if type(kids) ~= "table" then return 0 end
+  for i = 1, #kids do
+    local ch = kids[i]
+    if ch ~= nil and ch.SetVisible ~= nil then
+      pcall(function() ch:SetVisible(show) end)
+      n = n + 1
+      n = n + self:_set_visible_deep(ch, show)
+    end
+  end
+  return n
+end
+
+function Adapter:_apply_baked(want_log)
+  local want = self._baked_level or false
+  local levels = (self.cfg and self.cfg.baked_levels) or { "case_001", "case_002" }
+  local root = self:find("root")
+  self._baked_state = self._baked_state or {}
+  for i = 1, #levels do
+    local lv = levels[i]
+    local box = self:find("fart." .. lv)
+    if box == nil and root ~= nil and root.GetChildren ~= nil then
+      local kids = nil
+      pcall(function() kids = root:GetChildren() end)
+      if type(kids) == "table" then
+        for k = 1, #kids do
+          local ch = kids[k]
+          local nm = nil
+          pcall(function() nm = ch.name end)          -- ★ 字段，不是 GetName()
+          if type(nm) == "string" and nm:find("fart", 1, true) and nm:find(lv, 1, true) then
+            box = ch
+            break
+          end
+        end
+      end
+    end
+    local show = (want == lv)
+    local touched = 0
+    if box ~= nil then
+      if box.SetVisible then pcall(function() box:SetVisible(show) end) end
+      if box.SetActive then pcall(function() box:SetActive(show) end) end
+      touched = self:_set_visible_deep(box, show)
+    end
+    local st = self._baked_state[lv]
+    if st == nil or st.found ~= (box ~= nil) or st.show ~= show then
+      self._baked_state[lv] = { found = (box ~= nil), show = show }
+      if print then
+        print(string.format("[murdoku] 烘焙容器 %s：找到=%s 目标=%s 子控件=%d",
+          lv, tostring(box ~= nil), show and "显示" or "隐藏", touched))
+      end
+    elseif want_log == true and print then
+      print(string.format("[murdoku] 烘焙容器 %s：找到=%s 目标=%s 子控件=%d（复述）",
+        lv, tostring(box ~= nil), show and "显示" or "隐藏", touched))
+    end
+  end
+  -- ★ v309：房间名容器 `labels` 必须**盖在图元之上**（与图元同一趟裁，代价≈0）
+  --   真机"房间名看不见"的一条候选原因：`labels` 的兄弟次序排在图元容器之下 ⇒ 被 455 条图元压住。
+  do
+    local lab = self:find("labels")
+    if lab ~= nil and lab.SetSiblingIndex ~= nil and root ~= nil and root.GetChildren ~= nil then
+      local kids, maxi = nil, nil
+      pcall(function() kids = root:GetChildren() end)
+      if type(kids) == "table" then
+        for i = 1, #kids do
+          local nm = nil
+          pcall(function() nm = kids[i].name end)
+          if type(nm) == "string" and nm:find("fart.", 1, true) then maxi = i end
+        end
+        if maxi ~= nil and (maxi + 1) <= #kids then
+          pcall(function() lab:SetSiblingIndex(maxi + 1) end)
+        end
+      end
+    end
+  end
+  return true
+end
+
 function Adapter:set_property(id, key, value, nkey)
   -- ★★★★★ 2026-10-05 **返回值 = "这次真的送达了吗"**（true/false），界面层据此决定记账 or 重发。
   --
@@ -17281,59 +17380,9 @@ function Adapter:set_property(id, key, value, nkey)
   --     · 真机上"父容器隐藏"**不保证级联**到子控件 ⇒ 这里**逐个子控件**设一遍 visible；
   --     · 加设备日志：把"找没找到容器 / 切了几个子控件"打出来，下次真机一眼定位。
   elseif key == "baked_level" then
+    -- ★ 2026-10-22（v309）：显隐逻辑收进 `_apply_baked`（唯一实现），这里只记意图
     self._baked_level = value or false
-    local levels = (self.cfg and self.cfg.baked_levels) or { "case_001", "case_002" }
-    local root = self:find("root")
-    for i = 1, #levels do
-      local lv = levels[i]
-      local box = self:find("fart." .. lv)
-      if box == nil and root ~= nil and root.GetChildren ~= nil then
-        -- 整名找不到 ⇒ 遍历 root 子控件按前缀匹配（防名字被引擎加后缀/大小写差异）
-        local kids = nil
-        pcall(function() kids = root:GetChildren() end)
-        if type(kids) == "table" then
-          for k = 1, #kids do
-            local ch = kids[k]
-            local nm = nil
-            if ch ~= nil and ch.GetName ~= nil then pcall(function() nm = ch:GetName() end) end
-            if type(nm) == "string" and nm:find("fart", 1, true) and nm:find(lv, 1, true) then
-              box = ch
-              break
-            end
-          end
-        end
-      end
-      local show = (value == lv)
-      local touched = 0
-      if box ~= nil then
-        if box.SetVisible ~= nil then pcall(function() box:SetVisible(show) end) end
-        if show then
-          if box.SetActive ~= nil then pcall(function() box:SetActive(true) end) end
-        else
-          if box.SetActive ~= nil then pcall(function() box:SetActive(false) end) end
-        end
-        local kids = nil
-        if box.GetChildren ~= nil then pcall(function() kids = box:GetChildren() end) end
-        if type(kids) == "table" then
-          for k = 1, #kids do
-            local ch = kids[k]
-            if ch ~= nil and ch.SetVisible ~= nil then
-              pcall(function() ch:SetVisible(show) end)
-              touched = touched + 1
-            end
-          end
-        end
-      end
-      -- 只在状态真的变了才打日志（避免每帧刷屏）
-      local prev = self._baked_logged and self._baked_logged[lv]
-      if prev ~= show then
-        if self._baked_logged == nil then self._baked_logged = {} end
-        self._baked_logged[lv] = show
-        print(string.format("[murdoku] 烘焙容器 %s：找到=%s 目标=%s 子控件=%d",
-          lv, tostring(box ~= nil), show and "显示" or "隐藏", touched))
-      end
-    end
-    return true
+    return self:_apply_baked(true)
 
   -- ★★★★★★★★ 2026-10-22（v302，第四轮）**家具 = 外部工具算出的图元拼法** ✗✓
   --
@@ -19081,6 +19130,15 @@ function Adapter:on_tick(dt)
     end
     repaint_all(self._edge_want)
     repaint_all(self._obj_want)
+  end
+  -- ★ 2026-10-22（v309）**图元容器的显隐重放**（事件驱动，稳态零成本）
+  --
+  --   为什么必须重放：切屏/换关会走 `_subtree_dirty`（递归藏）——它**会**把图元容器及其子控件
+  --   一起设成 false；而"显示方向"没有任何人负责 ⇒ 用户报的"两关图元同屏叠加 / 走了又回来家具没了"
+  --   就是这个形状。重放一趟 = 重新按"当前是第几关"裁一次（带件数日志，真机可核对）。
+  if self._baked_dirty then
+    self._baked_dirty = false
+    pcall(function() self:_apply_baked(false) end)
   end
   return self.clock
 end
@@ -23102,7 +23160,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v308 / 2026-10-22 / 一二关美术十轮：烘焙子控件默认隐藏 + 逐子控件切显隐 + 设备日志 =====")
+        print("[murdoku] ===== 构建标记 v309 / 2026-10-22 / 渲染专员接手：图元容器按「关卡内/外」切 + 显隐唯一实现（递归、事件重放）+ 名字兜底改读 name 字段 + 房间名容器抬到图元之上 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

@@ -1,4 +1,4 @@
---[[----------------------------------------------------------------------------
+﻿--[[----------------------------------------------------------------------------
   ui_controller.lua —— 操作框架层（页面布局 + 交互状态机 + 特效指令）v0.3.0
 
   交互模型照 murdoku 实证规格：
@@ -2267,7 +2267,10 @@ function Controller:build_layout(ui_adapter)
     id = "root", kind = "container", parent = nil, visible = true,
     rect = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height },
     -- ★ v306：静态烘焙的关卡名（适配层据此只显示 `fart.<关卡>` 一个容器）
-    baked_level = (M.FURN_BAKED and level_id) or false,
+    -- ★★★★★★★★ 2026-10-22（v309）**只有"关卡内"才显示烘焙图元** ✗✓（问题 1 的真因）
+    --   旧写法只看 `level_id` ⇒ 主页/选关/结算时**关卡 id 还在** ⇒ 容器一直显示 ✗
+    --   （用户：「主页/选关/结算能看到家具图元」）⇒ 非关卡内一律下发 `false` = 两个容器都藏 ✓
+    baked_level = (M.FURN_BAKED and level_id and self.screen == nil) or false,
     pos_runtime = true,
   }
   
