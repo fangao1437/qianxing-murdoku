@@ -191,7 +191,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v316 / 2026-10-23 / 地毯也走模板家具（furn.rug）+ cfg 换 524 真实 GUID =====")
+        print("[murdoku] ===== 构建标记 v317 / 2026-10-23 / 520.2 结构：模板补 content+图片层（按 cell 已验证写法）+ rug 模板 + things 引用 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -667,7 +667,7 @@ local function build_adapter()
       table_h2 = 1073747138,
       table_v2 = 1073747139,
       shelf    = 1073747140,
-      rug      = 1073747311,
+      rug      = 1073747149,
     },
     furn_parent = "fart.furn",   -- 实例挂载容器（root 下，默认隐藏；关卡内由脚本打开）
     furn_tpl_base = 108,
