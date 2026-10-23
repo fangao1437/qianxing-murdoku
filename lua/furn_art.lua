@@ -395,6 +395,12 @@ function F.layout(vm, keys, room_names)
       for _, cell in ipairs(p.cells) do
         res.cell[cell[1]][cell[2]].els = F.rug_cell_els(b, cell[1], cell[2])
       end
+      -- ★ v316：地毯也作为"一件"带出去（界面层据此下发 `furn.rug` 模板实例）
+      res.pieces = res.pieces or {}
+      res.pieces[#res.pieces + 1] = {
+        kind = kind, box = b, anchor = anchor_of(b), variant = "1",
+        cells = p.cells, span_r = span_r, span_c = span_c,
+      }
     else
       local els, variant = F.variant(kind, span_r, span_c)
       if els ~= nil then

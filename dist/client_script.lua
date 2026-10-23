@@ -3520,6 +3520,12 @@ function F.layout(vm, keys, room_names)
       for _, cell in ipairs(p.cells) do
         res.cell[cell[1]][cell[2]].els = F.rug_cell_els(b, cell[1], cell[2])
       end
+      -- ★ v316：地毯也作为"一件"带出去（界面层据此下发 `furn.rug` 模板实例）
+      res.pieces = res.pieces or {}
+      res.pieces[#res.pieces + 1] = {
+        kind = kind, box = b, anchor = anchor_of(b), variant = "1",
+        cells = p.cells, span_r = span_r, span_c = span_c,
+      }
     else
       local els, variant = F.variant(kind, span_r, span_c)
       if els ~= nil then
@@ -6689,6 +6695,8 @@ function Controller:build_layout(ui_adapter)
       chair = "furn.chair", plant = "furn.plant", statue = "furn.statue",
       shelf = "furn.shelf",
       table = { ["1"] = "furn.table", h2 = "furn.table.h2", v2 = "furn.table.v2" },
+      -- ★ v316：地毯也走模板（用户：「地毯也按其它家具的做法做」）
+      carpet = "furn.rug",
     }
     local furn_tpl, furn_span, furn_offset = {}, {}, {}
     for r = 1, vm.rows do
@@ -6697,7 +6705,7 @@ function Controller:build_layout(ui_adapter)
     end
     for _, p in ipairs(furn_art.pieces or {}) do
       local kind = p.kind
-      if kind ~= "carpet" and p.anchor ~= nil then
+      if p.anchor ~= nil then   -- ★ v316：地毯也纳入（整件一个实例、按包围盒拉伸）
         local variant = "1"
         if (p.span_c or 1) > 1 then variant = "h2"
         elseif (p.span_r or 1) > 1 then variant = "v2" end
@@ -17360,7 +17368,9 @@ function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
   if cw == nil then return false end          -- 格子还没就绪，下一帧再来
 
   self._furn_inst = self._furn_inst or {}
-  local inst = self._furn_inst[cell_id]
+  -- ★ v316：按 (cell, 模板键) 缓存 —— 同一格可以既有地毯又有家具
+  local inst_key = tostring(cell_id) .. "|" .. tostring(ckey)
+  local inst = self._furn_inst[inst_key]
   if inst == nil then
     -- ★ v315：新架构 content 里没有 `furn` 容器 ⇒ 直接挂 content；
     --   实例排在 face（index 0）之上、其余覆盖层（wall/note/portrait…）之下
@@ -17379,7 +17389,7 @@ function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
     end
     pcall(function() obj.name = "furni." .. cell_id end)
     inst = obj
-    self._furn_inst[cell_id] = inst
+    self._furn_inst[inst_key] = inst
     self.instantiated = self.instantiated or {}
     self.instantiated["furni." .. cell_id] = true
     -- 模板层按"基准 px"写死 ⇒ 首次实例化后按 f 缩放一遍子层
@@ -17409,14 +17419,9 @@ function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
     end
     if inst.SetVisible then inst:SetVisible(self._furn_level ~= false) end
     if inst.SetActive then inst:SetActive(self._furn_level ~= false) end
-    -- ★ v315：家具压在 face 上（face=0），又在墙/头像等覆盖层之下
+    -- ★ v315/v316：层级 = face(0) → 地毯(1) → 其它家具(2) → 墙/头像等覆盖层
     if inst.SetSiblingIndex then
-      local idx = 1
-      if self._furn_inst ~= nil then
-        for _, other in pairs(self._furn_inst) do
-          if other ~= nil and other ~= inst then idx = idx + 1 end
-        end
-      end
+      local idx = (ckey == "rug") and 1 or 2
       pcall(function() inst:SetSiblingIndex(idx) end)
     end
   end)
@@ -17815,9 +17820,14 @@ function Adapter:set_property(id, key, value, nkey)
       if self._furn_tpl_ok then self:_spawn_furn_tpl(id, ctrl, value) end
     else
       -- 这格没有家具（或切关后旧值）：把上一关的实例销毁掉，别残留
-      if self._furn_inst ~= nil and self._furn_inst[id] ~= nil then
-        self:_furn_destroy(self._furn_inst[id])
-        self._furn_inst[id] = nil
+      if self._furn_inst ~= nil then
+        local prefix = tostring(id) .. "|"
+        for k, v in pairs(self._furn_inst) do
+          if type(k) == "string" and k:sub(1, #prefix) == prefix then
+            self:_furn_destroy(v)
+            self._furn_inst[k] = nil
+          end
+        end
       end
     end
     return true
@@ -23782,7 +23792,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v315 / 2026-10-23 / 520.1 新架构：face 自动实例化 + things 家具映射 + 家具层级（face 上/覆盖层下） =====")
+        print("[murdoku] ===== 构建标记 v316 / 2026-10-23 / 地毯也走模板家具（furn.rug）+ cfg 换 524 真实 GUID =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -24248,14 +24258,17 @@ local function build_adapter()
     --   用户：「采用模板来手搭构建，模板里放多少层都可以（一个模板引用控件只算一层），
     --   然后像 cell 一样把模板创建出来」。
     --   键与 `FurnArt.layout().pieces` 对齐：chair / plant / statue / shelf 单格；table 有 1/h2/v2。
+    -- ★ v316：换成 524 里"用户编辑器建的空模板"真实源 GUID（integrator 524 回执）
+    --   主路径是从 `root/things` 的引用控件读 `referencedPrefabIndex`；这张表只作回退。
     furn_tpl_prefab = {
-      chair    = 1073746900,
-      plant    = 1073746902,
-      statue   = 1073746904,
-      table    = 1073746906,
-      table_h2 = 1073746908,
-      table_v2 = 1073746910,
-      shelf    = 1073746912,
+      chair    = 1073747134,
+      plant    = 1073747135,
+      statue   = 1073747136,
+      table    = 1073747137,
+      table_h2 = 1073747138,
+      table_v2 = 1073747139,
+      shelf    = 1073747140,
+      rug      = 1073747311,
     },
     furn_parent = "fart.furn",   -- 实例挂载容器（root 下，默认隐藏；关卡内由脚本打开）
     furn_tpl_base = 108,

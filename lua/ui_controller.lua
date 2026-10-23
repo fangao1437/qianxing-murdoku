@@ -2227,6 +2227,8 @@ function Controller:build_layout(ui_adapter)
       chair = "furn.chair", plant = "furn.plant", statue = "furn.statue",
       shelf = "furn.shelf",
       table = { ["1"] = "furn.table", h2 = "furn.table.h2", v2 = "furn.table.v2" },
+      -- ★ v316：地毯也走模板（用户：「地毯也按其它家具的做法做」）
+      carpet = "furn.rug",
     }
     local furn_tpl, furn_span, furn_offset = {}, {}, {}
     for r = 1, vm.rows do
@@ -2235,7 +2237,7 @@ function Controller:build_layout(ui_adapter)
     end
     for _, p in ipairs(furn_art.pieces or {}) do
       local kind = p.kind
-      if kind ~= "carpet" and p.anchor ~= nil then
+      if p.anchor ~= nil then   -- ★ v316：地毯也纳入（整件一个实例、按包围盒拉伸）
         local variant = "1"
         if (p.span_c or 1) > 1 then variant = "h2"
         elseif (p.span_r or 1) > 1 then variant = "v2" end

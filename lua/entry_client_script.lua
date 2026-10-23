@@ -191,7 +191,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v314 / 2026-10-23 / 方案A：模板改为编辑器骨架形态（520/521），家具模板实例化待真机验证 =====")
+        print("[murdoku] ===== 构建标记 v316 / 2026-10-23 / 地毯也走模板家具（furn.rug）+ cfg 换 524 真实 GUID =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -657,14 +657,17 @@ local function build_adapter()
     --   用户：「采用模板来手搭构建，模板里放多少层都可以（一个模板引用控件只算一层），
     --   然后像 cell 一样把模板创建出来」。
     --   键与 `FurnArt.layout().pieces` 对齐：chair / plant / statue / shelf 单格；table 有 1/h2/v2。
+    -- ★ v316：换成 524 里"用户编辑器建的空模板"真实源 GUID（integrator 524 回执）
+    --   主路径是从 `root/things` 的引用控件读 `referencedPrefabIndex`；这张表只作回退。
     furn_tpl_prefab = {
-      chair    = 1073746900,
-      plant    = 1073746902,
-      statue   = 1073746904,
-      table    = 1073746906,
-      table_h2 = 1073746908,
-      table_v2 = 1073746910,
-      shelf    = 1073746912,
+      chair    = 1073747134,
+      plant    = 1073747135,
+      statue   = 1073747136,
+      table    = 1073747137,
+      table_h2 = 1073747138,
+      table_v2 = 1073747139,
+      shelf    = 1073747140,
+      rug      = 1073747311,
     },
     furn_parent = "fart.furn",   -- 实例挂载容器（root 下，默认隐藏；关卡内由脚本打开）
     furn_tpl_base = 108,

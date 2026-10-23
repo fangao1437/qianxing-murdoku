@@ -4459,7 +4459,9 @@ function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
   if cw == nil then return false end          -- 格子还没就绪，下一帧再来
 
   self._furn_inst = self._furn_inst or {}
-  local inst = self._furn_inst[cell_id]
+  -- ★ v316：按 (cell, 模板键) 缓存 —— 同一格可以既有地毯又有家具
+  local inst_key = tostring(cell_id) .. "|" .. tostring(ckey)
+  local inst = self._furn_inst[inst_key]
   if inst == nil then
     -- ★ v315：新架构 content 里没有 `furn` 容器 ⇒ 直接挂 content；
     --   实例排在 face（index 0）之上、其余覆盖层（wall/note/portrait…）之下
@@ -4478,7 +4480,7 @@ function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
     end
     pcall(function() obj.name = "furni." .. cell_id end)
     inst = obj
-    self._furn_inst[cell_id] = inst
+    self._furn_inst[inst_key] = inst
     self.instantiated = self.instantiated or {}
     self.instantiated["furni." .. cell_id] = true
     -- 模板层按"基准 px"写死 ⇒ 首次实例化后按 f 缩放一遍子层
@@ -4508,14 +4510,9 @@ function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
     end
     if inst.SetVisible then inst:SetVisible(self._furn_level ~= false) end
     if inst.SetActive then inst:SetActive(self._furn_level ~= false) end
-    -- ★ v315：家具压在 face 上（face=0），又在墙/头像等覆盖层之下
+    -- ★ v315/v316：层级 = face(0) → 地毯(1) → 其它家具(2) → 墙/头像等覆盖层
     if inst.SetSiblingIndex then
-      local idx = 1
-      if self._furn_inst ~= nil then
-        for _, other in pairs(self._furn_inst) do
-          if other ~= nil and other ~= inst then idx = idx + 1 end
-        end
-      end
+      local idx = (ckey == "rug") and 1 or 2
       pcall(function() inst:SetSiblingIndex(idx) end)
     end
   end)
@@ -4914,9 +4911,14 @@ function Adapter:set_property(id, key, value, nkey)
       if self._furn_tpl_ok then self:_spawn_furn_tpl(id, ctrl, value) end
     else
       -- 这格没有家具（或切关后旧值）：把上一关的实例销毁掉，别残留
-      if self._furn_inst ~= nil and self._furn_inst[id] ~= nil then
-        self:_furn_destroy(self._furn_inst[id])
-        self._furn_inst[id] = nil
+      if self._furn_inst ~= nil then
+        local prefix = tostring(id) .. "|"
+        for k, v in pairs(self._furn_inst) do
+          if type(k) == "string" and k:sub(1, #prefix) == prefix then
+            self:_furn_destroy(v)
+            self._furn_inst[k] = nil
+          end
+        end
       end
     end
     return true

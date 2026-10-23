@@ -123,7 +123,21 @@ for i = n0 + 1, #instCalls do
 end
 ok(made ~= nil, "F3b 家具：按 things 里的 chair prefab 实例化了")
 ok(made ~= nil and made.parent == "content", "F4 家具：没有 furn 容器时挂到 content")
-ok(made ~= nil and made.ctrl.siblingIndex == 1, "F4b 家具：排在 face(=0) 之上（SiblingIndex 1）")
+-- v316：层级 = face(0) → 地毯(1) → 其它家具(2+)
+ok(made ~= nil and made.ctrl.siblingIndex == 2, "F4b 家具：排在 face(0)/地毯(1) 之上（SiblingIndex 2）")
+
+-- ── F4c/F4d 地毯：同一套模板实例化，层级 1 ────────────────────────────────
+local RUG_PREFAB = 1073747200
+add(things, ref("furn.rug", RUG_PREFAB))
+a:set_property("root", "furn_level", "case_001")   -- 重算映射（things 变了）
+local n1 = #instCalls
+a:set_property("cell.1.1", "furn_tpl", "furn.rug")
+local rug = nil
+for i = n1 + 1, #instCalls do
+  if instCalls[i].prefab == RUG_PREFAB then rug = instCalls[i] end
+end
+ok(rug ~= nil, "F4c 地毯：按 things 里 furn.rug 的 prefab 实例化了")
+ok(rug ~= nil and rug.ctrl.siblingIndex == 1, "F4d 地毯：层级 = 1（face 之上、其它家具之下）")
 
 -- ── F5 新架构下手搭层被跳过，不报错 ───────────────────────────────────────
 a:set_property("cell.1.1", "furn_span", { r = 1, c = 1 })
