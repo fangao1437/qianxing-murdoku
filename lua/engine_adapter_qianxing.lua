@@ -1,4 +1,4 @@
-﻿--[[----------------------------------------------------------------------------
+--[[----------------------------------------------------------------------------
   engine_adapter_qianxing.lua —— 千星奇域 7.1 客户端脚本绑定层（按官方 API 实现）
 
   依据：官方《客户端控件API文档》 mhtakr07vej4 与《客户端控件和客户端脚本》 mhbgxf0nynww
@@ -4628,7 +4628,7 @@ function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
     if inst.SetActive then inst:SetActive(self._furn_level ~= false) end
     -- ★ v315/v316：层级 = face(0) → 地毯(1) → 其它家具(2) → 墙/头像等覆盖层
     if inst.SetSiblingIndex then
-      local idx = (ckey == "rug" or ckey == "rug_2") and 1 or 2
+      local idx = (ckey == "rug" or ckey == "rug_2" or ckey == "rug_3") and 1 or 2
       pcall(function() inst:SetSiblingIndex(idx) end)
     end
   end)

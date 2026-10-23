@@ -6708,7 +6708,7 @@ function Controller:build_layout(ui_adapter)
       table = { ["1"] = "furn.table", h2 = "furn.table.h2", v2 = "furn.table.v2" },
       -- ★ v316：地毯也走模板（用户：「地毯也按其它家具的做法做」）
       -- ★ v320：多格地毯用专用模板 `furn.rug.2`（边框按整块算，不会被拉伸变形）
-      carpet = { ["1"] = "furn.rug", h2 = "furn.rug.2", v2 = "furn.rug.2" },
+      carpet = { ["1"] = "furn.rug", h2 = "furn.rug.2", v2 = "furn.rug.3" },
     }
     -- ★ v319：**不再在这里 `local`** —— 三个表已在函数作用域声明（见上面那段根因注释）。
     --   写成 `local` 就会遮盖外层同名变量 ⇒ 外层的表永远空着 ⇒ 格子节点下发 `false` ⇒ 家具不出现 ✗
@@ -17549,7 +17549,7 @@ function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
     if inst.SetActive then inst:SetActive(self._furn_level ~= false) end
     -- ★ v315/v316：层级 = face(0) → 地毯(1) → 其它家具(2) → 墙/头像等覆盖层
     if inst.SetSiblingIndex then
-      local idx = (ckey == "rug" or ckey == "rug_2") and 1 or 2
+      local idx = (ckey == "rug" or ckey == "rug_2" or ckey == "rug_3") and 1 or 2
       pcall(function() inst:SetSiblingIndex(idx) end)
     end
   end)
@@ -24071,7 +24071,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v324 / 2026-10-23 / 家具缩放改 localScale（原来只改容器尺寸 ⇒ 恒定大 1.21 倍）+ 应用记录挪出控件字段（原来每 0.5s 销毁重建）+ 格子尺寸优先 rects =====")
+        print("[murdoku] ===== 构建标记 v325 / 2026-10-23 / 竖版地毯 furn.rug.3 + 桌子按图重搭 + 书架书对齐 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -24549,12 +24549,13 @@ local function build_adapter()
       shelf    = 1073747140,
       rug      = 1073747149,
       rug_2    = 1073748252,
+      rug_3    = 1073749968,
     },
     furn_parent = "fart.furn",   -- 实例挂载容器（root 下，默认隐藏；关卡内由脚本打开）
     furn_tpl_base = 108,
     -- ★ v320：模板 content 画布尺寸（键 = 归一化家具键）。缺省 108×108；
     --   多格地毯模板是 216×108，竖放时实例 108×216 ⇒ 子层按 fx/fy 各向异性缩放。
-    furn_tpl_canvas = { rug_2 = { 216, 108 }, table_h2 = { 216, 108 }, table_v2 = { 108, 216 } },
+    furn_tpl_canvas = { rug_2 = { 216, 108 }, rug_3 = { 108, 216 }, table_h2 = { 216, 108 }, table_v2 = { 108, 216 } },
 
     -- ★ 2026-10-22（v311）**模板探针**：只回答两个问题，结果全在日志（前缀 `[tplprobe]`）
     --   ① 模板里的模板引用控件（第二层）能不能正常展开；
