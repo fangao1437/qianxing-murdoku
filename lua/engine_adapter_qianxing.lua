@@ -4251,10 +4251,34 @@ function Adapter:_apply_furn_level()
   local prefabs_cfg = self.cfg and self.cfg.furn_tpl_prefab
   -- 有"模板配置"才走模板路；没有（老存档/导入未带模板）⇒ `furn` 手搭层照旧画（v309 行为）
   self._furn_tpl_ok = (prefabs_cfg ~= nil and next(prefabs_cfg) ~= nil)
+  if self._furn_tpl_ok and self._furn_level ~= false then
+    pcall(function() self:_furn_try_all() end)   -- ★ v313：属性可能先到，这里统一补造
+  end
   if print then
     print("[murdoku] 模板化家具：关卡=" .. tostring(self._furn_level) .. "（实例缓存已清）")
   end
   return true
+end
+
+-- ★ v313：按缓存把"当前应该有家具的格子"整体补造一遍（供属性先到/后到两种顺序都能收敛）
+function Adapter:_furn_try_all()
+  if not self._furn_tpl_ok then return 0 end
+  if self._furn_want == nil then return 0 end
+  local n = 0
+  for cell_id, name in pairs(self._furn_want) do
+    if type(name) == "string" then
+      local ctrl = self:find(cell_id)
+      if ctrl ~= nil then
+        pcall(function() self:_spawn_furn_tpl(cell_id, ctrl, name) end)
+        n = n + 1
+      end
+    end
+  end
+  if n > 0 and print then
+    print("[murdoku] 模板化家具：本轮补造 " .. tostring(n) .. " 格（缓存里共 "
+      .. tostring(n) .. " 格有家具）")
+  end
+  return n
 end
 
 -- 取（或造）某格家具模板实例，并按 span/offset 摆好；同格同模板只造一次
@@ -4727,26 +4751,34 @@ function Adapter:set_property(id, key, value, nkey)
   elseif key == "furn_tpl" then
     self._furn_want = self._furn_want or {}
     self._furn_want[id] = type(value) == "string" and value or false
-    if self._furn_tpl_ok then
-      return self:_spawn_furn_tpl(id, ctrl, value)
+    -- ★ v313：**一律返回 true**（已受理）；真正能不能造要看 `furn_level` 有没有到，
+    --   到了由 `_furn_try_all()` 统一补造 —— 不再依赖属性投递顺序（真机教训）。
+    if type(value) == "string" then
+      if self._furn_tpl_ok then self:_spawn_furn_tpl(id, ctrl, value) end
+    else
+      -- 这格没有家具（或切关后旧值）：把上一关的实例销毁掉，别残留
+      if self._furn_inst ~= nil and self._furn_inst[id] ~= nil then
+        self:_furn_destroy(self._furn_inst[id])
+        self._furn_inst[id] = nil
+      end
     end
-    return false
+    return true
 
   elseif key == "furn_span" then
     self._furn_span = self._furn_span or {}
     self._furn_span[id] = (type(value) == "table") and value or false
     if self._furn_tpl_ok and self._furn_want and self._furn_want[id] then
-      return self:_spawn_furn_tpl(id, ctrl, self._furn_want[id])
+      self:_spawn_furn_tpl(id, ctrl, self._furn_want[id])
     end
-    return false
+    return true
 
   elseif key == "furn_offset" then
     self._furn_off = self._furn_off or {}
     self._furn_off[id] = (type(value) == "table") and value or false
     if self._furn_tpl_ok and self._furn_want and self._furn_want[id] then
-      return self:_spawn_furn_tpl(id, ctrl, self._furn_want[id])
+      self:_spawn_furn_tpl(id, ctrl, self._furn_want[id])
     end
-    return false
+    return true
 
   -- ★★★★★★★★ 2026-10-22（v302，第四轮）**家具 = 外部工具算出的图元拼法** ✗✓
   --
@@ -4764,8 +4796,10 @@ function Adapter:set_property(id, key, value, nkey)
     return self:_paint_furn_art(id, ctrl, value, true)
 
   elseif key == "furn" then
-    -- ★ v310：模板模式生效时不再画手搭层（家具由模板实例负责）；模板不可用时自动回落
-    if self._furn_tpl_ok then return true end
+    -- ★ v310/v313：**只要 cfg 里配了模板表就一律不画手搭层**（模板实例负责家具；
+    --   模板实例化失败时宁可空着，也不要出现"先画手搭、之后模板又叠上来"的两代同屏）。
+    local _pf = self.cfg and self.cfg.furn_tpl_prefab
+    if _pf ~= nil and next(_pf) ~= nil then return true end
     local layers = {}
     if type(value) == "table" then
       for i = 1, math.min(#value, #OBJ_LAYER_SUBS) do
