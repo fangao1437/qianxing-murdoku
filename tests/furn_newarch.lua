@@ -139,6 +139,22 @@ end
 ok(rug ~= nil, "F4c 地毯：按 things 里 furn.rug 的 prefab 实例化了")
 ok(rug ~= nil and rug.ctrl.siblingIndex == 1, "F4d 地毯：层级 = 1（face 之上、其它家具之下）")
 
+-- ── F4e/F4f 多格地毯：`furn.rug.2` 独立模板（v320）─────────────────────────
+local RUG2_PREFAB = 1073748252
+add(things, ref("furn.rug.2", RUG2_PREFAB))
+a:set_property("root", "furn_level", "case_001")   -- 重算映射（things 变了）
+local m2 = a:_furn_prefab_map()
+ok(m2.rug_2 == RUG2_PREFAB, "F4e things：furn.rug.2 归一化成 rug_2（" .. tostring(m2.rug_2) .. "）")
+local n2 = #instCalls
+a:set_property("cell.1.1", "furn_tpl", "furn.rug.2")
+a:set_property("cell.1.1", "furn_span", { r = 1, c = 2 })
+local rug2 = nil
+for i = n2 + 1, #instCalls do
+  if instCalls[i].prefab == RUG2_PREFAB then rug2 = instCalls[i] end
+end
+ok(rug2 ~= nil, "F4f 多格地毯：按 things 里 furn.rug.2 的 prefab 实例化了")
+ok(rug2 ~= nil and rug2.ctrl.siblingIndex == 1, "F4g 多格地毯：层级 = 1（与单格地毯同级）")
+
 -- ── F5 新架构下手搭层被跳过，不报错 ───────────────────────────────────────
 a:set_property("cell.1.1", "furn_span", { r = 1, c = 1 })
 local r5 = a:set_property("cell.1.1", "furn", {

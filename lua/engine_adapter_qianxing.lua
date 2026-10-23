@@ -4534,7 +4534,14 @@ function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
     self.instantiated = self.instantiated or {}
     self.instantiated["furni." .. cell_id] = true
     -- 模板层按"基准 px"写死 ⇒ 首次实例化后按 f 缩放一遍子层
-    self:_furn_scale_layers(inst, cw)
+    -- ★ v320：按"模板画布 → 实例尺寸"分别算 x/y 比例（多格地毯竖放时是各向异性的）
+    do
+      local span0 = self._furn_span and self._furn_span[cell_id] or { r = 1, c = 1 }
+      local cv = (self.cfg and self.cfg.furn_tpl_canvas and self.cfg.furn_tpl_canvas[ckey]) or { 108, 108 }
+      local fx = (cw * _num(span0.c, 1)) / _num(cv[1], 108)
+      local fy = (ch * _num(span0.r, 1)) / _num(cv[2], 108)
+      self:_furn_scale_layers(inst, fx, fy)
+    end
     self._furn_ok_n = (self._furn_ok_n or 0) + 1
     self._furn_keys = self._furn_keys or {}
     self._furn_keys[name] = (self._furn_keys[name] or 0) + 1
@@ -4562,7 +4569,7 @@ function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
     if inst.SetActive then inst:SetActive(self._furn_level ~= false) end
     -- ★ v315/v316：层级 = face(0) → 地毯(1) → 其它家具(2) → 墙/头像等覆盖层
     if inst.SetSiblingIndex then
-      local idx = (ckey == "rug") and 1 or 2
+      local idx = (ckey == "rug" or ckey == "rug_2") and 1 or 2
       pcall(function() inst:SetSiblingIndex(idx) end)
     end
   end)
@@ -4570,10 +4577,10 @@ function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
 end
 
 -- 模板实例里的层按 f = 格子宽 / 模板基准 缩放一次（记下基值，重复调用不漂移）
-function Adapter:_furn_scale_layers(inst, cw)
-  local base = (self.cfg and self.cfg.furn_tpl_base) or 108
-  local f = cw / base
-  if f == nil or f <= 0 then return end
+function Adapter:_furn_scale_layers(inst, fx, fy)
+  -- 兼容旧调用（只给一个参数时按等比）
+  if fy == nil then fy = fx end
+  if fx == nil or fx <= 0 or fy == nil or fy <= 0 then return end
   local kids = nil
   if inst.GetChildren ~= nil then pcall(function() kids = inst:GetChildren() end) end
   if type(kids) ~= "table" then return end
@@ -4591,16 +4598,17 @@ function Adapter:_furn_scale_layers(inst, cw)
       local memo = self._furn_base_vals[inst]
       if memo == nil then memo = {} self._furn_base_vals[inst] = memo end
       if memo[key] == nil and w0 ~= nil and h0 ~= nil then
-        memo[key] = { w = w0, h = h0, dx = dx0 or 0, dy = dy0 or 0, f = 1 }
+        memo[key] = { w = w0, h = h0, dx = dx0 or 0, dy = dy0 or 0, fx = 1, fy = 1 }
       end
       local b = memo[key]
       if b ~= nil then
-        if math.abs((b.f or 1) - f) > 0.001 then
+        local changed = math.abs((b.fx or 1) - fx) > 0.001 or math.abs((b.fy or 1) - fy) > 0.001
+        if changed then
           pcall(function()
-            if ch.SetSizeDelta then ch:SetSizeDelta(b.w * f, b.h * f) end
-            if ch.SetAnchoredPosition then ch:SetAnchoredPosition(b.dx * f, b.dy * f) end
+            if ch.SetSizeDelta then ch:SetSizeDelta(b.w * fx, b.h * fy) end
+            if ch.SetAnchoredPosition then ch:SetAnchoredPosition(b.dx * fx, b.dy * fy) end
           end)
-          b.f = f
+          b.fx, b.fy = fx, fy
         end
       end
     end

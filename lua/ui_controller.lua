@@ -2239,7 +2239,8 @@ function Controller:build_layout(ui_adapter)
       shelf = "furn.shelf",
       table = { ["1"] = "furn.table", h2 = "furn.table.h2", v2 = "furn.table.v2" },
       -- ★ v316：地毯也走模板（用户：「地毯也按其它家具的做法做」）
-      carpet = "furn.rug",
+      -- ★ v320：多格地毯用专用模板 `furn.rug.2`（边框按整块算，不会被拉伸变形）
+      carpet = { ["1"] = "furn.rug", h2 = "furn.rug.2", v2 = "furn.rug.2" },
     }
     -- ★ v319：**不再在这里 `local`** —— 三个表已在函数作用域声明（见上面那段根因注释）。
     --   写成 `local` 就会遮盖外层同名变量 ⇒ 外层的表永远空着 ⇒ 格子节点下发 `false` ⇒ 家具不出现 ✗

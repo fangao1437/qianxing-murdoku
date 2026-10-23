@@ -191,7 +191,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v319 / 2026-10-23 / 富图元模板 + 家具模板键作用域修复（渲染修复入包） =====")
+        print("[murdoku] ===== 构建标记 v320 / 2026-10-23 / 去旧代底色块 + 多格地毯 furn.rug.2 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -668,9 +668,13 @@ local function build_adapter()
       table_v2 = 1073747139,
       shelf    = 1073747140,
       rug      = 1073747149,
+      rug_2    = 1073748252,
     },
     furn_parent = "fart.furn",   -- 实例挂载容器（root 下，默认隐藏；关卡内由脚本打开）
     furn_tpl_base = 108,
+    -- ★ v320：模板 content 画布尺寸（键 = 归一化家具键）。缺省 108×108；
+    --   多格地毯模板是 216×108，竖放时实例 108×216 ⇒ 子层按 fx/fy 各向异性缩放。
+    furn_tpl_canvas = { rug_2 = { 216, 108 } },
 
     -- ★ 2026-10-22（v311）**模板探针**：只回答两个问题，结果全在日志（前缀 `[tplprobe]`）
     --   ① 模板里的模板引用控件（第二层）能不能正常展开；
