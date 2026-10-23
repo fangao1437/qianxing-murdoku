@@ -17444,6 +17444,8 @@ function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
         and a.span ~= nil and _num(a.span.r, 1) == _num(want_span.r, 1) and _num(a.span.c, 1) == _num(want_span.c, 1)
         and a.off ~= nil and math.abs(_num(a.off.dx, 0) - _num(want_off.dx, 0)) < 1e-6
         and math.abs(_num(a.off.dy, 0) - _num(want_off.dy, 0)) < 1e-6
+        and a.cw ~= nil and math.abs(_num(a.cw, 0) - _num(cw, 0)) < 0.5
+        and a.ch ~= nil and math.abs(_num(a.ch, 0) - _num(ch, 0)) < 0.5
       if not same then
         self:_furn_destroy(inst)
         self._furn_inst[inst_key] = nil
@@ -17507,6 +17509,7 @@ function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
     inst.__murdoku_applied = {
       span = { r = _num(span.r, 1), c = _num(span.c, 1) },
       off = { dx = _num(off.dx, 0), dy = _num(off.dy, 0) },
+      cw = _num(cw, 0), ch = _num(ch, 0),
       ckey = ckey,
     }
     if inst.SetVisible then inst:SetVisible(self._furn_level ~= false) end
@@ -17521,42 +17524,96 @@ function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
 end
 
 -- 模板实例里的层按 f = 格子宽 / 模板基准 缩放一次（记下基值，重复调用不漂移）
+-- ★ v323：把已缓存的家具实例按"格子当前实际尺寸/跨格/偏移"重新对齐一次。
+--   幂等：参数没变化时 `_spawn_furn_tpl` 内部会直接复用实例，不会重复造。
+function Adapter:_furn_resync()
+  local want = self._furn_want
+  if want == nil then return 0 end
+  local n = 0
+  for id, tpl in pairs(want) do
+    if type(tpl) == "string" then
+      local ctrl = self:find(id)
+      if ctrl ~= nil and self:_spawn_furn_tpl(id, ctrl, tpl) then n = n + 1 end
+    end
+  end
+  return n
+end
+
 function Adapter:_furn_scale_layers(inst, fx, fy)
   -- 兼容旧调用（只给一个参数时按等比）
   if fy == nil then fy = fx end
-  if fx == nil or fx <= 0 or fy == nil or fy <= 0 then return end
+  if fx == nil or fx <= 0 or fy == nil or fy <= 0 then return 0, 0 end
   local kids = nil
   if inst.GetChildren ~= nil then pcall(function() kids = inst:GetChildren() end) end
-  if type(kids) ~= "table" then return end
+  if type(kids) ~= "table" then return 0, 0 end
   self._furn_base_vals = self._furn_base_vals or setmetatable({}, { __mode = "k" })
+  self._furn_scale_n = (self._furn_scale_n or 0) + 1
+  local scaled, failed = 0, 0
   for i = 1, #kids do
     local ch = kids[i]
     if ch ~= nil then
-      local w0, h0 = nil, nil
-      if ch.GetSizeDelta ~= nil then pcall(function() local a, b = ch:GetSizeDelta() w0, h0 = a, b end) end
-      local dx0, dy0 = nil, nil
+      -- ① 读基值：GetSizeDelta/GetAnchoredPosition 优先，取不到退化到属性
+      local w0, h0, dx0, dy0 = nil, nil, nil, nil
+      if ch.GetSizeDelta ~= nil then
+        pcall(function() local a, b = ch.GetSizeDelta(ch) w0, h0 = a, b end)
+      end
+      if w0 == nil then
+        pcall(function() w0, h0 = ch.sizeDeltaX, ch.sizeDeltaY end)
+      end
       if ch.GetAnchoredPosition ~= nil then
-        pcall(function() local a, b = ch:GetAnchoredPosition() dx0, dy0 = a, b end)
+        pcall(function() local a, b = ch.GetAnchoredPosition(ch) dx0, dy0 = a, b end)
+      end
+      if dx0 == nil then
+        pcall(function() dx0, dy0 = ch.anchoredPositionX, ch.anchoredPositionY end)
       end
       local key = tostring(i)
       local memo = self._furn_base_vals[inst]
       if memo == nil then memo = {} self._furn_base_vals[inst] = memo end
-      if memo[key] == nil and w0 ~= nil and h0 ~= nil then
-        memo[key] = { w = w0, h = h0, dx = dx0 or 0, dy = dy0 or 0, fx = 1, fy = 1 }
+      if memo[key] == nil then
+        if w0 ~= nil and h0 ~= nil then
+          memo[key] = { w = w0, h = h0, dx = dx0 or 0, dy = dy0 or 0, fx = 1, fy = 1 }
+        else
+          -- 基值读不到：记一次失败；后面用 SetScale 兜底（只影响等比缩放）
+          memo[key] = { w = nil, h = nil, dx = dx0 or 0, dy = dy0 or 0, fx = 1, fy = 1, bad = true }
+          failed = failed + 1
+        end
       end
       local b = memo[key]
       if b ~= nil then
-        local changed = math.abs((b.fx or 1) - fx) > 0.001 or math.abs((b.fy or 1) - fy) > 0.001
-        if changed then
-          pcall(function()
-            if ch.SetSizeDelta then ch:SetSizeDelta(b.w * fx, b.h * fy) end
-            if ch.SetAnchoredPosition then ch:SetAnchoredPosition(b.dx * fx, b.dy * fy) end
-          end)
-          b.fx, b.fy = fx, fy
+        if b.w ~= nil and b.h ~= nil then
+          local changed = math.abs((b.fx or 1) - fx) > 0.001 or math.abs((b.fy or 1) - fy) > 0.001
+          if changed then
+            pcall(function()
+              if ch.SetSizeDelta then
+                ch:SetSizeDelta(b.w * fx, b.h * fy)
+              else
+                ch.sizeDeltaX, ch.sizeDeltaY = b.w * fx, b.h * fy
+              end
+              if b.dx ~= nil or b.dy ~= nil then
+                if ch.SetAnchoredPosition then
+                  ch:SetAnchoredPosition((b.dx or 0) * fx, (b.dy or 0) * fy)
+                else
+                  ch.anchoredPositionX = (b.dx or 0) * fx
+                  ch.anchoredPositionY = (b.dy or 0) * fy
+                end
+              end
+            end)
+            b.fx, b.fy = fx, fy
+            scaled = scaled + 1
+          end
+        elseif ch.SetScale ~= nil then
+          -- ② 拿不到尺寸：用 Scale 兜底（等比；各向异性时取平均，聊胜于无）
+          local avg = math.sqrt(fx * fy)
+          pcall(function() ch:SetScale(avg, avg) end)
         end
       end
     end
   end
+  if print and self._furn_scale_n <= 3 then
+    print(string.format("[murdoku] 家具层缩放：子层=%d 缩放=%.3f,%.3f 成功=%d 基值读不到=%d",
+      #kids, fx, fy, scaled, failed))
+  end
+  return scaled, failed
 end
 
 function Adapter:_paint_furn_art(cell_id, ctrl, want, force)
@@ -19659,6 +19716,13 @@ end
 
 function Adapter:on_tick(dt)
   self.clock = self.clock + (dt or 0)
+  -- ★ v323：家具实例重对齐（属性后到 / 格子后改尺寸都能收敛；0.5s 节流，稳态只比较）
+  if self._furn_want ~= nil and next(self._furn_want) ~= nil then
+    if (self._furn_resync_at or -1) <= self.clock then
+      self._furn_resync_at = self.clock + 0.5
+      pcall(function() self:_furn_resync() end)
+    end
+  end
   local due = {}
   for i = #self.timers, 1, -1 do
     if self.timers[i].at <= self.clock then
@@ -23917,7 +23981,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v322 / 2026-10-23 / 属性后到免疫：span/offset 晚到会重造家具实例 =====")
+        print("[murdoku] ===== 构建标记 v323 / 2026-10-23 / 家具尺寸/位置重对齐：格子尺寸后改、属性后到都收敛 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

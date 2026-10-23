@@ -193,6 +193,29 @@ ok(remade ~= nil and math.abs(remade.ctrl.anchoredPositionX + 54) < 0.01,
   "F6f 重建后的位置 = 锚点格中心左移半格（-54px）")
 _G.game.DestroyClientUIControl = oldDestroy
 
+-- ── F7 格子尺寸后改（v323）：6×6 关格子先按 108 建、后改成 89 ⇒ resync 必须重排 ──
+--   真机症状：家具整体比旧版大一圈、跨格件溢出（缩放按 108 算）。
+local cel33 = mkctrl("cell.3.3")
+cel33.kind = "button"
+add(cel33, (function() local c3 = mkctrl("content") add(c3, mkctrl("hint")) return c3 end)())
+add(board, cel33)
+a:set_property("cell.3.3", "furn_tpl", "furn.chair")
+local beforeSize = cel33.sizeDeltaX
+ok(beforeSize == 108, "F7a 前提：格子初始尺寸 108")
+a:set_property("cell.3.3", "furn_span", { r = 1, c = 1 })
+a:set_property("cell.3.3", "furn_offset", { dx = 0, dy = 0 })
+-- 模拟"格子随后被改成 6×6 的 89px"
+cel33.sizeDeltaX, cel33.sizeDeltaY = 89, 89
+local n4 = #instCalls
+a:_furn_resync()
+local resized = nil
+for i = n4 + 1, #instCalls do
+  if instCalls[i].prefab == CHAIR_PREFAB then resized = instCalls[i] end
+end
+ok(resized ~= nil, "F7b 格子尺寸变了 ⇒ resync 重建了实例")
+ok(resized ~= nil and resized.ctrl.sizeDeltaX == 89 and resized.ctrl.sizeDeltaY == 89,
+  "F7c 重建后实例尺寸 = 格子实际尺寸 89（不再是大一圈的 108）")
+
 -- ── F5 新架构下手搭层被跳过，不报错 ───────────────────────────────────────
 a:set_property("cell.1.1", "furn_span", { r = 1, c = 1 })
 local r5 = a:set_property("cell.1.1", "furn", {
