@@ -223,5 +223,41 @@ local r5 = a:set_property("cell.1.1", "furn", {
 })
 ok(r5 == true, "F5 新架构：手搭层属性被安全跳过（返回 true）")
 
+-- ── F8（v324）家具缩放必须走 localScale（真变换），不是改容器尺寸 ──────────────
+--   真机症状：6×6 关家具整体大 1.21 倍（108/89）。模板那一百多层是"内容根的孙子"，
+--   按画布 108 的绝对像素定位 ⇒ 只改容器 sizeDelta 时里面的层一个像素都不缩 ✗
+local cel44 = mkctrl("cell.4.4")
+cel44.kind = "button"
+cel44.sizeDeltaX, cel44.sizeDeltaY = 89, 89          -- 模拟 6×6 关的真实格子尺寸
+add(cel44, (function() local c4 = mkctrl("content") add(c4, mkctrl("hint")) return c4 end)())
+add(board, cel44)
+local n5 = #instCalls
+a:set_property("cell.4.4", "furn_tpl", "furn.chair")
+a:set_property("cell.4.4", "furn_span", { r = 1, c = 1 })
+a:set_property("cell.4.4", "furn_offset", { dx = 0, dy = 0 })
+local inst44 = nil
+for i = n5 + 1, #instCalls do
+  if instCalls[i].prefab == CHAIR_PREFAB then inst44 = instCalls[i].ctrl end
+end
+ok(inst44 ~= nil, "F8a 6×6 格子上造出了家具实例")
+ok(inst44 ~= nil and inst44.localScaleX ~= nil
+   and math.abs(inst44.localScaleX - 89 / 108) < 0.01,
+  "F8b 缩放 = 格子/画布 = 89/108（实测 " .. tostring(inst44 and inst44.localScaleX) .. "）")
+ok(inst44 ~= nil and inst44.sizeDeltaX == 89,
+  "F8c 实例框仍是格子实际尺寸 89（实测 " .. tostring(inst44 and inst44.sizeDeltaX) .. "）")
+
+-- ── F9（v324）resync 必须幂等：控件上的自定义字段存不住也不许重建 ──────────────
+--   真机证据：日志里同一批 `家具模板：…` 每 0.5 秒重复 + `本轮补造 8 格` 反复出现
+--   ⇒ `inst.__murdoku_applied` 读回来永远是 nil ⇒ 每趟 resync 都销毁重建 ✗
+if inst44 ~= nil then inst44.__murdoku_applied = nil end      -- 模拟真机（字段根本存不住）
+local n6 = #instCalls
+a:_furn_resync()
+ok(#instCalls == n6,
+  "F9a resync 幂等：参数没变就不许重建（实测新增 " .. (#instCalls - n6) .. " 次）")
+ok(a._furn_applied ~= nil and a._furn_applied["cell.4.4|chair"] ~= nil,
+  "F9b 应用记录存在适配器表里（不依赖控件字段）")
+a:_furn_resync()
+ok(#instCalls == n6, "F9c 再跑一趟也不重建")
+
 print(string.format("\nfurn_newarch: %d passed, %d failed", passed, failed))
 os.exit(failed == 0 and 0 or 1)

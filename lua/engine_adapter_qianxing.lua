@@ -1,4 +1,4 @@
---[[----------------------------------------------------------------------------
+﻿--[[----------------------------------------------------------------------------
   engine_adapter_qianxing.lua —— 千星奇域 7.1 客户端脚本绑定层（按官方 API 实现）
 
   依据：官方《客户端控件API文档》 mhtakr07vej4 与《客户端控件和客户端脚本》 mhbgxf0nynww
@@ -4149,11 +4149,34 @@ end
 
 -- 读格子边长（带兜底：模拟器没有 getter 时用界面层刚发的 rect）
 function Adapter:_cell_size_of(ctrl, cell_id)
-  local w, h = size_of(ctrl)
-  if (type(w) ~= "number" or w <= 1) and cell_id ~= nil and self.rects ~= nil then
+  -- ★★★★★★★★ 2026-10-23（v324）**优先用布局算出来的尺寸（`rects`）** ✗✓✓
+  --
+  --   真机证据（`日志_2026/10/23_22:03:28`，v323）：
+  --     · 5×5 关：`家具模板：…（格子=108px）` → 家具正常；
+  --     · 6×6 关：`…（格子=89px）`，可家具仍**整体大一圈**、多格地毯溢出错位。
+  --   机制：格子是**模板实例**，模板里写死的 `sizeDelta` 是 108（画布基准）；
+  --     而 6×6 关布局把格子摆成 89 —— 两者不一致时，家具按 108 算就会大 108/89 ≈ 1.21 倍。
+  --   ⇒ 布局计划写进 `self.rects[cell]` 的 w/h 才是**这一关真实的格子像素**，优先用它；
+  --     读不到才退回控件自己的 sizeDelta。两值不一致时打一行日志（真机一眼判读）。
+  if cell_id ~= nil and self.rects ~= nil then
     local r = self.rects[cell_id]
-    if type(r) == "table" then w, h = r.w, r.h end
+    if type(r) == "table" and tonumber(r.w) and tonumber(r.h) and r.w > 1 and r.h > 1 then
+      local sw, sh = size_of(ctrl)
+      if type(sw) == "number" and sw > 1 and math.abs(sw - r.w) > 0.5 then
+        self._cellsize_logged = self._cellsize_logged or {}
+        local k = tostring(cell_id)
+        if not self._cellsize_logged[k] then
+          self._cellsize_logged[k] = true
+          if print then
+            print(string.format("[murdoku] 格子尺寸：cell=%s rects=%.1f,%.1f sizeDelta=%.1f,%.1f（用 rects ✓）",
+              k, r.w, r.h, sw, sh))
+          end
+        end
+      end
+      return r.w, r.h
+    end
   end
+  local w, h = size_of(ctrl)
   if type(w) ~= "number" or type(h) ~= "number" or w <= 1 or h <= 1 then return nil, nil end
   return w, h
 end
@@ -4518,7 +4541,8 @@ function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
     local want_span = (self._furn_span and self._furn_span[cell_id]) or { r = 1, c = 1 }
     local want_off = (self._furn_off and self._furn_off[cell_id]) or { dx = 0, dy = 0 }
     if inst ~= nil then
-      local a = inst.__murdoku_applied
+      -- ★ v324：应用记录从**普通表**读（不再从控件对象读，原因见写入处那段注释）
+      local a = (self._furn_applied and self._furn_applied[inst_key]) or inst.__murdoku_applied
       local same = (a ~= nil)
         and a.span ~= nil and _num(a.span.r, 1) == _num(want_span.r, 1) and _num(a.span.c, 1) == _num(want_span.c, 1)
         and a.off ~= nil and math.abs(_num(a.off.dx, 0) - _num(want_off.dx, 0)) < 1e-6
@@ -4528,6 +4552,7 @@ function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
       if not same then
         self:_furn_destroy(inst)
         self._furn_inst[inst_key] = nil
+        if self._furn_applied then self._furn_applied[inst_key] = nil end
         inst = nil
       end
     end
@@ -4585,7 +4610,15 @@ function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
     if inst.SetAnchoredPosition then
       inst:SetAnchoredPosition(_num(off.dx, 0) * cw, -(_num(off.dy, 0) * ch))
     end
-    inst.__murdoku_applied = {
+    -- ★★★★★★★★ 2026-10-23（v324）**应用记录存在适配器表里，不再挂在控件对象上** ✗✓✓
+    --
+    --   真机证据（`日志_2026/10/23_22:03:28`）：同一批 `家具模板：cell=… ← …` **每 0.5 秒重复一次**，
+    --   同时 `模板化家具：本轮补造 8 格` 反复出现 ⇒ `inst.__murdoku_applied` 在这台真机上
+    --   **读回来永远是 nil**（控件对象不接受自定义字段）⇒ 每次 resync 都判定"参数变了"
+    --   ⇒ **销毁 → 重建 → 再销毁**（闪、卡、日志刷屏，而且家具位置会抖）✗
+    --   ⚠️ 旧实现在离线用例里是通过的 —— 因为假控件是 Lua 表，能存字段。**假环境骗了我们一次**。
+    self._furn_applied = self._furn_applied or {}
+    self._furn_applied[inst_key] = {
       span = { r = _num(span.r, 1), c = _num(span.c, 1) },
       off = { dx = _num(off.dx, 0), dy = _num(off.dy, 0) },
       cw = _num(cw, 0), ch = _num(ch, 0),
@@ -4618,16 +4651,66 @@ function Adapter:_furn_resync()
   return n
 end
 
+-- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+-- 2026-10-23（v324）**家具缩放：必须用 localScale（真变换），不能改容器尺寸** ✗✓✓
+--
+--   真机症状（`日志_2026/10/23_22:03:28` + 美术侧《家具尺寸偏大与地毯错位》）：
+--     6×6 关家具**整体大 1.21 倍**（108/89）、多格地毯溢出/偏位；5×5 关正常。
+--
+--   根因两层：
+--     ① 模板实例只有 **1 个子控件**（内容根，日志 `家具层缩放：子层=1`）——
+--        模板那一百多层是"内容根的孙子"，**全部按画布 108 的绝对像素定位**；
+--     ② 旧实现去改**内容根的 sizeDelta** ⇒ 只是把容器框从 108 改成 89，
+--        里面的层**一个像素都不缩** ⇒ 家具仍然按 108 画 ⇒ 恒定大 1.21 倍 ✗
+--   ⇒ 改法：对**实例本身**下 `SetLocalScale(fx, fy, 1)`（官方 API；`localScaleX/Y/Z` 也是读写字段）
+--      ⇒ 整棵子树（含所有层）一起缩 ⇒ 呈现尺寸 = 画布 × f = 格子实际尺寸 ✓
+--   ⚠️ v323 的兜底写的是 `ch:SetScale(avg, avg)` —— **官方没有这个方法**，pcall 吞掉后静默不生效。
+--      这里按官方两种写法依次尝试：`SetLocalScale(x,y,z)` → `localScaleX/localScaleY` → 子内容根。
 function Adapter:_furn_scale_layers(inst, fx, fy)
-  -- 兼容旧调用（只给一个参数时按等比）
+  if fy == nil then fy = fx end
+  if inst == nil or fx == nil or fy == nil or fx <= 0 or fy <= 0 then return 0, 0 end
+  local how = nil
+  local ok = false
+  if inst.SetLocalScale ~= nil then
+    ok = pcall(function() inst:SetLocalScale(fx, fy, 1) end)
+    if ok then how = "SetLocalScale" end
+  end
+  if not ok then
+    ok = pcall(function() inst.localScaleX = fx; inst.localScaleY = fy; inst.localScaleZ = 1 end)
+    if ok then how = "localScale 字段" end
+  end
+  if not ok then
+    -- 最后兜底：实例唯一那个内容根（模板内容根）上缩一遍
+    local kids = nil
+    if inst.GetChildren ~= nil then pcall(function() kids = inst:GetChildren() end) end
+    if type(kids) == "table" and #kids == 1 then
+      local rt = kids[1]
+      if rt ~= nil and rt.SetLocalScale ~= nil then
+        ok = pcall(function() rt:SetLocalScale(fx, fy, 1) end)
+        if ok then how = "内容根 SetLocalScale" end
+      end
+    end
+  end
+  if print then
+    self._furn_scale_logged = self._furn_scale_logged or {}
+    local key = tostring(how or "失败")
+    if not self._furn_scale_logged[key] then
+      self._furn_scale_logged[key] = true
+      print(string.format("[murdoku] 家具缩放：比例=%.3f,%.3f 方式=%s%s",
+        fx, fy, key, ok and "" or "（三种写法都不行 ⇒ 家具会偏大，请回传这行）"))
+    end
+  end
+  if ok then return 1, 0 end
+  return 0, 1
+end
+
+-- 旧实现（v323）：逐子控件改 sizeDelta —— **只在完全没有 scale API 时才用**，见上面注释。
+function Adapter:_furn_scale_children(inst, fx, fy)
   if fy == nil then fy = fx end
   if fx == nil or fx <= 0 or fy == nil or fy <= 0 then return 0, 0 end
   local kids = nil
   if inst.GetChildren ~= nil then pcall(function() kids = inst:GetChildren() end) end
   if type(kids) ~= "table" then return 0, 0 end
-  self._furn_base_vals = self._furn_base_vals or setmetatable({}, { __mode = "k" })
-  self._furn_scale_n = (self._furn_scale_n or 0) + 1
-  local scaled, failed = 0, 0
   for i = 1, #kids do
     local ch = kids[i]
     if ch ~= nil then
@@ -4680,16 +4763,22 @@ function Adapter:_furn_scale_layers(inst, fx, fy)
             b.fx, b.fy = fx, fy
             scaled = scaled + 1
           end
-        elseif ch.SetScale ~= nil then
-          -- ② 拿不到尺寸：用 Scale 兜底（等比；各向异性时取平均，聊胜于无）
+        else
+          -- ② 拿不到尺寸：用**官方** localScale 兜底
+          --    ★ 官方《客户端控件API文档》里**没有** `SetScale` —— v323 那条 `ch:SetScale(...)`
+          --      被 pcall 吞掉后等于没写（真机上"改了没变化"的一部分就是它）✓
           local avg = math.sqrt(fx * fy)
-          pcall(function() ch:SetScale(avg, avg) end)
+          if ch.SetLocalScale ~= nil then
+            pcall(function() ch:SetLocalScale(avg, avg, 1) end)
+          else
+            pcall(function() ch.localScaleX = avg; ch.localScaleY = avg end)
+          end
         end
       end
     end
   end
   if print and self._furn_scale_n <= 3 then
-    print(string.format("[murdoku] 家具层缩放：子层=%d 缩放=%.3f,%.3f 成功=%d 基值读不到=%d",
+    print(string.format("[murdoku] 家具层缩放（兜底路径）：子层=%d 缩放=%.3f,%.3f 成功=%d 基值读不到=%d",
       #kids, fx, fy, scaled, failed))
   end
   return scaled, failed
@@ -5056,6 +5145,7 @@ function Adapter:set_property(id, key, value, nkey)
             if want_key == nil or kk ~= tostring(want_key) then
               self:_furn_destroy(v)
               self._furn_inst[k] = nil
+              if self._furn_applied then self._furn_applied[k] = nil end
             end
           end
         end
@@ -5069,6 +5159,7 @@ function Adapter:set_property(id, key, value, nkey)
           if type(k) == "string" and k:sub(1, #prefix) == prefix then
             self:_furn_destroy(v)
             self._furn_inst[k] = nil
+            if self._furn_applied then self._furn_applied[k] = nil end
           end
         end
       end
