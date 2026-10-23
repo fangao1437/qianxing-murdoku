@@ -191,7 +191,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v311 / 2026-10-22 / 模板探针：验证模板嵌套 + 运行时改引用（v311） =====")
+        print("[murdoku] ===== 构建标记 v312 / 2026-10-23 / 方案A真机测试：家具模板实例化到每格 furn 层（带日志） =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -1335,21 +1335,24 @@ function OnEnable() end
 function OnDisable() end
 
 function OnUpdate(dt)
-  -- ★ 2026-10-22（v311）**模板探针**：等格子实例建出来之后跑一次（OnInit 时格子还没建）。
-  --   结果只在日志（前缀 `[tplprobe]`）；`cfg.tpl_probe = false` 可关。
-  if cfg.tpl_probe and not TPL_PROBE_DONE and adapter ~= nil then
-    local cell = nil
-    pcall(function() cell = adapter:find("cell.1.1") end)
-    if cell ~= nil then
-      TPL_PROBE_DONE = true
-      pcall(function()
-        local okp, probe = pcall(require, "tpl_probe")
-        if okp and probe ~= nil and probe.run ~= nil then
-          pcall(probe.run, cfg)
-        elseif print then
-          print("[tplprobe] 载入失败：" .. tostring(probe))
-        end
-      end)
+  -- ★ 2026-10-22（v311/v312）**模板探针**：等格子实例建出来之后跑一次（OnInit 时格子还没建）。
+  --   结果只在日志（前缀 `[tplprobe]`）；配置项在 build_adapter 的 cfg 表里（`adapter.cfg`）。
+  if not TPL_PROBE_DONE and adapter ~= nil then
+    local acfg = adapter.cfg
+    if acfg ~= nil and acfg.tpl_probe then
+      local cell = nil
+      pcall(function() cell = adapter:find("cell.1.1") end)
+      if cell ~= nil then
+        TPL_PROBE_DONE = true
+        pcall(function()
+          local okp, probe = pcall(require, "tpl_probe")
+          if okp and probe ~= nil and probe.run ~= nil then
+            pcall(probe.run, acfg)
+          elseif print then
+            print("[tplprobe] 载入失败：" .. tostring(probe))
+          end
+        end)
+      end
     end
   end
 

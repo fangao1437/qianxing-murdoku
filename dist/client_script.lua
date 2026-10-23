@@ -17145,6 +17145,9 @@ function Adapter:_apply_furn_level()
   end
   self._furn_inst = {}
   self._furn_scaled = {}
+  self._furn_ok_n = 0      -- v312：本关成功实例化的家具件数
+  self._furn_fail_n = 0    -- v312：失败件数
+  self._furn_keys = {}     -- v312：本关实际请求过的模板键（用于汇总日志）
   local c = self:find((self.cfg and self.cfg.furn_parent) or "board")
   local prefabs_cfg = self.cfg and self.cfg.furn_tpl_prefab
   -- 有"模板配置"才走模板路；没有（老存档/导入未带模板）⇒ `furn` 手搭层照旧画（v309 行为）
@@ -17156,14 +17159,32 @@ function Adapter:_apply_furn_level()
 end
 
 -- 取（或造）某格家具模板实例，并按 span/offset 摆好；同格同模板只造一次
+-- v312：把界面层下发的模板键（"furn.chair" / "furn.table.h2"）归一化成 cfg 表里的键（chair / table_h2）
+local function _furn_cfg_key(name)
+  if type(name) ~= "string" then return nil end
+  local k = name:gsub("^furn%.", "")
+  k = k:gsub("%.", "_")          -- table.h2 -> table_h2
+  if k == "table_1" then k = "table" end   -- 方桌：ui 层叫 furn.table（没有 .1）
+  return k
+end
+
 function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
   if cell_id == nil or type(name) ~= "string" then return false end
   local cfg = self.cfg or {}
   local prefabs = cfg.furn_tpl_prefab or {}
-  local prefab = prefabs[name]
+  local ckey = _furn_cfg_key(name)
+  local prefab = ckey ~= nil and prefabs[ckey] or nil
   if prefab == nil then
     -- 模板索引还没配（存档没这 7 个模板）⇒ 回落 `furn` 手搭层（v309 行为）
     self._furn_tpl_ok = false
+    return false
+  end
+  if game == nil or game.InstantiateClientUIControl == nil then
+    self._furn_tpl_ok = false
+    self._furn_fail_n = (self._furn_fail_n or 0) + 1
+    if print then
+      print("[murdoku] 家具模板：环境没有 InstantiateClientUIControl（cell=" .. tostring(cell_id) .. "）")
+    end
     return false
   end
   local cw, ch = self:_cell_size_of(ctrl, cell_id)
@@ -17176,8 +17197,13 @@ function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
     local ok, obj = pcall(game.InstantiateClientUIControl, prefab, parent)
     if not ok or obj == nil then
       self._furn_tpl_ok = false
-      self:warn_once("furn:tpl", "家具模板实例化失败（" .. tostring(name) .. " / " .. tostring(prefab)
-        .. " 返回 nil）⇒ 回落 `furn` 手搭层。")
+      self._furn_fail_n = (self._furn_fail_n or 0) + 1
+      if print then
+        print("[murdoku] 家具模板实例化失败：cell=" .. tostring(cell_id)
+          .. " 模板键=" .. tostring(name) .. " prefab=" .. tostring(prefab)
+          .. " 父控件=" .. tostring(parent ~= nil and parent.name or "nil")
+          .. " ok=" .. tostring(ok) .. " obj=" .. tostring(obj))
+      end
       return false
     end
     pcall(function() obj.name = "furni." .. cell_id end)
@@ -17187,6 +17213,15 @@ function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
     self.instantiated["furni." .. cell_id] = true
     -- 模板层按"基准 px"写死 ⇒ 首次实例化后按 f 缩放一遍子层
     self:_furn_scale_layers(inst, cw)
+    self._furn_ok_n = (self._furn_ok_n or 0) + 1
+    self._furn_keys = self._furn_keys or {}
+    self._furn_keys[name] = (self._furn_keys[name] or 0) + 1
+    if print then
+      local sn = tostring(name)
+      print("[murdoku] 家具模板：cell=" .. tostring(cell_id) .. " ← " .. sn
+        .. "（prefab=" .. tostring(prefab) .. "，格子=" .. tostring(math.floor(cw)) .. "px"
+        .. "，父控件=" .. tostring(parent ~= nil and parent.name or "nil") .. "）")
+    end
   end
 
   local span = (self._furn_span and self._furn_span[cell_id]) or { r = 1, c = 1 }
@@ -23552,7 +23587,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v311 / 2026-10-22 / 模板探针：验证模板嵌套 + 运行时改引用（v311） =====")
+        print("[murdoku] ===== 构建标记 v312 / 2026-10-23 / 方案A真机测试：家具模板实例化到每格 furn 层（带日志） =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -24696,21 +24731,24 @@ function OnEnable() end
 function OnDisable() end
 
 function OnUpdate(dt)
-  -- ★ 2026-10-22（v311）**模板探针**：等格子实例建出来之后跑一次（OnInit 时格子还没建）。
-  --   结果只在日志（前缀 `[tplprobe]`）；`cfg.tpl_probe = false` 可关。
-  if cfg.tpl_probe and not TPL_PROBE_DONE and adapter ~= nil then
-    local cell = nil
-    pcall(function() cell = adapter:find("cell.1.1") end)
-    if cell ~= nil then
-      TPL_PROBE_DONE = true
-      pcall(function()
-        local okp, probe = pcall(__require, "tpl_probe")
-        if okp and probe ~= nil and probe.run ~= nil then
-          pcall(probe.run, cfg)
-        elseif print then
-          print("[tplprobe] 载入失败：" .. tostring(probe))
-        end
-      end)
+  -- ★ 2026-10-22（v311/v312）**模板探针**：等格子实例建出来之后跑一次（OnInit 时格子还没建）。
+  --   结果只在日志（前缀 `[tplprobe]`）；配置项在 build_adapter 的 cfg 表里（`adapter.cfg`）。
+  if not TPL_PROBE_DONE and adapter ~= nil then
+    local acfg = adapter.cfg
+    if acfg ~= nil and acfg.tpl_probe then
+      local cell = nil
+      pcall(function() cell = adapter:find("cell.1.1") end)
+      if cell ~= nil then
+        TPL_PROBE_DONE = true
+        pcall(function()
+          local okp, probe = pcall(__require, "tpl_probe")
+          if okp and probe ~= nil and probe.run ~= nil then
+            pcall(probe.run, acfg)
+          elseif print then
+            print("[tplprobe] 载入失败：" .. tostring(probe))
+          end
+        end)
+      end
     end
   end
 
