@@ -1,4 +1,4 @@
---[[----------------------------------------------------------------------------
+﻿--[[----------------------------------------------------------------------------
   ui_controller.lua —— 操作框架层（页面布局 + 交互状态机 + 特效指令）v0.3.0
 
   交互模型照 murdoku 实证规格：
@@ -2188,6 +2188,17 @@ function Controller:build_layout(ui_adapter)
   --   ⇒ 这里只负责把"哪一格放哪件、整件中心相对锚点格偏移多少"算出来；坐标换算在适配层做。
   --   ⚠️ 地毯例外：它是一块可站人的平面图形，仍走原来的 12 层矩形（`furn`），不生成几百个图元。
   local furn_recs = nil
+  -- ★★★★★★★★ 2026-10-23（v319）**这三个表必须声明在函数作用域** ✗✓✓
+  --
+  --   真机症状：家具一件都不出现；`家具模板映射` 8 项全对、`模板化家具：关卡=true` 也有，
+  --   却**一条 `家具模板：cell=…` 都没有**（= 适配层从没收到模板键）。
+  --   根因（本地已复现，见 `tools/_diag_furn8.lua`）：声明原来写在下面那个 `do ... end` **里面**，
+  --   而格子节点是在那个 `do` **外面** push 的 ⇒ 那三行在 push 处解析成**全局 nil**
+  --   ⇒ 每格都下发 `false` ⇒ 家具永远不实例化 ✗
+  --   （`furn_art` / `furn_recs` / `level_id` 都是函数作用域声明的，所以它们一直正常 ——
+  --    这正是"别的东西都对、只有家具不出现"的原因。）
+  --   ⚠️ 别再把它们写回 `do` 里面：Lua 不会报错，只会静默变成全局 nil。
+  local furn_tpl, furn_span, furn_offset = {}, {}, {}
   local level_id = nil        -- 当前关卡 id（静态烘焙按关卡切容器用）
   do
     local keys = {}
@@ -2230,7 +2241,8 @@ function Controller:build_layout(ui_adapter)
       -- ★ v316：地毯也走模板（用户：「地毯也按其它家具的做法做」）
       carpet = "furn.rug",
     }
-    local furn_tpl, furn_span, furn_offset = {}, {}, {}
+    -- ★ v319：**不再在这里 `local`** —— 三个表已在函数作用域声明（见上面那段根因注释）。
+    --   写成 `local` 就会遮盖外层同名变量 ⇒ 外层的表永远空着 ⇒ 格子节点下发 `false` ⇒ 家具不出现 ✗
     for r = 1, vm.rows do
       furn_tpl[r], furn_span[r], furn_offset[r] = {}, {}, {}
       for c = 1, vm.cols do furn_tpl[r][c], furn_span[r][c], furn_offset[r][c] = false, false, false end
