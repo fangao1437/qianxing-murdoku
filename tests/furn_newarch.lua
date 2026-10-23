@@ -155,6 +155,44 @@ end
 ok(rug2 ~= nil, "F4f 多格地毯：按 things 里 furn.rug.2 的 prefab 实例化了")
 ok(rug2 ~= nil and rug2.ctrl.siblingIndex == 1, "F4g 多格地毯：层级 = 1（与单格地毯同级）")
 
+-- ── F6 属性后到（v322）：span/offset 比 furn_tpl 晚到 ⇒ 必须销毁重建 ──────
+--   真机顺序：furn_tpl 先到就实例化（按 1 格大小），span/offset 后到；
+--   旧代码不会重造 ⇒ 跨格件停在错误尺寸/位置（第二关错位的根因）。
+local TABLE_H2_PREFAB = 1073747138
+add(things, ref("furn.table.h2", TABLE_H2_PREFAB))
+local cel22 = mkctrl("cell.2.2")
+cel22.kind = "button"
+add(cel22, (function() local c2 = mkctrl("content") add(c2, mkctrl("hint")) return c2 end)())
+add(board, cel22)
+a:set_property("root", "furn_level", "case_001")   -- 重算映射
+local destroyed = {}
+local oldDestroy = _G.game.DestroyClientUIControl
+_G.game.DestroyClientUIControl = function(ctrl) destroyed[#destroyed + 1] = ctrl end
+local n3 = #instCalls
+a:set_property("cell.2.2", "furn_tpl", "furn.table.h2")   -- ① 只有 tpl（span/offset 还没到）
+local late = nil
+for i = n3 + 1, #instCalls do
+  if instCalls[i].prefab == TABLE_H2_PREFAB then late = instCalls[i] end
+end
+ok(late ~= nil, "F6a 属性后到：furn_tpl 先到也能先建实例")
+ok(late ~= nil and late.ctrl.sizeDeltaX == 108 and late.ctrl.sizeDeltaY == 108,
+  "F6b 此时按 1 格大小（旧代码会停在这个错误形态）")
+a:set_property("cell.2.2", "furn_span", { r = 1, c = 2 })
+a:set_property("cell.2.2", "furn_offset", { dx = -0.5, dy = 0 })
+local remade = nil
+for i = n3 + 1, #instCalls do
+  if instCalls[i].prefab == TABLE_H2_PREFAB and instCalls[i].ctrl ~= (late and late.ctrl) then
+    remade = instCalls[i]
+  end
+end
+ok(#destroyed > 0, "F6c span/offset 后到 ⇒ 旧实例被销毁")
+ok(remade ~= nil, "F6d 并按新 span 重建了实例")
+ok(remade ~= nil and remade.ctrl.sizeDeltaX == 216 and remade.ctrl.sizeDeltaY == 108,
+  "F6e 重建后的尺寸 = 2 格宽 × 1 格高（216×108）")
+ok(remade ~= nil and math.abs(remade.ctrl.anchoredPositionX + 54) < 0.01,
+  "F6f 重建后的位置 = 锚点格中心左移半格（-54px）")
+_G.game.DestroyClientUIControl = oldDestroy
+
 -- ── F5 新架构下手搭层被跳过，不报错 ───────────────────────────────────────
 a:set_property("cell.1.1", "furn_span", { r = 1, c = 1 })
 local r5 = a:set_property("cell.1.1", "furn", {

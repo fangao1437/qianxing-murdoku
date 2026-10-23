@@ -17433,6 +17433,24 @@ function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
   -- ★ v316：按 (cell, 模板键) 缓存 —— 同一格可以既有地毯又有家具
   local inst_key = tostring(cell_id) .. "|" .. tostring(ckey)
   local inst = self._furn_inst[inst_key]
+  -- ★ v322：属性可能后到（span/offset 比 tpl 晚）——尺寸/偏移变了就销毁重建，
+  --   否则跨格件会停在"按 1 格生成"的错误形态上。
+  do
+    local want_span = (self._furn_span and self._furn_span[cell_id]) or { r = 1, c = 1 }
+    local want_off = (self._furn_off and self._furn_off[cell_id]) or { dx = 0, dy = 0 }
+    if inst ~= nil then
+      local a = inst.__murdoku_applied
+      local same = (a ~= nil)
+        and a.span ~= nil and _num(a.span.r, 1) == _num(want_span.r, 1) and _num(a.span.c, 1) == _num(want_span.c, 1)
+        and a.off ~= nil and math.abs(_num(a.off.dx, 0) - _num(want_off.dx, 0)) < 1e-6
+        and math.abs(_num(a.off.dy, 0) - _num(want_off.dy, 0)) < 1e-6
+      if not same then
+        self:_furn_destroy(inst)
+        self._furn_inst[inst_key] = nil
+        inst = nil
+      end
+    end
+  end
   if inst == nil then
     -- ★ v315：新架构 content 里没有 `furn` 容器 ⇒ 直接挂 content；
     --   实例排在 face（index 0）之上、其余覆盖层（wall/note/portrait…）之下
@@ -17486,6 +17504,11 @@ function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
     if inst.SetAnchoredPosition then
       inst:SetAnchoredPosition(_num(off.dx, 0) * cw, -(_num(off.dy, 0) * ch))
     end
+    inst.__murdoku_applied = {
+      span = { r = _num(span.r, 1), c = _num(span.c, 1) },
+      off = { dx = _num(off.dx, 0), dy = _num(off.dy, 0) },
+      ckey = ckey,
+    }
     if inst.SetVisible then inst:SetVisible(self._furn_level ~= false) end
     if inst.SetActive then inst:SetActive(self._furn_level ~= false) end
     -- ★ v315/v316：层级 = face(0) → 地毯(1) → 其它家具(2) → 墙/头像等覆盖层
@@ -17887,6 +17910,20 @@ function Adapter:set_property(id, key, value, nkey)
     -- ★ v313：**一律返回 true**（已受理）；真正能不能造要看 `furn_level` 有没有到，
     --   到了由 `_furn_try_all()` 统一补造 —— 不再依赖属性投递顺序（真机教训）。
     if type(value) == "string" then
+      -- ★ v322：同一格换模板键（例如桌子换规格）⇒ 先清掉该格其它键的旧实例
+      if self._furn_inst ~= nil then
+        local want_key = _furn_cfg_key(value)
+        local prefix = tostring(id) .. "|"
+        for k, v in pairs(self._furn_inst) do
+          if type(k) == "string" and k:sub(1, #prefix) == prefix then
+            local kk = k:sub(#prefix + 1)
+            if want_key == nil or kk ~= tostring(want_key) then
+              self:_furn_destroy(v)
+              self._furn_inst[k] = nil
+            end
+          end
+        end
+      end
       if self._furn_tpl_ok then self:_spawn_furn_tpl(id, ctrl, value) end
     else
       -- 这格没有家具（或切关后旧值）：把上一关的实例销毁掉，别残留
@@ -23880,7 +23917,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v321 / 2026-10-23 / 桌子换富图元 + 横竖桌缩放修正（第二关错位） =====")
+        print("[murdoku] ===== 构建标记 v322 / 2026-10-23 / 属性后到免疫：span/offset 晚到会重造家具实例 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
