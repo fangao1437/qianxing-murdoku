@@ -15452,6 +15452,23 @@ function Adapter:ensure_cells(rows, cols)
       end
     end
   end)
+  -- ★★★★★★★★ 2026-10-23（v318）**格子建好之后必须再放一次家具** ✗✓✓
+  --
+  --   真机证据（`日志_2026/10/23_19:55:43_玩家_烧钱的玩意`）：
+  --     · `模板化家具：关卡=true（实例缓存已清）` **出现过** ⇒ `furn_level` 属性到了 ✓
+  --     · 但**一条 `家具模板：cell=… ← furn.xxx` 都没有**，也没有「本轮补造」行 ✗
+  --     · 格子是**进关之后**才建出来的：`棋盘格子：25 / 25 存在（本次新建 25 个，模板索引 1073741876）`
+  --   ⇒ 根因：`_apply_furn_level` 跑在"格子还没建 / `things` 还没进树"的时刻，
+  --     于是 `_furn_tpl_ok=false` 被**永久钉住**，而 `furn_tpl` 属性那时只做缓存、没人补造 ⇒ 家具一件不出 ✗
+  --   ⇒ 修法：① 格子建好后**主动补造一次**（本段）；② `_spawn_furn_tpl` 里**重新读一次映射**、不再钉死；
+  --            ③ `on_tick` 里给一个**有上限**的补造重试（见 `_furn_retry`）
+  pcall(function()
+    if self._furn_want ~= nil and next(self._furn_want) ~= nil then
+      self._furn_prefabs = self:_furn_prefab_map()
+      self._furn_tpl_ok = (self._furn_prefabs ~= nil and next(self._furn_prefabs) ~= nil)
+      self:_furn_try_all()
+    end
+  end)
   return made
 end
 
@@ -17289,6 +17306,8 @@ function Adapter:_apply_furn_level()
   self._furn_ok_n = 0      -- v312：本关成功实例化的家具件数
   self._furn_fail_n = 0    -- v312：失败件数
   self._furn_keys = {}     -- v312：本关实际请求过的模板键（用于汇总日志）
+  self._furn_retry_n = 0   -- ★ v318：换关后重试额度重置
+  self._furn_last_try = -1
   local c = self:find((self.cfg and self.cfg.furn_parent) or "board")
   -- ★ v315：家具模板映射优先读 `things` 容器里的引用控件（用户新架构），cfg 表只作回退
   self._furn_prefabs = self:_furn_prefab_map()
@@ -17298,6 +17317,17 @@ function Adapter:_apply_furn_level()
     self._furn_arch_new = (things ~= nil) or (self.cfg and self.cfg.furn_arch_new == true) or false
   end
   self._furn_tpl_ok = (self._furn_prefabs ~= nil and next(self._furn_prefabs) ~= nil)
+  -- ★ 2026-10-23（v318）：把"映射到底读到了什么"打一行 —— 真机原来对这件事完全不可见
+  --   （真机日志里只有 `模板化家具：关卡=true` 一行，家具却一件没出现 ⇒ 分不清是没映射还是没补造）
+  if print then
+    local ks = {}
+    for k in pairs(self._furn_prefabs or {}) do ks[#ks + 1] = k end
+    table.sort(ks)
+    print("[murdoku] 家具模板映射：things 找到="
+      .. tostring(self:find((self.cfg and self.cfg.furn_things_parent) or "things") ~= nil)
+      .. "　条目=" .. tostring(#ks) .. "　keys={" .. table.concat(ks, ",") .. "}"
+      .. "　已缓存的请求格=" .. tostring(self._furn_want ~= nil and next(self._furn_want) ~= nil))
+  end
   if self._furn_tpl_ok and self._furn_level ~= false then
     pcall(function() self:_furn_try_all() end)   -- ★ v313：属性可能先到，这里统一补造
   end
@@ -17352,8 +17382,28 @@ function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
   local ckey = _furn_cfg_key(name)
   local prefab = ckey ~= nil and prefabs[ckey] or nil
   if prefab == nil then
-    -- 模板索引还没配（存档没这 7 个模板）⇒ 回落 `furn` 手搭层（v309 行为）
-    self._furn_tpl_ok = false
+    -- ★ 2026-10-23（v318）：**不许永久钉死** —— `things` 可能是晚一步才进树（真机就是这个顺序）
+    --   每来一次就重读一次映射，并把"哪个键缺模板"打一次日志（原来这里是完全静默的）
+    self._furn_prefabs = self:_furn_prefab_map()
+    prefabs = self._furn_prefabs
+    prefab = ckey ~= nil and prefabs[ckey] or nil
+  end
+  if prefab == nil then
+    self._furn_fail_n = (self._furn_fail_n or 0) + 1
+    local key = "furnmiss:" .. tostring(ckey)
+    if print then
+      local once = self._furn_miss_logged or {}
+      self._furn_miss_logged = once
+      if not once[key] then
+        once[key] = true
+        local names = {}
+        for k in pairs(prefabs or {}) do names[#names + 1] = k end
+        table.sort(names)
+        print("[murdoku] 家具模板缺映射：模板键=" .. tostring(name) .. " → 归一化键=" .. tostring(ckey)
+          .. "　当前映射 keys={" .. table.concat(names, ",") .. "}"
+          .. "　things 找到=" .. tostring(self:find((self.cfg and self.cfg.furn_things_parent) or "things") ~= nil))
+      end
+    end
     return false
   end
   if game == nil or game.InstantiateClientUIControl == nil then
@@ -19611,6 +19661,24 @@ function Adapter:on_tick(dt)
   if self._baked_dirty then
     self._baked_dirty = false
     pcall(function() self:_apply_baked(false) end)
+  end
+  -- ★ 2026-10-23（v318）**家具模板的补造重试**（有上限，稳态零成本）
+  --
+  --   真机日志里家具一件都没出现：`furn_level` 到的时候格子还没建、`things` 可能也没进树，
+  --   之后再没有人补造。这里给一个**每秒一次、最多 12 次**的重试；全部造好后条件不再成立。
+  --   成本：want 表 ≤36 格，每格一次 `_spawn_furn_tpl`（已建好的只重摆位置，幂等）⇒ 可忽略。
+  if self._furn_want ~= nil and next(self._furn_want) ~= nil and self._furn_level ~= false
+     and (self._furn_retry_n or 0) < 12 then
+    self._furn_last_try = self._furn_last_try or -1
+    if self.clock - self._furn_last_try >= 1.0 then
+      self._furn_last_try = self.clock
+      self._furn_retry_n = (self._furn_retry_n or 0) + 1
+      pcall(function()
+        self._furn_prefabs = self:_furn_prefab_map()
+        self._furn_tpl_ok = (self._furn_prefabs ~= nil and next(self._furn_prefabs) ~= nil)
+        self:_furn_try_all()
+      end)
+    end
   end
   return self.clock
 end
@@ -23792,7 +23860,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v317 / 2026-10-23 / 520.2 结构：模板补 content+图片层（按 cell 已验证写法）+ rug 模板 + things 引用 =====")
+        print("[murdoku] ===== 构建标记 v318 / 2026-10-23 / 家具实例化修复：格子建好后补造 + 映射不钉死 + 重试（真机日志：家具模板一条都没跑） =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
