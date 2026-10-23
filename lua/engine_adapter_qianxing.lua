@@ -772,6 +772,13 @@ function Adapter:sub(parent_id, child_name)
     end
   end
 
+  -- ★ v315：新架构下 face 是"脚本实例化"的，第一次找不到就补一个（命名 `face`）
+  --   这样原来所有 `sub(cell,"face")` 的写入路径（图片/染色/可见性）不用改就自动换绑。
+  if hit == nil and child_name == "face" and type(parent_id) == "string"
+     and parent_id:match("^cell%.") ~= nil and self._ensure_cell_face ~= nil then
+    pcall(function() hit = self:_ensure_cell_face(parent_id, parent) end)
+  end
+
   if hit ~= nil then
     self.subs[key] = hit
   else
@@ -2525,6 +2532,17 @@ function Adapter:ensure_cells(rows, cols)
         layer_cells, layer_subs, layer_subs / layer_cells))
     end
   end
+  -- ★ v315：格子建好后，给每个格子补 face（新架构：face 从 cell 模板里拆出去了）
+  --   在 content 里实例化 face 并命名 `face` ⇒ 原来所有写 `sub(cell,"face")` 的代码自动换绑。
+  pcall(function()
+    for r = 1, rows do
+      for c = 1, cols do
+        local cid = self:cell_id(r, c)
+        local ctrl2 = self:find(cid)
+        if ctrl2 ~= nil then self:_ensure_cell_face(cid, ctrl2) end
+      end
+    end
+  end)
   return made
 end
 
@@ -4238,6 +4256,121 @@ function Adapter:_furn_destroy(ctrl)
 end
 
 -- 关卡切换 / 屏幕切换：销毁上一关实例、清缓存
+-- ══════════════════════════════════════════════════════════════════════════
+-- ★★★★★★★★ 2026-10-23（v315）**面层拆分 + things 家具引用**（用户改建的 520.1 架构）
+--
+--   用户把 cell 的 face 单独拿了出来（`cell.face` 模板源 1073747145、引用控件 `root/tpl.cell.face`），
+--   家具模板引用控件集中放在 `root/things` 下。脚本这边：
+--     · 给每个 cell 的 content 顶部实例化 face（命名 `face`）⇒ 旧代码里的 face 写入自动换绑；
+--     · 家具模板 prefab 从 `things` 引用控件读 `referencedPrefabIndex`；
+--     · 家具实例排在 face 之上（SiblingIndex 1）、覆盖层（wall/note/portrait…）之下。
+-- ══════════════════════════════════════════════════════════════════════════
+
+-- 把 "furn,chair" / "furn.table.h2" 归一化成 cfg 键（chair / table_h2 / table …）
+local function _furn_key_of(name)
+  if type(name) ~= "string" then return nil end
+  local k = name:gsub(",", ".")
+  k = k:gsub("^furn%.", "")
+  k = k:gsub("%.", "_")
+  if k == "table_1" then k = "table" end
+  return k
+end
+
+-- 家具模板映射：优先 things 引用控件（真实架构），其次 cfg.furn_tpl_prefab（旧档回退）
+function Adapter:_furn_prefab_map()
+  local map = {}
+  local things = self:find((self.cfg and self.cfg.furn_things_parent) or "things")
+  if things ~= nil and things.GetChildren ~= nil then
+    local ks = nil
+    pcall(function() ks = things:GetChildren() end)
+    if type(ks) == "table" then
+      for i = 1, #ks do
+        local ch = ks[i]
+        local nm, prefab = nil, nil
+        pcall(function() nm = ch.name end)
+        pcall(function() prefab = ch.referencedPrefabIndex end)
+        local key = _furn_key_of(nm)
+        if key ~= nil and type(prefab) == "number" and prefab > 0 then
+          map[key] = prefab
+        end
+      end
+    end
+  end
+  local cfg_map = self.cfg and self.cfg.furn_tpl_prefab
+  if type(cfg_map) == "table" then
+    for k, v in pairs(cfg_map) do
+      if map[k] == nil and type(v) == "number" and v > 0 then map[k] = v end
+    end
+  end
+  return map
+end
+
+-- face 模板 prefab：cfg → `tpl.cell.face` 引用控件 → 兜底 1073747145
+function Adapter:_face_prefab()
+  local cfg = self.cfg or {}
+  if type(cfg.face_tpl_prefab) == "number" and cfg.face_tpl_prefab > 0 then
+    return cfg.face_tpl_prefab
+  end
+  local ref = self:find(cfg.face_tpl_ref or "tpl.cell.face")
+  if ref ~= nil then
+    local v = nil
+    pcall(function() v = ref.referencedPrefabIndex end)
+    if type(v) == "number" and v > 0 then return v end
+  end
+  return tonumber(cfg.face_tpl_fallback) or 1073747145
+end
+
+-- 给某个 cell 的 content 顶部实例化 face（命名 `face`）；已有就复用
+function Adapter:_ensure_cell_face(cell_id, ctrl)
+  if cell_id == nil then return nil end
+  -- ⚠️ 这里**不能**用 `self:sub(cell_id,"face")` —— sub 对 face 有"缺了就补"的钩子，会递归
+  self._face_guard = self._face_guard or {}
+  if self._face_guard[cell_id] then return nil end
+  self._face_guard[cell_id] = true
+  local existing = nil
+  local content0 = nil
+  pcall(function() content0 = self:sub(cell_id, "content") end)
+  if content0 ~= nil and content0.GetChild ~= nil then
+    pcall(function() existing = content0:GetChild("face") end)
+  end
+  if existing ~= nil then
+    self._face_guard[cell_id] = nil
+    return existing
+  end
+  local prefab = self:_face_prefab()
+  if prefab == nil or game == nil or game.InstantiateClientUIControl == nil then return nil end
+  local content = nil
+  pcall(function() content = self:sub(cell_id, "content") end)
+  if content == nil then content = ctrl end
+  if content == nil then return nil end
+  local ok, obj = pcall(game.InstantiateClientUIControl, prefab, content)
+  if not ok or obj == nil then
+    self:warn_once("face:inst", "face 模板实例化失败（prefab=" .. tostring(prefab)
+      .. " cell=" .. tostring(cell_id) .. "）⇒ 本格没有地板图，其余逻辑继续")
+    self._face_guard[cell_id] = nil
+    return nil
+  end
+  pcall(function() obj.name = "face" end)
+  local cw, ch = self:_cell_size_of(ctrl, cell_id)
+  pcall(function()
+    if obj.SetAnchorMin then obj:SetAnchorMin(0.5, 0.5) end
+    if obj.SetAnchorMax then obj:SetAnchorMax(0.5, 0.5) end
+    if obj.SetPivot then obj:SetPivot(0.5, 0.5) end
+    if obj.SetSizeDelta and cw ~= nil then obj:SetSizeDelta(cw, ch) end
+    if obj.SetAnchoredPosition then obj:SetAnchoredPosition(0, 0) end
+    if obj.SetSiblingIndex then obj:SetSiblingIndex(0) end   -- 最底层：其余 content 层都在它上面
+    if obj.SetVisible then obj:SetVisible(true) end
+  end)
+  self._face_inst = self._face_inst or {}
+  self._face_inst[cell_id] = obj
+  self._face_guard[cell_id] = nil
+  if print then
+    print("[murdoku] 面层：cell=" .. tostring(cell_id) .. " 实例化 face（prefab="
+      .. tostring(prefab) .. "，尺寸=" .. tostring(cw) .. "px）")
+  end
+  return obj
+end
+
 function Adapter:_apply_furn_level()
   if self._furn_inst ~= nil then
     for _, v in pairs(self._furn_inst) do self:_furn_destroy(v) end
@@ -4248,12 +4381,24 @@ function Adapter:_apply_furn_level()
   self._furn_fail_n = 0    -- v312：失败件数
   self._furn_keys = {}     -- v312：本关实际请求过的模板键（用于汇总日志）
   local c = self:find((self.cfg and self.cfg.furn_parent) or "board")
-  local prefabs_cfg = self.cfg and self.cfg.furn_tpl_prefab
-  -- 有"模板配置"才走模板路；没有（老存档/导入未带模板）⇒ `furn` 手搭层照旧画（v309 行为）
-  self._furn_tpl_ok = (prefabs_cfg ~= nil and next(prefabs_cfg) ~= nil)
+  -- ★ v315：家具模板映射优先读 `things` 容器里的引用控件（用户新架构），cfg 表只作回退
+  self._furn_prefabs = self:_furn_prefab_map()
+  -- ★ v315：新架构判定（content 里没有 obj/furn 层）——用 `things` 容器或显式 cfg 开关
+  if self._furn_arch_new == nil then
+    local things = self:find((self.cfg and self.cfg.furn_things_parent) or "things")
+    self._furn_arch_new = (things ~= nil) or (self.cfg and self.cfg.furn_arch_new == true) or false
+  end
+  self._furn_tpl_ok = (self._furn_prefabs ~= nil and next(self._furn_prefabs) ~= nil)
   if self._furn_tpl_ok and self._furn_level ~= false then
     pcall(function() self:_furn_try_all() end)   -- ★ v313：属性可能先到，这里统一补造
   end
+  -- ★ v315：给已存在的格子补 face（首帧 cell 还没建时由 `_cells_ensure` 再补一次）
+  pcall(function()
+    for _, id in pairs(self.cells or {}) do
+      local ctrl = self:find(id)
+      if ctrl ~= nil then self:_ensure_cell_face(id, ctrl) end
+    end
+  end)
   if print then
     print("[murdoku] 模板化家具：关卡=" .. tostring(self._furn_level) .. "（实例缓存已清）")
   end
@@ -4294,7 +4439,7 @@ end
 function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
   if cell_id == nil or type(name) ~= "string" then return false end
   local cfg = self.cfg or {}
-  local prefabs = cfg.furn_tpl_prefab or {}
+  local prefabs = self._furn_prefabs or self:_furn_prefab_map()
   local ckey = _furn_cfg_key(name)
   local prefab = ckey ~= nil and prefabs[ckey] or nil
   if prefab == nil then
@@ -4316,6 +4461,8 @@ function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
   self._furn_inst = self._furn_inst or {}
   local inst = self._furn_inst[cell_id]
   if inst == nil then
+    -- ★ v315：新架构 content 里没有 `furn` 容器 ⇒ 直接挂 content；
+    --   实例排在 face（index 0）之上、其余覆盖层（wall/note/portrait…）之下
     local parent = self:sub(cell_id, "furn") or self:sub(cell_id, "content") or ctrl
     local ok, obj = pcall(game.InstantiateClientUIControl, prefab, parent)
     if not ok or obj == nil then
@@ -4361,6 +4508,16 @@ function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
     end
     if inst.SetVisible then inst:SetVisible(self._furn_level ~= false) end
     if inst.SetActive then inst:SetActive(self._furn_level ~= false) end
+    -- ★ v315：家具压在 face 上（face=0），又在墙/头像等覆盖层之下
+    if inst.SetSiblingIndex then
+      local idx = 1
+      if self._furn_inst ~= nil then
+        for _, other in pairs(self._furn_inst) do
+          if other ~= nil and other ~= inst then idx = idx + 1 end
+        end
+      end
+      pcall(function() inst:SetSiblingIndex(idx) end)
+    end
   end)
   return true
 end
@@ -4796,10 +4953,14 @@ function Adapter:set_property(id, key, value, nkey)
     return self:_paint_furn_art(id, ctrl, value, true)
 
   elseif key == "furn" then
-    -- ★ v310/v313：**只要 cfg 里配了模板表就一律不画手搭层**（模板实例负责家具；
-    --   模板实例化失败时宁可空着，也不要出现"先画手搭、之后模板又叠上来"的两代同屏）。
-    local _pf = self.cfg and self.cfg.furn_tpl_prefab
-    if _pf ~= nil and next(_pf) ~= nil then return true end
+    -- ★ v310/v313/v315：走模板家具时不画手搭层
+    if self._furn_tpl_ok then return true end
+    -- v315 新架构（520.1：content 里没有 obj/furn 层）⇒ 手搭层无处可画，跳过（地毯等 rug 模板）
+    if self._furn_arch_new then
+      self:warn_once("furn:newarch",
+        "新架构（things/无 obj 层）⇒ 手搭层（地毯）本轮跳过；需要地毯请让 integrator 在 things 加 `furn.rug` 模板。")
+      return true
+    end
     local layers = {}
     if type(value) == "table" then
       for i = 1, math.min(#value, #OBJ_LAYER_SUBS) do
