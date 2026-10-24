@@ -4585,6 +4585,15 @@ function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
       local cv = (self.cfg and self.cfg.furn_tpl_canvas and self.cfg.furn_tpl_canvas[ckey]) or { 108, 108 }
       local fx = (cw * _num(span0.c, 1)) / _num(cv[1], 108)
       local fy = (ch * _num(span0.r, 1)) / _num(cv[2], 108)
+      -- ★ v326：家具整体再缩小 + 地毯额外缩小（控件层缩放；实例尺寸/位置不变）
+      local k = _num(self.cfg and self.cfg.furn_scale, 1)
+      local kb = self.cfg and self.cfg.furn_scale_by_kind
+      if type(kb) == "table" then
+        local kv = kb[ckey]
+        if type(kv) ~= "number" then kv = kb["*"] end
+        if type(kv) == "number" then k = k * kv end
+      end
+      if k ~= 1 then fx, fy = fx * k, fy * k end
       self:_furn_scale_layers(inst, fx, fy)
     end
     self._furn_ok_n = (self._furn_ok_n or 0) + 1
