@@ -191,7 +191,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v328 / 2026-10-24 / 雕像修长版：剔除旧底座残影+新底座置顶（高:宽=1.2） =====")
+        print("[murdoku] ===== 构建标记 v329 / 2026-10-24 / 雕像整体缩0.85+底座干净4层 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -675,7 +675,7 @@ local function build_adapter()
     furn_tpl_base = 108,
     -- ★ v326：家具整体再缩小一点；地毯额外再缩小（用户要求"地毯在控件层单独额外缩小"）
     furn_scale = 0.93,
-    furn_scale_by_kind = { rug = 0.82, rug_2 = 0.82, rug_3 = 0.82 },
+    furn_scale_by_kind = { rug = 0.82, rug_2 = 0.82, rug_3 = 0.82, statue = 0.85 },
     -- ★ v327：多格地毯控件层加长（长轴恢复 0.93、短轴保持 0.93*0.82≈0.762）
     furn_scale_axis_by_kind = {
       rug_2 = { x = 0.93, y = 0.762 },
