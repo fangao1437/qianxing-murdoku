@@ -191,7 +191,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v326 / 2026-10-24 / 家具整体缩小0.93+地毯额外0.82（控件层缩放）+雕像底边补回 =====")
+        print("[murdoku] ===== 构建标记 v327 / 2026-10-24 / 多格地毯控件层加长+雕像底座重做（上下黑边+填色+色块） =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -676,6 +676,11 @@ local function build_adapter()
     -- ★ v326：家具整体再缩小一点；地毯额外再缩小（用户要求"地毯在控件层单独额外缩小"）
     furn_scale = 0.93,
     furn_scale_by_kind = { rug = 0.82, rug_2 = 0.82, rug_3 = 0.82 },
+    -- ★ v327：多格地毯控件层加长（长轴恢复 0.93、短轴保持 0.93*0.82≈0.762）
+    furn_scale_axis_by_kind = {
+      rug_2 = { x = 0.93, y = 0.762 },
+      rug_3 = { x = 0.762, y = 0.93 },
+    },
     -- ★ v320：模板 content 画布尺寸（键 = 归一化家具键）。缺省 108×108；
     --   多格地毯模板是 216×108，竖放时实例 108×216 ⇒ 子层按 fx/fy 各向异性缩放。
     furn_tpl_canvas = { rug_2 = { 216, 108 }, rug_3 = { 108, 216 }, table_h2 = { 216, 108 }, table_v2 = { 108, 216 } },

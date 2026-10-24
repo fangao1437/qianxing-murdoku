@@ -4593,7 +4593,15 @@ function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
         if type(kv) ~= "number" then kv = kb["*"] end
         if type(kv) == "number" then k = k * kv end
       end
-      if k ~= 1 then fx, fy = fx * k, fy * k end
+      local ax = self.cfg and self.cfg.furn_scale_axis_by_kind
+      if type(ax) == "table" and type(ax[ckey]) == "table" then
+        -- ★ v327：多格地毯按轴缩放（长轴恢复长度、短轴保持收窄）
+        local t = ax[ckey]
+        if type(t.x) == "number" then fx = fx * t.x end
+        if type(t.y) == "number" then fy = fy * t.y end
+      elseif k ~= 1 then
+        fx, fy = fx * k, fy * k
+      end
       self:_furn_scale_layers(inst, fx, fy)
     end
     self._furn_ok_n = (self._furn_ok_n or 0) + 1
