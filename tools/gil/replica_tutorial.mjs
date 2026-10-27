@@ -149,10 +149,10 @@ function circleLabel(parent, name, value, sx, sy, diameter, bg, fg, size) {
 }
 function header(page, o) {
   const p = page;
-  label(p, p + ".eyebrow", o.eyebrow, X(96) + 300, Y(91), 600, 22, 13, C.accent);
-  label(p, p + ".title", o.title, X(96) + 330, Y(130), 660, 48, 30, C.text);
-  if (o.sub) label(p, p + ".sub", o.sub, X(96) + 400, Y(174), 800, 28, 14, C.text2);
-  if (o.cur) rich(p, p + ".stepnum", [["第 ", C.text2], [String(o.cur), C.gold], [" / " + o.total + " 步", C.text2]], X(1900), Y(111), 14, 26);
+  label(p, p + ".eyebrow", o.eyebrow, X(96) + 300, Y(91), 600, 28, 17, C.accent);
+  label(p, p + ".title", o.title, X(96) + 330, Y(130), 660, 48, 27, C.text);
+  if (o.sub) label(p, p + ".sub", o.sub, X(96) + 400, Y(174), 800, 30, 17, C.text2);
+  if (o.cur) rich(p, p + ".stepnum", [["第 ", C.text2], [String(o.cur), C.gold], [" / " + o.total + " 步", C.text2]], X(1900), Y(111), 17, 30);
 }
 function stepper(page, items, cur) {
   if (!items) return;
@@ -161,64 +161,64 @@ function stepper(page, items, cur) {
   items.forEach((item, i) => {
     const x = start + i * (w + gap) + w / 2, y = Y(261), active = i + 1 === cur, done = i + 1 < cur;
     rect(page, page + ".step." + (i + 1), x, y, w, U(66), active ? 0xFF3A2B19 : C.card2, 107102);
-    circleLabel(page, page + ".stepn." + (i + 1), done ? "✓" : String(i + 1), x - w / 2 + U(32), y, U(38), active ? C.accent : done ? 0xFF29402B : C.card, active ? C.dark : done ? C.green : C.muted, 11);
-    label(page, page + ".stept." + (i + 1), item, x + U(15), y, w - U(70), U(40), 12, active ? C.text : C.text2, 1);
+    circleLabel(page, page + ".stepn." + (i + 1), done ? "✓" : String(i + 1), x - w / 2 + U(32), y, U(38), active ? C.accent : done ? 0xFF29402B : C.card, active ? C.dark : done ? C.green : C.muted, 13);
+    label(page, page + ".stept." + (i + 1), item, x + U(15), y, w - U(70), U(40), 13, active ? C.text : C.text2, 1);
   });
 }
 function stepCard(page, o, sx, sy, w, h) {
   card(page, page + ".main", sx, sy, w, h);
   const left = sx - w / 2 + U(28), top = sy - h / 2;
   rect(page, page + ".tagbg", left + U(70), top + U(30), U(140), U(38), 0xFF3A2B19, 107102);
-  label(page, page + ".tag", o.tag, left + U(70), top + U(30), U(136), U(32), 10.5, C.gold, 1);
-  label(page, page + ".heading", o.title, sx, top + U(91), w - U(56), U(58), o.title.length > 22 ? 21 : 25, C.text);
-  o.lines.forEach((segments, i) => rich(page, page + ".body." + i, segments, left, top + U(137) + i * U(34), 14.5, U(32)));
+  label(page, page + ".tag", o.tag, left + U(70), top + U(30), U(180), U(36), 17, C.gold, 1);
+  label(page, page + ".heading", o.title, sx, top + U(91), w - U(56), U(58), 27, C.text);
+  o.lines.forEach((segments, i) => rich(page, page + ".body." + i, segments, left, top + U(137) + i * U(34), 15, Math.max(26, U(32))));
 }
 function chipsCard(page, kicker, items, sx, sy, w, h) {
   card(page, page + ".chips", sx, sy, w, h);
   const left = sx - w / 2 + U(28), top = sy - h / 2;
-  label(page, page + ".chipsk", kicker, left + 100, top + U(22), 200, U(24), 10.5, C.muted);
+  label(page, page + ".chipsk", kicker, left + 100, top + U(22), 200, U(24), 13, C.muted);
   let x = left;
   items.forEach((item, i) => {
-    const [value, tone] = item, cw = widthOf(value, 12) + U(38), color = tone === "blue" ? C.blue : tone === "gold" ? C.gold : C.green;
+    const [value, tone] = item, cw = widthOf(value, 13) + U(38), color = tone === "blue" ? C.blue : tone === "gold" ? C.gold : C.green;
     rect(page, page + ".chip." + i, x + cw / 2, top + U(66), cw, U(44), tone === "blue" ? 0xFF1B2B37 : tone === "gold" ? 0xFF392D1C : 0xFF203125, 107102);
-    label(page, page + ".chipt." + i, value, x + cw / 2, top + U(66), cw - 4, U(36), 12, color, 1);
+    label(page, page + ".chipt." + i, value, x + cw / 2, top + U(66), cw - 4, U(36), 13, color, 1);
     x += cw + U(12);
   });
 }
 function noteCard(page, value, sx, sy, w, h) {
   card(page, page + ".note", sx, sy, w, h);
   const left = sx - w / 2 + U(28);
-  circleLabel(page, page + ".notei", "i", left + U(14), sy, U(28), 0xFF1B2B37, C.blue, 10);
+  circleLabel(page, page + ".notei", "i", left + U(14), sy, U(28), 0xFF1B2B37, C.blue, 13);
   label(page, page + ".notet", value, left + U(45) + (w - U(80)) / 2, sy, w - U(80), h - U(20), 13, C.text2);
 }
 function clueCard(page, o, sx, sy, w, h) {
   card(page, page + ".clue", sx, sy, w, h);
   const left = sx - w / 2 + U(28), top = sy - h / 2;
-  label(page, page + ".cluek", "线索来源", left + 80, top + U(20), 160, U(22), 10.5, C.muted);
+  label(page, page + ".cluek", "线索来源", left + 80, top + U(20), 160, U(24), 13, C.muted);
   circleLabel(page, page + ".clueface", o.letter, left + U(32), top + U(70), U(64), o.color || 0xFF5E6B8C, C.text, 17);
-  label(page, page + ".cluename", o.name, left + U(82) + (w - U(130)) / 2, top + U(52), w - U(130), U(28), 12.5, C.muted);
-  rich(page, page + ".cluesay", o.say, left + U(82), top + U(87), 14.5, U(34));
+  label(page, page + ".cluename", o.name, left + U(82) + (w - U(130)) / 2, top + U(52), w - U(130), U(30), 14, C.muted);
+  rich(page, page + ".cluesay", o.say, left + U(82), top + U(87), 14, Math.max(26, U(34)));
 }
 function footer(page, o) {
   label(page, page + ".skip", o.tag === "home" ? "稍后再看" : "跳过教程", X(96) + 100, Y(1005), 200, 30, 13, C.muted);
   if (o.cur > 1) {
     rect(page, page + ".prevbg", X(1950), Y(1005), U(180), U(66), 0xFF1B2230, 107102);
-    label(page, page + ".prevtext", "上一步", X(1950), Y(1005), 130, 34, 14, C.text2, 1);
+    label(page, page + ".prevtext", "上一步", X(1950), Y(1005), 130, 34, 13, C.text2, 1);
   }
   rect(page, page + ".nextbg", X(2150), Y(1005), U(190), U(66), C.accent, 107102);
-  label(page, page + ".nexttext", o.tag === "home" ? "开始办案" : o.cur === o.total ? "开始试玩" : "下一步", X(2150), Y(1005), 150, 36, 14, C.dark, 1);
+  label(page, page + ".nexttext", o.tag === "home" ? "开始办案" : o.cur === o.total ? "开始试玩" : "下一步", X(2150), Y(1005), 150, 36, 13, C.dark, 1);
 }
 function legend(page, rooms) {
   const x = X(1936), top = Y(316);
-  label(page, page + ".legendtitle", "图例", x + 50, top, 100, 24, 11, C.muted);
+  label(page, page + ".legendtitle", "图例", x + 50, top, 100, 26, 13, C.muted);
   const rows = rooms.map((r) => [r[0], r[1], "square"]).concat([["墙", 0xFF29282B, "square"], ["门", 0xFFDC5B28, "square"], ["棋子", C.text, "A"], ["候选", C.muted, "A?"], ["排除", C.red, "×"], ["笔记", C.text2, "b"], ["受害者", 0xFFBFE6F2, "V"], ["可站", C.green, "椅"], ["不可站", 0xFF6B5B49, "桌"]]);
   rows.forEach((row, i) => {
     const y = top + U(42) + i * U(35);
     if (row[2] === "square") rect(page, page + ".lg." + i, x + U(11), y, U(22), U(22), row[1], 107102);
-    else circleLabel(page, page + ".lg." + i, row[2], x + U(15), y, U(30), row[2] === "×" ? C.panel : row[1], row[2] === "×" ? C.red : row[2] === "A?" ? C.muted : C.dark, row[2] === "A?" ? 8 : 10);
-    label(page, page + ".lgt." + i, row[0], x + U(45) + 50, y, 100, U(30), 12, C.text2);
+    else circleLabel(page, page + ".lg." + i, row[2], x + U(15), y, U(30), row[2] === "×" ? C.panel : row[1], row[2] === "×" ? C.red : row[2] === "A?" ? C.muted : C.dark, 13);
+    label(page, page + ".lgt." + i, row[0], x + U(45) + 50, y, 100, U(30), 13, C.text2);
   });
-  label(page, page + ".coord", "坐标 =（行,列）\n行号自上而下，列号自左而右", x + U(85), top + U(42) + rows.length * U(35) + U(20), 170, U(58), 10.5, C.muted);
+  label(page, page + ".coord", "坐标 =（行,列）\n行号自上而下，列号自左而右", x + U(85), top + U(42) + rows.length * U(35) + U(20), 190, U(68), 13, C.muted);
 }
 
 function colorOf(value, opacity) {
@@ -337,8 +337,7 @@ function board(page, id, sx, sy, size, sharedBase) {
   }
   renderSvg(baseSvg, true);
   if (sharedBase) {
-    if (id.startsWith("l1-")) projectFurniture(sharedBase, "l1", bx, by, scale);
-    if (id.startsWith("l2-")) projectFurniture(sharedBase, "l2", bx, by, scale);
+    // 家具由 tutorial_ui 在运行时从 things/furn.* 模板实例化；存档不复制引用或内部图层。
     return;
   }
   renderSvg(overlaySvg, false);
@@ -348,7 +347,7 @@ function board(page, id, sx, sy, size, sharedBase) {
   }
   label(page, page + ".caption", "•  " + ({
     "home-1":"5×5 棋盘 · 三间屋 · 三扇门 · 5 枚棋子", "l1-1":"空盘：三间屋、三扇门", "l1-2":"选中 A，第 5 列亮起", "l1-3":"长按进度环 + 行/列将被划掉", "l1-4":"A 的 4 个可能格（A?）", "l1-5":"B/A 已放，3 个候选被划掉", "l1-6":"C 已放，(4,2) 被划掉", "l1-7":"D/V 互换的两种摆法，一种被划掉", "l1-8":"终局：金圈 D、蓝标 V", "l2-1":"6×6、四间屋；侧廊只有一扇门", "l2-2":"5 个地毯格先划掉", "l2-3":"第 3 列高亮 + 两个候选 + 红叉", "l2-4":"地毯已划掉，门是通道"
-  })[id], sx, sy + size / 2 + U(25), size, U(28), 10.5, C.muted, 1);
+  })[id], sx, sy + size / 2 + U(25), size, U(32), 13, C.muted, 1);
 }
 
 const HOME_CARDS = [
@@ -403,9 +402,9 @@ for (const tag of ["home", "l1", "l2"]) {
         const cy = top + cardH / 2 + Math.floor(i / 2) * (cardH + gap), name = page + ".rule." + (i + 1);
         card(page, name, cx, cy, w, cardH);
         const left2 = cx - w / 2 + U(28), top2 = cy - cardH / 2;
-        circleLabel(page, name + ".num", String(i + 1), left2 + U(23), top2 + U(40), U(46), 0xFF3A2B19, C.gold, 13);
-        label(page, name + ".title", o2.title, left2 + U(65) + (w - U(100)) / 2, top2 + U(34), w - U(100), U(42), i === 4 ? 17 : 18, C.text);
-        o2.lines.forEach((segments, j) => rich(page, name + ".body." + j, segments, left2 + U(65), top2 + U(78) + j * U(34), 13.5, U(32)));
+        circleLabel(page, name + ".num", String(i + 1), left2 + U(23), top2 + U(40), U(46), 0xFF3A2B19, C.gold, 16);
+        label(page, name + ".title", o2.title, left2 + U(65) + (w - U(100)) / 2, top2 + U(34), w - U(100), U(42), 18, C.text);
+        o2.lines.forEach((segments, j) => rich(page, name + ".body." + j, segments, left2 + U(65), top2 + U(78) + j * U(34), 13, Math.max(24, U(32))));
       });
     } else {
       const top = Y(302), gap = U(22), heights = o.chips && o.clue ? [U(278),U(108),U(234)] : o.chips && o.note ? [U(330),U(130),U(116)] : o.note && o.clue ? [U(320),U(130),U(170)] : [U(408),U(212)];

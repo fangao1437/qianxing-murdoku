@@ -21,13 +21,23 @@ add("teach"); add("teach.text")
 for _, spec in ipairs({ { "home", 1 }, { "l1", 8 }, { "l2", 4 } }) do
   local tag, pages = spec[1], spec[2]
   add("td." .. tag)
+  add("td." .. tag .. ".board")
   for i = 1, pages do add("td." .. tag .. ".page." .. i) end
   for _, b in ipairs({ "prev", "next", "close", "skip" }) do add("td." .. tag .. ".btn." .. b) end
 end
 local adapter = {}
 function adapter:find(name) return nodes[name] end
+function adapter:_furn_prefab_map()
+  return { table_v2=1, plant=2, rug_2=3, chair=4, table_h2=5, rug=6, statue=7, rug_3=8, shelf=9, table=10 }
+end
+function adapter:_furn_scale_layers(obj, fx, fy) obj.fx, obj.fy = fx, fy end
 _G.Enum = { CursorEventType = { CursorClick = "click" } }
-_G.game = { InstantiateClientUIControl = function() created = created + 1 end }
+_G.game = { InstantiateClientUIControl = function(prefab, parent)
+  created = created + 1
+  local obj = ctrl("tutorial.furniture." .. created)
+  obj.prefab, obj.parent = prefab, parent
+  return obj
+end }
 local home = Tutorial.new(adapter, { tag = "home", root = "td.home", pages = 1 })
 local l1 = Tutorial.new(adapter, { tag = "l1", root = "td.l1", pages = 8 })
 local l2 = Tutorial.new(adapter, { tag = "l2", root = "td.l2", pages = 4 })
@@ -52,6 +62,9 @@ home:open_ui(); home:next(); ok(not nodes["td.home"].visible, "首页开始办�
 l2:open_ui(); nodes["td.l2.btn.close"].click(); ok(not nodes["td.l2"].visible, "关闭按钮")
 l2:open_ui(); nodes["td.l2.btn.skip"].click(); ok(not nodes["td.l2"].visible, "跳过按钮")
 ok(writes == 0, "运行时不写文字或字色")
-ok(created == 0, "运行时不创建控件")
+ok(created == 20, "两关运行时各创建一套家具，共20件")
+ok(l1.furniture and l1.furniture[1] and l1.furniture[1].parent == nodes["td.l1.board"], "第一关家具挂到共享棋盘")
+ok(l2.furniture and l2.furniture[2] and math.abs(l2.furniture[2].fx - 178 * (1480 / 2268) / 216) < 0.0001, "多格家具按模板画布整树缩放")
+l1:open_ui(); ok(created == 20, "重复打开不重复实例化")
 print(string.format("tutorial_ui: %d passed, %d failed", passed, failed))
 os.exit(failed == 0 and 0 or 1)
