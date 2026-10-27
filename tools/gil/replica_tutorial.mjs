@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   readGil, encodeMsg, cloneField, findChildListTop, asIdList, setChildList,
-  stateBlocks, pairOf, setPair, bigIds, textsOf,
+  stateBlocks, pairOf, pairValue, setPair, bigIds, textsOf,
 } from "./gilread.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -206,7 +206,7 @@ function footer(page, o) {
     label(page, page + ".prevtext", "上一步", X(1950), Y(1005), 130, 34, 14, C.text2, 1);
   }
   rect(page, page + ".nextbg", X(2150), Y(1005), U(190), U(66), C.accent, 107102);
-  label(page, page + ".nexttext", o.cur === o.total ? "开始试玩" : o.tag === "home" ? "开始办案" : "下一步", X(2150), Y(1005), 150, 36, 14, C.dark, 1);
+  label(page, page + ".nexttext", o.tag === "home" ? "开始办案" : o.cur === o.total ? "开始试玩" : "下一步", X(2150), Y(1005), 150, 36, 14, C.dark, 1);
 }
 function legend(page, rooms) {
   const x = X(1936), top = Y(316);
@@ -232,6 +232,76 @@ function colorOf(value, opacity) {
 function attrs(s) {
   const out = {}; for (const m of s.matchAll(/([\w-]+)="([^"]*)"/g)) out[m[1]] = m[2]; return out;
 }
+function cloneExisting(proto, parentName, newName, w, h, sx, sy) {
+  const parent = byName.get(parentName);
+  const cf = cloneField(proto.field);
+  maxId += 1n;
+  const nid = Number(maxId);
+  bigIds(cf.sub, [])[0].num = maxId;
+  const t = textsOf(cf.sub, []).find((q) => q.payload && q.payload.toString("utf8") === proto.name);
+  if (t) { t.payload = Buffer.from(newName, "utf8"); t.len = t.payload.length; }
+  const blocks = []; stateBlocks(cf.sub, blocks);
+  for (const b of blocks) {
+    const sizePair = pairOf(b, 505); if (sizePair) setPair(sizePair, w, h);
+    const posPair = pairOf(b, 504); if (posPair) setPair(posPair, sx - 800, 450 - sy);
+  }
+  const parentLeaf = cf.sub.find((f) => f.field === 504 && f.wt === 0);
+  if (parentLeaf) parentLeaf.num = BigInt(parent.id);
+  const inherited = findChildListTop(cf.sub); if (inherited) setChildList(inherited, []);
+  const holderKey = "existing:" + proto.id;
+  let holder = protoHolders.get(holderKey);
+  if (!holder) { holder = holderOf(proto.id); protoHolders.set(holderKey, holder); }
+  holder.arr.splice(holder.index + 1, 0, cf);
+  let cl = findChildListTop(parent.field.sub);
+  const ids = (asIdList(cl.payload, true) || []).map(Number); ids.push(nid); setChildList(cl, ids);
+  const rec = { name:newName, id:nid, field:cf, parentId:parent.id };
+  byName.set(newName, rec);
+  if (t) added.push(newName);
+  return rec;
+}
+function childrenOf(rec) {
+  const cl = findChildListTop(rec.field.sub);
+  const ids = cl ? (asIdList(cl.payload, true) || []) : [];
+  return ids.map((id) => g.recs.find((r) => Number(r.id) === Number(id))).filter(Boolean);
+}
+const templateCache = new Map();
+function templateLayers(kind) {
+  if (templateCache.has(kind)) return templateCache.get(kind);
+  const source = g.recs.find((r) => r.name === kind && r.parentId == null);
+  if (!source) throw new Error("project furniture template missing " + kind);
+  const content = childrenOf(source)[0];
+  const layers = content ? childrenOf(content) : [];
+  if (!layers.length) throw new Error("project furniture layers missing " + kind);
+  templateCache.set(kind, layers);
+  return layers;
+}
+function existingFurniture(page, kind, cx, cy, w, h, bx, by, scale) {
+  const canvas = kind.includes("h2") || kind === "furn.rug.2" ? [216,108] : kind.includes("v2") || kind === "furn.rug.3" ? [108,216] : [108,108];
+  const layers = templateLayers(kind);
+  layers.forEach((proto, i) => {
+    const b = proto.states && proto.states[0];
+    if (!b) return;
+    const pos = pairOf(b, 504), sizePair = pairOf(b, 505);
+    const ox = pos ? pairValue(pos, 0) : 0, oy = pos ? pairValue(pos, 1) : 0;
+    const ow = sizePair ? pairValue(sizePair, 0) : canvas[0], oh = sizePair ? pairValue(sizePair, 1) : canvas[1];
+    const sx = bx(cx + ox * w / canvas[0]), sy = by(cy - oy * h / canvas[1]);
+    cloneExisting(proto, page, page + ".furn." + kind + "." + (++serial) + "." + i,
+      Math.max(1, ow * w / canvas[0] * scale), Math.max(1, oh * h / canvas[1] * scale), sx, sy);
+  });
+}
+function projectFurniture(page, tag, bx, by, scale) {
+  const l1 = [
+    ["furn.table.v2",676,262,108,216],["furn.plant",788,206,108,108],["furn.plant",676,654,108,108],["furn.plant",900,654,108,108],
+    ["furn.rug.2",732,430,216,108],["furn.rug.2",1068,318,216,108],["furn.chair",788,542,108,108],["furn.chair",1012,654,108,108],
+  ];
+  const l2 = [
+    ["furn.chair",667.5,197.5,89,89],["furn.table.h2",807,197.5,178,89],["furn.rug",946.5,197.5,89,89],["furn.statue",1132.5,197.5,89,89],
+    ["furn.chair",946.5,290.5,89,89],["furn.plant",760.5,383.5,89,89],["furn.rug.2",900,383.5,178,89],
+    ["furn.rug.3",667.5,616,89,178],["furn.plant",946.5,569.5,89,89],["furn.shelf",760.5,662.5,89,89],
+    ["furn.plant",946.5,662.5,89,89],["furn.table.1",1039.5,662.5,89,89],
+  ];
+  for (const piece of tag === "l1" ? l1 : l2) existingFurniture(page, ...piece, bx, by, scale);
+}
 function board(page, id, sx, sy, size) {
   const file = path.join(ROOT, "docs/tutorial-design/boards", id + ".svg");
   let svg = fs.readFileSync(file, "utf8").replace(/<defs>[\s\S]*?<\/defs>/g, "");
@@ -240,8 +310,17 @@ function board(page, id, sx, sy, size) {
   const bw = (v) => Number(v) * scale;
   let index = 0;
   const nextName = () => page + ".svg." + (++index);
-  for (const m of svg.matchAll(/<(rect|ellipse|circle|line|path|text)\b([^>]*)>(?:([^<]*)<\/\1>)?/g)) {
+  const closeGroup = svg.indexOf("</g>");
+  const baseSvg = closeGroup >= 0 ? svg.slice(0, closeGroup) : svg;
+  const overlaySvg = closeGroup >= 0 ? svg.slice(closeGroup + 4) : "";
+  function renderSvg(source, baseOnly) {
+  for (const m of source.matchAll(/<(rect|ellipse|circle|line|path|text)\b([^>]*)>(?:([^<]*)<\/\1>)?/g)) {
     const kind = m[1], a = attrs(m[2]), value = m[3] || "";
+    if (baseOnly && id !== "home-1") {
+      const roomCell = kind === "rect" && ["#D9CDB4","#C3CDD4","#D4C8BC","#BECFB0"].includes(a.fill);
+      if (!roomCell && !(kind === "rect" && (a.x === "572" || a.x === "608"))) continue;
+    }
+    if (id === "home-1" && ((kind === "circle" && (Math.abs(Number(a.r) - 18.36) < 0.01 || Math.abs(Number(a.r) - 6.2424) < 0.01)) || (kind === "rect" && Math.abs(Number(a.width) - 18.36) < 0.01))) continue;
     if (kind === "rect") {
       const color = colorOf(a.fill, a.opacity); if (!color || Number(a.width) > 650 && a.x == null) continue;
       rect(page, nextName(), bx(a.x) + bw(a.width) / 2, by(a.y) + bw(a.height) / 2, bw(a.width), bw(a.height), color, a.rx ? 107102 : 100001);
@@ -270,6 +349,15 @@ function board(page, id, sx, sy, size) {
       const w = Math.max(size2, widthOf(value, size2) + 8), h = size2 * 1.45;
       label(page, nextName(), value, bx(a.x), by(a.y) - size2 * 0.28, w, h, size2, color, 1);
     }
+  }
+  }
+  renderSvg(baseSvg, true);
+  if (id.startsWith("l1-")) projectFurniture(page, "l1", bx, by, scale);
+  if (id.startsWith("l2-")) projectFurniture(page, "l2", bx, by, scale);
+  renderSvg(overlaySvg, false);
+  if (id === "home-1") {
+    const pawns = [["A",676,206,C.text],["D",900,318,C.gold],["B",1124,430,C.text],["C",788,542,C.text],["V",1012,654,C.blue]];
+    for (const [letter, x, y, color] of pawns) label(page, nextName(), letter, bx(x), by(y) - bw(8), bw(70), bw(70), bw(54), color, 1);
   }
   label(page, page + ".caption", "•  " + ({
     "home-1":"5×5 棋盘 · 三间屋 · 三扇门 · 5 枚棋子", "l1-1":"空盘：三间屋、三扇门", "l1-2":"选中 A，第 5 列亮起", "l1-3":"长按进度环 + 行/列将被划掉", "l1-4":"A 的 4 个可能格（A?）", "l1-5":"B/A 已放，3 个候选被划掉", "l1-6":"C 已放，(4,2) 被划掉", "l1-7":"D/V 互换的两种摆法，一种被划掉", "l1-8":"终局：金圈 D、蓝标 V", "l2-1":"6×6、四间屋；侧廊只有一扇门", "l2-2":"5 个地毯格先划掉", "l2-3":"第 3 列高亮 + 两个候选 + 红叉", "l2-4":"地毯已划掉，门是通道"
