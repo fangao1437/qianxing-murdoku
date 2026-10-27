@@ -302,7 +302,7 @@ function projectFurniture(page, tag, bx, by, scale) {
   ];
   for (const piece of tag === "l1" ? l1 : l2) existingFurniture(page, ...piece, bx, by, scale);
 }
-function board(page, id, sx, sy, size) {
+function board(page, id, sx, sy, size, sharedBase) {
   const file = path.join(ROOT, "docs/tutorial-design/boards", id + ".svg");
   let svg = fs.readFileSync(file, "utf8").replace(/<defs>[\s\S]*?<\/defs>/g, "");
   const scale = size / 656, baseX = sx - size / 2, baseY = sy - size / 2;
@@ -314,6 +314,7 @@ function board(page, id, sx, sy, size) {
   const baseSvg = closeGroup >= 0 ? svg.slice(0, closeGroup) : svg;
   const overlaySvg = closeGroup >= 0 ? svg.slice(closeGroup + 4) : "";
   function renderSvg(source, baseOnly) {
+  const target = baseOnly && sharedBase ? sharedBase : page;
   for (const m of source.matchAll(/<(rect|ellipse|circle|line|path|text)\b([^>]*)>(?:([^<]*)<\/\1>)?/g)) {
     const kind = m[1], a = attrs(m[2]), value = m[3] || "";
     if (baseOnly && id !== "home-1") {
@@ -323,11 +324,11 @@ function board(page, id, sx, sy, size) {
     if (id === "home-1" && ((kind === "circle" && (Math.abs(Number(a.r) - 18.36) < 0.01 || Math.abs(Number(a.r) - 6.2424) < 0.01)) || (kind === "rect" && Math.abs(Number(a.width) - 18.36) < 0.01))) continue;
     if (kind === "rect") {
       const color = colorOf(a.fill, a.opacity); if (!color || Number(a.width) > 650 && a.x == null) continue;
-      rect(page, nextName(), bx(a.x) + bw(a.width) / 2, by(a.y) + bw(a.height) / 2, bw(a.width), bw(a.height), color, a.rx ? 107102 : 100001);
+      rect(target, nextName(), bx(a.x) + bw(a.width) / 2, by(a.y) + bw(a.height) / 2, bw(a.width), bw(a.height), color, a.rx ? 107102 : 100001);
     } else if (kind === "ellipse" || kind === "circle") {
       const color = colorOf(a.fill, a.opacity); if (!color) continue;
       const rx = kind === "circle" ? a.r : a.rx, ry = kind === "circle" ? a.r : a.ry;
-      rect(page, nextName(), bx(a.cx), by(a.cy), bw(rx) * 2, bw(ry) * 2, color, 100002);
+      rect(target, nextName(), bx(a.cx), by(a.cy), bw(rx) * 2, bw(ry) * 2, color, 100002);
       if (a.stroke && a["stroke-dasharray"]) {
         // 候选虚线在设计里由文字和半透明圆共同表达；实色圆保留，避免自造虚线素材。
       }
@@ -335,25 +336,28 @@ function board(page, id, sx, sy, size) {
       const color = colorOf(a.stroke, a.opacity); if (!color) continue;
       const x1 = bx(a.x1), y1 = by(a.y1), x2 = bx(a.x2), y2 = by(a.y2);
       const len = Math.hypot(x2 - x1, y2 - y1), deg = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
-      rect(page, nextName(), (x1 + x2) / 2, (y1 + y2) / 2, len, Math.max(1, bw(a["stroke-width"])), color, 100001, -deg);
+      rect(target, nextName(), (x1 + x2) / 2, (y1 + y2) / 2, len, Math.max(1, bw(a["stroke-width"])), color, 100001, -deg);
     } else if (kind === "path") {
       const color = colorOf(a.stroke, a.opacity); if (!color) continue;
       const nums = (a.d.match(/-?[\d.]+/g) || []).map(Number);
       for (let i = 0; i + 3 < nums.length; i += 4) {
         const x1 = bx(nums[i]), y1 = by(nums[i + 1]), x2 = bx(nums[i + 2]), y2 = by(nums[i + 3]);
         const len = Math.hypot(x2 - x1, y2 - y1), deg = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
-        rect(page, nextName(), (x1 + x2) / 2, (y1 + y2) / 2, len, Math.max(1, bw(a["stroke-width"])), color, 100001, -deg);
+        rect(target, nextName(), (x1 + x2) / 2, (y1 + y2) / 2, len, Math.max(1, bw(a["stroke-width"])), color, 100001, -deg);
       }
     } else if (kind === "text") {
       const size2 = bw(a["font-size"]), color = colorOf(a.fill, a.opacity) || C.text;
       const w = Math.max(size2, widthOf(value, size2) + 8), h = size2 * 1.45;
-      label(page, nextName(), value, bx(a.x), by(a.y) - size2 * 0.28, w, h, size2, color, 1);
+      label(target, nextName(), value, bx(a.x), by(a.y) - size2 * 0.28, w, h, size2, color, 1);
     }
   }
   }
   renderSvg(baseSvg, true);
-  if (id.startsWith("l1-")) projectFurniture(page, "l1", bx, by, scale);
-  if (id.startsWith("l2-")) projectFurniture(page, "l2", bx, by, scale);
+  if (sharedBase) {
+    if (id.startsWith("l1-")) projectFurniture(sharedBase, "l1", bx, by, scale);
+    if (id.startsWith("l2-")) projectFurniture(sharedBase, "l2", bx, by, scale);
+    return;
+  }
   renderSvg(overlaySvg, false);
   if (id === "home-1") {
     const pawns = [["A",676,206,C.text],["D",900,318,C.gold],["B",1124,430,C.text],["C",788,542,C.text],["V",1012,654,C.blue]];
@@ -393,6 +397,10 @@ for (const tag of ["home", "l1", "l2"]) {
   cloneOne("container", "root", root, 1600, 900, 800, 450);
   rect(root, root + ".bg", 800, 450, 1480, U(1008), C.panel, 107102);
   const pages = tag === "home" ? [null] : tag === "l1" ? L1 : L2;
+  const sharedId = tag === "home" ? "home-1" : tag === "l1" ? "l1-1" : "l2-1";
+  const sharedY = tag === "home" ? Y(240) + U(620) / 2 : Y(302) + U(620) / 2;
+  cloneOne("container", root, root + ".board", 1600, 900, 800, 450);
+  board(root + ".board", sharedId, X(1256) + U(620) / 2, sharedY, U(656), root + ".board");
   pages.forEach((o, k) => {
     const cur = k + 1, page = root + ".page." + cur;
     cloneOne("container", root, page, 1600, 900, 800, 450);
