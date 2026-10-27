@@ -191,7 +191,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v351 / 2026-10-27 / 静态字色与教程棋盘设计对齐 =====")
+        print("[murdoku] ===== 构建标记 v352 / 2026-10-27 / 十三页教程逐图元复刻 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -1036,9 +1036,9 @@ local tutorial_wait = {}         -- tag → 等了多少帧
 -- ★ v289：**三套各自独立**（用户 2026-10-21 晚：首页那套保留，第一关再单独接一套，第二关本来就是自己一套）
 --   每条 = 一个实例 + 一段配置；以后哪一套要改内容/页数，只改自己那一段。
 local TUT_SETS = {
-  home = { tag = "home", root = "teach.home", text = "teach.text.home", pages = 3 },
-  l1   = { tag = "l1",   root = "teach.l1",   text = "teach.text.l1",   pages = 3 },
-  l2   = { tag = "l2",   root = "teach.l2",   text = "teach.text.l2",   pages = 3 },
+  home = { tag = "home", root = "td.home", text = "td.home", pages = 1 },
+  l1   = { tag = "l1",   root = "td.l1",   text = "td.l1",   pages = 8 },
+  l2   = { tag = "l2",   root = "td.l2",   text = "td.l2",   pages = 4 },
 }
 
 -- 触发键 → 用哪一套：`home` = 首页；`case_001` / `case_002` = 关卡内
