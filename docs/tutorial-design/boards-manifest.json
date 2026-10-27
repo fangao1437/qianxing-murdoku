@@ -1,0 +1,864 @@
+{
+  "boards": [
+    {
+      "id": "home-1",
+      "base": "demo",
+      "rows": 5,
+      "cols": 5,
+      "furniturePieces": 4,
+      "furnitureLayers": 16,
+      "wallSegments": 8,
+      "doorSegments": 3,
+      "overlayPrimitives": 42,
+      "totalPrimitives": 58,
+      "pieces": [
+        {
+          "name": "植物@1,3",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "桌子@2,2",
+          "template": "furn.table.h2",
+          "layers": 5
+        },
+        {
+          "name": "椅子@3,5",
+          "template": "furn.chair",
+          "layers": 4
+        },
+        {
+          "name": "地毯@5,2",
+          "template": "furn.rug",
+          "layers": 3
+        }
+      ],
+      "group": "home",
+      "title": "目标：摆满，再指认"
+    },
+    {
+      "id": "home-2",
+      "base": "demo",
+      "rows": 5,
+      "cols": 5,
+      "furniturePieces": 4,
+      "furnitureLayers": 16,
+      "wallSegments": 8,
+      "doorSegments": 3,
+      "overlayPrimitives": 38,
+      "totalPrimitives": 54,
+      "pieces": [
+        {
+          "name": "植物@1,3",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "桌子@2,2",
+          "template": "furn.table.h2",
+          "layers": 5
+        },
+        {
+          "name": "椅子@3,5",
+          "template": "furn.chair",
+          "layers": 4
+        },
+        {
+          "name": "地毯@5,2",
+          "template": "furn.rug",
+          "layers": 3
+        }
+      ],
+      "group": "home",
+      "title": "铁律：每行每列一人，而且只能站可站格"
+    },
+    {
+      "id": "home-3",
+      "base": "demo",
+      "rows": 5,
+      "cols": 5,
+      "furniturePieces": 4,
+      "furnitureLayers": 16,
+      "wallSegments": 8,
+      "doorSegments": 3,
+      "overlayPrimitives": 35,
+      "totalPrimitives": 51,
+      "pieces": [
+        {
+          "name": "植物@1,3",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "桌子@2,2",
+          "template": "furn.table.h2",
+          "layers": 5
+        },
+        {
+          "name": "椅子@3,5",
+          "template": "furn.chair",
+          "layers": 4
+        },
+        {
+          "name": "地毯@5,2",
+          "template": "furn.rug",
+          "layers": 3
+        }
+      ],
+      "group": "home",
+      "title": "房间：粗墙围一间屋，门才算相通"
+    },
+    {
+      "id": "l1-1",
+      "base": "level1",
+      "rows": 5,
+      "cols": 5,
+      "furniturePieces": 8,
+      "furnitureLayers": 31,
+      "wallSegments": 9,
+      "doorSegments": 3,
+      "overlayPrimitives": 26,
+      "totalPrimitives": 57,
+      "pieces": [
+        {
+          "name": "桌子@2,1",
+          "template": "furn.table.v2",
+          "layers": 5
+        },
+        {
+          "name": "植物@1,2",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "地毯@2,5",
+          "template": "furn.rug.2",
+          "layers": 3
+        },
+        {
+          "name": "地毯@3,2",
+          "template": "furn.rug.2",
+          "layers": 3
+        },
+        {
+          "name": "椅子@4,2",
+          "template": "furn.chair",
+          "layers": 4
+        },
+        {
+          "name": "植物@5,1",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "植物@5,3",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "椅子@5,4",
+          "template": "furn.chair",
+          "layers": 4
+        }
+      ],
+      "group": "l1",
+      "title": "认识棋盘"
+    },
+    {
+      "id": "l1-2",
+      "base": "level1",
+      "rows": 5,
+      "cols": 5,
+      "furniturePieces": 8,
+      "furnitureLayers": 31,
+      "wallSegments": 9,
+      "doorSegments": 3,
+      "overlayPrimitives": 29,
+      "totalPrimitives": 60,
+      "pieces": [
+        {
+          "name": "桌子@2,1",
+          "template": "furn.table.v2",
+          "layers": 5
+        },
+        {
+          "name": "植物@1,2",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "地毯@2,5",
+          "template": "furn.rug.2",
+          "layers": 3
+        },
+        {
+          "name": "地毯@3,2",
+          "template": "furn.rug.2",
+          "layers": 3
+        },
+        {
+          "name": "椅子@4,2",
+          "template": "furn.chair",
+          "layers": 4
+        },
+        {
+          "name": "植物@5,1",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "植物@5,3",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "椅子@5,4",
+          "template": "furn.chair",
+          "layers": 4
+        }
+      ],
+      "group": "l1",
+      "title": "选人：点一张线索卡"
+    },
+    {
+      "id": "l1-3",
+      "base": "level1",
+      "rows": 5,
+      "cols": 5,
+      "furniturePieces": 8,
+      "furnitureLayers": 31,
+      "wallSegments": 9,
+      "doorSegments": 3,
+      "overlayPrimitives": 38,
+      "totalPrimitives": 69,
+      "pieces": [
+        {
+          "name": "桌子@2,1",
+          "template": "furn.table.v2",
+          "layers": 5
+        },
+        {
+          "name": "植物@1,2",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "地毯@2,5",
+          "template": "furn.rug.2",
+          "layers": 3
+        },
+        {
+          "name": "地毯@3,2",
+          "template": "furn.rug.2",
+          "layers": 3
+        },
+        {
+          "name": "椅子@4,2",
+          "template": "furn.chair",
+          "layers": 4
+        },
+        {
+          "name": "植物@5,1",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "植物@5,3",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "椅子@5,4",
+          "template": "furn.chair",
+          "layers": 4
+        }
+      ],
+      "group": "l1",
+      "title": "放人：轻点写笔记，长按才放下"
+    },
+    {
+      "id": "l1-4",
+      "base": "level1",
+      "rows": 5,
+      "cols": 5,
+      "furniturePieces": 8,
+      "furnitureLayers": 31,
+      "wallSegments": 9,
+      "doorSegments": 3,
+      "overlayPrimitives": 40,
+      "totalPrimitives": 71,
+      "pieces": [
+        {
+          "name": "桌子@2,1",
+          "template": "furn.table.v2",
+          "layers": 5
+        },
+        {
+          "name": "植物@1,2",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "地毯@2,5",
+          "template": "furn.rug.2",
+          "layers": 3
+        },
+        {
+          "name": "地毯@3,2",
+          "template": "furn.rug.2",
+          "layers": 3
+        },
+        {
+          "name": "椅子@4,2",
+          "template": "furn.chair",
+          "layers": 4
+        },
+        {
+          "name": "植物@5,1",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "植物@5,3",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "椅子@5,4",
+          "template": "furn.chair",
+          "layers": 4
+        }
+      ],
+      "group": "l1",
+      "title": "推理 1：地毯上只有一个人"
+    },
+    {
+      "id": "l1-5",
+      "base": "level1",
+      "rows": 5,
+      "cols": 5,
+      "furniturePieces": 8,
+      "furnitureLayers": 31,
+      "wallSegments": 9,
+      "doorSegments": 3,
+      "overlayPrimitives": 43,
+      "totalPrimitives": 74,
+      "pieces": [
+        {
+          "name": "桌子@2,1",
+          "template": "furn.table.v2",
+          "layers": 5
+        },
+        {
+          "name": "植物@1,2",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "地毯@2,5",
+          "template": "furn.rug.2",
+          "layers": 3
+        },
+        {
+          "name": "地毯@3,2",
+          "template": "furn.rug.2",
+          "layers": 3
+        },
+        {
+          "name": "椅子@4,2",
+          "template": "furn.chair",
+          "layers": 4
+        },
+        {
+          "name": "植物@5,1",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "植物@5,3",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "椅子@5,4",
+          "template": "furn.chair",
+          "layers": 4
+        }
+      ],
+      "group": "l1",
+      "title": "推理 2：B 只能站在桌子旁的那一格"
+    },
+    {
+      "id": "l1-6",
+      "base": "level1",
+      "rows": 5,
+      "cols": 5,
+      "furniturePieces": 8,
+      "furnitureLayers": 31,
+      "wallSegments": 9,
+      "doorSegments": 3,
+      "overlayPrimitives": 33,
+      "totalPrimitives": 64,
+      "pieces": [
+        {
+          "name": "桌子@2,1",
+          "template": "furn.table.v2",
+          "layers": 5
+        },
+        {
+          "name": "植物@1,2",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "地毯@2,5",
+          "template": "furn.rug.2",
+          "layers": 3
+        },
+        {
+          "name": "地毯@3,2",
+          "template": "furn.rug.2",
+          "layers": 3
+        },
+        {
+          "name": "椅子@4,2",
+          "template": "furn.chair",
+          "layers": 4
+        },
+        {
+          "name": "植物@5,1",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "植物@5,3",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "椅子@5,4",
+          "template": "furn.chair",
+          "layers": 4
+        }
+      ],
+      "group": "l1",
+      "title": "推理 3：剩下的人只能站椅子"
+    },
+    {
+      "id": "l1-7",
+      "base": "level1",
+      "rows": 5,
+      "cols": 5,
+      "furniturePieces": 8,
+      "furnitureLayers": 31,
+      "wallSegments": 9,
+      "doorSegments": 3,
+      "overlayPrimitives": 43,
+      "totalPrimitives": 74,
+      "pieces": [
+        {
+          "name": "桌子@2,1",
+          "template": "furn.table.v2",
+          "layers": 5
+        },
+        {
+          "name": "植物@1,2",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "地毯@2,5",
+          "template": "furn.rug.2",
+          "layers": 3
+        },
+        {
+          "name": "地毯@3,2",
+          "template": "furn.rug.2",
+          "layers": 3
+        },
+        {
+          "name": "椅子@4,2",
+          "template": "furn.chair",
+          "layers": 4
+        },
+        {
+          "name": "植物@5,1",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "植物@5,3",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "椅子@5,4",
+          "template": "furn.chair",
+          "layers": 4
+        }
+      ],
+      "group": "l1",
+      "title": "收口：只剩两种摆法"
+    },
+    {
+      "id": "l1-8",
+      "base": "level1",
+      "rows": 5,
+      "cols": 5,
+      "furniturePieces": 8,
+      "furnitureLayers": 31,
+      "wallSegments": 9,
+      "doorSegments": 3,
+      "overlayPrimitives": 40,
+      "totalPrimitives": 71,
+      "pieces": [
+        {
+          "name": "桌子@2,1",
+          "template": "furn.table.v2",
+          "layers": 5
+        },
+        {
+          "name": "植物@1,2",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "地毯@2,5",
+          "template": "furn.rug.2",
+          "layers": 3
+        },
+        {
+          "name": "地毯@3,2",
+          "template": "furn.rug.2",
+          "layers": 3
+        },
+        {
+          "name": "椅子@4,2",
+          "template": "furn.chair",
+          "layers": 4
+        },
+        {
+          "name": "植物@5,1",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "植物@5,3",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "椅子@5,4",
+          "template": "furn.chair",
+          "layers": 4
+        }
+      ],
+      "group": "l1",
+      "title": "指认：A/B/C 都被钉死，只有 D 还有得选"
+    },
+    {
+      "id": "l2-1",
+      "base": "level2",
+      "rows": 6,
+      "cols": 6,
+      "furniturePieces": 12,
+      "furnitureLayers": 49,
+      "wallSegments": 14,
+      "doorSegments": 3,
+      "overlayPrimitives": 38,
+      "totalPrimitives": 87,
+      "pieces": [
+        {
+          "name": "椅子@1,1",
+          "template": "furn.chair",
+          "layers": 4
+        },
+        {
+          "name": "桌子@1,3",
+          "template": "furn.table.h2",
+          "layers": 5
+        },
+        {
+          "name": "地毯@1,4",
+          "template": "furn.rug",
+          "layers": 3
+        },
+        {
+          "name": "雕塑@1,6",
+          "template": "furn.statue",
+          "layers": 4
+        },
+        {
+          "name": "椅子@2,4",
+          "template": "furn.chair",
+          "layers": 4
+        },
+        {
+          "name": "植物@3,2",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "地毯@3,4",
+          "template": "furn.rug.2",
+          "layers": 3
+        },
+        {
+          "name": "地毯@6,1",
+          "template": "furn.rug.3",
+          "layers": 3
+        },
+        {
+          "name": "植物@5,4",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "书架@6,2",
+          "template": "furn.shelf",
+          "layers": 6
+        },
+        {
+          "name": "植物@6,4",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "桌子@6,5",
+          "template": "furn.table.1",
+          "layers": 5
+        }
+      ],
+      "group": "l2",
+      "title": "复习：四步推理法"
+    },
+    {
+      "id": "l2-2",
+      "base": "level2",
+      "rows": 6,
+      "cols": 6,
+      "furniturePieces": 12,
+      "furnitureLayers": 49,
+      "wallSegments": 14,
+      "doorSegments": 3,
+      "overlayPrimitives": 40,
+      "totalPrimitives": 89,
+      "pieces": [
+        {
+          "name": "椅子@1,1",
+          "template": "furn.chair",
+          "layers": 4
+        },
+        {
+          "name": "桌子@1,3",
+          "template": "furn.table.h2",
+          "layers": 5
+        },
+        {
+          "name": "地毯@1,4",
+          "template": "furn.rug",
+          "layers": 3
+        },
+        {
+          "name": "雕塑@1,6",
+          "template": "furn.statue",
+          "layers": 4
+        },
+        {
+          "name": "椅子@2,4",
+          "template": "furn.chair",
+          "layers": 4
+        },
+        {
+          "name": "植物@3,2",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "地毯@3,4",
+          "template": "furn.rug.2",
+          "layers": 3
+        },
+        {
+          "name": "地毯@6,1",
+          "template": "furn.rug.3",
+          "layers": 3
+        },
+        {
+          "name": "植物@5,4",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "书架@6,2",
+          "template": "furn.shelf",
+          "layers": 6
+        },
+        {
+          "name": "植物@6,4",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "桌子@6,5",
+          "template": "furn.table.1",
+          "layers": 5
+        }
+      ],
+      "group": "l2",
+      "title": "新规则：至多一句假话"
+    },
+    {
+      "id": "l2-3",
+      "base": "level2",
+      "rows": 6,
+      "cols": 6,
+      "furniturePieces": 12,
+      "furnitureLayers": 49,
+      "wallSegments": 14,
+      "doorSegments": 3,
+      "overlayPrimitives": 42,
+      "totalPrimitives": 91,
+      "pieces": [
+        {
+          "name": "椅子@1,1",
+          "template": "furn.chair",
+          "layers": 4
+        },
+        {
+          "name": "桌子@1,3",
+          "template": "furn.table.h2",
+          "layers": 5
+        },
+        {
+          "name": "地毯@1,4",
+          "template": "furn.rug",
+          "layers": 3
+        },
+        {
+          "name": "雕塑@1,6",
+          "template": "furn.statue",
+          "layers": 4
+        },
+        {
+          "name": "椅子@2,4",
+          "template": "furn.chair",
+          "layers": 4
+        },
+        {
+          "name": "植物@3,2",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "地毯@3,4",
+          "template": "furn.rug.2",
+          "layers": 3
+        },
+        {
+          "name": "地毯@6,1",
+          "template": "furn.rug.3",
+          "layers": 3
+        },
+        {
+          "name": "植物@5,4",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "书架@6,2",
+          "template": "furn.shelf",
+          "layers": 6
+        },
+        {
+          "name": "植物@6,4",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "桌子@6,5",
+          "template": "furn.table.1",
+          "layers": 5
+        }
+      ],
+      "group": "l2",
+      "title": "抓谎：先当全真，再逐条摘"
+    },
+    {
+      "id": "l2-4",
+      "base": "level2",
+      "rows": 6,
+      "cols": 6,
+      "furniturePieces": 12,
+      "furnitureLayers": 49,
+      "wallSegments": 14,
+      "doorSegments": 3,
+      "overlayPrimitives": 41,
+      "totalPrimitives": 90,
+      "pieces": [
+        {
+          "name": "椅子@1,1",
+          "template": "furn.chair",
+          "layers": 4
+        },
+        {
+          "name": "桌子@1,3",
+          "template": "furn.table.h2",
+          "layers": 5
+        },
+        {
+          "name": "地毯@1,4",
+          "template": "furn.rug",
+          "layers": 3
+        },
+        {
+          "name": "雕塑@1,6",
+          "template": "furn.statue",
+          "layers": 4
+        },
+        {
+          "name": "椅子@2,4",
+          "template": "furn.chair",
+          "layers": 4
+        },
+        {
+          "name": "植物@3,2",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "地毯@3,4",
+          "template": "furn.rug.2",
+          "layers": 3
+        },
+        {
+          "name": "地毯@6,1",
+          "template": "furn.rug.3",
+          "layers": 3
+        },
+        {
+          "name": "植物@5,4",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "书架@6,2",
+          "template": "furn.shelf",
+          "layers": 6
+        },
+        {
+          "name": "植物@6,4",
+          "template": "furn.plant",
+          "layers": 4
+        },
+        {
+          "name": "桌子@6,5",
+          "template": "furn.table.1",
+          "layers": 5
+        }
+      ],
+      "group": "l2",
+      "title": "收口：说假话的人，就是盗窃者"
+    }
+  ]
+}

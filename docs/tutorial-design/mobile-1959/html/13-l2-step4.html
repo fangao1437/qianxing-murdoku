@@ -1,0 +1,298 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>第二关 · 第 4 步</title><style>
+:root{
+  --ink:#0A0D15; --bg1:#111622; --bg2:#0B0F18;
+  --card:rgba(255,255,255,.032); --card2:rgba(255,255,255,.012);
+  --line:rgba(255,255,255,.085); --line2:rgba(255,255,255,.16);
+  --text:#F3EDE0; --text2:#BDB6A7; --muted:#827C6D;
+  --accent:#E8A23C; --accent2:#FFCB7A; --blue:#9ED8FF; --green:#8FC08A; --red:#D0553F;
+  --fA:#C96A5C; --fB:#5E8CC0; --fC:#6E9B62; --fD:#8A6FB0; --fE:#C08B4A; --fV:#4C8FA6;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:2340px;height:1080px;overflow:hidden}
+body{font-family:"Noto Sans SC","Source Han Sans SC","Microsoft YaHei",sans-serif;color:var(--text);
+  background:radial-gradient(1000px 700px at 10% 0%,rgba(255,240,200,.55),rgba(255,240,200,0) 62%),
+             radial-gradient(900px 700px at 95% 10%,rgba(200,190,255,.45),rgba(200,190,255,0) 64%),
+             radial-gradient(1000px 800px at 70% 105%,rgba(160,200,250,.45),rgba(160,200,250,0) 64%),
+             linear-gradient(152deg,#FFF7E8,#EFF3FF 48%,#DCE5F8);}
+.screen{position:relative;width:2340px;height:1080px;overflow:hidden}
+.popup{position:absolute;inset:36px;border-radius:30px;background:linear-gradient(165deg,#151A27,#0E1220 60%,#0B0F18);
+  border:1px solid rgba(255,255,255,.09);box-shadow:0 40px 100px rgba(10,14,26,.55)}
+.scrim{position:absolute;inset:0;background:rgba(8,11,18,.32)}
+.glow{position:absolute;border-radius:50%;filter:blur(1px);opacity:.4}
+.glow.a{width:900px;height:900px;right:-260px;top:-380px;background:radial-gradient(circle,rgba(255,220,150,.22),rgba(255,220,150,0) 68%)}
+.glow.b{width:1000px;height:800px;left:-320px;bottom:-420px;background:radial-gradient(circle,rgba(130,170,240,.18),rgba(130,170,240,0) 68%)}
+/* header */
+.head{position:absolute;left:96px;right:96px;top:84px;height:140px;display:flex;align-items:flex-start}
+.eyebrow{font-size:20px;font-weight:700;letter-spacing:2.4px;color:var(--accent);margin-bottom:12px}
+.h-title{font-size:46px;font-weight:800;letter-spacing:1px;line-height:1.1}
+.h-sub{font-size:21px;color:var(--text2);margin-top:14px;letter-spacing:.5px}
+.head-right{margin-left:auto;display:flex;align-items:center;gap:22px;padding-top:6px}
+.stepnum{font-size:21px;font-weight:800;color:var(--text2);letter-spacing:.5px}
+.stepnum b{color:var(--accent2);font-size:26px}
+.close{width:64px;height:64px;border-radius:50%;border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;
+  font-size:28px;color:var(--text2);background:rgba(255,255,255,.03)}
+/* stepper */
+.stepper{position:absolute;left:96px;right:96px;top:228px;height:66px;display:flex;gap:12px;justify-content:center}
+.step{flex:0 1 300px;height:66px;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.022);
+  display:flex;align-items:center;gap:14px;padding:0 20px;color:var(--text2);font-size:19px;font-weight:700;min-width:0}
+.step .n{width:38px;height:38px;border-radius:50%;border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;
+  font-size:17px;font-weight:800;color:var(--muted);flex:0 0 auto}
+.step .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.step.on{border-color:rgba(232,162,60,.55);background:linear-gradient(90deg,rgba(232,162,60,.18),rgba(232,162,60,.04));color:var(--text)}
+.step.on .n{background:var(--accent);border-color:var(--accent);color:#22180A}
+.step.done .n{background:rgba(143,192,138,.16);border-color:rgba(143,192,138,.5);color:#A9D6A2}
+/* body */
+.body{position:absolute;left:96px;right:96px;top:302px;height:664px;display:flex;gap:60px}
+.col-text{width:1100px;display:flex;flex-direction:column;gap:22px;min-width:0}
+.col-text .step-card{justify-content:flex-start;flex:1 1 auto}
+.board-col{width:620px;display:flex;flex-direction:column;gap:14px}
+.legend-col{width:340px;display:flex;flex-direction:column;gap:18px}
+/* card face（统一成首页那张图的卡面） */
+.card{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:20px;padding:24px 28px;display:flex;flex-direction:column;justify-content:center}
+.card .row{display:flex;gap:20px;align-items:flex-start}
+.num{width:46px;height:46px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  background:rgba(232,162,60,.16);border:1px solid rgba(232,162,60,.45);color:var(--accent2);font-size:21px;font-weight:800}
+.card h3{font-size:29px;font-weight:800;letter-spacing:.3px;margin-bottom:8px;line-height:1.3}
+.card p{font-size:22px;line-height:1.78;color:#D3CCBD}
+.card p b{color:var(--accent2);font-weight:700}
+.card p em{font-style:normal;color:var(--blue);font-weight:700}
+.card .kicker{font-size:16px;font-weight:700;letter-spacing:2px;color:var(--muted);margin-bottom:12px}
+.step-card .tag{align-self:flex-start;display:inline-flex;align-items:center;height:38px;padding:0 16px;border-radius:19px;font-size:16px;font-weight:800;
+  color:var(--accent2);background:rgba(232,162,60,.14);border:1px solid rgba(232,162,60,.35);margin-bottom:14px}
+.step-card h2{font-size:39px;font-weight:800;line-height:1.3;letter-spacing:.4px;margin-bottom:12px}
+.step-card p{font-size:22.5px}
+.clue-row{display:flex;gap:18px;align-items:center}
+.face{width:64px;height:64px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  font-size:26px;font-weight:800;color:#FFF8EC;background:var(--fc,#5E6B8C);box-shadow:inset 0 0 0 3px rgba(255,255,255,.24)}
+.clue-name{font-size:20px;color:var(--muted);font-weight:700;letter-spacing:.5px}
+.clue-say{font-size:23px;color:#E9E2D3;line-height:1.5;margin-top:4px}
+.clue-say b{color:var(--accent2)}
+.chips{display:flex;gap:12px;flex-wrap:wrap}
+.chip{height:44px;padding:0 18px;border-radius:22px;display:flex;align-items:center;gap:8px;font-size:18px;font-weight:700;
+  background:rgba(143,192,138,.10);border:1px solid rgba(143,192,138,.38);color:#B6DDB0}
+.chip.blue{background:rgba(158,216,255,.09);border-color:rgba(158,216,255,.32);color:#BEE3F8}
+.chip.gold{background:rgba(240,181,74,.11);border-color:rgba(240,181,74,.4);color:#FFD79A}
+.note{display:flex;gap:14px;align-items:flex-start;font-size:20px;color:var(--text2);line-height:1.6}
+.note .k{width:28px;height:28px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  background:rgba(158,216,255,.12);border:1px solid rgba(158,216,255,.35);color:var(--blue);font-size:15px;font-weight:800}
+/* board */
+.board-card{border-radius:20px;overflow:hidden;border:1px solid var(--line2);box-shadow:0 26px 60px rgba(4,6,12,.5)}
+.board-card svg{width:100%;height:auto;display:block}
+.caption{font-size:17px;color:var(--muted);display:flex;gap:10px;align-items:center}
+.caption i{width:8px;height:8px;border-radius:50%;background:var(--accent);display:block}
+/* legend */
+.legend-col .kicker{font-size:16px;font-weight:700;letter-spacing:2px;color:var(--muted)}
+.lg{display:flex;flex-direction:column;gap:11px;font-size:18px;color:var(--text2);font-weight:600}
+.lg .row{display:flex;align-items:center;gap:12px}
+.lg i{width:22px;height:22px;border-radius:5px;display:block}
+.lg b{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex:0 0 auto}
+.lg .gpawn{background:#F2EDE3;color:#2A241C}
+.lg .gghost{background:transparent;color:#9A9080;border:2px dashed #8A8272;font-size:12px}
+.lg .gx{color:var(--red);font-size:22px}
+.lg .gnote{background:transparent;color:#A9A392;font-size:16px}
+.lg .gv{background:#BFE6F2;color:#2C5A6B}
+.lg .gchair{background:#8FC08A;color:#1C2A18}
+.lg .gblock{background:#6B5B49;color:#F2EDE3}
+.coord{font-size:17px;color:var(--muted);border-left:2px solid rgba(232,162,60,.4);padding-left:12px;line-height:1.6}
+/* footer */
+.foot{position:absolute;left:96px;right:96px;top:972px;height:72px;display:flex;align-items:center;gap:18px}
+.skip{font-size:20px;font-weight:700;color:var(--muted);margin-right:auto}
+.btn{height:66px;padding:0 36px;border-radius:33px;font-size:22px;font-weight:800;display:flex;align-items:center;gap:12px}
+.btn.ghost{background:rgba(255,255,255,.04);border:1px solid var(--line2);color:var(--text2)}
+.btn.primary{background:linear-gradient(180deg,#F3B963,#E39A2F);color:#2A1B06;box-shadow:0 10px 26px rgba(227,154,47,.28)}
+.btn .k{font-size:17px;font-weight:700;opacity:.55}
+/* home grid */
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:22px;flex:1 1 auto;grid-template-rows:1fr 1fr 1fr}
+.rules .card.wide{grid-column:1 / span 2}
+.body.home .col-text{width:1100px}
+.body.home .board-col{width:620px}
+/* pages */
+.pages{position:absolute;left:60px;right:60px;top:36px;height:140px;display:flex;align-items:flex-start}
+.pager{display:flex;gap:10px;align-items:center;margin-top:14px}
+.pager i{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,.16)}
+.pager i.on{width:42px;border-radius:6px;background:var(--accent)}
+</style></head>
+<body><div class="screen">
+  <div class="scrim"></div><div class="popup"></div>
+  <div class="glow a"></div><div class="glow b"></div>
+  
+<div class="head">
+  <div>
+    <div class="eyebrow">教程 · 第二关 · 案件 002《双影》</div>
+    <div class="h-title">复述与谎言</div>
+    
+  </div>
+  <div class="head-right">
+    <div class="stepnum">第 <b>4</b> / 4 步</div>
+    <div class="close">✕</div>
+  </div>
+</div>
+  <div class="stepper">
+  <div class="step done">
+    <span class="n">✓</span><span class="t">复习</span>
+  </div>
+  <div class="step done">
+    <span class="n">✓</span><span class="t">假话</span>
+  </div>
+  <div class="step done">
+    <span class="n">✓</span><span class="t">抓谎</span>
+  </div>
+  <div class="step on">
+    <span class="n">4</span><span class="t">收口</span>
+  </div></div>
+  <div class="body " >
+    <div class="col-text"><div class="card step-card">
+  <div class="tag">第 4 / 4 步 · 收口</div>
+  <h2>说假话的人，就是盗窃者</h2>
+  <p>摆满、提交；判题只校验硬冲突（同行同列、踩到家具），不会告诉你是哪一句假、也不会说有几条不成立。找到那句假话之后，说这句话的人就是你要指认的人。</p>
+</div><div class="card">
+  <div class="kicker">本关要点</div>
+  <div class="chips"><span class="chip ">摆满 → 提交</span><span class="chip ">判题不揭晓假话</span><span class="chip gold">指认盗窃者</span></div></div><div class="card">
+  <div class="kicker">线索来源</div>
+  <div class="clue-row"><span class="face" style="--fc:var(--fV)">V</span>
+    <div><div class="clue-name">受害者的话也可能为假</div><div class="clue-say">「我独自一人，且 <b>临时搬运工</b> 在我下方的不同区域中」</div></div>
+  </div></div></div>
+    <div class="board-col">
+      <div class="board-card"><svg xmlns="http://www.w3.org/2000/svg" width="656" height="656" viewBox="572 102 656 656" font-family="Noto Sans SC, Source Han Sans SC, Microsoft YaHei, sans-serif">
+<defs>
+    <clipPath id="boardClip-l2-4"><rect x="608" y="138" width="584" height="584" rx="6"/></clipPath>
+  </defs>
+<rect x="572" y="102" width="656" height="656" rx="16" fill="#141018"/>
+<g clip-path="url(#boardClip-l2-4)">
+<rect width="100%" height="100%" fill="#141018"/>
+<rect x="608" y="138" width="584" height="584" fill="#0b0a0d" rx="4"/>
+<rect x="623" y="153" width="89" height="89" fill="#D9CDB4"/>
+<rect x="716" y="153" width="89" height="89" fill="#D9CDB4"/>
+<rect x="809" y="153" width="89" height="89" fill="#D9CDB4"/>
+<rect x="902" y="153" width="89" height="89" fill="#D9CDB4"/>
+<rect x="995" y="153" width="89" height="89" fill="#C3CDD4"/>
+<rect x="1088" y="153" width="89" height="89" fill="#C3CDD4"/>
+<rect x="623" y="246" width="89" height="89" fill="#D9CDB4"/>
+<rect x="716" y="246" width="89" height="89" fill="#D9CDB4"/>
+<rect x="809" y="246" width="89" height="89" fill="#D9CDB4"/>
+<rect x="902" y="246" width="89" height="89" fill="#D9CDB4"/>
+<rect x="995" y="246" width="89" height="89" fill="#C3CDD4"/>
+<rect x="1088" y="246" width="89" height="89" fill="#C3CDD4"/>
+<rect x="623" y="339" width="89" height="89" fill="#D9CDB4"/>
+<rect x="716" y="339" width="89" height="89" fill="#D9CDB4"/>
+<rect x="809" y="339" width="89" height="89" fill="#D9CDB4"/>
+<rect x="902" y="339" width="89" height="89" fill="#D9CDB4"/>
+<rect x="995" y="339" width="89" height="89" fill="#C3CDD4"/>
+<rect x="1088" y="339" width="89" height="89" fill="#C3CDD4"/>
+<rect x="623" y="432" width="89" height="89" fill="#D4C8BC"/>
+<rect x="716" y="432" width="89" height="89" fill="#D4C8BC"/>
+<rect x="809" y="432" width="89" height="89" fill="#D4C8BC"/>
+<rect x="902" y="432" width="89" height="89" fill="#BECFB0"/>
+<rect x="995" y="432" width="89" height="89" fill="#BECFB0"/>
+<rect x="1088" y="432" width="89" height="89" fill="#C3CDD4"/>
+<rect x="623" y="525" width="89" height="89" fill="#D4C8BC"/>
+<rect x="716" y="525" width="89" height="89" fill="#D4C8BC"/>
+<rect x="809" y="525" width="89" height="89" fill="#D4C8BC"/>
+<rect x="902" y="525" width="89" height="89" fill="#BECFB0"/>
+<rect x="995" y="525" width="89" height="89" fill="#BECFB0"/>
+<rect x="1088" y="525" width="89" height="89" fill="#BECFB0"/>
+<rect x="623" y="618" width="89" height="89" fill="#D4C8BC"/>
+<rect x="716" y="618" width="89" height="89" fill="#D4C8BC"/>
+<rect x="809" y="618" width="89" height="89" fill="#D4C8BC"/>
+<rect x="902" y="618" width="89" height="89" fill="#D4C8BC"/>
+<rect x="995" y="618" width="89" height="89" fill="#BECFB0"/>
+<rect x="1088" y="618" width="89" height="89" fill="#BECFB0"/>
+<ellipse cx="667.50" cy="197.50" rx="32.96" ry="34.61" fill="rgb(0,0,0)" opacity="0.200"/>
+<rect x="637.83" y="164.54" width="59.33" height="65.93" rx="3.56" fill="rgb(217,192,138)"/>
+<rect x="641.95" y="169.48" width="51.09" height="56.04" rx="3.07" fill="rgb(254,247,228)"/>
+<rect x="646.07" y="167.01" width="42.85" height="9.89" rx="0.59" fill="rgb(251,213,146)"/>
+<ellipse cx="807.00" cy="197.50" rx="74.99" ry="47.80" fill="rgb(0,0,0)" opacity="0.200"/>
+<rect x="733.66" y="162.06" width="146.69" height="59.33" rx="3.56" fill="rgb(173,156,103)"/>
+<rect x="733.66" y="218.93" width="146.69" height="6.59" fill="rgb(31,26,20)"/>
+<rect x="752.20" y="226.75" width="7.42" height="7.42" fill="rgb(140,127,82)"/>
+<rect x="854.38" y="226.75" width="7.42" height="7.42" fill="rgb(140,127,82)"/>
+<rect x="902.00" y="153.00" width="89.00" height="89.00" fill="rgb(143,107,63)"/>
+<rect x="912.67" y="163.67" width="67.66" height="67.66" fill="rgb(240,221,178)"/>
+<rect x="919.80" y="170.80" width="53.40" height="53.40" fill="rgb(203,169,114)"/>
+<ellipse cx="1132.50" cy="204.09" rx="26.37" ry="24.72" fill="rgb(0,0,0)" opacity="0.200"/>
+<rect x="1105.31" y="215.63" width="54.39" height="13.19" fill="rgb(62,62,72)"/>
+<ellipse cx="1132.50" cy="195.85" rx="14.01" ry="23.07" fill="rgb(201,201,210)"/>
+<ellipse cx="1132.50" cy="172.78" rx="8.24" ry="7.42" fill="rgb(226,226,232)"/>
+<ellipse cx="946.50" cy="290.50" rx="32.96" ry="34.61" fill="rgb(0,0,0)" opacity="0.200"/>
+<rect x="916.83" y="257.54" width="59.33" height="65.93" rx="3.56" fill="rgb(217,192,138)"/>
+<rect x="920.95" y="262.48" width="51.09" height="56.04" rx="3.07" fill="rgb(254,247,228)"/>
+<rect x="925.07" y="260.01" width="42.85" height="9.89" rx="0.59" fill="rgb(251,213,146)"/>
+<ellipse cx="760.50" cy="388.44" rx="24.72" ry="23.07" fill="rgb(0,0,0)" opacity="0.200"/>
+<rect x="745.67" y="396.69" width="29.67" height="19.78" fill="rgb(252,161,97)"/>
+<ellipse cx="760.50" cy="383.50" rx="18.13" ry="14.01" fill="rgb(30,42,24)"/>
+<ellipse cx="757.20" cy="380.20" rx="13.19" ry="9.89" fill="rgb(121,207,161)"/>
+<rect x="811.00" y="339.00" width="178.00" height="89.00" fill="rgb(143,107,63)"/>
+<rect x="832.34" y="349.67" width="135.31" height="67.66" fill="rgb(240,221,178)"/>
+<rect x="846.60" y="356.80" width="106.80" height="53.40" fill="rgb(203,169,114)"/>
+<rect x="623.00" y="527.00" width="89.00" height="178.00" fill="rgb(143,107,63)"/>
+<rect x="633.67" y="548.34" width="67.66" height="135.31" fill="rgb(240,221,178)"/>
+<rect x="640.80" y="562.60" width="53.40" height="106.80" fill="rgb(203,169,114)"/>
+<ellipse cx="946.50" cy="574.44" rx="24.72" ry="23.07" fill="rgb(0,0,0)" opacity="0.200"/>
+<rect x="931.67" y="582.69" width="29.67" height="19.78" fill="rgb(252,161,97)"/>
+<ellipse cx="946.50" cy="569.50" rx="18.13" ry="14.01" fill="rgb(30,42,24)"/>
+<ellipse cx="943.20" cy="566.20" rx="13.19" ry="9.89" fill="rgb(121,207,161)"/>
+<ellipse cx="760.50" cy="669.09" rx="38.73" ry="23.07" fill="rgb(0,0,0)" opacity="0.200"/>
+<rect x="720.12" y="624.59" width="80.76" height="75.81" fill="rgb(31,26,20)"/>
+<rect x="725.06" y="628.71" width="70.87" height="65.93" fill="rgb(208,176,217)"/>
+<rect x="727.54" y="639.43" width="65.93" height="6.59" fill="rgb(228,203,233)"/>
+<rect x="745.25" y="663.32" width="7.42" height="18.13" fill="rgb(178,219,235)"/>
+<rect x="755.14" y="665.80" width="7.42" height="13.19" fill="rgb(156,207,230)"/>
+<ellipse cx="946.50" cy="667.44" rx="24.72" ry="23.07" fill="rgb(0,0,0)" opacity="0.200"/>
+<rect x="931.67" y="675.69" width="29.67" height="19.78" fill="rgb(252,161,97)"/>
+<ellipse cx="946.50" cy="662.50" rx="18.13" ry="14.01" fill="rgb(30,42,24)"/>
+<ellipse cx="943.20" cy="659.20" rx="13.19" ry="9.89" fill="rgb(121,207,161)"/>
+<ellipse cx="1039.50" cy="662.50" rx="32.96" ry="39.56" fill="rgb(0,0,0)" opacity="0.200"/>
+<rect x="1008.19" y="627.06" width="62.63" height="59.33" rx="3.56" fill="rgb(173,156,103)"/>
+<rect x="1008.19" y="683.93" width="62.63" height="6.59" fill="rgb(31,26,20)"/>
+<rect x="1016.01" y="691.75" width="7.42" height="7.42" fill="rgb(140,127,82)"/>
+<rect x="1055.57" y="691.75" width="7.42" height="7.42" fill="rgb(140,127,82)"/>
+
+
+
+
+
+
+
+
+
+
+
+
+
+</g>
+
+<line x1="993" y1="153" x2="993" y2="242" stroke="#29282B" stroke-width="9" stroke-linecap="butt"/><line x1="993" y1="246" x2="993" y2="270.03" stroke="#29282B" stroke-width="9" stroke-linecap="butt"/><line x1="993" y1="310.97" x2="993" y2="335" stroke="#29282B" stroke-width="9" stroke-linecap="butt"/><rect x="987" y="270.03" width="12" height="40.940000000000005" rx="3" fill="#F2A03D" opacity="1"/><rect x="980" y="266.03" width="26" height="48.940000000000005" rx="8" fill="#F2A03D" opacity="0.22"/><line x1="993" y1="339" x2="993" y2="428" stroke="#29282B" stroke-width="9" stroke-linecap="butt"/><line x1="1086" y1="432" x2="1086" y2="521" stroke="#29282B" stroke-width="9" stroke-linecap="butt"/><line x1="623" y1="430" x2="647.03" y2="430" stroke="#29282B" stroke-width="9" stroke-linecap="butt"/><line x1="687.97" y1="430" x2="712" y2="430" stroke="#29282B" stroke-width="9" stroke-linecap="butt"/><rect x="647.03" y="424" width="40.940000000000005" height="12" rx="3" fill="#F2A03D" opacity="1"/><rect x="643.03" y="417" width="48.940000000000005" height="26" rx="8" fill="#F2A03D" opacity="0.22"/><line x1="716" y1="430" x2="805" y2="430" stroke="#29282B" stroke-width="9" stroke-linecap="butt"/><line x1="809" y1="430" x2="898" y2="430" stroke="#29282B" stroke-width="9" stroke-linecap="butt"/><line x1="902" y1="430" x2="991" y2="430" stroke="#29282B" stroke-width="9" stroke-linecap="butt"/><line x1="995" y1="430" x2="1084" y2="430" stroke="#29282B" stroke-width="9" stroke-linecap="butt"/><line x1="1088" y1="523" x2="1177" y2="523" stroke="#29282B" stroke-width="9" stroke-linecap="butt"/><line x1="900" y1="432" x2="900" y2="456.03" stroke="#29282B" stroke-width="9" stroke-linecap="butt"/><line x1="900" y1="496.97" x2="900" y2="521" stroke="#29282B" stroke-width="9" stroke-linecap="butt"/><rect x="894" y="456.03" width="12" height="40.940000000000005" rx="3" fill="#F2A03D" opacity="1"/><rect x="887" y="452.03" width="26" height="48.940000000000005" rx="8" fill="#F2A03D" opacity="0.22"/><line x1="900" y1="525" x2="900" y2="614" stroke="#29282B" stroke-width="9" stroke-linecap="butt"/><line x1="993" y1="618" x2="993" y2="707" stroke="#29282B" stroke-width="9" stroke-linecap="butt"/><line x1="902" y1="616" x2="991" y2="616" stroke="#29282B" stroke-width="9" stroke-linecap="butt"/><rect x="618.5" y="148.5" width="563" height="563" fill="none" stroke="#29282B" stroke-width="9" rx="2"/>
+<text x="667.5" y="139" font-size="21" font-weight="700" fill="#CBBFA6" text-anchor="middle">1</text><text x="760.5" y="139" font-size="21" font-weight="700" fill="#CBBFA6" text-anchor="middle">2</text><text x="853.5" y="139" font-size="21" font-weight="700" fill="#CBBFA6" text-anchor="middle">3</text><text x="946.5" y="139" font-size="21" font-weight="700" fill="#CBBFA6" text-anchor="middle">4</text><text x="1039.5" y="139" font-size="21" font-weight="700" fill="#CBBFA6" text-anchor="middle">5</text><text x="1132.5" y="139" font-size="21" font-weight="700" fill="#CBBFA6" text-anchor="middle">6</text><text x="603" y="204.5" font-size="21" font-weight="700" fill="#CBBFA6" text-anchor="middle">1</text><text x="603" y="297.5" font-size="21" font-weight="700" fill="#CBBFA6" text-anchor="middle">2</text><text x="603" y="390.5" font-size="21" font-weight="700" fill="#CBBFA6" text-anchor="middle">3</text><text x="603" y="483.5" font-size="21" font-weight="700" fill="#CBBFA6" text-anchor="middle">4</text><text x="603" y="576.5" font-size="21" font-weight="700" fill="#CBBFA6" text-anchor="middle">5</text><text x="603" y="669.5" font-size="21" font-weight="700" fill="#CBBFA6" text-anchor="middle">6</text>
+<path d="M 928.7 179.7 L 964.3 215.3 M 964.3 179.7 L 928.7 215.3" stroke="#4A3A2C" stroke-width="6.5" stroke-linecap="round" opacity="0.82"/><path d="M 835.7 365.7 L 871.3 401.3 M 871.3 365.7 L 835.7 401.3" stroke="#4A3A2C" stroke-width="6.5" stroke-linecap="round" opacity="0.82"/><path d="M 928.7 365.7 L 964.3 401.3 M 964.3 365.7 L 928.7 401.3" stroke="#4A3A2C" stroke-width="6.5" stroke-linecap="round" opacity="0.82"/><path d="M 649.7 551.7 L 685.3 587.3 M 685.3 551.7 L 649.7 587.3" stroke="#4A3A2C" stroke-width="6.5" stroke-linecap="round" opacity="0.82"/><path d="M 649.7 644.7 L 685.3 680.3 M 685.3 644.7 L 649.7 680.3" stroke="#4A3A2C" stroke-width="6.5" stroke-linecap="round" opacity="0.82"/>
+
+
+<rect x="609" y="139" width="582" height="582" fill="none" stroke="#000000" stroke-opacity="0.55" stroke-width="2" rx="6"/>
+</svg></div>
+      <div class="caption"><i></i>地毯已划掉，门是通道</div>
+    </div>
+    
+<div class="legend-col">
+  <div class="kicker">图例</div>
+  <div class="lg">
+    <div class="row"><i style="background:#D9CDB4"></i>大厅</div><div class="row"><i style="background:#C3CDD4"></i>侧廊</div><div class="row"><i style="background:#D4C8BC"></i>库房</div><div class="row"><i style="background:#BECFB0"></i>内室</div>
+    <div class="row"><i style="background:#29282B"></i>墙</div>
+    <div class="row"><i style="background:#DC5B28"></i>门</div>
+  </div>
+  <div class="lg">
+    <div class="row"><b class="gpawn">A</b>棋子</div>
+    <div class="row"><b class="gghost">A?</b>候选</div>
+    <div class="row"><b class="gx">✕</b>排除</div>
+    <div class="row"><b class="gnote">b</b>笔记</div>
+    <div class="row"><b class="gv">V</b>受害者</div>
+    <div class="row"><b class="gchair">椅</b>可站</div>
+    <div class="row"><b class="gblock">桌</b>不可站</div>
+  </div>
+  <div class="coord">坐标 =（行,列）<br>行号自上而下，列号自左而右</div>
+</div>
+  </div>
+  <div class="foot">
+    <div class="skip">跳过教程</div>
+    <div class="btn ghost">上一步</div>
+    <div class="btn primary">开始试玩</div>
+  </div>
+</div></body></html>

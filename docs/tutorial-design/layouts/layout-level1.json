@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "name": "tutorial-board-level1-case001",
+  "note": "案件 001《夜盗独行》5×5 真实关卡布局（来源 lua/levels/case_001.lua）。房间号按引擎行优先洪泛：0=大屋(9格)、1=内室(8格)、2=外间(8格)。walls/doors 来自同文件的 walls/doors 表（字母 v/h 与关卡数据一致）。",
+  "canvas": [1600, 900],
+  "frame": { "x": 608, "y": 138, "size": 584, "ruler": 12, "gap": 4 },
+  "rows": 5,
+  "cols": 5,
+  "rooms": [
+    { "id": 0, "name": "大屋", "color": "#D9CDB4" },
+    { "id": 1, "name": "内室", "color": "#C3CDD4" },
+    { "id": 2, "name": "外间", "color": "#D4C8BC" }
+  ],
+  "cells": [
+    "00011",
+    "00011",
+    "00011",
+    "22221",
+    "22221"
+  ],
+  "walls": [
+    { "dir": "v", "r": 1, "c": 3 }, { "dir": "v", "r": 2, "c": 3 }, { "dir": "v", "r": 3, "c": 3 },
+    { "dir": "h", "r": 3, "c": 1 }, { "dir": "h", "r": 3, "c": 2 }, { "dir": "h", "r": 3, "c": 3 },
+    { "dir": "h", "r": 3, "c": 4 },
+    { "dir": "v", "r": 4, "c": 4 }, { "dir": "v", "r": 5, "c": 4 }
+  ],
+  "doors": [
+    { "dir": "v", "r": 2, "c": 3 },
+    { "dir": "h", "r": 3, "c": 2 },
+    { "dir": "h", "r": 3, "c": 4 }
+  ],
+  "objects": [
+    { "name": "桌子", "kind": "table", "cells": [[1, 1], [2, 1]] },
+    { "name": "植物", "kind": "plant", "cells": [[1, 2], [5, 1], [5, 3]] },
+    { "name": "地毯", "kind": "carpet", "cells": [[3, 1], [3, 2], [2, 4], [2, 5]] },
+    { "name": "椅子", "kind": "chair", "cells": [[4, 2], [5, 4]] }
+  ]
+}

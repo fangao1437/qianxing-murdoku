@@ -1,0 +1,238 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>首页教程</title><style>
+:root{
+  --ink:#0A0D15; --bg1:#111622; --bg2:#0B0F18;
+  --card:rgba(255,255,255,.032); --card2:rgba(255,255,255,.012);
+  --line:rgba(255,255,255,.085); --line2:rgba(255,255,255,.16);
+  --text:#F3EDE0; --text2:#BDB6A7; --muted:#827C6D;
+  --accent:#E8A23C; --accent2:#FFCB7A; --blue:#9ED8FF; --green:#8FC08A; --red:#D0553F;
+  --fA:#C96A5C; --fB:#5E8CC0; --fC:#6E9B62; --fD:#8A6FB0; --fE:#C08B4A; --fV:#4C8FA6;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:2340px;height:1080px;overflow:hidden}
+body{font-family:"Noto Sans SC","Source Han Sans SC","Microsoft YaHei",sans-serif;color:var(--text);
+  background:radial-gradient(1000px 700px at 10% 0%,rgba(255,240,200,.55),rgba(255,240,200,0) 62%),
+             radial-gradient(900px 700px at 95% 10%,rgba(200,190,255,.45),rgba(200,190,255,0) 64%),
+             radial-gradient(1000px 800px at 70% 105%,rgba(160,200,250,.45),rgba(160,200,250,0) 64%),
+             linear-gradient(152deg,#FFF7E8,#EFF3FF 48%,#DCE5F8);}
+.screen{position:relative;width:2340px;height:1080px;overflow:hidden}
+.popup{position:absolute;inset:36px;border-radius:30px;background:linear-gradient(165deg,#151A27,#0E1220 60%,#0B0F18);
+  border:1px solid rgba(255,255,255,.09);box-shadow:0 40px 100px rgba(10,14,26,.55)}
+.scrim{position:absolute;inset:0;background:rgba(8,11,18,.32)}
+.glow{position:absolute;border-radius:50%;filter:blur(1px);opacity:.4}
+.glow.a{width:900px;height:900px;right:-260px;top:-380px;background:radial-gradient(circle,rgba(255,220,150,.22),rgba(255,220,150,0) 68%)}
+.glow.b{width:1000px;height:800px;left:-320px;bottom:-420px;background:radial-gradient(circle,rgba(130,170,240,.18),rgba(130,170,240,0) 68%)}
+/* header */
+.head{position:absolute;left:96px;right:96px;top:84px;height:140px;display:flex;align-items:flex-start}
+.eyebrow{font-size:20px;font-weight:700;letter-spacing:2.4px;color:var(--accent);margin-bottom:12px}
+.h-title{font-size:46px;font-weight:800;letter-spacing:1px;line-height:1.1}
+.h-sub{font-size:21px;color:var(--text2);margin-top:14px;letter-spacing:.5px}
+.head-right{margin-left:auto;display:flex;align-items:center;gap:22px;padding-top:6px}
+.stepnum{font-size:21px;font-weight:800;color:var(--text2);letter-spacing:.5px}
+.stepnum b{color:var(--accent2);font-size:26px}
+.close{width:64px;height:64px;border-radius:50%;border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;
+  font-size:28px;color:var(--text2);background:rgba(255,255,255,.03)}
+/* stepper */
+.stepper{position:absolute;left:96px;right:96px;top:228px;height:66px;display:flex;gap:12px;justify-content:center}
+.step{flex:0 1 300px;height:66px;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.022);
+  display:flex;align-items:center;gap:14px;padding:0 20px;color:var(--text2);font-size:19px;font-weight:700;min-width:0}
+.step .n{width:38px;height:38px;border-radius:50%;border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;
+  font-size:17px;font-weight:800;color:var(--muted);flex:0 0 auto}
+.step .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.step.on{border-color:rgba(232,162,60,.55);background:linear-gradient(90deg,rgba(232,162,60,.18),rgba(232,162,60,.04));color:var(--text)}
+.step.on .n{background:var(--accent);border-color:var(--accent);color:#22180A}
+.step.done .n{background:rgba(143,192,138,.16);border-color:rgba(143,192,138,.5);color:#A9D6A2}
+/* body */
+.body{position:absolute;left:96px;right:96px;top:302px;height:664px;display:flex;gap:60px}
+.col-text{width:1100px;display:flex;flex-direction:column;gap:22px;min-width:0}
+.col-text .step-card{justify-content:flex-start;flex:1 1 auto}
+.board-col{width:620px;display:flex;flex-direction:column;gap:14px}
+.legend-col{width:340px;display:flex;flex-direction:column;gap:18px}
+/* card face（统一成首页那张图的卡面） */
+.card{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:20px;padding:24px 28px;display:flex;flex-direction:column;justify-content:center}
+.card .row{display:flex;gap:20px;align-items:flex-start}
+.num{width:46px;height:46px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  background:rgba(232,162,60,.16);border:1px solid rgba(232,162,60,.45);color:var(--accent2);font-size:21px;font-weight:800}
+.card h3{font-size:29px;font-weight:800;letter-spacing:.3px;margin-bottom:8px;line-height:1.3}
+.card p{font-size:22px;line-height:1.78;color:#D3CCBD}
+.card p b{color:var(--accent2);font-weight:700}
+.card p em{font-style:normal;color:var(--blue);font-weight:700}
+.card .kicker{font-size:16px;font-weight:700;letter-spacing:2px;color:var(--muted);margin-bottom:12px}
+.step-card .tag{align-self:flex-start;display:inline-flex;align-items:center;height:38px;padding:0 16px;border-radius:19px;font-size:16px;font-weight:800;
+  color:var(--accent2);background:rgba(232,162,60,.14);border:1px solid rgba(232,162,60,.35);margin-bottom:14px}
+.step-card h2{font-size:39px;font-weight:800;line-height:1.3;letter-spacing:.4px;margin-bottom:12px}
+.step-card p{font-size:22.5px}
+.clue-row{display:flex;gap:18px;align-items:center}
+.face{width:64px;height:64px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  font-size:26px;font-weight:800;color:#FFF8EC;background:var(--fc,#5E6B8C);box-shadow:inset 0 0 0 3px rgba(255,255,255,.24)}
+.clue-name{font-size:20px;color:var(--muted);font-weight:700;letter-spacing:.5px}
+.clue-say{font-size:23px;color:#E9E2D3;line-height:1.5;margin-top:4px}
+.clue-say b{color:var(--accent2)}
+.chips{display:flex;gap:12px;flex-wrap:wrap}
+.chip{height:44px;padding:0 18px;border-radius:22px;display:flex;align-items:center;gap:8px;font-size:18px;font-weight:700;
+  background:rgba(143,192,138,.10);border:1px solid rgba(143,192,138,.38);color:#B6DDB0}
+.chip.blue{background:rgba(158,216,255,.09);border-color:rgba(158,216,255,.32);color:#BEE3F8}
+.chip.gold{background:rgba(240,181,74,.11);border-color:rgba(240,181,74,.4);color:#FFD79A}
+.note{display:flex;gap:14px;align-items:flex-start;font-size:20px;color:var(--text2);line-height:1.6}
+.note .k{width:28px;height:28px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  background:rgba(158,216,255,.12);border:1px solid rgba(158,216,255,.35);color:var(--blue);font-size:15px;font-weight:800}
+/* board */
+.board-card{border-radius:20px;overflow:hidden;border:1px solid var(--line2);box-shadow:0 26px 60px rgba(4,6,12,.5)}
+.board-card svg{width:100%;height:auto;display:block}
+.caption{font-size:17px;color:var(--muted);display:flex;gap:10px;align-items:center}
+.caption i{width:8px;height:8px;border-radius:50%;background:var(--accent);display:block}
+/* legend */
+.legend-col .kicker{font-size:16px;font-weight:700;letter-spacing:2px;color:var(--muted)}
+.lg{display:flex;flex-direction:column;gap:11px;font-size:18px;color:var(--text2);font-weight:600}
+.lg .row{display:flex;align-items:center;gap:12px}
+.lg i{width:22px;height:22px;border-radius:5px;display:block}
+.lg b{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex:0 0 auto}
+.lg .gpawn{background:#F2EDE3;color:#2A241C}
+.lg .gghost{background:transparent;color:#9A9080;border:2px dashed #8A8272;font-size:12px}
+.lg .gx{color:var(--red);font-size:22px}
+.lg .gnote{background:transparent;color:#A9A392;font-size:16px}
+.lg .gv{background:#BFE6F2;color:#2C5A6B}
+.lg .gchair{background:#8FC08A;color:#1C2A18}
+.lg .gblock{background:#6B5B49;color:#F2EDE3}
+.coord{font-size:17px;color:var(--muted);border-left:2px solid rgba(232,162,60,.4);padding-left:12px;line-height:1.6}
+/* footer */
+.foot{position:absolute;left:96px;right:96px;top:972px;height:72px;display:flex;align-items:center;gap:18px}
+.skip{font-size:20px;font-weight:700;color:var(--muted);margin-right:auto}
+.btn{height:66px;padding:0 36px;border-radius:33px;font-size:22px;font-weight:800;display:flex;align-items:center;gap:12px}
+.btn.ghost{background:rgba(255,255,255,.04);border:1px solid var(--line2);color:var(--text2)}
+.btn.primary{background:linear-gradient(180deg,#F3B963,#E39A2F);color:#2A1B06;box-shadow:0 10px 26px rgba(227,154,47,.28)}
+.btn .k{font-size:17px;font-weight:700;opacity:.55}
+/* home grid */
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:22px;flex:1 1 auto;grid-template-rows:1fr 1fr 1fr}
+.rules .card.wide{grid-column:1 / span 2}
+.body.home .col-text{width:1100px}
+.body.home .board-col{width:620px}
+/* pages */
+.pages{position:absolute;left:60px;right:60px;top:36px;height:140px;display:flex;align-items:flex-start}
+.pager{display:flex;gap:10px;align-items:center;margin-top:14px}
+.pager i{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,.16)}
+.pager i.on{width:42px;border-radius:6px;background:var(--accent)}
+</style></head>
+<body><div class="screen">
+  <div class="scrim"></div><div class="popup"></div>
+  <div class="glow a"></div><div class="glow b"></div>
+  
+<div class="head">
+  <div>
+    <div class="eyebrow">教程 · 玩法总览</div>
+    <div class="h-title">先摆人，再指认</div>
+    <div class="h-sub">数独 × 推理：每行每列各站一人，靠线索收窄，最后揪出盗窃者</div>
+  </div>
+  <div class="head-right">
+    
+    <div class="close">✕</div>
+  </div>
+</div>
+  
+  <div class="body home" style="top:240px;height:716px">
+    <div class="col-text"><div class="rules">
+    <div class="card"><div class="row"><div class="num">1</div>
+  <div><h3>目标：摆满当事人，再指认</h3><p>每名当事人（含 1 名受害者）各占一格。全部摆好后，指出谁是<b>盗窃者</b>；如果受害者屋里还有别人，还要说清有没有同伙。</p></div></div></div>
+    <div class="card"><div class="row"><div class="num">2</div>
+  <div><h3>每行、每列恰好一人</h3><p>放下一个人，整行整列会自动打叉。一行不能站两个，一列也不能。</p></div></div></div>
+    <div class="card"><div class="row"><div class="num">3</div>
+  <div><h3>只能站「可站」的格子</h3><p><em>椅子、地毯</em>可以站；<b>桌子、植物、书架、雕像</b>不能站。</p></div></div></div>
+    <div class="card"><div class="row"><div class="num">4</div>
+  <div><h3>「旁边 / 隔壁」怎么算</h3><p>只算上下左右贴着的格子：<b>同屋直接算，跨屋必须中间有门</b>，隔着墙不算。盗窃者也一定落在受害者隔壁的屋里。</p></div></div></div>
+    <div class="card wide"><div class="row"><div class="num">5</div>
+  <div><h3>操作：轻点＝笔记，双击＝预放置，长按＝正式放下</h3><p>点一张线索卡选中人。轻点格子＝铅笔笔记；<b>双击＝预放置</b>（先占位，可反悔）；<b>按住不放、进度环走完＝正式放下</b>。放错了用右边的撤销。</p></div></div></div>
+  </div></div>
+    <div class="board-col">
+      <div class="board-card"><svg xmlns="http://www.w3.org/2000/svg" width="656" height="656" viewBox="572 102 656 656" font-family="Noto Sans SC, Source Han Sans SC, Microsoft YaHei, sans-serif">
+<defs>
+    <clipPath id="boardClip-home-1"><rect x="608" y="138" width="584" height="584" rx="6"/></clipPath>
+  </defs>
+<rect x="572" y="102" width="656" height="656" rx="16" fill="#141018"/>
+<g clip-path="url(#boardClip-home-1)">
+<rect width="100%" height="100%" fill="#141018"/>
+<rect x="608" y="138" width="584" height="584" fill="#0b0a0d" rx="4"/>
+<rect x="622" y="152" width="108" height="108" fill="#D9CDB4"/>
+<rect x="734" y="152" width="108" height="108" fill="#D9CDB4"/>
+<rect x="846" y="152" width="108" height="108" fill="#C3CDD4"/>
+<rect x="958" y="152" width="108" height="108" fill="#C3CDD4"/>
+<rect x="1070" y="152" width="108" height="108" fill="#C3CDD4"/>
+<rect x="622" y="264" width="108" height="108" fill="#D9CDB4"/>
+<rect x="734" y="264" width="108" height="108" fill="#D9CDB4"/>
+<rect x="846" y="264" width="108" height="108" fill="#C3CDD4"/>
+<rect x="958" y="264" width="108" height="108" fill="#C3CDD4"/>
+<rect x="1070" y="264" width="108" height="108" fill="#C3CDD4"/>
+<rect x="622" y="376" width="108" height="108" fill="#D9CDB4"/>
+<rect x="734" y="376" width="108" height="108" fill="#D9CDB4"/>
+<rect x="846" y="376" width="108" height="108" fill="#C3CDD4"/>
+<rect x="958" y="376" width="108" height="108" fill="#C3CDD4"/>
+<rect x="1070" y="376" width="108" height="108" fill="#C3CDD4"/>
+<rect x="622" y="488" width="108" height="108" fill="#D9CDB4"/>
+<rect x="734" y="488" width="108" height="108" fill="#D9CDB4"/>
+<rect x="846" y="488" width="108" height="108" fill="#D4C8BC"/>
+<rect x="958" y="488" width="108" height="108" fill="#D4C8BC"/>
+<rect x="1070" y="488" width="108" height="108" fill="#D4C8BC"/>
+<rect x="622" y="600" width="108" height="108" fill="#D9CDB4"/>
+<rect x="734" y="600" width="108" height="108" fill="#D9CDB4"/>
+<rect x="846" y="600" width="108" height="108" fill="#D4C8BC"/>
+<rect x="958" y="600" width="108" height="108" fill="#D4C8BC"/>
+<rect x="1070" y="600" width="108" height="108" fill="#D4C8BC"/>
+<ellipse cx="900.00" cy="212.00" rx="30.00" ry="28.00" fill="rgb(0,0,0)" opacity="0.200"/>
+<rect x="882.00" y="222.00" width="36.00" height="24.00" fill="rgb(252,161,97)"/>
+<ellipse cx="900.00" cy="206.00" rx="22.00" ry="17.00" fill="rgb(30,42,24)"/>
+<ellipse cx="896.00" cy="202.00" rx="16.00" ry="12.00" fill="rgb(121,207,161)"/>
+<ellipse cx="732.00" cy="318.00" rx="91.00" ry="58.00" fill="rgb(0,0,0)" opacity="0.200"/>
+<rect x="643.00" y="275.00" width="178.00" height="72.00" rx="4.32" fill="rgb(173,156,103)"/>
+<rect x="643.00" y="344.00" width="178.00" height="8.00" fill="rgb(31,26,20)"/>
+<rect x="665.50" y="353.50" width="9.00" height="9.00" fill="rgb(140,127,82)"/>
+<rect x="789.50" y="353.50" width="9.00" height="9.00" fill="rgb(140,127,82)"/>
+<ellipse cx="1124.00" cy="430.00" rx="40.00" ry="42.00" fill="rgb(0,0,0)" opacity="0.200"/>
+<rect x="1088.00" y="390.00" width="72.00" height="80.00" rx="4.32" fill="rgb(217,192,138)"/>
+<rect x="1093.00" y="396.00" width="62.00" height="68.00" rx="3.72" fill="rgb(254,247,228)"/>
+<rect x="1098.00" y="393.00" width="52.00" height="12.00" rx="0.72" fill="rgb(251,213,146)"/>
+<rect x="734.00" y="600.00" width="108.00" height="108.00" fill="rgb(143,107,63)"/>
+<rect x="746.95" y="612.95" width="82.10" height="82.10" fill="rgb(240,221,178)"/>
+<rect x="755.60" y="621.60" width="64.80" height="64.80" fill="rgb(203,169,114)"/>
+
+
+
+
+
+
+
+
+</g>
+
+<line x1="844" y1="152" x2="844" y2="260" stroke="#29282B" stroke-width="9" stroke-linecap="butt"/><line x1="844" y1="264" x2="844" y2="293.16" stroke="#29282B" stroke-width="9" stroke-linecap="butt"/><line x1="844" y1="342.84" x2="844" y2="372" stroke="#29282B" stroke-width="9" stroke-linecap="butt"/><rect x="838" y="293.16" width="12" height="49.68" rx="3" fill="#DC5B28" opacity="0.95"/><line x1="844" y1="376" x2="844" y2="484" stroke="#29282B" stroke-width="9" stroke-linecap="butt"/><line x1="844" y1="488" x2="844" y2="596" stroke="#29282B" stroke-width="9" stroke-linecap="butt"/><line x1="844" y1="600" x2="844" y2="708" stroke="#29282B" stroke-width="9" stroke-linecap="butt"/><line x1="846" y1="486" x2="875.16" y2="486" stroke="#29282B" stroke-width="9" stroke-linecap="butt"/><line x1="924.84" y1="486" x2="954" y2="486" stroke="#29282B" stroke-width="9" stroke-linecap="butt"/><rect x="875.16" y="480" width="49.68" height="12" rx="3" fill="#DC5B28" opacity="0.95"/><line x1="958" y1="486" x2="1066" y2="486" stroke="#29282B" stroke-width="9" stroke-linecap="butt"/><line x1="1070" y1="486" x2="1099.16" y2="486" stroke="#29282B" stroke-width="9" stroke-linecap="butt"/><line x1="1148.84" y1="486" x2="1178" y2="486" stroke="#29282B" stroke-width="9" stroke-linecap="butt"/><rect x="1099.16" y="480" width="49.68" height="12" rx="3" fill="#DC5B28" opacity="0.95"/><rect x="617.5" y="147.5" width="565" height="565" fill="none" stroke="#29282B" stroke-width="9" rx="2"/>
+<text x="676" y="138" font-size="21" font-weight="700" fill="#CBBFA6" text-anchor="middle">1</text><text x="788" y="138" font-size="21" font-weight="700" fill="#CBBFA6" text-anchor="middle">2</text><text x="900" y="138" font-size="21" font-weight="700" fill="#CBBFA6" text-anchor="middle">3</text><text x="1012" y="138" font-size="21" font-weight="700" fill="#CBBFA6" text-anchor="middle">4</text><text x="1124" y="138" font-size="21" font-weight="700" fill="#CBBFA6" text-anchor="middle">5</text><text x="602" y="213" font-size="21" font-weight="700" fill="#CBBFA6" text-anchor="middle">1</text><text x="602" y="325" font-size="21" font-weight="700" fill="#CBBFA6" text-anchor="middle">2</text><text x="602" y="437" font-size="21" font-weight="700" fill="#CBBFA6" text-anchor="middle">3</text><text x="602" y="549" font-size="21" font-weight="700" fill="#CBBFA6" text-anchor="middle">4</text><text x="602" y="661" font-size="21" font-weight="700" fill="#CBBFA6" text-anchor="middle">5</text>
+
+<circle cx="676" cy="206" r="18.360000000000003" fill="#EFE6D2" stroke="#241D15" stroke-width="3"/><circle cx="676" cy="202.6952" r="6.242400000000002" fill="#241D15" opacity="0.75"/><rect x="666.82" y="211.508" width="18.360000000000003" height="10.098000000000003" rx="4.039200000000001" fill="#241D15" opacity="0.6"/><circle cx="900" cy="318" r="18.360000000000003" fill="#F7DFAE" stroke="#8A5A16" stroke-width="3"/><circle cx="900" cy="314.6952" r="6.242400000000002" fill="#8A5A16" opacity="0.75"/><rect x="890.82" y="323.508" width="18.360000000000003" height="10.098000000000003" rx="4.039200000000001" fill="#8A5A16" opacity="0.6"/><text x="900" y="363.36" font-size="15" font-weight="700" fill="#8A5A16" text-anchor="middle">盗窃者？</text><circle cx="1124" cy="430" r="18.360000000000003" fill="#EFE6D2" stroke="#241D15" stroke-width="3"/><circle cx="1124" cy="426.6952" r="6.242400000000002" fill="#241D15" opacity="0.75"/><rect x="1114.82" y="435.508" width="18.360000000000003" height="10.098000000000003" rx="4.039200000000001" fill="#241D15" opacity="0.6"/><circle cx="788" cy="542" r="18.360000000000003" fill="#EFE6D2" stroke="#241D15" stroke-width="3"/><circle cx="788" cy="538.6952" r="6.242400000000002" fill="#241D15" opacity="0.75"/><rect x="778.82" y="547.508" width="18.360000000000003" height="10.098000000000003" rx="4.039200000000001" fill="#241D15" opacity="0.6"/><circle cx="1012" cy="654" r="18.360000000000003" fill="#BFE6F2" stroke="#2C5A6B" stroke-width="3"/><circle cx="1012" cy="650.6952" r="6.242400000000002" fill="#2C5A6B" opacity="0.75"/><rect x="1002.82" y="659.508" width="18.360000000000003" height="10.098000000000003" rx="4.039200000000001" fill="#2C5A6B" opacity="0.6"/><text x="1012" y="699.36" font-size="15" font-weight="700" fill="#2C5A6B" text-anchor="middle">受害者</text>
+
+<rect x="609" y="139" width="582" height="582" fill="none" stroke="#000000" stroke-opacity="0.55" stroke-width="2" rx="6"/>
+</svg></div>
+      <div class="caption"><i></i>5×5 棋盘 · 三间屋 · 三扇门 · 5 枚棋子</div>
+    </div>
+    
+<div class="legend-col">
+  <div class="kicker">图例</div>
+  <div class="lg">
+    <div class="row"><i style="background:#D9CDB4"></i>大屋</div><div class="row"><i style="background:#C3CDD4"></i>内室</div><div class="row"><i style="background:#D4C8BC"></i>外间</div>
+    <div class="row"><i style="background:#29282B"></i>墙</div>
+    <div class="row"><i style="background:#DC5B28"></i>门</div>
+  </div>
+  <div class="lg">
+    <div class="row"><b class="gpawn">A</b>棋子</div>
+    <div class="row"><b class="gghost">A?</b>候选</div>
+    <div class="row"><b class="gx">✕</b>排除</div>
+    <div class="row"><b class="gnote">b</b>笔记</div>
+    <div class="row"><b class="gv">V</b>受害者</div>
+    <div class="row"><b class="gchair">椅</b>可站</div>
+    <div class="row"><b class="gblock">桌</b>不可站</div>
+  </div>
+  <div class="coord">坐标 =（行,列）<br>行号自上而下，列号自左而右</div>
+</div>
+  </div>
+  <div class="foot">
+    <div class="skip">稍后再看</div>
+    
+    <div class="btn primary">开始办案</div>
+  </div>
+</div></body></html>
