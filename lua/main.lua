@@ -675,6 +675,9 @@ function Murdoku.start(level_id, opts)
       end
       adapter.cfg.btn_list = list
       if print then print("[murdoku] 上色名单（来自规划）：" .. #list .. " 个按钮") end
+      -- ★ 2026-10-18（优化组）：按钮上色是 **opt-in**（`cfg.btn_art = true` 才跑）——
+      --   入口从原来的 `apply_tray_layout` 改成独立方法 `apply_btn_art`（那个函数已删）✓
+      pcall(function() if adapter.apply_btn_art then adapter:apply_btn_art() end end)
       -- ★ 顺手把所有按钮的**名字**也收集起来（规划里的 `text`），开机直接写下去。
       --   为什么不信渲染那条路：用户反复反馈名字没配上，而文字**只能靠脚本写**
       --   （存档里不存文字，已用 `ruler.c.1` 验证）。这里走一条**明确、可读回验证**的路径。
@@ -792,13 +795,8 @@ function Murdoku.start(level_id, opts)
     print(string.format("[murdoku] 按钮名字：成功 %d 个；另有 %d 个走 `text` 子控件（头像卡，正常）或写入未回读（共 %d）", okN, badN, #ids2))
   end
 
-  -- 头像卡按本关实际人数重新摆正（列数会随人数变，编辑器那套只是"最挤的情况"）
-  if adapter.apply_tray_layout and controller.tray_layout_canvas then
-    local moved = adapter:apply_tray_layout(controller:tray_layout_canvas())
-    if moved > 0 and print then
-      print("[murdoku] 头像卡已按 " .. moved .. " 人重新排布")
-    end
-  end
+  -- ★ 2026-10-18（优化组 · C 类清理）：头像卡重排的调用**已删除**（`tray_layout_canvas` 同时删了）
+  --   ⇒ 不再每局打「找不到头像卡容器」；`apply_tray_layout` 本体留到下一批处理 ✓
 
   -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
   -- ★★ 2026-10-12 **【已删除】"行标 / 列标按格子的实际位置对齐"这一段** ✗✓
@@ -818,20 +816,9 @@ function Murdoku.start(level_id, opts)
   if adapter.diagnose_overlap and adapter.cfg.overlap_diag ~= false then
     adapter:diagnose_overlap()
   end
-  -- ③ 参照格子体检：把「cell.1.1 到底配好了没有」一次性讲清楚。
-  --    原因：格子能不能看见/点得动，取决于类型、射线、子控件、状态节点、图片类型好几项，
-  --    而这些在日志里**原本一点痕迹都没有**，出问题只能靠肉眼猜。
-  --    搭界面阶段默认开（cfg.diagnose_cell = false 可关），每个会话只打一次。
-  if adapter.diagnose_cell ~= nil and not adapter._cell_diagnosed
-     and not (adapter.cfg and adapter.cfg.diagnose_cell == false) then
-    adapter._cell_diagnosed = true
-    pcall(function() adapter:diagnose_cell() end)
-    -- 跟着报一段「模板候选」：cell.1.1 自己的 prefabIndex 是**基础模板**，不能用来
-    -- 生成格子；必须有「从另存出来的模板**新建**的」那个控件（约定名 tpl.cell）。
-    -- 提前报出来，试玩前就知道配没配对，而不是等一句"全部实例化失败"。
-    pcall(function() adapter:diagnose_template() end)
-  end
-
+  -- ★ 2026-10-18（优化组 · B 类清理）：**参照格子体检（diagnose_cell / diagnose_template）调用删除** ✗✓
+  --   结案证据见真机日志：「这一格配好了」/「生成成功了 —— 建了 25 个格子」。
+  --   下面的 `diagnose_grid` 仍在，但它的闸从「`_cell_diagnosed` + DIAG」简化成**只看 DIAG** ✓
   Murdoku.render(true)
 
   -- ★★★ 2026-09-30：**把主页/选关和 3D 角色的输入隔开**（用户明确要求）。
@@ -880,8 +867,9 @@ function Murdoku.start(level_id, opts)
   -- （`controller:render` 才推 `walls`/`doors`/`image`/`tint`）。放在渲染前，
   -- 清单里读到的全是**编辑器初始值** —— 用户 2026-09-27 04:26 的日志里
   -- `wall.up visible=false` 但**屏幕上明明有蓝线**，就是这么来的（误导性输出）。
-  if adapter.diagnose_cell ~= nil and adapter._cell_diagnosed and adapter.diagnose_grid ~= nil
-     and adapter.cfg and adapter.cfg.diagnose_grid ~= false then
+  -- ★ 2026-10-18：原来这里还要 `adapter._cell_diagnosed`（由 diagnose_cell 置位）⇒ 那个体检已删，
+  --   闸只留 `Murdoku.DIAG`（真正的调用在下面 `if Murdoku.DIAG then`）✓ 行为不变。
+  if adapter.diagnose_grid ~= nil and adapter.cfg and adapter.cfg.diagnose_grid ~= false then
     local rows = adapter.cells_rows or (adapter.cfg.cells and adapter.cfg.cells.rows) or 5
     local cols = adapter.cells_cols or (adapter.cfg.cells and adapter.cfg.cells.cols) or 5
   if Murdoku.DIAG then pcall(function() adapter:diagnose_grid(rows, cols) end) end   -- ★ 闸 ✓
@@ -988,63 +976,11 @@ function Murdoku.on_update(dt)
       end
     end
   end
-  -- ★★★★★ 2026-10-08 **四键探针（真·每帧入口 ＋ adapter 在手 ✓）** ✗✓
-  --   ★ 为什么这里能读 ✓：★ 本函数是 `Murdoku.on_update`（★ 入口脚本 L853 的 `OnUpdate` 调它 ✓
-  --     ★ 且 `script:EnableUpdate(true)` 已开 ✓）★ 而 `current.adapter` **就在这里** ✓✓
-  --   ★ 触发条件 ✓：★ 渲染分支刚记录过"弹窗开着"（★ `current._modal_seen` 在涨 ✓）
-  --     ★ 那一侧拿不到 adapter ✗ ⇒ ★ **两边拼起来**：★ 一边报"开着" ✓ ★ 一边读控件 ✓
-  -- ★★★★★ 2026-10-09 **修好这条探针 —— 它【从来没触发过】** ✗✓
-  --   ★ 症状 ✓：真机日志里**一次都没有** `★ 四键探针2` ✗
-  --   ★ 根因（两处对不上 ✗）：
-  --     · `ui_controller.lua:3028` 是把计数器加在 **控制器** 上：`self._modal_seen = …`
-  --     · 而这里读的是 **会话**：`current._modal_seen` ✗ —— **两个不同的对象** ✓
-  --     ⇒ `current._modal_seen` **恒为 nil** ⇒ `_seen = 0` ⇒ 那个 `>` 判断**永远不成立** ✓
-  --   ⇒ ★ 修法：从**控制器**上读（`current.controller` ✓ 与 L794 的 `current.controller:tick` 同一个 ✓）
-  --   ★ 顺带把资料员要的那两个数打出来 ✓（它建议的"最大的分叉"那条 ✓）：
-  --     `bg` / `label` 的 **同级排序索引**（官方 `GetSiblingIndex()` ✓ 语义：**数值越大越靠上** ✓）
-  --     ⇒ 一行就能分清"**根本没画**"还是"**画了被盖住**" ✓
-  if current ~= nil and current.adapter ~= nil then
-    local _ctl = current.controller
-    local _seen = (_ctl and _ctl._modal_seen) or 0
-    if _seen > (Murdoku._probe_seen or 0) and (Murdoku._probe_n or 0) < 12 then
-      Murdoku._probe_seen = _seen
-      Murdoku._probe_n = (Murdoku._probe_n or 0) + 1
-      local _k = nil
-      pcall(function() _k = current.adapter:sub("modal", "modal.exit") end)
-      if _k == nil then pcall(function() _k = current.adapter:find("modal.exit") end) end
-      local _b = nil
-      if _k ~= nil then pcall(function() _b = current.adapter:sub("modal.exit", "bg") end) end
-      local _id, _src, _vis, _sz = "?", "?", "?", "?"
-      if _b ~= nil then
-        pcall(function() _id = tostring(_b.imageId) end)
-        pcall(function() _src = tostring(_b.imageSource) end)
-        pcall(function() _vis = tostring(_b.visible) end)
-        pcall(function() _sz = tostring(_b.sizeDelta and (_b.sizeDelta.x .. "x" .. _b.sizeDelta.y) or "无") end)
-      end
-      -- ★★★ 2026-10-09 **资料员建议的那两个数（最大的分叉就在这一行 ✓）**
-      --   官方语义（`docs/api-cache/mhtakr07vej4.txt:1300-1311` ✓）：
-      --     `GetSiblingIndex()` ⇒ 同级排序索引 ✓ **数值越大越靠上** ✓
-      --   读法 ✓：
-      --     · `bg` 的索引 **>** `label` 的 ⇒ ★ **底图压在文字上面** ⇒ 图文一起看不见 ✓
-      --     · 两者都**读不出来**（nil） ⇒ 接口不适用，改看别的 ✓
-      --     · 索引正常（`label` 更大）而画面上还是空 ⇒ ★ **压根没画**（不是被盖住）✓
-      --   ⇒ ★ 这一条能一次分清「没画」还是「被盖住」✓ —— 那是当前最大的分叉 ✓
-      local _bi, _li = "?", "?"
-      local _lb = nil
-      if _k ~= nil then pcall(function() _lb = current.adapter:sub("modal.exit", "label") end) end
-      if _b ~= nil then pcall(function() _bi = tostring(_b:GetSiblingIndex()) end) end
-      if _lb ~= nil then pcall(function() _li = tostring(_lb:GetSiblingIndex()) end) end
-      print("[murdoku] ★ 四键探针2：exit=" .. tostring(_k ~= nil) .. "  bg=" .. tostring(_b ~= nil)
-        .. "  imageId=" .. _id .. "  source=" .. _src .. "  visible=" .. _vis .. "  size=" .. _sz)
-      print("[murdoku] ★ 四键探针3（谁在上面）：bg 的 GetSiblingIndex=" .. _bi
-        .. "   label 的 GetSiblingIndex=" .. _li
-        .. "   （官方：**数值越大越靠上** ✓ ⇒ bg > label 就是底图压在字上面 ✗）"
-        .. "  label=" .. tostring(_lb ~= nil)
-        .. "  label.visible=" .. (function() local v = "?" pcall(function() v = tostring(_lb.visible) end) return v end)())
-    end
-  end
-
-  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  -- ★ 2026-10-18（优化组 · B 类清理）：**四键探针整段删除** ✗✓
+  --   它要查的「弹窗四键没图 / 没字」已由 v262 结案（几何归编辑器 + 盒模型修正 + `label` 防裁），
+  --   而它**不在 `Murdoku.DIAG` 门内** ⇒ 默认就在跑（每次会话最多 12 次刷两行）。
+  --   判据：真机日志里它只在"弹窗打开后"产出；那两行信息（bg/label 的 GetSiblingIndex）
+  --     现在也能用 `tools/gil/_probe_state.mjs` 从存档侧直接读，不必挂在每帧路径上。
   current.adapter:on_tick(dt)
   current.controller:tick(dt)
 
@@ -1174,7 +1110,9 @@ function Murdoku.on_update(dt)
       "stage", "board.bg", "cell.1.1",
       "topbar", "toolbar", "right",
       "clues", "clues.bg", "clues.grid",
-      "hud.title", "hud.subtitle", "hud.timer", "hud.progress",
+      -- ★ 2026-10-18（优化组）：`"hud.subtitle"` 已去掉 ✓ —— 副标题位按美术结论移除，
+      --   它不再存在于规划与存档里 ⇒ 列在这里只会每次报"树里没有这个名字" ✗
+      "hud.title", "hud.timer", "hud.progress",
       -- ★ 2026-10-11 `"action.back"` 已去掉 ✓（★ 用户要求整颗删除 ✓
       --   ⇒ ★ 它不再存在于规划里 ⇒ ★ 列在这里只会每次报"树里没有这个名字"✗）
     }
@@ -1337,184 +1275,12 @@ function Murdoku.on_update(dt)
     --   那个探针控件就是用户看到的"白块"，已删除，不再创建。
 
   end
-  -- ★★★★ 2026-10-01 **射线落点探针**：给几个"容器/弹窗"也绑上点击。
-  --
-  --   为什么：选关页上 `select.back` / `select.card.*` 的 visible/坐标/bind 全对，
-  --   而用户"所有位置都点了一遍"却**零点击日志**。可 `select` 容器自己**没绑点击**
-  --   => "没日志"并不能区分"射线被别人吃了"和"射线落在没绑事件的控件上"。
-  --   => 给容器们绑一遍：**谁收到日志，射线就落在谁身上**。
-  --      容器能收到 => 射线到得了这一层，子控件却没收到 => 子控件的射线被谁挡住/顺序不对
-  --      容器也收不到 => 更上层还有东西（游戏自己的 UI 层）
-  if not Murdoku._ray_probe_done and (current.frames or 0) >= 100 then
-    Murdoku._ray_probe_done = true
-    local ad3 = current.adapter
-    -- ★★★★★ 2026-10-06 **名单按真机实测修正** ✗✓
-    --   旧的 7 个里 `select` / `intro` / `toast` / `modal` / `board` **都不存在** ✗
-    --   ⇒ ★ 每次刷 7 行「射线探针：X 找不到或不支持光标事件」✗
-    --     ★ 而 `root` / `home` **其实存在** ✓ 只是不支持光标事件 ✓
-    --     ⇒ ★★ 那句话把两种完全不同的情况混成一句 ✗ ⇒ 读起来像"控件没了" ✓
-    --   ⇒ 只探**真机确认存在**的容器 ✓（★ 依 2026-10-05/06 真机日志 ✓）
-    local probe_ids = { "root", "home", "stage", "clues", "topbar", "toolbar", "right", "board.bg" }
-    for i = 1, #probe_ids do
-      local pid = probe_ids[i]
-      local c = nil
-      pcall(function() c = ad3:find(pid) end)
-      local clickEnum = nil
-      pcall(function() clickEnum = Enum.CursorEventType.CursorClick end)
-      if clickEnum == nil then
-        pcall(function() clickEnum = Enum.CursorEventType.CursorClickDown end)
-      end
-      if c ~= nil and c.AddCursorEventListener ~= nil and clickEnum ~= nil then
-        local okb = pcall(function()
-          c:AddCursorEventListener(clickEnum, function()
-            print("[murdoku] RAY-HIT = " .. pid .. " （射线落在这个容器上）")
-          end)
-        end)
-        print("[murdoku] 射线探针：" .. pid .. " 绑定=" .. tostring(okb))
-      elseif clickEnum == nil then
-        print("[murdoku] 射线探针：读不到 Enum.CursorEventType.CursorClick，跳过")
-        break
-      else
-        print("[murdoku] 射线探针：" .. pid .. " 找不到或不支持光标事件")
-      end
-    end
-    -- ★★★★★ 2026-10-02 **打印所有客户端 UI 根**。
-    --
-    --   为什么：用户的观察把范围压到了最后一格 ——
-    --     · 把 `home`/`select` 缩成 1x1 之后，**选关页该有的按钮消失了**（被父级裁剪）
-    --     · 而**"处处有音效"依旧** ⇒ 那个吃点击的全屏按钮**不是** home/select
-    --     · 排行榜里只有 `root` 一个全屏 ⇒ **它不在 root 的子树里**
-    --   ⇒ 结论：**它在另一个客户端 UI 根上**。
-    --   适配器注释里写着查找用的是 `game.GetClientUIRoots()`（**复数**），
-    --   而脚本从头到尾只用了一个 `root`。把这些根全部列出来，那个全屏按钮就会现形。
-    dprint("[murdoku] ===== 客户端 UI 根清单 =====")
-    do
-      local roots = nil
-      pcall(function() roots = game.GetClientUIRoots() end)
-      if type(roots) ~= "table" then
-        dprint("[murdoku]   读不到 game.GetClientUIRoots()（或返回非表）")
-      else
-        dprint("[murdoku]   共 " .. tostring(#roots) .. " 个根")
-        for i = 1, math.min(#roots, 12) do
-          local r = roots[i]
-          local nm, v, w, h = "?", "?", 0, 0
-          pcall(function() nm = tostring(r.name) end)
-          pcall(function() v = tostring(r.visible) end)
-          pcall(function()
-            local a, b = r:GetSizeDelta()
-            if type(a) == "table" then w, h = a.x, a.y else w, h = a, b end
-          end)
-          local kids = nil
-          pcall(function() kids = r:GetChildren() end)
-          local nk = (type(kids) == "table") and #kids or -1
-          dprint(string.format("[murdoku]     %d. %-18s visible=%-5s %6.0fx%-6.0f 子控件=%d",
-            i, nm, v, w or 0, h or 0, nk))
-          -- 根下面直接可见的大控件 —— 那个全屏按钮多半就在这一层
-          if type(kids) == "table" then
-            for k = 1, math.min(nk, 20) do
-              local c = kids[k]
-              if c ~= nil then
-                local cn, cv, cw, ch, hasCur = "?", "?", 0, 0, false
-                pcall(function() cn = tostring(c.name) end)
-                pcall(function() cv = tostring(c.visible) end)
-                pcall(function()
-                  local a, b = c:GetSizeDelta()
-                  if type(a) == "table" then cw, ch = a.x, a.y else cw, ch = a, b end
-                end)
-                pcall(function() hasCur = (c.AddCursorEventListener ~= nil) end)
-                if (cw or 0) * (ch or 0) > 20000 then
-                  dprint(string.format("[murdoku]        └ %-20s visible=%-5s %6.0fx%-6.0f 可接收光标=%s",
-                    cn, cv, cw or 0, ch or 0, tostring(hasCur)))
-                end
-              end
-            end
-          end
-        end
-      end
-    end
-    dprint("[murdoku] ===== 根清单结束 =====")
-    -- ★★★★★ 2026-10-02 **对照组诊断**：把"能点的样本"和"不能点的样本"逐一对比。
-    --
-    --   ⚠️ 第一版这里全部报「找不到」—— 因为直接用了 `ad:find(id)`，
-    --   而同一份日志里「诊断二」用**同一个调用**却能拿到 `home.select`。
-    --   ⇒ 不再依赖 `find`：**自己从 `root` 遍历整棵树建一张 name→控件 的表**，
-    --     然后从表里取。这样"取不到"只可能是名字真不在树里。
-    dprint("[murdoku] ===== 对照组：能点 vs 不能点 =====")
-    do
-      local rootC = nil
-      -- ★★★★★ 2026-10-05 **第一遍代码体检修**：这里原来写 `ad:find("root")`，
-      --   而 `local ad = current.adapter` 在 **734 行**、它所在的 if 块 **892 行就结束了**
-      --   ⇒ 这一句在块外读的是一个**不存在的全局 `ad`**（= nil）
-      --   ⇒ `attempt to index a nil value (global 'ad')` 被 pcall **静默吞掉**，
-      --     一个错误都不报（症状与这一轮修掉的 `screen` 恒真 bug 同一类）。
-      --   本块内的适配器变量叫 **`ad3`**（见 903 行）。
-      pcall(function() rootC = ad3:find("root") end)
-      -- 兜底：从 GetClientUIRoots 拿
-      if rootC == nil then
-        local rs = nil
-        pcall(function() rs = game.GetClientUIRoots() end)
-        if type(rs) == "table" and rs[1] ~= nil then rootC = rs[1] end
-      end
-      local map, count = {}, 0
-      if rootC ~= nil then
-        local function walk(c, depth)
-          if c == nil or depth > 6 then return end
-          local nm = nil
-          pcall(function() nm = c.name end)
-          if nm ~= nil and nm ~= "" and map[nm] == nil then map[nm] = c count = count + 1 end
-          local kids = nil
-          pcall(function() kids = c:GetChildren() end)
-          if type(kids) == "table" then
-            for k = 1, math.min(#kids, 200) do walk(kids[k], depth + 1) end
-          end
-        end
-        walk(rootC, 0)
-      end
-      dprint("[murdoku]   树里共收集 " .. tostring(count) .. " 个具名控件（root=" .. tostring(rootC ~= nil) .. "）")
-      local fields = { "visible", "active", "showCursor", "interactable", "raycastTarget",
-                       "clickAudioId", "disableCursorEventPassthrough", "disableKeyEventPassthrough",
-                       "isolateNavigation", "alpha", "index", "zIndex", "sortingOrder",
-                       "enable", "enabled", "blockRaycast", "grayed", "isEnabled" }
-      -- ★★★★★ 2026-10-06 **名单按真机实测修正** ✗✓（旧名单里 3 个名字不存在 ✗：
-      --   `select.card.1` `select.back` `board` ⇒ ★ 每次都刷 3 行"树里没有这个名字" ✓
-      --   ⇒ ★ 这一段是「能点 vs 不能点」的对照组 ✗ ⇒ ★ 拿不存在的名字对照毫无意义 ✓）
-      -- ★ 2026-10-11 `"action.back"` 已从这个对照样本里去 ✓（★ 整颗控件已删 ✓）
-      local samples = { "home.select", "cell.1.1", "selbtn.1", "selbtn.2",
-                        "hex.submit", "hit.submit",
-                        "clues.bg", "clues.grid", "tpl-container", "board.bg", "home" }
-      for s = 1, #samples do
-        local id = samples[s]
-        local c = map[id]
-        if c == nil then
-          dprint("[murdoku]   " .. id .. "  —— **树里没有这个名字**")
-        else
-          local parts = {}
-          for f = 1, #fields do
-            local v = "?"
-            pcall(function() v = tostring(c[fields[f]]) end)
-            if v ~= "nil" then parts[#parts + 1] = fields[f] .. "=" .. v end
-          end
-          local chain, cur, guard = {}, c, 0
-          while cur ~= nil and guard < 8 do
-            local nm, sc, vv = "?", "?", "?"
-            pcall(function() nm = tostring(cur.name) end)
-            pcall(function() sc = tostring(cur.showCursor) end)
-            pcall(function() vv = tostring(cur.visible) end)
-            chain[#chain + 1] = nm .. "(vis=" .. vv .. ",cur=" .. sc .. ")"
-            local up = nil
-            pcall(function() up = cur.parent end)
-            if up == nil then pcall(function() up = cur:GetParent() end) end
-            cur = up
-            guard = guard + 1
-          end
-          dprint("[murdoku]   " .. id .. "  " .. table.concat(parts, "  "))
-          dprint("[murdoku]       祖先链：" .. table.concat(chain, " ← "))
-        end
-      end
-    end
-    dprint("[murdoku] ===== 对照组结束 =====")
-    print("[murdoku] 射线探针装好了 —— 之后点任何地方，只要射线落在这些容器上就会打日志")
-  end
+  -- ★ 2026-10-18（优化组 · B 类清理）：**射线落点探针整段删除** ✗✓
+  --   判据（真机日志 2026-10-18 v271，一次会话）：`root / home / stage / clues / topbar /
+  --     toolbar / right / board.bg` **八个容器全部**打「找不到或不支持光标事件」⇒
+  --     它一个监听都没绑上，唯一产出就是 8 行噪声 + 一句"装好了"。
+  --   它的历史使命（"没日志不能区分射线被吃 / 落在没事件的控件上"）已由后来的
+  --   `raycastTarget` 普查 + 盒模型修正覆盖 ✓
   -- ★★★★ 2026-10-02 **按用户建议做的对比：主页 ⇄ 选关，"切换后到底改了什么"**。
   --
   --   用户原话：「我认为应该好好对比一下首页和选关切换后到底改了什么」
@@ -2447,8 +2213,19 @@ function Murdoku.on_signal(name, payload)
     Murdoku.restore(payload)
   elseif name == S.SYNC_STATE then
     if payload and payload.who and payload.r and payload.c then
+      -- ★★ 2026-10-20（v282）：**别再把两个返回值丢掉** ✗✓
+      --   服务端同步来的动作以前是**全静默**的：`select_suspect` / `tap_cell` 都返回值，
+      --   这里一个都不看 ⇒ 被规则拒绝（越界 / 已有人 / 障碍格 / 同行同列互斥）时
+      --   玩家和服务端**都只看到"盘面没变"**，日志里一个字都没有。
+      --   现在把拒绝原因打到同一个出口（`_refuse` 自带同类去重，最多 3 条，不会刷屏）。
       current.core:select_suspect(payload.who)
-      current.core:tap_cell(payload.r, payload.c)
+      local ok_sync, why_sync = current.core:tap_cell(payload.r, payload.c)
+      if (not ok_sync) and current.controller ~= nil
+        and current.controller._refuse ~= nil then
+        pcall(function()
+          current.controller:_refuse(payload.r, payload.c, why_sync)
+        end)
+      end
       Murdoku.render()
     end
   elseif name == "murdoku/next_level" then

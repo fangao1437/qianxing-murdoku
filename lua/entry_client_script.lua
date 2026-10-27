@@ -191,7 +191,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v332 / 2026-10-24 / 雕像改用原作图标压缩（381 纯色矩形，含底座）+ 书架对齐 + 桌子重搭 =====")
+        print("[murdoku] ===== 构建标记 v351 / 2026-10-27 / 静态字色与教程棋盘设计对齐 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -1075,7 +1075,8 @@ local function tutorial_instance(spec)
   local mod = tutorial_module()
   if mod == nil or adapter == nil then return nil end
   local ok, made = pcall(function()
-    return mod.new(adapter, { tag = spec.tag, root = spec.root, text = spec.text, pages = spec.pages })
+    local content = (type(mod.CONTENT) == "table") and mod.CONTENT[spec.tag] or nil
+    return mod.new(adapter, { tag = spec.tag, root = spec.root, text = spec.text, pages = spec.pages, content = content })
   end)
   if not ok or type(made) ~= "table" then
     if printerr then printerr("[murdoku] 教程实例建不出来（" .. tostring(spec.tag) .. "）：" .. tostring(made)) end
