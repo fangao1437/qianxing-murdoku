@@ -191,7 +191,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v356 / 2026-10-28 / 运行时家具实例与原脚本字号 =====")
+        print("[murdoku] ===== 构建标记 v357 / 2026-10-28 / 教程家具实例化层序修正：实例追加到 board 子控件末尾（最上层）；地毯先建、家具后建 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

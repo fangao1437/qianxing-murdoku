@@ -6,6 +6,7 @@ local Tutorial = require("tutorial_ui")
 local passed, failed = 0, 0
 local function ok(v, msg) if v then passed = passed + 1 else failed = failed + 1; print("FAIL " .. msg) end end
 local writes, created = 0, 0
+local createdObjs = {}
 local function ctrl(name)
   local x = { name = name, visible = true, active = true, fontColor = "STATIC" }
   setmetatable(x, { __newindex = function(t, k, v) if k == "text" or k == "fontColor" then writes = writes + 1 end; rawset(t, k, v) end })
@@ -13,6 +14,8 @@ local function ctrl(name)
   x.SetActive = function(_, v) rawset(x, "active", v) end
   x.SetText = function() writes = writes + 1 end
   x.AddCursorEventListener = function(_, _, cb) x.click = cb end
+  x.SetAsLastSibling = function() rawset(x, "lasted", true) end
+  x.SetSiblingIndex = function(_, i) rawset(x, "sibling", i) end
   return x
 end
 local nodes = {}
@@ -25,6 +28,10 @@ for _, spec in ipairs({ { "home", 1 }, { "l1", 8 }, { "l2", 4 } }) do
   for i = 1, pages do add("td." .. tag .. ".page." .. i) end
   for _, b in ipairs({ "prev", "next", "close", "skip" }) do add("td." .. tag .. ".btn." .. b) end
 end
+-- 教程 board 是"存档静态底图"：先塞一批底板子控件（模拟 v356 存档的 27 个）
+local boardKids = {}
+for i = 1, 27 do boardKids[i] = ctrl("td.l1.board.svg." .. i) end
+nodes["td.l1.board"].GetChildren = function() return boardKids end
 local adapter = {}
 function adapter:find(name) return nodes[name] end
 function adapter:_furn_prefab_map()
@@ -36,6 +43,7 @@ _G.game = { InstantiateClientUIControl = function(prefab, parent)
   created = created + 1
   local obj = ctrl("tutorial.furniture." .. created)
   obj.prefab, obj.parent = prefab, parent
+  createdObjs[#createdObjs + 1] = obj
   return obj
 end }
 local home = Tutorial.new(adapter, { tag = "home", root = "td.home", pages = 1 })
@@ -65,6 +73,20 @@ ok(writes == 0, "运行时不写文字或字色")
 ok(created == 20, "两关运行时各创建一套家具，共20件")
 ok(l1.furniture and l1.furniture[1] and l1.furniture[1].parent == nodes["td.l1.board"], "第一关家具挂到共享棋盘")
 ok(l2.furniture and l2.furniture[2] and math.abs(l2.furniture[2].fx - 178 * (1480 / 2268) / 216) < 0.0001, "多格家具按模板画布整树缩放")
+-- ★ v357：层序修正回归（旧代码塞 1/2 号位会落到 27 个棋盘底板之下 ⇒ 实机看不见）
+local allLasted, anyLowSibling = true, false
+for _, o in ipairs(createdObjs) do
+  if not o.lasted then allLasted = false end
+  if o.sibling == 1 or o.sibling == 2 then anyLowSibling = true end
+end
+ok(allLasted, "所有家具实例都追加到 board 子控件末尾（SetAsLastSibling）")
+ok(not anyLowSibling, "不再往 1/2 号位塞家具（会落到棋盘底板下方）")
+ok(createdObjs[1] and createdObjs[1].prefab == 3 and createdObjs[2] and createdObjs[2].prefab == 3,
+  "第一关先建 2 件地毯")
+ok(createdObjs[3] and createdObjs[3].prefab == 1, "第一关地毯之后再建家具（table_v2）")
+ok(createdObjs[9] and createdObjs[9].prefab == 6 and createdObjs[10] and createdObjs[10].prefab == 3
+  and createdObjs[11] and createdObjs[11].prefab == 8, "第二关先建 3 件地毯（rug/rug_2/rug_3）")
+ok(createdObjs[12] and createdObjs[12].prefab == 4, "第二关地毯之后再建家具（chair）")
 l1:open_ui(); ok(created == 20, "重复打开不重复实例化")
 print(string.format("tutorial_ui: %d passed, %d failed", passed, failed))
 os.exit(failed == 0 and 0 or 1)

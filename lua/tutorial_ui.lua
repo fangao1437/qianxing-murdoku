@@ -33,12 +33,33 @@ function M:_ensure_furniture()
   local spec = FURN[self.tag]
   if spec == nil or game == nil or game.InstantiateClientUIControl == nil then return end
   local parent = self:_find(self.root_name .. ".board")
-  if parent == nil then return end
+  if parent == nil then
+    self:_note("家具实例化跳过 tag=" .. self.tag .. "：找不到 " .. self.root_name .. ".board")
+    return
+  end
   local prefabs = nil
   pcall(function() prefabs = self.adapter:_furn_prefab_map() end)
-  if type(prefabs) ~= "table" then return end
+  if type(prefabs) ~= "table" then
+    self:_note("家具实例化跳过 tag=" .. self.tag .. "：things 模板映射为空")
+    return
+  end
   self.furniture = self.furniture or {}
-  for i, f in ipairs(spec) do
+  -- ★ v357（2026-10-28）**层序修正：家具必须追加到 board 子控件末尾（最上层）**。
+  --   旧代码照搬正式关卡的 `SetSiblingIndex(地毯=1 / 家具=2)` —— 那是"格子 content"里的序号
+  --   （0=face、1=地毯、2=家具、3+=墙/门/笔记/头像）。但教程棋盘 `td.*.board` 是**存档静态底图**：
+  --   它的子控件是 25 个格子底板 + 墙等（在 v356 存档里 td.l1.board 共 27 个子控件），
+  --   把家具塞到 1/2 号位 = 落到格子底板**下面** ⇒ 运行时实例化了但真机一片空白（"卡住"的根因）。
+  --   正确做法：本关棋盘底图之上、按"地毯先建 → 其它家具后建"的顺序 append（后建=更靠上）。
+  local order = {}
+  for pass = 1, 2 do
+    for i, f in ipairs(spec) do
+      local is_rug = tostring(f[1]):find("rug", 1, true) ~= nil
+      if (pass == 1) == is_rug then order[#order + 1] = i end
+    end
+  end
+  local made = 0
+  for _, i in ipairs(order) do
+    local f = spec[i]
     if self.furniture[i] == nil and prefabs[f[1]] ~= nil then
       local ok, obj = pcall(game.InstantiateClientUIControl, prefabs[f[1]], parent)
       if ok and obj ~= nil then
@@ -58,11 +79,22 @@ function M:_ensure_furniture()
           end
         end)
         if not scaled then pcall(function() if obj.SetLocalScale then obj:SetLocalScale(w / f[6], h / f[7], 1) end end) end
-        pcall(function() if obj.SetSiblingIndex then obj:SetSiblingIndex(f[1]:find("rug", 1, true) and 1 or 2) end end)
+        -- 追加到末尾（最上层）；没有 SetAsLastSibling 时退化为"最后一个兄弟索引"
+        pcall(function()
+          if obj.SetAsLastSibling ~= nil then
+            obj:SetAsLastSibling()
+          elseif obj.SetSiblingIndex ~= nil and parent.GetChildren ~= nil then
+            local kids = nil
+            pcall(function() kids = parent:GetChildren() end)
+            if type(kids) == "table" and #kids > 0 then obj:SetSiblingIndex(#kids - 1) end
+          end
+        end)
         pcall(function() obj:SetVisible(true); obj:SetActive(true) end)
+        made = made + 1
       end
     end
   end
+  if made > 0 then self:_note("家具实例化 tag=" .. self.tag .. " 新建=" .. made) end
 end
 
 function M.new(adapter, opts)
