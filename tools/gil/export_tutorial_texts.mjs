@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { readGil } from "./gilread.mjs";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const IN = path.resolve(process.argv[2]);
-const OUT = path.resolve(process.argv[3] || path.join(ROOT, "docs/tutorial-design/教程文本填写清单-v354"));
+const OUT = path.resolve(process.argv[3] || path.join(ROOT, "docs/tutorial-design/教程文本填写清单-v355"));
 const g = readGil(IN);
 function nodesAt(fields, pathArr) {
   let level = fields;
@@ -40,9 +40,9 @@ const csvCell = (v) => '"' + String(v).replaceAll('"', '""') + '"';
 const csv = ["﻿页面,控件名,要填写的文本,字号,字色"];
 for (const r of rows) csv.push([`${r.tag} 第${r.page}页`,r.name,r.text,r.size,r.color].map(csvCell).join(","));
 fs.mkdirSync(OUT, { recursive:true });
-fs.writeFileSync(path.join(OUT, "教程文本填写清单-v354.csv"), csv.join("\n") + "\n", "utf8");
+fs.writeFileSync(path.join(OUT, "教程文本填写清单-v355.csv"), csv.join("\n") + "\n", "utf8");
 const titles = { home:"首页教程", l1:"第一关教程", l2:"第二关教程" };
-const md = ["# 教程文本填写清单（v354）", "", `共 ${rows.length} 个含文本控件。以下内容直接从最终存档回读；多色正文已拆成多个控件，请逐行填写，不要合并。`, ""];
+const md = ["# 教程文本填写清单（v355）", "", `共 ${rows.length} 个含文本控件。以下内容直接从最终存档回读；多色正文已拆成多个控件，请逐行填写，不要合并。`, ""];
 for (const tag of ["home","l1","l2"]) {
   const pages = [...new Set(rows.filter((r) => r.tag === tag).map((r) => r.page))];
   for (const page of pages) {
@@ -54,5 +54,5 @@ for (const tag of ["home","l1","l2"]) {
     md.push("");
   }
 }
-fs.writeFileSync(path.join(OUT, "教程文本填写清单-v354.md"), md.join("\n"), "utf8");
+fs.writeFileSync(path.join(OUT, "教程文本填写清单-v355.md"), md.join("\n"), "utf8");
 console.log("exported", rows.length, "text controls to", OUT);

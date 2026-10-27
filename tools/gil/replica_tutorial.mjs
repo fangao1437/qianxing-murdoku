@@ -264,30 +264,13 @@ function childrenOf(rec) {
   const ids = cl ? (asIdList(cl.payload, true) || []) : [];
   return ids.map((id) => g.recs.find((r) => Number(r.id) === Number(id))).filter(Boolean);
 }
-const templateCache = new Map();
-function templateLayers(kind) {
-  if (templateCache.has(kind)) return templateCache.get(kind);
-  const source = g.recs.find((r) => r.name === kind && r.parentId == null);
-  if (!source) throw new Error("project furniture template missing " + kind);
-  const content = childrenOf(source)[0];
-  const layers = content ? childrenOf(content) : [];
-  if (!layers.length) throw new Error("project furniture layers missing " + kind);
-  templateCache.set(kind, layers);
-  return layers;
-}
 function existingFurniture(page, kind, cx, cy, w, h, bx, by, scale) {
-  const canvas = kind.includes("h2") || kind === "furn.rug.2" ? [216,108] : kind.includes("v2") || kind === "furn.rug.3" ? [108,216] : [108,108];
-  const layers = templateLayers(kind);
-  layers.forEach((proto, i) => {
-    const b = proto.states && proto.states[0];
-    if (!b) return;
-    const pos = pairOf(b, 504), sizePair = pairOf(b, 505);
-    const ox = pos ? pairValue(pos, 0) : 0, oy = pos ? pairValue(pos, 1) : 0;
-    const ow = sizePair ? pairValue(sizePair, 0) : canvas[0], oh = sizePair ? pairValue(sizePair, 1) : canvas[1];
-    const sx = bx(cx + ox * w / canvas[0]), sy = by(cy - oy * h / canvas[1]);
-    cloneExisting(proto, page, page + ".furn." + kind + "." + (++serial) + "." + i,
-      Math.max(1, ow * w / canvas[0] * scale), Math.max(1, oh * h / canvas[1] * scale), sx, sy);
-  });
+  const things = byName.get("things");
+  if (!things) throw new Error("project furniture references missing: things");
+  const proto = childrenOf(things).find((r) => r.name === kind);
+  if (!proto) throw new Error("project furniture reference missing things/" + kind);
+  cloneExisting(proto, page, page + ".furn." + kind + "." + (++serial),
+    Math.max(1, w * scale), Math.max(1, h * scale), bx(cx), by(cy));
 }
 function projectFurniture(page, tag, bx, by, scale) {
   const l1 = [
