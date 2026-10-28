@@ -285,7 +285,7 @@ function projectFurniture(page, tag, bx, by, scale) {
   ];
   for (const piece of tag === "l1" ? l1 : l2) existingFurniture(page, ...piece, bx, by, scale);
 }
-function board(page, id, sx, sy, size, sharedBase) {
+function board(page, id, sx, sy, size, sharedBase, mode) {
   const file = path.join(ROOT, "docs/tutorial-design/boards", id + ".svg");
   let svg = fs.readFileSync(file, "utf8").replace(/<defs>[\s\S]*?<\/defs>/g, "");
   const scale = size / 656, baseX = sx - size / 2, baseY = sy - size / 2;
@@ -335,10 +335,19 @@ function board(page, id, sx, sy, size, sharedBase) {
     }
   }
   }
-  renderSvg(baseSvg, true);
   if (sharedBase) {
-    // 家具由 tutorial_ui 在运行时从 things/furn.* 模板实例化；存档不复制引用或内部图层。
+    // 这一趟只负责「共享底图」：底图控件全部挂在 td.<tag>.board 上（每关一份）。
+    // 家具由 tutorial_ui 在运行时从 things/furn.* 模板实例化，追加在同一块 board 的末尾，
+    // 因此层序是：td.<tag>.bg < board 底图 < 地毯 < 家具 < 各页提示层（page 在 board 之后）。
+    renderSvg(baseSvg, true);
     return;
+  }
+  if (mode === "overlay") {
+    // v358：底图已由上面那趟共享底图提供，本页只复刻提示层。
+    // 之前这里没有 sharedBase/mode 参数，13 页各自又画了一整套不透明格子底板，
+    // 把 td.<tag>.board（底图 + 运行时家具）整块盖住 ⇒ 家具实例化了也看不见（真机"卡住"的根因）。
+  } else {
+    renderSvg(baseSvg, true);
   }
   renderSvg(overlaySvg, false);
   if (id === "home-1") {
@@ -391,7 +400,7 @@ for (const tag of ["home", "l1", "l2"]) {
     stepper(page, tag === "home" ? null : tag === "l1" ? ["认识棋盘","选人","放人","推理一","推理二","推理三","收口","指认"] : ["复习","假话","抓谎","收口"], cur);
     const boardId = tag === "home" ? "home-1" : o.board;
     const boardY = tag === "home" ? Y(240) + U(620) / 2 : Y(302) + U(620) / 2;
-    board(page, boardId, X(1256) + U(620) / 2, boardY, U(656));
+    board(page, boardId, X(1256) + U(620) / 2, boardY, U(656), null, "overlay");
     legend(page, tag === "l2" ? [["大厅",0xFFD9CDB4],["侧廊",0xFFC3CDD4],["库房",0xFFD4C8BC],["内室",0xFFBECFB0]] : [["大屋",0xFFD9CDB4],["内室",0xFFC3CDD4],["外间",0xFFD4C8BC]]);
     footer(page, { tag, cur, total:pages.length });
     const left = X(96) + U(1100) / 2, colW = U(1100);
