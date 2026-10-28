@@ -123,6 +123,9 @@ function rect(parent, name, sx, sy, w, h, color, image = 100001, rotation = 0) {
   const r = cloneOne("image", parent, name, Math.max(1, w), Math.max(1, h), sx, sy); art(r, image, color, rotation); return r;
 }
 function label(parent, name, value, sx, sy, w, h, size, color, align = 0) {
+  // 千星文本框过矮/过窄会整段不渲染；保留中心，只扩大可绘制区域。
+  w = Math.max(w, Math.ceil(size * 1.5));
+  h = Math.max(h, Math.ceil(size * 2));
   const r = cloneOne("text", parent, name, w, h, sx, sy); textProps(r, value, size, color, align); return r;
 }
 function card(parent, name, sx, sy, w, h) {
@@ -138,7 +141,7 @@ function rich(parent, name, segments, sx, sy, size, lineH = 24) {
   let x = sx;
   segments.forEach((seg, i) => {
     const [value, color = C.body] = seg;
-    const w = widthOf(value, size) + 3;
+    const w = widthOf(value, size) + 12;
     label(parent, name + "." + i, value, x + w / 2, sy, w, lineH, size, color);
     x += w;
   });

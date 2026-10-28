@@ -1,0 +1,388 @@
+{
+  "base": "579-教程家具可见-v358.gil",
+  "out": "580-教程文本回填-v359.gil",
+  "total": 942,
+  "applied": 757,
+  "changed": 38,
+  "missing": [
+    "td.home.page.1.svg.59",
+    "td.home.page.1.svg.60",
+    "td.home.page.1.svg.61",
+    "td.home.page.1.svg.62",
+    "td.home.page.1.svg.63",
+    "td.home.page.1.svg.64",
+    "td.home.page.1.svg.65",
+    "td.home.page.1.svg.66",
+    "td.home.page.1.svg.67",
+    "td.home.page.1.svg.68",
+    "td.home.page.1.svg.69",
+    "td.home.page.1.svg.70",
+    "td.home.page.1.svg.71",
+    "td.home.page.1.svg.72",
+    "td.home.page.1.svg.73",
+    "td.home.page.1.svg.74",
+    "td.home.page.1.svg.75",
+    "td.l1.page.1.svg.43",
+    "td.l1.page.1.svg.44",
+    "td.l1.page.1.svg.45",
+    "td.l1.page.1.svg.46",
+    "td.l1.page.1.svg.47",
+    "td.l1.page.1.svg.48",
+    "td.l1.page.1.svg.49",
+    "td.l1.page.1.svg.50",
+    "td.l1.page.1.svg.51",
+    "td.l1.page.1.svg.52",
+    "td.l1.page.2.svg.44",
+    "td.l1.page.2.svg.45",
+    "td.l1.page.2.svg.46",
+    "td.l1.page.2.svg.47",
+    "td.l1.page.2.svg.48",
+    "td.l1.page.2.svg.49",
+    "td.l1.page.2.svg.50",
+    "td.l1.page.2.svg.51",
+    "td.l1.page.2.svg.52",
+    "td.l1.page.2.svg.53",
+    "td.l1.page.2.svg.55",
+    "td.l1.page.3.svg.45",
+    "td.l1.page.3.svg.46",
+    "td.l1.page.3.svg.47",
+    "td.l1.page.3.svg.48",
+    "td.l1.page.3.svg.49",
+    "td.l1.page.3.svg.50",
+    "td.l1.page.3.svg.51",
+    "td.l1.page.3.svg.52",
+    "td.l1.page.3.svg.53",
+    "td.l1.page.3.svg.54",
+    "td.l1.page.3.svg.63",
+    "td.l1.page.3.svg.64",
+    "td.l1.page.4.svg.47",
+    "td.l1.page.4.svg.48",
+    "td.l1.page.4.svg.49",
+    "td.l1.page.4.svg.50",
+    "td.l1.page.4.svg.51",
+    "td.l1.page.4.svg.52",
+    "td.l1.page.4.svg.53",
+    "td.l1.page.4.svg.54",
+    "td.l1.page.4.svg.55",
+    "td.l1.page.4.svg.56",
+    "td.l1.page.4.svg.58",
+    "td.l1.page.4.svg.60",
+    "td.l1.page.4.svg.62",
+    "td.l1.page.4.svg.64",
+    "td.l1.page.4.svg.66",
+    "td.l1.page.5.svg.46",
+    "td.l1.page.5.svg.47",
+    "td.l1.page.5.svg.48",
+    "td.l1.page.5.svg.49",
+    "td.l1.page.5.svg.50",
+    "td.l1.page.5.svg.51",
+    "td.l1.page.5.svg.52",
+    "td.l1.page.5.svg.53",
+    "td.l1.page.5.svg.54",
+    "td.l1.page.5.svg.62",
+    "td.l1.page.5.svg.64",
+    "td.l1.page.5.svg.66",
+    "td.l1.page.5.svg.67",
+    "td.l1.page.5.svg.68",
+    "td.l1.page.5.svg.70",
+    "td.l1.page.5.svg.72",
+    "td.l1.page.6.svg.44",
+    "td.l1.page.6.svg.45",
+    "td.l1.page.6.svg.46",
+    "td.l1.page.6.svg.47",
+    "td.l1.page.6.svg.48",
+    "td.l1.page.6.svg.49",
+    "td.l1.page.6.svg.50",
+    "td.l1.page.6.svg.51",
+    "td.l1.page.6.svg.52",
+    "td.l1.page.6.svg.53",
+    "td.l1.page.6.svg.56",
+    "td.l1.page.6.svg.57",
+    "td.l1.page.6.svg.58",
+    "td.l1.page.6.svg.60",
+    "td.l1.page.7.svg.45",
+    "td.l1.page.7.svg.46",
+    "td.l1.page.7.svg.47",
+    "td.l1.page.7.svg.48",
+    "td.l1.page.7.svg.49",
+    "td.l1.page.7.svg.50",
+    "td.l1.page.7.svg.51",
+    "td.l1.page.7.svg.52",
+    "td.l1.page.7.svg.58",
+    "td.l1.page.7.svg.60",
+    "td.l1.page.7.svg.62",
+    "td.l1.page.7.svg.64",
+    "td.l1.page.7.svg.65",
+    "td.l1.page.7.svg.66",
+    "td.l1.page.7.svg.67",
+    "td.l1.page.7.svg.69",
+    "td.l1.page.7.svg.71",
+    "td.l1.page.8.svg.44",
+    "td.l1.page.8.svg.45",
+    "td.l1.page.8.svg.46",
+    "td.l1.page.8.svg.47",
+    "td.l1.page.8.svg.48",
+    "td.l1.page.8.svg.49",
+    "td.l1.page.8.svg.50",
+    "td.l1.page.8.svg.51",
+    "td.l1.page.8.svg.52",
+    "td.l1.page.8.svg.53",
+    "td.l1.page.8.svg.54",
+    "td.l1.page.8.svg.55",
+    "td.l1.page.8.svg.56",
+    "td.l1.page.8.svg.57",
+    "td.l1.page.8.svg.58",
+    "td.l1.page.8.svg.60",
+    "td.l1.page.8.svg.61",
+    "td.l1.page.8.svg.63",
+    "td.l1.page.8.svg.65",
+    "td.l2.page.1.svg.62",
+    "td.l2.page.1.svg.63",
+    "td.l2.page.1.svg.64",
+    "td.l2.page.1.svg.65",
+    "td.l2.page.1.svg.66",
+    "td.l2.page.1.svg.67",
+    "td.l2.page.1.svg.68",
+    "td.l2.page.1.svg.69",
+    "td.l2.page.1.svg.70",
+    "td.l2.page.1.svg.71",
+    "td.l2.page.1.svg.72",
+    "td.l2.page.1.svg.73",
+    "td.l2.page.1.svg.75",
+    "td.l2.page.2.svg.59",
+    "td.l2.page.2.svg.60",
+    "td.l2.page.2.svg.61",
+    "td.l2.page.2.svg.62",
+    "td.l2.page.2.svg.63",
+    "td.l2.page.2.svg.64",
+    "td.l2.page.2.svg.65",
+    "td.l2.page.2.svg.66",
+    "td.l2.page.2.svg.67",
+    "td.l2.page.2.svg.68",
+    "td.l2.page.2.svg.69",
+    "td.l2.page.2.svg.70",
+    "td.l2.page.2.svg.82",
+    "td.l2.page.3.svg.60",
+    "td.l2.page.3.svg.61",
+    "td.l2.page.3.svg.62",
+    "td.l2.page.3.svg.63",
+    "td.l2.page.3.svg.64",
+    "td.l2.page.3.svg.65",
+    "td.l2.page.3.svg.66",
+    "td.l2.page.3.svg.67",
+    "td.l2.page.3.svg.68",
+    "td.l2.page.3.svg.69",
+    "td.l2.page.3.svg.70",
+    "td.l2.page.3.svg.71",
+    "td.l2.page.3.svg.74",
+    "td.l2.page.3.svg.76",
+    "td.l2.page.3.svg.78",
+    "td.l2.page.4.svg.62",
+    "td.l2.page.4.svg.63",
+    "td.l2.page.4.svg.64",
+    "td.l2.page.4.svg.65",
+    "td.l2.page.4.svg.66",
+    "td.l2.page.4.svg.67",
+    "td.l2.page.4.svg.68",
+    "td.l2.page.4.svg.69",
+    "td.l2.page.4.svg.70",
+    "td.l2.page.4.svg.71",
+    "td.l2.page.4.svg.72",
+    "td.l2.page.4.svg.73"
+  ],
+  "noGroup": [
+    "td.l1.page.7.svg.43"
+  ],
+  "changes": [
+    {
+      "name": "td.l1.page.1.stepnum.0",
+      "before": "第 ",
+      "after": "第"
+    },
+    {
+      "name": "td.l1.page.1.stepnum.2",
+      "before": " / 8 步",
+      "after": "/ 8 步"
+    },
+    {
+      "name": "td.l1.page.2.cluesay.0",
+      "before": "「收藏家 ",
+      "after": "「收藏家"
+    },
+    {
+      "name": "td.l1.page.2.stepnum.0",
+      "before": "第 ",
+      "after": "第"
+    },
+    {
+      "name": "td.l1.page.2.stepnum.2",
+      "before": " / 8 步",
+      "after": "/ 8 步"
+    },
+    {
+      "name": "td.l1.page.3.stepnum.0",
+      "before": "第 ",
+      "after": "第"
+    },
+    {
+      "name": "td.l1.page.3.stepnum.2",
+      "before": " / 8 步",
+      "after": "/ 8 步"
+    },
+    {
+      "name": "td.l1.page.4.cluesay.0",
+      "before": "「只有 值班保安 站在 ",
+      "after": "「只有 值班保安 站在"
+    },
+    {
+      "name": "td.l1.page.4.cluesay.2",
+      "before": " 上」",
+      "after": "上」"
+    },
+    {
+      "name": "td.l1.page.4.stepnum.0",
+      "before": "第 ",
+      "after": "第"
+    },
+    {
+      "name": "td.l1.page.4.stepnum.2",
+      "before": " / 8 步",
+      "after": "/ 8 步"
+    },
+    {
+      "name": "td.l1.page.5.body.1.0",
+      "before": "站上去就和卡 3「只有值班保安在地毯上」冲突，所以 ",
+      "after": "站上去就和卡 3「只有值班保安在地毯上」冲突，所以"
+    },
+    {
+      "name": "td.l1.page.5.body.2.0",
+      "before": "第 2 行、第 2 列被占 ⇒ A 的 (2,4)(2,5)(3,2) 出局 ⇒ ",
+      "after": "第 2 行、第 2 列被占 ⇒ A 的 (2,4)(2,5)(3,2) 出局 ⇒"
+    },
+    {
+      "name": "td.l1.page.5.cluesay.0",
+      "before": "「前台姑娘 ",
+      "after": "「前台姑娘"
+    },
+    {
+      "name": "td.l1.page.5.stepnum.0",
+      "before": "第 ",
+      "after": "第"
+    },
+    {
+      "name": "td.l1.page.5.stepnum.2",
+      "before": " / 8 步",
+      "after": "/ 8 步"
+    },
+    {
+      "name": "td.l1.page.5.svg.45",
+      "before": "2",
+      "after": "1"
+    },
+    {
+      "name": "td.l1.page.6.body.2.0",
+      "before": "站不了 ⇒ ",
+      "after": "站不了 ⇒"
+    },
+    {
+      "name": "td.l1.page.6.cluesay.0",
+      "before": "「夜班清洁工 站在 ",
+      "after": "「夜班清洁工 站在"
+    },
+    {
+      "name": "td.l1.page.6.cluesay.2",
+      "before": " 上」",
+      "after": "上」"
+    },
+    {
+      "name": "td.l1.page.6.stepnum.0",
+      "before": "第 ",
+      "after": "第"
+    },
+    {
+      "name": "td.l1.page.6.stepnum.2",
+      "before": " / 8 步",
+      "after": "/ 8 步"
+    },
+    {
+      "name": "td.l1.page.7.cluesay.0",
+      "before": "「收藏家 在 ",
+      "after": "「收藏家 在"
+    },
+    {
+      "name": "td.l1.page.7.stepnum.0",
+      "before": "第 ",
+      "after": "第"
+    },
+    {
+      "name": "td.l1.page.7.stepnum.2",
+      "before": " / 8 步",
+      "after": "/ 8 步"
+    },
+    {
+      "name": "td.l1.page.8.body.1.0",
+      "before": "只有 D 一直留着 2 格 —— ",
+      "after": "只有 D 一直留着 2 格 ——"
+    },
+    {
+      "name": "td.l1.page.8.stepnum.0",
+      "before": "第 ",
+      "after": "第"
+    },
+    {
+      "name": "td.l1.page.8.stepnum.2",
+      "before": " / 8 步",
+      "after": "/ 8 步"
+    },
+    {
+      "name": "td.l2.page.1.stepnum.0",
+      "before": "第 ",
+      "after": "第"
+    },
+    {
+      "name": "td.l2.page.1.stepnum.2",
+      "before": " / 4 步",
+      "after": "/ 4 步"
+    },
+    {
+      "name": "td.l2.page.2.stepnum.0",
+      "before": "第 ",
+      "after": "第"
+    },
+    {
+      "name": "td.l2.page.2.stepnum.2",
+      "before": " / 4 步",
+      "after": "/ 4 步"
+    },
+    {
+      "name": "td.l2.page.3.stepnum.0",
+      "before": "第 ",
+      "after": "第"
+    },
+    {
+      "name": "td.l2.page.3.stepnum.2",
+      "before": " / 4 步",
+      "after": "/ 4 步"
+    },
+    {
+      "name": "td.l2.page.4.cluesay.0",
+      "before": "「我独自一人，且 ",
+      "after": "「我独自一人，且"
+    },
+    {
+      "name": "td.l2.page.4.cluesay.2",
+      "before": " 在我下方的不同区域中」",
+      "after": "在我下方的不同区域中」"
+    },
+    {
+      "name": "td.l2.page.4.stepnum.0",
+      "before": "第 ",
+      "after": "第"
+    },
+    {
+      "name": "td.l2.page.4.stepnum.2",
+      "before": " / 4 步",
+      "after": "/ 4 步"
+    }
+  ]
+}

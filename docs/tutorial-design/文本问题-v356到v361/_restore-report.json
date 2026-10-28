@@ -1,0 +1,23 @@
+{
+  "base": "580-教程文本回填-基座v358.gil",
+  "out": "581-教程文本补齐-基座580.gil",
+  "total": 942,
+  "cloned": 184,
+  "groupFixed": 1,
+  "skipped": [],
+  "parentAdd": {
+    "td.home.page.1": 17,
+    "td.l1.page.1": 10,
+    "td.l1.page.2": 11,
+    "td.l1.page.3": 12,
+    "td.l1.page.4": 15,
+    "td.l1.page.5": 16,
+    "td.l1.page.6": 14,
+    "td.l1.page.7": 17,
+    "td.l1.page.8": 19,
+    "td.l2.page.1": 13,
+    "td.l2.page.2": 13,
+    "td.l2.page.3": 15,
+    "td.l2.page.4": 12
+  }
+}
