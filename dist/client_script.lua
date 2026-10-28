@@ -22411,88 +22411,254 @@ end
 
 __M["tutorial_ui"] = function()
 --[[----------------------------------------------------------------------------
-  lua/tutorial_ui.lua —— 玩法说明（教程）浮层 · v290（视觉升级版）
+  lua/tutorial_ui.lua —— 玩法说明（教程）浮层 · v335（左卡面 + 线索卡 + 结论文本）
 
-  ★ 控件来源：`486-教程teach-v290.gil`（`tools/gil/gen_tutorial_teach.mjs`
-    从 472 母本克隆，号段 1073743900…1073743994，466 条）。结构（名字**逐字一致**，改存档要同步这里）：
+  v335（用户 2026-10-25 实机反馈后）：
+    · 面板压矮到 560×600（原 820 高），左侧卡面 + 右侧棋盘；
+    · 主卡（page）500×150 + 新克隆的线索卡底板（teach.<t>.clue）500×110 + 结论/提示一行；
+    · 正文分三段写：body.1 主说明、body.2 线索、body.3 结论/提示（脚本写 text/fontSize/fontColor）。
 
-      teach                            容器 1600×900（父 = root）
-      ├ teach.<t>                      每一套（t = home | l1 | l2）1240×780
-      │   ├ teach.<t>.bg
-      │   ├ teach.<t>.page             页面本体（几何没动）
-      │   ├ teach.<t>.btn.prev / .next  180×158 贴左/右边缘 ← 脚本绑（翻页）
-      │   │   └ icon                    40×40 三角图（100003，旋转 ±90°）
-      │   ├ teach.<t>.btn.close        48×48 右上角 ← 脚本绑（收起）
-      │   │   └ x                       22×22 叉图（100151，米白）
-      │   ├ teach.<t>.btn.click        180×52 底部 ← 脚本绑（**等价于 next()**）
-      │   └ teach.<t>.dot.1..3.on/.off 菱形页标 ← 脚本**只切显隐**（当前页 on，其余 off）
-      └ teach.text                     文本区域 1600×900
-          ├ teach.text.<t>             文本分区（1600×900）
-          │   ├ teach.text.<t>.title
-          │   ├ teach.text.<t>.subtitle            （v290 新增，编辑器填）
-          │   ├ teach.text.<t>.body.1 / .2 / .3    ← 脚本**只切显隐**
-          │   └ teach.text.<t>.btn.prev / .next / .close / .click   （按钮字，脚本不碰）
-          └ …
+  控件结构（与存档逐字一致，改存档要同步这里）：
+      teach.<t>                         560×600 面板（贴左）
+      ├ bg / page(500×150) / page.bg
+      ├ clue                            500×110 线索卡底板（v335 克隆）
+      ├ btn.prev / next（100×52，贴底）/ close（44×44，右上）
+      └ dot.* / btn.click               脚本隐藏
+      teach.text.<t>                    title / subtitle / body.1..3 / btn.*
 
-  ★★ 本模块的规矩（v287 起，v290 不变）：
-    · **脚本一个字都不写**：不做 `ctrl.text = …`、不调 `SetText(…)`。
-      标题 / 副标题 / 正文 / 按钮字**全部由编辑器填**（`.gil` 存不下文字 —— 项目已多次实测）；
-      脚本只做两件事：**显隐** + **绑点击**。
-    · **页标的"选中"是两套图互斥显隐**（存档里 `dot.i.on` / `dot.i.off` 各一条记录）：
-      参考资产（`assets/教程UI系统_翻页单击活动样式.gia`）的页签控件也是"换素材组"，
-      翻译到 Lua 侧就是 `SetVisible` 互斥 —— 见 `docs/gia教程UI-翻译规格.md` §1.5 / T5。
-    · **每关一个实例，不共用**：
-        local l1 = M.new(adapter, { tag="l1", root="teach.l1", text="teach.text.l1", pages=3 })
-        local l2 = M.new(adapter, { tag="l2", root="teach.l2", text="teach.text.l2", pages=3 })
-      两关内容将来会分叉 ⇒ 数据结构上就不允许"一套接两处"。
-    · **页数不从代码写死**：`pages` 由入口按关卡传（现在三套都是 3）。
-      `pages` 比存档里的 body / dot 条数少时，多出来的**不归本模块管**（编辑器里留空即可）。
-    · **不创建任何控件**（用户明确要求：脚本里不要有创建控件这种操作）。
-    · 全程 pcall 兜住：任何控件缺失都只降级（少一块 / 少一次翻页 / 少一次高亮），**不许整条链崩**。
-
-  ★ 两个 API 命名上的坑（v287 实测，别改回去）：
-    ① `goto` 是 Lua 5.3 的**保留字** ⇒ `function M:goto(n)` / `inst:goto(n)` **编译不过**
-       （`<name> expected near 'goto'`；lua.exe 5.4 与 tools/lua53check(5.3) 两处都验过）
-       ⇒ 方法名用 **`inst:go(n)`**；同一函数另挂在 `M["goto"]` 上
-         （真要原名就 `inst["goto"](inst, n)`）。
-    ② `inst:open()` 与字段 `inst.open` **不能共存**：实例上已有 `open` 布尔字段，
-       查找时字段优先 ⇒ `inst.open` 是布尔值，`inst:open()` 会报
-       "attempt to call a boolean value" ⇒ 显示方法用 **`inst:open_ui()`**。
-
-  ★ 取控件（两种写法都是项目里验证过的）：
-    · 顶层控件一律 `adapter:find(全名)`（`teach.l1` / `teach.text.l1.body.1` …）；
-    · 页正文的取法见 `_body()`：**先 `find(全名)`**（走适配层的缓存 + 失效代，语义最稳），
-      失败才 `sub(text, 全名)`（官方 `GetChild(name)` 精确名匹配）。
-      ⚠️ 别写成 `sub(text, "body.1")` —— 存档里子控件名**就是全名**
-      （`teach.text.l1.body.1` 是自己的名字），短的 `body.1` 命中不了，这是预期。
-    · 页标 `dot.i.on/.off` 同理用 `find(全名)`：它们是 `teach.<t>` 的**直接子控件**、
-      名字自带点号（**不是** `dot.i` 容器再套 on/off）—— 这样适配层的 `sub()` 一级子名也够用。
------------------------------------------------------------------------------]]--
+  规矩：不创建/改尺寸/改父级；只做「显隐 + 绑点击 + 写文本三属性」；全程 pcall。
+----------------------------------------------------------------------------]]--
 
 local M = {}
 
 local DEFAULT_PAGES = 3
 
--- 构造。opts：
---   tag    实例标签（日志用；l1 / l2）
---   root   面板控件名（teach.l1 / teach.l2）
---   text   文本区域控件名（teach.text.l1 / teach.text.l2）
---   pages  页数（入口按关卡传；当前两关都是 3）
+-- ── 文案：三套教程逐页内容（step=页标签 / body=主说明 / clue=线索 / note=结论）──
+M.CONTENT = {
+  home = {
+    title = "玩法总览 · 先摆人，再指认",
+    pages = {
+      {
+        step = "5 条规则",
+        body = "① 目标：摆满当事人，再指认。全部摆好后指出盗窃者；受害者屋里还有别人，还要说清有没有同伙。\n"
+            .. "② 每行、每列恰好一人。放下一个人，整行整列自动打叉。\n"
+            .. "③ 只能站「可站」的格子：椅子、地毯可以站；桌子、植物、书架、雕像不能站。\n"
+            .. "④ 「旁边 / 隔壁」只算上下左右贴着的格子：同屋直接算，跨屋必须中间有门，隔着墙不算。",
+        clue = "操作：轻点＝笔记　双击＝预放置　长按＝正式放下",
+        note = "受害者也在这 5 个人里，别把他落下。",
+      },
+    },
+  },
+  l1 = {
+    title = "第一关 · 操作与推理",
+    pages = {
+      {
+        step = "第 1 / 8 步 · 认识棋盘",
+        body = "左边是线索卡，中间是棋盘，右边是工具。棋盘 5×5，三间屋：大屋、内室、外间；粗线是墙，橙色是门。行号 1–5 从上往下，列号 1–5 从左往右。",
+        clue = "棋盘：5×5 · 大屋 / 内室 / 外间 · 三扇门",
+        note = "受害者也在这 5 个人里，别把他落下。",
+      },
+      {
+        step = "第 2 / 8 步 · 选人",
+        body = "点一张线索卡，就选中卡上那个人。卡上写的是他的口供——说的可能是别人。选中后，话里提到的位置会在棋盘上亮起来；再点一次取消选中。",
+        clue = "卡 1（值班保安）：「收藏家 在第 5 列」",
+        note = "卡上的人＝要放下的人；卡上的话＝口供，可能说别人。",
+      },
+      {
+        step = "第 3 / 8 步 · 放人",
+        body = "轻点格子＝铅笔笔记（不占位）；双击＝预放置（先占位，可反悔）；按住不放、进度环走完＝正式放下。放下后这一行这一列自动打叉。",
+        clue = "轻点＝笔记　双击＝预放置　长按＝正式放下",
+        note = "放错了：撤销 / 重做 / 重置在右边。",
+      },
+      {
+        step = "第 4 / 8 步 · 推理一",
+        body = "卡 3（夜班清洁工）：「只有值班保安站在地毯上」。地毯一共 4 格，所以保安只可能在这 4 格之一——别人踩上地毯就破了这句话。",
+        clue = "卡 3（夜班清洁工）：「只有 值班保安 站在 地毯 上」",
+        note = "别人踩上地毯就破了这句话。",
+      },
+      {
+        step = "第 5 / 8 步 · 推理二",
+        body = "卡 5（收藏家）：「前台姑娘在桌子旁边」。桌子旁只有 (2,2) 和 (3,1)；但 (3,1) 是地毯，站上去就和卡 3 冲突，所以 B=(2,2)。第 2 行、第 2 列被占 ⇒ A 的 (2,4)(2,5)(3,2) 出局 ⇒ A=(3,1)。",
+        clue = "卡 5（收藏家）：「前台姑娘 在 桌子 旁边」",
+        note = "已确定：B→(2,2)　A→(3,1)",
+      },
+      {
+        step = "第 6 / 8 步 · 推理三",
+        body = "卡 4（旧识古董商）：「夜班清洁工站在椅子上」。椅子只有 (4,2) 和 (5,4)；(4,2) 和前台姑娘同列，站不了 ⇒ 清洁工 = (5,4)。",
+        clue = "卡 4（旧识古董商）：「夜班清洁工 站在 椅子 上」",
+        note = "已确定：C→(5,4)（(4,2) 同列出局）",
+      },
+      {
+        step = "第 7 / 8 步 · 收口",
+        body = "卡 1「收藏家在第 5 列」+ 卡 2「古董商在植物旁边」。前三个人已钉死，只剩 D 与 V 互换的两种摆法；把 D 换到外间 (4,3) 时，受害者相邻两屋里「无辜人数最多的那间」不是 D 所在的屋 ⇒ 这种摆法不成立。",
+        clue = "卡 1（值班保安）：「收藏家 在 第 5 列」",
+        note = "两种摆法 → 只留 D(1,3)、V(4,5)",
+      },
+      {
+        step = "第 8 / 8 步 · 指认",
+        body = "摆位定死后回头看：A、B、C 全程各只有 1 个可能格，只有 D 一直留着 2 格——有选择余地的那个就是盗窃者。受害者独处内室 ⇒ 无同伙。",
+        clue = "结论：盗窃者 = D　同伙 = 无",
+        note = "提交后：先校验摆位，再指认盗窃者、回答有没有同伙。",
+      },
+    },
+  },
+  l2 = {
+    title = "第二关 · 复述与谎言",
+    pages = {
+      {
+        step = "第 1 / 4 步 · 复习",
+        body = "① 每行每列恰好一人 ② 只能站椅子、地毯 ③ 用线索把每个人的可能格收窄 ④ 看门：只有门直接连通的两间才算相邻。这一关的侧廊只有一扇门，所以它只和大厅相邻。",
+        clue = "本关场地：6×6 · 四间屋 · 侧廊只有一扇门",
+        note = "门只决定「哪两间算相邻」，不改变房间划分。",
+      },
+      {
+        step = "第 2 / 4 步 · 假话",
+        body = "线索里最多有一句假话，整条假、不会预告是哪一句；受害者的话也可能落在这一条上。另有一种「通用线索」不算谁的卡，比如本关的「地毯上没有人」——它同样可能为假，但这一句是真的，先把 5 个地毯格划掉。",
+        clue = "通用线索（不占卡位）：「地毯上没有人」",
+        note = "至多 1 句假话，不会预告是哪一句。",
+      },
+      {
+        step = "第 3 / 4 步 · 抓谎",
+        body = "先假设所有线索都为真；如果一种摆法都摆不出来，就说明必有一句假话。再逐条假设它是假、摘掉它，看剩下能不能自洽——能自洽的那一条就是假话。像「某人在某人的同一列上方」这种形状的话天生就假：每列只能站一个人。",
+        clue = "恒假句式：「A 在 B 的同一列上方」",
+        note = "先假设全真；摆不出 ⇒ 必有假。",
+      },
+      {
+        step = "第 4 / 4 步 · 收口",
+        body = "摆满、提交；判题只校验硬冲突（同行同列、踩到家具），不会告诉你是哪一句假、也不会说有几条不成立。找到那句假话之后，说这句话的人就是你要指认的人。",
+        clue = "结论：说谎者 = 盗窃者（不点名）",
+        note = "判题只报「摆位还没成立」，不揭晓哪句假。",
+      },
+    },
+  },
+}
+
+-- ── 样式（脚本写入）：字号 / 颜色（0xAARRGGBB 整数）────────────────────────────
+local STYLE = {
+  title    = { size = 27, color = 0xFFF3EDE0 },
+  subtitle = { size = 17, color = 0xFFFFCB7A },
+  body     = { size = 15, color = 0xFFD3CCBD },
+  clue     = { size = 14, color = 0xFFE9E2D3 },
+  note     = { size = 13, color = 0xFFBDB6A7 },
+  btn      = { size = 13, color = 0xFFBDB6A7 },
+  legend   = { size = 13, color = 0xFFBDB6A7 },
+}
+
+-- 图例（宽版面板右列）
+local LEGEND = "图例\n\n大屋 / 内室 / 外间\n墙（深灰）  门（橙）\n棋子＝头像\n候选＝淡圈\n排除＝红叉\n笔记＝铅笔小字\n受害者＝蓝标\n\n坐标＝(行,列)\n行号自上而下\n列号自左而右"
+
+-- ── 缩略棋盘：房间色 + 头像显隐（v339 新增；控件 teach.<t>.board.r.c / teach.<t>.av.X）──
+local BOARDS = {
+  home = {
+    rows = 5, cols = 5,
+    colors = { [0] = 0xFFD9CDB4, [1] = 0xFFC3CDD4, [2] = 0xFFD4C8BC },
+    grid = { "00011", "00011", "00011", "22221", "22221" },
+    avatars = {},
+  },
+  l1 = {
+    rows = 5, cols = 5,
+    colors = { [0] = 0xFFD9CDB4, [1] = 0xFFC3CDD4, [2] = 0xFFD4C8BC },
+    grid = { "00011", "00011", "00011", "22221", "22221" },
+    avatars = { { id = "A", from = 5 }, { id = "B", from = 5 }, { id = "C", from = 6 }, { id = "D", from = 8 }, { id = "V", from = 8 } },
+  },
+  l2 = {
+    rows = 6, cols = 6,
+    colors = { [0] = 0xFFD9CDB4, [1] = 0xFFC3CDD4, [2] = 0xFFD4C8BC, [3] = 0xFFBECFB0 },
+    grid = { "000011", "000011", "000011", "222331", "222333", "222233" },
+    avatars = { { id = "A", from = 4 }, { id = "B", from = 4 }, { id = "C", from = 4 }, { id = "D", from = 4 }, { id = "E", from = 4 }, { id = "V", from = 4 } },
+  },
+}
+
+
+-- ── 首页 5 块分区卡（v340）────────────────────────────────────────────────
+local HOME_CARDS = {
+  { t = "目标：摆满当事人，再指认", b = "每名当事人（含 1 名受害者）各占一格；全部摆好后指出盗窃者；受害者屋里还有别人，还要说清有没有同伙。" },
+  { t = "每行、每列恰好一人", b = "放下一个人，整行整列自动打叉。一行不能站两个，一列也不能。" },
+  { t = "只能站「可站」的格子", b = "椅子、地毯可以站；桌子、植物、书架、雕像不能站。" },
+  { t = "「旁边 / 隔壁」怎么算", b = "只算上下左右贴着的格子：同屋直接算，跨屋必须中间有门，隔着墙不算。" },
+  { t = "操作：轻点 / 双击 / 长按", b = "点卡选中人；轻点＝铅笔笔记；双击＝预放置；按住不放、进度环走完＝正式放下。" },
+}
+
+-- ── 图例 9 行（图标色 + 文字；v340）──────────────────────────────────────
+local LEGEND_ROWS = {
+  l1 = {
+    { "大屋", 0xFFD9CDB4 }, { "内室", 0xFFC3CDD4 }, { "外间", 0xFFD4C8BC },
+    { "墙", 0xFF29282B }, { "门", 0xFFDC5B28 }, { "棋子＝头像", 0xFF8FB4D9 },
+    { "候选＝淡圈", 0xFF9A9385 }, { "排除＝红叉", 0xFFD0553F }, { "受害者＝蓝标", 0xFF4C8FA6 },
+  },
+  l2 = {
+    { "大厅", 0xFFD9CDB4 }, { "侧廊", 0xFFC3CDD4 }, { "库房", 0xFFD4C8BC }, { "内室", 0xFFBECFB0 },
+    { "墙", 0xFF29282B }, { "门", 0xFFDC5B28 }, { "棋子＝头像", 0xFF8FB4D9 },
+    { "候选＝淡圈", 0xFF9A9385 }, { "排除＝红叉", 0xFFD0553F },
+  },
+  home = {
+    { "大屋", 0xFFD9CDB4 }, { "内室", 0xFFC3CDD4 }, { "外间", 0xFFD4C8BC },
+    { "墙", 0xFF29282B }, { "门", 0xFFDC5B28 }, { "棋子＝头像", 0xFF8FB4D9 },
+    { "候选＝淡圈", 0xFF9A9385 }, { "排除＝红叉", 0xFFD0553F }, { "受害者＝蓝标", 0xFF4C8FA6 },
+  },
+}
+
+local function _clear(ctrl)
+  if ctrl == nil then return false end
+  if type(ctrl.SetText) == "function" then
+    pcall(function() ctrl:SetText("") end)
+  else
+    pcall(function() ctrl.text = "" end)
+  end
+  return true
+end
+
+local function _to_color(argb)
+  if type(argb) ~= "number" then return argb end
+  local a = math.floor(argb / 16777216) % 256
+  local r = math.floor(argb / 65536) % 256
+  local g = math.floor(argb / 256) % 256
+  local b = argb % 256
+  if Color ~= nil then
+    local ok, c = pcall(Color, r, g, b, a)
+    if ok and c ~= nil then return c end
+  end
+  return argb
+end
+
+local function _write(ctrl, txt, size, color)
+  if ctrl == nil then return false end
+  if type(txt) == "string" and txt ~= "" then
+    local ok = false
+    if type(ctrl.SetText) == "function" then
+      ok = pcall(function() ctrl:SetText(txt) end)
+    end
+    if not ok then pcall(function() ctrl.text = txt end) end
+  end
+  if size ~= nil then
+    pcall(function() if ctrl.adaptiveFontSize ~= nil then ctrl.adaptiveFontSize = false end end)
+    pcall(function() ctrl.fontSize = size end)
+  end
+  if color ~= nil then
+    local c = _to_color(color)
+    pcall(function() ctrl.fontColor = c end)
+  end
+  return true
+end
+
 function M.new(adapter, opts)
   if type(opts) ~= "table" then opts = {} end
-  local pages = tonumber(opts.pages) or DEFAULT_PAGES
+  local tag = tostring(opts.tag or "?")
+  local content = opts.content or nil
+  local pages = (content ~= nil and content.pages ~= nil and #content.pages) or tonumber(opts.pages) or DEFAULT_PAGES
   if pages < 1 then pages = 1 end
 
   local self = {
     adapter   = adapter,
-    tag       = tostring(opts.tag or "?"),
+    tag       = tag,
     root_name = tostring(opts.root or "teach"),
     text_name = tostring(opts.text or "teach.text"),
+    content   = content,
     pages     = pages,
     page      = 1,
-    open      = false,      -- ★ 状态字段（不能同时有同名方法 open()，见文件头 ②）
+    open      = false,
     inited    = false,
-    bound     = {},         -- 控件对象 → true（防双绑；★ 不按 id 记，控件换代后对象会变）
+    bound     = {},
     log       = {},
   }
   return setmetatable(self, { __index = M })
@@ -22515,8 +22681,6 @@ function M:_sub(parent_name, child_name)
   return ctrl
 end
 
--- 显隐：只调 SetVisible（+ 显示时顺手 SetActive(true)）。
--- ★ 不写文字、不改尺寸/父级 —— 本模块对控件的写操作只有这两种。
 function M:_set_visible(name, want)
   local ctrl = self:_find(name)
   if ctrl == nil then return false end
@@ -22525,7 +22689,6 @@ function M:_set_visible(name, want)
   return true
 end
 
--- 点一下（只绑一次；控件换代后对象变了会重新绑，与旧版 bound 语义一致）
 function M:_bind(ctrl_name, fn)
   local ctrl = self:_find(ctrl_name)
   if ctrl == nil then return false end
@@ -22544,11 +22707,6 @@ function M:_bind(ctrl_name, fn)
   return ok
 end
 
--- 取第 i 页的正文控件。两级尝试（全 pcall）：
---   ① `find(text .. ".body.i")` —— **优先**：走适配层的按名查找（有缓存 + 失效代，语义最稳）；
---   ② `sub(text, text .. ".body.i")` —— 兜底：官方 `GetChild(name)` 是**精确名匹配**
---      （存档里子控件名是全名，所以这里也要传全名）。
---   ⚠️ 不要写 `sub(text, "body." .. i)`：子控件不叫短名，注定不命中（预期行为）。
 function M:_body(i)
   local full = self.text_name .. ".body." .. tostring(i)
   local ctrl = self:_find(full)
@@ -22556,22 +22714,130 @@ function M:_body(i)
   return ctrl
 end
 
--- 把「第 page 页」刷到正文区：只切 body 的显隐，**不碰 root / text**。
-function M:_paint_bodies()
-  for i = 1, self.pages do
-    local ctrl = self:_body(i)
-    if ctrl ~= nil then
-      pcall(function() ctrl:SetVisible(i == self.page) end)
-    end
+function M:_paint_home()
+  if self.tag ~= "home" then return self end
+  local T = self.text_name
+  self:_set_visible(self.root_name .. ".page", false)
+  self:_set_visible(self.root_name .. ".clue", false)
+  self:_set_visible(T .. ".body.1", false)
+  self:_set_visible(T .. ".body.2", false)
+  self:_set_visible(T .. ".body.3", false)
+  self:_set_visible(T .. ".body.1b", false)
+  for i, card in ipairs(HOME_CARDS) do
+    local N = self.root_name .. ".card." .. tostring(i)
+    local bg = self:_find(N)
+    if bg ~= nil then pcall(function() bg.imageColor = 0xFF1B2230 end) end
+    local ctrl = self:_find(N .. ".badge")
+    if ctrl ~= nil then pcall(function() ctrl.imageColor = 0xFFE8A23C end) end
+    -- 标题/编号框已加大（用户提示：文本框不够大文字不渲染）
+    local ttl = self:_find(T .. ".card." .. tostring(i) .. ".title")
+    local num = self:_find(T .. ".card." .. tostring(i) .. ".num")
+    if ttl ~= nil then pcall(function() ttl:SetVisible(true) end) end
+    if num ~= nil then pcall(function() num:SetVisible(true) end) end
+    _write(num, tostring(i), 16, 0xFF22180A)
+    _write(ttl, card.t, 18, 0xFFF3EDE0)
+    _write(self:_find(T .. ".card." .. tostring(i) .. ".body"), card.b, 13, 0xFFD3CCBD)
   end
   return self
 end
 
--- 页标（v290 新增）：第 page 页那颗菱形用 `dot.i.on`、其余用 `dot.i.off` —— **两套图互斥显隐**。
---   ★ 这是参考资产「页签控件 + 选中/未选中两套素材组」在 Lua 侧的等价物（规格 §1.5 / §3.4 T5-T6）：
---     页签控件我们不建（模拟器对它支持不确定），**只留显隐**。
---   ★ 依旧**不写字、不创建控件**；控件缺失时 `_set_visible` 返回 false，静默降级（只是少颗点）。
-function M:_paint_dots()
+function M:_paint_legend()
+  local rows = LEGEND_ROWS[self.tag]
+  if rows == nil then return self end
+  -- 行文本框已加大（192×30）
+  self:_set_visible(self.text_name .. ".legend", false)
+  for i, row in ipairs(rows) do
+    local icon = self:_find(self.root_name .. ".legend." .. tostring(i) .. ".icon")
+    if icon ~= nil then pcall(function() icon.imageColor = row[2] end) end
+    local ctrl = self:_find(self.text_name .. ".legend." .. tostring(i))
+    if ctrl ~= nil then pcall(function() ctrl:SetVisible(true) end) end
+    _write(ctrl, row[1], 13, 0xFFBDB6A7)
+  end
+  return self
+end
+
+function M:_paint_board()
+  local B = BOARDS[self.tag]
+  if B == nil then return self end
+  for r = 1, B.rows do
+    local line = B.grid[r]
+    if line ~= nil then
+      for c = 1, B.cols do
+        local ctrl = self:_find(self.root_name .. ".board." .. tostring(r) .. "." .. tostring(c))
+        if ctrl ~= nil then
+          local room = tonumber(line:sub(c, c)) or 0
+          local col = B.colors[room]
+          if col ~= nil then pcall(function() ctrl.imageColor = col end) end
+        end
+      end
+    end
+  end
+  for _, av in ipairs(B.avatars) do
+    self:_set_visible(self.root_name .. ".av." .. tostring(av.id), self.page >= av.from)
+  end
+  return self
+end
+
+function M:_paint()
+  if self.content ~= nil then
+    local pg = self.content.pages[self.page]
+    local T = self.text_name
+    -- 标题/页标签先显式显示（防止被旧状态隐藏）
+    local c_title = self:_find(T .. ".title")
+    if c_title ~= nil then pcall(function() c_title:SetVisible(true) end) end
+    local c_sub = self:_find(T .. ".subtitle")
+    if c_sub ~= nil then pcall(function() c_sub:SetVisible(true) end) end
+    _write(c_title, self.content.title, STYLE.title.size, STYLE.title.color)
+    _write(self:_find(T .. ".subtitle"), pg and pg.step or "", STYLE.subtitle.size, STYLE.subtitle.color)
+    _write(self:_find(T .. ".legend"), LEGEND, STYLE.legend.size, STYLE.legend.color)
+    pcall(function() local b = self:_find(self.root_name .. ".bg"); if b ~= nil then b.imageColor = 0xFF0B0F18 end end)
+    pcall(function() local b = self:_find(self.root_name .. ".board"); if b ~= nil then b.imageColor = 0xFF141A26 end end)
+    pcall(function() local b = self:_find(self.root_name .. ".clue"); if b ~= nil then b.imageColor = 0xFF1B2230 end end)
+    pcall(function() local b = self:_sub(self.root_name .. ".page", "bg"); if b ~= nil then b.imageColor = 0xFF1B2230 end end)
+    self:_paint_board()
+    -- 主卡拆两段：body.1 = 线索复述（金），body.1b = 推导（灰）
+    if self.tag == "home" then
+      _write(self:_body(1), "", STYLE.body.size, STYLE.body.color)
+      _write(self:_find(T .. ".body.1b"), "", STYLE.body.size, STYLE.body.color)
+    else
+      _write(self:_body(1), pg and pg.clue or "", STYLE.clue.size, 0xFFFFCB7A)
+      _write(self:_find(T .. ".body.1b"), pg and pg.body or "", STYLE.body.size, STYLE.body.color)
+    end
+    local b1b = self:_find(T .. ".body.1b")
+    if b1b ~= nil then pcall(function() b1b:SetVisible(self.tag ~= "home") end) end
+    _write(self:_body(2), pg and pg.clue or "", STYLE.clue.size, STYLE.clue.color)
+    _write(self:_body(3), pg and pg.note or "", STYLE.note.size, STYLE.note.color)
+    for i = 1, 3 do
+      local c = self:_body(i)
+      if c ~= nil then pcall(function() c:SetVisible(true) end) end
+    end
+    self:_paint_home()
+    self:_paint_legend()
+    for i = 1, 3 do
+      self:_set_visible(self.root_name .. ".dot." .. tostring(i) .. ".on", false)
+      self:_set_visible(self.root_name .. ".dot." .. tostring(i) .. ".off", false)
+    end
+    self:_set_visible(self.root_name .. ".btn.click", false)
+    local multi = self.pages > 1
+    self:_set_visible(self.root_name .. ".btn.prev", multi)
+    self:_set_visible(self.root_name .. ".btn.next", multi)
+    -- 箭头图标隐藏，翻页按钮改文字（用户 2026-10-25：箭头可去掉）
+    self:_set_visible(self.root_name .. ".btn.prev.icon", false)
+    self:_set_visible(self.root_name .. ".btn.next.icon", false)
+    _write(self:_find(T .. ".btn.prev"), "上一步", STYLE.btn.size, STYLE.btn.color)
+    _write(self:_find(T .. ".btn.next"), "下一步", STYLE.btn.size, STYLE.btn.color)
+    _clear(self:_find(T .. ".btn.close"))
+    _clear(self:_find(T .. ".btn.click"))
+    if not multi then
+      self:_set_visible(T .. ".btn.prev", false)
+      self:_set_visible(T .. ".btn.next", false)
+    end
+    return self
+  end
+  for i = 1, self.pages do
+    local ctrl = self:_body(i)
+    if ctrl ~= nil then pcall(function() ctrl:SetVisible(i == self.page) end) end
+  end
   for i = 1, self.pages do
     local cur = (i == self.page)
     self:_set_visible(self.root_name .. ".dot." .. tostring(i) .. ".on", cur)
@@ -22580,48 +22846,35 @@ function M:_paint_dots()
   return self
 end
 
--- 首次初始化：绑四个按钮、把面板与文本区域一起藏起来。只跑一次。
 function M:init()
   if self.inited then return self end
   if self:_find(self.root_name) == nil then
-    return self                 -- 控件还没进树：入口每帧调，下一帧再试
+    return self
   end
-
   self.inited = true
   self:_bind(self.root_name .. ".btn.prev", function() self:prev() end)
   self:_bind(self.root_name .. ".btn.next", function() self:next() end)
   self:_bind(self.root_name .. ".btn.close", function() self:close() end)
-  -- ★ v290：底部那颗「点击继续」= **同一个 next()**（双通道，参考资产是"点击阅览/翻页阅览"两种模式，
-  --   本工程按规格 §4.4 折成"两个入口都指向同一动作"，不做模式开关）
   self:_bind(self.root_name .. ".btn.click", function() self:next() end)
-
-  -- ★ root 与 text 在存档里是两棵（面板 / 文本区域）⇒ 一起隐藏，少藏一个都会露半块
   self:_set_visible(self.root_name, false)
   self:_set_visible(self.text_name, false)
   if self:_find(self.text_name) == nil then
     self:_note("文本区域 " .. self.text_name .. " 没找到（只显示面板，正文不会出现）")
   end
-
   self.page = 1
-  self:_note("init 完成 tag=" .. self.tag .. " root=" .. self.root_name
-    .. " text=" .. self.text_name .. " pages=" .. tostring(self.pages))
+  self:_note("init 完成 tag=" .. self.tag .. " pages=" .. tostring(self.pages))
   return self
 end
 
--- 显示：面板 + 文本区域 + 当前页正文 + 当前页页标。
--- ★ 方法名是 `open_ui` 不是 `open`（字段 `self.open` 会遮住同名方法，见文件头 ②）。
 function M:open_ui()
   self.open = true
   self:_set_visible(self.root_name, true)
   self:_set_visible(self.text_name, true)
-  self:_paint_bodies()
-  self:_paint_dots()
-  self:_note("打开 tag=" .. self.tag .. "（第 " .. tostring(self.page)
-    .. " / " .. tostring(self.pages) .. " 页）")
+  self:_paint()
+  self:_note("打开 tag=" .. self.tag .. "（第 " .. tostring(self.page) .. " / " .. tostring(self.pages) .. " 页）")
   return self
 end
 
--- 收起：面板与文本区域一起藏。
 function M:close()
   self.open = false
   self:_set_visible(self.root_name, false)
@@ -22630,24 +22883,18 @@ function M:close()
   return self
 end
 
--- 跳到第 n 页：**只切 body 与页标的显隐**，并把 n 夹紧到 1..pages。
--- ★ 方法名是 `go`：`goto` 是保留字（见文件头 ①）；`M["goto"]` 是同一函数的别名。
 function M:go(n)
   local p = tonumber(n) or 1
   if p < 1 then p = 1 end
   if p > self.pages then p = self.pages end
   self.page = p
-  self:_paint_bodies()
-  self:_paint_dots()
+  self:_paint()
   return self
 end
 
 function M:next() return self:go(self.page + 1) end
 function M:prev() return self:go(self.page - 1) end
 
--- 别名：契约里写的是 `goto`，但 `inst:goto(n)` 在 Lua 5.3 是语法错误
--- （`goto` 是保留字）。这里只保留"能拿得到同一个函数"：
---   inst["goto"](inst, 2)   -- 等价于 inst:go(2)
 M["goto"] = M.go
 
 return M
@@ -24088,7 +24335,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v332 / 2026-10-24 / 雕像改用原作图标压缩（381 纯色矩形，含底座）+ 书架对齐 + 桌子重搭 =====")
+        print("[murdoku] ===== 构建标记 v350 / 2026-10-27 / 按设计稿色板逐项染色 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -24972,7 +25219,8 @@ local function tutorial_instance(spec)
   local mod = tutorial_module()
   if mod == nil or adapter == nil then return nil end
   local ok, made = pcall(function()
-    return mod.new(adapter, { tag = spec.tag, root = spec.root, text = spec.text, pages = spec.pages })
+    local content = (type(mod.CONTENT) == "table") and mod.CONTENT[spec.tag] or nil
+    return mod.new(adapter, { tag = spec.tag, root = spec.root, text = spec.text, pages = spec.pages, content = content })
   end)
   if not ok or type(made) ~= "table" then
     if printerr then printerr("[murdoku] 教程实例建不出来（" .. tostring(spec.tag) .. "）：" .. tostring(made)) end

@@ -1,0 +1,47 @@
+{
+  "_comment": [
+    "tools/sim 的自动化用例（qxqy-autotest / version 1）。",
+    "跑法（Harness 会话里）：qxqy_studio_play{action:'runCase', args:{case:<本文件内容>}}。",
+    "前置：模拟器里已 load 一份由「存档/468-首关家具-v280.gil」转出的 save，并已把 dist/client_script.lua 挂到 root（n137）；",
+    "      复现步骤见 records/playtest.md。",
+    "断言口径：`构建标记 v` 只断前缀（版本号会一直涨，断全串会让用例每版都要改）。",
+    "为什么用键盘：模拟器里 24 个 cell.* 要 game.InstantiateClientUIControl 运行时生成，",
+    "      而模拟器没有可实例化的客户端控件模板（日志「24 个格子全部实例化失败」）⇒ 棋盘格点不到。",
+    "      键盘路径（方向键 + 1/F/Space）直接走 Controller，不依赖格子控件。",
+    "覆盖：构建标记 / 规则 P 同行拒绝 / 规则 P 同列拒绝 / 规则 B 障碍格拒绝笔记 /",
+    "      规则 X 自动 ✗ 擦掉同行笔记（放置日志「笔记 1 ⇒ 0」）。"
+  ],
+  "version": 1,
+  "name": "client-rules",
+  "dt": 0.0333333333,
+  "playerCount": 1,
+  "events": [
+    { "kind": "key", "typeName": "KeyboardCraftspersonKey39Down", "at": 0 },
+    { "kind": "key", "typeName": "KeyboardCraftspersonKey39Down", "at": 0 },
+    { "kind": "key", "typeName": "KeyboardCraftspersonKey39Down", "at": 0 },
+    { "kind": "key", "typeName": "KeyboardCraftspersonKey2Down", "at": 0 },
+    { "kind": "key", "typeName": "KeyboardJumpKeyDown", "at": 0 },
+    { "kind": "key", "typeName": "KeyboardCraftspersonKey38Down", "at": 0 },
+    { "kind": "key", "typeName": "KeyboardCraftspersonKey1Down", "at": 0 },
+    { "kind": "key", "typeName": "KeyboardInteractKeyDown", "at": 0 },
+    { "kind": "key", "typeName": "KeyboardCraftspersonKey39Down", "at": 0 },
+    { "kind": "key", "typeName": "KeyboardCraftspersonKey39Down", "at": 0 },
+    { "kind": "key", "typeName": "KeyboardCraftspersonKey2Down", "at": 0 },
+    { "kind": "key", "typeName": "KeyboardInteractKeyDown", "at": 0 },
+    { "kind": "key", "typeName": "KeyboardCraftspersonKey37Down", "at": 0 },
+    { "kind": "key", "typeName": "KeyboardCraftspersonKey38Down", "at": 0 },
+    { "kind": "key", "typeName": "KeyboardCraftspersonKey38Down", "at": 0 },
+    { "kind": "key", "typeName": "KeyboardInteractKeyDown", "at": 0 },
+    { "kind": "key", "typeName": "KeyboardCraftspersonKey38Down", "at": 0 },
+    { "kind": "key", "typeName": "KeyboardCraftspersonKey38Down", "at": 0 },
+    { "kind": "key", "typeName": "KeyboardJumpKeyDown", "at": 0 }
+  ],
+  "asserts": [
+    { "kind": "log", "contains": "构建标记 v" },
+    { "kind": "log", "contains": "正式放置 hold_cell】 人=A" },
+    { "kind": "log", "contains": "笔记 1 ⇒ 0" },
+    { "kind": "log", "contains": "第1行已经有" },
+    { "kind": "log", "contains": "第3列已经有" },
+    { "kind": "log", "contains": "这格是障碍物" }
+  ]
+}

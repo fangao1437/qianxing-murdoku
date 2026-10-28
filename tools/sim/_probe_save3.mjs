@@ -1,4 +1,4 @@
-﻿import fs from "node:fs";
+import fs from "node:fs";
 const j = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
 // 真正的控件 = 有 id + kind + transformByPlatform
 const byId = new Map();

@@ -164,7 +164,17 @@ check("棋盘格控件已创建", stub.controls["cell.1.1"] ~= nil)
 --     （老写法只能证明"建出来了" ✓ 新写法能守住"按参考图删掉了" ✓）
 check("区域推断面板**按参考图删除**（不该再出现）", stub.controls["hud.violations"] == nil,
       tostring(stub.controls["hud.violations"]))
-check("告知“有一句假话”显示在副标题", stub.props["hud.subtitle"] ~= nil)
+-- ★★★★★ 2026-10-18 **这条断言也按设计反转了** ✗✓（用户指令：「美术布局上目前没有副标题的位置了，
+--   把它当死代码处理吧」）
+--
+--   原来：`check("告知“有一句假话”显示在副标题", stub.props["hud.subtitle"] ~= nil)` ✗
+--   为什么过时：副标题那条控件位**已经不留文字了** ⇒ `ui_controller` 里那处 push 被整段删掉
+--     ⇒ 计划里不再出现 `hud.subtitle` ⇒ 老断言**必然红**，而且它要求的是一个**已不存在的控件** ✗
+--   ⇒ 反转成"它确实不在计划里"：万一以后有人又把副标题这条接回来 ⇒ **测试立刻红** ✓
+--     （同时把"告知行暂时无处显示"这件事**钉成已知状态**，不许悄悄漂移 ✓）
+check("副标题控件**已按美术结论移除**（不该再出现在计划里）",
+      stub.props["hud.subtitle"] == nil,
+      tostring(stub.props["hud.subtitle"]))
 
 core:reset()
 ctrl:on_input({ action = "suspect", id = "A" })
@@ -313,8 +323,20 @@ check("书桌所在格不可站人", core:is_blocked(1, 5))
 -- ★★ 2026-09-29 更正：这条断言原来编码的是**我写错的假设**
 --   （原文：「不可站人的格子打不了 X」）。
 --   用户实测报「R1C5 不能正常做 x 标记」后，语义改成正确的：
---   **`blocked` 只表示"不能站人"，✗ / 笔记是玩家的推理痕迹，任何格子都能打。**
+--   **`blocked` 只表示"不能站人"，✗ 是玩家的推理痕迹，任何格子都能打。**
 check("不可站人的格子**能**打 X（✗ 与能否站人无关）", core:toggle_x(1, 5) == true)
+-- ★★★ 2026-10-20 **规则 B 收窄了上一句的一半** ✗✓（用户本轮原话：
+--   「不可放置人物的障碍物上也不可进行 note 标记」）
+--   ⇒ ✗ 仍然能打（上面那条不许回滚），但**铅笔笔记**在障碍格上被拒绝。
+--     两条断言成对存在，才挡得住"把 ✗ 也一起关掉"的过度修正。
+local b_ok, b_why = core:tap_cell(1, 5)   -- 此时 selected 还是 B，(1,5) 是障碍格
+check("不可站人的格子**不能**打铅笔笔记（规则 B）", b_ok == false,
+      b_ok and "障碍格居然写进笔记了" or nil)
+check("规则 B 的拒绝带原因串（界面才打得出提示）", type(b_why) == "string" and #b_why > 0,
+      tostring(b_why))
+check("规则 B 被拒后该格仍无笔记",
+      core.notes[1][5] ~= nil and next(core.notes[1][5]) == nil,
+      "笔记残留")
 core.x_marks[1][5] = false      -- 还原，免得影响后面的编码/解码断言
 core:toggle_x(2, 4)
 local code = core:encode_state()

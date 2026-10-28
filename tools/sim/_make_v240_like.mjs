@@ -1,4 +1,4 @@
-﻿// tools/sim/_make_v240_like.mjs —— 把 v215 存档改造成"v240 那样"：在 root 末尾追加 settle.btn
+// tools/sim/_make_v240_like.mjs —— 把 v215 存档改造成"v240 那样"：在 root 末尾追加 settle.btn
 // （几何取自 371-结算按钮-v240.gil：pos[-642,-380] size[217x60]；子控件 bg/label 与原存档按钮同构）
 import fs from "node:fs";
 

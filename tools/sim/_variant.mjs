@@ -1,4 +1,4 @@
-﻿import fs from "node:fs";
+import fs from "node:fs";
 const SRC = process.argv[2], OUT = process.argv[3], MODE = process.argv[4] || "noray";
 const j = JSON.parse(fs.readFileSync(SRC, "utf8"));
 const byId = new Map();

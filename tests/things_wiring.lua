@@ -189,5 +189,110 @@ do
 end
 
 --------------------------------------------------------------------------------
+-- ⑦ ★★ 2026-10-20 **"第一次进第一关：家具/障碍物不画"** 的回归（真机 bug）
+--
+--   用户原话：「第一次进入第一关**障碍物和家具**会渲染不出来，进入第二关后重新回到第一关就有了，
+--              这个问题在门墙渲染上曾出现过」
+--
+--   机制（仓内已有先例，见 `engine_adapter_qianxing.lua` 的 `_edge_want` 长注释 +
+--   `set_property` 的 `visible` 分支）：
+--     · `visible=false` 且 id 以 `cell.` 开头 ⇒ `hide_kids(ctrl, 0)` **递归**把所有子控件设 false
+--     · 而它**只藏不显**（单向）⇒ 子控件必须有人**每帧**把"该亮的"重新点亮
+--     · `face` 有（`_cells_paint` 每帧点亮）✓　`wall.*`/`door.*` 有（`_edge_want` 每帧重放）✓
+--     · **`obj` 没有** ✗ ⇒ 第一关（格子是这一帧新建的、会走一次 false→true）家具全灭；
+--       第二关起**不重建格子** ⇒ 没有 false→true ⇒ 不触发递归藏 ⇒ 家具正常 ✓✓
+--   ⇒ 本节的判据就是那句话：**藏过之后，每帧那条路必须把 obj 救回来**。
+--------------------------------------------------------------------------------
+do
+  -- ⑦.1 先把家具画上（记下意图），再模拟 `hide_kids` 递归藏一次
+  a:set_property("cell.1.1", "object", "obj.chair")
+  ok(obj.visible == true, "⑦.1 前置：家具先正常画出来")
+  obj.visible = false                  -- ← `hide_kids` 干的就是这件事
+  a:_cells_paint(cell, 108, "cell.1.1")
+  ok(obj.visible == true,
+    "⑦.1 ★ `hide_kids` 藏过之后，每帧的 `_cells_paint` 必须把 obj 救回来（第一关家具不画的根因）")
+  ok(obj.imageColor == 0xFFE0A040, "⑦.1 救回来时颜色仍是调色板里那一份（没被冲掉）")
+
+  -- ⑦.2 反向：**本来就不该有家具**的格子，每帧重放不许把它点亮（防过度修正）
+  a:set_property("cell.1.1", "object", false)
+  ok(obj.visible == false, "⑦.2 前置：object=false ⇒ obj 藏起来")
+  a:_cells_paint(cell, 108, "cell.1.1")
+  ok(obj.visible == false, "⑦.2 ★ 没有家具的格子，每帧重放**不许**把它点亮（否则白板压住头像）")
+
+  -- ⑦.3 子控件晚一步就绪：**先记意图，后补画**（首帧 `content/obj` 取不到也要能自愈）
+  local face2 = ctrl("face", {}, { imageId = 100001, imageColor = 4294967295 })
+  local content2 = ctrl("content", { face2 })          -- ← 此刻还没有 obj
+  local cell2 = ctrl("cell.1.2", { content2 })
+  cell2.kind = "button"
+  cell2.sizeDeltaX, cell2.sizeDeltaY = 108, 108
+  rootCtl._kids[#rootCtl._kids + 1] = cell2
+  a:invalidate_lookups("test:cell.1.2 新建")
+  local r_late = a:set_property("cell.1.2", "object", "obj.table")
+  ok(r_late == true, "⑦.3 子控件还没就绪时写入算送达（记下意图，不刷屏重试）")
+  -- 子控件随后就绪（引擎侧等价于"这一格被补建/模板实例化晚了一步"）
+  local obj2 = ctrl("obj", {}, { imageId = 100001, imageColor = 4294967295, visible = false })
+  content2._kids[#content2._kids + 1] = obj2
+  a:invalidate_lookups("test:content/obj 就绪")
+  a:_cells_paint(cell2, 108, "cell.1.2")
+  ok(obj2.visible == true,
+    "⑦.3 ★ 子控件晚一步就绪 ⇒ 那条重放路要把它补画出来（不必等玩家再点一次/换关）")
+  ok(obj2.imageColor == 0xFFB07946, "⑦.3 补画时颜色来自调色板（0xFFB07946 = 桌子）")
+
+  -- ⑦.4 ★★ **真正的触发路径**：`cell.*` 走一次 `visible=false → true`（第一关开局就是这条）
+  --   真机的递归藏是 `hide_kids()` 做的（假树里 `set_property(…, "visible", false)` 会真的调到它），
+  --   所以这里**不手动置 false**，让被测代码自己藏 —— 这样才钉得住"谁来救"。
+  a:set_property("cell.1.1", "object", "obj.chair")
+  a:set_property("cell.1.1", "walls", { up = true, down = false, left = false, right = false })
+  ok(obj.visible == true and wallUp.visible == true, "⑦.4 前置：家具与门墙都亮着")
+  a:set_property("cell.1.1", "visible", false)      -- ← 这里会触发 hide_kids 递归藏
+  ok(obj.visible == false and wallUp.visible == false,
+    "⑦.4 前置：递归藏生效（家具与门墙都被压成 false —— 与真机日志同形）")
+  a:set_property("cell.1.1", "visible", true)       -- ← 回关卡内（显示方向不递归，这是既有设计）
+  a:on_tick(0.016)                                  -- ← 每帧那条路（main.lua 的 on_update 会调它）
+  ok(obj.visible == true,
+    "⑦.4 ★ cell 由藏转显之后，on_tick 必须把**家具**救回来（第一关的真实触发路径）")
+  ok(wallUp.visible == true,
+    "⑦.4 ★ 同一趟也要把**门墙**救回来（这条重放原来挂在只会跑一次的 _cells_paint 上，等于没有）")
+end
+
+--------------------------------------------------------------------------------
+-- ⑧ ★★ 2026-10-20（v282）调色板的两个历史陷阱（与"首关家具不画"同一族：**读得太早**）
+--
+--   ① `imageId = 0`（= 这张图还没配）的控件**不许进调色板** ——
+--      否则它会把好键毒掉（`SetImage(src, 0)` = 没图），而 `cfg.obj_art` 的兜底
+--      又因为"键已存在"被跳过 ⇒ 配了脚本素材也不生效，且完全静默。
+--   ② **空调色板不许缓存** —— 首帧树还没就绪时读到空表，原来会永久缓存 ⇒ 整局解析不出素材。
+--------------------------------------------------------------------------------
+do
+  local saved = _G.game
+  -- ⑧.1 `things/obj.table` 在、但图没配（imageId = 0）⇒ 必须落到 cfg.obj_art
+  local badKid = ctrl("obj.table", {}, { imageId = 0, imageColor = 0xFFB07946 })
+  _G.game = { GetClientUIRoots = function() return { ctrl("root", { ctrl("things", { badKid }) }) } end }
+  local a8 = Ad.new({ cells = { rows = 5, cols = 5 },
+    obj_art = { table = { id = 100001, color = 0xFFB07946 } } })
+  local pal8 = a8:read_palette()
+  ok(pal8["obj.table"] ~= nil and pal8["obj.table"].id == 100001,
+    "⑧.1 imageId=0 的控件不进调色板 ⇒ 用 cfg.obj_art 的 100001（不被毒键挡住）",
+    pal8["obj.table"] and tostring(pal8["obj.table"].id))
+  ok(pal8["obj.table"] ~= nil and pal8["obj.table"].from == "cfg.obj_art",
+    "⑧.1 来源标记 = cfg.obj_art（排障用）")
+
+  -- ⑧.2 树里暂时没有 things/assets（也没有 obj_art）⇒ 空表**不缓存**，树就绪后能读到
+  _G.game = { GetClientUIRoots = function() return { ctrl("root", { ctrl("cell.1.1", {}) }) } end }
+  local a9 = Ad.new({ cells = { rows = 5, cols = 5 } })
+  local empty = a9:read_palette()
+  ok(type(empty) == "table" and next(empty) == nil, "⑧.2 前置：此刻调色板确实是空的")
+  -- 素材区随后就绪（引擎侧等价于"控件后来才实例化出来"）
+  _G.game = { GetClientUIRoots = function()
+    return { ctrl("root", { ctrl("things", { ctrl("obj.chair", {}, { imageId = 100001, imageColor = 0xFFE0A040 }) }) }) }
+  end }
+  a9:invalidate_lookups("test:things 就绪")
+  local later = a9:read_palette()
+  ok(later["obj.chair"] ~= nil and later["obj.chair"].id == 100001,
+    "⑧.2 ★ 空表**没有**被永久缓存 ⇒ 素材区就绪后能读到（首帧读太早不再等于整局没有素材）")
+  _G.game = saved
+end
+
+--------------------------------------------------------------------------------
 print(string.format("\n结果：%d 通过 / %d 失败", passed, failed))
 if failed > 0 then os.exit(1) end

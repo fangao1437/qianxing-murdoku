@@ -77,7 +77,6 @@ _G.game = { GetClientUIRoots = function() return { rootCtl } end }
 -- ★ 必须在 `Ad.new` **之前**建树（适配层的 `find()` 会缓存树）
 local a = Ad.new({ btn_list = { "hex.undo", "hex.submit" } })
 
-local EMPTY_LAYOUT = { tray_cx = 0, tray_cy = 0, items = {} }
 
 -- ── 前提：树是通的（否则下面全是"空过"）────────────────────────────────
 ok(a:find("hex.undo") ~= nil, "（前提）find('hex.undo') 能找到")
@@ -87,7 +86,7 @@ ok(a:find("hex.undo") ~= nil and a:sub("hex.undo", "bg") == undoBg, "（前提�
 -- ① + ② 默认关闭 ⇒ 底图一个字节都不动、SetImage 一次都没调
 --------------------------------------------------------------------------------
 ok(a.cfg.btn_art == nil, "（前提）cfg.btn_art 默认没开（实测 " .. tostring(a.cfg.btn_art) .. "）")
-a:apply_tray_layout(EMPTY_LAYOUT)
+a:apply_btn_art()
 ok(undoBg.imageId == BG_ID,
   "① 默认关闭 ⇒ 底图 imageId 没被改（实测 " .. tostring(undoBg.imageId) .. "，期望 " .. tostring(BG_ID) .. "）")
 ok(undoBg.imageSource == BG_SRC,
@@ -99,7 +98,7 @@ ok((undoBg.setimage_calls or 0) == 0,
 -- ③ 反向：打开开关 ⇒ 真的重设（功能没被删掉）
 --------------------------------------------------------------------------------
 a.cfg.btn_art = true
-a:apply_tray_layout(EMPTY_LAYOUT)
+a:apply_btn_art()
 local want = a.cfg.bg_image_id or 100108
 ok(undoBg.imageId == want,
   "③ 打开后底图被重设成 " .. tostring(want) .. "（实测 " .. tostring(undoBg.imageId) .. "）")
@@ -109,13 +108,13 @@ ok((undoBg.setimage_calls or 0) == 1,
 --------------------------------------------------------------------------------
 -- ④ 反向：没有 `bg` 子控件的按钮 ⇒ 不许抛错、也不许被别人顶上
 --------------------------------------------------------------------------------
-local okCall, errCall = pcall(function() a:apply_tray_layout(EMPTY_LAYOUT) end)
+local okCall, errCall = pcall(function() a:apply_btn_art() end)
 ok(okCall, "④ 名单里有缺 `bg` 的按钮时不抛错", errCall)
 ok(undoBg.imageId == want, "④ 缺 `bg` 的按钮不影响另一个按钮（实测 " .. tostring(undoBg.imageId) .. "）")
 
 -- 收尾：关掉开关，避免影响同进程后续用例（本文件独立进程，稳妥起见）
 a.cfg.btn_art = nil
-a:apply_tray_layout(EMPTY_LAYOUT)
+a:apply_btn_art()
 ok((undoBg.setimage_calls or 0) == 2,
   "⑤ 再关掉开关 ⇒ 不再新增 SetImage（实测 " .. tostring(undoBg.setimage_calls or 0) .. "，期望 2）")
 

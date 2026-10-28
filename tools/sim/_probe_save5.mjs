@@ -1,4 +1,4 @@
-﻿import fs from "node:fs";
+import fs from "node:fs";
 const j = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
 const byId = new Map();
 (function w(n) { if (!n || typeof n !== "object") return; if (Array.isArray(n)) { n.forEach(w); return; }

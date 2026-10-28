@@ -221,11 +221,17 @@ do
   --   （用户定案 ruler 功能废弃 ⇒ 那个方法按设计不存在了 ✓
   --    ⇒ 留在这里会变成"拿旧设计当判据"，本项目栽过多次 ✓）
   --   ⚠️ 反向哨兵在 §C：**如果它又出现**，说明有人把已删功能加回来了 ✓
+  -- ★ 2026-10-18（优化组）：`apply_tray_layout` **已从这个名单里删掉** ✗✓
+  --   （头像卡容器 `tray` 按用户指令从布局计划删除、`tray_layout_canvas` 同批删除
+  --    ⇒ 那个方法按设计不存在了 ✓ 留在这里会变成"拿旧设计当判据"）
+  --   同轮新增：`apply_btn_art`（按钮上色的**唯一入口**，缺陷 1 的开关就在它里面 ✓
+  --   它必须一直存在 —— 缺了就等于"开关还在、功能没了" ✓）
   local names = {
     "_cells_beacon_button", "_cells_signal", "count_names", "dump_names", "near_names",
     "invalidate_lookups", "ensure_raycast", "rearm_raycast", "input_profile", "hide_unlisted",
-    "ensure_widgets", "ensure_cells", "apply_tray_layout",
-    "diagnose_overlap", "diagnose_cell", "diagnose_grid", "diagnose_template",
+    "ensure_widgets", "ensure_cells", "apply_btn_art",
+    -- ★ 2026-10-18：`diagnose_cell` / `diagnose_template` 已按"结案探针"删除 ⇒ 从名单里拿掉
+    "diagnose_overlap", "diagnose_grid",
     "seal_containers", "seal_container", "enable_cursor", "enable_raycast", "report_missing",
     "find", "sub", "set_property", "create_control", "destroy_control", "play_effect",
     "on_tick", "signal_emit", "set_image_deep", "cell_geometry", "enforce_hidden_subtrees",

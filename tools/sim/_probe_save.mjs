@@ -1,4 +1,4 @@
-﻿import fs from "node:fs";
+import fs from "node:fs";
 const f = process.argv[2];
 const j = JSON.parse(fs.readFileSync(f, "utf8"));
 const want = new Set(process.argv.slice(3));

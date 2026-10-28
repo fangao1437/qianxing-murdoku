@@ -1805,6 +1805,55 @@ end
 -- 操作
 ----------------------------------------------------------------------------
 
+-- ★★★★★★★ 2026-10-20 本轮规则 P：**同一行/列已有别人 ⇒ 不许再放**
+--
+--   用户原话：「已经放置的人物的**同行同列**内不能再放置其它人物」。
+--
+--   为什么**不**写进 `do_place` ✗（想过，明确否决）：
+--     `do_place` 还被 `Core:hint()` / `Core:decode_state()` / `Core:deserialize()` 调用 ——
+--     那三条是**状态恢复/程序代放**，不是玩家操作。把守卫塞进 `do_place`，
+--     一份"同行两人"的存档就会**静默丢子**（数据被改而作者不知道），
+--     分享码解码也会半途失败。⇒ 守卫只放在**交互入口**（`hold_cell` / `pre_place`）。
+--
+--   两个容易误伤的口径（都写进 tests/rule_guards.lua 了）：
+--     · 判据是「**其它人物**」⇒ **同一个人**在本行/本列内换位**不拦**
+--       （换位本来就等价于"撤销后重新放置"，拦了就没法调位置）
+--     · 目标格上的旧人**会离场**（换人站同一格）⇒ 目标格自己不参与判定
+--
+--   关卡 `rules.one_per_row / one_per_col` 为 false 时对应方向不拦（沿用 `Core:rules()`）。
+function Core:row_col_conflict(r, c, id)
+  local rules = self:rules()
+  if rules.one_per_row then
+    for cc = 1, self.cols do
+      if cc ~= c then
+        local other = self.grid[r][cc]
+        if other ~= nil and other ~= id then
+          return {
+            kind = "row", index = r, other = other,
+            text = string.format("第%d行已经有%s了，同一行只能站一个人",
+                                 r, self.names[other] or tostring(other)),
+          }
+        end
+      end
+    end
+  end
+  if rules.one_per_col then
+    for rr = 1, self.rows do
+      if rr ~= r then
+        local other = self.grid[rr][c]
+        if other ~= nil and other ~= id then
+          return {
+            kind = "col", index = c, other = other,
+            text = string.format("第%d列已经有%s了，同一列只能站一个人",
+                                 c, self.names[other] or tostring(other)),
+          }
+        end
+      end
+    end
+  end
+  return nil
+end
+
 function Core:select_suspect(id)
   if id ~= nil and not self.piece_by_id[id] then return false end
   if self.selected == id then self.selected = nil else self.selected = id end
@@ -1833,9 +1882,11 @@ end
 
 local function do_place(self, r, c, id, record, opts)
   opts = opts or {}
-  if self.blocked[cell_key(r, c)] then return false end
+  -- ★ 2026-10-20：拒绝**必须带原因串** —— 界面 `_refuse` 拿到 nil 就一个字都不打，
+  --   玩家只看到"长按没反应"。这里的两个原因串靠 `hold_cell`/`pre_place` 透传上来。
+  if self.blocked[cell_key(r, c)] then return false, "这个格子站不了人" end
   local prev = self.grid[r][c]
-  if prev == id then return false end
+  if prev == id then return false, "这个人已经站在这里了" end
 
 
   if prev then
@@ -1857,18 +1908,27 @@ local function do_place(self, r, c, id, record, opts)
   --       —— 还在试推阶段，笔记是他自己的思考痕迹，不能替他抹掉。
   --     · **正式放置**（长按）：擦掉该人物的笔记 + 之后不许再给他打笔记 + 取消选中
   --       —— 这是"定案"，笔记没有意义了。
-  local auto = { x = {}, notes = {} }
-  for cc = 1, self.cols do
-    if cc ~= c and not self.grid[r][cc] and not self.x_marks[r][cc] then
-      self.x_marks[r][cc] = true
-      auto.x[#auto.x + 1] = { r = r, c = cc }
+  -- ★★★ 2026-10-20 本轮规则 X：**任何方式出现的 ✗ 都要擦掉该格的铅笔笔记** ——
+  --   自动派生出来的 ✗（放置时给同行同列标的）也算"出现了 ✗" ✓
+  --   被擦掉的笔记记进 `auto.x_notes`，交给 `revert_auto` 在撤销/拿起时还原 ✓
+  local auto = { x = {}, notes = {}, x_notes = {} }
+  local function auto_x(rr, cc)
+    if self.grid[rr][cc] or self.x_marks[rr][cc] then return end
+    self.x_marks[rr][cc] = true
+    auto.x[#auto.x + 1] = { r = rr, c = cc }
+    local cur = self.notes[rr][cc]
+    if cur ~= nil and next(cur) ~= nil then
+      local had = {}
+      for k in pairs(cur) do had[k] = true end
+      self.notes[rr][cc] = {}
+      auto.x_notes[#auto.x_notes + 1] = { r = rr, c = cc, had = had }
     end
   end
+  for cc = 1, self.cols do
+    if cc ~= c then auto_x(r, cc) end
+  end
   for rr = 1, self.rows do
-    if rr ~= r and not self.grid[rr][c] and not self.x_marks[rr][c] then
-      self.x_marks[rr][c] = true
-      auto.x[#auto.x + 1] = { r = rr, c = c }
-    end
+    if rr ~= r then auto_x(rr, c) end
   end
   if opts.clear_notes ~= false then
     -- ⚠️ 笔记的数据形状是**集合**（`notes[r][c][id] = true`），不是数组 ——
@@ -1893,6 +1953,38 @@ local function do_place(self, r, c, id, record, opts)
   return true
 end
 
+-- ★★★ 2026-10-20 **"撤销一次放置派生出来的自动改动"只此一处实现** ✗✓
+--
+--   原来这段逻辑在 `do_clear` / `restore_auto_of` / `Core:undo` **三处各写一遍** ——
+--   上一轮就在"直接拿起"那条路上漏了一处（用户报「拿起人物后 ✗ 未清除」），
+--   本文件自己的注释都记着这件事："同一个概念散在三处实现，就一定会漏一处"。
+--   本轮规则 X 又要多还原一样东西（**被自动 ✗ 擦掉的笔记**）⇒ 再复制三份必然再漏 ⇒
+--   在这里收成一个函数，三处都调它。
+--
+--   ⚠️ 两件**不还原**的事（都是用户定过的，别好心改回去）：
+--     · `auto.notes`：正式放置擦掉的是"**该人物自己**的草稿"，那是定案后废弃的猜想；
+--       再捡回来会让盘面自相矛盾（2026-09-28 用户原话：「正式放置删除的笔记拿起后会重现……
+--       但不需要这个」）。
+--     · 被**换人覆盖**掉的那个人的自动 ✗（本函数只处理"本次放置"自己的 auto）。
+local function revert_auto(self, auto)
+  if auto == nil then return false end
+  for i = 1, #(auto.x or {}) do
+    local a = auto.x[i]
+    self.x_marks[a.r][a.c] = false
+  end
+  -- ★ 规则 X：自动 ✗ 擦掉的笔记一起还回去，否则"拿起/撤销"会永久吞掉玩家的推理草稿
+  for i = 1, #(auto.x_notes or {}) do
+    local e = auto.x_notes[i]
+    -- 只有当那格的 ✗ 真的被撤掉了才还原笔记（防止把笔记塞回一个仍带 ✗ 的格子）
+    if self.x_marks[e.r][e.c] == false then
+      local restored = {}
+      for k in pairs(e.had or {}) do restored[k] = true end
+      self.notes[e.r][e.c] = restored
+    end
+  end
+  return true
+end
+
 local function do_clear(self, r, c, record)
   local prev = self.grid[r][c]
   if not prev then return false end
@@ -1913,17 +2005,12 @@ local function do_clear(self, r, c, record)
   --   ⚠️ 这个还原逻辑我早就在两处写过了（`move_piece_if_needed` 的换位、
   --      `Core:undo` 的撤销），**唯独漏了"直接拿起"这条最常见的路径** ——
   --      同一个概念散在三处实现，就一定会漏一处。
+  --   ★ 2026-10-20：三处已收成 `revert_auto`（本轮规则 X 又给它加了一件事要做）。
   if self.history ~= nil then
     for i = #self.history, 1, -1 do
       local a = self.history[i]
       if a.kind == "place" and a.id == prev then
-        local au = a.auto
-        if au ~= nil then
-          for k = 1, #(au.x or {}) do
-            local x = au.x[k]
-            self.x_marks[x.r][x.c] = false
-          end
-        end
+        revert_auto(self, a.auto)
         break
       end
     end
@@ -1950,10 +2037,8 @@ local function restore_auto_of(self, id)
     if a.kind == "place" and a.id == id then
       local au = a.auto
       if au then
-        for k = 1, #(au.x or {}) do
-          local x = au.x[k]
-          self.x_marks[x.r][x.c] = false
-        end
+        -- ★ 2026-10-20：还原动作收进 `revert_auto`（✗ 与被自动 ✗ 擦掉的笔记一起还原）
+        revert_auto(self, au)
         -- ★ 2026-09-28（用户要求去掉）：**不还原被清掉的铅笔笔记**。
         --
         -- 原来这里会把"正式放置时清掉的那些笔记"重新填回去，
@@ -1995,17 +2080,38 @@ local function toggle_note(self, r, c, id)
   --   `blocked` 的语义是「**不能站人**」，只该管 `do_place` 一件事；
   --   笔记/✗ 是"玩家的推理痕迹"，与格子能不能站人无关。
   --   （本工程第 N 次踩同一个坑：**一个字段被拿去管了两件不相关的事**。）
+  --
+  -- ★★★ 2026-10-20 **用户改主意了（本轮规则 B），如实记录，别把上一条当结论**：
+  --   用户新要求原话：「**不可放置人物的障碍物上也不可进行 note 标记**」⇒
+  --   **笔记这一半重新关掉**（`blocked` 格拒绝铅笔笔记），而 **✗ 那一半仍然开着**
+  --   （`Core:toggle_x` 不加门控 —— "这格排除掉"恰恰是障碍格最该能划的）。
+  --   所以 09-29 那条"一个字段管了两件事"的教训**依然成立**：这里论的仍是两件事，
+  --   只是现在按用户最新的口径，两件事的取值**恰好一开一关**。
   if not id then return false end
-  if self.grid[r][c] then return false end
+  if self.grid[r][c] then return false, "这格已经有人了" end
+  -- ★ 规则 B：障碍物（不可站人）的格子不可打笔记
+  if self.blocked[cell_key(r, c)] then
+    return false, "这格是障碍物，站不了人，也不能打笔记"
+  end
   -- ★ 2026-09-28（用户要求）：**正式放置过的人，不能再给他打笔记**。
   --   为什么：正式放置 = 定案，他在哪已经确定；再允许"猜他在别处"只会让盘面自相矛盾。
   --   （预放置不设这个限制 —— 那时还在试推，笔记是思考痕迹。）
   if self.placed and self.placed[id] then
     return false, "这个人已正式放置，不能再打笔记"
   end
+  -- ★★★ 规则 X（2026-10-20）：**✗ 与铅笔笔记互斥** ——
+  --   "在 ✗ 上打笔记时也会**在标记的同时**擦除 ✗" ⇒ 同一个动作里做两件事：
+  --   擦 ✗ + 落笔记。两件事记进**同一条历史**（不许拆成两条，否则撤销要点两下）。
+  local was_x = (self.x_marks[r][c] == true)
+  if was_x then self.x_marks[r][c] = false end
   local cell = self.notes[r][c]
   if cell[id] then cell[id] = nil else cell[id] = true end
-  push_history(self, { kind = "note", r = r, c = c, id = id }, false)   -- 笔记不计步
+  -- 笔记不计步（`push_history` 第三个参数是全工程的记号；计步由界面按 kind 判断）
+  push_history(self, {
+    kind = "note", r = r, c = c, id = id,
+    on = (cell[id] == true),        -- 这一击是"加上"还是"去掉"（撤销/重做要精确反演）
+    was_x = was_x,                  -- 这一击顺带擦掉的那个 ✗（撤销时还原）
+  }, false)
   return true
 end
 
@@ -2018,8 +2124,11 @@ function Core:tap_cell(r, c)
   --   直接把整格封死 —— 用户报「R1C5 不能做 ✗ / 放人 / 笔记」，
   --   日志里那句"这个格子站不了人"就是**从这里**出来的（不是 `do_place`）。
   --   它把"不能站人"错误地扩大成了"这格什么都不能做"。
-  --   ⇒ 现在按动作各自判断：✗ / 擦除 / 笔记都能打（它们是玩家的推理痕迹）；
+  --   ⇒ 现在按动作各自判断：✗ / 擦除 都能打（它们是玩家的推理痕迹）；
   --     只有**放人**会落到 `do_place`，由 `do_place` 自己的门控拒绝（书桌确实不能站人）。
+  --   ★ 2026-10-20（规则 B）：笔记这一项按用户新要求**重新收敛** ——
+  --     `blocked` 格不再允许铅笔笔记（拒绝原因由 `toggle_note` 给出，这里不再重复判断）；
+  --     ✗ 与擦除**保持放行**。
   if self.mode == M.MODE_X then
     return self:toggle_x(r, c), nil
   end
@@ -2029,7 +2138,9 @@ function Core:tap_cell(r, c)
   if self.mode == M.MODE_NOTE then
     if self.grid[r][c] then return false, "这格已经有人了" end
     if not self.selected then return false, "先选一个人再打草稿" end
-    return toggle_note(self, r, c, self.selected), nil
+    -- ★ 2026-10-20：**原因要透传**（原来写的是 `toggle_note(...), nil` ⇒
+    --   拒绝原因被吞成 nil ⇒ 界面 `_refuse` 什么都没打印 ⇒ 玩家/开发者只看到"点了没反应"）
+    return toggle_note(self, r, c, self.selected)
   end
   -- 放置模式：轻点=标记（与 murdoku 一致），双击=放置
   if self.grid[r][c] then
@@ -2068,7 +2179,8 @@ function Core:tap_cell(r, c)
   if not self.selected then
     return self:toggle_x(r, c), nil
   end
-  return toggle_note(self, r, c, self.selected), nil
+  -- ★ 2026-10-20：原因要透传（同上：`..., nil` 会把 `toggle_note` 的拒绝原因吞掉）
+  return toggle_note(self, r, c, self.selected)
 end
 
 -- 长按入口：放置（murdoku 的核心手感）
@@ -2079,19 +2191,31 @@ function Core:hold_cell(r, c)
   --   原因：放置拆成"双击=预放置 / 长按=正式放置"之后，误触本身就有救 ——
   --   双击只是预放置（可反悔），长按才定案。多一个保护开关反而不如直接删。
   if not self.selected then return false, "先点一个头像" end
-  if self.mode == M.MODE_ERASE then
-    -- 长按橡皮擦 = 清空全部
-    self:clear_all()
-    return true, "已清空全盘"
-  end
+  -- ★★★★★★★★ 2026-10-20（v282）**删掉"长按橡皮擦 = 清空全盘"这一段** ✗✓（它是死码 ✓）
+  --
+  --   原文长这样：`if self.mode == M.MODE_ERASE then self:clear_all(); return true, "已清空全盘" end`
+  --
+  --   ★ 为什么它是死的（两条不变量的合取，谁都破不了）：
+  --     · 上一行 `if not self.selected then return false …` ⇒ 走到这里必有 `selected`
+  --     · 而 `Core:set_mode(MODE_ERASE)` 自己会 `self.selected = nil`（见它里面那句）
+  --     · `Core:select_suspect(id)` 若在 ERASE/X 模式下选中了人，**会先把模式切回 PLACE**
+  --     ⇒ 不变量：`mode == eraser` ⇒ `selected == nil` ⇒ **这个分支永远进不来** ✓
+  --   ★ 旁证：`tests/selftest.lua` 早就有断言「双击橡皮擦**不再**清空全盘（破坏性快捷键已移除）」
+  --     —— 也就是说这条清空路径**本来就已经不是游戏行为**了，留着只会骗下一个读者。
+  --   ★ 本轮加了一条钉住不变量本身的用例（`tests/rule_guards.lua` 的 R5）：
+  --     以后谁改了 `set_mode` / `select_suspect` 的联动，那条会立刻红。
+  --   ⚠️ `Core:clear_all()` 本体**保留**（`tests/gray_unplace.lua` 在用，也是合理的公开 API）。
   -- ★★ 2026-09-28（用户设计）：长按 = **正式放置**（定案）
   --   · 擦掉该人物的所有铅笔笔记（`clear_notes = true` 是默认，这里写明意图）
   --   · 记入 `placed[id]` → 之后**不能再给他打笔记**（见 toggle_note）
   --   · **取消选中**（玩家要求："正式放置后取消对应人物的选中"）
   --   与"双击 = 预放置"的区别就在这三点：预放置只标 ✗，笔记留着、选中留着。
   local who = self.selected
+  -- ★★ 规则 P（2026-10-20）：同行/同列已经有别人 ⇒ 直接拒绝（不落子、不改盘）。
+  local conflict = self:row_col_conflict(r, c, who)
+  if conflict then return false, conflict.text end
   local _, move_from = move_piece_if_needed(self, who, r, c)
-  local ok = do_place(self, r, c, who, true, { clear_notes = true })
+  local ok, why = do_place(self, r, c, who, true, { clear_notes = true })
   -- ★ 把"从哪来"补进刚压下的那条历史 —— 这样**一次撤销就能回到原位**（见 Core:undo）
   if ok and move_from ~= nil and self.history[#self.history] ~= nil then
     self.history[#self.history].move_from = move_from
@@ -2101,7 +2225,9 @@ function Core:hold_cell(r, c)
     self.placed[who] = true
     self.selected = nil
   end
-  return ok, nil
+  -- ★ 2026-10-20：原因串**透传**（原来是 `return ok, nil` ⇒ 界面 `_refuse` 收不到原因
+  --   ⇒ "长按没反应、日志也没有"）。
+  return ok, why
 end
 
 -- ★ 2026-09-28（用户设计）：双击 = **预放置**（试推，可反悔）
@@ -2112,12 +2238,15 @@ function Core:pre_place(r, c)
   if r < 1 or r > self.rows or c < 1 or c > self.cols then return false, "越界" end
   if self:is_blocked(r, c) then return false, "这个格子站不了人" end
   if not self.selected then return false, "先点一个头像" end
+  -- ★★ 规则 P：预放置同样受守卫（用户口径是"不能再放置"，没区分正式/预放置）
+  local conflict = self:row_col_conflict(r, c, self.selected)
+  if conflict then return false, conflict.text end
   local _, move_from = move_piece_if_needed(self, self.selected, r, c)
-  local ok = do_place(self, r, c, self.selected, true, { clear_notes = false })
+  local ok, why = do_place(self, r, c, self.selected, true, { clear_notes = false })
   if ok and move_from ~= nil and self.history[#self.history] ~= nil then
     self.history[#self.history].move_from = move_from
   end
-  return ok, nil
+  return ok, why
 end
 
 -- X 标记：这格不可能是任何人
@@ -2131,15 +2260,26 @@ function Core:toggle_x(r, c)
   --   **恰恰是站不了人的格子最该能划掉**。
   --   原来一个字段管了两件不相关的事，结果 R1C5（书桌）连 ✗ 都打不上。
   if self.grid[r][c] then return false end
-  self.x_marks[r][c] = not self.x_marks[r][c]
-  if self.x_marks[r][c] then self.notes[r][c] = {} end
+  -- ★★★ 规则 X（2026-10-20）：**任何方式出现的 ✗ 都要擦掉该格全部笔记**。
+  --   手动点亮 ✗ 只是其中一条路（另一条是放置时自动给同行同列标 ✗，见 `do_place`）。
+  --   被擦掉的笔记记进历史 ⇒ **撤销能把它们还回来**（不然撤销一次就永久吞掉玩家草稿）。
+  local on = not self.x_marks[r][c]
+  self.x_marks[r][c] = on
+  local prev_notes = nil
+  if on then
+    local cur = self.notes[r][c]
+    if cur ~= nil and next(cur) ~= nil then
+      prev_notes = {}
+      for k in pairs(cur) do prev_notes[k] = true end
+    end
+    self.notes[r][c] = {}
+  end
   -- ★ 2026-09-28：X 标记**不计步**（`counts = false`）。
   --
   -- 口径与"铅笔笔记不计步"一致：X 是**推断过程的草稿**，不改变棋盘上的人。
   -- 而且取消交互按钮后，「单击 = 切换 X」变成**最高频**的动作 ——
   -- 一次推理要划十几个 ✗，每个都计步会让"N 步"这个数字失去意义。
-  -- （放置 / 清格才是真正改变棋盘的动作，它们计步。）
-  push_history(self, { kind = "x", r = r, c = c }, false)
+  push_history(self, { kind = "x", r = r, c = c, on = on, prev_notes = prev_notes }, false)
   return true
 end
 
@@ -2157,7 +2297,8 @@ function Core:erase_cell(r, c)
   end
   if self.x_marks[r][c] then
     self.x_marks[r][c] = false
-    push_history(self, { kind = "x", r = r, c = c })
+    -- ★ 2026-10-20：带上 `on = false`（撤销/重做要精确反演，不再靠"翻转当前值"猜）
+    push_history(self, { kind = "x", r = r, c = c, on = false })
     changed = true
   end
   return changed
@@ -2262,19 +2403,23 @@ function Core:decode_state(code)
     for c = 1, self.cols do
       idx = idx + 1
       local tok = tokens[idx]
+      -- ★ 2026-10-20 规则 B：障碍物格不接受笔记（分享码是"外部输入"，同样要守不变量）
+      local note_ok = not self.blocked[cell_key(r, c)]
       if tok == "X" then
         self.x_marks[r][c] = true
       elseif tok == "-" then
         -- 空格，不动
       elseif tok:sub(1, 1) == "!" then
         local body = tok:sub(2, -2)
-        for k = 1, #body do
-          local id = symbol_to_id[string.upper(body:sub(k, k))]
-          if id then self.notes[r][c][id] = true end
+        if note_ok then
+          for k = 1, #body do
+            local id = symbol_to_id[string.upper(body:sub(k, k))]
+            if id then self.notes[r][c][id] = true end
+          end
         end
       elseif tok:match("^%l$") then
         local id = symbol_to_id[string.upper(tok)]
-        if id then self.notes[r][c][id] = true end
+        if id and note_ok then self.notes[r][c][id] = true end
       elseif tok:match("^%u$") then
         local id = symbol_to_id[tok]
         if id then do_place(self, r, c, id, false) end
@@ -2299,21 +2444,40 @@ function Core:undo()
     -- ★ 2026-09-28：还原这次放置**派生出来的自动改动**。
     --   规则①②会顺手改几十个格子（同行同列标 ✗、清掉该人物的笔记），
     --   不还原的话撤销一次会留下一盘 ✗，玩家得手动擦。
-    if action.auto then
-      for i = 1, #(action.auto.x or {}) do
-        local a = action.auto.x[i]
-        self.x_marks[a.r][a.c] = false
-      end
-      -- ★ 2026-09-28：撤销**不还原**被清掉的笔记（与 restore_auto_of 保持一致）。
-      --   理由同上：正式放置是定案，被推翻的猜想不该复活。
-    end
+    -- ★ 2026-10-20：改调 `revert_auto` —— 它同时还原"被自动 ✗ 擦掉的笔记"
+    --   （规则 X 之后 ✗ 会连带擦笔记，撤销必须一起还）。
+    --   ⚠️ `auto.notes`（该人物自己的草稿）仍然**不还原**，那是用户 09-28 定过的。
+    revert_auto(self, action.auto)
   elseif action.kind == "clear" then
     do_place(self, action.r, action.c, action.prev, false)
   elseif action.kind == "note" then
+    -- ★ 2026-10-20 规则 X：笔记动作可能**顺带擦掉了一个 ✗** ⇒ 撤销要把它还原；
+    --   同时按 `on` 精确反演（不再靠"翻转当前值" —— 有了 ✗ 互斥之后翻转会翻错）。
     local cell = self.notes[action.r][action.c]
-    if cell[action.id] then cell[action.id] = nil else cell[action.id] = true end
+    if action.on ~= nil then
+      if action.on then cell[action.id] = nil else cell[action.id] = true end
+    else
+      if cell[action.id] then cell[action.id] = nil else cell[action.id] = true end
+    end
+    if action.was_x then self.x_marks[action.r][action.c] = true end
   elseif action.kind == "x" then
-    self.x_marks[action.r][action.c] = not self.x_marks[action.r][action.c]
+    -- ★ 2026-10-20 规则 X：✗ 动作会擦掉笔记 ⇒ 撤销时把笔记还回去；
+    --   取消 ✗ 的动作撤销时，✗ 回来 ⇒ 该格笔记按互斥清空。
+    local on = action.on
+    if on == nil then
+      self.x_marks[action.r][action.c] = not self.x_marks[action.r][action.c]   -- 旧历史兜底
+    else
+      self.x_marks[action.r][action.c] = not on
+      if on then
+        if action.prev_notes ~= nil then
+          local restored = {}
+          for k in pairs(action.prev_notes) do restored[k] = true end
+          self.notes[action.r][action.c] = restored
+        end
+      else
+        self.notes[action.r][action.c] = {}
+      end
+    end
   elseif action.kind == "wipe_notes" then
     local restored = {}
     for k in pairs(action.prev_notes or {}) do restored[k] = true end
@@ -2332,10 +2496,34 @@ function Core:redo()
   elseif action.kind == "clear" then
     do_clear(self, action.r, action.c, false)
   elseif action.kind == "note" then
+    -- ★ 2026-10-20 规则 X：重做笔记动作 —— 正向是"按 on 落/擦笔记"，
+    --   若当初它顺带擦掉过 ✗，重做也要再擦一次（互斥不许被重做破坏）。
     local cell = self.notes[action.r][action.c]
-    if cell[action.id] then cell[action.id] = nil else cell[action.id] = true end
+    if action.on ~= nil then
+      if action.on then cell[action.id] = true else cell[action.id] = nil end
+    else
+      if cell[action.id] then cell[action.id] = nil else cell[action.id] = true end
+    end
+    if action.was_x then
+      -- 当初这一击擦掉了 ✗ ⇒ 重做也再擦一次（互斥不许被重做破坏）。
+      -- 该格此刻笔记必为空（✗ 与笔记互斥），所以上一步落下的笔记不用重算。
+      self.x_marks[action.r][action.c] = false
+    end
   elseif action.kind == "x" then
-    self.x_marks[action.r][action.c] = not self.x_marks[action.r][action.c]
+    -- ★ 2026-10-20 规则 X：重做 ✗ 动作 ⇒ ✗ 亮起则擦笔记；✗ 取消则笔记回来
+    local on = action.on
+    if on == nil then
+      self.x_marks[action.r][action.c] = not self.x_marks[action.r][action.c]
+    else
+      self.x_marks[action.r][action.c] = on
+      if on then
+        self.notes[action.r][action.c] = {}
+      elseif action.prev_notes ~= nil then
+        local restored = {}
+        for k in pairs(action.prev_notes) do restored[k] = true end
+        self.notes[action.r][action.c] = restored
+      end
+    end
   elseif action.kind == "wipe_notes" then
     self.notes[action.r][action.c] = {}
   end
@@ -2501,9 +2689,14 @@ function Core:serialize()
       if id then
         cells[#cells + 1] = { r = r, c = c, id = id }
       else
+        -- ★ 2026-10-20（规则 X / B）：写出前再守一次不变量 ——
+        --   存档里出现"又有 ✗ 又有笔记"或"障碍格上有笔记"的格，读回去就是脏数据。
+        --   ✗ 优先（互斥时 ✗ 赢），障碍格不写笔记。
         local note_ids = sorted_keys(self.notes[r][c])
-        if #note_ids > 0 or self.x_marks[r][c] then
-          cells[#cells + 1] = { r = r, c = c, notes = note_ids, x = self.x_marks[r][c] or nil }
+        local x = self.x_marks[r][c] == true
+        if x or self.blocked[cell_key(r, c)] then note_ids = {} end
+        if #note_ids > 0 or x then
+          cells[#cells + 1] = { r = r, c = c, notes = note_ids, x = x or nil }
         end
       end
     end
@@ -2527,10 +2720,21 @@ function Core:deserialize(save)
   self:reset()
   for i = 1, #save.cells do
     local e = save.cells[i]
-    if e.id then do_place(self, e.r, e.c, e.id, false)
+    if e.id then
+      do_place(self, e.r, e.c, e.id, false)
     elseif e.notes or e.x then
-      for j = 1, #(e.notes or {}) do self.notes[e.r][e.c][e.notes[j]] = true end
-      if e.x then self.x_marks[e.r][e.c] = true end
+      -- ★★★ 2026-10-20（规则 X / B）：**读档时清洗成互斥** ——
+      --   旧存档、手改过的存档、分享码都可能一格两样都写着。
+      --   口径：✗ 优先（"✗ 出现就擦掉该格笔记"），障碍格不接受笔记。
+      --   ⇒ 不静默"两者都留着"：那会让 view()/界面同时画 ✗ 和字母，盘面自相矛盾。
+      local k = cell_key(e.r, e.c)
+      local blocked = self.blocked[k] == true
+      if e.x then
+        self.x_marks[e.r][e.c] = true
+        self.notes[e.r][e.c] = {}
+      elseif not blocked then
+        for j = 1, #(e.notes or {}) do self.notes[e.r][e.c][e.notes[j]] = true end
+      end
     end
   end
   self.elapsed = save.elapsed or 0
@@ -2705,7 +2909,8 @@ function Core:view()
     structure = structure,
     door_graph = self.adjacency,
     title = self.level.name or self.level.id or "未命名奇域",
-    subtitle = self.level.subtitle,
+    -- ★ 2026-10-18：`subtitle` 字段已删 —— 唯一读者（`hud.subtitle` 那条 push）随
+    --   「美术没有副标题位」一起移除（用户指令），关卡文件里也从来没有 `subtitle` 键。
     difficulty = self.level.difficulty,
     rows = self.rows,
     cols = self.cols,

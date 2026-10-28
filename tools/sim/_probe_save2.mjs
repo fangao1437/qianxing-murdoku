@@ -1,4 +1,4 @@
-﻿import fs from "node:fs";
+import fs from "node:fs";
 const j = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
 const names = process.argv.slice(3);
 const byName = new Map();
