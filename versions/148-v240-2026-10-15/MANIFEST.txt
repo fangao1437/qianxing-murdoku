@@ -1,0 +1,23 @@
+版本：148-v240-2026-10-15
+时间：2026/10/15 23:02:53
+配套 .gil：371-结算按钮-v240.gil
+说明：删掉四个旧方块(widgets=false+每帧清单不再列);主页/选关左下角加settle.btn(预设按钮原生点击,只发SETTLE不存档);新增settle_button用例与破坏M
+
+文件清单：
+  engine_adapter.lua              5649 字节
+  engine_adapter_qianxing.lua     349904 字节
+  entry_client_script.lua         52902 字节
+  main.lua                        157326 字节
+  murdoku_core.lua                110816 字节
+  room_map.lua                    5227 字节
+  ui_controller.lua               554782 字节
+  client_script.lua               1267221 字节（真机跑的就是这份）
+  371-结算按钮-v240.gil               1551321 字节（配套存档）
+
+用途：**这一版是"当时能跑的那一份"**。要回退：
+  1) 把本目录的 *.lua 拷回 qianxing-murdoku\lua\
+  2) 跑 node tools/bundle_client_script.lua，再 powershell -File tools/install_script_to_sandbox.ps1
+     （或直接用本目录的 client_script.lua 覆盖沙箱里的那份，省掉打包）
+  3) 导入本目录里的 .gil
+
+规则（重要）：**每轮一个新编号，不删旧的、不覆盖**。

@@ -16,11 +16,22 @@ local RoomMap = require("room_map")
 local M = {}
 
 -- 按顺序登记你的关卡；游戏里默认从第一个开始
-local LIST = {
-  "levels.demo_selftest",     -- 框架自检样例（不需要就删掉这一行）
-  "levels.case_001",          -- 案件 001 · 夜盗独行（5×5，k=1，无同伙）
-  "levels.case_002",          -- 案件 002 · 双影（6×6，k=2，必有同伙）
-  "levels.case_003",          -- 案件 003 · 第三方（7×7，k=3，必有同伙 + 假话不告知）
+--
+-- ★★★★★★★★ 2026-10-18 **这个 LIST 的顺序【就是】编辑器 `assets/row.<关>.<行>` 的 `<关>` 号** ✗✓✓
+--
+--   链路：`Controller:_level_ordinal()` → `levels.init.M.index_of(id)` → **本 LIST 的下标** ✓
+--   ⇒ 所以「第几关」不是猜的，也不是存档里另存的，**只由下面这几行的先后决定** ✓
+--
+--   当前的对应关系（★ 改这个 LIST 就等于改 row 编号，必须同步改编辑器里的 row.* ✗）：
+--     --     LIST[2] case_001       → 编辑器的 row.2.1 … row.2.5   （5 枚棋子）
+--     LIST[3] case_002       → 编辑器的 row.3.1 … row.3.6   （6 枚棋子）
+--     LIST[4] case_003       → 编辑器的 row.4.*             （本阶段未配内容）
+--   ⇒ 通用线索那块也是同一个口径：`row.<关>.clue`
+--     （★ 只有"有关卡声明了 general_clues"的那一关才需要它 —— 目前是 case_002 ⇒
+--       应是 **row.3.clue**，不是 row.2.clue ✗ 那一格属于 case_001，而 case_001 没有通用线索）
+local LIST = {  "levels.case_001",          -- 第 1 关：案件 001 · 夜盗独行（5×5，5 人；row.1.1 … row.1.5）
+  "levels.case_002",          -- 第 2 关：案件 002 · 双影（6×6，6 人 ＋ 通用线索；row.2.1 … row.2.6 ＋ row.2.clue）
+  "levels.case_003",          -- 第 3 关：案件 003 · 第三方（未配 row 内容；row.3.*）
 }
 
 M._errors = {}

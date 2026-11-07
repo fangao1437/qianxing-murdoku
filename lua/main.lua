@@ -160,8 +160,24 @@ local murdoku_vis_ids_key = nil
 --   ★ 这里用 `adapter.cells_rows/cols` —— 与下面 `%30` 段、与适配器**同一个优先级** ✓
 --     （`main.lua` 别处早就写着"`adapter.cells_rows` 比 cfg 里的兜底值准" ✓）
 local function murdoku_build_vis_ids(scr_now, rows)
-  local ids = { "selbar", "tpl-container" }
-  for i = 1, 6 do ids[#ids + 1] = "selbtn." .. tostring(i) end
+  -- ★★★★★★★★ 2026-10-15 **`selbar` / `selbtn.*` 按 `widgets` 开关决定要不要进清单** ✗✓✓
+  --
+  --   ★ 用户原话 ✓：「**把原来四个方块删掉**」✓ ⇒ ★ `cfg.widgets = false` ✓
+  --   ★★ 为什么清单也要跟着改 ✗：★ 这一份清单就是**每帧去找它们、按屏压显隐**的地方 ✓
+  --     ⇒ ★ 关掉创建之后它们**根本不存在** ✓
+  --       ⇒ ★ 每帧白跑 7 次 `find`（深树按名搜 ✗）＋ 0 笔写 ✓
+  --     ★ 这正是本项目反复算过的那笔账（「控件不在本关 ⇒ 立即记账、不补发」✓）
+  --   ★ 判据 ✓：`tests/perframe_throttle.lua` §A
+  --     ⇒ ★ 稳态 60 帧里 `selbar` 的 `SetVisible` **必须恰好 0 笔** ✓
+  --       （★ 删除前是 60 笔 ✓ —— 它同时证明了"确实没再碰它们" ✓）
+  --   ⚠️ `tpl-container` 与 `cell.*` **照旧** ✓（与那四个方块无关 ✓）
+  local wid_on = not (current ~= nil and current.adapter ~= nil and current.adapter.cfg ~= nil
+                      and current.adapter.cfg.widgets == false)
+  local ids = { "tpl-container" }
+  if wid_on then
+    ids[#ids + 1] = "selbar"
+    for i = 1, 6 do ids[#ids + 1] = "selbtn." .. tostring(i) end
+  end
   if scr_now == "level" then
     local n = tonumber(rows) or 5
     for r = 1, n do
@@ -219,6 +235,23 @@ Murdoku.GRID_ITEM_PREFAB = 1073742421    -- 列表项模板索引（存档核对
 --   ⚠️ 这两组数有**两处**要用：① 建控件**之前**（否则 `cell_geometry` 会读到 .gil 里的
 --      1600×900，算出格子 171 —— 真机日志 `边缘适配 wall.up：目标 171x8` 就是这么来的）；
 --      ② on_update 里每帧兜底。抽成常量就不会漂。
+--   ★★★★★★★★ 2026-10-16 **用户指令③：棋盘/棋盘底图/卡片缩到 90%**
+--     ★ 原话 ✓：「★ **把棋盘，棋盘背景图，选关卡片的 xy 缩减到现在的 90%**」✓
+--     ★ 已落地 ✓：★ 选关卡片（`ui_controller` 的 `CARD_W/H/GAP` × 0.9 ✓）
+--       ＋ 棋盘底图 `board.bg`（★ **用户在编辑器里填的 609.3** ✓ 677×0.9 ✓）
+--   ★★★★★★★★ 2026-10-16 **这一轮（v248）的更正：棋盘框（`stage`）也归编辑器了** ✗✓
+--
+--     ★ 上一版把这两个数改成 525.6（= 584×0.9）✓ 但**它从来没生效过** ✗ ——
+--       模拟器实测（`tools/sim/geom_probe.mjs`）：`stage` 运行时是 **584** ✓
+--       ★ 因为真正在写它的是**规划里那条 `stage` 节点**（`ui_controller` 的 `L.board`），
+--         而 `geom_by_editor` 只加在 `main.lua` 这四处 ⇒ 规划那条路照旧每帧覆盖 ✓
+--     ★ 这一轮修好了那条路（`geom_by_editor` 现在也管规划侧 ✓）⇒
+--       ★★ **`stage` 从此也是"编辑器说了算"** ✓ ⇒ 下面这两个数**只在开关关掉时才用** ✓
+--     ⇒ ★ 要让棋盘变成 90%，**在编辑器里**把 `stage` 改成：
+--         尺寸 **525.6 × 525.6**、位置 **X=90, Y=18**（= 现在这份 (100,20) 的 90% ✓）
+--       格子尺寸是**读 `stage` 实算**的 ✓ ⇒ 你改多少，格子自动跟着变 ✓
+--       ★ 本轮的交付存档里 `stage` 写的就是**现在生效的那份 584 @ (100,20)** ✓
+--         （⇒ 观感与上一版**逐像素相同** ✓ 这一轮不夹带尺寸改动 ✓）
 local BOARD_W, BOARD_H = 584, 584
 local BOARD_X, BOARD_Y = 100, 20
 
@@ -364,6 +397,21 @@ function Murdoku.start(level_id, opts)
     end,
     on_settle = function()
       if Murdoku ~= nil and Murdoku.save_now ~= nil then pcall(function() Murdoku.save_now() end) end
+      if adapter ~= nil and adapter.signal_emit ~= nil then
+        pcall(function() adapter:signal_emit(Qianxing.SIGNALS.SETTLE, { tostring(level.id) }) end)
+      end
+    end,
+    -- ★★★★★★★★ 2026-10-15 **主页/选关左下角那颗「结算」的回调** ✗✓✓
+    --
+    --   ★★ 用户要求 ✓：「**不接存档线，只接结算**」✓
+    --   ⇒ ★ 与上面那颗**唯一的区别**：★ **不调 `Murdoku.save_now()`** ✗
+    --     ★ 只发 `SETTLE` 信号 ✓（★ 服务端那两条：`Level.settle_level` ＋ `PlayerSelf.settle_win` ✓
+    --       见 `回执-胜利路径-收尾` 那轮的实测 ✓）
+    --   ★★ 为什么单独一个回调、而不是复用 `on_settle` ✗：
+    --     ★ 复用就等于"顺手把存档也写了" ✗ —— ★ 那正是用户明确排除的东西 ✓
+    --     ★ 本项目的老毛病是"同一件事两处实现" ✓ 但这条**不是同一件事** ✓
+    --       （★ 一个"存档＋结算"、一个"只结算" ✓ 语义不同 ⇒ 两个入口才对 ✓）
+    on_settle_only = function()
       if adapter ~= nil and adapter.signal_emit ~= nil then
         pcall(function() adapter:signal_emit(Qianxing.SIGNALS.SETTLE, { tostring(level.id) }) end)
       end
@@ -529,17 +577,26 @@ function Murdoku.start(level_id, opts)
     pcall(function() root = adapter:find("root") end)
     local s = nil
     if root ~= nil then pcall(function() s = root:GetChild("stage") end) end
-    if s ~= nil then
-      pcall(function() s:SetSizeDelta(BOARD_W, BOARD_H) end)
-      pcall(function() s:SetAnchoredPosition(BOARD_X, BOARD_Y) end)
-      if print then
-        local w, h = nil, nil
-        pcall(function() w, h = s:GetSizeDelta() end)
-        print("[murdoku] 建控件前先摆好 stage：" .. tostring(w) .. "x" .. tostring(h)
-          .. "（这样 cell_geometry 读到的就是 " .. tostring(BOARD_W) .. "）")
-      end
-    elseif print then
-      print("[murdoku] ⚠️ 建控件前没找到 stage（root 底下没有）—— 格子几何会退回默认尺寸")
+    -- ★★★★★★★★ 2026-10-16 **v253：这段"建控件前先摆 stage"【整段删除】** ✗✓✓
+    --   ★ 用户指令 ✓：「★ **把所有失效的几何/文字脚本代码从脚本中删除**」✓
+    --   ★ 它原本靠 `cfg.geom_by_editor == true` 才不跑 ✗ —— ★ 本轮把那个开关也删了 ✓
+    --     ⇒ ★ 再留着它就会**真的去摆 stage** ✗（★ 几何明明已经归编辑器 ✓）
+    --     ★ 模拟器当场抓到过同类问题 ✓：`settle.btn` 被脚本挪到 `X[1442..1550] Y[800..860]` ✗
+    --       （★ 编辑器里是 `X[1431..1536] Y[694..764]` ✓）—— ★ 就是"开关删了、写还在"造成的 ✓
+    --   ★ 现在的口径 ✓：★ **stage 的位置/尺寸 = 编辑器里那份** ✓
+    --     ★ `cell_geometry` 读的就是编辑器那个 stage ✓（这正是当年要达到的效果 ✓）
+    --   ★ 只留一行"回读日志" ✓（★ 读回值 ✓ 不是脚本常量 ✓ —— 这一行救过一轮排查 ✓）
+    local s2 = nil
+    do
+      local root2 = nil
+      pcall(function() root2 = adapter:find("root") end)
+      if root2 ~= nil then pcall(function() s2 = root2:GetChild("stage") end) end
+    end
+    if print and s2 ~= nil then
+      local ew, eh = nil, nil
+      pcall(function() ew, eh = s2:GetSizeDelta() end)
+      print("[murdoku] ★ 几何归编辑器：stage **回读** " .. tostring(ew) .. "x" .. tostring(eh)
+        .. "（★ 这才是实际生效的尺寸 ✓ 脚本常量 BOARD_W/H=" .. tostring(BOARD_W) .. "x" .. tostring(BOARD_H) .. " 不参与）")
     end
   end
 
@@ -618,6 +675,9 @@ function Murdoku.start(level_id, opts)
       end
       adapter.cfg.btn_list = list
       if print then print("[murdoku] 上色名单（来自规划）：" .. #list .. " 个按钮") end
+      -- ★ 2026-10-18（优化组）：按钮上色是 **opt-in**（`cfg.btn_art = true` 才跑）——
+      --   入口从原来的 `apply_tray_layout` 改成独立方法 `apply_btn_art`（那个函数已删）✓
+      pcall(function() if adapter.apply_btn_art then adapter:apply_btn_art() end end)
       -- ★ 顺手把所有按钮的**名字**也收集起来（规划里的 `text`），开机直接写下去。
       --   为什么不信渲染那条路：用户反复反馈名字没配上，而文字**只能靠脚本写**
       --   （存档里不存文字，已用 `ruler.c.1` 验证）。这里走一条**明确、可读回验证**的路径。
@@ -735,13 +795,8 @@ function Murdoku.start(level_id, opts)
     print(string.format("[murdoku] 按钮名字：成功 %d 个；另有 %d 个走 `text` 子控件（头像卡，正常）或写入未回读（共 %d）", okN, badN, #ids2))
   end
 
-  -- 头像卡按本关实际人数重新摆正（列数会随人数变，编辑器那套只是"最挤的情况"）
-  if adapter.apply_tray_layout and controller.tray_layout_canvas then
-    local moved = adapter:apply_tray_layout(controller:tray_layout_canvas())
-    if moved > 0 and print then
-      print("[murdoku] 头像卡已按 " .. moved .. " 人重新排布")
-    end
-  end
+  -- ★ 2026-10-18（优化组 · C 类清理）：头像卡重排的调用**已删除**（`tray_layout_canvas` 同时删了）
+  --   ⇒ 不再每局打「找不到头像卡容器」；`apply_tray_layout` 本体留到下一批处理 ✓
 
   -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
   -- ★★ 2026-10-12 **【已删除】"行标 / 列标按格子的实际位置对齐"这一段** ✗✓
@@ -761,20 +816,9 @@ function Murdoku.start(level_id, opts)
   if adapter.diagnose_overlap and adapter.cfg.overlap_diag ~= false then
     adapter:diagnose_overlap()
   end
-  -- ③ 参照格子体检：把「cell.1.1 到底配好了没有」一次性讲清楚。
-  --    原因：格子能不能看见/点得动，取决于类型、射线、子控件、状态节点、图片类型好几项，
-  --    而这些在日志里**原本一点痕迹都没有**，出问题只能靠肉眼猜。
-  --    搭界面阶段默认开（cfg.diagnose_cell = false 可关），每个会话只打一次。
-  if adapter.diagnose_cell ~= nil and not adapter._cell_diagnosed
-     and not (adapter.cfg and adapter.cfg.diagnose_cell == false) then
-    adapter._cell_diagnosed = true
-    pcall(function() adapter:diagnose_cell() end)
-    -- 跟着报一段「模板候选」：cell.1.1 自己的 prefabIndex 是**基础模板**，不能用来
-    -- 生成格子；必须有「从另存出来的模板**新建**的」那个控件（约定名 tpl.cell）。
-    -- 提前报出来，试玩前就知道配没配对，而不是等一句"全部实例化失败"。
-    pcall(function() adapter:diagnose_template() end)
-  end
-
+  -- ★ 2026-10-18（优化组 · B 类清理）：**参照格子体检（diagnose_cell / diagnose_template）调用删除** ✗✓
+  --   结案证据见真机日志：「这一格配好了」/「生成成功了 —— 建了 25 个格子」。
+  --   下面的 `diagnose_grid` 仍在，但它的闸从「`_cell_diagnosed` + DIAG」简化成**只看 DIAG** ✓
   Murdoku.render(true)
 
   -- ★★★ 2026-09-30：**把主页/选关和 3D 角色的输入隔开**（用户明确要求）。
@@ -823,8 +867,9 @@ function Murdoku.start(level_id, opts)
   -- （`controller:render` 才推 `walls`/`doors`/`image`/`tint`）。放在渲染前，
   -- 清单里读到的全是**编辑器初始值** —— 用户 2026-09-27 04:26 的日志里
   -- `wall.up visible=false` 但**屏幕上明明有蓝线**，就是这么来的（误导性输出）。
-  if adapter.diagnose_cell ~= nil and adapter._cell_diagnosed and adapter.diagnose_grid ~= nil
-     and adapter.cfg and adapter.cfg.diagnose_grid ~= false then
+  -- ★ 2026-10-18：原来这里还要 `adapter._cell_diagnosed`（由 diagnose_cell 置位）⇒ 那个体检已删，
+  --   闸只留 `Murdoku.DIAG`（真正的调用在下面 `if Murdoku.DIAG then`）✓ 行为不变。
+  if adapter.diagnose_grid ~= nil and adapter.cfg and adapter.cfg.diagnose_grid ~= false then
     local rows = adapter.cells_rows or (adapter.cfg.cells and adapter.cfg.cells.rows) or 5
     local cols = adapter.cells_cols or (adapter.cfg.cells and adapter.cfg.cells.cols) or 5
   if Murdoku.DIAG then pcall(function() adapter:diagnose_grid(rows, cols) end) end   -- ★ 闸 ✓
@@ -901,9 +946,18 @@ function Murdoku.on_update(dt)
   --   ★ 修法 ✓：搬到 `on_update` 的**最前面**（每帧都跑到 ✓），自己用闩锁保证只做一次 ✓
   --     ⇒ 稳态**零成本** ✓（一次 set + 一个布尔判断 ✓）
   --     ⚠️ 用 `current.adapter` ✓ **不要**再用裸 `adapter` ✓
+  -- ★★★★★★★★ 2026-10-16 **v251：主页那四颗也套同一款胶囊底图** ✗✓✓（★ 用户要求 ✓）
+  --   ★ 原话 ✓：「**把首页中间四个按键的做成和弹窗按键一样的规格**」✓
+  --   ★ 弹窗那四颗的"规格"由三件组成 ✓：★ **尺寸 312×60**（★ 已写进存档 ✓ 交给编辑器 ✓）
+  --     ＋ ★ **文字**（脚本按规划写 ✓）＋ ★ **这颗 107179 胶囊底图**（★ 只在这一段里设 ✓）
+  --   ⇒ ★ 所以主页那四颗要"同规格"，差的就是**这一段没给它们设图** ✓
+  --   ⚠️ 与弹窗那四颗**同一行代码同一款素材** ✓ —— ★ 不新造一套 ✓（★ 一处改、两处一致 ✓）
   if (not Murdoku._exit_art_done) and current.adapter ~= nil then
     Murdoku._exit_art_done = true
-    for _, _bid in ipairs({ "modal.exit", "modal.save", "modal.settle", "modal.cancel" }) do
+    for _, _bid in ipairs({
+      "modal.exit", "modal.save", "modal.settle", "modal.cancel",
+      "home.select", "home.continue", "home.shop", "home.bag",
+    }) do
       local _bg = nil
       pcall(function() _bg = current.adapter:sub(_bid, "bg") end)
       if _bg ~= nil then
@@ -922,63 +976,11 @@ function Murdoku.on_update(dt)
       end
     end
   end
-  -- ★★★★★ 2026-10-08 **四键探针（真·每帧入口 ＋ adapter 在手 ✓）** ✗✓
-  --   ★ 为什么这里能读 ✓：★ 本函数是 `Murdoku.on_update`（★ 入口脚本 L853 的 `OnUpdate` 调它 ✓
-  --     ★ 且 `script:EnableUpdate(true)` 已开 ✓）★ 而 `current.adapter` **就在这里** ✓✓
-  --   ★ 触发条件 ✓：★ 渲染分支刚记录过"弹窗开着"（★ `current._modal_seen` 在涨 ✓）
-  --     ★ 那一侧拿不到 adapter ✗ ⇒ ★ **两边拼起来**：★ 一边报"开着" ✓ ★ 一边读控件 ✓
-  -- ★★★★★ 2026-10-09 **修好这条探针 —— 它【从来没触发过】** ✗✓
-  --   ★ 症状 ✓：真机日志里**一次都没有** `★ 四键探针2` ✗
-  --   ★ 根因（两处对不上 ✗）：
-  --     · `ui_controller.lua:3028` 是把计数器加在 **控制器** 上：`self._modal_seen = …`
-  --     · 而这里读的是 **会话**：`current._modal_seen` ✗ —— **两个不同的对象** ✓
-  --     ⇒ `current._modal_seen` **恒为 nil** ⇒ `_seen = 0` ⇒ 那个 `>` 判断**永远不成立** ✓
-  --   ⇒ ★ 修法：从**控制器**上读（`current.controller` ✓ 与 L794 的 `current.controller:tick` 同一个 ✓）
-  --   ★ 顺带把资料员要的那两个数打出来 ✓（它建议的"最大的分叉"那条 ✓）：
-  --     `bg` / `label` 的 **同级排序索引**（官方 `GetSiblingIndex()` ✓ 语义：**数值越大越靠上** ✓）
-  --     ⇒ 一行就能分清"**根本没画**"还是"**画了被盖住**" ✓
-  if current ~= nil and current.adapter ~= nil then
-    local _ctl = current.controller
-    local _seen = (_ctl and _ctl._modal_seen) or 0
-    if _seen > (Murdoku._probe_seen or 0) and (Murdoku._probe_n or 0) < 12 then
-      Murdoku._probe_seen = _seen
-      Murdoku._probe_n = (Murdoku._probe_n or 0) + 1
-      local _k = nil
-      pcall(function() _k = current.adapter:sub("modal", "modal.exit") end)
-      if _k == nil then pcall(function() _k = current.adapter:find("modal.exit") end) end
-      local _b = nil
-      if _k ~= nil then pcall(function() _b = current.adapter:sub("modal.exit", "bg") end) end
-      local _id, _src, _vis, _sz = "?", "?", "?", "?"
-      if _b ~= nil then
-        pcall(function() _id = tostring(_b.imageId) end)
-        pcall(function() _src = tostring(_b.imageSource) end)
-        pcall(function() _vis = tostring(_b.visible) end)
-        pcall(function() _sz = tostring(_b.sizeDelta and (_b.sizeDelta.x .. "x" .. _b.sizeDelta.y) or "无") end)
-      end
-      -- ★★★ 2026-10-09 **资料员建议的那两个数（最大的分叉就在这一行 ✓）**
-      --   官方语义（`docs/api-cache/mhtakr07vej4.txt:1300-1311` ✓）：
-      --     `GetSiblingIndex()` ⇒ 同级排序索引 ✓ **数值越大越靠上** ✓
-      --   读法 ✓：
-      --     · `bg` 的索引 **>** `label` 的 ⇒ ★ **底图压在文字上面** ⇒ 图文一起看不见 ✓
-      --     · 两者都**读不出来**（nil） ⇒ 接口不适用，改看别的 ✓
-      --     · 索引正常（`label` 更大）而画面上还是空 ⇒ ★ **压根没画**（不是被盖住）✓
-      --   ⇒ ★ 这一条能一次分清「没画」还是「被盖住」✓ —— 那是当前最大的分叉 ✓
-      local _bi, _li = "?", "?"
-      local _lb = nil
-      if _k ~= nil then pcall(function() _lb = current.adapter:sub("modal.exit", "label") end) end
-      if _b ~= nil then pcall(function() _bi = tostring(_b:GetSiblingIndex()) end) end
-      if _lb ~= nil then pcall(function() _li = tostring(_lb:GetSiblingIndex()) end) end
-      print("[murdoku] ★ 四键探针2：exit=" .. tostring(_k ~= nil) .. "  bg=" .. tostring(_b ~= nil)
-        .. "  imageId=" .. _id .. "  source=" .. _src .. "  visible=" .. _vis .. "  size=" .. _sz)
-      print("[murdoku] ★ 四键探针3（谁在上面）：bg 的 GetSiblingIndex=" .. _bi
-        .. "   label 的 GetSiblingIndex=" .. _li
-        .. "   （官方：**数值越大越靠上** ✓ ⇒ bg > label 就是底图压在字上面 ✗）"
-        .. "  label=" .. tostring(_lb ~= nil)
-        .. "  label.visible=" .. (function() local v = "?" pcall(function() v = tostring(_lb.visible) end) return v end)())
-    end
-  end
-
-  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  -- ★ 2026-10-18（优化组 · B 类清理）：**四键探针整段删除** ✗✓
+  --   它要查的「弹窗四键没图 / 没字」已由 v262 结案（几何归编辑器 + 盒模型修正 + `label` 防裁），
+  --   而它**不在 `Murdoku.DIAG` 门内** ⇒ 默认就在跑（每次会话最多 12 次刷两行）。
+  --   判据：真机日志里它只在"弹窗打开后"产出；那两行信息（bg/label 的 GetSiblingIndex）
+  --     现在也能用 `tools/gil/_probe_state.mjs` 从存档侧直接读，不必挂在每帧路径上。
   current.adapter:on_tick(dt)
   current.controller:tick(dt)
 
@@ -1108,7 +1110,9 @@ function Murdoku.on_update(dt)
       "stage", "board.bg", "cell.1.1",
       "topbar", "toolbar", "right",
       "clues", "clues.bg", "clues.grid",
-      "hud.title", "hud.subtitle", "hud.timer", "hud.progress",
+      -- ★ 2026-10-18（优化组）：`"hud.subtitle"` 已去掉 ✓ —— 副标题位按美术结论移除，
+      --   它不再存在于规划与存档里 ⇒ 列在这里只会每次报"树里没有这个名字" ✗
+      "hud.title", "hud.timer", "hud.progress",
       -- ★ 2026-10-11 `"action.back"` 已去掉 ✓（★ 用户要求整颗删除 ✓
       --   ⇒ ★ 它不再存在于规划里 ⇒ ★ 列在这里只会每次报"树里没有这个名字"✗）
     }
@@ -1271,184 +1275,12 @@ function Murdoku.on_update(dt)
     --   那个探针控件就是用户看到的"白块"，已删除，不再创建。
 
   end
-  -- ★★★★ 2026-10-01 **射线落点探针**：给几个"容器/弹窗"也绑上点击。
-  --
-  --   为什么：选关页上 `select.back` / `select.card.*` 的 visible/坐标/bind 全对，
-  --   而用户"所有位置都点了一遍"却**零点击日志**。可 `select` 容器自己**没绑点击**
-  --   => "没日志"并不能区分"射线被别人吃了"和"射线落在没绑事件的控件上"。
-  --   => 给容器们绑一遍：**谁收到日志，射线就落在谁身上**。
-  --      容器能收到 => 射线到得了这一层，子控件却没收到 => 子控件的射线被谁挡住/顺序不对
-  --      容器也收不到 => 更上层还有东西（游戏自己的 UI 层）
-  if not Murdoku._ray_probe_done and (current.frames or 0) >= 100 then
-    Murdoku._ray_probe_done = true
-    local ad3 = current.adapter
-    -- ★★★★★ 2026-10-06 **名单按真机实测修正** ✗✓
-    --   旧的 7 个里 `select` / `intro` / `toast` / `modal` / `board` **都不存在** ✗
-    --   ⇒ ★ 每次刷 7 行「射线探针：X 找不到或不支持光标事件」✗
-    --     ★ 而 `root` / `home` **其实存在** ✓ 只是不支持光标事件 ✓
-    --     ⇒ ★★ 那句话把两种完全不同的情况混成一句 ✗ ⇒ 读起来像"控件没了" ✓
-    --   ⇒ 只探**真机确认存在**的容器 ✓（★ 依 2026-10-05/06 真机日志 ✓）
-    local probe_ids = { "root", "home", "stage", "clues", "topbar", "toolbar", "right", "board.bg" }
-    for i = 1, #probe_ids do
-      local pid = probe_ids[i]
-      local c = nil
-      pcall(function() c = ad3:find(pid) end)
-      local clickEnum = nil
-      pcall(function() clickEnum = Enum.CursorEventType.CursorClick end)
-      if clickEnum == nil then
-        pcall(function() clickEnum = Enum.CursorEventType.CursorClickDown end)
-      end
-      if c ~= nil and c.AddCursorEventListener ~= nil and clickEnum ~= nil then
-        local okb = pcall(function()
-          c:AddCursorEventListener(clickEnum, function()
-            print("[murdoku] RAY-HIT = " .. pid .. " （射线落在这个容器上）")
-          end)
-        end)
-        print("[murdoku] 射线探针：" .. pid .. " 绑定=" .. tostring(okb))
-      elseif clickEnum == nil then
-        print("[murdoku] 射线探针：读不到 Enum.CursorEventType.CursorClick，跳过")
-        break
-      else
-        print("[murdoku] 射线探针：" .. pid .. " 找不到或不支持光标事件")
-      end
-    end
-    -- ★★★★★ 2026-10-02 **打印所有客户端 UI 根**。
-    --
-    --   为什么：用户的观察把范围压到了最后一格 ——
-    --     · 把 `home`/`select` 缩成 1x1 之后，**选关页该有的按钮消失了**（被父级裁剪）
-    --     · 而**"处处有音效"依旧** ⇒ 那个吃点击的全屏按钮**不是** home/select
-    --     · 排行榜里只有 `root` 一个全屏 ⇒ **它不在 root 的子树里**
-    --   ⇒ 结论：**它在另一个客户端 UI 根上**。
-    --   适配器注释里写着查找用的是 `game.GetClientUIRoots()`（**复数**），
-    --   而脚本从头到尾只用了一个 `root`。把这些根全部列出来，那个全屏按钮就会现形。
-    dprint("[murdoku] ===== 客户端 UI 根清单 =====")
-    do
-      local roots = nil
-      pcall(function() roots = game.GetClientUIRoots() end)
-      if type(roots) ~= "table" then
-        dprint("[murdoku]   读不到 game.GetClientUIRoots()（或返回非表）")
-      else
-        dprint("[murdoku]   共 " .. tostring(#roots) .. " 个根")
-        for i = 1, math.min(#roots, 12) do
-          local r = roots[i]
-          local nm, v, w, h = "?", "?", 0, 0
-          pcall(function() nm = tostring(r.name) end)
-          pcall(function() v = tostring(r.visible) end)
-          pcall(function()
-            local a, b = r:GetSizeDelta()
-            if type(a) == "table" then w, h = a.x, a.y else w, h = a, b end
-          end)
-          local kids = nil
-          pcall(function() kids = r:GetChildren() end)
-          local nk = (type(kids) == "table") and #kids or -1
-          dprint(string.format("[murdoku]     %d. %-18s visible=%-5s %6.0fx%-6.0f 子控件=%d",
-            i, nm, v, w or 0, h or 0, nk))
-          -- 根下面直接可见的大控件 —— 那个全屏按钮多半就在这一层
-          if type(kids) == "table" then
-            for k = 1, math.min(nk, 20) do
-              local c = kids[k]
-              if c ~= nil then
-                local cn, cv, cw, ch, hasCur = "?", "?", 0, 0, false
-                pcall(function() cn = tostring(c.name) end)
-                pcall(function() cv = tostring(c.visible) end)
-                pcall(function()
-                  local a, b = c:GetSizeDelta()
-                  if type(a) == "table" then cw, ch = a.x, a.y else cw, ch = a, b end
-                end)
-                pcall(function() hasCur = (c.AddCursorEventListener ~= nil) end)
-                if (cw or 0) * (ch or 0) > 20000 then
-                  dprint(string.format("[murdoku]        └ %-20s visible=%-5s %6.0fx%-6.0f 可接收光标=%s",
-                    cn, cv, cw or 0, ch or 0, tostring(hasCur)))
-                end
-              end
-            end
-          end
-        end
-      end
-    end
-    dprint("[murdoku] ===== 根清单结束 =====")
-    -- ★★★★★ 2026-10-02 **对照组诊断**：把"能点的样本"和"不能点的样本"逐一对比。
-    --
-    --   ⚠️ 第一版这里全部报「找不到」—— 因为直接用了 `ad:find(id)`，
-    --   而同一份日志里「诊断二」用**同一个调用**却能拿到 `home.select`。
-    --   ⇒ 不再依赖 `find`：**自己从 `root` 遍历整棵树建一张 name→控件 的表**，
-    --     然后从表里取。这样"取不到"只可能是名字真不在树里。
-    dprint("[murdoku] ===== 对照组：能点 vs 不能点 =====")
-    do
-      local rootC = nil
-      -- ★★★★★ 2026-10-05 **第一遍代码体检修**：这里原来写 `ad:find("root")`，
-      --   而 `local ad = current.adapter` 在 **734 行**、它所在的 if 块 **892 行就结束了**
-      --   ⇒ 这一句在块外读的是一个**不存在的全局 `ad`**（= nil）
-      --   ⇒ `attempt to index a nil value (global 'ad')` 被 pcall **静默吞掉**，
-      --     一个错误都不报（症状与这一轮修掉的 `screen` 恒真 bug 同一类）。
-      --   本块内的适配器变量叫 **`ad3`**（见 903 行）。
-      pcall(function() rootC = ad3:find("root") end)
-      -- 兜底：从 GetClientUIRoots 拿
-      if rootC == nil then
-        local rs = nil
-        pcall(function() rs = game.GetClientUIRoots() end)
-        if type(rs) == "table" and rs[1] ~= nil then rootC = rs[1] end
-      end
-      local map, count = {}, 0
-      if rootC ~= nil then
-        local function walk(c, depth)
-          if c == nil or depth > 6 then return end
-          local nm = nil
-          pcall(function() nm = c.name end)
-          if nm ~= nil and nm ~= "" and map[nm] == nil then map[nm] = c count = count + 1 end
-          local kids = nil
-          pcall(function() kids = c:GetChildren() end)
-          if type(kids) == "table" then
-            for k = 1, math.min(#kids, 200) do walk(kids[k], depth + 1) end
-          end
-        end
-        walk(rootC, 0)
-      end
-      dprint("[murdoku]   树里共收集 " .. tostring(count) .. " 个具名控件（root=" .. tostring(rootC ~= nil) .. "）")
-      local fields = { "visible", "active", "showCursor", "interactable", "raycastTarget",
-                       "clickAudioId", "disableCursorEventPassthrough", "disableKeyEventPassthrough",
-                       "isolateNavigation", "alpha", "index", "zIndex", "sortingOrder",
-                       "enable", "enabled", "blockRaycast", "grayed", "isEnabled" }
-      -- ★★★★★ 2026-10-06 **名单按真机实测修正** ✗✓（旧名单里 3 个名字不存在 ✗：
-      --   `select.card.1` `select.back` `board` ⇒ ★ 每次都刷 3 行"树里没有这个名字" ✓
-      --   ⇒ ★ 这一段是「能点 vs 不能点」的对照组 ✗ ⇒ ★ 拿不存在的名字对照毫无意义 ✓）
-      -- ★ 2026-10-11 `"action.back"` 已从这个对照样本里去 ✓（★ 整颗控件已删 ✓）
-      local samples = { "home.select", "cell.1.1", "selbtn.1", "selbtn.2",
-                        "hex.submit", "hit.submit",
-                        "clues.bg", "clues.grid", "tpl-container", "board.bg", "home" }
-      for s = 1, #samples do
-        local id = samples[s]
-        local c = map[id]
-        if c == nil then
-          dprint("[murdoku]   " .. id .. "  —— **树里没有这个名字**")
-        else
-          local parts = {}
-          for f = 1, #fields do
-            local v = "?"
-            pcall(function() v = tostring(c[fields[f]]) end)
-            if v ~= "nil" then parts[#parts + 1] = fields[f] .. "=" .. v end
-          end
-          local chain, cur, guard = {}, c, 0
-          while cur ~= nil and guard < 8 do
-            local nm, sc, vv = "?", "?", "?"
-            pcall(function() nm = tostring(cur.name) end)
-            pcall(function() sc = tostring(cur.showCursor) end)
-            pcall(function() vv = tostring(cur.visible) end)
-            chain[#chain + 1] = nm .. "(vis=" .. vv .. ",cur=" .. sc .. ")"
-            local up = nil
-            pcall(function() up = cur.parent end)
-            if up == nil then pcall(function() up = cur:GetParent() end) end
-            cur = up
-            guard = guard + 1
-          end
-          dprint("[murdoku]   " .. id .. "  " .. table.concat(parts, "  "))
-          dprint("[murdoku]       祖先链：" .. table.concat(chain, " ← "))
-        end
-      end
-    end
-    dprint("[murdoku] ===== 对照组结束 =====")
-    print("[murdoku] 射线探针装好了 —— 之后点任何地方，只要射线落在这些容器上就会打日志")
-  end
+  -- ★ 2026-10-18（优化组 · B 类清理）：**射线落点探针整段删除** ✗✓
+  --   判据（真机日志 2026-10-18 v271，一次会话）：`root / home / stage / clues / topbar /
+  --     toolbar / right / board.bg` **八个容器全部**打「找不到或不支持光标事件」⇒
+  --     它一个监听都没绑上，唯一产出就是 8 行噪声 + 一句"装好了"。
+  --   它的历史使命（"没日志不能区分射线被吃 / 落在没事件的控件上"）已由后来的
+  --   `raycastTarget` 普查 + 盒模型修正覆盖 ✓
   -- ★★★★ 2026-10-02 **按用户建议做的对比：主页 ⇄ 选关，"切换后到底改了什么"**。
   --
   --   用户原话：「我认为应该好好对比一下首页和选关切换后到底改了什么」
@@ -1569,14 +1401,21 @@ function Murdoku.on_update(dt)
         --     格子会被放大 33%（本文件上面正记着那次事故 ✓）⇒ 保留执行者、只加守卫 ✓
         --   ⚠️ 读不到尺寸时**照旧写** ✓（不许因为读不到就不摆 ✓ 与同块另三处同口径 ✓）
         local sw0, sh0 = nil, nil
-        pcall(function() sw0, sh0 = s:GetSizeDelta() end)
-        if not (sw0 == BOARD_W and sh0 == BOARD_H) then
-          pcall(function() s:SetSizeDelta(BOARD_W, BOARD_H) end)
-        end
-        local px0, py0 = nil, nil
-        pcall(function() px0, py0 = s:GetAnchoredPosition() end)
-        if not (px0 == BOARD_X and py0 == BOARD_Y) then
-          pcall(function() s:SetAnchoredPosition(BOARD_X, BOARD_Y) end)
+        -- ★★★★★★★★ 2026-10-16 **v253：这段"每帧兜底把 stage 摆回脚本常量"【已删除】** ✗✓✓
+        --   ★ 用户指令 ✓：「把所有失效的几何/文字脚本代码从脚本中删除」✓
+        --   ★ 它原来靠 `cfg.geom_by_editor == true` 才不跑 ✗ —— ★ 开关本轮已删 ✓
+        --     ⇒ ★ 再留着就会**每帧把 stage 拨回 `BOARD_W/H`** ✗ ⇒ ★ 你在编辑器里调的棋盘尺寸
+        --       会被顶掉 ✓（★ 这正是当初"我改了却没生效"那一类 ✓）
+        --   ★ 现在的口径 ✓：★ **stage 的尺寸就是编辑器里那份** ✓ ⇒ ★ 格子尺寸照它算 ✓
+        --   ⚠️ 当年那段注释担心的"stage 被改回全屏 ⇒ 格子放大 33%" ✗：
+        --     ★ 那是**脚本自己**把它改成全屏造成的 ✓，★ 现在脚本一个字都不写 ⇒ 不会发生 ✓
+        if s ~= nil and print and current._stage_rb_logged ~= true then
+          -- ★ 2026-10-18 **只打一次**（用户实测：这一行**每帧**刷，日志被淹没了 ✗）
+          --   它本来只是"确认 stage 归编辑器"的诊断 ⇒ 一次就够 ✓
+          current._stage_rb_logged = true
+          pcall(function() sw0, sh0 = s:GetSizeDelta() end)
+          print("[murdoku] ★ 棋盘容器 stage 回读 " .. tostring(sw0) .. "x" .. tostring(sh0)
+            .. "（★ 归编辑器 ✓ 脚本不再写它 ✓）")
         end
       end
       local bar = nil
@@ -1763,23 +1602,14 @@ function Murdoku.on_update(dt)
         --   棋盘缩到 584 之后，它还是 677。
         --   ⇒ 现在让它**跟着 stage 走**：尺寸 = stage 的实时尺寸，位置 (0,0) 对齐中心。
         --     只在尺寸变化时写一次（移动端：不做每帧 SetSizeDelta）。
-        if bg ~= nil and s ~= nil then
-          local sw, sh = nil, nil
-          pcall(function() sw, sh = s:GetSizeDelta() end)
-          if type(sw) == "number" and type(sh) == "number" and sw > 0 and sh > 0 then
-            if current._board_bg_size ~= sw then
-              pcall(function() bg:SetSizeDelta(sw, sh) end)
-              pcall(function() bg:SetAnchoredPosition(0, 0) end)
-              current._board_bg_size = sw
-              local rw, rh = nil, nil
-              pcall(function() rw, rh = bg:GetSizeDelta() end)
-              if print then
-                print("[murdoku] 底板对齐棋盘：stage " .. tostring(sw) .. "x" .. tostring(sh)
-                  .. " → board.bg 回读 " .. tostring(rw) .. "x" .. tostring(rh))
-              end
-            end
-          end
-        end
+        -- ★★★★★★★★ 2026-10-16 **v253：这段"把 board.bg 对齐 stage"【已删除】** ✗✓✓
+        --   ★ 用户指令 ✓：「把所有失效的几何/文字脚本代码从脚本中删除」✓
+        --   ★ 它原来靠 `cfg.geom_by_editor == true` 才不跑 ✗ —— ★ 开关本轮已删 ✓
+        --     ⇒ ★ 再留着就会**把 stage 的（旧的）尺寸烙到 board.bg 上** ✗
+        --     ★ 当年真机日志点名过它 ✓：「底板对齐棋盘：stage 584.0x584.0 → board.bg 回读 584.0x584.0」✓
+        --     ★ 而你现在在编辑器里把 `board.bg` 调成了 **590** ✓ ⇒ ★ 脚本不该再动它 ✓
+        --   ★ 现在的口径 ✓：★ `board.bg` 的尺寸/位置**完全归编辑器** ✓（与 stage 同一套 ✓）
+        --   ⚠️ 显隐仍然由脚本管 ✓（下面那几行 ✓ —— ★ 那是"可见性"不是"几何" ✓ 留着 ✓）
         -- ★ 显隐：**只在状态变化时**写一次（不再每帧 SetVisible ⇒ 省一次跨引擎调用）
         if bg ~= nil then
           local want = true
@@ -1829,7 +1659,59 @@ function Murdoku.on_update(dt)
     --      上半段 `selbtn.*` 的循环也只在 `widgets = true` 时才让 `on_select` 为真，
     --      默认配置下它什么都不做，不会干扰 93 里原有的卡片。
   end
-  -- ★★★★★ 2026-10-04 **整块删掉"把 topbar / right 锚点归零"** —— 它是错的，两半都是。
+  -- ★★★★★★★★ 2026-10-15 **「结算」按钮：位置与命中区【由脚本【每帧】按屏设定】** ✗✓✓
+  --
+  --   ★★ 为什么不能再"以存档那份为准" ✗（v241 真机日志给的判决 ✓）：
+  --     · v241 已经把"不该吃点击的屏"改成 `raycast = false`（`ui_controller` ✓）
+  --     · ★ 真机仍然：★「全屏按钮还在，预期的按钮未出现」✗
+  --     · ★ 而且真机日志明确：点 **(654, 112)** ⇒ `收到点击 → 控件 settle.btn` ✗
+  --       ★ 那一点离"存档里那个 217×60 的左下角小方块"**很远** ✓
+  --     ⇒ ★★ 结论：★ **存档里那份几何在这台引擎上不是它实际占的矩形** ✗
+  --       （★ 本项目早就有过同款教训：★「真正决定位置的不是存档里的几何」✓
+  --         见上面那段"整块删掉把 topbar / right 锚点归零" ✓）
+  --
+  --   ★★ 所以这一轮改成与 `stage` / `domove` 们**同一套**做法 ✓：
+  --     ★ **脚本每帧显式 SetSizeDelta + SetAnchoredPosition** ✓
+  --       ⇒ ★ 位置和尺寸都变成"我写进去的那两个数" ✓
+  --       ⇒ ★ 命中区跟着它走 ✓（★ 不再依赖存档里那条记录算出来的结果 ✓）
+  --
+  --   ★ 值怎么取 ✓（与 `ui_controller` 里那份 `rect` 同源 ✓ 不另造一套数 ✓）：
+  --     · 设计空间（1920×1080、左上原点）x=60, y=960, 260×72 ✓
+  --     · 画布 1600×900、**中心为原点** ⇒ 缩放 5/6 ⇒
+  --       中心 = ((60+130)×5/6 − 800, (450 − (960+36)×5/6)) = (−642, −380) ✓
+  --       ★ 这两个数**正好等于**存档里那份 `pos[-642,-380]` ✓
+  --       ⇒ ★ 说明存档的坐标口径与我算的一致 ✓，★ 分歧在**引擎怎么用它** ✗
+  --     · 尺寸 = (260×5/6, 72×5/6) = (217, 60) ✓（★ 也与存档一致 ✓）
+  --
+  --   ⚠️ 只对**这台**引擎兜底 ✓：读不到 `SetSizeDelta` 时**什么都不做** ✓
+  --     （★ 不许因为读不到就不摆、也不许把别的东西改坏 ✓）
+  --   ★★★★★★★★ 2026-10-16 **v253：这段"每帧显式摆 `settle.btn`"【已删除】** ✗✓✓
+  --     ★ 用户指令 ✓：「把所有失效的几何/文字脚本代码从脚本中删除」✓
+  --     ★ 它原来靠 `cfg.geom_by_editor == true` 才不跑 ✗ —— ★ 开关本轮已删 ✓
+  --       ⇒ ★ 再留着就会**每帧把结算键拨到 `(696,-380) 108×60`** ✗
+  --       ★ 模拟器当场抓到 ✓：`settle.btn` 落屏变成 `X[1442..1550] Y[800..860]` ✗
+  --       ★（★ 编辑器里那份是 `X[1431..1536] Y[694..764]` = 105×70 ✓ —— 那是你要的 ×1.5 ✓）
+  --     ⇒ ★ **删掉之后，结算键就是编辑器里那个 105×70** ✓✓
+  --     ★ 顺带：这里原来那段"每帧 SetSizeDelta 兜底"是为"引擎不认存档几何"写的 ✗
+  --       —— ★ 那是**几何归脚本**时代的对策 ✓；★ 现在几何归编辑器 ✓ 对策随之作废 ✓
+  do
+    -- ★ 只留一条**一次性回读探针** ✓（★ 位置这种事不靠猜 ✓ 但它**不写**任何几何 ✓）
+    if not Murdoku._settle_probe_done then
+      Murdoku._settle_probe_done = true
+      local sb0 = nil
+      pcall(function() sb0 = current.adapter:find("settle.btn") end)
+      if sb0 ~= nil and print then
+        local rw, rh, rx, ry, rvis, rray = "?", "?", "?", "?", "?", "?"
+        pcall(function() rw, rh = sb0:GetSizeDelta() end)
+        pcall(function() rx, ry = sb0:GetAnchoredPosition() end)
+        pcall(function() rvis = tostring(sb0.visible) end)
+        pcall(function() rray = tostring(sb0.raycastTarget) end)
+        print("[murdoku] ★ 结算按钮（归编辑器 ✓ 脚本一个字都不写）：回读 size=("
+          .. tostring(rw) .. "," .. tostring(rh) .. ") pos=(" .. tostring(rx) .. "," .. tostring(ry)
+          .. ") visible=" .. rvis .. " raycastTarget=" .. rray)
+      end
+    end
+  end
   --
   --   历史：2026-10-02 为了让"子控件不再双重偏移"加了这段
   --   （当时真机日志：`right` pos=(575,-23)，子控件 `hud.progress` pos=(508,-283)
@@ -2331,8 +2213,19 @@ function Murdoku.on_signal(name, payload)
     Murdoku.restore(payload)
   elseif name == S.SYNC_STATE then
     if payload and payload.who and payload.r and payload.c then
+      -- ★★ 2026-10-20（v282）：**别再把两个返回值丢掉** ✗✓
+      --   服务端同步来的动作以前是**全静默**的：`select_suspect` / `tap_cell` 都返回值，
+      --   这里一个都不看 ⇒ 被规则拒绝（越界 / 已有人 / 障碍格 / 同行同列互斥）时
+      --   玩家和服务端**都只看到"盘面没变"**，日志里一个字都没有。
+      --   现在把拒绝原因打到同一个出口（`_refuse` 自带同类去重，最多 3 条，不会刷屏）。
       current.core:select_suspect(payload.who)
-      current.core:tap_cell(payload.r, payload.c)
+      local ok_sync, why_sync = current.core:tap_cell(payload.r, payload.c)
+      if (not ok_sync) and current.controller ~= nil
+        and current.controller._refuse ~= nil then
+        pcall(function()
+          current.controller:_refuse(payload.r, payload.c, why_sync)
+        end)
+      end
       Murdoku.render()
     end
   elseif name == "murdoku/next_level" then
@@ -2381,7 +2274,7 @@ function Murdoku.remember_level(id)
   if id == nil then return end
   local a = store()
   if a == nil or a.save == nil then return end
-  pcall(function() a:save(SAVE_RECENT, tostring(id)) end)
+  pcall(function() a:save(SAVE_RECENT, tostring(id), { no_signal = true }) end)
   pcall(function()
     local p = a:load(SAVE_PROGRESS)
     if type(p) ~= "table" then p = {} end
@@ -2389,7 +2282,8 @@ function Murdoku.remember_level(id)
     if type(cur) ~= "table" then cur = {} end
     if not cur.cleared then cur.started = true end
     p[tostring(id)] = cur
-    a:save(SAVE_PROGRESS, p)
+    -- ★ 2026-10-15：进度表**只写本地** ⇒ 传 `no_signal` ✓（否则会白发一次 `murdoku/save` ✗）
+    a:save(SAVE_PROGRESS, p, { no_signal = true })
   end)
 end
 
@@ -2414,7 +2308,8 @@ function Murdoku.mark_cleared(id)
     cur.cleared = true
     cur.started = true
     p[tostring(id)] = cur
-    a:save(SAVE_PROGRESS, p)
+    -- ★ 2026-10-15：同上，**只写本地** ✓
+    a:save(SAVE_PROGRESS, p, { no_signal = true })
   end)
 end
 

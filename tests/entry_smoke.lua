@@ -72,7 +72,12 @@ local function make_ctrl(name)
   end
   c.SetVisible = function() end
   c.SetActive = function() end
-  c.SetSizeDelta = function() end
+  -- ★ 2026-10-18（优化组）：记下最后一次尺寸与调用次数 —— 6f 的两个测试要数
+  --   "信标到底有没有动这个控件"（只看最终值会被后面的写入覆盖，看不出跑没跑）。
+  c.SetSizeDelta = function(_, w, h)
+    c.sd_calls = (c.sd_calls or 0) + 1
+    c.sd_w, c.sd_h = w, h
+  end
   -- 记录锚点位置：用来断言"引用控件被挪出了画布"（_park_control 靠它生效）
   c.SetAnchoredPosition = function(_, x, y) c.ax, c.ay = x, y end
   c.SetAnchorMin = function() end
@@ -306,13 +311,24 @@ local ok6, err6 = pcall(function()
 end)
 ok(ok6, "纯模板模式不抛错", err6)
 ok(has("started") ~= nil, "纯模板模式下也能开局", has("started"))
-ok(has("纯模板模式") ~= nil, "明确识别为**纯模板模式**（而不是报「找不到控件」）",
+-- ★★★★★ 2026-10-18（优化组 · B 类清理）：**这两条断言反转成哨兵** ✗✓
+--   原来断言「日志里有 纯模板模式 / 体检结束」—— 那是 `diagnose_template` / `diagnose_cell` 的输出。
+--   而这两个体检已按"结案探针"删除（结案证据：真机日志「这一格配好了」/「生成成功了 —— 建了 25 个格子」）。
+--   ⇒ 现在断言它们**不再出现**：万一有人把体检加回来，这里立刻红 ✓
+--   ⚠️ 纯模板模式本身仍要能开局 —— 那一条在上面（`started`），不受体检删除影响 ✓
+ok(has("体检结束") == nil, "格子体检已按结案删除（日志里不该再有「体检结束」）",
+  has("体检结束"))
+ok(has("纯模板模式") == nil, "模板体检已按结案删除（日志里不该再有「纯模板模式」那一行）",
   has("纯模板模式"))
-ok(has("体检结束") ~= nil, "体检正常跑完")
 -- 反例：绝不能再出现"找不到这个控件"这种误报
 ok(has("格子体检 cell.1.1：**找不到这个控件**") == nil,
   "**没有**把「没有 cell.1.1」报成「找不到控件」（误报回归）")
-ok(has("参照格子") ~= nil, "说明了「没有参照格子 → 不做图片盖章」这条正常代价")
+-- ★ 2026-10-18（优化组 · B 类清理）：原来这里断言「说明了『没有参照格子 → 不做图片盖章』」——
+--   那句话其实是 `diagnose_template` 打的（已按结案删除）⇒ 断言随之失效，删掉 ✓
+--   ⚠️ 顺带查出一个**死条件**（记进台账，本批没动它）：
+--     `ensure_cells` 里那段 `if ref == nil and made > 0 then self:warn_once("cells:noref", …)`
+--     —— `made` 在那个位置**还是 0**（创建循环在后面才开始）⇒ 这句"纯模板模式的正常代价"
+--     **从来没打出来过**。属"恒假分支"，等下一批连它一起处理。
 
 -- ── 6b. ★ 引用控件占着 `cell.1.1` 这个名字 ────────────────────────────────
 --
@@ -444,6 +460,15 @@ face.__visible = true
 face.SetVisible = function(_, v) face.__visible = v end
 -- 假控件也要有 SetImage（适配层会调它把调色板里的 id 套上来）
 face.SetImage = function(_, src, id) face.imageSource = src; face.imageId = id end
+-- ★★ 2026-10-22（v299）**结构性补课**：v283 起格子的「放置头像」改画在 `portrait` 层
+--   （`set_property(…, "image", …)` 对 `cell.*` 走的是 `_paint_portrait`，不再动 `face`）
+--   ⇒ 下面 ① 那条断言必须验 `portrait`，否则假红；`face` 只保留房间色（② 染色那条验它）。
+local portrait = make_ctrl("portrait")
+portrait.imageSource = "StaticReference"
+portrait.imageId = 100001
+portrait.__visible = true
+portrait.SetVisible = function(_, v) portrait.__visible = v end
+portrait.SetImage = function(_, src, id) portrait.imageSource = src; portrait.imageId = id end
 local wallup = make_ctrl("wall.up"); wallup.__visible = true
 wallup.SetVisible = function(_, v) wallup.__visible = v end
 local doorl = make_ctrl("door.left"); doorl.__visible = true
@@ -451,7 +476,7 @@ doorl.SetVisible = function(_, v) doorl.__visible = v end
 local content = make_ctrl("content")
 content.disableCursorEventPassthrough = true     -- 故意开着：脚本必须把它关掉
 content.disableKeyEventPassthrough = true
-content.__kids = { face, wallup, doorl }
+content.__kids = { face, portrait, wallup, doorl }
 cellc.__kids = { content }
 local root6d = tree_root({ cellc })
 roots = { root6d, pal }
@@ -474,16 +499,106 @@ local ok6d, err6d = pcall(function()
 end)
 ok(ok6d, "调色板/染色/墙门 不抛错", err6d)
 if __murdoku_debug ~= nil and __murdoku_debug.adapter ~= nil then
-  ok(face.imageId == 424242, "① 按素材名换图成功（face.imageId = " .. tostring(face.imageId) .. "）")
+  ok(portrait.imageId == 424242, "① 按素材名换图成功（portrait.imageId = " .. tostring(portrait.imageId) .. "）")
+  ok(face.imageId == 106053, "①b 换头像图**不动**房间色底图（face.imageId 仍是 106053）")
+  ok(portrait.__visible == true, "①c 头像层被点亮了（visible=true）")
   ok(wallup.__visible == false, "③ wall.up 按数据关掉了（visible=" .. tostring(wallup.__visible) .. "）")
   ok(doorl.__visible == false, "③ door.left 按数据关掉了（visible=" .. tostring(doorl.__visible) .. "）")
   ok(content.disableCursorEventPassthrough == false,
   "★ 中间容器的「屏蔽区域内点击事件穿透」被脚本关掉了（"
   .. tostring(content.disableCursorEventPassthrough) .. "）")
-  ok(face.imageColor ~= nil,
-    "② 染色落到了 face.imageColor（r=" .. tostring(face.imageColor and face.imageColor.r) .. "）")
+  -- ★★★★★★★★ 2026-10-15 **断言换成"打包整数"** ✗✓（旧断言读的是 `imageColor.r` ✗）
+  --
+  --   ★ 为什么必须换 ✗：★ 染色那条路**改契约了** ✓ ——
+  --     ★ 旧写法：`Color(r,g,b)`（若环境里有这个全局函数）⇒ `imageColor` 是**表** ✓
+  --     ★★ 真机实测：★ **`Color()` 根本不存在** ✗ ⇒ 表那条路**永远拿不到值** ✓
+  --       ⇒ ★★ 于是"卡片一直纯白、缩略图一直没颜色" ✓（用户 2026-10-15 截图 ✓）
+  --     ★ 新写法：★ 一律打包成 **`0xAARRGGBB` 整数** ✓ 直接写 `imageColor` ✓
+  --       （★ 真机已证明整数可用 ✓：`PLACED_TINT` / `HIGHLIGHT_TINT` 都是整数 ✓）
+  --   ★ 判据一并升级 ✓：★ 不只断言"有值"，而是断言**那个整数逐位对** ✓
+  --     `{r=10,g=20,b=30}` + a=255 ⇒ `0xFF0A141E` = 4278850590 ✓
+  local TINT_WANT = 4278850590
+  ok(face.imageColor == TINT_WANT,
+    "② 染色落到了 face.imageColor（0xAARRGGBB = " .. tostring(face.imageColor)
+    .. "，期望 " .. tostring(TINT_WANT) .. "）")
 else
   ok(false, "拿不到适配器实例（__murdoku_debug.adapter）")
+end
+
+-- ── 6e. 四个方块已删除（`widgets = false`）────────────────────────────────
+out("\n== 6e. 四个方块（selbar + selbtn.1..4）已按用户指令删除 ==")
+do
+  local a = (__murdoku_debug ~= nil) and __murdoku_debug.adapter or nil
+  ok(a ~= nil and a.cfg ~= nil and a.cfg.widgets == false,
+    "入口配置里 widgets = false（★ 用户原话：「把原来四个方块删掉」✓）",
+    a and a.cfg and ("实测 widgets = " .. tostring(a.cfg.widgets)))
+  if a ~= nil then
+    -- ★ 对照 ✓：**同一环境下格子确实被建出来了** ⇒
+    --   ★ 下面那两条"没建"就**不是空过** ✗（★ 假绿的经典形状：环境本来建不出东西 ✓）
+    ok(a:find("cell.1.1") ~= nil,
+      "（对照）同一环境下格子确实建出来了 ⇒ 下面两条有意义")
+    ok(a:find("selbar") == nil, "`selbar` 没有被创建", "find('selbar') 実測 = " .. tostring(a:find("selbar") ~= nil))
+    local n = 0
+    for i = 1, 6 do if a:find("selbtn." .. i) ~= nil then n = n + 1 end end
+    ok(n == 0, "`selbtn.1..6` 一个都没建", "实测建了 " .. n .. " 个")
+  end
+end
+
+-- ── 6f. 两个 opt-in 开关（缺陷 1 / 缺陷 3 的回归）────────────────────────────
+--
+--   ★ 两条 bug 是同一个形状：**开关写在注释里、代码里没生效** ✗
+--     · 缺陷 3：`beacon()` 读 `a.cells_beacon`，而配置在 `a.cfg.cells_beacon`
+--              ⇒ 恒 nil ⇒ 早退从不生效 ⇒ "默认关闭"的信标每局都在改尺寸；
+--     · 缺陷 1：`_tray_btn_art(...)` 的调用被写在 `if cfg.btn_art == true` 的 `end` **之外**
+--              ⇒ 每局无条件把每个按钮底图重设成 100108（覆盖编辑器配好的图）。
+--   ★ 两条都必须**双向**断言 ✓：「默认关着」＋「打开后真的还会跑」——
+--     只测前一半的话，把开关删掉也能过（那就把功能修没了）。
+out("\n== 6f. 两个 opt-in 开关（默认关闭 / 打开后仍然有效）==")
+do
+  local dbg = _G.__murdoku_debug
+  local a = dbg and dbg.adapter or nil
+  ok(type(dbg) == "table" and type(dbg.beacon) == "function",
+    "beacon 已挂到 __murdoku_debug（离线可测的前提）")
+
+  -- ── 缺陷 3：启动信标 ────────────────────────────────────────────────────
+  local cellc = a and a:find("cell.1.1") or nil
+  ok(cellc ~= nil, "（前提）`cell.1.1` 在假树里")
+  if a ~= nil and type(dbg.beacon) == "function" and cellc ~= nil then
+    local before = cellc.sd_calls or 0
+    local keep = a.cfg.cells_beacon
+
+    -- ① 入口配置就是 `cells_beacon = false` ⇒ beacon 必须一步都不动
+    ok(keep == false, "入口 CONFIG 里 cells_beacon = false（实测 " .. tostring(keep) .. "）")
+    -- ★ 这条就是缺陷 3 的**病因判据**：旧代码读的是 `a.cells_beacon`，
+    --   而它在 adapter 上**恒为 nil** ⇒ `nil == false` 为假 ⇒ 早退永远不成立。
+    ok(a.cells_beacon == nil,
+      "（病因）adapter.cells_beacon 恒为 nil ⇒ 旧代码读它永远读不到关闭开关"
+      .. "（实测 " .. tostring(a.cells_beacon) .. "）")
+    dbg.beacon(a, 300)
+    ok((cellc.sd_calls or 0) == before,
+      "① 默认关闭 ⇒ 信标没碰 cell.1.1（调用次数 " .. tostring(cellc.sd_calls or 0)
+      .. "，调用前 " .. tostring(before) .. "）")
+
+    -- ② 老路径（直接挂在 adapter 上）也要能关 —— 离线夹具就是这么用的
+    a.cells_beacon = false
+    dbg.beacon(a, 300)
+    ok((cellc.sd_calls or 0) == before, "② 老路径 a.cells_beacon=false 同样生效")
+    a.cells_beacon = nil
+
+    -- ③ 反向：放开开关 ⇒ 信标必须真的跑（别把它修成永久关闭）
+    a.cfg.cells_beacon = nil
+    dbg.beacon(a, 300)
+    ok((cellc.sd_calls or 0) > before and cellc.sd_w == 300 and cellc.sd_h == 300,
+      "③ 放开后信标真的把 cell.1.1 改成 300×300（实测 "
+      .. tostring(cellc.sd_w) .. "×" .. tostring(cellc.sd_h) .. "）")
+    a.cfg.cells_beacon = keep
+  end
+
+  -- ── 缺陷 1（按钮底图上色开关）不在这里测 ──────────────────────────────
+  --   ★ 它在 `tests/btn_art_gate.lua` 里单独测 ✓ —— 原因：适配层的 `find()`
+  --     对着**建好之后**的树有缓存，本文件的控件是 `OnInit` 之后才挂进去的 ⇒
+  --     `find("hex.undo")` 恒 nil，会得到一个"看着像产品坏了"的假红 ✗
+  --   ★ 那个夹具在 `Ad.new` **之前**建树，和 `tests/card_fit_gate.lua` 同一套写法 ✓
 end
 
 -- ── 7. OnDestroy ─────────────────────────────────────────────────────────

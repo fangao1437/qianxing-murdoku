@@ -29,6 +29,27 @@
 
 local M = {}
 
+-- ★★★★ 2026-10-17 **测试床：家具一律标成"可站人"** ✗✓
+--
+--   ★ 起因 ✓：第一关的家具换成了设计定稿那一套 —— 桌子占了 **(1,1)**、
+--     植物占了 (1,2)/(5,1)/(5,3)，而这些按内容规则**不可站人** ✓
+--   ★ 而一批测试的判据是"沿主对角线 (k,k) 放棋子"（`board_wiring_e2e` 等）✓
+--     ⇒ ★ (1,1) 被桌子挡住 ⇒ 报「棋A@(1,1) 得到 <没有这一格>」✗
+--   ★★ 那是**内容规则**（这一关不让人站桌子上），**不是接线坏了** ✗ ——
+--     ★ 判据自己的注释就写着「只该测接线，不该测这一关能不能放」✓
+--   ⇒ ★ 所以只在**这份测试 fixture** 里把家具标成可站 ✓
+--     ★★ 真关卡 `lua/levels/case_001.lua` **一个字不动** ✓✓
+--   （★ 与设计阶段 `main` 分支对 fixtures 的处置**同一口径** ✓）
+local function objects_all_occupiable(base)
+  local out = {}
+  for name, def in pairs(base.objects or {}) do
+    local cells = {}
+    for i = 1, #(def.cells or {}) do cells[i] = def.cells[i] end
+    out[name] = { cells = cells, occupiable = true, kind = def.kind }
+  end
+  return out
+end
+
 -- ★ 自检关（5×5）的**完整克隆** ＋ 它原来那 7 条线索 ✓
 --   ★ 布局/墙/门/物件/答案全部照抄真关卡 ✓ ⇒ ★ 其它断言（区域、门径、唯一解）继续成立 ✓
 function M.clue_level_5x5()
@@ -51,25 +72,14 @@ end
 
 -- ★ `case_001`（5×5）的完整克隆 ＋ 它原来那 8 条线索 ✓
 function M.clue_level_case001()
-  local base = require("levels.case_001")
+  -- ★★ 2026-10-18 改指向**冻结夹具** ✓
+  --   第 2 关已经换成真正的 6×6 内容（`lua/levels/case_001.lua`）⇒
+  --   本 fixture 原本克隆它，会跟着已交付内容一起漂 ✗
+  --   ⇒ 改用 `tests/old_case_001.lua`（从 e0531ef 逐字节冻结的旧 5×5 内容）✓
+  --   ★ 这样"测引擎行为"的套件就与"交付的关卡内容"彻底解耦 ✓
+  local base = require("tests.old_case_001")
   local lv = {}
   for k, v in pairs(base) do lv[k] = v end
-  -- ★★ 2026-10-17：真关卡 case_001 的家具换成了 桌子 / 植物 / 地毯 / 椅子，
-  --   其中 **桌子占了 (1,1)**（`occupiable = false`）。
-  --   而 `board_wiring_e2e` 判据①/② 是沿**主对角线 (k,k)** 逐个放棋子的，
-  --   (1,1) 一被家具挡住，那条判据就会报"棋A@(1,1) 得到 <没有这一格>"✗ ——
-  --   但那是**内容规则**（这一关不让人站桌子上），**不是接线坏了** ✗
-  --   （判据自己的注释就是这么写的：「判据只该测接线，不该测这一关能不能放」）
-  --   ⇒ 本 fixture 是**给引擎测试用的**，把家具一律标成可站，
-  --     让"放棋子 → 出头像"这条接线判据不被内容挡住 ✓
-  --   ⚠️ 只影响这一份测试 fixture，**不改真关卡** ✓
-  lv.objects = {}
-  for name, obj in pairs(base.objects or {}) do
-    local o2 = {}
-    for k2, v2 in pairs(obj) do o2[k2] = v2 end
-    o2.occupiable = true
-    lv.objects[name] = o2
-  end
   lv.clues = {
     { type = "at",         who = "V",      r = 4, c = 5 },   -- 受害者就在保险库内室
     { type = "in_col",     who = "@thief", c = 3 },          -- 盗窃者在第 3 列
@@ -81,6 +91,7 @@ function M.clue_level_case001()
     { type = "in_col",     who = "A",      c = 4 },          -- ★ 第 8 条：假话
   }
   lv.meta = { false_clue = 8, announce = "unknown" }
+  lv.objects = objects_all_occupiable(base)
   return lv
 end
 
@@ -110,6 +121,7 @@ function M.clue_level_6x6()
     { type = "abs_col_from", who = "C", n = 1 },
   }
   lv.meta = { false_clue = 15, announce = "one" }
+  lv.objects = objects_all_occupiable(base)
   return lv
 end
 

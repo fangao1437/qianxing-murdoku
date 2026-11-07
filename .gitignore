@@ -22,6 +22,17 @@ dist/_tmp/
 *.log
 *.tmp
 
+# ★ 2026-10-20：`selene` 报告是 **`tools/lua_lint.ps1` 的输出**（`$tooling\out\selene-report.txt` ✓）
+#   ⇒ 每跑一次 lint 内容就变一个字/一堆行 ⇒ 而它**原先被误入库** ✗
+#   ⇒ 结果是：**每次 lint 都把工作树弄脏一条 M** ✓（`git status` 里那条"改了却没人改"的噪音 ✓）
+#   ⇒ 归到"可再生成"这一类：忽略整个 `out\`（与上面 `tools/sim/out/` 同一性质 ✓，
+#      这个目录里也确实只有这一个生成物 ✓）
+#   ⚠️ 文件**留在磁盘上**（人要能打开看 ✓），只是**不入库** ✓
+#   ⚠️ ⚠️ 光加规则**还不够** —— 它**已经在索引里了** ⇒ 提交的人还得跑一次
+#      `git rm --cached tools/lua-tooling/out/selene-report.txt` ✓
+#      （只摘索引、**不删磁盘文件** ✓；这一步本仓库的工具不替人做，免得动别人的未提交改动 ✓）
+tools/lua-tooling/out/
+
 # ===== 系统 / 编辑器 =====
 Thumbs.db
 Desktop.ini

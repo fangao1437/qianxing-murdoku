@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1840" viewBox="0 0 1600 1840" font-family="sans-serif">
+<rect width="100%" height="100%" fill="#05070a"/>
+<g transform="translate(0,0)"><g><rect x="0" y="0" width="1600" height="900" fill="#101418"/>
+<rect x="0" y="-0.5" width="1600" height="87" rx="6" fill="rgba(120,170,255,0.13)" stroke="#78aaff" stroke-width="1.5"/>
+<text x="6" y="-4.5" fill="#cfe0ff" font-size="17" font-family="sans-serif">topbar</text>
+<rect x="19.5" y="106.5" width="327" height="733" rx="6" fill="rgba(120,170,255,0.13)" stroke="#78aaff" stroke-width="1.5"/>
+<text x="25.5" y="102.5" fill="#cfe0ff" font-size="17" font-family="sans-serif">left</text>
+<rect x="1183.5" y="106.5" width="383" height="733" rx="6" fill="rgba(120,170,255,0.13)" stroke="#78aaff" stroke-width="1.5"/>
+<text x="1189.5" y="102.5" fill="#cfe0ff" font-size="17" font-family="sans-serif">right</text>
+<rect x="30" y="229" width="400" height="544" rx="6" fill="rgba(120,170,255,0.13)" stroke="#78aaff" stroke-width="1.5"/>
+<text x="36" y="225" fill="#cfe0ff" font-size="17" font-family="sans-serif">clues</text>
+<rect x="30" y="229" width="400" height="544" rx="6" fill="rgba(120,170,255,0.13)" stroke="#78aaff" stroke-width="1.5"/>
+<text x="36" y="225" fill="#cfe0ff" font-size="17" font-family="sans-serif">clues.bg</text>
+<rect x="30" y="229" width="400" height="544" rx="6" fill="rgba(120,170,255,0.13)" stroke="#78aaff" stroke-width="1.5"/>
+<text x="36" y="225" fill="#cfe0ff" font-size="17" font-family="sans-serif">clues.grid</text>
+<rect x="58" y="129.5" width="450" height="47" rx="6" fill="rgba(120,170,255,0.13)" stroke="#78aaff" stroke-width="1.5"/>
+<text x="64" y="125.5" fill="#cfe0ff" font-size="17" font-family="sans-serif">hud.title  「框架自检样例（偷窃版）」</text>
+<rect x="58.5" y="169.5" width="717" height="25" rx="6" fill="rgba(120,170,255,0.13)" stroke="#78aaff" stroke-width="1.5"/>
+<text x="64.5" y="165.5" fill="#cfe0ff" font-size="17" font-family="sans-serif">hud.subtitle  「内室里留下了两个人的痕迹 —— 这一次，他身边还有别人。　※ 线索中有一句假话」</text>
+<rect x="60.5" y="179.5" width="283" height="47" rx="6" fill="rgba(120,170,255,0.13)" stroke="#78aaff" stroke-width="1.5"/>
+<text x="66.5" y="175.5" fill="#cfe0ff" font-size="17" font-family="sans-serif">hud.timer  「00:00」</text>
+<rect x="1350.5" y="750" width="125" height="50" rx="6" fill="rgba(120,170,255,0.13)" stroke="#78aaff" stroke-width="1.5"/>
+<text x="1356.5" y="746" fill="#cfe0ff" font-size="17" font-family="sans-serif">hud.progress  「0 / 5」</text>
+<rect x="608" y="138" width="584" height="584" rx="6" fill="rgba(120,170,255,0.13)" stroke="#78aaff" stroke-width="1.5"/>
+<text x="614" y="134" fill="#cfe0ff" font-size="17" font-family="sans-serif">board</text>
+<rect x="608" y="138" width="584" height="584" rx="6" fill="rgba(120,170,255,0.13)" stroke="#78aaff" stroke-width="1.5"/>
+<text x="614" y="134" fill="#cfe0ff" font-size="17" font-family="sans-serif">stage</text>
+<rect x="60" y="48" width="62" height="62" rx="6" fill="rgba(120,170,255,0.13)" stroke="#78aaff" stroke-width="1.5"/>
+<text x="66" y="44" fill="#cfe0ff" font-size="17" font-family="sans-serif">hex.back</text>
+<rect x="60" y="48" width="62" height="62" rx="6" fill="rgba(120,170,255,0.13)" stroke="#78aaff" stroke-width="1.5"/>
+<text x="66" y="44" fill="#cfe0ff" font-size="17" font-family="sans-serif">hit.back</text>
+<rect x="1448" y="48" width="70" height="70" rx="6" fill="rgba(120,170,255,0.13)" stroke="#78aaff" stroke-width="1.5"/>
+<text x="1454" y="44" fill="#cfe0ff" font-size="17" font-family="sans-serif">hex.submit</text>
+<rect x="1448" y="48" width="70" height="70" rx="6" fill="rgba(255,196,0,0.20)" stroke="#ffc400" stroke-width="3"/>
+<text x="1454" y="44" fill="#ffc400" font-size="17" font-family="sans-serif">hit.submit</text>
+<text x="1454" y="136" fill="#8fe08f" font-size="15" font-family="sans-serif">action = submit</text>
+<rect x="1448" y="144" width="70" height="70" rx="6" fill="rgba(120,170,255,0.13)" stroke="#78aaff" stroke-width="1.5"/>
+<text x="1454" y="140" fill="#cfe0ff" font-size="17" font-family="sans-serif">hex.redo</text>
+<rect x="1448" y="144" width="70" height="70" rx="6" fill="rgba(120,170,255,0.13)" stroke="#78aaff" stroke-width="1.5"/>
+<text x="1454" y="140" fill="#cfe0ff" font-size="17" font-family="sans-serif">hit.redo</text>
+<rect x="1448" y="240" width="70" height="70" rx="6" fill="rgba(120,170,255,0.13)" stroke="#78aaff" stroke-width="1.5"/>
+<text x="1454" y="236" fill="#cfe0ff" font-size="17" font-family="sans-serif">hex.undo</text>
+<rect x="1448" y="240" width="70" height="70" rx="6" fill="rgba(120,170,255,0.13)" stroke="#78aaff" stroke-width="1.5"/>
+<text x="1454" y="236" fill="#cfe0ff" font-size="17" font-family="sans-serif">hit.undo</text>
+<rect x="1448" y="694" width="70" height="70" rx="6" fill="rgba(120,170,255,0.13)" stroke="#78aaff" stroke-width="1.5"/>
+<text x="1454" y="690" fill="#cfe0ff" font-size="17" font-family="sans-serif">hex.hint</text>
+<rect x="1448" y="694" width="70" height="70" rx="6" fill="rgba(255,196,0,0.20)" stroke="#ffc400" stroke-width="3"/>
+<text x="1454" y="690" fill="#ffc400" font-size="17" font-family="sans-serif">hit.hint</text>
+<text x="1454" y="782" fill="#8fe08f" font-size="15" font-family="sans-serif">action = hint</text>
+<rect x="355" y="48" width="54" height="54" rx="6" fill="rgba(120,170,255,0.13)" stroke="#78aaff" stroke-width="1.5"/>
+<text x="361" y="44" fill="#cfe0ff" font-size="17" font-family="sans-serif">hex.ok</text>
+<rect x="355" y="48" width="54" height="54" rx="6" fill="rgba(255,196,0,0.20)" stroke="#ffc400" stroke-width="3"/>
+<text x="361" y="44" fill="#ffc400" font-size="17" font-family="sans-serif">hit.ok</text>
+<text x="361" y="120" fill="#8fe08f" font-size="15" font-family="sans-serif">action = confirm_yes</text>
+<rect x="417" y="48" width="54" height="54" rx="6" fill="rgba(120,170,255,0.13)" stroke="#78aaff" stroke-width="1.5"/>
+<text x="423" y="44" fill="#cfe0ff" font-size="17" font-family="sans-serif">hex.no</text>
+<rect x="417" y="48" width="54" height="54" rx="6" fill="rgba(120,170,255,0.13)" stroke="#78aaff" stroke-width="1.5"/>
+<text x="423" y="44" fill="#cfe0ff" font-size="17" font-family="sans-serif">hit.no</text>
+<text x="18" y="34" fill="#fff" font-size="26" font-family="sans-serif" font-weight="bold">① 关卡内 —— 点这三个键就能打到胜利</text>
+<text x="18" y="62" fill="#9fb0c8" font-size="17" font-family="sans-serif">黄框 = 要点的；绿字 = 它发出的事件名。棋盘在中间，右侧是 7 个六边形图标。</text></g></g>
+<g transform="translate(0,940)"><g><rect x="0" y="0" width="1600" height="900" fill="#101418"/>
+<rect x="483.5" y="258.5" width="633" height="383" rx="6" fill="rgba(120,170,255,0.13)" stroke="#78aaff" stroke-width="1.5"/>
+<text x="489.5" y="254.5" fill="#cfe0ff" font-size="17" font-family="sans-serif">modal</text>
+<rect x="508.5" y="292" width="583" height="50" rx="6" fill="rgba(120,170,255,0.13)" stroke="#78aaff" stroke-width="1.5"/>
+<text x="514.5" y="288" fill="#cfe0ff" font-size="17" font-family="sans-serif">modal.title  「破案！」</text>
+<rect x="508.5" y="358" width="583" height="100" rx="6" fill="rgba(120,170,255,0.13)" stroke="#78aaff" stroke-width="1.5"/>
+<text x="514.5" y="354" fill="#cfe0ff" font-size="17" font-family="sans-serif">modal.body  「（结果文案）」</text>
+<rect x="508.5" y="466.5" width="583" height="33" rx="6" fill="rgba(120,170,255,0.13)" stroke="#78aaff" stroke-width="1.5"/>
+<text x="514.5" y="462.5" fill="#cfe0ff" font-size="17" font-family="sans-serif">modal.stats  「用时 00:00 · 误指认 0 次 · 位置 0/5」</text>
+<rect x="644" y="300" width="312" height="60" rx="6" fill="rgba(255,196,0,0.20)" stroke="#ffc400" stroke-width="3"/>
+<text x="650" y="296" fill="#ffc400" font-size="17" font-family="sans-serif">result.next  「下一关」</text>
+<text x="650" y="378" fill="#8fe08f" font-size="15" font-family="sans-serif">action = next_level</text>
+<rect x="644" y="380" width="312" height="60" rx="6" fill="rgba(255,196,0,0.20)" stroke="#ffc400" stroke-width="3"/>
+<text x="650" y="376" fill="#ffc400" font-size="17" font-family="sans-serif">result.exit  「退出至菜单」</text>
+<text x="650" y="458" fill="#8fe08f" font-size="15" font-family="sans-serif">action = exit_menu_go</text>
+<rect x="644" y="460" width="312" height="60" rx="6" fill="rgba(255,196,0,0.20)" stroke="#ffc400" stroke-width="3"/>
+<text x="650" y="456" fill="#ffc400" font-size="17" font-family="sans-serif">result.home  「返回首页」</text>
+<text x="650" y="538" fill="#8fe08f" font-size="15" font-family="sans-serif">action = home</text>
+<rect x="644" y="540" width="312" height="60" rx="6" fill="rgba(255,196,0,0.20)" stroke="#ffc400" stroke-width="3"/>
+<text x="650" y="536" fill="#ffc400" font-size="17" font-family="sans-serif">result.settle  「存档并结算」</text>
+<text x="650" y="618" fill="#8fe08f" font-size="15" font-family="sans-serif">action = exit_menu_settle</text>
+<text x="18" y="34" fill="#fff" font-size="26" font-family="sans-serif" font-weight="bold">② 结算弹窗 —— 打到之后出现的四键</text>
+<text x="18" y="62" fill="#9fb0c8" font-size="17" font-family="sans-serif">黄框 = 用户点名的四个键；本轮已把它们从 modal.* 改名为 result.* 并建进存档。</text></g></g>
+</svg>

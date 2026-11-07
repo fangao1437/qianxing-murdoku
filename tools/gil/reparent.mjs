@@ -26,7 +26,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  readGil, findChildListTop, setChildList, asIdList, pairOf, setPair,
+  readGil, encodeMsg, findChildListTop, setChildList, asIdList, pairOf, setPair,
 } from './gilread.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -94,16 +94,50 @@ if (removedTotal === 0) console.log('  （旧父级子列表里没找到这些 i
 
 // 改每条记录的 #504
 let n504 = 0;
-function fixParent(fields) {
-  for (const f of fields) {
+// ★★★★★★★★ 2026-10-15 **越界改写事故：这里原来会毁掉整棵控件树** ✗✗
+//
+//   ★ 事故经过 ✓：用它改父 12 条记录（`--ids="select.card."`）✓
+//     日志打印「**改写 #504 的记录字段：36 处**」✗ —— **12 条记录却改了 36 处** = 每条 3 处 ✗✓
+//     ⇒ ★ 真机实测（用户 04:43 日志）：
+//       「客户端控件树（脚本能看到的，**共 1 个节点**）」「`board/stage/home/select` **全部找不到**」✗
+//       「已由脚本打开 **1** 个容器的常驻光标」（正常是 6 ✓）✗
+//     ⇒ ★★ **`root` 在、但它的子控件在运行时全部解析不到** ✓ —— **整屏界面消失** ✗✗
+//
+//   ★ 根因 ✓：原来的 `fixParent` **递归进嵌套消息** ✗：
+//       `if (f.wt === 0 && f.field === 504) { f.num = … }        ← 任何深度都改 ✗
+//        `else if (f.wt === 2 && f.sub) fixParent(f.sub);`        ← 递归进去 ✗
+//     ★ 而 `delete_controls.mjs` 的文件头**早就警告过** ✓：
+//       「这个文件里**嵌套**的 `#504` 到处都是，而且**取值是真的控件 ID**」✗
+//     ⇒ 那些嵌套 `#504` **属于别的语义** ✗ 一并改掉 ⇒ 父级关系在运行时崩掉 ✓
+//
+//   ★ 现在的修法 ✓：**只改记录自己的顶层 `#504`** ✓ 不递归 ✓
+//     （§「#504 是记录顶层字段」这条与 `delete_controls.mjs` 的判据一致 ✓）
+//
+//   ★ 教训 ✓：**批量改二进制字段前，先问"这个字段号在别的层级是不是另一个意思"** ✗
+//     —— 光看"改了几处"的计数（36 而不是 12）就该起疑 ✓ 我当时没看 ✗
+for (const r of moving) {
+  for (const f of r.field.sub) {
     if (f.wt === 0 && f.field === 504) { f.num = BigInt(toRec.id); n504++; }
-    else if (f.wt === 2 && f.sub) fixParent(f.sub);
   }
 }
-for (const r of moving) fixParent(r.field.sub);
 console.log('  ✅ 改写 #504 的记录字段：' + n504 + ' 处');
 
-const buf = g.pack();
+// ★★★★★★ 2026-10-15 **修一个静默崩掉的 bug** ✗✓
+//
+//   ★ 症状 ✓：跑起来打印到「✅ 改写 #504 的记录字段：8 处」之后
+//     抛 `TypeError: Cannot read properties of undefined (reading 'length')` ✗
+//     ⇒ ★ **没有写出任何文件** ✗（所以那一步等于白做 ✓）
+//
+//   ★ 根因 ✓：这里原来是 `const buf = g.pack();` ✗ —— **少了参数** ✗
+//     `gilread` 的 `pack` 现在要**先 `encodeMsg(g.tree)` 再喂进去** ✓
+//     （对照 `set_key_art.mjs` 的正确写法 ✓：
+//        `const body = encodeMsg(g.tree); const buf = g.pack(body);` ✓）
+//     ⇒ `pack(undefined)` ⇒ 内部读 `undefined.length` ⇒ **正是那个 TypeError** ✓
+//
+//   ⇒ ★ 这个工具应该写在 `gilread` 换签名**之前** ✗ ⇒ 之后**再没人跑过它** ✓
+//     ★ 教训 ✓：**改公共库的签名，要 grep 全仓的调用点** ✗
+const body = encodeMsg(g.tree);
+const buf = g.pack(body);
 fs.writeFileSync(OUT, buf);
 console.log('  写出：' + path.basename(OUT) + '  ' + Math.round(buf.length / 1024) + ' KB');
 

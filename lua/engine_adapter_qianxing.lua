@@ -100,6 +100,52 @@ local Adapter = {}
 Adapter.__index = Adapter
 M.Adapter = Adapter
 
+-- ★★★★★★★★ 2026-10-15 **把 {r,g,b,a} 打包成引擎认的 32 位整数（`0xAARRGGBB`）** ✗✓✓
+--
+--   ★ 为什么需要它 ✓：★ 真机上**没有全局 `Color()`** ✓（本文件 `style` 分支的注释
+--     早就写着这条实测 ✓）⇒ ★ `imageColor` 只能**直接写整数** ✓
+--   ★ 为什么单独提成一个**导出的纯函数** ✓：
+--     ★ 纯函数**离线就能测** ✓（`tests/select_hit_visible.lua` 直接断言几个值 ✓）
+--     —— 这正是本项目"给测试留一条通路"的老做法 ✓（同 `M.press_seconds` ✓）
+--   ★ 约定 ✓（与真机日志里的值逐位对齐 ✓）：
+--     `0xFFFFFFFF` = 不透明白（原色）✓ · `0x7FFFFFFF` = 50% 透明白（减淡）✓
+--     `0xFF9353CB` 这类 = 不透明色 ✓ —— ★ 一律 **A 在高位** ✓
+--   ★ **不给 `a` = 不透明（255）** ✓ —— 与官方 `Color(r,g,b)` 的默认一致 ✓
+--     （⚠️ 我第一版让缺省 `a` 落到 0 ⇒ `pack_color(255,255,255)` 出 `0x00FFFFFF`
+--       —— 那是**全透明** ✗ 与本意相反 ✓ 测试当场抓出来 ✓）
+function M.pack_color(r, g, b, a)
+  local function c(v)
+    v = tonumber(v)
+    if v == nil then v = 0 end
+    v = math.floor(v + 0.5)
+    if v < 0 then v = 0 end
+    if v > 255 then v = 255 end
+    return v
+  end
+  if a == nil then a = 255 end
+  return c(a) * 16777216 + c(r) * 65536 + c(g) * 256 + c(b)
+end
+
+-- ★ 读控件尺寸：**真机返回两个数，模拟器返回一个数组** ⇒ 两种都认 ✗✓
+--   （2026-10-17 实测：模拟器的桥接把 `GetSizeDelta()` 包成一个返回数组的方法，
+--     `local a, b = c:GetSizeDelta()` 拿到的是 `a=表, b=nil` ⇒ 会被当成"读不到" ✗）
+--   ★ 必须定义在**文件靠前**：`_apply_edges`（很靠前）也要用它 ✓
+--     （定义在后面的 `local function` 对**前面**的函数不可见 ⇒ 会变成"全局 nil"✓）
+local function size_of(ctrl)
+  if ctrl == nil then return nil, nil end
+  local a, b = nil, nil
+  if ctrl.GetSizeDelta ~= nil then
+    pcall(function() a, b = ctrl:GetSizeDelta() end)
+  end
+  if type(a) == "table" then return tonumber(a[1]), tonumber(a[2]) end
+  if type(a) == "number" then return tonumber(a), tonumber(b) end
+  -- ★ 兜底：直接读字段（个别环境没有 getter，但字段是有的）
+  local px, py = nil, nil
+  pcall(function() px = ctrl.sizeDeltaX end)
+  pcall(function() py = ctrl.sizeDeltaY end)
+  return tonumber(px), tonumber(py)
+end
+
 function M.new(cfg)
   cfg = cfg or {}
   -- ★★ 防呆：把 `cfg.cells.<调试开关>` 上提到顶层。
@@ -200,6 +246,22 @@ function M.new(cfg)
   self.warned = {}
   self.on_input = nil
   self.apply_rect = cfg.apply_rect == true   -- 默认不动位置（布局在编辑器里定）
+  -- ★★★★★★★★ 2026-10-16 **v252：哪些控件的文案"编辑器优先"** ✗✓✓
+  --   ★ 名单来自 `cfg.text_editor_first`（见 `entry_client_script.lua` ✓ 一处定义 ✓）
+  --   ★ 语义 ✓：★ 名单里的控件，★ 脚本**只在它当前是空的时候**才写字 ✓
+  --     ⇒ ★ 你在编辑器里填了文案 ⇒ 脚本一个字都不动 ✓✓（`set_property` 的 `text` 分支 ✓）
+  --   ⚠️ 为什么要"空才写"而不是"完全不写" ✗：
+  --     ★ 文字**存不进 `.gil`**（`_probe_texts.mjs` 实测 ✓）⇒ ★ 新导入的档里这些控件**是空的** ✓
+  --     ⇒ ★ 完全不写 ⇒ **按钮全空** ✗✓ —— ★ 留一个兜底，界面永远不会空 ✓
+  self.text_editor_first = {}
+  do
+    local list = cfg.text_editor_first
+    if type(list) == "table" then
+      for i = 1, #list do
+        if type(list[i]) == "string" then self.text_editor_first[list[i]] = true end
+      end
+    end
+  end
   return self
 end
 
@@ -254,7 +316,7 @@ local function missing_group(id)
   if s:match("^clue%.[%d]+$")         then return "clue.N"  end
   if s:match("^tray%.[%w_]+$")        then return "tray.*"  end
   if s:match("^modal%.")              then return "modal.*" end
-  if s:match("^intro%.")              then return "intro.*" end
+
   if s:match("^action%.")             then return "action.*"
   end
   local head = s:match("^([%w_]+)%.")
@@ -268,8 +330,71 @@ function Adapter:report_missing(force)
   if self.missing_reported and not force then return 0 end
   self.missing_reported = true
 
-  local groups, order = {}, {}
+  -- ★ 2026-10-13：这里原来有一条 `local groups, order = {}, {}` ✓
+  --   它配的那段"整段 printerr"已被下面**按性质分两类**的版本取代 ✓
+  --   ⇒ 那一条成了没人读的**死声明** ⇒ 删掉（用户要求：删干净 ✓）
+  --   （新的声明在下面分类逻辑里就地写 ✓）
+  -- ★★★★★★★★ 2026-10-13 **按性质分两类打：已知不需要（info）／未分类（error）** ✗✓✓
+  --
+  --   ★ 起因 ✓（真机日志实测 ✓）：这一段原来**整段**走 `printerr` ⇒ **error 级** ✗
+  --     而真机上那 38 项**全是"设计上就不该存在"的** ✓
+  --     ⇒ ★★ **真错误会被这一段淹掉** ✗✓ —— 本项目最怕的形状 ✓
+  --
+  --   ★ 分法 ✓：
+  --     · 🟡 **已知不需要** ⇒ `print`（info）✓ 一行带过 ✓ 不再刷屏 ✓
+  --     · 🔴 **未分类** ⇒ 仍然 `printerr`（error）✓
+  --       ★★ **这才是"计划有、存档没有、又没有创建路"的硬失败** ✓
+  --       　 一旦冒出来 ⇒ 就是**真问题**（要么补计划、要么补存档）✓
+  --
+  --   ⚠️ 这份名单**只放"已经确认过、设计上就不要"的** ✓
+  --     新东西冒出来**一律先落进 🔴** ✓ 逼着人去判断 —— 这正是闸门的意义 ✓
+  local KNOWN_ABSENT = {
+    "clue.",   -- 旧线索卡：已被网格视窗取代（列表项由引擎按 index 现建）
+    "clues.",  -- 旧滚动条 bar/up/down/track/knob/count/more：网格视窗自己滚
+    "board",   -- 已被 stage 取代（★ 注意 room.label.* 挂在它下面 ⇒ board 不能删）
+    "left",    -- 旧左栏容器（tray / legend 挂在它下面）
+    "legend",  -- 旧图例
+    -- ★★★★★★★★ 2026-10-15 **`"select."` 这条【整条删掉】** ✗✓✓（v235）
+    --
+    --   ★ 为什么 ✗：★ 它是个**裸前缀** ✓ ⇒ ★ **任何** `select.*` 都被它吃掉 ✓
+    --     ⇒ ★★ 于是"选关屏某个控件真的不见了"这种**最该报出来**的事，
+    --       会被静默归进"已知不需要" ✗✗ —— ★ 本项目在 2026-10-15 刚因为
+    --       `select.back` 被它遮住而白查过一轮 ✓（见下面那段历史 ✓）
+    --     ★ 上一轮的收窄**只做到一半** ✗：把 `"select"` 改成 `"select."` ✓
+    --       但 `"select."` **仍然匹配 `select.*` 全部** ✓ ⇒ 遮住的效果一模一样 ✓
+    --
+    --   ★ 现在为什么敢删 ✓：★ 计划里 `select.*` 一共 **41 个** ✓
+    --     （`title` / `page` / `back` / `prev` / `next` ＋ 4 张卡 ×（自己 + `.title` + `.info`
+    --       + `.room.1..6`）✓）★ **全部已建进存档** ✓
+    --     ⇒ ★ 实测判据 ✓（跑在 v236 那版存档上 ✓）：
+    --       `node tools/gil/list_names.mjs 369-选关补齐子控件-v236.gil select.`
+    --       ⇒ **命中 48 个** = 41 个 `select.*` ＋ 7 个 `hit.select.*` ✓（**一个都不缺** ✓）；
+    --       `delete_controls.mjs --dry` ⇒ `link mismatch 0 / dangling 0 / parentMissing 0` ✓
+    --   ★ 顺带核实 ✓：`select.panel` / `home.panel` **不在计划里**（只留在 `prefab_of` 配置里 ✓）
+    --     ⇒ ★ 删掉这条**不会**制造新的假警报 ✓
+    --   ⇒ ★★ 规矩 ✓：★ **名单只写"确实不该存在"的东西** ✓；
+    --     ★ "已经建好了"的东西**必须从名单里拿掉** ✗（否则它一旦消失，没人会知道 ✓）
+    "tray",    -- 头像卡已并进滚动线索卡（用户 2026-10-02 定稿）
+    "room.",   -- 房间名标签：★ 用户 2026-10-13 定「下一阶段的事，暂时搁置」
+    "obj.",    -- 家具图标：同上
+  }
+  local function known_absent(id)
+    for i = 1, #KNOWN_ABSENT do
+      local p = KNOWN_ABSENT[i]
+      if id == p or id:sub(1, #p) == p then return true end
+    end
+    return false
+  end
+
+  local unknown, known_n = {}, 0
   for id in pairs(self.missing) do
+    if known_absent(id) then known_n = known_n + 1 else unknown[#unknown + 1] = id end
+  end
+  table.sort(unknown)
+
+  local groups, order = {}, {}
+  for i = 1, #unknown do
+    local id = unknown[i]
     local g = missing_group(id)
     if groups[g] == nil then
       groups[g] = { n = 0, sample = {} }
@@ -283,9 +408,15 @@ function Adapter:report_missing(force)
     return a < b
   end)
 
-  if printerr then
-    printerr("[murdoku] 这些控件还没建（共 " .. tostring(self.missing_count or 0)
-      .. " 个，按类分组）：")
+  if print and known_n > 0 then
+    print("[murdoku] 规划里有 " .. tostring(known_n) .. " 个控件是【已知不需要】的"
+      .. "（旧线索卡 / 旧滚动条 / board / left / legend / select / tray / room.* / obj.*）"
+      .. " —— 按 info 打，不再当错误（名单见 adapter 的 KNOWN_ABSENT）")
+  end
+
+  if printerr and #unknown > 0 then
+    printerr("[murdoku] ⚠️ 有 " .. tostring(#unknown)
+      .. " 个控件【计划有、存档没有、又没有创建路】—— 这是**真问题**，去补计划或补存档：")
     for i = 1, #order do
       local g = order[i]
       local gd = groups[g]
@@ -293,7 +424,7 @@ function Adapter:report_missing(force)
       if gd.n > #gd.sample then samp = samp .. " …" end
       printerr("[murdoku]   " .. g .. "  ×" .. gd.n .. "   " .. samp)
     end
-    printerr("[murdoku] 完整 150 个控件的名字/坐标/父子关系：docs/控件坐标表-1600x900.md")
+    printerr("[murdoku] （全部缺失项见 `node tools/gil/check_names.mjs` 的 🔴 那一组）")
   end
   return self.missing_count or 0
 end
@@ -423,6 +554,9 @@ function Adapter:invalidate_lookups(why)
   --   ★ 所以 ✓：★ **作废时连命中缓存一起清** ✓ ⇒ ★ 下次 `find` 会真的重新深搜 ✓
   self.controls = {}
   self._subtree_dirty = true
+  -- ★ 2026-10-22（v309）：切屏/换关 = "图元容器该重新裁一次"的权威事件
+  --   （真正的重放在 `on_tick` 的 `_baked_dirty` 分支；与门墙/家具的重放同一个判据）
+  self._baked_dirty = true
   self._lookup_gen = (self._lookup_gen or 0) + 1
   if self.cfg and self.cfg.debug_lookup and print then
     print(PREFIX .. "控件名缓存作废（第 " .. tostring(self._lookup_gen) .. " 代）："
@@ -507,17 +641,56 @@ end
 --   静默失效（我们为此排查了一整天）。现在未命中只返回 nil，下次还会重试。
 --
 -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
--- ★★ 2026-10-12 **性能优化（大鱼 2）：未命中改成"按代记忆"，仍然【不跨代】永久缓存** ✗✓
+-- ★★ 2026-10-12 **未命中改成"按代记忆"，仍然【不跨代】永久缓存** ✗✓
 --
---   ★ 实测（`tests/_wip/render_cost.lua`，包装**产线自己那棵树** ✓ 数引擎调用 ✓）：
---     ★ **一次 render = 972 次引擎调用 / 约 1.8~2.2 ms 纯 Lua** ✗
---     ★ 其中 **`GetChild` 840 次** ✓ —— ★ 调用点聚合后**全部落在本函数** ✓✓
---     ★★ 而 **`sub` 每次 render 被调 168 次，命中缓存【0】次** ✗
---       （键是 `cell.R.C.wall.up/down/left/right` 这类 ✓ —— **模板里根本没配这些子控件** ✓）
+--   ⚠️⚠️⚠️ **2026-10-13 更正（★ 重要，请先读这一段 ✗✓）** ⚠️⚠️⚠️
+--
+--   ★★★ 本节原先写着"**一次 render = 972 次引擎调用、其中 GetChild 840 次**"✗✓
+--     ⇒ ★★ **那两个数字是【探针假树】造的，已【撤回】** ✗✗
+--     ★ 依据 ✓：`审计-性能-v192对213.md` §0（★ 2026-10-13 ✓ 含用户指正 ✓）
+--
+--   ★★★ 假树错在哪 ✗（★ 一句话 ✓）：
+--     ★ `tests/_wip/render_cost.lua` 手搭的树里，每个格子的 `content` 下**只有 `face`** ✗
+--     ★★ 而存档（`347.gil`，293 条控件记录）里**确实有 8 个边控件** ✓：
+--        `wall.up/down/left/right` ＋ `door.up/down/left/right`，**父＝`content`** ✓
+--        （★ 可复现 ✓：`node tools/gil/list_names.mjs 347.gil wall` ⇒ 8 个、父＝content ✓）
+--     ⇒ ★ 于是每次 `sub(cell, "cell.R.C.wall.up")` **注定未命中** ✗
+--       ⇒ ★ 凭空造出 **840 笔 `GetChild` / render** ✓ ★ 而这笔账**全记在了 v192 头上** ✓
+--         （★ 因为 v213 有按代未命中记忆 ⇒ 只付一次 ⇒ 看起来"省了 840" ✓）
+--     ★★ 同一棵假树**还反向造了假控件** ✗：`ruler.c.1..5` / `ruler.r.1..5` ——
+--        ★ 存档里**没有**这些名字 ✓（★ 只有 `ruler` ×2 与 `tpl.ruler` ✓）
+--
+--   ★★★ 把树改忠实之后**重测** ✓（★ 同产物、同骨架、同参数 ✓）：
+--     | 指标 | 假树 | ★ 忠实树 |
+--     |---|---|---|
+--     | 一次稳态 render · v192 | 972 | ★ **111** |
+--     | 一次稳态 render · v213 | 132 | ★ **111** |
+--     | ⇒ 差额 | 声称 −86% | ★★ **0%（两版逐字相同）** |
+--     | `GetChild` / render | 840 → 0 | ★★ **0 → 0** |
+--     ⇒ ★★ **"972 → 132"这条战果【不存在】** ✗ —— ★ 两版**都没有**那 840 笔 ✓
+--
+--   ★★★ 那本节这条"按代记忆"还有没有价值 ✗✓（★ 老实说 ✓）：
+--     ★ **在 `wall/door` 这条路上，它买不到任何东西** ✗ ——
+--       ★ v192 的命中缓存（`self.subs`）本来就把这 8 个边控件服务得很好 ✓
+--       （★ 真机上这些查询**会命中** ✓ 并被 `self.subs` 留住 ✓）
+--     ★★ 它**仍然保留** ✓，理由从"省 840 笔"改成下面两条**站得住的** ✓：
+--       ① ★ **语义更对** ✓：同一代内"确认取不到"就不必**重复**三级尝试 ✓
+--          它不假设"控件不存在"✗，只记录"**这一代里没找到**"✓ ⇒ §下面那条"不会重演老 bug"
+--          的论证**依然成立** ✓
+--       ② ★ 对**真的取不到**的名字（例如本关没建的可选子控件 ✓）它确实省 ✓
+--          —— ★ 但这是**小的、未被量到真机收益**的一笔 ✗ ★ **不许再当战果引用** ✓
+--
+--   ★★★ 规矩（★ 本项目第 ④ 条 ✓ 详见 `tests/_wip/README.md` ✓）：
+--     ★「探针包了**产线遍历的那棵树**」≠「**那棵树是真的**」✗✓
+--     ⇒ ★ 现在由 `tools/gil/gen_tree_ref.mjs` 从**存档**生成参考边表 ✓，
+--       ★ 探针搭完树**必须**调 `tree_ref.check(...)` 对账 ✓
+--       ⇒ ★★ "树是手搭的、漏了控件"这类错误**结构上不可能**再悄悄发生 ✓
+-- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+--
 --   ★ 机制 ✓：本函数未命中**故意不落缓存**（上面那段的老决定 ✓ 有充分理由 ✓）
---     ⇒ 于是**每帧 168 次**都从零走三级尝试：`GetChild(名)` ⇒ 3 个 sub_root 各一次
---       `GetChild(root)` ＋ `GetChild(名)` ⇒ 约 **6 笔 `GetChild` / 次** ⇒ **≈840 笔/render** ✓
---     ★ 而它们**全都注定失败**（控件不存在 ✓）⇒ ★★ **纯白烧** ✓
+--     ⇒ 于是同一个未命中键在同一代内**会**重复走三级尝试：
+--       `GetChild(名)` ⇒ 3 个 sub_root 各一次 `GetChild(root)` ＋ `GetChild(名)` ✓
+--     ⇒ ★ 按代记住它 ⇒ **同一代内只付一次** ✓（★ 但**不再**声称"省 840 笔／render" ✗）
 --
 --   ★★ 修法 ✓：**留住老决定（不跨代永久缓存）＋ 补上它缺的那一半** ✗✓
 --     · 未命中仍然**返回 nil** ✓（★ 所以"下次还会重试"这条语义**不变** ✓
@@ -597,6 +770,13 @@ function Adapter:sub(parent_id, child_name)
       end
       if hit ~= nil then break end
     end
+  end
+
+  -- ★ v315：新架构下 face 是"脚本实例化"的，第一次找不到就补一个（命名 `face`）
+  --   这样原来所有 `sub(cell,"face")` 的写入路径（图片/染色/可见性）不用改就自动换绑。
+  if hit == nil and child_name == "face" and type(parent_id) == "string"
+     and parent_id:match("^cell%.") ~= nil and self._ensure_cell_face ~= nil then
+    pcall(function() hit = self:_ensure_cell_face(parent_id, parent) end)
   end
 
   if hit ~= nil then
@@ -1657,12 +1837,9 @@ function Adapter:_cells_prefabs(g)
   return out
 end
 
--- 兼容旧名（别处还在用）
-function Adapter:_cells_prefab(g)
-  local list = self:_cells_prefabs(g)
-  if list[1] ~= nil then return list[1].index end
-  return nil
-end
+-- ★ 2026-10-18（优化组 · P0）：`Adapter:_cells_prefab`（**单数**，兼容旧名的转发壳）**已删除** ✗✓
+--   判据：全仓 0 调用点；"兼容旧名（别处还在用）"是过期结论。
+--   真正的实现在下面 `Adapter:_cells_prefabs`（**复数**，返回候选列表），仍被 `ensure_cells` 用着 ✓
 
 -- ★★★★★ 2026-10-02 **给脚本生成的格子"上底图"**（纯模板模式专用，不依赖参照格子）。
 --
@@ -1710,31 +1887,36 @@ function Adapter:_cells_paint(ctrl, size, cell_id, img)
   --
   --   ★ **三处字段（★ 改这里要一起看 ✓）**：
   --     · **记录**：`_apply_edges` 写 `self._edge_want[id][prefix.."."..side] = want`
-  --       ⇒ ★ 本文件 **L3798~3800**（★ 另有一份同类写在 **L3775~3777** ✓）
-  --     · **重放**：★ 就是下面 `for name, want in pairs(w)` 那段 ✓
-  --       ⇒ ★ 每帧约 **200 次**「缓存查表 `self:sub` + `SetVisible`」✗
-  --     · **触发**：`_cells_paint` 由 ★ **L2071** 每帧调用 ✓（★ 同一条路还负责点亮 `face` ✓）
-  --     · **事件驱动那份**：★ 对称恢复分支 —— 本文件 **L4267** 读 `_edge_want` ✓
+  --     · **重放**：`Adapter:_repaint_cell_overlays`（本函数下面也调它一次）
+  --     · **每帧触发**：★ **`Adapter:on_tick` 的 `_overlay_dirty` 分支** ✓
+  --     · **置位**：`set_property` 的 `visible` 分支（`cell.*` 由藏转显）
   --
-  --   ★ 为什么当初要每帧重放 ✗：★ `hide_kids`（★ **L4230** ✓）会**递归藏子树** ✗
-  --     且**只藏不显** ✗ ⇒ ★ 必须有东西**每帧把"该亮的"重新点亮** ✓
-  --     ★ 否则真机症状：★「第一关的墙/门永远不画」✓（★ 那个 bug 的根因 ✓）
+  --   ⚠️⚠️ **2026-10-20（v282）更正了一条把后人带沟里的旧注释** ✗✓✓
+  --
+  --     旧注释原文：「**触发**：`_cells_paint` 由 **L2071** 每帧调用（同一条路还负责点亮 `face`）」
+  --     ★ 事实：那时起 `_cells_paint` **只在建控件时**被调用（`create_control` / `ensure_cells`），
+  --       **根本没有每帧的调用者** ⇒ 挂在这儿的"每帧重放"是**死码**。
+  --     ★ 代价：v280 照着这句把家具重放挂在这里 ⇒ **离线全绿、真机无效**（用例自己手动调了这个函数，
+  --       等于替被测代码补了关键一步）。v281 才改挂到真正每帧的 `on_tick`。
+  --     ★ 教训：**"每帧调用"必须去数调用点，不能信注释**（见 `docs/回执-首关家具不画-v281.md` §五）。
+  --
+  --   ★ 为什么当初要重放：★ `hide_kids` 会**递归藏子树** ✗ 且**只藏不显** ✗
+  --     ⇒ ★ 必须有东西把"该亮的"重新点亮 ✓ ★ 否则真机症状：「第一关的墙/门永远不画」✓
   --   ⇒ ★★ **要省成本，正确顺序** ✓：
-  --     ★ ① 先确认 `L4267` 那条**对称恢复覆盖了所有 hide 路径** ✓
-  --     ★ ② 再把这里从"每帧"改成"**脏标记驱动**" ✗
+  --     ★ ① 先确认"由藏转显"那条**对称恢复覆盖了所有 hide 路径** ✓
+  --     ★ ② 再把 `_overlay_dirty` 从"事件驱动"改成更细的脏标记 ✗
   --     ★ ③ ★ **不能直接删** ✗ —— ★ 删了会退回那个 bug ✓
-  --   ★ 测量入口 ✓：`tests/grid_cost.lua`（13 项 ✓）· `tests/_wip/probe_*` 里那几条计数 ✓
+  --   ★ 测量入口 ✓：`tests/grid_cost.lua` · `tests/_wip/perframe_engine_calls*.lua`
   -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-  if cell_id ~= nil and self._edge_want ~= nil then
-    local w = self._edge_want[cell_id]
-    if w ~= nil then
-      for name, want in pairs(w) do
-        local s2 = self:sub(cell_id, name)
-        if s2 ~= nil and s2.SetVisible ~= nil then
-          pcall(function() s2:SetVisible(want) end)
-        end
-      end
-    end
+  -- ★★★★★★★★ 2026-10-20 **每帧重放门墙 + 家具/障碍物**（同一个入口，只此一份实现）
+  --
+  --   ★ 这是"**第一次进第一关家具/障碍物不画**"（以及当年"墙门不亮"）的修法：
+  --     `visible=false` 对 `cell.*` 会 `hide_kids()` 递归藏子树，而且**只藏不显**；
+  --     `face` 有人每帧点亮，而 `wall.*`/`door.*`/`obj` 只在属性下发那趟设一次 ⇒ 必须重放。
+  --   ⚠️ 真正的"每帧"入口在 `Adapter:on_tick` 的 `_overlay_dirty` 分支；
+  --      这里这一句只是**建格子那一刻顺便先画一次**（很多格子建完就再也不进 dirty 了）。
+  if cell_id ~= nil then
+    self:_repaint_cell_overlays(cell_id)
   end
   -- 铺满格子（子控件默认可能比格子小，**甚至尺寸是 0** —— 两种都会让它"看不见"）
   --
@@ -2350,6 +2532,34 @@ function Adapter:ensure_cells(rows, cols)
         layer_cells, layer_subs, layer_subs / layer_cells))
     end
   end
+  -- ★ v315：格子建好后，给每个格子补 face（新架构：face 从 cell 模板里拆出去了）
+  --   在 content 里实例化 face 并命名 `face` ⇒ 原来所有写 `sub(cell,"face")` 的代码自动换绑。
+  pcall(function()
+    for r = 1, rows do
+      for c = 1, cols do
+        local cid = self:cell_id(r, c)
+        local ctrl2 = self:find(cid)
+        if ctrl2 ~= nil then self:_ensure_cell_face(cid, ctrl2) end
+      end
+    end
+  end)
+  -- ★★★★★★★★ 2026-10-23（v318）**格子建好之后必须再放一次家具** ✗✓✓
+  --
+  --   真机证据（`日志_2026/10/23_19:55:43_玩家_烧钱的玩意`）：
+  --     · `模板化家具：关卡=true（实例缓存已清）` **出现过** ⇒ `furn_level` 属性到了 ✓
+  --     · 但**一条 `家具模板：cell=… ← furn.xxx` 都没有**，也没有「本轮补造」行 ✗
+  --     · 格子是**进关之后**才建出来的：`棋盘格子：25 / 25 存在（本次新建 25 个，模板索引 1073741876）`
+  --   ⇒ 根因：`_apply_furn_level` 跑在"格子还没建 / `things` 还没进树"的时刻，
+  --     于是 `_furn_tpl_ok=false` 被**永久钉住**，而 `furn_tpl` 属性那时只做缓存、没人补造 ⇒ 家具一件不出 ✗
+  --   ⇒ 修法：① 格子建好后**主动补造一次**（本段）；② `_spawn_furn_tpl` 里**重新读一次映射**、不再钉死；
+  --            ③ `on_tick` 里给一个**有上限**的补造重试（见 `_furn_retry`）
+  pcall(function()
+    if self._furn_want ~= nil and next(self._furn_want) ~= nil then
+      self._furn_prefabs = self:_furn_prefab_map()
+      self._furn_tpl_ok = (self._furn_prefabs ~= nil and next(self._furn_prefabs) ~= nil)
+      self:_furn_try_all()
+    end
+  end)
   return made
 end
 
@@ -2397,7 +2607,7 @@ local DECOR = {
 
 local MANAGED = {
   "root", "topbar", "left", "tray", "clues", "board",
-  "right", "actions", "modal", "intro",
+  "right", "actions", "modal",
 }
 
 -- ★ 只有"开常驻光标"这件事需要额外覆盖 `home` / `select`。
@@ -2407,12 +2617,21 @@ local MANAGED = {
 --   CURSOR_CONTAINERS = "需要打开「显示常驻光标」的容器"（**必须包含每个屏幕容器**）。
 local CURSOR_CONTAINERS = {
   "root", "topbar", "left", "tray", "clues", "board",
-  "right", "actions", "modal", "intro",
+  "right", "actions", "modal",
   "home", "select",
 }
 
+-- ★★★ 2026-10-21（v288）**脚本自管的顶层容器**（不参与 `hide_unlisted` 的"不在计划里就藏"）
+--
+--   目前只有教程浮层 `teach`：它的显隐完全由 `lua/tutorial_ui.lua` 决定
+--   （打开=显示 `teach.lX` + `teach.text.lX`，关闭=隐藏），**永远不会出现在任何屏幕计划里**。
+--   ⇒ 如果不豁免，`hide_unlisted` 每趟都会把整棵教程浮层藏掉（真机实测：教程"打开了"但一片空白）。
+--   ⚠️ 以后新增这种"自管显隐的顶层容器"时，名字要加到这里，并同步 `tutorial_ui` 的配置。
+local SELF_MANAGED_TOP = { teach = true }
+
 function Adapter:hide_unlisted(keep)
   local hidden = 0
+  local skipped_self = 0
   for i = 1, #MANAGED do
     local parent = self:find(MANAGED[i])
     if parent ~= nil and parent.GetChildren ~= nil then
@@ -2423,7 +2642,17 @@ function Adapter:hide_unlisted(keep)
           local name = nil
           pcall(function() name = child.name end)
           if name ~= nil and name ~= "" and not keep[name] and not DECOR[name] then
-            if child.SetVisible ~= nil then
+            -- ★★★ 2026-10-21（v288）**脚本自管的顶层覆盖层一律不藏** ✗✓
+            --
+            --   真机实测（用户 2026-10-21 04:19 日志）：教程控件生成好了、日志也打了
+            --   `[tutorial] 打开 tag=l1（第 1 / 3 页）`、自检 `18/18` 全绿，
+            --   但**屏幕上一片空白** ✓ —— 因为这个函数把 root 下"不在本屏计划里"的
+            --   直接子控件**逐个 SetVisible(false)**，而 `teach` 永远不在任何屏幕计划里 ✓
+            --   ⇒ 整棵教程浮层被它关掉，而且它**只会隐藏、从不恢复** ✗
+            --   ⇒ 修法：这类"脚本自己管显隐"的顶层容器，显式豁免（显隐由 `tutorial_ui` 决定）。
+            if SELF_MANAGED_TOP[name] then
+              skipped_self = skipped_self + 1
+            elseif child.SetVisible ~= nil then
               local ok2 = pcall(function() child:SetVisible(false) end)
               if ok2 then hidden = hidden + 1 end
             end
@@ -2431,6 +2660,12 @@ function Adapter:hide_unlisted(keep)
         end
       end
     end
+  end
+  -- 只喊一次：让"豁免生效"在真机日志里可见（否则这条又是静默的）
+  if skipped_self > 0 and not self._said_self_managed and print then
+    self._said_self_managed = true
+    print("[murdoku] hide_unlisted：跳过 " .. skipped_self
+      .. " 个**脚本自管的顶层容器**（teach，教程浮层 —— 显隐由 tutorial_ui 决定）")
   end
   return hidden
 end
@@ -2542,183 +2777,22 @@ function Adapter:_tray_btn_art(moved, names, done, miss)
   return moved
 end
 
-function Adapter:apply_tray_layout(layout)
-  if layout == nil or layout.items == nil then return 0 end
-  local parent = self:find(self.cfg.tray_parent or "tray")
-  if parent == nil then
-    self:warn_once("tray:parent", "找不到头像卡容器（cfg.tray_parent，默认 tray）")
-    return 0
-  end
-  local moved = 0
-  for i = 1, #layout.items do
-    local it = layout.items[i]
-    local ctrl = self:find(it.id)
-    if ctrl ~= nil then
-      local ox = it.cx - layout.tray_cx
-      local oy = it.cy - layout.tray_cy
-      if ctrl.SetAnchorMin then pcall(function() ctrl:SetAnchorMin(0.5, 0.5) end) end
-      if ctrl.SetAnchorMax then pcall(function() ctrl:SetAnchorMax(0.5, 0.5) end) end
-      if ctrl.SetPivot     then pcall(function() ctrl:SetPivot(0.5, 0.5) end) end
-      if ctrl.SetSizeDelta then pcall(function() ctrl:SetSizeDelta(it.w, it.h) end) end
-      if ctrl.SetAnchoredPosition then pcall(function() ctrl:SetAnchoredPosition(ox, oy) end) end
-      -- ★★ 2026-09-28：**重排后必须把样式缩放重新施加一遍**。
-      --
-      --   这一行就是"已放置头像卡没变小"的修复点：
-      --   原来 `style` 分支设了 0.72，但重排的 `SetSizeDelta`/`SetAnchoredPosition`
-      --   会把姿态重置回 1.0，而重排发生在其后 ⇒ 玩家永远看不到那一档。
-      --   缩放值取自 `scale_of_style`（与 style 分支**同一处定义**，不可能不一致）。
-      local sty = self._style and self._style[it.id] or nil
-      local sc2 = sty ~= nil and self:scale_of_style(sty) or nil
-      if sc2 ~= nil and ctrl.SetLocalScale ~= nil then
-        pcall(function() ctrl:SetLocalScale(sc2, sc2, 1) end)
-      end
-      -- 卡片里的 face / text 跟着一起变
-      local kids = { "face", "text" }
-      for k = 1, #kids do
-        local sub = self:sub(it.id, kids[k])
-        if sub ~= nil then
-          if sub.SetSizeDelta then pcall(function() sub:SetSizeDelta(it.w, it.h) end) end
-          if sub.SetAnchoredPosition then pcall(function() sub:SetAnchoredPosition(0, 0) end) end
-          if sub.SetPivot then pcall(function() sub:SetPivot(0.5, 0.5) end) end
-        end
-      end
-      moved = moved + 1
-    end
-  end
-
-  -- ★ 头像卡体检（2026-09-27 新增）。
-  --
-  -- 为什么需要：用户问"tray 里的图我是不是也得补"。而按已真机确认的规则 ——
-  --   **预设按钮只渲染"四个状态节点引用的"子控件**，未被引用的子控件**不显示**。
-  --   用户往 tray.D 加了一个图片子控件，但**没动状态节点**，所以到底显不显示只有真机能答。
-  -- 这条诊断把每张卡的"子控件清单 + visible + imageType + imageId"打出来：
-  --   · 子控件**不在清单里** → 加子控件这步没生效（或没存进关卡）
-  --   · 在清单里但 **visible=false** → 被脚本藏了
-  --   · visible=true 但 imageId=nil → 没配图
-  --   · 全都正常却看不见 → **就是状态节点没引用**（这条规则得到验证）
-  if self.cfg.tray_diag ~= false and print then
-    local names = { "A", "B", "C", "D", "E", "F", "V" }
-    print("[murdoku] --- 头像卡体检（每张卡的子控件）---")
-    for i = 1, #names do
-      local cid = (self.cfg.tray_parent or "tray") .. "." .. names[i]
-      local c = self:find(cid)
-      if c ~= nil then
-        local kids = nil
-        pcall(function() if c.GetChildren then kids = c:GetChildren() end end)
-        local n = (type(kids) == "table") and #kids or 0
-        local parts = {}
-        for k = 1, n do
-          local kk = kids[k]
-          local kn, kv, kt, ki = "?", "?", "?", "?"
-          pcall(function() kn = tostring(kk.name) end)
-          pcall(function() kv = tostring(kk.visible) end)
-          pcall(function() kt = tostring(kk.imageType) end)
-          pcall(function() ki = tostring(kk.imageId) end)
-          parts[#parts + 1] = kn .. "(visible=" .. kv .. " type=" .. kt .. " id=" .. ki .. ")"
-        end
-        print(string.format("  %-9s 子控件 %d 个  %s", cid, n,
-          (#parts > 0) and table.concat(parts, "  ") or "**（没有子控件）**"))
-      else
-        print(string.format("  %-9s **找不到这个控件**", cid))
-      end
-    end
-    -- ★ 2026-09-28 扩展：**原来只查 7 张头像卡，按钮一个都没查** ——
-    --   于是"按钮到底有没有子控件"在真机上完全看不出来，只能靠猜。
-    --   按同一套判读法再查一批代表性按钮。
-    local btns = { "tool.place", "tool.x", "tool.eraser", "action.submit", "action.undo",
-                   "intro.next", "modal.suspect.A" }
-    for i = 1, #btns do
-      local cid = btns[i]
-      local c = self:find(cid)
-      if c ~= nil then
-        local kids = nil
-        pcall(function() if c.GetChildren then kids = c:GetChildren() end end)
-        local n = (type(kids) == "table") and #kids or 0
-        local parts = {}
-        for k = 1, n do
-          local kk = kids[k]
-          local kn, kv, kt, ki = "?", "?", "?", "?"
-          pcall(function() kn = tostring(kk.name) end)
-          pcall(function() kv = tostring(kk.visible) end)
-          pcall(function() kt = tostring(kk.imageType) end)
-          pcall(function() ki = tostring(kk.imageId) end)
-          parts[#parts + 1] = kn .. "(visible=" .. kv .. " type=" .. kt .. " id=" .. ki .. ")"
-        end
-        print(string.format("  %-18s 子控件 %d 个  %s", cid, n,
-          (#parts > 0) and table.concat(parts, "  ") or "**（无子控件 → 完全透明看不见）**"))
-      else
-        print(string.format("  %-18s **找不到**", cid))
-      end
-    end
-    print("[murdoku] --- 体检结束 ---")
-  end
-  -- ★★ 2026-09-28 新增：**运行时给按钮底图上色 + 提到最上层**。
-  --
-  -- 为什么必须走运行时：真机日志显示 `bg(visible=true type=Stretch id=100001)` ——
-  --   存档里图片 ID **确实改成 100001 了**，但屏幕上**还是白块**。
-  --   推断：那些白块是**按钮状态节点自带的白色底板**，盖在我的 `bg` 上面。
-  --   ⇒ 两手一起上：
-  --     ① 运行时 `SetImage`（这是已被证明能改图的路径）把底图设成有颜色的素材；
-  --     ② `bg:SetAsLastSibling()` 把它提到最上层，压住状态节点那块白板。
-  -- ★★ 2026-09-28：**改成默认关闭（opt-in）**。
-    --
-    -- 为什么：`.gil` 里每个按钮的 `bg` 已经带好了正确的 (source, id) 对
-    --   （真机读出来 `src=4281536672 id=100108`，和棋盘上的浅蓝横墙一模一样）。
-    --   而运行时再 `SetImage(bg.imageSource, 100108)` 反而把它**覆盖成了紫色** ——
-    --   说明运行时读到的 `imageSource` 和我写进存档的**不是同一个值**，配错了图集。
-    --   ⇒ 既然静态图已经对，就不该再动它。**同一件事有两处实现，就会有两处不一致** ——
-    --     这一课我这个项目里已经吃了两次（另一次是 `erases` 动效）。
-    --   想再实验运行时上色时，传 `cfg.btn_art = true` 打开。
-    if self.cfg.btn_art == true and print then
-    -- ⚠️ 名单**不能手写**！第一版我手写了 19 个，而实际有 35 个按钮 → 那 16 个
-    --    （`action.q.*`、`modal.level.*` …）**从没被验证过**
-    --    （真机日志 `SetImage 成功 19 个` 暴露的）。
-    --    改成由调用方传入（`main.lua` 从规划里取 `kind == "button"`），有多少算多少。
-    --
-    -- ★★★★★ 2026-10-05 **这两个 local 必须提到这里**（Round 35 的结构性修复，最后一步）。
-    --   原因：它们被**两个地方**用 —— 本 `btn_art` 块（函数末尾的上色循环，
-    --   见下面 `--- 按钮底图上色（运行时）---` 那段），以及**两个彻底独立的功能**
-    --   （`apply_ruler_layout` / `diagnose_overlap`，它们已挪到 `apply_tray_layout` 外面）。
-    --   代价说明：现在 `cfg.btn_art ~= true` 时也会读一次 `cfg.btn_list`、建两个数 ——
-    --   `apply_tray_layout` 只在开局摆一次，这点成本可忽略（不给每帧路径加负担）。
-    local names = self.cfg.btn_list or {}
-    local done, miss = 0, 0
-    -- ★ ★ ★★★ 2026-10-05 **Round 35 收口**：块账在这里收平 ✓
-    --
-    --   历史（这条 bug 的形状很值得记）：
-    --     L2371 的 `if self.cfg.btn_art == true and print then` 原来**一直没被关闭** ✗
-    --     ⇒ 后面两个**顶层方法定义**被当成它的语句体吞了进去：
-    --       `Adapter:apply_ruler_layout`（原 L2391）与 `Adapter:diagnose_overlap`（原 L2474）
-    --     ⇒ Lua **不报错**（`end` 总数平衡），但这两个方法**只在 `apply_tray_layout`
-    --       被调用过之后**才存在 ✗
-    --     ⇒ `lua/main.lua` 的 `if a.apply_ruler_layout ~= nil then …` / `if diagnose_overlap then …`
-    --       守卫**恒为假** ⇒「行标/列标对齐」与「相交诊断」**从来没跑过**（静默，零报错）✗
-    --
-    --   收口做法：两个方法整段**挪到本函数之后**（真正的文件顶层），
-    --   上色循环留在本函数内（默认关闭）⇒ 本行的 `end` 关掉 `btn_art` 块 ✓
-    --   ⇒ `node tools/audit/check_nesting.mjs` 的 `[嵌套]` 必须降到 **0 处** ✓
-  end
-  -- ★★★ 2026-10-05 Round 45：**上色循环已抽成顶层 helper** `Adapter:_tray_btn_art`
-  --   （就定义在下面，`apply_tray_layout` **之前**）。
-  --   为什么非抽不可：那段循环用 `names` / `done, miss`（本函数局部），
-  --   而它**上面**那两个方法又必须在本函数**外面** ⇒ 只能把那段整段移出去 ✓
-  --   等价性：同一段代码、同样顺序、同样计数、同样默认关闭（`cfg.btn_art`）✓
-  -- ★★★★★ 2026-10-05 Round 48 修：下面这行调用用到了 `names` / `done` / `miss`，
-  --   但抽 helper 时它们**没有跟着过来** ✗ ⇒ selene 报三条 `error[undefined_variable]` ✗
-  --   （`names` / `done` / `miss` @L2461）⇒ 一旦 `cfg.btn_art = true` 就会**当场崩**（`#nil` 抛错 ✗）。
-  --   该路径**默认关闭** ⇒ 离线测试测不到 ✗ ⇒ 只有静态检查能抓 ✓（这正是 selene 的价值 ✓）
-  --   ⇒ 修法：在调用前就地声明（与 helper 内部那份等价 ✓ 传参用 ✓）
+-- ★ 2026-10-18（优化组 · C 类清理）：`Adapter:apply_tray_layout`（**110 行**）**已删除** ✗✓
+--   判据：① 头像卡容器 `tray` 已按用户指令从布局计划里删除，`Controller:tray_layout_canvas`
+--           也在同一批删掉 ⇒ **全仓没有任何调用点**；
+--        ② 它每局唯一能干的事就是打一行「找不到头像卡容器（cfg.tray_parent，默认 tray）」；
+--        ③ 真机日志（v274）确认：那行每局都在，除此之外一无所出。
+--   ⚠️ 里面**唯一还活着**的是「按钮底图上色」那段（**缺陷 1** 修的就是它的开关）⇒
+--      提成独立入口 `Adapter:apply_btn_art()`，**仍然受 `cfg.btn_art == true` 控制**（默认关），
+--      由 `main.lua` 在设好 `cfg.btn_list` 之后调一次 ✓
+function Adapter:apply_btn_art()
+  -- ★ 缺陷 1 的行为不变：**默认关闭**（`cfg.btn_art` 默认 nil）；要实验时显式传 true。
+  --   ⚠️ 判据：`grep -c "_tray_btn_art(moved" lua/engine_adapter_qianxing.lua` == 1
+  if self.cfg.btn_art ~= true or print == nil then return 0 end
   local names = self.cfg.btn_list or {}
   local done, miss = 0, 0
-  local moved_final = self:_tray_btn_art(moved, names, done, miss)
-  -- ⚠️⚠️ 这个 `end` 关的就是 `apply_tray_layout`（`function` 在 2244 行）。
-  --   它**必须**在下面两个方法之前 —— 否则那两个方法又会被吞成它的**子闭包**
-  --   ⇒ 加载时不存在 ⇒ `main.lua` 的 `~= nil` 守卫恒假
-  --   ⇒ 行标/列标对齐、相交诊断**静默失效**（零报错）✗ —— 就是本 bug 的原形。
-  --   判据：`node tools/audit/check_nesting.mjs` ⇒ 这两个方法的 `深度` 必须是 **0** ✓
-  return moved_final
+  return self:_tray_btn_art(0, names, done, miss)
 end
-
 -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 -- ★★ 2026-10-12 **【已删除】`Adapter:apply_ruler_layout` 整段** ✗✓（用户要求：ruler 功能废弃 ✓）
 --
@@ -3000,348 +3074,16 @@ end
 -- 能不能真的造出一个格子」。但「能不能造」只有**缺格子时**才会被试到，
 -- 而那时日志里已经混了一堆别的东西。这里提前把候选和索引列出来，
 -- 让你**试玩之前**就能确认配对了没有。
--- ════════════════════════════════════════════════════════════════════════
-
-function Adapter:diagnose_template()
-  local log = print
-  if log == nil then return false end
-  local g = self.cfg.cells
-  if g == nil then return false end
-
-  local base_id = g.probe or "cell.1.1"
-  -- 与 _cells_prefabs 同样的规矩：基准**只从参照格子取**。
-  -- 纯模板模式下参照格子不存在 → base_idx 保持 nil → `tpl.cell` 会被正确算成"可用候选"。
-  --
-  -- ⚠️ 但要注意**时机**：本函数跑在 `ensure_cells` **之后**，那时纯模板模式下的
-  --    `cell.1.1` 已经被脚本造出来了 —— 现场查一定查得到。所以"纯模板模式"这个事实
-  --    要读 `ensure_cells` **当时记下**的 `self.cells_probe_missing`，不能现场重推。
-  local base_idx = nil
-  local base_ctrl = self:find(base_id)
-  if base_ctrl ~= nil then pcall(function() base_idx = base_ctrl.prefabIndex end) end
-  if self.cells_probe_missing == true then
-    log("[murdoku]   （**纯模板模式**：生成前没有参照格子 " .. base_id
-      .. "，格子全部由脚本按模板生成 —— 这是一种合法且推荐的配置）")
-  elseif base_idx == nil then
-    log("[murdoku]   （没有参照格子 " .. base_id .. "，也读不到它的模板索引）")
-  end
-
-  local names = g.prefab_from or { base_id, "tpl.cell", "cell.tpl", "cell.prefab" }
-  local found, usable = {}, 0
-  log("[murdoku] --- 格子模板候选（用来批量生成其余格子）---")
-  if type(g.prefab) == "number" and g.prefab > 0 then
-    log("[murdoku]   cfg.cells.prefab = " .. tostring(g.prefab)
-      .. "   ← **显式配置**，脚本会最先试它")
-  else
-    log("[murdoku]   cfg.cells.prefab = (未配置)")
-  end
-  for i = 1, #names do
-    local id = tostring(names[i])
-    local c = self:find(id)
-    if c == nil then
-      log("[murdoku]   " .. id .. "  —— **不存在**")
-    else
-      local p = nil
-      pcall(function() p = c.prefabIndex end)
-      -- ★ 两个数字含义不同，都要打出来（用户 2026-09-26 纠正过：
-      --   `prefabIndex` 是**控件自身**的模板索引；模板引用控件引用的是
-      --   `referencedPrefabIndex`。只打一个会让人把"控件自身索引"误当成"模板索引"。）
-      local rf = self:_ref_index_of(c)
-      local ref_txt = (rf ~= nil) and ("  ref=" .. tostring(rf) .. "（引用的模板）") or ""
-      found[#found + 1] = { id = id, idx = p }
-      local tag
-      if id == base_id then
-        tag = "   ← 参照格子自己"
-      elseif type(p) == "number" and p > 0 and p == base_idx then
-        tag = "   ← 与 " .. base_id .. " 同一个索引"
-      elseif type(p) == "number" and p > 0 then
-        tag = "   ← 与 " .. base_id .. " **不同**"
-        if rf == nil then tag = tag .. "：可能就是可用的那个" end
-        usable = usable + 1
-      else
-        tag = "   ← 读不到 prefabIndex"
-      end
-      log("[murdoku]   " .. id .. "  prefabIndex=" .. tostring(p) .. ref_txt .. tag)
-    end
-  end
-
-  -- ★★ 结论必须报**实际结果**，不能靠"索引看起来不同"来猜。
-  --
-  -- 真机 16:07 就是这么被误导的：生成**明明成功了**
-  -- （`格子模板索引 1073741876 可用；棋盘格子：25 / 25 存在`），
-  -- 可这一段却打出「**没有可用的自定义模板** —— 缺格子时生成会失败」。
-  -- 原因：`cell.1.1` 现在自己就带着模板索引（它是「模板引用控件」），
-  -- 于是 `base_idx` 等于它自己 → "与 base 不同"这个启发式恒为假 → usable=0。
-  --
-  -- 所以现在：**ensure_cells 跑过就以它的实测结果为准**，启发式只当备注。
-  -- ★ 把"生成前就存在的格子"点出来 —— 这是最容易被看错的一件事。
-  do
-    local pre = self.cells_preexisting
-    if pre ~= nil then
-      local ids = {}
-      for id in pairs(pre) do ids[#ids + 1] = id end
-      table.sort(ids)
-      if #ids > 0 then
-        log("[murdoku]   ℹ️ 生成前**已存在**的格子：" .. table.concat(ids, " "))
-        log("[murdoku]     这些是**编辑器里的控件**，脚本只把它们摆正、**不会覆盖** —— "
-          .. "所以它们不是模板生成的副本。")
-        if pre[base_id] and base_idx ~= nil and g.prefab ~= nil and base_idx == g.prefab then
-          log("[murdoku]     ⚠️ **" .. base_id .. " 的索引 == cfg.cells.prefab** —— "
-            .. "它**就是那个模板引用控件本身**，不是生成的格子！")
-          log("[murdoku]        它的外观由它自己决定，**可能和模板里的格子不一样**"
-            .. "（截图里常见表现：只有它看着不对 / 缺一块）。")
-          log("[murdoku]        想要「全 25 格都是模板副本」：把它**改名成 `tpl.cell`**（或删掉），"
-            .. "让脚本把 " .. base_id .. " 也一起生成。")
-        end
-      end
-    end
-  end
-
-  if self.cells_ok ~= nil then
-    if self.cells_ok then
-      log("[murdoku] 结论（实测）：**生成成功了** —— 用模板索引 "
-        .. tostring(self.cells_index) .. " 建了 " .. tostring(self.cells_made)
-        .. " 个格子，棋盘 " .. tostring(self.cells_total) .. " 格齐全")
-    else
-      log("[murdoku] 结论（实测）：**生成失败** —— 试过的索引都不可实例化（见上面的错误行）")
-    end
-    log("[murdoku] --- 体检结束（模板）---")
-    return self.cells_ok
-  end
-
-  -- 没跑过 ensure_cells（例如缺格子数为 0）时才用启发式
-  if usable > 0 or (type(g.prefab) == "number" and g.prefab > 0) then
-    log("[murdoku] 结论（推测）：有**可能是可用模板**的候选 —— "
-      .. "缺格子时脚本会挨个**真试着造**，造得出来才用它")
-    log("[murdoku] --- 体检结束（模板）---")
-    return true
-  end
-
-  log("[murdoku] 结论：**没有可用的自定义模板** —— "
-    .. "缺格子时生成会失败（日志会打「全部实例化失败」）")
-  log("[murdoku]   原因：" .. base_id .. " 自己的 prefabIndex 是「预设按钮」的**基础模板**，"
-    .. "读得到但不能实例化；而右键【另存为模板】存出来的索引**也调不动**。")
-  log("[murdoku] ⚠️ 正确入口是官方文档里那个（右键另存为模板**不是**它）：")
-  log("[murdoku]   ① 界面控件组管理 → 界面控件组库 → **客户端控件模板** → 【添加客户端控件】")
-  log("[murdoku]      → 加一个「预设按钮」，配好底图与子控件 → **存为模板**")
-  log("[murdoku]   ② 那个模板的**控件模板索引 ID** 才是客户端脚本能调用的")
-  log("[murdoku]      （点它就能看到 ID，把数字填进 cfg.cells.prefab 也行）")
-  log("[murdoku]   ③ 也可尝试把它放进容器画布后改名 tpl.cell（脚本会自己读它的索引）")
-  log("[murdoku] 依据：官方《客户端控件和客户端脚本的定义》——")
-  log("[murdoku]   「除客户端控件容器画布中的客户端控件以及客户端控件模板中的控件外，"
-    .. "其他控件均为服务器控件，**服务器控件的模板索引无法被客户端脚本调用**」")
-  log("[murdoku] --- 体检结束（模板）---")
-  return false
-end
-
--- ════════════════════════════════════════════════════════════════════════
--- 参照格子体检（`cell.1.1`）
---
--- 为什么需要：一个格子要能"看得见 + 点得动 + 能当模板"，同时依赖四五项设置：
---   控件类型（必须预设按钮/光标检测区域）、可被光标射线检测、子控件 face/note/x、
---   face 挂到「默认」状态节点、图片类型=拉伸、祖先容器开了「显示常驻光标」。
---   这些**在日志里全都没有痕迹** —— 出问题时只能靠肉眼一个个猜。
---   2026-09-26 的真机日志就是这样：只知道"缺 24 个格子"，不知道手上这个配好没有。
---
--- 这里把上面每一项读出来，逐条给出 ✅/❌ 和"怎么修"，一次性讲完。
--- 每个会话打一次，不刷屏。
--- ════════════════════════════════════════════════════════════════════════
-
-function Adapter:diagnose_cell(id)
-  id = id or (self.cfg.cells and self.cfg.cells.probe) or "cell.1.1"
-  -- 走 print（**正常级**日志）而不是 printerr：
-  -- 这是一份**报告**，不是故障。走 stderr 有两个坏处：
-  --   ① 模拟器/排查脚本会把"日志里有没有报错"当成健康判据 → 一份全是 ✅ 的体检
-  --      也会被算成错误（本次就是这样挂了 8b/9 两步回归）；
-  --   ② 你在日志窗口的「报错」分类里会看到一堆其实是 ✅ 的行。
-  local log = print
-  if log == nil then return false end
-
-  local c = self:find(id)
-  if c == nil then
-    -- ⚠️ 纯模板模式（board 下只留一个 `tpl.cell` 模板引用控件、不建任何真格子）下，
-    --    参照格子**本来就不存在** —— 这时候报"找不到控件"就是误报（会把人吓一跳）。
-    --    改成明确说"这是合法配置，体检跳过"，把判断权交给下面的「模板候选」实测结论。
-    local g = self.cfg.cells or {}
-    if id == (g.probe or "cell.1.1") and (g.prefab ~= nil or self:find("tpl.cell") ~= nil) then
-      log("[murdoku] 格子体检：没有 " .. id .. " —— **纯模板模式**（board 下只放模板引用控件）")
-      log("[murdoku]   这是合法配置：格子全部由脚本按模板生成，编辑器里一个真格子都不用建。")
-      log("[murdoku]   子控件 face/note/x 与状态节点引用都在**模板里**，不在这里，所以本段体检跳过。")
-      log("[murdoku]   → 有没有配对，看紧接着的「格子模板候选」那段的**实测结论**。")
-      log("[murdoku] ===== 体检结束 =====")
-      return true
-    end
-    log("[murdoku] 格子体检 " .. id .. "：**找不到这个控件**"
-      .. "（名字要一字不差；必须在客户端控件容器里）")
-    return false
-  end
-
-  local lines, bad = {}, 0
-  local function say(s) lines[#lines + 1] = s end
-  local function mark(okflag, text, fix)
-    if okflag then
-      say("  ✅ " .. text)
-    else
-      bad = bad + 1
-      say("  ❌ " .. text .. (fix and ("   → " .. fix) or ""))
-    end
-    return okflag
-  end
-
-  -- ① 类型：只有「预设按钮 / 光标检测区域」才有 AddCursorEventListener
-  --    注意：kind 在真机/模拟器上可能读不到（模拟器返回 nil），所以以
-  --    **接口是否存在**为准，类型名只作参考 —— 否则会出现"类型 = nil ✅"
-  --    这种自相矛盾的行。
-  local kind = nil
-  pcall(function() kind = c.kind end)
-  local kind_s = (kind ~= nil) and tostring(kind) or "读不到"
-  if c.AddCursorEventListener ~= nil then
-    say("  ✅ 控件类型 = " .. kind_s .. "，且**支持光标事件**（AddCursorEventListener 存在）")
-  else
-    mark(false, "控件类型 = " .. kind_s .. "，**不支持光标事件**",
-      "改成【预设按钮】或【光标检测区域】；用容器/文本框永远点不动")
-  end
-
-  -- ② 射线检测 + 可交互
-  local ray, ia = nil, nil
-  pcall(function() ray = c.raycastTarget end)
-  pcall(function() ia  = c.interactable end)
-  if ray ~= nil then
-    mark(ray == true, "可被光标射线检测 raycastTarget = " .. tostring(ray),
-      "在【基础】里打开它，否则点击到不了脚本")
-  else
-    say("  ⚠️ 读不到 raycastTarget（该实现不暴露这个字段）—— 请到编辑器里确认已打开")
-  end
-  if ia ~= nil and ia ~= true then
-    mark(false, "可交互 interactable = false",
-      "脚本会按格子是否可站人切它；常关会让格子一直是灰的")
-  end
-
-  -- ③ 模板索引（决定能不能复制出其余格子）
-  local pf = nil
-  pcall(function() pf = c.prefabIndex end)
-  if type(pf) == "number" and pf > 0 then
-    say("  ℹ️ 模板索引 prefabIndex = " .. tostring(pf)
-      .. "（**能不能实例化以实际生成结果为准** —— 见下面「格子模板候选」那段的实测结论。"
-      .. "内置基础模板（例如「预设按钮」的 1073741848）会静默返回 nil；"
-      .. "用「**模板引用控件**」引用自定义模板后，这里就会变成可用的模板索引）")
-  end
-
-  -- ④ 子控件（脚本按名字找，**支持装在中间容器里的方案 A**）
-  --
-  -- ⚠️ 这里曾经写死 `c:GetChild(name)`（只查直接子控件），于是用户采用
-  --    **方案 A**（子控件装进 `content` 容器）时，体检会**误报「不存在」** ——
-  --    而运行时的 `Adapter:sub` 早就支持穿透容器了。**两处查找方式必须一致**，
-  --    否则就会变成"体检说没有、其实能用"或反过来，白折腾。
-  local via = nil
-  do
-    local direct = nil
-    pcall(function() direct = c:GetChild("face") end)
-    if direct == nil then
-      for _, rn in ipairs({ "content", "root", "body" }) do
-        local mid = nil
-        pcall(function() mid = c:GetChild(rn) end)
-        if mid ~= nil then via = rn break end
-      end
-    end
-  end
-  if via ~= nil then
-    say("  ℹ️ 子控件装在中间容器 `" .. via .. "` 里（方案 A）—— 按路径查找")
-  end
-
-  local want_children = { { "face", true }, { "note", false }, { "x", false } }
-  for i = 1, #want_children do
-    local name = want_children[i][1]
-    local sub = self:sub(id, name)      -- ★ 与运行时同一套查找
-    if sub == nil then
-      mark(false, "子控件 " .. name .. " —— 不存在",
-        (name == "face" and "没它就换不了格面图（放置角色时看不到人）"
-          or "没它这一格的" .. (name == "note" and "铅笔笔记" or "X 标记") .. "显示不出来")
-        .. (via ~= nil and "" or "（若你把它装进了中间容器，容器名要在 content/root/body 之一）"))
-    else
-      local vis = nil
-      pcall(function() vis = sub.visible end)
-      local extra = ""
-      -- face 和 x 都是**图片**控件，把图片来源/类型都读出来。
-      -- 为什么连 x 也要读：能立刻发现"X 根本没配图"（imageId 为 nil 就永远不显示），
-      -- 也能看到「基础 / 拉伸」实际是哪一个。
-      if name == "face" or name == "x" then
-        local it, iid = nil, nil
-        pcall(function() it = sub.imageType end)
-        pcall(function() iid = sub.imageId end)
-        extra = "  imageType=" .. tostring(it) .. " imageId=" .. tostring(iid)
-        if iid == nil then
-          bad = bad + 1
-          extra = extra .. "   ← **图片来源没配**！去「图片设置 → 图片源=静态引用 → 引用素材资产」选一张 "
-            .. (name == "face" and "格面底图（带圆角/边框的建议用九宫格素材 + 图片类型=拉伸）"
-                          or "X 图标（功能图标类即可）")
-        end
-        -- ⚠️ 这里**只提示、不报错**。
-        --
-        -- 2026-09-26 真机实验（用户做的）：**基础 也会铺满图片控件本身** ——
-        -- 所以"格面不是拉伸"**不会**导致棋盘花掉，格面照样跟着格子缩放。
-        --
-        -- 「基础 / 拉伸」的真正区别只在**素材是九宫格/三宫格**时才显现：
-        --   · 素材图片属性 = 普通   → 基础 和 拉伸 表现**完全一样**（角都形变）
-        --   · 素材图片属性 = 三宫格 → 拉伸 保住那一对边，基础 会压扁
-        --   · 素材图片属性 = 九宫格 → 拉伸 保住四角，基础 会压扁圆角
-        -- 依据：官方《图片控件》那张「**图片属性**」表（注意：它属于**素材**，
-        -- 不是「图片类型」的选项）。
-        --
-        -- 所以这里最多给一句 info，绝不记成 ❌ —— 否则就是在制造误报。
-        if name == "face" and it ~= nil then
-          local s = tostring(it)
-          if not s:find("Stretch") then
-            say("  ℹ️ 格面用的是【基础】：**也会铺满格子**，不影响棋盘。"
-              .. "只有当你给 face 换了**九宫格/三宫格**素材、想让四角不被压扁时，"
-              .. "才需要把图片类型改成【拉伸】")
-          end
-        end
-      end
-      say("  ✅ 子控件 " .. name .. " 存在（visible=" .. tostring(vis) .. "）" .. extra)
-    end
-  end
-
-  -- ⑤ 祖先容器有没有开「显示常驻光标」（门控②）。脚本会自己开，这里只做复核。
-  local cur, cursor = c, false
-  for _ = 1, 12 do
-    if cur == nil then break end
-    local sc = nil
-    pcall(function() sc = cur.showCursor end)
-    if sc == true then cursor = true end
-    local p
-    pcall(function() p = cur.parent end)
-    cur = p
-  end
-  mark(cursor, "祖先容器已开「显示常驻光标」（门控②）",
-    "日志里没看到『已由脚本打开 N 个容器』就得在编辑器里手动勾")
-
-  log("[murdoku] ===== 格子体检：" .. id .. " =====")
-  for i = 1, #lines do log("[murdoku]" .. lines[i]) end
-  if bad == 0 then
-    log("[murdoku] 结论：**这一格配好了**（底图 + face/note/x + 状态节点 + 射线 + 门控②都过）。")
-    log("[murdoku]   → 接下来按第 5 节做「客户端控件模板」，再用「**模板引用控件**」引用它，")
-    log("[murdoku]     把 referencedPrefabIndex 填进 cfg.cells.prefab（**不是** prefabIndex）就行。")
-    log("[murdoku]   → 若这一格是**脚本生成**的副本，说明模板已通，不用再动编辑器。")
-  else
-    log("[murdoku] 结论：还有 " .. bad .. " 项要处理（见上面 ❌ 行）")
-  end
-  log("[murdoku] ===== 体检结束 =====")
-  return bad == 0
-end
-
--- ★★★★★ 2026-10-05 **销毁/回收一个控件时，把它名下「所有规划节点」的事件一起扔掉。**
---
---   为什么不能只按 id 清一笔：事件表现在按**规划节点**记（`id \1 父容器 \1 序号`），
---   一个 id 可能挂着好几个节点（`action.back` 就挂着 2 个）。
---   控件真的没了 ⇒ 这几个节点的事件**全都作废**：只清掉其中一个会留下**孤儿条目**
---   （那个键再也不会被写、也再也不会被读，纯泄漏）。
---   ⚠️ 前缀匹配是安全的：分隔符 `\1` 不可能出现在控件 id 里（同一条约定见
---      ui_controller 的 `drop_props_of`），所以 `id .. "\1"` 只会命中**这个 id** 的节点键。
---   ★★★★★ 2026-10-05 **B2 追加：`event_claim` 也要一起清**（同一件事，不能只做一半）。
---      `event_claim[id]` 指着"认领这个控件的那把节点键" —— 控件销毁重建后，那把键**已经
---      不存在**（上面刚被清掉）⇒ 不清就会**认领到旧节点** ✗：
---      `live_event()` 读 `self.events[旧键]` = nil ⇒ 静默退回 `node.event`，
---      看起来"还能点"，实际派发的可能不是这颗新控件的语义（而且新节点再也认领不上 ✗）。
+-- ★ 2026-10-18（优化组 · B 类清理）：`Adapter:diagnose_template` 与 `Adapter:diagnose_cell`
+--   （**合计 354 行**，含两段说明区）**已删除** ✗✓
+--   判据（真机日志给的结案证据，不需要再猜）：
+--     · `diagnose_cell`：v274/v276 日志「格子体检：cell.1.1」→ **每一项都 ✅** →
+--       「结论：**这一格配好了**（底图 + face/note/x + 状态节点 + 射线 + 门控②都过）」；
+--     · `diagnose_template`：「结论（实测）：**生成成功了** —— 用模板索引 1073741876
+--       建了 25 个格子，棋盘 25 格齐全」。
+--   ⇒ 它们是"搭界面阶段"的一次性体检，结论已落 docs（`真机搭建与运行指南` / `API-四方对照`）；
+--     留在上机包里每局要打 30+ 行 ⇒ 按"结案探针"清掉 ✓
+--   ⚠️ **保留** `diagnose_overlap`（用户点名不能删）与 `diagnose_grid`（`Murdoku.DIAG` 门控 + 有用例）
 function Adapter:forget_events_of(id)
   local pre = tostring(id) .. "\1"
   local stale = nil
@@ -3419,26 +3161,122 @@ function Adapter:read_palette()
   if self._palette ~= nil then return self._palette end
   local map, names = {}, {}
   local a = self.cfg.assets or {}
-  local root = self:find(a.palette or "assets")
-  if root ~= nil then
-    local kids = nil
-    pcall(function() kids = root:GetChildren() end)
-    if type(kids) == "table" then
-      for i = 1, #kids do
-        local k = kids[i]
-        local nm, src, id = nil, nil, nil
-        pcall(function() nm = tostring(k.name) end)
-        pcall(function() src = k.imageSource end)
-        pcall(function() id = k.imageId end)
-        if nm ~= nil and nm ~= "" and type(id) == "number" then
-          map[nm] = { source = src, id = id }
-          names[#names + 1] = nm
+  -- ★ 2026-10-17 **调色板可以有两处** ✗✓
+  --   ① `assets`（老：`portrait.*` / `row.*`）
+  --   ② **`things`（新：家具/障碍物的美术素材，用户要求"单独建一个 things 区域"）**
+  --   ★ 两个容器的子控件都用**名字**当引用键（`obj.table` / `portrait.A` …）✓
+  --   ★ `imageColor` 也一起读 ✓ —— 素材先按色块占位时，格子里的 `obj` 要跟着变色 ✓
+  local roots = { a.palette or "assets", a.things or "things" }
+  for ri = 1, #roots do
+    local root = self:find(roots[ri])
+    if root ~= nil then
+      local kids = nil
+      pcall(function() kids = root:GetChildren() end)
+      if type(kids) == "table" then
+        for i = 1, #kids do
+          local k = kids[i]
+          local nm, src, id, col = nil, nil, nil, nil
+          pcall(function() nm = tostring(k.name) end)
+          pcall(function() src = k.imageSource end)
+          pcall(function() id = k.imageId end)
+          pcall(function() col = k.imageColor end)
+          -- ★★★★★★★★ 2026-10-20（v282）**`imageId <= 0` 的控件不收** ✗✓
+          --
+          --   为什么要挑出来：`type(id) == "number"` 对 **0** 也成立，而 0 = "这张图没配"。
+          --   收进去的后果是**把好键毒掉**：`map["obj.table"] = {id = 0}` ⇒ 家具那一格
+          --   `SetImage(src, 0)` = 没有图 ⇒ 看不见，而且下面的 `cfg.obj_art` 兜底
+          --   因为"键已存在"被跳过 ⇒ **配了脚本素材也不生效**，还查不出原因。
+          --   （这正是本项目"素材还没配"那个阶段的常态：控件在、图空着。）
+          if nm ~= nil and nm ~= "" and type(id) == "number" and id > 0 then
+            map[nm] = { source = src, id = id, color = col, from = roots[ri] }
+            names[#names + 1] = nm
+          end
         end
       end
     end
   end
-  self._palette = map
-  self._palette_names = names
+  -- ★★★★★★★★ 2026-10-18 **家具素材也可以直接写在脚本里**（`cfg.obj_art`）✗✓✓
+  --   ★ 为什么加这条：用户实测「编辑器报 GUID 重复」是从 396（第一次新建 `things` 素材区）开始的 ✗
+  --     ⇒ 只要**不新建控件**就不会撞 ✓ 而家具图标本来只需要"一张图 + 一个颜色" ✓
+  --   ★ 优先级：**控件里有的优先**（用户若真在编辑器里做了 `things` 区，仍以那边为准 ✓）
+  --   ★ 写法：`obj_art = { table = { id = 100001, color = 0xFFB07946 }, … }`
+  --     （键 = `kind`，不是控件名；内部拼成 `obj.<kind>` ✓，与 `object_key_of` 对齐 ✓）
+  --   ★★★★★★★★ 2026-10-22 **家具改成「多层拼装」** ✗✓
+  --
+  --   原作（Murdoku）的家具就是**两层白色剪影 + 两个颜色**：
+  --     `obj_<名>.svg`（base 层，染 `obj_color_base_<id>`）
+  --   ＋ `obj_<名>_02.svg`（overlay 层，染 `obj_color_overlay_<id>`）。
+  --   ⇒ 想尽量复刻它，一格家具就不能只有一张图。于是格子模板在 `obj` 之后
+  --     再补了 `obj2` / `obj3` 两层（见 `tools/gil/gen_obj_art.mjs`），
+  --     这里按 **层号** 往调色板里登记同名的键：
+  --       第 1 层 → `obj.<kind>`（= 老的写法，**完全向后兼容**）
+  --       第 2 层 → `obj2.<kind>`
+  --       第 3 层 → `obj3.<kind>`
+  --
+  --   兼容两种写法（同一张表里可以混用）：
+  --     · 单层（老）：`chair = { id = 100001, color = 0xFFE0A040 }`
+  --     · 多层（新）：`chair = { { id = 106053, color = 0xFF8A6A48, w = 0.78, h = 0.78 },
+  --                            { id = 106053, color = 0xFFE3D2AE, w = 0.60, h = 0.60 } }`
+  --   多层里每一项除 `id/color` 外还可以带**格子相对几何**：
+  --     `w, h` = 相对格子边长的比例（默认 1）；`dx, dy` = 相对格子边长的偏移（默认 0，**dy 正 = 向下**）
+  local oa = self.cfg.obj_art
+  if type(oa) == "table" then
+    for k, v in pairs(oa) do
+      -- 键允许写成 `table` 或 `obj.table`（老注释里的两种写法都认）
+      local kind = tostring(k)
+      local pref = kind:match("^(obj%d*)%.") 
+      if pref ~= nil then kind = kind:sub(#pref + 2) end
+      -- 归一成"层数组"
+      local layers = nil
+      if type(v) == "table" and type(v.id) == "number" then
+        layers = { v }                                   -- 老写法 = 单层
+      elseif type(v) == "table" and #v > 0 then
+        layers = v                                       -- 新写法 = 层数组
+      end
+      if layers ~= nil then
+        for i = 1, #layers do
+          local L = layers[i]
+          local key = (i == 1 and ("obj.") or ("obj" .. i .. ".")) .. kind
+          if type(L) == "table" and type(L.id) == "number" then
+            local e = map[key]
+            if e == nil then
+              map[key] = {
+                source = L.source or "StaticReference",
+                id = L.id,
+                color = L.color,
+                w = L.w, h = L.h, dx = L.dx, dy = L.dy,
+                layer = i,
+                from = "cfg.obj_art",
+              }
+              names[#names + 1] = key
+            else
+              -- ★ 控件里已有这一层（编辑器优先：**图与色以控件为准**），
+              --   但**几何只可能来自 cfg**（控件扫描不读尺寸）⇒ 补进去。
+              --   这就是"第 1 层给编辑器改、几何仍由脚本定"的实现。
+              if e.w == nil then e.w = L.w end
+              if e.h == nil then e.h = L.h end
+              if e.dx == nil then e.dx = L.dx end
+              if e.dy == nil then e.dy = L.dy end
+              if e.layer == nil then e.layer = i end
+            end
+          end
+        end
+      end
+    end
+  end
+  -- ★★★★★★★★ 2026-10-20（v282）**"空调色板"不许缓存** ✗✓
+  --
+  --   起因：与 v281 修的那个 bug 同一族 —— **首帧树还没就绪**。
+  --   原来 `self._palette = map` 无条件写死，所以只要第一次读的时候
+  --   `assets` / `things` 还没被找到（启动早期、或控件是后来才实例化的），
+  --   就会缓存一张**空表**，而它**再也不重读** ⇒ 整局所有素材名都解析不出来。
+  --   ⇒ 现在：**确实拿到了东西才缓存**；空表只返回当次结果，下次调用会重新走一遍。
+  --   ⚠️ 成本可控：只有"空"的时候才会重走（树就绪后立刻转成缓存），不是每帧白扫。
+  --   ⚠️ 空表时 `_palette_names` 也不覆盖 —— 报错文案要保留上一份"看到过哪些名字"更有用。
+  if next(map) ~= nil then
+    self._palette = map
+    self._palette_names = names
+  end
   return map
 end
 
@@ -3875,6 +3713,59 @@ function Adapter:_apply_edges(id, prefix, flags)
   --   ⇒ 这里把**本关真需要、却取不到子控件**的边记下来，函数返回 false；
   --     界面层按"有限次重试"补发（次数有上限，不会变成每帧死循环）。
   local missing_sub = {}
+
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ 2026-10-18（v265）**边的几何基准** ✗✓✓
+  --
+  --   ★ 用户原话：「调整门墙坐标让**门墙位于格子之间**，偏差你测量图片」✓
+  --
+  --   ★ 实机截图实测（`records/shot-2026-10-18-doorwall.png`，1600×900 画布，1 画布 px = 1 截图 px）：
+  --       · 格子 91×91、缝 2px ⇒ **pitch 93**；格线（缝中线）在格子边**再往外 gap/2 = 1px** 处 ✓
+  --       · 墙条 #29282B 7×92：竖墙中心 x=1001，格线 x=994.5 ⇒ **偏 +6.5** ✗
+  --         （横墙同理偏 +6.5，**门也一样偏** ⇒ 不是素材偏心、也不是只门有问题 ✓）
+  --   ★ 根因：旧代码把条子摆成「**贴格子内侧边**」：
+  --       up: y = (cw − 厚)/2 ⇒ 条子的**外沿**正好压在格子边上、整条在格子**里面** ✓
+  --     而格线在「格子边 + gap/2」⇒ 条子中心离格线 = 厚/2 + gap/2 = 4 + 1 = 5px（实测 6.5）✓
+  --   ⇒ ★ 本版的判据只有一条：**格子之间的墙都居中在格线上** ✓
+  --       · **内部边**（两格之间）⇒ 距本格中心 **pitch/2** ✓ ← 本次要修的就是这条
+  --       · **外框边**（棋盘最外圈）⇒ 仍**贴格子内侧**（`(cw−厚)/2`）—— 外框由 ruler 做边界，
+  --         用户没抱怨它，动它只是新增风险（"墙压到外框上"）⇒ 保持原观感 ✓
+  --     ★ 墙与门**共用**同一个距离 ⇒ 门永远压在墙的正中（不会一上一下）✓
+  --   ⚠️ 不要再用"固定 nudge 数字"来补：缝随 N 变（5×5 缝 3 / 6×6 缝 2），写死必错 ✓
+  local geo_n = self.cells_rows or self.cells_cols
+    or (self.cfg.cells and (self.cfg.cells.rows or self.cfg.cells.cols)) or 5
+  local cw, pitch = nil, nil
+  pcall(function() cw, pitch = self:cell_geometry(geo_n) end)
+  if type(cw) ~= "number" or cw <= 0 then cw, pitch = nil, nil end
+  local ch = cw
+  -- pitch 读不到 / 小于边长（异常）⇒ 退化成"没有缝"，至少不会把条子推到隔壁格子外
+  if cw ~= nil and (type(pitch) ~= "number" or pitch <= 0 or pitch < cw) then pitch = cw end
+  if cw == nil and print and not self._edge_no_geo_noted then
+    self._edge_no_geo_noted = true
+    print("[murdoku] 边缘适配：**算不出格子边长**（cell_geometry(" .. tostring(geo_n)
+      .. ") 返回 0/nil）⇒ 墙/门的**缩放与贴边整段跳过**（按编辑器里摆的原样显示）")
+  end
+
+      -- ★★★★★ 2026-10-18 **content 归位** ✗✓（墙/门错位到格子内部）
+      --   墙/门的贴边坐标是「相对 content 中心」算的（见下面那段贴边 ✓）
+      --   ⇒ content 自己若带偏移/尺寸不对，**整组边会被一起挪走** ✓
+      --     表现就是「墙不在两行/列之间，而是陷在格子里面」✓ 正是用户截图那个形状
+      --   ⇒ 把 content 钉成"锚点居中、尺寸=格子、位置=0" ⇒ 边的坐标基准干净 ✓
+      --   ⚠️ 2026-10-18 修正：原来这里用的是 `cw, ch`，而那两个 local 在**下面**才声明
+      --      ⇒ 传进去恒为 nil ⇒ `SetSizeDelta(nil,nil)` 被 pcall 吞掉 ⇒ **等于没做** ✗
+      --      现在几何值提到函数开头算（见上），这里真的会写进去 ✓
+      do
+        local content = nil
+        pcall(function() content = self:sub(id, "content") end)
+        if content ~= nil then
+          if content.SetAnchorMin then pcall(function() content:SetAnchorMin(0.5, 0.5) end) end
+          if content.SetAnchorMax then pcall(function() content:SetAnchorMax(0.5, 0.5) end) end
+          if content.SetPivot then pcall(function() content:SetPivot(0.5, 0.5) end) end
+          if content.SetSizeDelta and cw ~= nil then
+            pcall(function() content:SetSizeDelta(cw, ch) end)
+          end
+          if content.SetAnchoredPosition then pcall(function() content:SetAnchoredPosition(0, 0) end) end
+        end
+      end
   for i = 1, #sides do
     local s = sides[i]
     local want = (flags[s] and not skip[s]) and true or false
@@ -3967,41 +3858,65 @@ function Adapter:_apply_edges(id, prefix, flags)
   --    前提：编辑器里把墙控件的尺寸调成**"正好包住那张图"**（脚本按
   --    目标长度 ÷ 这个尺寸 求缩放比）。控件已经铺满整条边时缩放比≈1，不受影响。
   if self.cfg.cells == nil or self.cfg.cells.edge_fit ~= false then
-    -- 格子边长：`cell_geometry(n)` 才是权威算法（它按 board 实际尺寸与行列数算）。
-    -- n 用当前关卡的真实行列数（ensure_cells 时记在 self.cells_rows/cols 上）。
-    local n = self.cells_rows or (self.cfg.cells and self.cfg.cells.rows) or 5
-    local cw = nil
-    pcall(function() cw = self:cell_geometry(n) end)
-    local ch = cw
-    if type(cw) ~= "number" or cw <= 0 then cw, ch = nil, nil end
-
-    -- ★★★★★ 2026-10-05 **"算不出格子边长"必须说出来**（否则这一整段是静默跳过的）。
-    --
-    --   为什么：下面 `if cw ~= nil then` 一旦为假，**整个几何适配（缩放 + 贴边）都不跑**，
-    --   日志里却一个字都没有 —— 而"什么都没做"和"做了但没生效"在画面上完全一样，
-    --   排查时会往错的方向找（比如怀疑贴图/层序）。
-    if cw == nil and print and not self._edge_no_geo_noted then
-      self._edge_no_geo_noted = true
-      print("[murdoku] 边缘适配：**算不出格子边长**（cell_geometry(" .. tostring(n)
-        .. ") 返回 0/nil）⇒ 墙/门的**缩放与贴边整段跳过**（按编辑器里摆的原样显示）")
-    end
+    -- 格子边长 / pitch：★ 2026-10-18 已提到**函数开头**统一算（见 `geo_n` 那段 ✓）
+    --   ⚠️ 别再在这里重新声明 `cw` —— 这里再声明一次的话，上面 `content` 归位那段
+    --      又会拿到 nil（v264 的坑：`local cw` 在下面，上面引用恒 nil，pcall 吞掉）✓
 
     -- 墙/门的**目标厚度**（画布单位）。做成配置项，这样"看起来多粗"是确定的数字，
     -- 而不是"看你素材多大"。
     local thick = (self.cfg.cells and self.cfg.cells.edge_thickness) or 8
     local door_ratio = (self.cfg.cells and self.cfg.cells.door_length_ratio) or 0.45
+  -- ★★★★ 2026-10-18（v264）**墙加长 4px，填掉相邻两格之间的缝** ✗✓
+  --   用户真机原话：「现在墙稍微有一点缝隙，把墙的长度增加 4，填满现在的空隙即可」
+  --   缝的来源：每格只画自己那条边（长 = cw），相邻两格各画各的 ⇒ 取整误差在四角留 1–2px。
+  --   加 4 ⇒ 两端各溢出 2（`localScale` 绕中心 ⇒ 位置不变）⇒ 角上相邻两格重叠，缝消失。
+  --   ★ 只加**墙**，不加门（门要明显短于墙才像门，见 `door_length_ratio`）。
+  --   ★ 想调就只改这一个数：2 = 几乎无缝不重叠；6 = 明显重叠（角上变厚）。
+  local overlap = (self.cfg.cells and self.cfg.cells.edge_overlap) or 4
+  -- ★★★★★ 2026-10-18（v266）用户原话：「**位置对了，再把门墙加粗 2 加长 4**」✗✓
+  --   ⇒ 厚度走 `edge_thickness`（8 → 10，墙门同厚 ✓）；**长度**必须"墙和门都 +4" ⇒ 单独一个旋钮：
+  --       extra 同时加到墙（cw + overlap + extra）与门（cw×ratio + extra）上 ✓
+  --   ⚠️ 不要把它并进 `overlap`：`overlap` 是"墙填缝"专用，门不吃它 ✓
+  --     （并进去的话，门长度一点都不会变 —— 而用户这次要的就是"门也长 4" ✓）
+  local extra_len = (self.cfg.cells and self.cfg.cells.edge_extra_len) or 0
 
     if cw ~= nil then
       for i = 1, #sides do
         local s = sides[i]
         local sub = self:sub(id, prefix .. "." .. s)
         if sub ~= nil and flags[s] then
-          local w, h = nil, nil
-          pcall(function() w, h = sub:GetSizeDelta() end)
+          -- ★ 2026-10-17：用 `size_of`（真机两数 / 模拟器一个数组，两种都认 ✓）
+          local w, h = size_of(sub)
           local horiz = (s == "up" or s == "down")
-          -- 目标几何：横边 = 长 cw × 厚 thick；竖边 = 厚 thick × 长 ch
-          -- 门比墙短一点，看起来才像"门"而不是一整面墙
-          local tlen = (prefix == "door") and (cw * door_ratio) or cw
+          -- ★ 这条边是不是**外框边**（棋盘最外一圈）——长度与位置都要用到 ⇒ 只算一次
+          local outer = (s == "down" or s == "right")
+          if s == "up" then outer = (r == nil or r <= 1) end
+          if s == "left" then outer = (c == nil or c <= 1) end
+          -- 目标几何：横边 = 长 × 厚；竖边 = 厚 × 长
+          -- ★ 2026-10-18（v266）：
+          --     · 墙 = cw + overlap(缝补 4) + extra_len(用户要的 +4) = **cw + 8**
+          --     · 门 = cw × door_length_ratio(**0.44**) + extra_len(同样 +4)
+          --   ⇒ 门/墙 = 44/99 ≈ 44% ⇒ 与设计图"门占墙线 44%"同一比例 ✓（见 records/design-layout-measure.md）
+          --
+          -- ★★★★★ 2026-10-18（v270）**外框两端多伸「对方半宽 + 2」⇒ 转角互相重叠** ✗✓
+          --
+          --   用户原话：「**小台阶还是存在，让转角处墙重叠，各自延长到对方的宽的边缘，这样一定不会出错**」
+          --   实测（`records/shot-2026-10-18-v269-device.png`，1px 逐点）：
+          --     · 顶臂端头 = x **619.5**、左臂外沿 = x **618.5** ⇒ 外框最角上那 1×1 像素
+          --       **两边都没盖住** ⇒ 露出黑框色 = 你看到的那级小台阶 ✗
+          --     · v269 的端头伸长量正好等于外移量（都是 厚/2 = 5）⇒ 叠/漏取决于取整，**必错** ✗
+          --   ⇒ 端头伸长量 = **厚/2 + 2**（每端各 7）⇒ 每条臂都越过对方外沿 2px、**真的叠上**；
+          --     多出的 2px 落在外框黑边里（黑框 13px 厚），肉眼看不出来 ✓
+          --   ⚠️ 只给**外框边**加：内部边的端头本来就藏在垂直墙的宽度里（4 < 厚/2），
+          --     多伸反而会在格子角上冒出 2px 小尖 ✗
+          local tlen
+          if prefix == "door" then
+            tlen = cw * door_ratio + extra_len
+          elseif outer then
+            tlen = cw + thick + 4          -- 两端各 厚/2 + 2
+          else
+            tlen = cw + overlap + extra_len
+          end
           local tthick = thick
           local base_l = horiz and w or h      -- 基准：编辑器里控件的尺寸
           local base_t = horiz and h or w
@@ -4056,12 +3971,33 @@ function Adapter:_apply_edges(id, prefix, flags)
               end
             end
           end
-          -- 贴到对应边（缩放绕中心，所以位置按"目标厚度"算，不再依赖控件自身尺寸）
+          -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★ 2026-10-18（v265）**居中在格线上** ✗✓✓
+          --
+          --   ★ 判据（实测 + 设计图两边都成立）：
+          --     · 实机截图：墙/门整条偏在格线**右/下**侧 +6.5 截图 px（门也偏 ⇒ 不是素材偏心）
+          --     · 设计图（`records/design-layout-measure.md`）：23 根墙 + 4 个门**全部**压格线，
+          --       偏移 +0.0 px ⇒ 设计意图就是"骑在格线上"✓
+          --
+          --   ★ 旧公式（贴着格子**内侧边**）：
+          --       up: y = +(cw − 厚)/2 ⇒ 条子的外沿压在格子边上、整条在格子**里面**
+          --     而格线在「格子边 + gap/2」⇒ 系统性差 **(gap + 厚)/2**（6×6：1+4 = 5px）✓
+          --   ★ 新公式（居中在格线）：
+          --       · 内部边 ⇒ 距本格中心 **pitch/2**（两格中心的中点 = 缝中线 ✓）
+          --       · 外框边 ⇒ 距本格中心 **cw/2**（棋盘最外那条格线就是格子自己的边 ✓）
+          --         ★ v267（用户：「边缘一圈墙没贴边，转角处仍然有小缺口」）：
+          --           外框原来用 `(cw−厚)/2`（贴格子内侧）⇒ 外沿只到格子边，而**格子边离外框内沿
+          --           还差 1–2px** ⇒ 那 1–2px 露出的是**格子自己的颜色**（实机放大图里那条橙细线）✗
+          --           改成 `cw/2` 后整圈**向外移 厚/2 = 5px**：外侧盖住细缝、压到外框内沿 ✓
+          --         ★ v268（用户：「角上还有小台阶」）：外移 5px 而旧端头只多出 4px ⇒ 每个角短 1px ✗
+          --           ⇒ 外框墙的长度再 **+厚**（见上面 `tlen` 那段）⇒ 横竖两段在角上互相盖住 ✓
+          --   ★ 墙与门走**同一个** `d` ⇒ 门永远压在墙正中（共线 ✓）
+          --   ⚠️ 不再有 `door_nudge` —— 那条是给旧公式打的手工补丁（6），公式对了它反而是错 ✓
+          local d = outer and (cw / 2) or (pitch / 2)
           local x, y = 0, 0
-          if s == "up" then y = (ch - tthick) / 2
-          elseif s == "down" then y = -((ch - tthick) / 2)
-          elseif s == "left" then x = -((cw - tthick) / 2)
-          elseif s == "right" then x = ((cw - tthick) / 2) end
+          if s == "up" then y = d
+          elseif s == "down" then y = -d
+          elseif s == "left" then x = -d
+          else x = d end
           if sub.SetPivot then pcall(function() sub:SetPivot(0.5, 0.5) end) end
           if sub.SetAnchoredPosition then pcall(function() sub:SetAnchoredPosition(x, y) end) end
         end
@@ -4073,6 +4009,1020 @@ function Adapter:_apply_edges(id, prefix, flags)
   --      （比如基准尺寸读成 0），但那些不是"缺控件"，把它们也算成失败会让每条边都反复重发，
   --      纯粹是噪音 —— 那两种情形已经各自打了日志（见上面两处「边缘适配 …」）。
   return #missing_sub == 0
+end
+
+-- ★ 读控件尺寸：见文件靠前的 `size_of`（**必须在前**：`_apply_edges` 也要用 ✓）
+--   ⚠️ 这里原来又定义了一份 local —— 对**前面**的函数不可见 ⇒ 会变成"全局 nil"崩掉 ✓ 已删
+
+-- ★★★★★★★★ 2026-10-17 **把"铺满格子"的图层钉成和格子一样大** ✗✓✓
+--
+--   用户真机回报：「**家具和提示不要溢出格子**」✓
+--   ★ 根因有两条，**都在模板/素材层**，脚本只能补后半条：
+--     ① 图片的 `imageType` 没写 = **Basic** ⇒ 图片**按自己原尺寸画**，盒子多大都没用 ✓
+--        （已在存档里改成 `Stretch`：见 `tools/gil/fix_cell_layers.mjs` ✓）
+--     ② 子控件的**尺寸/锚点是编辑器里那一套 135×135 定值** ✗
+--        而格子边长随关卡变（5×5 → 108 画布 / 6×6 → 89 画布 ✓ 见 `cell_geometry`）
+--        ⇒ 6×6 那一关**必然溢出** ✓
+--   ⇒ 这里按"**格子自己当前的尺寸**"把子控件钉成同尺寸、居中（`face` / `hint` / `obj` 三层）✓
+--   ★ 只做一次：按子控件实例记 {w,h}，尺寸没变就**不再写** ✓（稳态零成本 ✓）
+--   ★ 不碰 `wall.*` / `door.*` —— 那两个由 `_apply_edges` 用 localScale 缩放 + 贴边 ✓
+--   ⚠️ 读不到格子尺寸（首帧还没摆好）⇒ **直接返回**，下一帧属性重发时会再来一次 ✓
+-- ★★★★★★★★ 2026-10-18 **「贴格」只能对格子自己用** ✗✓✓（选关卡片塌成一张的真因）
+--
+--   用户定位 ✓：「**选关渲染问题的出现在 397 之后**」✓ —— 397 正是 v255，
+--   而那一版给 `tint` 分支加了这一行「顺手把 face 钉成格子大小」✓（见下面 `_fit_child_to_cell` 的调用点）
+--
+--   事故链（实测可推）：
+--     · `select.card.N` 没有 `face` 子控件 ⇒ `target = self:sub(id, "face") or ctrl` **落到 ctrl 本身**
+--     · 于是 `_fit_child_sized(ctrl, …)` 对**卡片自己**执行：
+--         `SetSizeDelta(w,h)` + **`SetAnchoredPosition(0, 0)`**
+--     · 四张卡**各自**被钉到父级中心 ⇒ 四张叠在一起 ⇒ **看起来只有一张** ✓
+--   而卡片同时下发 `image` 与 `tint` ⇒ 上面两个分支各触发一次（`image` 分支 L4547）✓
+--   ⇒ 闸门：**只有 id 形如 `cell.<行>.<列>` 的控件**才允许贴格 ✓
+--     （与 v257 给 `rect` 分支加的那道闸门同一条判据 ✓ 上次只堵了一条路 ✓）
+local function is_cell_id(id)
+  return type(id) == "string" and id:match("^cell%.%d+%.%d+$") ~= nil
+end
+Adapter._is_cell_id = is_cell_id
+
+function Adapter:_fit_child_to_cell(ctrl, sub, cell_id)
+  if ctrl == nil or sub == nil then return end
+  -- ★ 兜底闸门（任何调用点漏了外面那道，这里也不会把非格子控件拽到父级中心）
+  if cell_id ~= nil and not is_cell_id(cell_id) then return end
+  local w, h = size_of(ctrl)
+  -- ★ 兜底：控件尺寸读不到（模拟器的桥接就没有这两个 getter）⇒ 用界面层**刚发给格子的 rect**
+  if (type(w) ~= "number" or w <= 1) and cell_id ~= nil and self.rects ~= nil then
+    local r = self.rects[cell_id]
+    if type(r) == "table" then w, h = r.w, r.h end
+  end
+  if type(w) ~= "number" or type(h) ~= "number" or w <= 1 or h <= 1 then return end
+  self:_fit_child_sized(sub, w, h)
+end
+
+-- 已经知道格子尺寸时直接调这个（`rect` 下发那一刻用 ✓）
+function Adapter:_fit_child_sized(sub, w, h)
+  if sub == nil then return end
+  if type(w) ~= "number" or type(h) ~= "number" or w <= 1 or h <= 1 then return end
+  local marks = self._fit_marks
+  if marks == nil then
+    marks = setmetatable({}, { __mode = "k" })   -- 弱键：格子实例被回收后自动释放
+    self._fit_marks = marks
+  end
+  local m = marks[sub]
+  if m ~= nil and math.abs(m.w - w) < 0.5 and math.abs(m.h - h) < 0.5 then return end
+  marks[sub] = { w = w, h = h }
+  if print and (self._fit_log or 0) < 10 then
+    self._fit_log = (self._fit_log or 0) + 1
+    print("[murdoku] 图层贴格：" .. tostring(sub.name) .. " ← 格子 " ..
+      tostring(w) .. "×" .. tostring(h))
+  end
+  if sub.SetAnchorMin then pcall(function() sub:SetAnchorMin(0.5, 0.5) end) end
+  if sub.SetAnchorMax then pcall(function() sub:SetAnchorMax(0.5, 0.5) end) end
+  if sub.SetPivot then pcall(function() sub:SetPivot(0.5, 0.5) end) end
+  if sub.SetSizeDelta then pcall(function() sub:SetSizeDelta(w, h) end) end
+  if sub.SetAnchoredPosition then pcall(function() sub:SetAnchoredPosition(0, 0) end) end
+end
+
+-- ★★★★★★★★ 2026-10-20 家具/障碍物（`cell` 的 `obj` 子控件）—— **唯一**的画法 ✗✓
+--
+--   为什么要抽成一个函数：有两个调用点，而"同一件事两处实现"是本项目栽过最多的地方。
+--     ① `set_property` 的 `object` 分支 —— 属性下发那一刻
+--     ② `_cells_paint` —— **每帧**重放（对抗 `hide_kids` 的递归藏，见下面的长注释）
+--
+--   `want` 的形状：`false` = 这一格**没有**物件（必须藏，否则白板压住头像）；
+--                 表 = `{ key=素材名, src=imageSource, id=imageId, color=imageColor }`
+--   `force`：true = 这一次强制重写图/色（属性刚变化）；false = 只在意图变了才写。
+--
+--   ⚠️ **`SetVisible(true)` 每帧都要写**（不能缓存"我已经显示过了"）：
+--      `hide_kids` 会绕过我们递归把子控件设成 false ⇒ 任何"我记住它亮着"的缓存都会骗自己。
+--   ⚠️ 但 `SetActive(true)` **只在换图那一次写**：`hide_kids` 只碰 visible，
+--      active 只有我们自己会改 ⇒ 每帧重写纯属浪费（`grid_cost` 是按每帧调用数算账的）。
+-- ★★★★★★★★ 2026-10-22（v299）家具 = **多层拼装**（`obj` / `obj2` / `obj3`）✗✓
+--
+--   为什么加：原作（Murdoku）的家具就是「base 剪影 + overlay 剪影 + 两个颜色」，我们只有
+--   单张官方素材是拼不出扶手椅/长桌这种俯视图的。层由存档模板给（`gen_obj_art.mjs` 加的），
+--   这里只负责**按层画**。
+--
+--   `want` 的形状（v299 起带 `layers`；老路径仍然可用）：
+--     `false`/`nil` = 这一格没有物件（三层全藏）
+--     表 = { key="obj.chair", layers = { 层1, 层2, 层3 } }，
+--          每层 = { id, src, color, w, h, dx, dy }（w/h/dx/dy 可缺省 = 铺满/居中）
+--     ⚠️ 兼容：没有 `layers` 时按老形状 `{ key, src, id, color }` 当**只有第 1 层**。
+--
+--   纪律（与 v281/v283 同一套）：
+--     · **画法只有一份**（本函数），重放只有一份（`_repaint_cell_overlays`）；
+--     · `SetVisible(true)` **每次重放都要写**（`hide_kids` 会绕过我们递归藏子控件）；
+--     · `SetActive(true)` 只在换图那一次写；
+--     · 没有物件的格子**三层都要藏**（否则白板压住头像，那是老 bug）。
+
+-- ★ 2026-10-22（v301）**12 层**：用户原话「图层3是肯定不够了，你可以任意添加」+
+--   「其它家具的细节保留（包括阴影），横桌竖桌明显需要分开做」⇒ 每件家具按原作的部件表
+--   （桌 7~12 / 椅 9 / 书架 12 / 植物 12 / 雕塑 8）一部件一层，层数上限给到 12。
+--   老存档只有 3 或 6 层时，本表多出来的层拿到 nil ⇒ `_paint_obj` 会当作"还没就绪"逐帧重放（幂等）。
+local OBJ_LAYER_SUBS = {
+  "obj", "obj2", "obj3", "obj4", "obj5", "obj6",
+  "obj7", "obj8", "obj9", "obj10", "obj11", "obj12",
+}   -- 从下到上（与 layer_order 同序）
+
+-- 把 `want` 归一成 1..3 层（逐字段填好默认值）。返回 {} 表示"没有物件"。
+function Adapter:obj_layers_of(want)
+  if want == false or want == nil or type(want) ~= "table" then return {} end
+  local out = {}
+  if type(want.layers) == "table" then
+    for i = 1, math.min(#want.layers, #OBJ_LAYER_SUBS) do
+      local L = want.layers[i]
+      if type(L) == "table" and L.id ~= nil then
+        out[#out + 1] = {
+          sub = OBJ_LAYER_SUBS[i],
+          key = L.key or (want.key .. "#" .. i),
+          src = L.src, id = L.id, color = L.color,
+          w = L.w, h = L.h, dx = L.dx, dy = L.dy,
+        }
+      end
+    end
+  elseif want.id ~= nil then
+    -- 老形状：单层
+    out[1] = { sub = "obj", key = want.key, src = want.src, id = want.id, color = want.color }
+  end
+  return out
+end
+
+-- 读格子边长（带兜底：模拟器没有 getter 时用界面层刚发的 rect）
+function Adapter:_cell_size_of(ctrl, cell_id)
+  -- ★★★★★★★★ 2026-10-23（v324）**优先用布局算出来的尺寸（`rects`）** ✗✓✓
+  --
+  --   真机证据（`日志_2026/10/23_22:03:28`，v323）：
+  --     · 5×5 关：`家具模板：…（格子=108px）` → 家具正常；
+  --     · 6×6 关：`…（格子=89px）`，可家具仍**整体大一圈**、多格地毯溢出错位。
+  --   机制：格子是**模板实例**，模板里写死的 `sizeDelta` 是 108（画布基准）；
+  --     而 6×6 关布局把格子摆成 89 —— 两者不一致时，家具按 108 算就会大 108/89 ≈ 1.21 倍。
+  --   ⇒ 布局计划写进 `self.rects[cell]` 的 w/h 才是**这一关真实的格子像素**，优先用它；
+  --     读不到才退回控件自己的 sizeDelta。两值不一致时打一行日志（真机一眼判读）。
+  if cell_id ~= nil and self.rects ~= nil then
+    local r = self.rects[cell_id]
+    if type(r) == "table" and tonumber(r.w) and tonumber(r.h) and r.w > 1 and r.h > 1 then
+      local sw, sh = size_of(ctrl)
+      if type(sw) == "number" and sw > 1 and math.abs(sw - r.w) > 0.5 then
+        self._cellsize_logged = self._cellsize_logged or {}
+        local k = tostring(cell_id)
+        if not self._cellsize_logged[k] then
+          self._cellsize_logged[k] = true
+          if print then
+            print(string.format("[murdoku] 格子尺寸：cell=%s rects=%.1f,%.1f sizeDelta=%.1f,%.1f（用 rects ✓）",
+              k, r.w, r.h, sw, sh))
+          end
+        end
+      end
+      return r.w, r.h
+    end
+  end
+  local w, h = size_of(ctrl)
+  if type(w) ~= "number" or type(h) ~= "number" or w <= 1 or h <= 1 then return nil, nil end
+  return w, h
+end
+
+-- 按层几何摆一个层子控件（w/h 缺省 = 铺满格子；dx/dy 以格子边长为单位，**dy 正 = 向下**）
+function Adapter:_fit_obj_layer(sub, cw, ch, L)
+  if sub == nil or cw == nil or ch == nil then return end
+  local fw = tonumber(L and L.w) or 1
+  local fh = tonumber(L and L.h) or 1
+  local dx = tonumber(L and L.dx) or 0
+  local dy = tonumber(L and L.dy) or 0
+  if sub.SetAnchorMin then pcall(function() sub:SetAnchorMin(0.5, 0.5) end) end
+  if sub.SetAnchorMax then pcall(function() sub:SetAnchorMax(0.5, 0.5) end) end
+  if sub.SetPivot then pcall(function() sub:SetPivot(0.5, 0.5) end) end
+  if sub.SetSizeDelta then pcall(function() sub:SetSizeDelta(cw * fw, ch * fh) end) end
+  if sub.SetAnchoredPosition then pcall(function() sub:SetAnchoredPosition(dx * cw, -(dy * ch)) end) end
+end
+
+function Adapter:_paint_obj(cell_id, ctrl, want, force)
+  if cell_id == nil then return false end
+  local layers = self:obj_layers_of(want)
+  local marks = self._obj_marks
+  if marks == nil then
+    marks = setmetatable({}, { __mode = "k" })   -- 弱键：格子实例回收后自动释放
+    self._obj_marks = marks
+  end
+  local cw, ch = nil, nil
+  local all_ready = true
+  for i = 1, #OBJ_LAYER_SUBS do
+    local sub = self:sub(cell_id, OBJ_LAYER_SUBS[i])
+    local L = layers[i]
+    if sub == nil then
+      -- 层还没就绪（模板是老存档 / 首帧树没齐）⇒ 交给每帧重放补
+      if L ~= nil then all_ready = false end
+    elseif L == nil then
+      -- 没有物件 / 这一层不用 ⇒ 藏掉（**必须**，否则白板压住头像）
+      if sub.SetVisible then pcall(function() sub:SetVisible(false) end) end
+      marks[sub] = nil
+    else
+      local m = marks[sub]
+      local need = (force == true) or m == nil
+        or m.key ~= L.key or m.id ~= L.id or m.color ~= L.color
+        or m.w ~= L.w or m.h ~= L.h or m.dx ~= L.dx or m.dy ~= L.dy
+      if need then
+        if cw == nil and ctrl ~= nil then cw, ch = self:_cell_size_of(ctrl, cell_id) end
+        if cw ~= nil then self:_fit_obj_layer(sub, cw, ch, L) end
+        local src = nil
+        pcall(function() src = sub.imageSource end)
+        if L.src ~= nil then src = L.src end
+        pcall(function() sub:SetImage(src, L.id) end)
+        if L.color ~= nil then pcall(function() sub.imageColor = L.color end) end
+        marks[sub] = { key = L.key, id = L.id, color = L.color,
+                       w = L.w, h = L.h, dx = L.dx, dy = L.dy }
+        -- 与 `hint` / `notes` 同一口径：要显示时补一次 `SetActive(true)`（幂等）
+        if sub.SetActive then pcall(function() sub:SetActive(true) end) end
+      end
+      if sub.SetVisible then pcall(function() sub:SetVisible(true) end) end   -- 见上面 ⚠️：每次都写
+    end
+  end
+  return all_ready
+end
+
+-- ══════════════════════════════════════════════════════════════════════════
+-- 2026-10-22（v302，第四轮）**图元拼法家具**：按外部工具的结果记录，逐图元生成图片控件
+--
+--   为什么不能再用"模板层"：
+--     · 外部拼图工具算出来的"正确拼法"每件 148~200 条图元（它用几十~几百个半透明椭圆
+--       去逼近原作的渐变与描边），**格子模板里只有 12 层**，差一个数量级；
+--     · 但千星的客户端 API 支持**运行时实例化**（`InstantiateClientUIControl`），
+--       拼图工具自己导出的 Lua 运行时就是这么画的 —— 本函数照它的做法搬过来。
+--
+--   数据（`lua/furn_art_records.lua`，由工具结果文件拆解而来）每条：
+--       { imageId, w, h, dx, dy, rotDeg, colorARGB }
+--     · imageId：100001 矩形 / 100002 椭圆 / 100003 三角形（工具用的就是这三个基础形状）
+--     · w,h / dx,dy：单位 = 格；dx 右为正、**dy 下为正**（因此写 anchoredPosition 时取负）
+--     · rotDeg：直接喂 `SetLocalRotation(0,0,rotDeg)`（与工具运行时同一写法）
+--     · colorARGB：直接喂 `imageColor`（alpha 已在里面）
+--
+--   父级：格子 `content` 下的 `furn` 容器（v302 新增，位置在 obj12 与 x 之间 ⇒
+--     家具压住地板、但仍在墙/门/笔记/头像之下，层序与之前一致）。
+--   ⚠️ 与 `_paint_obj` 同一纪律：**画法只有这一处**，重放只有 `_repaint_cell_overlays` ④。
+-- ══════════════════════════════════════════════════════════════════════════
+local FURN_ART_CAP_DEFAULT = 260   -- 每格最多几条图元（超了截掉：宁缺一点，别把帧率拖死）
+
+function Adapter:_furn_prefab_id()
+  local cfg = self.cfg or {}
+  local id = cfg.furn_prim_prefab
+  if type(id) == "number" and id > 0 then return id end
+  local hit = self:find("tpl.prim")
+  if hit ~= nil then
+    local v = nil
+    pcall(function() v = hit.prefabIndex end)
+    if type(v) == "number" and v > 0 then return v end
+    pcall(function() v = hit.referencedPrefabIndex end)
+    if type(v) == "number" and v > 0 then return v end
+  end
+  return nil
+end
+
+-- ══════════════════════════════════════════════════════════════════════════
+-- ★★★★★★★★ 2026-10-22（v310）**模板化家具**：像 cell 一样实例化"客户端控件模板"
+--
+--   用户：「模板里放多少层都可以（一个模板引用控件只算一层），然后像 cell 一样把模板创建出来」。
+--   实例挂在**锚点格的 `content/furn`** 下：位置 = 整件中心相对该格中心（`furn_offset`，格），
+--   尺寸 = span×格子；模板内部层按 f = 格子/模板基准 缩放（模板不会随根自动缩放，cell 也是如此）。
+-- ══════════════════════════════════════════════════════════════════════════
+
+local function _num(v, d) local n = tonumber(v) return n or d end
+
+function Adapter:_furn_destroy(ctrl)
+  if ctrl == nil then return end
+  if game ~= nil and game.DestroyClientUIControl ~= nil then
+    pcall(game.DestroyClientUIControl, ctrl)
+  elseif ctrl.Destroy ~= nil then
+    pcall(function() ctrl:Destroy() end)
+  end
+end
+
+-- 关卡切换 / 屏幕切换：销毁上一关实例、清缓存
+-- ══════════════════════════════════════════════════════════════════════════
+-- ★★★★★★★★ 2026-10-23（v315）**面层拆分 + things 家具引用**（用户改建的 520.1 架构）
+--
+--   用户把 cell 的 face 单独拿了出来（`cell.face` 模板源 1073747145、引用控件 `root/tpl.cell.face`），
+--   家具模板引用控件集中放在 `root/things` 下。脚本这边：
+--     · 给每个 cell 的 content 顶部实例化 face（命名 `face`）⇒ 旧代码里的 face 写入自动换绑；
+--     · 家具模板 prefab 从 `things` 引用控件读 `referencedPrefabIndex`；
+--     · 家具实例排在 face 之上（SiblingIndex 1）、覆盖层（wall/note/portrait…）之下。
+-- ══════════════════════════════════════════════════════════════════════════
+
+-- 把 "furn,chair" / "furn.table.h2" 归一化成 cfg 键（chair / table_h2 / table …）
+local function _furn_key_of(name)
+  if type(name) ~= "string" then return nil end
+  local k = name:gsub(",", ".")
+  k = k:gsub("^furn%.", "")
+  k = k:gsub("%.", "_")
+  if k == "table_1" then k = "table" end
+  return k
+end
+
+-- 家具模板映射：优先 things 引用控件（真实架构），其次 cfg.furn_tpl_prefab（旧档回退）
+function Adapter:_furn_prefab_map()
+  local map = {}
+  local things = self:find((self.cfg and self.cfg.furn_things_parent) or "things")
+  if things ~= nil and things.GetChildren ~= nil then
+    local ks = nil
+    pcall(function() ks = things:GetChildren() end)
+    if type(ks) == "table" then
+      for i = 1, #ks do
+        local ch = ks[i]
+        local nm, prefab = nil, nil
+        pcall(function() nm = ch.name end)
+        pcall(function() prefab = ch.referencedPrefabIndex end)
+        local key = _furn_key_of(nm)
+        if key ~= nil and type(prefab) == "number" and prefab > 0 then
+          map[key] = prefab
+        end
+      end
+    end
+  end
+  local cfg_map = self.cfg and self.cfg.furn_tpl_prefab
+  if type(cfg_map) == "table" then
+    for k, v in pairs(cfg_map) do
+      if map[k] == nil and type(v) == "number" and v > 0 then map[k] = v end
+    end
+  end
+  return map
+end
+
+-- face 模板 prefab：cfg → `tpl.cell.face` 引用控件 → 兜底 1073747145
+function Adapter:_face_prefab()
+  local cfg = self.cfg or {}
+  if type(cfg.face_tpl_prefab) == "number" and cfg.face_tpl_prefab > 0 then
+    return cfg.face_tpl_prefab
+  end
+  local ref = self:find(cfg.face_tpl_ref or "tpl.cell.face")
+  if ref ~= nil then
+    local v = nil
+    pcall(function() v = ref.referencedPrefabIndex end)
+    if type(v) == "number" and v > 0 then return v end
+  end
+  return tonumber(cfg.face_tpl_fallback) or 1073747145
+end
+
+-- 给某个 cell 的 content 顶部实例化 face（命名 `face`）；已有就复用
+function Adapter:_ensure_cell_face(cell_id, ctrl)
+  if cell_id == nil then return nil end
+  -- ⚠️ 这里**不能**用 `self:sub(cell_id,"face")` —— sub 对 face 有"缺了就补"的钩子，会递归
+  self._face_guard = self._face_guard or {}
+  if self._face_guard[cell_id] then return nil end
+  self._face_guard[cell_id] = true
+  local existing = nil
+  local content0 = nil
+  pcall(function() content0 = self:sub(cell_id, "content") end)
+  if content0 ~= nil and content0.GetChild ~= nil then
+    pcall(function() existing = content0:GetChild("face") end)
+  end
+  if existing ~= nil then
+    self._face_guard[cell_id] = nil
+    return existing
+  end
+  local prefab = self:_face_prefab()
+  if prefab == nil or game == nil or game.InstantiateClientUIControl == nil then return nil end
+  local content = nil
+  pcall(function() content = self:sub(cell_id, "content") end)
+  if content == nil then content = ctrl end
+  if content == nil then return nil end
+  local ok, obj = pcall(game.InstantiateClientUIControl, prefab, content)
+  if not ok or obj == nil then
+    self:warn_once("face:inst", "face 模板实例化失败（prefab=" .. tostring(prefab)
+      .. " cell=" .. tostring(cell_id) .. "）⇒ 本格没有地板图，其余逻辑继续")
+    self._face_guard[cell_id] = nil
+    return nil
+  end
+  pcall(function() obj.name = "face" end)
+  local cw, ch = self:_cell_size_of(ctrl, cell_id)
+  pcall(function()
+    if obj.SetAnchorMin then obj:SetAnchorMin(0.5, 0.5) end
+    if obj.SetAnchorMax then obj:SetAnchorMax(0.5, 0.5) end
+    if obj.SetPivot then obj:SetPivot(0.5, 0.5) end
+    if obj.SetSizeDelta and cw ~= nil then obj:SetSizeDelta(cw, ch) end
+    if obj.SetAnchoredPosition then obj:SetAnchoredPosition(0, 0) end
+    if obj.SetSiblingIndex then obj:SetSiblingIndex(0) end   -- 最底层：其余 content 层都在它上面
+    if obj.SetVisible then obj:SetVisible(true) end
+  end)
+  self._face_inst = self._face_inst or {}
+  self._face_inst[cell_id] = obj
+  self._face_guard[cell_id] = nil
+  if print then
+    print("[murdoku] 面层：cell=" .. tostring(cell_id) .. " 实例化 face（prefab="
+      .. tostring(prefab) .. "，尺寸=" .. tostring(cw) .. "px）")
+  end
+  return obj
+end
+
+function Adapter:_apply_furn_level()
+  if self._furn_inst ~= nil then
+    for _, v in pairs(self._furn_inst) do self:_furn_destroy(v) end
+  end
+  self._furn_inst = {}
+  self._furn_scaled = {}
+  self._furn_ok_n = 0      -- v312：本关成功实例化的家具件数
+  self._furn_fail_n = 0    -- v312：失败件数
+  self._furn_keys = {}     -- v312：本关实际请求过的模板键（用于汇总日志）
+  self._furn_retry_n = 0   -- ★ v318：换关后重试额度重置
+  self._furn_last_try = -1
+  local c = self:find((self.cfg and self.cfg.furn_parent) or "board")
+  -- ★ v315：家具模板映射优先读 `things` 容器里的引用控件（用户新架构），cfg 表只作回退
+  self._furn_prefabs = self:_furn_prefab_map()
+  -- ★ v315：新架构判定（content 里没有 obj/furn 层）——用 `things` 容器或显式 cfg 开关
+  if self._furn_arch_new == nil then
+    local things = self:find((self.cfg and self.cfg.furn_things_parent) or "things")
+    self._furn_arch_new = (things ~= nil) or (self.cfg and self.cfg.furn_arch_new == true) or false
+  end
+  self._furn_tpl_ok = (self._furn_prefabs ~= nil and next(self._furn_prefabs) ~= nil)
+  -- ★ 2026-10-23（v318）：把"映射到底读到了什么"打一行 —— 真机原来对这件事完全不可见
+  --   （真机日志里只有 `模板化家具：关卡=true` 一行，家具却一件没出现 ⇒ 分不清是没映射还是没补造）
+  if print then
+    local ks = {}
+    for k in pairs(self._furn_prefabs or {}) do ks[#ks + 1] = k end
+    table.sort(ks)
+    print("[murdoku] 家具模板映射：things 找到="
+      .. tostring(self:find((self.cfg and self.cfg.furn_things_parent) or "things") ~= nil)
+      .. "　条目=" .. tostring(#ks) .. "　keys={" .. table.concat(ks, ",") .. "}"
+      .. "　已缓存的请求格=" .. tostring(self._furn_want ~= nil and next(self._furn_want) ~= nil))
+  end
+  if self._furn_tpl_ok and self._furn_level ~= false then
+    pcall(function() self:_furn_try_all() end)   -- ★ v313：属性可能先到，这里统一补造
+  end
+  -- ★ v315：给已存在的格子补 face（首帧 cell 还没建时由 `_cells_ensure` 再补一次）
+  pcall(function()
+    for _, id in pairs(self.cells or {}) do
+      local ctrl = self:find(id)
+      if ctrl ~= nil then self:_ensure_cell_face(id, ctrl) end
+    end
+  end)
+  if print then
+    print("[murdoku] 模板化家具：关卡=" .. tostring(self._furn_level) .. "（实例缓存已清）")
+  end
+  return true
+end
+
+-- ★ v313：按缓存把"当前应该有家具的格子"整体补造一遍（供属性先到/后到两种顺序都能收敛）
+function Adapter:_furn_try_all()
+  if not self._furn_tpl_ok then return 0 end
+  if self._furn_want == nil then return 0 end
+  local n = 0
+  for cell_id, name in pairs(self._furn_want) do
+    if type(name) == "string" then
+      local ctrl = self:find(cell_id)
+      if ctrl ~= nil then
+        pcall(function() self:_spawn_furn_tpl(cell_id, ctrl, name) end)
+        n = n + 1
+      end
+    end
+  end
+  if n > 0 and print then
+    print("[murdoku] 模板化家具：本轮补造 " .. tostring(n) .. " 格（缓存里共 "
+      .. tostring(n) .. " 格有家具）")
+  end
+  return n
+end
+
+-- 取（或造）某格家具模板实例，并按 span/offset 摆好；同格同模板只造一次
+-- v312：把界面层下发的模板键（"furn.chair" / "furn.table.h2"）归一化成 cfg 表里的键（chair / table_h2）
+local function _furn_cfg_key(name)
+  if type(name) ~= "string" then return nil end
+  local k = name:gsub("^furn%.", "")
+  k = k:gsub("%.", "_")          -- table.h2 -> table_h2
+  if k == "table_1" then k = "table" end   -- 方桌：ui 层叫 furn.table（没有 .1）
+  return k
+end
+
+function Adapter:_spawn_furn_tpl(cell_id, ctrl, name)
+  if cell_id == nil or type(name) ~= "string" then return false end
+  local cfg = self.cfg or {}
+  local prefabs = self._furn_prefabs or self:_furn_prefab_map()
+  local ckey = _furn_cfg_key(name)
+  local prefab = ckey ~= nil and prefabs[ckey] or nil
+  if prefab == nil then
+    -- ★ 2026-10-23（v318）：**不许永久钉死** —— `things` 可能是晚一步才进树（真机就是这个顺序）
+    --   每来一次就重读一次映射，并把"哪个键缺模板"打一次日志（原来这里是完全静默的）
+    self._furn_prefabs = self:_furn_prefab_map()
+    prefabs = self._furn_prefabs
+    prefab = ckey ~= nil and prefabs[ckey] or nil
+  end
+  if prefab == nil then
+    self._furn_fail_n = (self._furn_fail_n or 0) + 1
+    local key = "furnmiss:" .. tostring(ckey)
+    if print then
+      local once = self._furn_miss_logged or {}
+      self._furn_miss_logged = once
+      if not once[key] then
+        once[key] = true
+        local names = {}
+        for k in pairs(prefabs or {}) do names[#names + 1] = k end
+        table.sort(names)
+        print("[murdoku] 家具模板缺映射：模板键=" .. tostring(name) .. " → 归一化键=" .. tostring(ckey)
+          .. "　当前映射 keys={" .. table.concat(names, ",") .. "}"
+          .. "　things 找到=" .. tostring(self:find((self.cfg and self.cfg.furn_things_parent) or "things") ~= nil))
+      end
+    end
+    return false
+  end
+  if game == nil or game.InstantiateClientUIControl == nil then
+    self._furn_tpl_ok = false
+    self._furn_fail_n = (self._furn_fail_n or 0) + 1
+    if print then
+      print("[murdoku] 家具模板：环境没有 InstantiateClientUIControl（cell=" .. tostring(cell_id) .. "）")
+    end
+    return false
+  end
+  local cw, ch = self:_cell_size_of(ctrl, cell_id)
+  if cw == nil then return false end          -- 格子还没就绪，下一帧再来
+
+  self._furn_inst = self._furn_inst or {}
+  -- ★ v316：按 (cell, 模板键) 缓存 —— 同一格可以既有地毯又有家具
+  local inst_key = tostring(cell_id) .. "|" .. tostring(ckey)
+  local inst = self._furn_inst[inst_key]
+  -- ★ v322：属性可能后到（span/offset 比 tpl 晚）——尺寸/偏移变了就销毁重建，
+  --   否则跨格件会停在"按 1 格生成"的错误形态上。
+  do
+    local want_span = (self._furn_span and self._furn_span[cell_id]) or { r = 1, c = 1 }
+    local want_off = (self._furn_off and self._furn_off[cell_id]) or { dx = 0, dy = 0 }
+    if inst ~= nil then
+      -- ★ v324：应用记录从**普通表**读（不再从控件对象读，原因见写入处那段注释）
+      local a = (self._furn_applied and self._furn_applied[inst_key]) or inst.__murdoku_applied
+      local same = (a ~= nil)
+        and a.span ~= nil and _num(a.span.r, 1) == _num(want_span.r, 1) and _num(a.span.c, 1) == _num(want_span.c, 1)
+        and a.off ~= nil and math.abs(_num(a.off.dx, 0) - _num(want_off.dx, 0)) < 1e-6
+        and math.abs(_num(a.off.dy, 0) - _num(want_off.dy, 0)) < 1e-6
+        and a.cw ~= nil and math.abs(_num(a.cw, 0) - _num(cw, 0)) < 0.5
+        and a.ch ~= nil and math.abs(_num(a.ch, 0) - _num(ch, 0)) < 0.5
+      if not same then
+        self:_furn_destroy(inst)
+        self._furn_inst[inst_key] = nil
+        if self._furn_applied then self._furn_applied[inst_key] = nil end
+        inst = nil
+      end
+    end
+  end
+  if inst == nil then
+    -- ★ v315：新架构 content 里没有 `furn` 容器 ⇒ 直接挂 content；
+    --   实例排在 face（index 0）之上、其余覆盖层（wall/note/portrait…）之下
+    local parent = self:sub(cell_id, "furn") or self:sub(cell_id, "content") or ctrl
+    local ok, obj = pcall(game.InstantiateClientUIControl, prefab, parent)
+    if not ok or obj == nil then
+      self._furn_tpl_ok = false
+      self._furn_fail_n = (self._furn_fail_n or 0) + 1
+      if print then
+        print("[murdoku] 家具模板实例化失败：cell=" .. tostring(cell_id)
+          .. " 模板键=" .. tostring(name) .. " prefab=" .. tostring(prefab)
+          .. " 父控件=" .. tostring(parent ~= nil and parent.name or "nil")
+          .. " ok=" .. tostring(ok) .. " obj=" .. tostring(obj))
+      end
+      return false
+    end
+    pcall(function() obj.name = "furni." .. cell_id end)
+    inst = obj
+    self._furn_inst[inst_key] = inst
+    self.instantiated = self.instantiated or {}
+    self.instantiated["furni." .. cell_id] = true
+    -- 模板层按"基准 px"写死 ⇒ 首次实例化后按 f 缩放一遍子层
+    -- ★ v320：按"模板画布 → 实例尺寸"分别算 x/y 比例（多格地毯竖放时是各向异性的）
+    do
+      local span0 = self._furn_span and self._furn_span[cell_id] or { r = 1, c = 1 }
+      local cv = (self.cfg and self.cfg.furn_tpl_canvas and self.cfg.furn_tpl_canvas[ckey]) or { 108, 108 }
+      local fx = (cw * _num(span0.c, 1)) / _num(cv[1], 108)
+      local fy = (ch * _num(span0.r, 1)) / _num(cv[2], 108)
+      -- ★ v326：家具整体再缩小 + 地毯额外缩小（控件层缩放；实例尺寸/位置不变）
+      local k = _num(self.cfg and self.cfg.furn_scale, 1)
+      local kb = self.cfg and self.cfg.furn_scale_by_kind
+      if type(kb) == "table" then
+        local kv = kb[ckey]
+        if type(kv) ~= "number" then kv = kb["*"] end
+        if type(kv) == "number" then k = k * kv end
+      end
+      local ax = self.cfg and self.cfg.furn_scale_axis_by_kind
+      if type(ax) == "table" and type(ax[ckey]) == "table" then
+        -- ★ v327：多格地毯按轴缩放（长轴恢复长度、短轴保持收窄）
+        local t = ax[ckey]
+        if type(t.x) == "number" then fx = fx * t.x end
+        if type(t.y) == "number" then fy = fy * t.y end
+      elseif k ~= 1 then
+        fx, fy = fx * k, fy * k
+      end
+      self:_furn_scale_layers(inst, fx, fy)
+    end
+    self._furn_ok_n = (self._furn_ok_n or 0) + 1
+    self._furn_keys = self._furn_keys or {}
+    self._furn_keys[name] = (self._furn_keys[name] or 0) + 1
+    if print then
+      local sn = tostring(name)
+      print("[murdoku] 家具模板：cell=" .. tostring(cell_id) .. " ← " .. sn
+        .. "（prefab=" .. tostring(prefab) .. "，格子=" .. tostring(math.floor(cw)) .. "px"
+        .. "，父控件=" .. tostring(parent ~= nil and parent.name or "nil") .. "）")
+    end
+  end
+
+  local span = (self._furn_span and self._furn_span[cell_id]) or { r = 1, c = 1 }
+  local off = (self._furn_off and self._furn_off[cell_id]) or { dx = 0, dy = 0 }
+  pcall(function()
+    if inst.SetAnchorMin then inst:SetAnchorMin(0.5, 0.5) end
+    if inst.SetAnchorMax then inst:SetAnchorMax(0.5, 0.5) end
+    if inst.SetPivot then inst:SetPivot(0.5, 0.5) end
+    if inst.SetSizeDelta then
+      inst:SetSizeDelta(cw * _num(span.c, 1), ch * _num(span.r, 1))
+    end
+    if inst.SetAnchoredPosition then
+      inst:SetAnchoredPosition(_num(off.dx, 0) * cw, -(_num(off.dy, 0) * ch))
+    end
+    -- ★★★★★★★★ 2026-10-23（v324）**应用记录存在适配器表里，不再挂在控件对象上** ✗✓✓
+    --
+    --   真机证据（`日志_2026/10/23_22:03:28`）：同一批 `家具模板：cell=… ← …` **每 0.5 秒重复一次**，
+    --   同时 `模板化家具：本轮补造 8 格` 反复出现 ⇒ `inst.__murdoku_applied` 在这台真机上
+    --   **读回来永远是 nil**（控件对象不接受自定义字段）⇒ 每次 resync 都判定"参数变了"
+    --   ⇒ **销毁 → 重建 → 再销毁**（闪、卡、日志刷屏，而且家具位置会抖）✗
+    --   ⚠️ 旧实现在离线用例里是通过的 —— 因为假控件是 Lua 表，能存字段。**假环境骗了我们一次**。
+    self._furn_applied = self._furn_applied or {}
+    self._furn_applied[inst_key] = {
+      span = { r = _num(span.r, 1), c = _num(span.c, 1) },
+      off = { dx = _num(off.dx, 0), dy = _num(off.dy, 0) },
+      cw = _num(cw, 0), ch = _num(ch, 0),
+      ckey = ckey,
+    }
+    if inst.SetVisible then inst:SetVisible(self._furn_level ~= false) end
+    if inst.SetActive then inst:SetActive(self._furn_level ~= false) end
+    -- ★ v315/v316：层级 = face(0) → 地毯(1) → 其它家具(2) → 墙/头像等覆盖层
+    if inst.SetSiblingIndex then
+      local idx = (ckey == "rug" or ckey == "rug_2" or ckey == "rug_3") and 1 or 2
+      pcall(function() inst:SetSiblingIndex(idx) end)
+    end
+  end)
+  return true
+end
+
+-- 模板实例里的层按 f = 格子宽 / 模板基准 缩放一次（记下基值，重复调用不漂移）
+-- ★ v323：把已缓存的家具实例按"格子当前实际尺寸/跨格/偏移"重新对齐一次。
+--   幂等：参数没变化时 `_spawn_furn_tpl` 内部会直接复用实例，不会重复造。
+function Adapter:_furn_resync()
+  local want = self._furn_want
+  if want == nil then return 0 end
+  local n = 0
+  for id, tpl in pairs(want) do
+    if type(tpl) == "string" then
+      local ctrl = self:find(id)
+      if ctrl ~= nil and self:_spawn_furn_tpl(id, ctrl, tpl) then n = n + 1 end
+    end
+  end
+  return n
+end
+
+-- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+-- 2026-10-23（v324）**家具缩放：必须用 localScale（真变换），不能改容器尺寸** ✗✓✓
+--
+--   真机症状（`日志_2026/10/23_22:03:28` + 美术侧《家具尺寸偏大与地毯错位》）：
+--     6×6 关家具**整体大 1.21 倍**（108/89）、多格地毯溢出/偏位；5×5 关正常。
+--
+--   根因两层：
+--     ① 模板实例只有 **1 个子控件**（内容根，日志 `家具层缩放：子层=1`）——
+--        模板那一百多层是"内容根的孙子"，**全部按画布 108 的绝对像素定位**；
+--     ② 旧实现去改**内容根的 sizeDelta** ⇒ 只是把容器框从 108 改成 89，
+--        里面的层**一个像素都不缩** ⇒ 家具仍然按 108 画 ⇒ 恒定大 1.21 倍 ✗
+--   ⇒ 改法：对**实例本身**下 `SetLocalScale(fx, fy, 1)`（官方 API；`localScaleX/Y/Z` 也是读写字段）
+--      ⇒ 整棵子树（含所有层）一起缩 ⇒ 呈现尺寸 = 画布 × f = 格子实际尺寸 ✓
+--   ⚠️ v323 的兜底写的是 `ch:SetScale(avg, avg)` —— **官方没有这个方法**，pcall 吞掉后静默不生效。
+--      这里按官方两种写法依次尝试：`SetLocalScale(x,y,z)` → `localScaleX/localScaleY` → 子内容根。
+function Adapter:_furn_scale_layers(inst, fx, fy)
+  if fy == nil then fy = fx end
+  if inst == nil or fx == nil or fy == nil or fx <= 0 or fy <= 0 then return 0, 0 end
+  local how = nil
+  local ok = false
+  if inst.SetLocalScale ~= nil then
+    ok = pcall(function() inst:SetLocalScale(fx, fy, 1) end)
+    if ok then how = "SetLocalScale" end
+  end
+  if not ok then
+    ok = pcall(function() inst.localScaleX = fx; inst.localScaleY = fy; inst.localScaleZ = 1 end)
+    if ok then how = "localScale 字段" end
+  end
+  if not ok then
+    -- 最后兜底：实例唯一那个内容根（模板内容根）上缩一遍
+    local kids = nil
+    if inst.GetChildren ~= nil then pcall(function() kids = inst:GetChildren() end) end
+    if type(kids) == "table" and #kids == 1 then
+      local rt = kids[1]
+      if rt ~= nil and rt.SetLocalScale ~= nil then
+        ok = pcall(function() rt:SetLocalScale(fx, fy, 1) end)
+        if ok then how = "内容根 SetLocalScale" end
+      end
+    end
+  end
+  if print then
+    self._furn_scale_logged = self._furn_scale_logged or {}
+    local key = tostring(how or "失败")
+    if not self._furn_scale_logged[key] then
+      self._furn_scale_logged[key] = true
+      print(string.format("[murdoku] 家具缩放：比例=%.3f,%.3f 方式=%s%s",
+        fx, fy, key, ok and "" or "（三种写法都不行 ⇒ 家具会偏大，请回传这行）"))
+    end
+  end
+  if ok then return 1, 0 end
+  return 0, 1
+end
+
+-- 旧实现（v323）：逐子控件改 sizeDelta —— **只在完全没有 scale API 时才用**，见上面注释。
+function Adapter:_furn_scale_children(inst, fx, fy)
+  if fy == nil then fy = fx end
+  if fx == nil or fx <= 0 or fy == nil or fy <= 0 then return 0, 0 end
+  local kids = nil
+  if inst.GetChildren ~= nil then pcall(function() kids = inst:GetChildren() end) end
+  if type(kids) ~= "table" then return 0, 0 end
+  for i = 1, #kids do
+    local ch = kids[i]
+    if ch ~= nil then
+      -- ① 读基值：GetSizeDelta/GetAnchoredPosition 优先，取不到退化到属性
+      local w0, h0, dx0, dy0 = nil, nil, nil, nil
+      if ch.GetSizeDelta ~= nil then
+        pcall(function() local a, b = ch.GetSizeDelta(ch) w0, h0 = a, b end)
+      end
+      if w0 == nil then
+        pcall(function() w0, h0 = ch.sizeDeltaX, ch.sizeDeltaY end)
+      end
+      if ch.GetAnchoredPosition ~= nil then
+        pcall(function() local a, b = ch.GetAnchoredPosition(ch) dx0, dy0 = a, b end)
+      end
+      if dx0 == nil then
+        pcall(function() dx0, dy0 = ch.anchoredPositionX, ch.anchoredPositionY end)
+      end
+      local key = tostring(i)
+      local memo = self._furn_base_vals[inst]
+      if memo == nil then memo = {} self._furn_base_vals[inst] = memo end
+      if memo[key] == nil then
+        if w0 ~= nil and h0 ~= nil then
+          memo[key] = { w = w0, h = h0, dx = dx0 or 0, dy = dy0 or 0, fx = 1, fy = 1 }
+        else
+          -- 基值读不到：记一次失败；后面用 SetScale 兜底（只影响等比缩放）
+          memo[key] = { w = nil, h = nil, dx = dx0 or 0, dy = dy0 or 0, fx = 1, fy = 1, bad = true }
+          failed = failed + 1
+        end
+      end
+      local b = memo[key]
+      if b ~= nil then
+        if b.w ~= nil and b.h ~= nil then
+          local changed = math.abs((b.fx or 1) - fx) > 0.001 or math.abs((b.fy or 1) - fy) > 0.001
+          if changed then
+            pcall(function()
+              if ch.SetSizeDelta then
+                ch:SetSizeDelta(b.w * fx, b.h * fy)
+              else
+                ch.sizeDeltaX, ch.sizeDeltaY = b.w * fx, b.h * fy
+              end
+              if b.dx ~= nil or b.dy ~= nil then
+                if ch.SetAnchoredPosition then
+                  ch:SetAnchoredPosition((b.dx or 0) * fx, (b.dy or 0) * fy)
+                else
+                  ch.anchoredPositionX = (b.dx or 0) * fx
+                  ch.anchoredPositionY = (b.dy or 0) * fy
+                end
+              end
+            end)
+            b.fx, b.fy = fx, fy
+            scaled = scaled + 1
+          end
+        else
+          -- ② 拿不到尺寸：用**官方** localScale 兜底
+          --    ★ 官方《客户端控件API文档》里**没有** `SetScale` —— v323 那条 `ch:SetScale(...)`
+          --      被 pcall 吞掉后等于没写（真机上"改了没变化"的一部分就是它）✓
+          local avg = math.sqrt(fx * fy)
+          if ch.SetLocalScale ~= nil then
+            pcall(function() ch:SetLocalScale(avg, avg, 1) end)
+          else
+            pcall(function() ch.localScaleX = avg; ch.localScaleY = avg end)
+          end
+        end
+      end
+    end
+  end
+  if print and self._furn_scale_n <= 3 then
+    print(string.format("[murdoku] 家具层缩放（兜底路径）：子层=%d 缩放=%.3f,%.3f 成功=%d 基值读不到=%d",
+      #kids, fx, fy, scaled, failed))
+  end
+  return scaled, failed
+end
+
+function Adapter:_paint_furn_art(cell_id, ctrl, want, force)
+  if cell_id == nil then return false end
+  local state = self._furn_art_state
+  if state == nil then state = {}; self._furn_art_state = state end
+  local st = state[cell_id]
+  if st == nil then st = { kids = {} }; state[cell_id] = st end
+
+  local recs = want
+  local n = (type(recs) == "table") and #recs or 0
+  local cap = (self.cfg and self.cfg.furn_prim_cap) or FURN_ART_CAP_DEFAULT
+  if n > cap then n = cap end
+
+  -- 没有图元 ⇒ 全部藏起来（实例不销毁：切关/换关时还能复用，避免反复创建）
+  if n == 0 then
+    for i = 1, #st.kids do
+      local k = st.kids[i]
+      if k ~= nil and k.SetVisible ~= nil then pcall(function() k:SetVisible(false) end) end
+    end
+    st.shown = 0
+    return true
+  end
+
+  -- 父容器：`content/furn`（v302 新增）；老存档没有时退回格子本身（会压住墙/头像，但能看见）
+  local parent = self:sub(cell_id, "furn")
+  if parent == nil then parent = ctrl or self:find(cell_id) end
+  if parent == nil then return false end
+
+  local prefab = self:_furn_prefab_id()
+  if prefab == nil then
+    if not self._furn_prefab_warned then
+      self._furn_prefab_warned = true
+      if printerr then
+        printerr("[murdoku] 图元拼法家具画不出来：拿不到「控件模板索引」——"
+          .. "请在存档里放一个『仅存为模板』的图片控件 tpl.prim，或填 cfg.furn_prim_prefab")
+      end
+    end
+    return false
+  end
+
+  local cw, ch = self:_cell_size_of(ctrl, cell_id)
+  if cw == nil or cw <= 0 then cw, ch = 108, 108 end
+
+  local all_ok = true
+  for i = 1, n do
+    local e = recs[i]
+    local k = st.kids[i]
+    if k == nil then
+      local okc, obj = pcall(game.InstantiateClientUIControl, prefab, parent)
+      if okc and obj ~= nil then
+        k = obj
+        st.kids[i] = k
+        -- 一次性布局（之后只改图/色/尺寸/位置/旋转）
+        if k.SetAnchorMin ~= nil then pcall(function() k:SetAnchorMin(0.5, 0.5) end) end
+        if k.SetAnchorMax ~= nil then pcall(function() k:SetAnchorMax(0.5, 0.5) end) end
+        if k.SetPivot ~= nil then pcall(function() k:SetPivot(0.5, 0.5) end) end
+        pcall(function() k.imageType = Enum.ImageType.Stretch end)
+      else
+        all_ok = false
+      end
+    end
+    if k ~= nil then
+      if e ~= nil then
+        if k.SetImage ~= nil then
+          pcall(function() k:SetImage(Enum.ImageSource.StaticReference, e[1]) end)
+        end
+        pcall(function() k.imageColor = e[7] end)   -- imageColor 用 pcall 直接写（假环境里该字段没有默认值）
+        if k.SetSizeDelta ~= nil then pcall(function() k:SetSizeDelta(e[2] * cw, e[3] * ch) end) end
+        if k.SetAnchoredPosition ~= nil then
+          pcall(function() k:SetAnchoredPosition(e[4] * cw, -(e[5] * ch)) end)
+        end
+        local rot = e[6] or 0
+        if rot ~= 0 and k.SetLocalRotation ~= nil then
+          pcall(function() k:SetLocalRotation(0, 0, rot) end)
+        end
+        if k.SetActive ~= nil then pcall(function() k:SetActive(true) end) end
+        if k.SetVisible ~= nil then pcall(function() k:SetVisible(true) end) end
+      end
+    end
+  end
+  -- 多出来的藏掉（图元数会随关卡/变体变化）
+  for i = n + 1, #st.kids do
+    local k = st.kids[i]
+    if k ~= nil and k.SetVisible ~= nil then pcall(function() k:SetVisible(false) end) end
+  end
+  st.shown = n
+  return all_ok
+end
+
+-- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+-- 2026-10-20（v283）**放置头像专用层 `portrait`** ✗✓✓
+--
+--   用户原话：「**现在家具图层会盖在放置的头像上，把这个问题解决**」
+--
+--   根因（层序）：格子 content 的层序（`cfg.cells.layer_order`，从下到上）是
+--       face（房间色板/原来放头像的）→ hint → **obj（家具）** → wall → door → x → note
+--     而"放置的头像"走 `image` 键落到 **face（最底）** ⇒ **家具盖住头像** ✗
+--   为什么不能简单对调：`face` 是不透明的房间色板，挪到家层之上会把家具整个盖掉 ✗
+--   ⇒ 存档里给模板补一层 **`portrait`**（克隆自 `face`：135×135 / imageId 100001 / 拉伸），
+--     层序放在 **obj 之上、wall 之下** ⇒ 头像在家具之上、又不压墙 ✓
+--   ⚠️ 画法只有一处（本函数）、重放只有一处（`_repaint_cell_overlays` ③），与家具/门墙同一套路 ✓
+function Adapter:_paint_portrait(cell_id, ctrl, want, force)
+  if cell_id == nil then return false end
+  local p = self:sub(cell_id, "portrait")
+  if p == nil then
+    -- 老存档没有这一层（模板还没补）⇒ 退回旧的 face 路径，别把头像弄丢
+    return false
+  end
+  if want == false or want == nil then
+    if p.SetVisible then pcall(function() p:SetVisible(false) end) end
+    return true
+  end
+  local marks = self._portrait_marks
+  if marks == nil then
+    marks = setmetatable({}, { __mode = "k" })   -- 弱键：格子实例回收后自动释放
+    self._portrait_marks = marks
+  end
+  local m = marks[p]
+  if force == true or m == nil or m.key ~= want.key or m.id ~= want.id then
+    if ctrl ~= nil then self:_fit_child_to_cell(ctrl, p, cell_id) end
+    local src = want.src
+    if src == nil then pcall(function() src = p.imageSource end) end
+    pcall(function() p:SetImage(src, want.id) end)
+    -- 头像要**原色**显示（房间色只在 face 上）
+    pcall(function() p.imageColor = 4294967295 end)
+    marks[p] = { key = want.key, id = want.id }
+    if p.SetActive then pcall(function() p:SetActive(true) end) end
+  end
+  if p.SetVisible then pcall(function() p:SetVisible(true) end) end
+  return true
+end
+
+-- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+-- 2026-10-22（v309）**静态烘焙图元家具：显隐的唯一实现** ✗✓
+--
+--   美术侧《渲染问题交接报告-2026-10-22》§4 的三个真机现象：
+--     问题 1 主页/选关/结算能看到图元 ⇒ `baked_level` 只看关卡 id、离开关卡没被关掉 ✗（已在界面层修成 screen==nil）
+--     问题 2 两关图元同屏叠加 ⇒ 切换只在"值变化"那一次发生，之后任何一次隐藏/树变动都可能把状态弄脏
+--     问题 3 房间名不显示 ⇒ `labels` 容器与层序（见 `rect` 分支里的 `SetAsLastSibling`）
+--   本函数把"该显示哪个容器 / 它的子控件"做成**幂等的一趟**：
+--     · 容器：`SetVisible` + `SetActive` 都写（真机上"父隐藏"不保证级联）
+--     · 子控件：**递归**逐个 `SetVisible`（case_001=199 / case_002=256 条，只在事件时跑）
+--     · 名字兜底：读 `ch.name` **字段**（官方没有 `GetName()`；v308 那版兜底因此永远不生效 ✗）
+--   ⇒ 重放入口三处：`baked_level` 属性变化 · `invalidate_lookups`（切屏/换关）· `on_tick` 的 `_baked_dirty`
+function Adapter:_set_visible_deep(ctrl, show)
+  local n = 0
+  if ctrl == nil or ctrl.GetChildren == nil then return 0 end
+  local kids = nil
+  pcall(function() kids = ctrl:GetChildren() end)
+  if type(kids) ~= "table" then return 0 end
+  for i = 1, #kids do
+    local ch = kids[i]
+    if ch ~= nil and ch.SetVisible ~= nil then
+      pcall(function() ch:SetVisible(show) end)
+      n = n + 1
+      n = n + self:_set_visible_deep(ch, show)
+    end
+  end
+  return n
+end
+
+function Adapter:_apply_baked(want_log)
+  local want = self._baked_level or false
+  local levels = (self.cfg and self.cfg.baked_levels) or { "case_001", "case_002" }
+  local root = self:find("root")
+  self._baked_state = self._baked_state or {}
+  for i = 1, #levels do
+    local lv = levels[i]
+    local box = self:find("fart." .. lv)
+    if box == nil and root ~= nil and root.GetChildren ~= nil then
+      local kids = nil
+      pcall(function() kids = root:GetChildren() end)
+      if type(kids) == "table" then
+        for k = 1, #kids do
+          local ch = kids[k]
+          local nm = nil
+          pcall(function() nm = ch.name end)          -- ★ 字段，不是 GetName()
+          if type(nm) == "string" and nm:find("fart", 1, true) and nm:find(lv, 1, true) then
+            box = ch
+            break
+          end
+        end
+      end
+    end
+    local show = (want == lv)
+    local touched = 0
+    if box ~= nil then
+      if box.SetVisible then pcall(function() box:SetVisible(show) end) end
+      if box.SetActive then pcall(function() box:SetActive(show) end) end
+      touched = self:_set_visible_deep(box, show)
+    end
+    local st = self._baked_state[lv]
+    if st == nil or st.found ~= (box ~= nil) or st.show ~= show then
+      self._baked_state[lv] = { found = (box ~= nil), show = show }
+      if print then
+        print(string.format("[murdoku] 烘焙容器 %s：找到=%s 目标=%s 子控件=%d",
+          lv, tostring(box ~= nil), show and "显示" or "隐藏", touched))
+      end
+    elseif want_log == true and print then
+      print(string.format("[murdoku] 烘焙容器 %s：找到=%s 目标=%s 子控件=%d（复述）",
+        lv, tostring(box ~= nil), show and "显示" or "隐藏", touched))
+    end
+  end
+  -- ★ v309：房间名容器 `labels` 必须**盖在图元之上**（与图元同一趟裁，代价≈0）
+  --   真机"房间名看不见"的一条候选原因：`labels` 的兄弟次序排在图元容器之下 ⇒ 被 455 条图元压住。
+  do
+    local lab = self:find("labels")
+    if lab ~= nil and lab.SetSiblingIndex ~= nil and root ~= nil and root.GetChildren ~= nil then
+      local kids, maxi = nil, nil
+      pcall(function() kids = root:GetChildren() end)
+      if type(kids) == "table" then
+        for i = 1, #kids do
+          local nm = nil
+          pcall(function() nm = kids[i].name end)
+          if type(nm) == "string" and nm:find("fart.", 1, true) then maxi = i end
+        end
+        if maxi ~= nil and (maxi + 1) <= #kids then
+          pcall(function() lab:SetSiblingIndex(maxi + 1) end)
+        end
+      end
+    end
+  end
+  return true
 end
 
 function Adapter:set_property(id, key, value, nkey)
@@ -4104,6 +5054,37 @@ function Adapter:set_property(id, key, value, nkey)
     --   ① 按钮自己的 `label` 子控件（我生成的那种）
     --   ② 按钮自己就是文字控件（`ctrl.text` 可写）
     --   ③ 老的 `text` 子控件（兼容）
+    --
+    -- ★★★★★★★★ 2026-10-16 **v252：这几颗的文案【编辑器优先】** ✗✓✓
+    --   ★ 用户要求 ✓：「**让所有按钮的文本内容也交由编辑器**」✓
+    --     （原话还有半句 ✓：「你如果能直接填内容进控件你就填，不能就把位置告诉我」✓
+    --      ★ 答复 ✓：★ `.gil` **存不下文字** ✗ —— ★ `tools/gil/_probe_texts.mjs` 实测
+    --      338 条记录里**一条"非名字文本"都没有** ✓ ⇒ ★ 只能**在编辑器里填** ✓
+    --      ⇒ ★ 所以这条通道的意义是：★ **你在编辑器里填了 ⇒ 脚本一个字都不动** ✓✓）
+    --   ★ 名单 ✓：`cfg.text_editor_first = { "home.select", … }`（见 `entry_client_script.lua` ✓）
+    --   ★ 机制 ✓：★ **先读一眼** ——
+    --     · ★ 已经有内容 ⇒ **不写** ✓（★ 算送达 ✓ 免得每帧重发 ✓）
+    --     · ★ 读不到 / 是空的 ⇒ **照旧写** ✓（★ 新关卡、刚导入的档 ⇒ 也不会出现空按钮 ✓✓）
+    local tef_target = nil
+    do
+      if self.text_editor_first and self.text_editor_first[id] then
+        local lc = nil
+        pcall(function() lc = self:sub(id, "label") end)
+        if lc ~= nil and lc.text ~= nil then tef_target = lc
+        elseif ctrl.text ~= nil then tef_target = ctrl
+        else
+          local tc = self:sub(id, "text")
+          if tc ~= nil and tc.text ~= nil then tef_target = tc end
+        end
+        if tef_target ~= nil then
+          local cur = nil
+          pcall(function() cur = tef_target.text end)
+          if cur ~= nil and tostring(cur) ~= "" then
+            return true      -- ★ 编辑器里已经有字 ⇒ 让位 ✓（故意的空操作 ⇒ 算送达 ✓）
+          end
+        end
+      end
+    end
     local done = false
     do
       local lc = nil
@@ -4126,6 +5107,154 @@ function Adapter:set_property(id, key, value, nkey)
     --   这里会返回 false，界面层就会**下一帧再补一次** —— 而不是让按钮永远空着。
     return done
 
+  -- ★★★★★★★★ 2026-10-22（v300）**家具美术：界面层直接给"六层元素"** ✗✓
+  --
+  --   与 `object`（按名字查调色板 ⇒ 一格一张图）的分工：
+  --     · `object` = 老路，保留给离线用例/兼容；生产不再下发；
+  --     · `furn`   = 新路：value 是**元素数组**（最多 6 个），每个 { id, color, w, h, dx, dy }，
+  --                  w/h/dx/dy 单位 = 格子（dx 右、dy 下为正），元素坐标以**本格中心**为原点。
+  --                  跨格家具由界面层把整件的元素**只下发给锚点格**（坐标会超出 ±0.5，合法），
+  --                  再由 `furn_anchor` 把这个格子抬到所有格子之上。
+  --   绘图仍然只有一处实现（`_paint_obj`），与 `object` 完全同一条流水线（含 hide_kids 重放）。
+  -- ★★★★★★★★ 2026-10-22（v306/v308）**静态烘焙的图元家具：只切容器显隐** ✗✓
+  --
+  --   用户判断：「网站导出的内容能实机显示，因为它把图元写成存档里的静态控件；
+  --   官方必然提供了和图元等价的素材（= 基础形状 100001/100002/100003），找到它们就能绕开这层」。
+  --   ⇒ 图元由 integrator 烘成存档里的静态图片控件：`root/fart.case_001`、`root/fart.case_002`。
+  --
+  --   ⚠️ v308 的两处加固（真机教训）：
+  --     · 存档里子控件默认 `visible=false`（新烘焙）——脚本没跑对时**不会外泄**；
+  --     · 真机上"父容器隐藏"**不保证级联**到子控件 ⇒ 这里**逐个子控件**设一遍 visible；
+  --     · 加设备日志：把"找没找到容器 / 切了几个子控件"打出来，下次真机一眼定位。
+  elseif key == "baked_level" then
+    -- ★ 2026-10-22（v309）：显隐逻辑收进 `_apply_baked`（唯一实现），这里只记意图
+    self._baked_level = value or false
+    return self:_apply_baked(true)
+
+  -- ★★★★★★★★ 2026-10-22（v310，第十三轮）**模板化家具** ✗✓
+  --
+  --   用户：「采用模板来手搭构建，模板里放多少层都可以（一个模板引用控件只算一层），
+  --   然后像 cell 一样把模板创建出来」。
+  --   ⇒ 每件家具一个客户端控件模板（`furn.chair` / `furn.table.h2` …），
+  --     锚点格下发 `furn_tpl`（模板键）+ `furn_span`（跨几格），这里：
+  --       ① `InstantiateClientUIControl(cfg.furn_tpl_prefab[key], cfg.furn_parent 容器)`
+  --       ② 尺寸 = span × 格子；位置 = 整件中心（相对容器中心，Y 向上）
+  --       ③ 模板里的层按 f = 格子尺寸 / cfg.furn_tpl_base 缩放（模板不随根自动缩放）
+  --       ④ 按行号排 SiblingIndex（下排压上排）；同格同模板缓存复用
+  --   `furn_level`（root 下发）负责开关 `fart.furn` 容器 + 切关销毁旧实例。
+  elseif key == "furn_level" then
+    self._furn_level = value or false
+    return self:_apply_furn_level()
+
+  elseif key == "furn_tpl" then
+    self._furn_want = self._furn_want or {}
+    self._furn_want[id] = type(value) == "string" and value or false
+    -- ★ v313：**一律返回 true**（已受理）；真正能不能造要看 `furn_level` 有没有到，
+    --   到了由 `_furn_try_all()` 统一补造 —— 不再依赖属性投递顺序（真机教训）。
+    if type(value) == "string" then
+      -- ★ v322：同一格换模板键（例如桌子换规格）⇒ 先清掉该格其它键的旧实例
+      if self._furn_inst ~= nil then
+        local want_key = _furn_cfg_key(value)
+        local prefix = tostring(id) .. "|"
+        for k, v in pairs(self._furn_inst) do
+          if type(k) == "string" and k:sub(1, #prefix) == prefix then
+            local kk = k:sub(#prefix + 1)
+            if want_key == nil or kk ~= tostring(want_key) then
+              self:_furn_destroy(v)
+              self._furn_inst[k] = nil
+              if self._furn_applied then self._furn_applied[k] = nil end
+            end
+          end
+        end
+      end
+      if self._furn_tpl_ok then self:_spawn_furn_tpl(id, ctrl, value) end
+    else
+      -- 这格没有家具（或切关后旧值）：把上一关的实例销毁掉，别残留
+      if self._furn_inst ~= nil then
+        local prefix = tostring(id) .. "|"
+        for k, v in pairs(self._furn_inst) do
+          if type(k) == "string" and k:sub(1, #prefix) == prefix then
+            self:_furn_destroy(v)
+            self._furn_inst[k] = nil
+            if self._furn_applied then self._furn_applied[k] = nil end
+          end
+        end
+      end
+    end
+    return true
+
+  elseif key == "furn_span" then
+    self._furn_span = self._furn_span or {}
+    self._furn_span[id] = (type(value) == "table") and value or false
+    if self._furn_tpl_ok and self._furn_want and self._furn_want[id] then
+      self:_spawn_furn_tpl(id, ctrl, self._furn_want[id])
+    end
+    return true
+
+  elseif key == "furn_offset" then
+    self._furn_off = self._furn_off or {}
+    self._furn_off[id] = (type(value) == "table") and value or false
+    if self._furn_tpl_ok and self._furn_want and self._furn_want[id] then
+      self:_spawn_furn_tpl(id, ctrl, self._furn_want[id])
+    end
+    return true
+
+  -- ★★★★★★★★ 2026-10-22（v302，第四轮）**家具 = 外部工具算出的图元拼法** ✗✓
+  --
+  --   用户原话：「桌子椅子植物依然没有达到参考效果，仓库里有一个能兼容千星的外部图片网站，
+  --     **你先用他把参考拼出来，再按结果文件拆解出正确拼法导入存档**」
+  --   ⇒ 用 `qx-img.070077.xyz` 的本地引擎把原作图标拟合成图元（每件 148~200 条：椭圆/矩形 +
+  --      旋转 + 每图元独立的 RGBA），结果文件拆成 `lua/furn_art_records.lua`。
+  --   ⇒ 一件家具 = N 个图片控件，**格子模板的层数装不下**（12 层 >>> 不够），
+  --      所以走**运行时实例化**：`game.InstantiateClientUIControl(模板索引, 父控件)`
+  --      —— 这正是拼图工具自己导出的 Lua 运行时的做法（它就是这么在千星里画的）。
+  --   value = { {imageId, w, h, dx, dy, rotDeg, colorARGB}, … }（单位 = 格，dy 向下为正）
+  elseif key == "furn_art" then
+    self._furn_art_want = self._furn_art_want or {}
+    self._furn_art_want[id] = (type(value) == "table") and value or false
+    return self:_paint_furn_art(id, ctrl, value, true)
+
+  elseif key == "furn" then
+    -- ★ v310/v313/v315：走模板家具时不画手搭层
+    if self._furn_tpl_ok then return true end
+    -- v315 新架构（520.1：content 里没有 obj/furn 层）⇒ 手搭层无处可画，跳过（地毯等 rug 模板）
+    if self._furn_arch_new then
+      self:warn_once("furn:newarch",
+        "新架构（things/无 obj 层）⇒ 手搭层（地毯）本轮跳过；需要地毯请让 integrator 在 things 加 `furn.rug` 模板。")
+      return true
+    end
+    local layers = {}
+    if type(value) == "table" then
+      for i = 1, math.min(#value, #OBJ_LAYER_SUBS) do
+        local e = value[i]
+        if type(e) == "table" and type(e.id) == "number" then
+          layers[#layers + 1] = {
+            key = "furn." .. i,
+            id = e.id,
+            color = e.color,
+            w = e.w, h = e.h, dx = e.dx, dy = e.dy,
+          }
+        end
+      end
+    end
+    local want = false
+    if #layers > 0 then want = { key = "furn", layers = layers } end
+    self._obj_want = self._obj_want or {}
+    self._obj_want[id] = want
+    return self:_paint_obj(id, ctrl, want, true)
+
+  -- ★ 跨格家具的锚点格：把这一格抬到 `stage` 子列表的**最后**（= 最上层），
+  --   否则邻格的 `face`（不透明房间色）会盖掉越过格线的那半件家具。
+  --   只在"跨格"时下发（见 `lua/furn_art.lua` 的 `anchor` 字段）。
+  elseif key == "furn_anchor" then
+    if value == true and ctrl ~= nil and ctrl.SetAsLastSibling ~= nil then
+      local ok = pcall(function() ctrl:SetAsLastSibling() end)
+      if not ok then return false end
+      self._furn_anchors = self._furn_anchors or {}
+      self._furn_anchors[id] = true
+    end
+    return true
+
   elseif key == "object" then
     -- ★★ 2026-09-28 新增：**物件图标的显隐**。
     --
@@ -4135,33 +5264,100 @@ function Adapter:set_property(id, key, value, nkey)
     --   空格看不出（face 本来就是白图），**一放人就露馅** ——
     --   截图里 C3/R1、C4/R2、C4/R3 那三块白方块就是它。
     --   ⇒ 没物件就**藏起来**；将来配了物件图（调色板 `obj.*`）再按名字换图并显示。
-    local o = self:sub(id, "obj")
-    if o ~= nil then
-      -- `false` 是 ui_controller 约定的"没有物件"哨兵（nil 会让这个键在 `pairs` 里消失）
-      if value == false or value == nil then
-        if o.SetVisible then pcall(function() o:SetVisible(false) end) end
-        return true          -- ★ "藏起来"就是这次要做的全部 ⇒ 算送达（不要重发）
+    --
+    -- ★★★★★★★★ 2026-10-20 **顺序倒过来：先解析"该显示什么"，再谈能不能画** ✗✓✓
+    --
+    --   ★ 真机 bug（用户原话）：「**第一次进入第一关障碍物和家具会渲染不出来**，
+    --     进入第二关后重新回到第一关就有了，**这个问题在门墙渲染上曾出现过**」。
+    --
+    --   ★ 根因（就是墙门那个坑的**同一个坑、下一层**，仓内早有定案，见 `_edge_want` 长注释）：
+    --     · `set_property(…, "visible", false)` 对 `cell.*` 会 `hide_kids()` **递归藏子树**，
+    --       而它**只藏不显**（单向）⇒ 子控件**必须有人每帧把"该亮的"重新点亮**；
+    --     · `face` 有人点（`_cells_paint` 每帧）✓
+    --       `wall.*` / `door.*` 有人点（`_edge_want` 每帧重放）✓
+    --       **`obj` 没人点** ✗ —— 它只在属性下发那一趟设一次；
+    --     · 第一关的格子是**这一帧新建**的 ⇒ 会走一次 `false → true` ⇒ 触发递归藏 ⇒
+    --       家具/障碍物（就是 `obj`）全灭，而且**本关内再也没人救它**；
+    --       第二关起**不重建格子** ⇒ 没有 `false → true` ⇒ 不触发递归藏 ⇒ 家具正常 ✓
+    --     ⇒ 与用户描述**逐字对上**（"第一次不行、换关回来就有了"）✓✓
+    --
+    --   ★ 修法：**与墙门同一套路** —— 把"这一格该显示什么"记进 `_obj_want`，
+    --     由 `_cells_paint`（每帧都跑）重放；画法收进 `Adapter:_paint_obj`，只有一个实现。
+    local want = false
+    if not (value == false or value == nil) then
+      -- ★ 2026-10-22（v299）：按 **层** 取素材 —— `obj.<kind>` / `obj2.<kind>` / `obj3.<kind>`。
+      --   层数由"调色板里真的有哪几层"决定（编辑器控件优先，其次 cfg.obj_art）⇒
+      --   只有 1 层的老数据/老存档行为**完全不变**（其余层在 `_paint_obj` 里藏掉）。
+      local vkey = tostring(value)
+      local kind = vkey:match("^obj%.(.+)$") or vkey
+      local map = self:read_palette()
+      local layers = {}
+      for li = 1, #OBJ_LAYER_SUBS do
+        local k = (li == 1 and ("obj.") or ("obj" .. li .. ".")) .. kind
+        local hit = map[k]
+        if type(hit) == "table" and type(hit.id) == "number" then
+          layers[#layers + 1] = {
+            key = k, src = hit.source, id = hit.id, color = hit.color,
+            w = hit.w, h = hit.h, dx = hit.dx, dy = hit.dy,
+          }
+        end
       end
       -- ⚠️ 这里**不要用 `resolve_asset`** —— 它查不到会 `warn_once` 打**报错**，
       --    而"调色板里还没有 obj.* 素材"是**当前阶段的正常状态**（物件美术还没配），
-      --    不该污染日志。直接查表，查不到就藏起来。
-      local hit = nil
-      do
-        local map = self:read_palette()
-        local key = tostring(value)
-        hit = map[key]
-      end
-      if hit ~= nil and hit.id ~= nil then
-        local src = nil
-        pcall(function() src = o.imageSource end)
-        if hit.source ~= nil then src = hit.source end
-        pcall(function() o:SetImage(src, hit.id) end)
-        if o.SetVisible then pcall(function() o:SetVisible(true) end) end
-      else
-        -- 没有物件（或名字解析不出来）→ **必须藏**，否则白板会盖住头像
-        if o.SetVisible then pcall(function() o:SetVisible(false) end) end
+      --    不该污染日志。直接查表，查不到就当"这一格没有物件"。
+      if #layers > 0 then
+        want = { key = vkey, layers = layers }
       end
     end
+    -- ① 先记意图（**即使子控件此刻还取不到也要记** —— 每帧重放靠它补画）
+    self._obj_want = self._obj_want or {}
+    self._obj_want[id] = want
+    -- ② 再尽力立刻画一次（失败不报错：子控件晚一步就绪是正常情形，每帧会补）
+    self:_paint_obj(id, ctrl, want, true)
+
+  -- ★★★★★★★★ 2026-10-17 **线索位置提示层：`cell.R.C` 的 `hint` 子控件** ✗✓
+  --
+  --   用户已经在编辑器里把这一层做好了：模板 `cell` → `content` → **`hint`**
+  --   （135×135 铺满格子，颜色 `0x7F0063D5` = 50% 透明蓝，图片 100001）
+  --   ⇒ ★ **脚本只负责"显示 / 隐藏"** ✓ 颜色一个字都不写 ✓（用户原话："颜色也已经调好了"）
+  --   ★ 为什么不再染 `face` ✗：`face` 是**房间色 + 人像**的载体，染它会把头像也染蓝 ✓
+  --   ★ `sub()` 会**穿过 `content`** 找同名子控件（见 `Adapter:sub` 的三级尝试 ✓）
+  elseif key == "hint" then
+    local h = self:sub(id, "hint")
+    if h == nil then
+      -- 老存档 / 模拟器建树没有这一层：**算送达**（不发重试、不刷屏），只是这次没东西可显示
+      self:warn_once("hint:missing", "模板里没有 `hint` 子控件（线索位置提示画不出来）"
+        .. " —— 2026-10-17 的存档里它在 `cell` 的 `content` 下")
+      return true
+    end
+    -- ★ 2026-10-17：提示层也必须"和格子一样大"（否则 6×6 会溢出格子 ✓）
+    self:_fit_child_to_cell(ctrl, h, id)
+    local on = (value == true)
+    if h.SetVisible then pcall(function() h:SetVisible(on) end) end
+    -- ★★★★★ 2026-10-18 **淡蓝层抬到最上层** ✗✓
+    --   日志：「图层顺序：对 N 个格子排过层序，子控件成功置底 …」⇒ 子控件被重排过
+    --   ⇒ hint 很可能被压到 face 下面 ⇒ 可见性开了、却被不透明 face 盖住 ✗
+    if on then
+      if h.SetAsLastSibling then pcall(function() h:SetAsLastSibling() end) end
+    end
+    if on and h.SetActive then pcall(function() h:SetActive(true) end) end
+    return true
+
+  -- ★★★★★★★★ 2026-10-17 **`fit`：界面层直接给格子边长（画布）** ✗✓
+  --   把"铺满型"三层（face / hint / obj）钉成这个尺寸、居中 ✓
+  --   ★ 为什么由界面层给：`build_layout` 本来就知道 `cell`；适配层**读控件尺寸不可靠**
+  --     （模拟器的桥接根本没有 `GetSizeDelta` 的实现 ⇒ 静默跳过 ⇒ 溢出）✓
+  --   ★ 与 `hint` / `object` / `rect` 的**到达顺序无关** ⇒ 不会出现"第一条到了就记死账" ✓
+  elseif key == "fit" then
+    local n = tonumber(value)
+    if n ~= nil and n > 1 then
+      for _, nm in ipairs({ "face", "hint", "obj", "portrait" }) do
+        local s2 = self:sub(id, nm)
+        if s2 ~= nil then self:_fit_child_sized(s2, n, n) end
+      end
+    end
+    return true
+
   elseif key == "imageType" then
     -- ★★★ 2026-10-01：**强制图片的拉伸方式**（Basic = 按原始像素 / Stretch = 填满控件）。
     --
@@ -4212,6 +5408,26 @@ function Adapter:set_property(id, key, value, nkey)
       end
     end
   elseif key == "image" then
+    -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+    -- 2026-10-20（v283）**格子的"放置头像"改画到 `portrait` 层**（在家具之上）
+    --
+    --   用户原话：「现在家具图层会盖在放置的头像上，把这个问题解决」
+    --   · 旧：`image` → `face`（最底层）⇒ 家具 `obj` 压在上面 ✗
+    --   · 新：格子走 `portrait`（层序在 obj 之上、wall 之下）✅
+    --     房间色仍然留在 `face`（由 `tint` 写），所以格子**底色不会丢** ✓
+    --   ⚠️ 非格子（线索卡 `clue.N.face`、选关卡、托盘卡）**一律不动**，照旧走 face 那条路 ✓
+    if is_cell_id(id) then
+      local want = false
+      if value ~= nil and value ~= false then
+        local hit = self:resolve_asset(value)
+        if hit ~= nil and hit.id ~= nil then
+          want = { key = tostring(value), id = hit.id, src = hit.source }
+        end
+      end
+      self._portrait_want = self._portrait_want or {}
+      self._portrait_want[id] = want
+      return self:_paint_portrait(id, ctrl, want, true)
+    end
     -- 头像/格面/物件图标：图片来自子控件 "face"
     --
     -- `value` 可以是两种：
@@ -4220,6 +5436,9 @@ function Adapter:set_property(id, key, value, nkey)
     --     整数 ID 的难题（只读字段 + 不能手抄数字）由调色板解决：见 read_palette。
     local target = self:sub(id, "face") or ctrl
     if target ~= nil then
+      -- ★ 2026-10-17：`face` 也钉成"和格子一样大"（房间色/头像都不该溢到邻格 ✓）
+      -- ★★ 2026-10-18 **加闸门**：只有格子才贴（否则会把选关卡片钉到父级中心 ⇒ 四张叠成一张 ✗）
+      if is_cell_id(id) then self:_fit_child_to_cell(ctrl, target, id) end
       -- ★★ 2026-09-27 修：**没有图时不要直接把 face 藏掉**。
       --
       -- 旧行为：`value == nil` → `SetVisible(false)`。后果很严重 ——
@@ -4292,37 +5511,51 @@ function Adapter:set_property(id, key, value, nkey)
 
   elseif key == "doors" then
     return self:_apply_edges(id, "door", value)
-
   -- ★ 染色：`imageColor` 官方是 **读写**（ColorValue、Tweenable），
   --   所以"同底图 + 不同颜色区分区域"是零额外素材的做法。
   --   value 用 {r,g,b,a?}（0–255）；官方构造是全局函数 `Color(r,g,b,a?)`。
   elseif key == "tint" then
+    -- ★★★★★★★★ 2026-10-15 **染色这条路【在真机上一直是空操作】** ✗✓✓（本轮修 ✓）
+    --
+    --   ★★ 旧写法有两道门槛 ✗，真机**两道都过不去** ✓：
+    --     ① `type(value) == "table"` ✗ —— ★ 缩略图那边传的是**打包整数** ✓
+    --        ⇒ ★ 直接不进分支 ⇒ **静默什么都不做** ✓（连一行日志都没有 ✗）
+    --     ② 就算传了 table，还要 `type(Color) == "function"` ✗ ——
+    --        ★★ 而本文件后面自己写着 ✓（`style` 分支那段 ✓）：
+    --        「颜色在引擎里就是 **32 位整数**，而 `Color()` 全局函数**不存在**」✓
+    --        ⇒ ★ 于是 table 那条路**也永远拿不到 made** ⇒ 又是一次空操作 ✓
+    --   ⇒ ★★ 结果 ✓：★ **卡片一直是纯白、缩略图一直没有颜色** ✓✓
+    --     （用户 2026-10-15 那张截图正是"4 张纯白卡" ✓ —— 与本条吻合 ✓）
+    --
+    --   ★ 修法 ✓（两条，都不依赖那个不存在的全局函数 ✓）：
+    --     · ★ **整数直接认** ✓ —— ★ 真机已经证明它能用 ✓：
+    --       `style` 分支的 `PLACED_TINT = 0x7FFFFFFF` / `NORMAL_TINT = 0xFFFFFFFF`、
+    --       以及选中高亮 `HIGHLIGHT_TINT = 4294956107` 都是**直接写整数** ✓
+    --     · ★ **table 自己打包成 `0xAARRGGBB`** ✓（`M.pack_color` ✓ 已导出，测试够得着 ✓）
+    --   ⚠️ 像素约定 ✓：★ `imageColor` 是**乘算** ✓ ⇒ 白(255) × 目标色 = 目标色 ✓；
+    --     ★ alpha 也乘 ⇒ `0x7F…` = 整体减淡（"已放置头像卡"那种效果 ✓）。
     local target = self:sub(id, "face") or ctrl
-    if target ~= nil and type(value) == "table" then
-      local r = tonumber(value.r or value[1]) or 255
-      local g = tonumber(value.g or value[2]) or 255
-      local b = tonumber(value.b or value[3]) or 255
-      local a = value.a or value[4]
+    if target ~= nil then
+      -- ★ 2026-10-17：`face` 钉成"和格子一样大"（房间色/头像都不该溢到邻格 ✓）
+      --   `tint` 每格每关都会下发一次 ⇒ 这里是最稳的挂钩
+      -- ★★ 2026-10-18 **加闸门**：`select.card.N` 没有 `face` ⇒ `target` 会落到**卡片自己**，
+      --   于是 `SetAnchoredPosition(0,0)` 把四张卡全钉到父级中心 ⇒ **看起来只有一张** ✗
+      --   （用户定位：选关渲染问题出现在 397 之后 —— 正是这一行加进来的那版 ✓）
+      if is_cell_id(id) then self:_fit_child_to_cell(ctrl, target) end
       local made = nil
-      if type(Color) == "function" then
-        if a ~= nil then made = Color(r, g, b, tonumber(a) or 255)
-        else made = Color(r, g, b) end
+      if type(value) == "number" then
+        made = value
+      elseif type(value) == "table" then
+        local r = tonumber(value.r or value[1]) or 255
+        local g = tonumber(value.g or value[2]) or 255
+        local b = tonumber(value.b or value[3]) or 255
+        local a = tonumber(value.a or value[4]) or 255
+        made = M.pack_color(r, g, b, a)
       end
       if made ~= nil then
         local ok = pcall(function() target.imageColor = made end)
         if not ok then
-          self:warn_once("tint", "设置 imageColor 失败（可能是 ColorValue 的构造方式不对）")
-        end
-      else
-        -- ⚠️ 没有全局 `Color` **不是错误**，只是这个运行环境不支持染色
-        --    （模拟器就没有它）。所以这里用 print 说一次，**不能走 printerr** ——
-        --    模拟器有「运行期不得有错误日志」的断言，走 printerr 会把 8b/9 两步打挂。
-        if not self._tint_no_color_noted then
-          self._tint_no_color_noted = true
-          if print then
-            print("[murdoku] 环境没有全局函数 `Color`，染色跳过（不影响玩法）。"
-              .. "官方文档里 ColorValue 由 `Color(r,g,b,a?)` 创建（0–255，a 可省略）。")
-          end
+          self:warn_once("tint", "设置 imageColor 失败（imageColor 可能不是整数）")
         end
       end
     end
@@ -4373,6 +5606,19 @@ function Adapter:set_property(id, key, value, nkey)
     --   ⇒ 那一次递归隐藏根本没赶上它们（真机排行榜里 face/content 依然可见）。
     self._hidden_ids = self._hidden_ids or {}
     if vis then self._hidden_ids[id] = nil else self._hidden_ids[id] = true end
+    -- ★★★★★★★★ 2026-10-20 **`cell.*` 由藏转显 ⇒ 请求一次"把子控件该亮的重新点亮"** ✗✓✓
+    --
+    --   为什么必须在这里置位：上面那段 `hide_kids`（`vis == false` 且 `cell.*`）会**递归藏掉**
+    --   格子的全部子控件（`face`/`obj`/`wall.*`/`door.*`/`note`/`x`），而**显示方向不递归**
+    --   （既有设计：子控件各有负责人）。⇒ 谁被藏过，谁就得有人重新点亮：
+    --     · `face` 每帧有人点 ✓
+    --     · `wall.*`/`door.*`/`obj` **只有属性下发那一趟** ✗ ⇒ 这里置位，`on_tick` 里重放。
+    --   ★ 真机症状就是这个：**第一次进第一关**，格子是这一帧新建的 ⇒ 走一次 false→true
+    --     ⇒ 家具/障碍物整关不画；第二关起不重建格子 ⇒ 不触发 ⇒ "换关回来就好了" ✓
+    --   ⚠️ 只在**显示方向**置位（隐藏方向没有要救的东西，而且置了也只是白跑一趟重放）。
+    if vis and id:sub(1, 5) == "cell." then
+      self._overlay_dirty = true
+    end
     -- ★★★★★ 2026-10-05 **可见性真的被脚本改了 ⇒ 兜底隐藏这一帧必须重跑一次。**
     --
     --   这是 `enforce_hidden_subtrees` 从"每帧扫"改成"事件驱动"之后的**主要触发源**
@@ -4441,6 +5687,32 @@ function Adapter:set_property(id, key, value, nkey)
           end
         end
       end
+    end
+  -- ★★★★★★★★ 2026-10-15 **`raycast`：运行时可写的"能不能被射线打到"** ✗✓✓
+  --
+  --   ★★ 为什么必须补这一条 ✓：`ui_controller` 的「结算」按钮在**不在主页/选关那一帧**时
+  --     推 `raycast = false` ✓ —— ★ 目的是让一个**存档里的实体按钮**在别的屏幕上
+  --     **不再吃整屏的点击** ✓（用户报的"全屏都被一个能触发结算的东西占满了"）
+  --   ⚠️ 没有这一条会怎样 ✗：★ `set_property` 落到下面的 `else` ⇒ **静默什么都不做** ✗
+  --     ⇒ ★ 我推的那个 `false` **等于没推** ✓ ⇒ ★ 症状原样保留 ✓
+  --
+  --   ★ 实现照本文件那条**已验证**的路（`_grid_disable_gray_raycast`，
+  --     灰色占位列表项就是这么关掉射线的 ✓）：
+  --     · `raycastTarget` —— 控件自己收不收光标事件 ✓
+  --     · `blockRaycast`  —— 挡不挡后面控件收事件 ✓（*** 两个都写才等于"整颗退出命中" ***）
+  --   ★ 两个都**先读字段在不在**再写 ✓（本项目在假适配器/旧实现上踩过"改不存在的属性"）
+  --   ★ 与 `visible` 分工 ✓：这条**只碰射线**、不碰可见性 ✓
+  --     ⇒ ★ 不会和「可见性只该有一个权威」那条结论打架 ✓
+  elseif key == "raycast" then
+    local want = value and true or false
+    if ctrl.raycastTarget ~= nil then
+      pcall(function() ctrl.raycastTarget = want end)
+    end
+    if ctrl.blockRaycast ~= nil then
+      pcall(function() ctrl.blockRaycast = want end)
+    end
+    if ctrl.interactable ~= nil then
+      pcall(function() ctrl.interactable = want end)
     end
   elseif key == "enabled" then
     if ctrl.interactable ~= nil then ctrl.interactable = value and true or false end
@@ -4545,6 +5817,19 @@ function Adapter:set_property(id, key, value, nkey)
 
     self.rects = self.rects or {}
     self.rects[id] = { cx = cx, cy = cy, w = w, h = h }
+
+    -- ★★★★★★★★ 2026-10-17 **格子尺寸就在手上 ⇒ 顺手把"铺满型"三层钉一次** ✗✓
+    --   ★ 2026-10-18 **删掉过一次又加回来了，但要加闸门** ✗✓
+    --     事故：这段对**每个**带 rect 的控件都跑 ⇒ `select.card.N` 也进了 `_fit_child_sized`
+    --     （`sub()` 通过 `FindChild("content/face")` 之类找到了**别的**东西），
+    --     于是四张选关卡全被 `SetAnchoredPosition(0,0)` 钉到画布中心 ⇒ **看起来只有一张** ✓
+    --   ⇒ 闸门：**只认 `cell.<行>.<列>`**（脚本自己实例化出来的格子）✓
+    if w ~= nil and h ~= nil and type(id) == "string" and id:match("^cell%.%d+%.%d+$") then
+      for _, nm in ipairs({ "face", "hint", "obj", "portrait" }) do
+        local sub3 = self:sub(id, nm)
+        if sub3 ~= nil then self:_fit_child_sized(sub3, w, h) end
+      end
+    end
 
     -- ★★ 父级中心怎么来：**从父节点自己的 `rect` 算**，而不是读"运行时已经摆过没有"。
     --
@@ -4737,15 +6022,22 @@ function Adapter:set_property(id, key, value, nkey)
   elseif key == "x_mark" then
     local c = self:sub(id, "x")
     if c and c.SetVisible then c:SetVisible(value and true or false) end
-
-  elseif key == "walls" or key == "doors" then
-    local prefix = (key == "walls") and "wall." or "door."
-    local dirs = { "up", "down", "left", "right" }
-    for i = 1, #dirs do
-      local c = self:sub(id, prefix .. dirs[i])
-      if c and c.SetVisible then c:SetVisible((value and value[dirs[i]]) and true or false) end
-    end
   end
+
+  -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  -- ★ 2026-10-18（v265）**删除：这里曾经有一份"第二套墙/门定位"代码** ✗✓✓
+  --
+  --   它长这样（现在已删）：
+  --     elseif key == "walls" or key == "doors" then
+  --       … 用 `self.rects[id].w/h` 再算一遍 (cw−厚)/2 + `door_nudge` 的补偿 …
+  --
+  --   ★ 为什么删：`set_property` 在**前面**（本函数 L4710/L4715）已经 `return self:_apply_edges(…)`
+  --     ⇒ 这个 `elseif` **永远走不到**（Lua 的 return 直接出函数）✓ ⇒ 是**死代码** ✗
+  --   ★ 但死代码在这里**特别危险**：它是"同一条边有两套坐标公式"的第二份 ✓
+  --     （一份贴格子内侧 + nudge=6，一份居中格线 ⇒ 谁被复活谁就覆盖另一份 ✗）
+  --     —— 本项目已经为"两处实现同一件事"栽过多次（上色 / 缩放表 / 显隐 / 几何都在里面）✓
+  --   ⇒ 坐标公式**只有一处**：`Adapter:_apply_edges`（居中格线，墙门共线）✓
+  --     ⚠️ 想改墙/门位置，只改那儿；不要在这里再写一份 ✗
 
   -- ★★★★★ 2026-10-05 **默认"送达成功"** —— 这条 `return true` 是上面那条契约的另一半：
   --   只有明确知道"没送到"的分支（`ctrl == nil`、文字无处可写、墙/门缺子控件）才返回 false，
@@ -4817,13 +6109,10 @@ end
 -- 取不到枚举时只是不绑定，鼠标照样能玩，不影响可用性。
 ----------------------------------------------------------------------------
 
-local function make_cursor_data(x, y, press_x, press_y)
-  return {
-    x = x, y = y, pressX = press_x, pressY = press_y,
-    GetUIPos = function() return x, y end,
-    GetPressUIPos = function() return press_x, press_y end,
-  }
-end
+-- ★ 2026-10-18（优化组 · P0）：`make_cursor_data`（连带它返回表里的 `GetPressUIPos` 字段）**已删除** ✗✓
+--   判据：文件内 local，全仓 0 调用点。
+--   ⚠️ 真引擎回调收到的 `CursorEventData` **自带** `GetUIPos` / `GetPressUIPos`（官方）⇒
+--     这个"自己捏一个"的假对象只在早期离线桩阶段用过，早就不需要了。
 
 -- 平台/设备：KeyboardAndMouse | Mobile | Controller | MobileController
 function Adapter:device()
@@ -5247,11 +6536,8 @@ function Adapter:bind_keys(spec, control_id)
   return n, note
 end
 
--- 键盘是否真的可用（要么绑成功过，要么收到过键盘事件）
-function Adapter:keyboard_ready()
-  if self.keymap ~= nil and next(self.keymap) ~= nil then return true end
-  return false
-end
+-- ★ 2026-10-18（优化组 · P0）：`Adapter:keyboard_ready` **已删除** —— 全仓 0 调用点
+--   （需要判断时直接看 `self.keymap` 是否非空即可，不必留一个包装函数）
 
 ----------------------------------------------------------------------------
 -- 动效（TweenSequence 关键帧）+ 音效
@@ -5310,9 +6596,7 @@ local EFFECTS = {
   -- 擦除：缩到 0
   vanish       = { dur = 0.20, ease = "InQuad",   ch = "scale",
                    keys = { { 0.00, 1.00 }, { 1.00, 0.00 } } },
-  -- 区域墙：轻微一缩（表示"这里隔断"）
-  roomwall     = { dur = 0.14, ease = "OutQuad",  ch = "scale",
-                   keys = { { 0.00, 0.98 }, { 1.00, 1.00 } } },
+  -- ★ 2026-10-18（优化组 · P0）：`roomwall` 动效**已删除** —— 上一批删掉 `M.EFFECTS.ROOMWALL` 后无人再发它
   -- 拒绝 / 错误：左右摇头
   shake        = { dur = 0.30, ease = "Linear",   ch = "pos_x",
                    keys = { { 0.00, 0 }, { 0.20, -8 }, { 0.45, 8 },
@@ -5338,7 +6622,6 @@ M.SOUNDS = {
   clue_box_pop = nil,
   solved_flash = nil,
   vanish       = nil,
-  roomwall     = nil,
   shake        = nil,
   portrait_slide_up = nil,
 }
@@ -5559,8 +6842,74 @@ function Adapter:enforce_hidden_subtrees()
   end
 end
 
+-- ★★★★★★★★ 2026-10-20 **把"该亮的子控件"重新点亮 —— 只此一处** ✗✓✓
+--
+--   为什么需要它（真机 bug，用户报的）：`set_property(…, "visible", false)` 作用在 `cell.*` 上时，
+--   `hide_kids()` 会**递归**把该格全部子控件设成 `visible=false`，而且**只藏不显**（单向）。
+--   ⇒ 必须有东西把"该亮的"重新点亮，否则：
+--     · `face` —— 有人点（每帧底图那条路）✓
+--     · `wall.*` / `door.*` / `obj` —— **只在属性下发那一趟设一次** ⇒ 一旦被递归藏过就**永不恢复** ✗
+--       第一关的格子是"这一帧新建"的 ⇒ 会走一次 `false → true` ⇒ 触发递归藏 ⇒
+--       家具/障碍物/墙门整关不画；第二关起不重建格子 ⇒ 不触发 ⇒ "换关回来就好了" ✓
+--       （这就是用户说的「第一次进第一关家具不渲染、进第二关再回来就有了」）
+--
+--   两个调用点：
+--     ① `_cells_paint`（建格子那一刻也会跑）
+--     ② `Adapter:on_tick` 的 `_overlay_dirty` 分支（★ 每帧那条路 —— `main.lua` 的 `on_update` 会调它）
+--   ⚠️ **光有 ① 不够**：`_cells_paint` 现在只在**建控件时**被调用，不是每帧
+--      （注释里"每帧调用"那句是旧行号时代的，清理之后已经不准了）。
+--      真正每帧都在跑的是 `on_tick` ⇒ 重放必须挂在它上面才作数。
+function Adapter:_repaint_cell_overlays(cell_id)
+  if cell_id == nil then return end
+  -- ① 门墙：重放"该亮哪些边"（记录在 `_apply_edges`）
+  local w = self._edge_want
+  if w ~= nil then
+    local e = w[cell_id]
+    if e ~= nil then
+      for name, want in pairs(e) do
+        local s2 = self:sub(cell_id, name)
+        if s2 ~= nil and s2.SetVisible ~= nil then
+          pcall(function() s2:SetVisible(want) end)
+        end
+      end
+    end
+  end
+  -- ② 家具/障碍物：重放"这一格该显示什么"（记录在 `object` 分支）
+  local o = self._obj_want
+  if o ~= nil then
+    local want = o[cell_id]
+    if want ~= nil then
+      self:_paint_obj(cell_id, nil, want, false)
+    end
+  end
+  -- ③ 放置头像（v283）：重放"这一格有没有人"（记录在 `image` 分支）—— 与家具同一条纪律 ✓
+  local pp = self._portrait_want
+  if pp ~= nil then
+    local want = pp[cell_id]
+    if want ~= nil then
+      self:_paint_portrait(cell_id, nil, want, false)
+    end
+  end
+  -- ④ 图元拼法家具（v302）：重放"这一格该画哪几百个图元"（记录在 `furn_art` 分支）
+  --   ★ 与上面三处同一套路：want 记在表里、画法只有 `_paint_furn_art` 一处、这里只负责重放。
+  local fa = self._furn_art_want
+  if fa ~= nil then
+    local want = fa[cell_id]
+    if want ~= nil then
+      self:_paint_furn_art(cell_id, nil, want, false)
+    end
+  end
+end
+
 function Adapter:on_tick(dt)
   self.clock = self.clock + (dt or 0)
+  -- ★ v323：家具实例重对齐（属性后到 / 格子后改尺寸都能收敛；0.5s 节流，稳态只比较）
+  if self._furn_want ~= nil and next(self._furn_want) ~= nil then
+    if (self._furn_resync_at or -1) <= self.clock then
+      self._furn_resync_at = self.clock + 0.5
+      pcall(function() self:_furn_resync() end)
+    end
+  end
   local due = {}
   for i = #self.timers, 1, -1 do
     if self.timers[i].at <= self.clock then
@@ -5588,6 +6937,56 @@ function Adapter:on_tick(dt)
   --   另外 `find` 一搜到"该隐藏的名字"就置位（`_note_lookup_hit`）—— 兜底不会漏。
   if self._subtree_dirty then
     pcall(function() self:enforce_hidden_subtrees() end)
+  end
+  -- ★★ 2026-10-20 **格子子控件的"该亮的"重放**（事件驱动，稳态零成本）
+  --
+  --   谁置位：`set_property` 的 `visible` 分支 —— **`cell.*` 由藏转显**的那一刻
+  --     （真机第一关开局就是这条：格子先被藏（主页）→ 递归藏子树 → 回关卡内转显）。
+  --   为什么不用每帧无条件跑：25~36 格 × (sub + SetVisible) 每帧白跑，
+  --     与上面 `_subtree_dirty` 当初被改成事件驱动是**同一个理由**（`grid_cost` 在盯）。
+  --   为什么不能只在建格子时跑：`_cells_paint` 现在只在**建控件**时被调用
+  --     （注释里"每帧调用"那句是旧行号时代的）⇒ 挂在那儿等于没有。
+  if self._overlay_dirty then
+    self._overlay_dirty = false
+    local seen = {}
+    local function repaint_all(t)
+      if type(t) ~= "table" then return end
+      for cid in pairs(t) do
+        if not seen[cid] then
+          seen[cid] = true
+          pcall(function() self:_repaint_cell_overlays(cid) end)
+        end
+      end
+    end
+    repaint_all(self._edge_want)
+    repaint_all(self._obj_want)
+  end
+  -- ★ 2026-10-22（v309）**图元容器的显隐重放**（事件驱动，稳态零成本）
+  --
+  --   为什么必须重放：切屏/换关会走 `_subtree_dirty`（递归藏）——它**会**把图元容器及其子控件
+  --   一起设成 false；而"显示方向"没有任何人负责 ⇒ 用户报的"两关图元同屏叠加 / 走了又回来家具没了"
+  --   就是这个形状。重放一趟 = 重新按"当前是第几关"裁一次（带件数日志，真机可核对）。
+  if self._baked_dirty then
+    self._baked_dirty = false
+    pcall(function() self:_apply_baked(false) end)
+  end
+  -- ★ 2026-10-23（v318）**家具模板的补造重试**（有上限，稳态零成本）
+  --
+  --   真机日志里家具一件都没出现：`furn_level` 到的时候格子还没建、`things` 可能也没进树，
+  --   之后再没有人补造。这里给一个**每秒一次、最多 12 次**的重试；全部造好后条件不再成立。
+  --   成本：want 表 ≤36 格，每格一次 `_spawn_furn_tpl`（已建好的只重摆位置，幂等）⇒ 可忽略。
+  if self._furn_want ~= nil and next(self._furn_want) ~= nil and self._furn_level ~= false
+     and (self._furn_retry_n or 0) < 12 then
+    self._furn_last_try = self._furn_last_try or -1
+    if self.clock - self._furn_last_try >= 1.0 then
+      self._furn_last_try = self.clock
+      self._furn_retry_n = (self._furn_retry_n or 0) + 1
+      pcall(function()
+        self._furn_prefabs = self:_furn_prefab_map()
+        self._furn_tpl_ok = (self._furn_prefabs ~= nil and next(self._furn_prefabs) ~= nil)
+        self:_furn_try_all()
+      end)
+    end
   end
   return self.clock
 end
@@ -5620,9 +7019,25 @@ function Adapter:_save_params(value)
   }
 end
 
-function Adapter:save(key, value)
+function Adapter:save(key, value, opts)
   self.state[key] = value
-  self:signal_emit(self.signals.SAVE, self:_save_params(value))
+  -- ★★★★★★ 2026-10-15 **加一个"只写本地、不发信号"的开关** ✗✓
+  --
+  --   ★ 起因 ✓：`main.lua` 里 `remember_level` / `mark_cleared` 那三处调的是
+  --     `a:save(SAVE_PROGRESS, p)` / `a:save(SAVE_RECENT, id)` ✓ —— 它们**只想写本地缓存** ✓
+  --     但 `Adapter:save` **无条件发 `murdoku/save` 信号** ✗
+  --     ⇒ ★ 而那三个值**不是存档 payload**（是进度表 / 关卡 id）✓
+  --     ⇒ `_save_params` 只能摊出 `{"", "", 0, 0, false}` ✗ ⇒ **白发一次信号** ✓
+  --
+  --   ★ 后果 ✓：服务端【监听信号 murdoku/save】被**无意义地触发** ✗
+  --     ★★ 将来接上局内存档后，这会**用空数据覆盖真存档** ✗✗ —— 不是"脏"，是**会咬人** ✓
+  --
+  --   ★ 修法 ✓：加**可选第三参** `opts` ✓ 不传 ⇒ 行为**完全不变**（照旧发信号 ✓）⇒ 向后兼容 ✓
+  --     · `murdoku/save` 的真存档那条（`save_now`）**不传 opts** ⇒ 照发 ✓
+  --     · 进度 / 最近游玩那三处**传 `{ no_signal = true }`** ⇒ 只写本地 ✓
+  if not (type(opts) == "table" and opts.no_signal) then
+    self:signal_emit(self.signals.SAVE, self:_save_params(value))
+  end
   return true
 end
 
@@ -5688,84 +7103,24 @@ function Adapter:play_audio(audio_id)
   return nil
 end
 
-function Adapter:get_text(text_map_id)
-  if game and game.GetText then return game.GetText(text_map_id) end
-  return tostring(text_map_id)
-end
+-- ★ 2026-10-18（优化组 · P0）：`Adapter:get_text` **已删除** —— 全仓 0 调用点
+--   文案通道是 `set_property(id, "text", …)`（真机已验证），不存在"本地化文本表"这条路 ✓
 
 ----------------------------------------------------------------------------
--- 运行时能力自检
-----------------------------------------------------------------------------
+-- ★ 2026-10-18（优化组 · P0）：`M.capabilities`（运行时能力自检，19 条 check）**已删除** ✗✓
+--   判据：全仓 0 调用点（底稿里"tools 里 15 处在用"是第三方库污染，已逐个复核为 0）。
+--   它是"真机首跑"那一轮的一次性体检，结论已经落在 docs/（API-四方对照、平台边界）；
+--   留在上机包里只是白占体积，而且真需要时随时能从 git 历史取回 ✓
 
-function M.capabilities()
-  local has_game = (type(game) == "table")
-  local has_script = (type(script) == "table")
-  local rows, missing = {}, {}
-
-  local function check(label, ok)
-    rows[#rows + 1] = string.format("%-36s %s", label, ok and "OK" or "缺失")
-    if not ok then missing[#missing + 1] = label end
-  end
-
-  check("game 全局表", has_game)
-  check("game.GetClientUIRoots", has_game and type(game.GetClientUIRoots) == "function")
-  check("game.FindClientUIRoot", has_game and type(game.FindClientUIRoot) == "function")
-  check("game.GetClientUIControl", has_game and type(game.GetClientUIControl) == "function")
-  check("game.InstantiateClientUIControl", has_game and type(game.InstantiateClientUIControl) == "function")
-  check("game.Tween", has_game and type(game.Tween) == "function")
-  check("game.TweenSequence", has_game and type(game.TweenSequence) == "function")
-  check("game.ServerSignal", has_game and type(game.ServerSignal) == "function")
-  check("game.PlayAudio2D", has_game and type(game.PlayAudio2D) == "function")
-  check("game.GetText", has_game and type(game.GetText) == "function")
-  check("game.GetUICanvasSize", has_game and type(game.GetUICanvasSize) == "function")
-  check("Enum.CursorEventType.CursorClick", E("CursorEventType.CursorClick") ~= nil)
-  check("Enum.ImageSource", E("ImageSource") ~= nil)
-  check("script（当前脚本实例）", has_script)
-  check("script:RegisterServerSignalHandler", has_script and type(script.RegisterServerSignalHandler) == "function")
-  check("script:GetParam", has_script and type(script.GetParam) == "function")
-  check("script:EnableUpdate", has_script and type(script.EnableUpdate) == "function")
-
-  local text = "千星适配层运行时能力自检：\n" .. table.concat(rows, "\n")
-  if #missing > 0 then text = text .. "\n\n缺失项：" .. table.concat(missing, "、") end
-  return text, missing
-end
-
--- ★★ 2026-09-28：`apply_button_labels` **放到文件最末尾**重新定义。
+-- ★★★★★★★★ 2026-10-16 **v253：`apply_button_labels` 【已删除】** ✗✓✓
 --
---   为什么搬：原来它定义在中段，语法上看是顶层，但实测
---   `M.Adapter.apply_button_labels == nil`（而同一位置的 `set_property` 存在）——
---   说明它被包在了某个 `do`/`local function` 里，**永远不会被赋值到 Adapter 上**。
---   放到 `return M` 前一行，**不可能再有嵌套**。
+--   ★ 用户指令 ✓：「把所有失效的几何/文字脚本代码从脚本中删除」✓
+--   ★ 它自己头部的注释就写着 ✗：「★ **现在它没有调用方** ✓（`main.lua` 走已验证的
+--     ⇒ ★ 一直没人用 ✓，而且它当初"放进 `Adapter` 上"还失败过 ✗（`== nil` ✓）
+--   ★ 现在的按钮文案通道 ✓（两条 ✓ 都在用 ✓ 别一起删掉 ✗）：
+--     · ★ `main.lua` 开机那条：走 `set_property(id, "text", …)` ✓（已验证 ✓ 带读回日志 ✓）
+--     · ★ 渲染每帧那条：同一个 `set_property` ✓ ＋ `self.text_editor_first` 名单 ✓
+--       （★ 编辑器里已经填了文案的控件 ⇒ **一个字都不动** ✓）
 --
---   ⚠️ 现在它**没有调用方**（main.lua 走已验证的 `set_property` 路径），
---      保留它只为将来需要"批量重写按钮文字 + 读回校验"时有个现成入口。
-function Adapter:apply_button_labels(labels)
-  if labels == nil or print == nil then return 0 end
-  local okN, miss, bad, shown = 0, 0, 0, 0
-  local ids = {}
-  for id in pairs(labels) do ids[#ids + 1] = id end
-  table.sort(ids)
-  for i = 1, #ids do
-    local id, want = ids[i], labels[ids[i]]
-    if type(want) == "string" and want ~= "" then
-      local lb = nil
-      pcall(function() lb = self:sub(id, "label") end)
-      if lb == nil then
-        miss = miss + 1
-      else
-        local wrote = pcall(function() lb.text = want end)
-        local back = nil
-        pcall(function() back = lb.text end)
-        if wrote and back == want then okN = okN + 1 else bad = bad + 1 end
-        if shown < 8 then
-          print(string.format("  %s：想要 %q → 读回 %s", id, want, tostring(back)))
-          shown = shown + 1
-        end
-      end
-    end
-  end
-  print(string.format("[murdoku] 按钮文字：成功 %d，读回不一致 %d，找不到 label %d", okN, bad, miss))
-  return okN
-end
 
 return M

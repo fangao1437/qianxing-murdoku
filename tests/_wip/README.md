@@ -53,6 +53,55 @@ lua tests/_wip/probe_accuse_flow.lua <别的root>   # 对旧版跑（要那 root
 ⚠️ 仍然**不算回归防线**（`_wip` 的规矩不变）；结论与证据链见
 [docs/点格子没反应-三段切开结论.md](../../docs/点格子没反应-三段切开结论.md) ✓
 
+## render_cost_faithful.lua ／ perframe_engine_calls_faithful.lua（2026-10-13，**忠实树** ✓）
+
+**为什么有它们 ✗**：原来的 `render_cost.lua` / `perframe_engine_calls.lua` 用的是**手搭假树**，
+而那棵树**漏了真存档里确实存在**的 8 个边控件 ——
+`wall.up/down/left/right`、`door.up/down/left/right`（父控件全部 ＝ `content`）：
+
+```
+node tools/gil/list_names.mjs 347.gil wall     → 8 个，父 = content
+node tools/gil/list_names.mjs 347.gil door     → 8 个，父 = content
+```
+
+⇒ 每一次 `sub(cell,"wall.up")` 都**注定未命中** ⇒ 凭空造出 **840 笔 `GetChild` / 一次 render** ✗
+⇒ 而 v213 有"按代未命中记忆"、v192 没有 ⇒ **那 840 笔全记在 v192 头上** ⇒
+量出一个**不存在的** "972 → 132（−86%）" ✗✓
+
+**这两个文件做的两件事** ✓：
+1. 给每个格子的 `content` **补上**那 8 个边控件（与 `347.gil` 对账）；
+2. **去掉**假树**反向假造**的 10 个控件（`ruler.c.1..5` / `ruler.r.1..5` —— 存档里只有 `ruler` 与 `tpl.ruler`，没有这些标签）。
+
+**补忠实之后的实测（2026-10-13）** ✓：
+
+| 指标 | v192 | v213 |
+|---|---|---|
+| 一次稳态 render | **111** | **111** |
+| └ `GetChild` / `GetSizeDelta` | **0 / 0** | **0 / 0** |
+| 换代后第一趟（冷） | 29,786 | 25,947 |
+| 每帧（60 帧窗） | 100.5 | 42.0 |
+| 每帧（300 帧窗） | 40.3 | 28.4 |
+| `GetChild`/帧 | 1.00 | 1.00 |
+
+⇒ **差额全在 `GetChildren`（整树遍历）**；`_sub_miss` 在 wall/door 这条路上**买不到可测收益** ✓
+
+**跑法** ✓（产物路径请用 **ASCII 路径** ✗ —— Lua 解释器在中文路径下拿不到参数）：
+
+```
+lua tests/_wip/render_cost_faithful.lua          <产物> [cold|switch]
+lua tests/_wip/perframe_engine_calls_faithful.lua <产物> [帧数]   # 建议 60 与 300 各跑一次
+```
+
+**产出可复现的产物身份** ✓：v192 sha `32DFC2AF…`、v213 sha `4054178B6A6EBF63`
+（两个产物各含 4 个"孤立 CR 字节"⇒ PowerShell 行号比真实行号**多至多 4** ✗）
+
+★★★ **新增第 ④ 条规矩** ✗✓：**探针的树必须与存档对账** ——
+"探针包了产线遍历的那棵树" ≠ "**那棵树是真的**" ✓✓
+依据与全量证据：`-project` 仓 **`审计-性能-v192对213.md`** §0 更正声明（含 `347.gil` 实证与更正前后对照）。
+
+⚠️ 它们**仍然不算回归防线**（`_wip` 的规矩不变）：假树虽已与存档对齐，但**仍是手搭的替身**
+（349 个控件 vs 存档 293 条记录）⇒ 只有"两版之间怎么变"可比，**绝对量级不是设备真值**，更不能当毫秒 ✓
+
 ## 规矩
 - 从 `_wip` 毕业的条件：**跑通且能红能绿**（跑旧版会红 ⇒ 说明有方向 ✓）。
 - **不许**把 `_wip` 里的失败计入"预存在红榜"（那是 `entry_smoke` 11 / `selftest` 4 的专属）。

@@ -1,0 +1,593 @@
+{
+    "version":  1,
+    "name":  "tutorial-furniture-simplified",
+    "source":  {
+                   "mode":  "hand",
+                   "route":  "tutorial-board-simplified"
+               },
+    "cellTemplatePx":  108,
+    "templates":  {
+                      "furn.chair":  {
+                                         "template":  "furn.chair",
+                                         "kind":  "chair",
+                                         "variant":  "1",
+                                         "sizePx":  [
+                                                        108,
+                                                        108
+                                                    ],
+                                         "layerCount":  4,
+                                         "layers":  [
+                                                        {
+                                                            "order":  1,
+                                                            "imageId":  106056,
+                                                            "color":  "0x66000000",
+                                                            "w":  80,
+                                                            "h":  84,
+                                                            "dx":  0,
+                                                            "dy_down":  0,
+                                                            "y_up":  0,
+                                                            "rotDeg":  0
+                                                        },
+                                                        {
+                                                            "order":  2,
+                                                            "imageId":  107102,
+                                                            "color":  "0xFFD9C08A",
+                                                            "w":  72,
+                                                            "h":  80,
+                                                            "dx":  0,
+                                                            "dy_down":  0,
+                                                            "y_up":  0,
+                                                            "rotDeg":  0
+                                                        },
+                                                        {
+                                                            "order":  3,
+                                                            "imageId":  107102,
+                                                            "color":  "0xFFFEF7E4",
+                                                            "w":  62,
+                                                            "h":  68,
+                                                            "dx":  0,
+                                                            "dy_down":  0,
+                                                            "y_up":  0,
+                                                            "rotDeg":  0
+                                                        },
+                                                        {
+                                                            "order":  4,
+                                                            "imageId":  107102,
+                                                            "color":  "0xFFFBD592",
+                                                            "w":  52,
+                                                            "h":  12,
+                                                            "dx":  0,
+                                                            "dy_down":  -31,
+                                                            "y_up":  31,
+                                                            "rotDeg":  0
+                                                        }
+                                                    ]
+                                     },
+                      "furn.plant":  {
+                                         "template":  "furn.plant",
+                                         "kind":  "plant",
+                                         "variant":  "1",
+                                         "sizePx":  [
+                                                        108,
+                                                        108
+                                                    ],
+                                         "layerCount":  4,
+                                         "layers":  [
+                                                        {
+                                                            "order":  1,
+                                                            "imageId":  106056,
+                                                            "color":  "0x66000000",
+                                                            "w":  60,
+                                                            "h":  56,
+                                                            "dx":  0,
+                                                            "dy_down":  6,
+                                                            "y_up":  -6,
+                                                            "rotDeg":  0
+                                                        },
+                                                        {
+                                                            "order":  2,
+                                                            "imageId":  100001,
+                                                            "color":  "0xFFFCA161",
+                                                            "w":  36,
+                                                            "h":  24,
+                                                            "dx":  0,
+                                                            "dy_down":  28,
+                                                            "y_up":  -28,
+                                                            "rotDeg":  0
+                                                        },
+                                                        {
+                                                            "order":  3,
+                                                            "imageId":  100002,
+                                                            "color":  "0xFF1E2A18",
+                                                            "w":  44,
+                                                            "h":  34,
+                                                            "dx":  0,
+                                                            "dy_down":  0,
+                                                            "y_up":  0,
+                                                            "rotDeg":  0
+                                                        },
+                                                        {
+                                                            "order":  4,
+                                                            "imageId":  100002,
+                                                            "color":  "0xFF79CFA1",
+                                                            "w":  32,
+                                                            "h":  24,
+                                                            "dx":  -4,
+                                                            "dy_down":  -4,
+                                                            "y_up":  4,
+                                                            "rotDeg":  0
+                                                        }
+                                                    ]
+                                     },
+                      "furn.table.1":  {
+                                           "template":  "furn.table.1",
+                                           "kind":  "table",
+                                           "variant":  "1",
+                                           "sizePx":  [
+                                                          108,
+                                                          108
+                                                      ],
+                                           "layerCount":  5,
+                                           "layers":  [
+                                                          {
+                                                              "order":  1,
+                                                              "imageId":  106056,
+                                                              "color":  "0x66000000",
+                                                              "w":  80,
+                                                              "h":  96,
+                                                              "dx":  0,
+                                                              "dy_down":  0,
+                                                              "y_up":  0,
+                                                              "rotDeg":  0
+                                                          },
+                                                          {
+                                                              "order":  2,
+                                                              "imageId":  107102,
+                                                              "color":  "0xFFAD9C67",
+                                                              "w":  76,
+                                                              "h":  72,
+                                                              "dx":  0,
+                                                              "dy_down":  -7,
+                                                              "y_up":  7,
+                                                              "rotDeg":  0
+                                                          },
+                                                          {
+                                                              "order":  3,
+                                                              "imageId":  100001,
+                                                              "color":  "0xFF1F1A14",
+                                                              "w":  76,
+                                                              "h":  8,
+                                                              "dx":  0,
+                                                              "dy_down":  30,
+                                                              "y_up":  -30,
+                                                              "rotDeg":  0
+                                                          },
+                                                          {
+                                                              "order":  4,
+                                                              "imageId":  100001,
+                                                              "color":  "0xFF8C7F52",
+                                                              "w":  9,
+                                                              "h":  9,
+                                                              "dx":  -24,
+                                                              "dy_down":  40,
+                                                              "y_up":  -40,
+                                                              "rotDeg":  0
+                                                          },
+                                                          {
+                                                              "order":  5,
+                                                              "imageId":  100001,
+                                                              "color":  "0xFF8C7F52",
+                                                              "w":  9,
+                                                              "h":  9,
+                                                              "dx":  24,
+                                                              "dy_down":  40,
+                                                              "y_up":  -40,
+                                                              "rotDeg":  0
+                                                          }
+                                                      ]
+                                       },
+                      "furn.table.h2":  {
+                                            "template":  "furn.table.h2",
+                                            "kind":  "table",
+                                            "variant":  "h2",
+                                            "sizePx":  [
+                                                           216,
+                                                           108
+                                                       ],
+                                            "layerCount":  5,
+                                            "layers":  [
+                                                           {
+                                                               "order":  1,
+                                                               "imageId":  106056,
+                                                               "color":  "0x66000000",
+                                                               "w":  182,
+                                                               "h":  116,
+                                                               "dx":  0,
+                                                               "dy_down":  0,
+                                                               "y_up":  0,
+                                                               "rotDeg":  0
+                                                           },
+                                                           {
+                                                               "order":  2,
+                                                               "imageId":  107102,
+                                                               "color":  "0xFFAD9C67",
+                                                               "w":  178,
+                                                               "h":  72,
+                                                               "dx":  0,
+                                                               "dy_down":  -7,
+                                                               "y_up":  7,
+                                                               "rotDeg":  0
+                                                           },
+                                                           {
+                                                               "order":  3,
+                                                               "imageId":  100001,
+                                                               "color":  "0xFF1F1A14",
+                                                               "w":  178,
+                                                               "h":  8,
+                                                               "dx":  0,
+                                                               "dy_down":  30,
+                                                               "y_up":  -30,
+                                                               "rotDeg":  0
+                                                           },
+                                                           {
+                                                               "order":  4,
+                                                               "imageId":  100001,
+                                                               "color":  "0xFF8C7F52",
+                                                               "w":  9,
+                                                               "h":  9,
+                                                               "dx":  -62,
+                                                               "dy_down":  40,
+                                                               "y_up":  -40,
+                                                               "rotDeg":  0
+                                                           },
+                                                           {
+                                                               "order":  5,
+                                                               "imageId":  100001,
+                                                               "color":  "0xFF8C7F52",
+                                                               "w":  9,
+                                                               "h":  9,
+                                                               "dx":  62,
+                                                               "dy_down":  40,
+                                                               "y_up":  -40,
+                                                               "rotDeg":  0
+                                                           }
+                                                       ]
+                                        },
+                      "furn.table.v2":  {
+                                            "template":  "furn.table.v2",
+                                            "kind":  "table",
+                                            "variant":  "v2",
+                                            "sizePx":  [
+                                                           108,
+                                                           216
+                                                       ],
+                                            "layerCount":  5,
+                                            "layers":  [
+                                                           {
+                                                               "order":  1,
+                                                               "imageId":  106056,
+                                                               "color":  "0x66000000",
+                                                               "w":  78,
+                                                               "h":  190,
+                                                               "dx":  0,
+                                                               "dy_down":  0,
+                                                               "y_up":  0,
+                                                               "rotDeg":  0
+                                                           },
+                                                           {
+                                                               "order":  2,
+                                                               "imageId":  107102,
+                                                               "color":  "0xFFAD9C67",
+                                                               "w":  76,
+                                                               "h":  176,
+                                                               "dx":  0,
+                                                               "dy_down":  -7,
+                                                               "y_up":  7,
+                                                               "rotDeg":  0
+                                                           },
+                                                           {
+                                                               "order":  3,
+                                                               "imageId":  100001,
+                                                               "color":  "0xFF1F1A14",
+                                                               "w":  76,
+                                                               "h":  8,
+                                                               "dx":  0,
+                                                               "dy_down":  82,
+                                                               "y_up":  -82,
+                                                               "rotDeg":  0
+                                                           },
+                                                           {
+                                                               "order":  4,
+                                                               "imageId":  100001,
+                                                               "color":  "0xFF8C7F52",
+                                                               "w":  9,
+                                                               "h":  9,
+                                                               "dx":  -24,
+                                                               "dy_down":  92,
+                                                               "y_up":  -92,
+                                                               "rotDeg":  0
+                                                           },
+                                                           {
+                                                               "order":  5,
+                                                               "imageId":  100001,
+                                                               "color":  "0xFF8C7F52",
+                                                               "w":  9,
+                                                               "h":  9,
+                                                               "dx":  24,
+                                                               "dy_down":  92,
+                                                               "y_up":  -92,
+                                                               "rotDeg":  0
+                                                           }
+                                                       ]
+                                        },
+                      "furn.shelf":  {
+                                         "template":  "furn.shelf",
+                                         "kind":  "shelf",
+                                         "variant":  "1",
+                                         "sizePx":  [
+                                                        108,
+                                                        108
+                                                    ],
+                                         "layerCount":  6,
+                                         "layers":  [
+                                                        {
+                                                            "order":  1,
+                                                            "imageId":  106056,
+                                                            "color":  "0x66000000",
+                                                            "w":  94,
+                                                            "h":  56,
+                                                            "dx":  0,
+                                                            "dy_down":  8,
+                                                            "y_up":  -8,
+                                                            "rotDeg":  0
+                                                        },
+                                                        {
+                                                            "order":  2,
+                                                            "imageId":  100001,
+                                                            "color":  "0xFF1F1A14",
+                                                            "w":  98,
+                                                            "h":  92,
+                                                            "dx":  0,
+                                                            "dy_down":  0,
+                                                            "y_up":  0,
+                                                            "rotDeg":  0
+                                                        },
+                                                        {
+                                                            "order":  3,
+                                                            "imageId":  100001,
+                                                            "color":  "0xFFD0B0D9",
+                                                            "w":  86,
+                                                            "h":  80,
+                                                            "dx":  0,
+                                                            "dy_down":  -1,
+                                                            "y_up":  1,
+                                                            "rotDeg":  0
+                                                        },
+                                                        {
+                                                            "order":  4,
+                                                            "imageId":  100001,
+                                                            "color":  "0xFFE4CBE9",
+                                                            "w":  80,
+                                                            "h":  8,
+                                                            "dx":  0,
+                                                            "dy_down":  -24,
+                                                            "y_up":  24,
+                                                            "rotDeg":  0
+                                                        },
+                                                        {
+                                                            "order":  5,
+                                                            "imageId":  100001,
+                                                            "color":  "0xFFB2DBEB",
+                                                            "w":  9,
+                                                            "h":  22,
+                                                            "dx":  -14,
+                                                            "dy_down":  12,
+                                                            "y_up":  -12,
+                                                            "rotDeg":  0
+                                                        },
+                                                        {
+                                                            "order":  6,
+                                                            "imageId":  100001,
+                                                            "color":  "0xFF9CCFE6",
+                                                            "w":  9,
+                                                            "h":  16,
+                                                            "dx":  -2,
+                                                            "dy_down":  12,
+                                                            "y_up":  -12,
+                                                            "rotDeg":  0
+                                                        }
+                                                    ]
+                                     },
+                      "furn.statue":  {
+                                          "template":  "furn.statue",
+                                          "kind":  "statue",
+                                          "variant":  "1",
+                                          "sizePx":  [
+                                                         108,
+                                                         108
+                                                     ],
+                                          "layerCount":  4,
+                                          "layers":  [
+                                                         {
+                                                             "order":  1,
+                                                             "imageId":  106056,
+                                                             "color":  "0x66000000",
+                                                             "w":  64,
+                                                             "h":  60,
+                                                             "dx":  0,
+                                                             "dy_down":  8,
+                                                             "y_up":  -8,
+                                                             "rotDeg":  0
+                                                         },
+                                                         {
+                                                             "order":  2,
+                                                             "imageId":  100001,
+                                                             "color":  "0xFF3E3E48",
+                                                             "w":  66,
+                                                             "h":  16,
+                                                             "dx":  0,
+                                                             "dy_down":  30,
+                                                             "y_up":  -30,
+                                                             "rotDeg":  0
+                                                         },
+                                                         {
+                                                             "order":  3,
+                                                             "imageId":  100002,
+                                                             "color":  "0xFFC9C9D2",
+                                                             "w":  34,
+                                                             "h":  56,
+                                                             "dx":  0,
+                                                             "dy_down":  -2,
+                                                             "y_up":  2,
+                                                             "rotDeg":  0
+                                                         },
+                                                         {
+                                                             "order":  4,
+                                                             "imageId":  100002,
+                                                             "color":  "0xFFE2E2E8",
+                                                             "w":  20,
+                                                             "h":  18,
+                                                             "dx":  0,
+                                                             "dy_down":  -30,
+                                                             "y_up":  30,
+                                                             "rotDeg":  0
+                                                         }
+                                                     ]
+                                      },
+                      "furn.rug":  {
+                                       "template":  "furn.rug",
+                                       "kind":  "carpet",
+                                       "variant":  "1",
+                                       "sizePx":  [
+                                                      108,
+                                                      108
+                                                  ],
+                                       "layerCount":  3,
+                                       "layers":  [
+                                                      {
+                                                          "order":  1,
+                                                          "imageId":  100001,
+                                                          "color":  "0xFF8F6B3F",
+                                                          "w":  108,
+                                                          "h":  108,
+                                                          "dx":  0,
+                                                          "dy_down":  0,
+                                                          "y_up":  0,
+                                                          "rotDeg":  0
+                                                      },
+                                                      {
+                                                          "order":  2,
+                                                          "imageId":  100001,
+                                                          "color":  "0xFFF0DDB2",
+                                                          "w":  82.1,
+                                                          "h":  82.1,
+                                                          "dx":  0,
+                                                          "dy_down":  0,
+                                                          "y_up":  0,
+                                                          "rotDeg":  0
+                                                      },
+                                                      {
+                                                          "order":  3,
+                                                          "imageId":  100001,
+                                                          "color":  "0xFFCBA972",
+                                                          "w":  64.8,
+                                                          "h":  64.8,
+                                                          "dx":  0,
+                                                          "dy_down":  0,
+                                                          "y_up":  0,
+                                                          "rotDeg":  0
+                                                      }
+                                                  ]
+                                   },
+                      "furn.rug.2":  {
+                                         "template":  "furn.rug.2",
+                                         "kind":  "carpet",
+                                         "variant":  "h2",
+                                         "sizePx":  [
+                                                        216,
+                                                        108
+                                                    ],
+                                         "layerCount":  3,
+                                         "layers":  [
+                                                        {
+                                                            "order":  1,
+                                                            "imageId":  100001,
+                                                            "color":  "0xFF8F6B3F",
+                                                            "w":  216,
+                                                            "h":  108,
+                                                            "dx":  0,
+                                                            "dy_down":  0,
+                                                            "y_up":  0,
+                                                            "rotDeg":  0
+                                                        },
+                                                        {
+                                                            "order":  2,
+                                                            "imageId":  100001,
+                                                            "color":  "0xFFF0DDB2",
+                                                            "w":  164.2,
+                                                            "h":  82.1,
+                                                            "dx":  0,
+                                                            "dy_down":  0,
+                                                            "y_up":  0,
+                                                            "rotDeg":  0
+                                                        },
+                                                        {
+                                                            "order":  3,
+                                                            "imageId":  100001,
+                                                            "color":  "0xFFCBA972",
+                                                            "w":  129.6,
+                                                            "h":  64.8,
+                                                            "dx":  0,
+                                                            "dy_down":  0,
+                                                            "y_up":  0,
+                                                            "rotDeg":  0
+                                                        }
+                                                    ]
+                                     },
+                      "furn.rug.3":  {
+                                         "template":  "furn.rug.3",
+                                         "kind":  "carpet",
+                                         "variant":  "v2",
+                                         "sizePx":  [
+                                                        108,
+                                                        216
+                                                    ],
+                                         "layerCount":  3,
+                                         "layers":  [
+                                                        {
+                                                            "order":  1,
+                                                            "imageId":  100001,
+                                                            "color":  "0xFF8F6B3F",
+                                                            "w":  108,
+                                                            "h":  216,
+                                                            "dx":  0,
+                                                            "dy_down":  0,
+                                                            "y_up":  0,
+                                                            "rotDeg":  0
+                                                        },
+                                                        {
+                                                            "order":  2,
+                                                            "imageId":  100001,
+                                                            "color":  "0xFFF0DDB2",
+                                                            "w":  82.1,
+                                                            "h":  164.2,
+                                                            "dx":  0,
+                                                            "dy_down":  0,
+                                                            "y_up":  0,
+                                                            "rotDeg":  0
+                                                        },
+                                                        {
+                                                            "order":  3,
+                                                            "imageId":  100001,
+                                                            "color":  "0xFFCBA972",
+                                                            "w":  64.8,
+                                                            "h":  129.6,
+                                                            "dx":  0,
+                                                            "dy_down":  0,
+                                                            "y_up":  0,
+                                                            "rotDeg":  0
+                                                        }
+                                                    ]
+                                     }
+                  }
+}

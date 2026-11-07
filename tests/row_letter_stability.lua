@@ -73,6 +73,10 @@ end
 local function boot(letters, in_refresh, whos)
   local core = Core.new(lv)
   local c = UIC.new(core, { skip_intro = true })
+  -- ★★ 2026-10-18 本套件**不依赖已交付的关卡清单** ✓
+  --   `_level_ordinal()` 走的是 `levels.init.M.index_of(id)` ⇒ 关卡一改清单，本套件的
+  --   `row.1.*` 夹具就对不上了 ✗ ⇒ 这里**注入固定关序**，夹具与清单彻底解耦 ✓
+  c._level_ordinal = function() return 1 end   -- _level_ordinal 由测试注入
   local keys = {}
   for pos = 1, #letters do keys[pos] = (whos and whos[pos]) or ("w" .. pos) end
   _G.game = { GetClientUIRoots = function() return make_world(letters, keys) end }
@@ -103,6 +107,10 @@ local Ctl = UIC.Controller
 local function boot(letters, in_refresh, whos)
   local core = Core.new(lv)
   local c = UIC.new(core, { skip_intro = true })
+  -- ★★ 2026-10-18 本套件**不依赖已交付的关卡清单** ✓
+  --   `_level_ordinal()` 走的是 `levels.init.M.index_of(id)` ⇒ 关卡一改清单，本套件的
+  --   `row.1.*` 夹具就对不上了 ✗ ⇒ 这里**注入固定关序**，夹具与清单彻底解耦 ✓
+  c._level_ordinal = function() return 1 end   -- _level_ordinal 由测试注入
   local keys = {}
   for pos = 1, #letters do keys[pos] = (whos and whos[pos]) or ("w" .. pos) end
   _G.game = { GetClientUIRoots = function() return make_world(letters, keys) end }
@@ -141,6 +149,10 @@ do
   Ctl._row_letter = {}
   local core2 = Core.new(lv)
   local c2 = UIC.new(core2, { skip_intro = true })
+  -- ★★ 2026-10-18 这一趟是**手工新建**的控制器（没走 `boot()`）⇒ 关序也要注入 ✓
+  --   ★ 第一版只注了 `boot()` 里那个 ⇒ 这一趟 `_level_ordinal()` 返回 nil
+  --     ⇒ 一条都读不到 ⇒ 这条"换顺序仍然确定"的断言假红 ✗
+  c2._level_ordinal = function() return 1 end   -- _level_ordinal 由测试注入
   c2._grid_in_refresh = true
   -- ★ 索引基准要钉住 ✓ —— ★ 否则第一趟进来的是 `index = #letters` ⇒ 基准被定成 7
   --   ★ ⇒ `pos` 算成 0 / −3 …… ✗ ★ 那是**假环境**的问题，不是落账的问题 ✓
@@ -181,6 +193,10 @@ end
 do
   local core = Core.new(lv)
   local c = UIC.new(core, { skip_intro = true })
+  -- ★★ 2026-10-18 本套件**不依赖已交付的关卡清单** ✓
+  --   `_level_ordinal()` 走的是 `levels.init.M.index_of(id)` ⇒ 关卡一改清单，本套件的
+  --   `row.1.*` 夹具就对不上了 ✗ ⇒ 这里**注入固定关序**，夹具与清单彻底解耦 ✓
+  c._level_ordinal = function() return 1 end   -- _level_ordinal 由测试注入
   -- ★ 键现在是**行号**（★ 用户定稿 ✓）—— 清空判据与键长什么样无关 ✓
   Ctl._row_letter = { [1] = "AAAA", [5] = "VVVV" }
   Ctl._row_face = { [1] = 1 }

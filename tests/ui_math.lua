@@ -95,9 +95,16 @@ local function check_board(n)
   for i = 1, #plan do byId[plan[i].id] = plan[i] end
 
   -- 棋盘容器与格子的画布绝对中心
-  local board = byId["board"]
-  ok(board ~= nil, "布局里有 board")
-  if not board then return end
+  --
+  -- ★★★★ 2026-10-18（优化组）：**基准容器从 `board` 换成 `stage`** ✗✓
+  --   用户指令：「老计划里到目前还没实现的都不需要保留了」⇒ `board` 容器（存档里从来没有）
+  --   已从布局计划里删除；而**真机日志一直显示格子挂在 `stage` 下**
+  --   （`★ 棋盘容器 stage 回读 584.0x584.0` / `棋盘格子：25 / 25 存在`）⇒ 基准就是 `stage` ✓
+  --   ⚠️ `board.bg` 仍存在，但它是**挂在 `stage` 下的一块背景**，不是容器 ✓
+  local stage = byId["stage"]
+  ok(stage ~= nil, "布局里有 stage（棋盘容器；`board` 已按用户指令从计划删除）")
+  ok(byId["board"] == nil, "`board` 容器**不该再出现在计划里**（已删；若回来就是有人把它加回去了）")
+  if not stage then return end
 
   -- 运行时算法：用 board 的实际画布尺寸算「相对父级中心的偏移」
   --
@@ -107,9 +114,9 @@ local function check_board(n)
   --   ⚠️ 注意 `cell_geometry` 里 `ruler` 是**两边各扣一份**。
   local ad = Qianxing.new({
     cells = {
-      probe = "cell.1.1", parent = "board",
+      probe = "cell.1.1", parent = "stage",
       -- 故意不给 parent_w/h：让它退回默认值，所以显式传实际值来模拟"读到了实际尺寸"
-      parent_w = board.w, parent_h = board.h,
+      parent_w = stage.w, parent_h = stage.h,
       ruler = 12, gap = 4,          -- ← 与 entry_client_script.lua 的 cfg.cells 同步
     },
   })
@@ -125,7 +132,7 @@ local function check_board(n)
       end
       -- 运行时：offset 是相对父级中心的偏移 → 换算成画布绝对中心
       local ox, oy = ad:cell_offset(r, c, n)
-      local absx, absy = board.cx + ox, board.cy + oy
+      local absx, absy = stage.cx + ox, stage.cy + oy
       local dx, dy = math.abs(absx - cell.cx), math.abs(absy - cell.cy)
       if dx > maxdiff then maxdiff, worst = dx, string.format("cell.%d.%d Δx=%.1f", r, c, dx) end
       if dy > maxdiff then maxdiff, worst = dy, string.format("cell.%d.%d Δy=%.1f", r, c, dy) end
@@ -139,11 +146,11 @@ local function check_board(n)
   local c1 = byId["cell.1.1"]
   local cn = byId[string.format("cell.%d.%d", n, n)]
   local half = c1.w / 2
-  ok(c1.cx - half >= board.cx - board.w / 2 - 1 and c1.cy + half <= board.cy + board.h / 2 + 1,
-    string.format("%d×%d：左上角格子没跑出 board", n, n),
-    string.format("格子 %d,%d 尺寸 %d；board 中心 %d,%d 尺寸 %d", c1.cx, c1.cy, c1.w, board.cx, board.cy, board.w))
-  ok(cn.cx + half <= board.cx + board.w / 2 + 1 and cn.cy - half >= board.cy - board.h / 2 - 1,
-    string.format("%d×%d：右下角格子没跑出 board", n, n))
+  ok(c1.cx - half >= stage.cx - stage.w / 2 - 1 and c1.cy + half <= stage.cy + stage.h / 2 + 1,
+    string.format("%d×%d：左上角格子没跑出 stage", n, n),
+    string.format("格子 %d,%d 尺寸 %d；stage 中心 %d,%d 尺寸 %d", c1.cx, c1.cy, c1.w, stage.cx, stage.cy, stage.w))
+  ok(cn.cx + half <= stage.cx + stage.w / 2 + 1 and cn.cy - half >= stage.cy - stage.h / 2 - 1,
+    string.format("%d×%d：右下角格子没跑出 stage", n, n))
 
   -- 格子不能互相重叠
   ok(c1.w > 0 and c1.w < 200, string.format("%d×%d：格子边长合理（%d px）", n, n, c1.w))
@@ -173,71 +180,21 @@ check_board(7)
 -- 3.2 容器不重叠：头像卡必须待在 tray 里，tray 不能压住 clues
 --     （2026-09-26 实测踩过两次：卡片溢出 tray 把线索盖住了。这两条断言就是为此加的。）
 ----------------------------------------------------------------------------
-local function check_no_overlap(n)
-  print(string.format("\n== %d×%d：左侧面板不重叠 ==", n, n))
-  local core, errs = Core.new(fake_level(n))
-  if not core then
-    ok(false, "构造 " .. n .. "×" .. n .. " 关卡", table.concat(errs or {}, " / "))
-    return
-  end
+-- ★ 2026-10-18（优化组）：**`check_no_overlap`（tray / legend 不重叠那套断言）整段删除** ✗✓
+--   用户指令：「老计划里到目前还没实现的都不需要保留了」⇒ `tray`（头像卡容器）与 `legend`（图例）
+--   已从布局计划里删除 ⇒ 这段断言测的是**已经不存在的控件**，留着只会恒红。
+--   ⚠️ 反向哨兵：下面留两条"它们不该再出现"的断言 —— 万一有人把 tray/legend 加回计划，立刻红 ✓
+
+do
+  local core = Core.new(fake_level(5))
   local ctl = UIC.new(core, {})
   local plan = ctl:layout_plan()
   local byId = {}
   for i = 1, #plan do byId[plan[i].id] = plan[i] end
-
-  local tray, clues, legend = byId["tray"], byId["clues"], byId["legend"]
-  ok(tray ~= nil and clues ~= nil and legend ~= nil, "容器齐全（tray / clues / legend）")
-  if not tray then return end
-
-  -- 每张头像卡都必须在 tray 的矩形里
-  local escaped, worst = 0, nil
-  for i = 1, #plan do
-    local nd = plan[i]
-    if nd.parent == "tray" then
-      local l, r = nd.cx - nd.w / 2, nd.cx + nd.w / 2
-      local b, t = nd.cy - nd.h / 2, nd.cy + nd.h / 2
-      local tl, tr = tray.cx - tray.w / 2, tray.cx + tray.w / 2
-      local tb, tt = tray.cy - tray.h / 2, tray.cy + tray.h / 2
-      if l < tl - 1 or r > tr + 1 or b < tb - 1 or t > tt + 1 then
-        escaped = escaped + 1
-        worst = worst or string.format("%s 中心(%.1f,%.1f) %d×%d 超出 tray(中心 %.1f,%.1f %d×%d)",
-          nd.id, nd.cx, nd.cy, nd.w, nd.h, tray.cx, tray.cy, tray.w, tray.h)
-      end
-    end
-  end
-  ok(escaped == 0, string.format("%d×%d：%d 张头像卡都在 tray 容器内", n, n, n), worst or "全部在界内")
-
-  -- 卡片的最低边不能压到线索区的最高边
-  local card_bottom = math.huge
-  for i = 1, #plan do
-    local nd = plan[i]
-    if nd.parent == "tray" then
-      card_bottom = math.min(card_bottom, nd.cy - nd.h / 2)
-    end
-  end
-  local clues_top = clues.cy + clues.h / 2
-  ok(card_bottom >= clues_top - 1,
-    string.format("%d×%d：头像卡没有压住线索区", n, n),
-    string.format("卡片最低 %.1f vs 线索最高 %.1f", card_bottom, clues_top))
-
-  -- 线索 + legend 也不能互相压
-  --
-  -- ★ 2026-10-05 **容差由 1 放宽到 20** —— 用户把线索区重做成**画布 400×544**
-  --   （中心 398.5 ⇒ 底边 126.5），比旧规划（479 高）多出 65px，会压过图例顶边
-  --   （136.7）约 **10px**。而：
-  --     · 图例（legend）是**尚未实现**的规划元素，脚本里只有文本、没有控件；
-  --     · 用户实际的版面（编辑器里摆的那一份）是权威 ✓
-  --   ⇒ 保留"不能大幅重叠"的检查（20px 内视为可接受），不再要求严丝合缝。
-  local legend_top = legend.cy + legend.h / 2
-  local clues_bottom = clues.cy - clues.h / 2
-  ok(clues_bottom >= legend_top - 20,
-    string.format("%d×%d：线索区和图例不重叠（容差 20px）", n, n),
-    string.format("线索最低 %.1f vs 图例最高 %.1f", clues_bottom, legend_top))
+  ok(byId["tray"] == nil, "`tray` 容器不该再出现在计划里（已按用户指令删除）")
+  ok(byId["legend"] == nil, "`legend` 图例不该再出现在计划里（已按用户指令删除）")
+  ok(byId["clues"] ~= nil, "`clues` 线索区仍然存在（网格视窗挂在它下面，不能删）")
 end
-
-check_no_overlap(5)
-check_no_overlap(6)
-check_no_overlap(7)
 
 ----------------------------------------------------------------------------
 print("\n== 3. 画布边界：所有控件都在 1600×900 之内 ==")

@@ -43,7 +43,18 @@ const byName = g.byName;
 
 // ── 选原型：容器用容器、其它用按钮/文本 ────────────────────────────────────
 const protoBox = g.byName.get('intro') || g.byName.get('modal') || g.byName.get('board');
-const protoBtn = g.byName.get('action.undo') || g.byName.get('action.hint');
+// ★★★★★ 2026-10-12 **原型查找补上"它已被删"的退路** ✗✓
+//
+//   症状：`❌ 找不到原型（需要 intro/modal/board 与 action.undo/action.hint）`
+//   根因：`action.undo` / `action.hint` 这**旧文字键**在 2026-10-05 就被删了 ✓
+//     （接替者 = `hex.undo` / `hex.hint` ✓ 见 `00-索引.md` 第五节的"已删控件"表 ✓）
+//     ⇒ ★ 这份工具**从那以后就没法用** ✗ —— 属"克隆族工具的陈旧原型"那类工具债 ✓
+//   ⇒ 修法：保留旧名（老存档还能命中）✓，但**补一串当前确实存在的按钮当退路** ✓
+//     挑的都是"运行时可见、且自带 bg/label 的预设按钮" ✓
+const protoBtn = g.byName.get('action.undo') || g.byName.get('action.hint')
+              || g.byName.get('modal.cancel') || g.byName.get('modal.next')
+              || g.byName.get('home.select')   || g.byName.get('action.back')
+              || g.byName.get('hex.submit');
 // 图片控件的原型：**必须是"source 对"、而且"visible=true"的图片控件**。
 //
 // ⚠️⚠️ 2026-10-01 **我在这里踩了《工作约定》里写明的那条坑**：

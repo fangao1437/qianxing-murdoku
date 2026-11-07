@@ -187,6 +187,18 @@ export function buildProject(c, plan, luaFile, opts = {}) {
     //   ⇒ 补齐结构，让 `verify_art` 的 obj 检查真正有效。
     addSub(n.id, 'obj', 'image', { cx: n.cx, cy: n.cy, w: Math.round(n.w * 0.65), h: Math.round(n.h * 0.65) },
       { imageId: 106053, visible: true });
+    // ★ 2026-10-17：与 397 存档的模板**逐项同构** —— 提示层 + 四边墙/门
+    //   `hint`：用户做的半透明提示层（颜色 0x7F0063D5），脚本**只开关可见性**
+    //   `wall.*` / `door.*`：按 `view().cells[r][c].walls/doors` 开关
+    addSub(n.id, 'hint', 'image', b, { imageId: 100001, imageColor: 2130731989, visible: true });
+    for (const d of ['up', 'down', 'left', 'right']) {
+      const wbox = d === 'up' ? { cx: n.cx, cy: n.cy + n.h / 2 - 5, w: n.w, h: 10 }
+        : d === 'down' ? { cx: n.cx, cy: n.cy - n.h / 2 + 5, w: n.w, h: 10 }
+          : d === 'left' ? { cx: n.cx - n.w / 2 + 5, cy: n.cy, w: 10, h: n.h }
+            : { cx: n.cx + n.w / 2 - 5, cy: n.cy, w: 10, h: n.h };
+      addSub(n.id, 'wall.' + d, 'image', wbox, { imageId: 100108, imageColor: 4281536672, visible: false });
+      addSub(n.id, 'door.' + d, 'image', wbox, { imageId: 100001, imageColor: 4292271642, visible: false });
+    }
     for (const k of ['selectedChildId', 'hoverChildId', 'pressedChildId', 'unavailableChildId']) {
       P(n.id + '.' + k, { op: 'set', id: idOf[n.id], key: k, value: idOf[n.id + '.face'] });
     }
@@ -278,6 +290,25 @@ export function buildProject(c, plan, luaFile, opts = {}) {
         n++;
         addSub('assets', 'portrait.' + k, 'image', { cx: 3000 + n * 20, cy: 3000, w: 80, h: 80 },
           id === null ? {} : { imageId: id });
+      }
+    }
+  }
+
+  // ★ 2026-10-17：**`things` 素材区**（障碍物/家具）—— 与 397 存档同构
+  //   名字 = 脚本引用键（`object_key_of` 产出 `obj.<kind>`）；色块占位，真图在编辑器里换
+  {
+    const pal2 = add('things', 'container', canvasRoot.id, { cx: 3200, cy: 3000, w: 10, h: 10 });
+    if (pal2) {
+      idOf.things = pal2;
+      const T = [
+        ['obj.table', 0xFFB07946], ['obj.plant', 0xFF4CAF50], ['obj.carpet', 0xFFD9C8A6],
+        ['obj.chair', 0xFFE0A040], ['obj.shelf', 0xFF7A5230], ['obj.statue', 0xFFB8B8C0],
+      ];
+      let n2 = 0;
+      for (const [k, col] of T) {
+        n2++;
+        addSub('things', k, 'image', { cx: 3200 + n2 * 20, cy: 3000, w: 80, h: 80 },
+          { imageId: 100001, imageColor: col, imageSource: 'StaticReference' });
       }
     }
   }

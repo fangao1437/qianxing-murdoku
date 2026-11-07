@@ -389,6 +389,11 @@ local function make_context(core, roles)
   return ctx
 end
 
+-- ★★ 2026-10-18 求解器已搬到设计期工具（`tools/design_solve.lua`）✓
+--   它要用这个构造线索判定的上下文；函数本来就在运行时里（`clue_results` 也用它）
+--   ⇒ 只是【导出】一下，**不增加任何运行时代码，也不增加任何算力** ✓
+M.make_context = make_context
+
 local function unregistered_text(ctx, clue)
   return "（未注册的线索类型：" .. tostring(clue.type) .. "）"
 end
@@ -754,52 +759,6 @@ reg("alone", {
   text = function(ctx, cl) return string.format("%s 独自一人", ctx.name(cl.who)) end,
 })
 
--- ★★ 2026-10-17 为内容设计第一阶段的两关补两条线索类型。
---    它们之所以没有被现成类型覆盖：
---      · 引擎只有 `nobody_in_water`（水里没人），没有"**任何一格家具上都没人**"；
---      · 而第二关 v 的那句话是**一句复合陈述**（"我独自一人" ＋ "c 在我下方的不同区域中"），
---        拆成两条会让"一句假话"的粒度变糊（假话判据是按【整条】算的），所以做成一条。
---    ⇒ 线索的**内容**由编辑器 row 区填（用户定稿），这里只补**类型**。
-
--- “没有任何人站在 X 上”：X 可以是多格家具（如"地毯"有多格）
-reg("nobody_on_object", {
-  params = { "object" },
-  validate = function(ctx, cl)
-    return ctx.count_on_object(cl.object) == 0
-  end,
-  text = function(ctx, cl)
-    return string.format("没有任何人站在 %s 上", tostring(cl.object))
-  end,
-})
-
--- “a 在 b 下方的不同区域中”：a 的行号更大，且两者不在同一区域
-reg("below_in_other_room", {
-  params = { "a", "b" },
-  validate = function(ctx, cl)
-    local a, b = ctx.pos(cl.a), ctx.pos(cl.b)
-    if not a or not b then return false end
-    return a.r > b.r and ctx.room_of(a.r, a.c) ~= ctx.room_of(b.r, b.c)
-  end,
-  text = function(ctx, cl)
-    return string.format("%s 在 %s 下方的不同区域中", ctx.name(cl.a), ctx.name(cl.b))
-  end,
-})
-
--- “who 独自一人，且 a 在 b 下方的不同区域中” —— 一句复合陈述（第二关 v 的那句话）
-reg("alone_and_below_in_other_room", {
-  params = { "who", "a", "b" },
-  validate = function(ctx, cl)
-    local p, a, b = ctx.pos(cl.who), ctx.pos(cl.a), ctx.pos(cl.b)
-    if not p or not a or not b then return false end
-    if ctx.count_in_room(ctx.room_of(p.r, p.c)) ~= 1 then return false end
-    return a.r > b.r and ctx.room_of(a.r, a.c) ~= ctx.room_of(b.r, b.c)
-  end,
-  text = function(ctx, cl)
-    return string.format("%s 独自一人，且 %s 在 %s 下方的不同区域中",
-      ctx.name(cl.who), ctx.name(cl.a), ctx.name(cl.b))
-  end,
-})
-
 -- “was the only person beside X”
 reg("only_beside", {
   params = { "who", "object" },
@@ -1040,6 +999,53 @@ reg("nobody_in_water", {
 })
 
 ----------------------------------------------------------------------------
+-- 线索类型：两关定稿新增（2026-10-17，来自设计阶段的 main 分支）
+--
+--   ★ 只补【类型】，线索【内容】由关卡表/编辑器 row 区填 ✓
+--   ★ 为什么做成"复合类型"：假话判据按**整条**陈述算 ——
+--     把 v 那句拆成两条，"一句假话"的粒度就糊了（设计收尾交接口径）。
+----------------------------------------------------------------------------
+
+-- 「地毯上没有人」：object 的每一格都必须空着（第二关的通用线索）
+reg("nobody_on_object", {
+  params = { "object" },
+  validate = function(ctx, cl) return ctx.count_on_object(cl.object) == 0 end,
+  text = function(ctx, cl) return string.format("%s 上没有人", cl.object) end,
+})
+
+-- 「a 在 b 下方的不同区域中」
+reg("below_in_other_room", {
+  params = { "a", "b" },
+  validate = function(ctx, cl)
+    local a, b = ctx.pos(cl.a), ctx.pos(cl.b)
+    if not a or not b then return false end
+    if a.r <= b.r then return false end
+    return not ctx.same_room(a, b)
+  end,
+  text = function(ctx, cl)
+    return string.format("%s 在 %s 下方的不同区域中", ctx.name(cl.a), ctx.name(cl.b))
+  end,
+})
+
+-- 「who 独自一人，且 a 在 b 下方的不同区域中」——第二关 v 的那一句
+reg("alone_and_below_in_other_room", {
+  params = { "who", "a", "b" },
+  validate = function(ctx, cl)
+    local p = ctx.pos(cl.who)
+    if not p then return false end
+    if ctx.count_in_room(ctx.room_of(p.r, p.c)) ~= 1 then return false end
+    local a, b = ctx.pos(cl.a), ctx.pos(cl.b)
+    if not a or not b then return false end
+    if a.r <= b.r then return false end
+    return not ctx.same_room(a, b)
+  end,
+  text = function(ctx, cl)
+    return string.format("%s 独自一人，且 %s 在 %s 下方的不同区域中",
+      ctx.name(cl.who), ctx.name(cl.a), ctx.name(cl.b))
+  end,
+})
+
+----------------------------------------------------------------------------
 -- 线索类型：偷窃版新增（门径 / 身份）
 ----------------------------------------------------------------------------
 
@@ -1201,6 +1207,26 @@ function M.validate_level(level)
           for _, p in ipairs(def.params or {}) do
             if cl[p] == nil then err("第 %d 条线索(%s)缺少参数 %s", i, cl.type, p) end
           end
+        end
+      end
+    end
+  end
+
+  -- ★ 2026-10-17 通用线索（不属于任何人的卡）：与卡线索**同一套校验** ✓
+  --   ★ 为什么要校验 ✗：类型拼错时 `clue_results` 只会退回"待填内容" ✓
+  --     而通用线索**没有卡可以看见** ⇒ 拼错就**永远静默失效** ✓ ⇒ 必须在这里报 ✓
+  local g_list = level.general_clues or {}
+  for i = 1, #g_list do
+    local cl = g_list[i]
+    if type(cl) ~= "table" or not cl.type then
+      err("第 %d 条通用线索缺少 type", i)
+    else
+      local def = M.clues[cl.type]
+      if not def then
+        err("第 %d 条通用线索类型未注册：%s", i, tostring(cl.type))
+      else
+        for _, p in ipairs(def.params or {}) do
+          if cl[p] == nil then err("第 %d 条通用线索(%s)缺少参数 %s", i, cl.type, p) end
         end
       end
     end
@@ -1384,6 +1410,23 @@ function M.new(level, opts)
   -- ★ 槽位条数 = 棋盘**容量** ✓（★ 判据写在代码里 ✓ 而不是只写在注释里 ✓）
   self.clue_slots = #self.clues
 
+  -- ★ 2026-10-17 通用线索：**不属于任何人的卡**（例如第二关的「地毯上没有人」）。
+  --
+  --   ★ 为什么单独一条表 ✗：卡位数量 = 棋盘容量（一人一条）✓
+  --     通用线索**没有主人** ⇒ 放进 `self.clues` 会挤掉一张卡、还会让卡序和棋子错位 ✓
+  --   ★ 它参与：① `solve` 的搜索剪枝 ✓ ② `view().general_clues`（界面/调试 ✓）
+  --   ★ 它不参与：位置提示（没有卡 ⇒ 没有"选卡"这个动作 ✓）
+  --     —— 但 `Core:clue_hint_general` 照样能算，测试与真机核验都用它 ✓
+  self.general_clues = {}
+  if type(level.general_clues) == "table" then
+    for i = 1, #level.general_clues do
+      local g = level.general_clues[i]
+      if type(g) == "table" and g.type ~= nil then
+        self.general_clues[#self.general_clues + 1] = g
+      end
+    end
+  end
+
   -- 家具
   self.objects = {}
   for name, cells in pairs(level.objects or {}) do
@@ -1532,133 +1575,6 @@ function Core:is_blocked(r, c) return self.blocked[cell_key(r, c)] == true end
 -- 偷窃版结构约束（规格 R3 / R4）
 ----------------------------------------------------------------------------
 
-function Core:tie_policy()
-  local r = self.level.rules or {}
-  return r.tie_policy or M.TIE_FORBID
-end
-
--- 某区域内的“无辜人数” = 该区域内既不是盗窃者也不是同伙的人数
-function Core:innocent_count(room_id, roles)
-  roles = roles or self.roles or {}
-  local n = 0
-  for r = 1, self.rows do
-    for c = 1, self.cols do
-      local id = self.grid[r][c]
-      if id and self.room[r][c] == room_id and id ~= roles.thief and id ~= roles.accomplice then
-        n = n + 1
-      end
-    end
-  end
-  return n
-end
-
-function Core:people_in_room(room_id)
-  local n = 0
-  for r = 1, self.rows do
-    for c = 1, self.cols do
-      if self.grid[r][c] and self.room[r][c] == room_id then n = n + 1 end
-    end
-  end
-  return n
-end
-
--- 结构检查：返回 ok, errors, info
---   info 里带 victim_room / adjacent / innocent_counts / best / best_rooms / k
---   界面可以直接把 info 展示给玩家当推理助手（这些量玩家自己也能数出来）
-function Core:structure_report(roles)
-  roles = roles or self.roles or {}
-  local errors = {}
-  local info = { roles = roles }
-  if not roles.thief then
-    return false, { "关卡没有声明 roles.thief" }, info
-  end
-
-  local vp = nil
-  if self.victim_id then vp = self.pos[self.victim_id] end
-  if not vp then vp = self.victim_fixed end
-  if not vp then
-    return false, { "受害者还没摆上棋盘" }, info
-  end
-  local rv = self.room[vp.r][vp.c]
-  info.victim_room = rv
-
-  local adj = {}
-  for other in pairs(self.adjacency[rv] or {}) do adj[#adj + 1] = other end
-  table.sort(adj)
-  info.adjacent = adj
-  if #adj == 0 then
-    errors[#errors + 1] = "受害者所在区域没有任何门相邻区域，R3 无法成立"
-    return false, errors, info
-  end
-
-  local counts, best, best_rooms = {}, -1, {}
-  for i = 1, #adj do
-    local room_id = adj[i]
-    local n = self:innocent_count(room_id, roles)
-    counts[room_id] = n
-    if n > best then
-      best = n
-      best_rooms = { room_id }
-    elseif n == best then
-      best_rooms[#best_rooms + 1] = room_id
-    end
-  end
-  info.innocent_counts = counts
-  info.best = best
-  info.best_rooms = best_rooms
-  info.k = self:people_in_room(rv)
-
-  if #best_rooms > 1 and self:tie_policy() == M.TIE_FORBID then
-    errors[#errors + 1] = string.format("相邻区域无辜人数并列（都等于 %d），tie_policy=forbid 视为非法", best)
-  end
-
-  local tp = self.pos[roles.thief]
-  if not tp then
-    errors[#errors + 1] = "盗窃者还没摆上棋盘"
-  else
-    local tr = self.room[tp.r][tp.c]
-    info.thief_room = tr
-    if not (self.adjacency[rv] or {})[tr] then
-      errors[#errors + 1] = "盗窃者不在受害者的相邻区域内"
-    end
-    local is_best = false
-    for i = 1, #best_rooms do
-      if best_rooms[i] == tr then is_best = true end
-    end
-    if not is_best then
-      errors[#errors + 1] = "盗窃者所在区域不是相邻区域里无辜人数最多的"
-    end
-  end
-
-  -- ★★ 2026-10-17 【同伙规则已废止】（用户决定，见 内容设计-第一阶段任务书 后续决定）
-  --
-  --   被删掉的旧规则有两条，它们互相咬合、把"受害者房间里还有别人"与"必须有同伙"绑死：
-  --     ⑪ 受害者所在区域人数 k >= 2  ⇒ 盗窃者必然有且只有一个同伙
-  --     ⑫ 同伙必须与盗窃者待在同一个区域
-  --   用户判断：这条规则**过度约束了变化性**——只要 k>=2 就强制多出一个角色，
-  --   关卡设计的自由度被吃掉一大块。
-  --
-  --   现在的语义：
-  --     · k 取任何值都**不再**要求同伙；
-  --     · 关卡在 roles 里声明了 accomplice，那个角色才存在（旧关卡 case_003 等不受影响）；
-  --     · 同伙**不再**被要求与盗窃者同区。
-  --   R3（盗窃者所在区域 = 受害者相邻区域里无辜人数最多的那个）**保持不变**。
-  local has_acc = roles.accomplice ~= nil
-  info.has_accomplice = has_acc
-  if has_acc then
-    local ap = self.pos[roles.accomplice]
-    if not ap then
-      errors[#errors + 1] = "同伙还没摆上棋盘"
-    end
-  end
-
-  return #errors == 0, errors, info
-end
-
-----------------------------------------------------------------------------
--- 约束与线索状态
-----------------------------------------------------------------------------
-
 function Core:violations()
   local rules = self:rules()
   local out = {}
@@ -1722,6 +1638,159 @@ end
 --   ★ 为什么它没用了 ✓：★ 凶手判定走的是 `level.murderer` ＋ 结算那套 ✓
 --     （★ 见 `view()` 的 `murderer_hint_available` ✓）—— 这个"同室推定"是早期版本的路 ✓
 
+-- 通用线索的结果（与 `clue_results` 同形；条数 = `#self.general_clues`）
+function Core:general_clue_results()
+  local ctx = make_context(self)
+  local list = self.general_clues or {}
+  local out = {}
+  for i = 1, #list do
+    local cl = list[i]
+    local def = cl.type and M.clues[cl.type] or nil
+    out[i] = {
+      index = i,
+      type = cl.type,
+      text = def and def.text(ctx, cl) or ("待填内容（通用线索 " .. tostring(i) .. "）"),
+      satisfied = (def ~= nil) and (def.validate(ctx, cl) and true or false),
+    }
+  end
+  return out
+end
+
+----------------------------------------------------------------------------
+-- 线索位置提示（2026-10-17）
+--
+--   用途：玩家选中一张线索卡 ⇒ 棋盘上把「这条线索允许那个人出现的位置」亮出来。
+--   规则不是这里发明的，逐条对照设计定稿：
+--     · 家具类 on / only_on / one_on / n_on / nobody_on ⇒ 该家具**自己的格子**
+--     · 旁边类 beside / only_beside / not_beside      ⇒ 家具**四邻、同区域、可站人的格**
+--     · in_col / in_row                               ⇒ 那一列 / 那一行的可站格
+--     · at                                            ⇒ 那一格本身
+--     · 人对人（above/below/beside/offset…）、区域级（room_has/alone…）、
+--       身份类（is_role/not_role）⇒ **不做位置提示**（返回 nil ✓ 给出来就会剧透 ✓）
+--   来源：`murdoku-内容设计-两关布局图/线索卡-位置提示表.md` §二（通用规则）
+--         ＋ `Temp/qxmurdoku/design/clue_hint.lua`（设计期可执行原型）
+--
+--   ★ 只算**可站人的格**（`is_blocked` 过滤）：家具占了但不可站的格永不出现 ✓
+--   ★ 只依赖关卡静态数据（家具/墙/门/区域），**与当前摆位无关** ✓
+--     ⇒ 玩家摆了几个棋子都不会改变提示 ✓（这正是"允许出现的位置"的意思 ✓）
+----------------------------------------------------------------------------
+
+local function standable(self, r, c)
+  if r == nil or c == nil then return false end
+  if r < 1 or r > self.rows or c < 1 or c > self.cols then return false end
+  return not self:is_blocked(r, c)
+end
+
+-- 集合 → 排好序的数组（行优先、再列）⇒ 界面顺序稳定、测试好比对
+local function cells_sorted(set)
+  local list = {}
+  for k in pairs(set or {}) do
+    local sr, sc = tostring(k):match("^(%d+):(%d+)$")
+    if sr ~= nil then list[#list + 1] = { r = tonumber(sr), c = tonumber(sc) } end
+  end
+  table.sort(list, function(a, b)
+    if a.r ~= b.r then return a.r < b.r end
+    return a.c < b.c
+  end)
+  return list
+end
+
+local HINT_DIRS = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }
+
+local function object_own_cells(self, name)
+  local set = {}
+  local cells = self.objects[name] or {}
+  for i = 1, #cells do
+    local p = cells[i]
+    if standable(self, p.r, p.c) then set[cell_key(p.r, p.c)] = true end
+  end
+  return set
+end
+
+local function object_beside_cells(self, name)
+  local set = {}
+  local cells = self.objects[name] or {}
+  for i = 1, #cells do
+    local p = cells[i]
+    local room = (self.room[p.r] ~= nil) and self.room[p.r][p.c] or nil
+    for d = 1, #HINT_DIRS do
+      local rr = p.r + HINT_DIRS[d][1]
+      local cc = p.c + HINT_DIRS[d][2]
+      if standable(self, rr, cc)
+         and self.room[rr] ~= nil and self.room[rr][cc] == room then
+        set[cell_key(rr, cc)] = true
+      end
+    end
+  end
+  return set
+end
+
+local function col_cells(self, col)
+  local set = {}
+  local c = tonumber(col)
+  if c == nil then return set end
+  for r = 1, self.rows do
+    if standable(self, r, c) then set[cell_key(r, c)] = true end
+  end
+  return set
+end
+
+local function row_cells(self, row)
+  local set = {}
+  local r = tonumber(row)
+  if r == nil then return set end
+  for c = 1, self.cols do
+    if standable(self, r, c) then set[cell_key(r, c)] = true end
+  end
+  return set
+end
+
+-- 一条线索 →（格子集合, 规则说明）；nil = 这条线索不做位置提示
+local function hint_for(self, cl)
+  if type(cl) ~= "table" or cl.type == nil then return nil end
+  local t = cl.type
+  if t == "on_object" or t == "only_on_object" or t == "one_on_object"
+     or t == "n_on_object" or t == "nobody_on_object" then
+    return object_own_cells(self, cl.object), "该家具自己的格子"
+  elseif t == "beside_object" or t == "only_beside" or t == "not_beside_object" then
+    return object_beside_cells(self, cl.object), "该家具四邻、同区域、可站人的格"
+  elseif t == "in_col" then
+    return col_cells(self, cl.c), "第 " .. tostring(cl.c) .. " 列的可站格"
+  elseif t == "in_row" then
+    return row_cells(self, cl.r), "第 " .. tostring(cl.r) .. " 行的可站格"
+  elseif t == "at" then
+    local set = {}
+    if standable(self, cl.r, cl.c) then set[cell_key(cl.r, cl.c)] = true end
+    return set, "这一格本身"
+  end
+  return nil
+end
+
+local function hint_result(self, cl, index, kind)
+  local set, rule = hint_for(self, cl)
+  if set == nil then return nil end
+  local list = cells_sorted(set)
+  return {
+    index = index,
+    kind = kind,        -- "card"（卡）/ "general"（通用线索）
+    type = cl.type,
+    rule = rule,
+    cells = list,       -- 有序数组：{ {r=,c=}, ... }
+    set = set,          -- 集合："r:c" = true（界面 O(1) 判断）
+    count = #list,
+  }
+end
+
+-- 第 index 张卡（= 第 index 条线索；卡序 = 棋子序，见 `_piece_at_row`）
+function Core:clue_hint(index)
+  return hint_result(self, (self.clues or {})[index], index, "card")
+end
+
+-- 第 index 条通用线索（不上卡；目前只有第二关用）
+function Core:clue_hint_general(index)
+  return hint_result(self, (self.general_clues or {})[index], index, "general")
+end
+
 function Core:is_full()
   local n = 0
   for r = 1, self.rows do
@@ -1735,6 +1804,55 @@ end
 ----------------------------------------------------------------------------
 -- 操作
 ----------------------------------------------------------------------------
+
+-- ★★★★★★★ 2026-10-20 本轮规则 P：**同一行/列已有别人 ⇒ 不许再放**
+--
+--   用户原话：「已经放置的人物的**同行同列**内不能再放置其它人物」。
+--
+--   为什么**不**写进 `do_place` ✗（想过，明确否决）：
+--     `do_place` 还被 `Core:hint()` / `Core:decode_state()` / `Core:deserialize()` 调用 ——
+--     那三条是**状态恢复/程序代放**，不是玩家操作。把守卫塞进 `do_place`，
+--     一份"同行两人"的存档就会**静默丢子**（数据被改而作者不知道），
+--     分享码解码也会半途失败。⇒ 守卫只放在**交互入口**（`hold_cell` / `pre_place`）。
+--
+--   两个容易误伤的口径（都写进 tests/rule_guards.lua 了）：
+--     · 判据是「**其它人物**」⇒ **同一个人**在本行/本列内换位**不拦**
+--       （换位本来就等价于"撤销后重新放置"，拦了就没法调位置）
+--     · 目标格上的旧人**会离场**（换人站同一格）⇒ 目标格自己不参与判定
+--
+--   关卡 `rules.one_per_row / one_per_col` 为 false 时对应方向不拦（沿用 `Core:rules()`）。
+function Core:row_col_conflict(r, c, id)
+  local rules = self:rules()
+  if rules.one_per_row then
+    for cc = 1, self.cols do
+      if cc ~= c then
+        local other = self.grid[r][cc]
+        if other ~= nil and other ~= id then
+          return {
+            kind = "row", index = r, other = other,
+            text = string.format("第%d行已经有%s了，同一行只能站一个人",
+                                 r, self.names[other] or tostring(other)),
+          }
+        end
+      end
+    end
+  end
+  if rules.one_per_col then
+    for rr = 1, self.rows do
+      if rr ~= r then
+        local other = self.grid[rr][c]
+        if other ~= nil and other ~= id then
+          return {
+            kind = "col", index = c, other = other,
+            text = string.format("第%d列已经有%s了，同一列只能站一个人",
+                                 c, self.names[other] or tostring(other)),
+          }
+        end
+      end
+    end
+  end
+  return nil
+end
 
 function Core:select_suspect(id)
   if id ~= nil and not self.piece_by_id[id] then return false end
@@ -1764,9 +1882,11 @@ end
 
 local function do_place(self, r, c, id, record, opts)
   opts = opts or {}
-  if self.blocked[cell_key(r, c)] then return false end
+  -- ★ 2026-10-20：拒绝**必须带原因串** —— 界面 `_refuse` 拿到 nil 就一个字都不打，
+  --   玩家只看到"长按没反应"。这里的两个原因串靠 `hold_cell`/`pre_place` 透传上来。
+  if self.blocked[cell_key(r, c)] then return false, "这个格子站不了人" end
   local prev = self.grid[r][c]
-  if prev == id then return false end
+  if prev == id then return false, "这个人已经站在这里了" end
 
 
   if prev then
@@ -1788,18 +1908,27 @@ local function do_place(self, r, c, id, record, opts)
   --       —— 还在试推阶段，笔记是他自己的思考痕迹，不能替他抹掉。
   --     · **正式放置**（长按）：擦掉该人物的笔记 + 之后不许再给他打笔记 + 取消选中
   --       —— 这是"定案"，笔记没有意义了。
-  local auto = { x = {}, notes = {} }
-  for cc = 1, self.cols do
-    if cc ~= c and not self.grid[r][cc] and not self.x_marks[r][cc] then
-      self.x_marks[r][cc] = true
-      auto.x[#auto.x + 1] = { r = r, c = cc }
+  -- ★★★ 2026-10-20 本轮规则 X：**任何方式出现的 ✗ 都要擦掉该格的铅笔笔记** ——
+  --   自动派生出来的 ✗（放置时给同行同列标的）也算"出现了 ✗" ✓
+  --   被擦掉的笔记记进 `auto.x_notes`，交给 `revert_auto` 在撤销/拿起时还原 ✓
+  local auto = { x = {}, notes = {}, x_notes = {} }
+  local function auto_x(rr, cc)
+    if self.grid[rr][cc] or self.x_marks[rr][cc] then return end
+    self.x_marks[rr][cc] = true
+    auto.x[#auto.x + 1] = { r = rr, c = cc }
+    local cur = self.notes[rr][cc]
+    if cur ~= nil and next(cur) ~= nil then
+      local had = {}
+      for k in pairs(cur) do had[k] = true end
+      self.notes[rr][cc] = {}
+      auto.x_notes[#auto.x_notes + 1] = { r = rr, c = cc, had = had }
     end
   end
+  for cc = 1, self.cols do
+    if cc ~= c then auto_x(r, cc) end
+  end
   for rr = 1, self.rows do
-    if rr ~= r and not self.grid[rr][c] and not self.x_marks[rr][c] then
-      self.x_marks[rr][c] = true
-      auto.x[#auto.x + 1] = { r = rr, c = c }
-    end
+    if rr ~= r then auto_x(rr, c) end
   end
   if opts.clear_notes ~= false then
     -- ⚠️ 笔记的数据形状是**集合**（`notes[r][c][id] = true`），不是数组 ——
@@ -1824,6 +1953,38 @@ local function do_place(self, r, c, id, record, opts)
   return true
 end
 
+-- ★★★ 2026-10-20 **"撤销一次放置派生出来的自动改动"只此一处实现** ✗✓
+--
+--   原来这段逻辑在 `do_clear` / `restore_auto_of` / `Core:undo` **三处各写一遍** ——
+--   上一轮就在"直接拿起"那条路上漏了一处（用户报「拿起人物后 ✗ 未清除」），
+--   本文件自己的注释都记着这件事："同一个概念散在三处实现，就一定会漏一处"。
+--   本轮规则 X 又要多还原一样东西（**被自动 ✗ 擦掉的笔记**）⇒ 再复制三份必然再漏 ⇒
+--   在这里收成一个函数，三处都调它。
+--
+--   ⚠️ 两件**不还原**的事（都是用户定过的，别好心改回去）：
+--     · `auto.notes`：正式放置擦掉的是"**该人物自己**的草稿"，那是定案后废弃的猜想；
+--       再捡回来会让盘面自相矛盾（2026-09-28 用户原话：「正式放置删除的笔记拿起后会重现……
+--       但不需要这个」）。
+--     · 被**换人覆盖**掉的那个人的自动 ✗（本函数只处理"本次放置"自己的 auto）。
+local function revert_auto(self, auto)
+  if auto == nil then return false end
+  for i = 1, #(auto.x or {}) do
+    local a = auto.x[i]
+    self.x_marks[a.r][a.c] = false
+  end
+  -- ★ 规则 X：自动 ✗ 擦掉的笔记一起还回去，否则"拿起/撤销"会永久吞掉玩家的推理草稿
+  for i = 1, #(auto.x_notes or {}) do
+    local e = auto.x_notes[i]
+    -- 只有当那格的 ✗ 真的被撤掉了才还原笔记（防止把笔记塞回一个仍带 ✗ 的格子）
+    if self.x_marks[e.r][e.c] == false then
+      local restored = {}
+      for k in pairs(e.had or {}) do restored[k] = true end
+      self.notes[e.r][e.c] = restored
+    end
+  end
+  return true
+end
+
 local function do_clear(self, r, c, record)
   local prev = self.grid[r][c]
   if not prev then return false end
@@ -1844,17 +2005,12 @@ local function do_clear(self, r, c, record)
   --   ⚠️ 这个还原逻辑我早就在两处写过了（`move_piece_if_needed` 的换位、
   --      `Core:undo` 的撤销），**唯独漏了"直接拿起"这条最常见的路径** ——
   --      同一个概念散在三处实现，就一定会漏一处。
+  --   ★ 2026-10-20：三处已收成 `revert_auto`（本轮规则 X 又给它加了一件事要做）。
   if self.history ~= nil then
     for i = #self.history, 1, -1 do
       local a = self.history[i]
       if a.kind == "place" and a.id == prev then
-        local au = a.auto
-        if au ~= nil then
-          for k = 1, #(au.x or {}) do
-            local x = au.x[k]
-            self.x_marks[x.r][x.c] = false
-          end
-        end
+        revert_auto(self, a.auto)
         break
       end
     end
@@ -1881,10 +2037,8 @@ local function restore_auto_of(self, id)
     if a.kind == "place" and a.id == id then
       local au = a.auto
       if au then
-        for k = 1, #(au.x or {}) do
-          local x = au.x[k]
-          self.x_marks[x.r][x.c] = false
-        end
+        -- ★ 2026-10-20：还原动作收进 `revert_auto`（✗ 与被自动 ✗ 擦掉的笔记一起还原）
+        revert_auto(self, au)
         -- ★ 2026-09-28（用户要求去掉）：**不还原被清掉的铅笔笔记**。
         --
         -- 原来这里会把"正式放置时清掉的那些笔记"重新填回去，
@@ -1926,17 +2080,38 @@ local function toggle_note(self, r, c, id)
   --   `blocked` 的语义是「**不能站人**」，只该管 `do_place` 一件事；
   --   笔记/✗ 是"玩家的推理痕迹"，与格子能不能站人无关。
   --   （本工程第 N 次踩同一个坑：**一个字段被拿去管了两件不相关的事**。）
+  --
+  -- ★★★ 2026-10-20 **用户改主意了（本轮规则 B），如实记录，别把上一条当结论**：
+  --   用户新要求原话：「**不可放置人物的障碍物上也不可进行 note 标记**」⇒
+  --   **笔记这一半重新关掉**（`blocked` 格拒绝铅笔笔记），而 **✗ 那一半仍然开着**
+  --   （`Core:toggle_x` 不加门控 —— "这格排除掉"恰恰是障碍格最该能划的）。
+  --   所以 09-29 那条"一个字段管了两件事"的教训**依然成立**：这里论的仍是两件事，
+  --   只是现在按用户最新的口径，两件事的取值**恰好一开一关**。
   if not id then return false end
-  if self.grid[r][c] then return false end
+  if self.grid[r][c] then return false, "这格已经有人了" end
+  -- ★ 规则 B：障碍物（不可站人）的格子不可打笔记
+  if self.blocked[cell_key(r, c)] then
+    return false, "这格是障碍物，站不了人，也不能打笔记"
+  end
   -- ★ 2026-09-28（用户要求）：**正式放置过的人，不能再给他打笔记**。
   --   为什么：正式放置 = 定案，他在哪已经确定；再允许"猜他在别处"只会让盘面自相矛盾。
   --   （预放置不设这个限制 —— 那时还在试推，笔记是思考痕迹。）
   if self.placed and self.placed[id] then
     return false, "这个人已正式放置，不能再打笔记"
   end
+  -- ★★★ 规则 X（2026-10-20）：**✗ 与铅笔笔记互斥** ——
+  --   "在 ✗ 上打笔记时也会**在标记的同时**擦除 ✗" ⇒ 同一个动作里做两件事：
+  --   擦 ✗ + 落笔记。两件事记进**同一条历史**（不许拆成两条，否则撤销要点两下）。
+  local was_x = (self.x_marks[r][c] == true)
+  if was_x then self.x_marks[r][c] = false end
   local cell = self.notes[r][c]
   if cell[id] then cell[id] = nil else cell[id] = true end
-  push_history(self, { kind = "note", r = r, c = c, id = id }, false)   -- 笔记不计步
+  -- 笔记不计步（`push_history` 第三个参数是全工程的记号；计步由界面按 kind 判断）
+  push_history(self, {
+    kind = "note", r = r, c = c, id = id,
+    on = (cell[id] == true),        -- 这一击是"加上"还是"去掉"（撤销/重做要精确反演）
+    was_x = was_x,                  -- 这一击顺带擦掉的那个 ✗（撤销时还原）
+  }, false)
   return true
 end
 
@@ -1949,8 +2124,11 @@ function Core:tap_cell(r, c)
   --   直接把整格封死 —— 用户报「R1C5 不能做 ✗ / 放人 / 笔记」，
   --   日志里那句"这个格子站不了人"就是**从这里**出来的（不是 `do_place`）。
   --   它把"不能站人"错误地扩大成了"这格什么都不能做"。
-  --   ⇒ 现在按动作各自判断：✗ / 擦除 / 笔记都能打（它们是玩家的推理痕迹）；
+  --   ⇒ 现在按动作各自判断：✗ / 擦除 都能打（它们是玩家的推理痕迹）；
   --     只有**放人**会落到 `do_place`，由 `do_place` 自己的门控拒绝（书桌确实不能站人）。
+  --   ★ 2026-10-20（规则 B）：笔记这一项按用户新要求**重新收敛** ——
+  --     `blocked` 格不再允许铅笔笔记（拒绝原因由 `toggle_note` 给出，这里不再重复判断）；
+  --     ✗ 与擦除**保持放行**。
   if self.mode == M.MODE_X then
     return self:toggle_x(r, c), nil
   end
@@ -1960,11 +2138,31 @@ function Core:tap_cell(r, c)
   if self.mode == M.MODE_NOTE then
     if self.grid[r][c] then return false, "这格已经有人了" end
     if not self.selected then return false, "先选一个人再打草稿" end
-    return toggle_note(self, r, c, self.selected), nil
+    -- ★ 2026-10-20：**原因要透传**（原来写的是 `toggle_note(...), nil` ⇒
+    --   拒绝原因被吞成 nil ⇒ 界面 `_refuse` 什么都没打印 ⇒ 玩家/开发者只看到"点了没反应"）
+    return toggle_note(self, r, c, self.selected)
   end
   -- 放置模式：轻点=标记（与 murdoku 一致），双击=放置
   if self.grid[r][c] then
-    self.selected = self.grid[r][c]
+    -- ★★★★★★★★ 2026-10-15 **拿起棋子【不再改变选中】** ✗✓✓（★ 用户定案 ✓）
+    --
+    --   ★★★ 用户原话 ✓（★ 他一句话点破了前两轮都没看出来的根因 ✓）：
+    --     「**取消操作确实捆绑选中，也就是我取消 a 放置的同时又重新选了 a，
+    --       把取消放置和选中的联系切断就行**」✓✓
+    --   ★★ 这里原来就是那句捆绑 ✗：`self.selected = self.grid[r][c]` ✓
+    --     ⇒ ★ **拿起谁就把谁选上** ✓
+    --   ★★★ 后果（★ 与用户报的第一句**逐字对上** ✓）：
+    --     ★ 放 V ⇒ 选 D（屏幕亮 D）⇒ ★ **拿起 V** ✗
+    --       ⇒ ★★ 这一行**把选中从 D 改成 V** ✓ ⇒ ★ **屏幕还亮着 D** ✓
+    --       ⇒ ★ **再长按 ⇒ 放的会是 V** ✓✓
+    --   ★ 设计上还说得过去的那一面 ✓（★ 记一下，免得后人以为是手滑 ✓）：
+    --     ★ 语义是"拿起一个人 ⇒ 他回到手上" ✓ ★ 顺带让"拿起再挪位"一步完成 ✓
+    --     ★★ 而 `ui_controller` 里那条双击路的第二击**只处理空格子** ✓
+    --       （★ 判据 `(not occupied)` ✓）⇒ ★ **没有任何地方依赖这一行** ✓✓
+    --   ⇒ ★★ 修法 ✓：★ **删掉这一行** ✗ —— ★ 拿起就只是拿起 ✓
+    --     ★ **选中保持不变** ✓ ⇒ ★ 玩家选的是谁，长按就放谁 ✓✓
+    --   ★ 与"正式放置后取消选中"的区别 ✓（★ 那条**要保留** ✓ 见 `hold_cell` ✓）：
+    --     ★ 放置是"定案" ⇒ 取消选中合理 ✓　★ 拿起是"撤回" ⇒ **不该顺手改选中** ✓✓
     return do_clear(self, r, c, true), nil
   end
   -- ★★ 2026-09-28 改：**没选人时，单击格子 = 切换「这格不可能」标记**。
@@ -1981,7 +2179,8 @@ function Core:tap_cell(r, c)
   if not self.selected then
     return self:toggle_x(r, c), nil
   end
-  return toggle_note(self, r, c, self.selected), nil
+  -- ★ 2026-10-20：原因要透传（同上：`..., nil` 会把 `toggle_note` 的拒绝原因吞掉）
+  return toggle_note(self, r, c, self.selected)
 end
 
 -- 长按入口：放置（murdoku 的核心手感）
@@ -1992,19 +2191,31 @@ function Core:hold_cell(r, c)
   --   原因：放置拆成"双击=预放置 / 长按=正式放置"之后，误触本身就有救 ——
   --   双击只是预放置（可反悔），长按才定案。多一个保护开关反而不如直接删。
   if not self.selected then return false, "先点一个头像" end
-  if self.mode == M.MODE_ERASE then
-    -- 长按橡皮擦 = 清空全部
-    self:clear_all()
-    return true, "已清空全盘"
-  end
+  -- ★★★★★★★★ 2026-10-20（v282）**删掉"长按橡皮擦 = 清空全盘"这一段** ✗✓（它是死码 ✓）
+  --
+  --   原文长这样：`if self.mode == M.MODE_ERASE then self:clear_all(); return true, "已清空全盘" end`
+  --
+  --   ★ 为什么它是死的（两条不变量的合取，谁都破不了）：
+  --     · 上一行 `if not self.selected then return false …` ⇒ 走到这里必有 `selected`
+  --     · 而 `Core:set_mode(MODE_ERASE)` 自己会 `self.selected = nil`（见它里面那句）
+  --     · `Core:select_suspect(id)` 若在 ERASE/X 模式下选中了人，**会先把模式切回 PLACE**
+  --     ⇒ 不变量：`mode == eraser` ⇒ `selected == nil` ⇒ **这个分支永远进不来** ✓
+  --   ★ 旁证：`tests/selftest.lua` 早就有断言「双击橡皮擦**不再**清空全盘（破坏性快捷键已移除）」
+  --     —— 也就是说这条清空路径**本来就已经不是游戏行为**了，留着只会骗下一个读者。
+  --   ★ 本轮加了一条钉住不变量本身的用例（`tests/rule_guards.lua` 的 R5）：
+  --     以后谁改了 `set_mode` / `select_suspect` 的联动，那条会立刻红。
+  --   ⚠️ `Core:clear_all()` 本体**保留**（`tests/gray_unplace.lua` 在用，也是合理的公开 API）。
   -- ★★ 2026-09-28（用户设计）：长按 = **正式放置**（定案）
   --   · 擦掉该人物的所有铅笔笔记（`clear_notes = true` 是默认，这里写明意图）
   --   · 记入 `placed[id]` → 之后**不能再给他打笔记**（见 toggle_note）
   --   · **取消选中**（玩家要求："正式放置后取消对应人物的选中"）
   --   与"双击 = 预放置"的区别就在这三点：预放置只标 ✗，笔记留着、选中留着。
   local who = self.selected
+  -- ★★ 规则 P（2026-10-20）：同行/同列已经有别人 ⇒ 直接拒绝（不落子、不改盘）。
+  local conflict = self:row_col_conflict(r, c, who)
+  if conflict then return false, conflict.text end
   local _, move_from = move_piece_if_needed(self, who, r, c)
-  local ok = do_place(self, r, c, who, true, { clear_notes = true })
+  local ok, why = do_place(self, r, c, who, true, { clear_notes = true })
   -- ★ 把"从哪来"补进刚压下的那条历史 —— 这样**一次撤销就能回到原位**（见 Core:undo）
   if ok and move_from ~= nil and self.history[#self.history] ~= nil then
     self.history[#self.history].move_from = move_from
@@ -2014,7 +2225,9 @@ function Core:hold_cell(r, c)
     self.placed[who] = true
     self.selected = nil
   end
-  return ok, nil
+  -- ★ 2026-10-20：原因串**透传**（原来是 `return ok, nil` ⇒ 界面 `_refuse` 收不到原因
+  --   ⇒ "长按没反应、日志也没有"）。
+  return ok, why
 end
 
 -- ★ 2026-09-28（用户设计）：双击 = **预放置**（试推，可反悔）
@@ -2025,12 +2238,15 @@ function Core:pre_place(r, c)
   if r < 1 or r > self.rows or c < 1 or c > self.cols then return false, "越界" end
   if self:is_blocked(r, c) then return false, "这个格子站不了人" end
   if not self.selected then return false, "先点一个头像" end
+  -- ★★ 规则 P：预放置同样受守卫（用户口径是"不能再放置"，没区分正式/预放置）
+  local conflict = self:row_col_conflict(r, c, self.selected)
+  if conflict then return false, conflict.text end
   local _, move_from = move_piece_if_needed(self, self.selected, r, c)
-  local ok = do_place(self, r, c, self.selected, true, { clear_notes = false })
+  local ok, why = do_place(self, r, c, self.selected, true, { clear_notes = false })
   if ok and move_from ~= nil and self.history[#self.history] ~= nil then
     self.history[#self.history].move_from = move_from
   end
-  return ok, nil
+  return ok, why
 end
 
 -- X 标记：这格不可能是任何人
@@ -2044,15 +2260,26 @@ function Core:toggle_x(r, c)
   --   **恰恰是站不了人的格子最该能划掉**。
   --   原来一个字段管了两件不相关的事，结果 R1C5（书桌）连 ✗ 都打不上。
   if self.grid[r][c] then return false end
-  self.x_marks[r][c] = not self.x_marks[r][c]
-  if self.x_marks[r][c] then self.notes[r][c] = {} end
+  -- ★★★ 规则 X（2026-10-20）：**任何方式出现的 ✗ 都要擦掉该格全部笔记**。
+  --   手动点亮 ✗ 只是其中一条路（另一条是放置时自动给同行同列标 ✗，见 `do_place`）。
+  --   被擦掉的笔记记进历史 ⇒ **撤销能把它们还回来**（不然撤销一次就永久吞掉玩家草稿）。
+  local on = not self.x_marks[r][c]
+  self.x_marks[r][c] = on
+  local prev_notes = nil
+  if on then
+    local cur = self.notes[r][c]
+    if cur ~= nil and next(cur) ~= nil then
+      prev_notes = {}
+      for k in pairs(cur) do prev_notes[k] = true end
+    end
+    self.notes[r][c] = {}
+  end
   -- ★ 2026-09-28：X 标记**不计步**（`counts = false`）。
   --
   -- 口径与"铅笔笔记不计步"一致：X 是**推断过程的草稿**，不改变棋盘上的人。
   -- 而且取消交互按钮后，「单击 = 切换 X」变成**最高频**的动作 ——
   -- 一次推理要划十几个 ✗，每个都计步会让"N 步"这个数字失去意义。
-  -- （放置 / 清格才是真正改变棋盘的动作，它们计步。）
-  push_history(self, { kind = "x", r = r, c = c }, false)
+  push_history(self, { kind = "x", r = r, c = c, on = on, prev_notes = prev_notes }, false)
   return true
 end
 
@@ -2070,7 +2297,8 @@ function Core:erase_cell(r, c)
   end
   if self.x_marks[r][c] then
     self.x_marks[r][c] = false
-    push_history(self, { kind = "x", r = r, c = c })
+    -- ★ 2026-10-20：带上 `on = false`（撤销/重做要精确反演，不再靠"翻转当前值"猜）
+    push_history(self, { kind = "x", r = r, c = c, on = false })
     changed = true
   end
   return changed
@@ -2175,19 +2403,23 @@ function Core:decode_state(code)
     for c = 1, self.cols do
       idx = idx + 1
       local tok = tokens[idx]
+      -- ★ 2026-10-20 规则 B：障碍物格不接受笔记（分享码是"外部输入"，同样要守不变量）
+      local note_ok = not self.blocked[cell_key(r, c)]
       if tok == "X" then
         self.x_marks[r][c] = true
       elseif tok == "-" then
         -- 空格，不动
       elseif tok:sub(1, 1) == "!" then
         local body = tok:sub(2, -2)
-        for k = 1, #body do
-          local id = symbol_to_id[string.upper(body:sub(k, k))]
-          if id then self.notes[r][c][id] = true end
+        if note_ok then
+          for k = 1, #body do
+            local id = symbol_to_id[string.upper(body:sub(k, k))]
+            if id then self.notes[r][c][id] = true end
+          end
         end
       elseif tok:match("^%l$") then
         local id = symbol_to_id[string.upper(tok)]
-        if id then self.notes[r][c][id] = true end
+        if id and note_ok then self.notes[r][c][id] = true end
       elseif tok:match("^%u$") then
         local id = symbol_to_id[tok]
         if id then do_place(self, r, c, id, false) end
@@ -2212,21 +2444,40 @@ function Core:undo()
     -- ★ 2026-09-28：还原这次放置**派生出来的自动改动**。
     --   规则①②会顺手改几十个格子（同行同列标 ✗、清掉该人物的笔记），
     --   不还原的话撤销一次会留下一盘 ✗，玩家得手动擦。
-    if action.auto then
-      for i = 1, #(action.auto.x or {}) do
-        local a = action.auto.x[i]
-        self.x_marks[a.r][a.c] = false
-      end
-      -- ★ 2026-09-28：撤销**不还原**被清掉的笔记（与 restore_auto_of 保持一致）。
-      --   理由同上：正式放置是定案，被推翻的猜想不该复活。
-    end
+    -- ★ 2026-10-20：改调 `revert_auto` —— 它同时还原"被自动 ✗ 擦掉的笔记"
+    --   （规则 X 之后 ✗ 会连带擦笔记，撤销必须一起还）。
+    --   ⚠️ `auto.notes`（该人物自己的草稿）仍然**不还原**，那是用户 09-28 定过的。
+    revert_auto(self, action.auto)
   elseif action.kind == "clear" then
     do_place(self, action.r, action.c, action.prev, false)
   elseif action.kind == "note" then
+    -- ★ 2026-10-20 规则 X：笔记动作可能**顺带擦掉了一个 ✗** ⇒ 撤销要把它还原；
+    --   同时按 `on` 精确反演（不再靠"翻转当前值" —— 有了 ✗ 互斥之后翻转会翻错）。
     local cell = self.notes[action.r][action.c]
-    if cell[action.id] then cell[action.id] = nil else cell[action.id] = true end
+    if action.on ~= nil then
+      if action.on then cell[action.id] = nil else cell[action.id] = true end
+    else
+      if cell[action.id] then cell[action.id] = nil else cell[action.id] = true end
+    end
+    if action.was_x then self.x_marks[action.r][action.c] = true end
   elseif action.kind == "x" then
-    self.x_marks[action.r][action.c] = not self.x_marks[action.r][action.c]
+    -- ★ 2026-10-20 规则 X：✗ 动作会擦掉笔记 ⇒ 撤销时把笔记还回去；
+    --   取消 ✗ 的动作撤销时，✗ 回来 ⇒ 该格笔记按互斥清空。
+    local on = action.on
+    if on == nil then
+      self.x_marks[action.r][action.c] = not self.x_marks[action.r][action.c]   -- 旧历史兜底
+    else
+      self.x_marks[action.r][action.c] = not on
+      if on then
+        if action.prev_notes ~= nil then
+          local restored = {}
+          for k in pairs(action.prev_notes) do restored[k] = true end
+          self.notes[action.r][action.c] = restored
+        end
+      else
+        self.notes[action.r][action.c] = {}
+      end
+    end
   elseif action.kind == "wipe_notes" then
     local restored = {}
     for k in pairs(action.prev_notes or {}) do restored[k] = true end
@@ -2245,10 +2496,34 @@ function Core:redo()
   elseif action.kind == "clear" then
     do_clear(self, action.r, action.c, false)
   elseif action.kind == "note" then
+    -- ★ 2026-10-20 规则 X：重做笔记动作 —— 正向是"按 on 落/擦笔记"，
+    --   若当初它顺带擦掉过 ✗，重做也要再擦一次（互斥不许被重做破坏）。
     local cell = self.notes[action.r][action.c]
-    if cell[action.id] then cell[action.id] = nil else cell[action.id] = true end
+    if action.on ~= nil then
+      if action.on then cell[action.id] = true else cell[action.id] = nil end
+    else
+      if cell[action.id] then cell[action.id] = nil else cell[action.id] = true end
+    end
+    if action.was_x then
+      -- 当初这一击擦掉了 ✗ ⇒ 重做也再擦一次（互斥不许被重做破坏）。
+      -- 该格此刻笔记必为空（✗ 与笔记互斥），所以上一步落下的笔记不用重算。
+      self.x_marks[action.r][action.c] = false
+    end
   elseif action.kind == "x" then
-    self.x_marks[action.r][action.c] = not self.x_marks[action.r][action.c]
+    -- ★ 2026-10-20 规则 X：重做 ✗ 动作 ⇒ ✗ 亮起则擦笔记；✗ 取消则笔记回来
+    local on = action.on
+    if on == nil then
+      self.x_marks[action.r][action.c] = not self.x_marks[action.r][action.c]
+    else
+      self.x_marks[action.r][action.c] = on
+      if on then
+        self.notes[action.r][action.c] = {}
+      elseif action.prev_notes ~= nil then
+        local restored = {}
+        for k in pairs(action.prev_notes) do restored[k] = true end
+        self.notes[action.r][action.c] = restored
+      end
+    end
   elseif action.kind == "wipe_notes" then
     self.notes[action.r][action.c] = {}
   end
@@ -2414,9 +2689,14 @@ function Core:serialize()
       if id then
         cells[#cells + 1] = { r = r, c = c, id = id }
       else
+        -- ★ 2026-10-20（规则 X / B）：写出前再守一次不变量 ——
+        --   存档里出现"又有 ✗ 又有笔记"或"障碍格上有笔记"的格，读回去就是脏数据。
+        --   ✗ 优先（互斥时 ✗ 赢），障碍格不写笔记。
         local note_ids = sorted_keys(self.notes[r][c])
-        if #note_ids > 0 or self.x_marks[r][c] then
-          cells[#cells + 1] = { r = r, c = c, notes = note_ids, x = self.x_marks[r][c] or nil }
+        local x = self.x_marks[r][c] == true
+        if x or self.blocked[cell_key(r, c)] then note_ids = {} end
+        if #note_ids > 0 or x then
+          cells[#cells + 1] = { r = r, c = c, notes = note_ids, x = x or nil }
         end
       end
     end
@@ -2440,10 +2720,21 @@ function Core:deserialize(save)
   self:reset()
   for i = 1, #save.cells do
     local e = save.cells[i]
-    if e.id then do_place(self, e.r, e.c, e.id, false)
+    if e.id then
+      do_place(self, e.r, e.c, e.id, false)
     elseif e.notes or e.x then
-      for j = 1, #(e.notes or {}) do self.notes[e.r][e.c][e.notes[j]] = true end
-      if e.x then self.x_marks[e.r][e.c] = true end
+      -- ★★★ 2026-10-20（规则 X / B）：**读档时清洗成互斥** ——
+      --   旧存档、手改过的存档、分享码都可能一格两样都写着。
+      --   口径：✗ 优先（"✗ 出现就擦掉该格笔记"），障碍格不接受笔记。
+      --   ⇒ 不静默"两者都留着"：那会让 view()/界面同时画 ✗ 和字母，盘面自相矛盾。
+      local k = cell_key(e.r, e.c)
+      local blocked = self.blocked[k] == true
+      if e.x then
+        self.x_marks[e.r][e.c] = true
+        self.notes[e.r][e.c] = {}
+      elseif not blocked then
+        for j = 1, #(e.notes or {}) do self.notes[e.r][e.c][e.notes[j]] = true end
+      end
     end
   end
   self.elapsed = save.elapsed or 0
@@ -2565,28 +2856,34 @@ function Core:view()
     }
   end
 
-  -- 偷窃版结构信息（界面可以直接展示，玩家自己也能数出来）
-  local sok, serrors, sinfo = self:structure_report()
+  -- ★ 2026-10-17 通用线索（不属于任何人的卡）：单独一条，供界面/调试读取
+  --   ★ 卡位数量不变（`#self.clues`）⇒ 卡片不会多出一张 ✓
+  local general_view = self:general_clue_results()
+
+  -- ★★★ 2026-10-18 **规则判断已移出运行时**（见 `tools/design_rules.lua`）✗✓
+  --   用户原话：「核心中的规则和求解器一起应该被移除，规则是内容部分，独立于脚本，
+  --             原设计已经收口了，脚本里的判断行和规则行对于关卡运行都是冗余内容」
+  --   ⇒ 运行时**不再算** R3/R4、无辜人数、k —— 关卡答案是预输入的 ✓
+  --   ⇒ 快照里这个字段保留形状（界面/存档在读它），但**不再包含规则计算结果** ✓
+  --   ⇒ 设计期要这些数字：`require("tools/design_rules")` 之后调 `core:structure_report()` ✓
   local structure = {
-    ok = sok,
-    errors = serrors or {},
-    victim_room = sinfo.victim_room,
-    adjacent = sinfo.adjacent,
-    innocent_counts = sinfo.innocent_counts,
-    best = sinfo.best,
-    best_rooms = sinfo.best_rooms,
-    k = sinfo.k,
-    thief_room = sinfo.thief_room,
-    has_accomplice = sinfo.has_accomplice,
-    -- ★ 2026-10-17 同伙规则废止：k>=2 不再意味着"必须有同伙"。
-    --   这里保留字段名（界面/存档已在读它），但恒为 false；
-    --   "这一关到底有没有同伙"请直接看 roles.accomplice（= has_accomplice 字段）。
+    ok = true,
+    errors = {},
+    victim_room = nil,
+    adjacent = nil,
+    innocent_counts = nil,
+    best = nil,
+    best_rooms = nil,
+    k = nil,
+    thief_room = nil,
+    has_accomplice = (self.roles and self.roles.accomplice ~= nil) or false,
     must_have_accomplice = false,
   }
 
   local hud = {
     time = self.elapsed or 0,
-    tie_policy = self:tie_policy(),
+    -- ★ 同上：tie_policy 只是关卡数据字段，运行时不判断它 ✓
+    tie_policy = (self:rules().tie_policy or M.TIE_FORBID),
     mode = self.mode,
     status = self.status,
     solved = (self.status == M.STATUS_SOLVED),
@@ -2612,7 +2909,8 @@ function Core:view()
     structure = structure,
     door_graph = self.adjacency,
     title = self.level.name or self.level.id or "未命名奇域",
-    subtitle = self.level.subtitle,
+    -- ★ 2026-10-18：`subtitle` 字段已删 —— 唯一读者（`hud.subtitle` 那条 push）随
+    --   「美术没有副标题位」一起移除（用户指令），关卡文件里也从来没有 `subtitle` 键。
     difficulty = self.level.difficulty,
     rows = self.rows,
     cols = self.cols,
@@ -2630,6 +2928,8 @@ function Core:view()
     cells = cells,
     tray = tray,
     clues = clue_view,
+    -- ★ 2026-10-17 通用线索（不上卡）：{index,type,text,satisfied}
+    general_clues = general_view,
     violations = self:violations(),
     hud = hud,
     last_message = self.last_result and self.last_result.message or nil,
@@ -2659,210 +2959,5 @@ end
 --   返回候选解列表，每项 = { placement = {r={c=id}}, thief =, accomplice = }
 --   注意：这同时校验了「盗窃者与同伙是否唯一确定」（规格自检清单第 7 条）
 ----------------------------------------------------------------------------
-
-function Core:solve(limit)
-  limit = limit or 2
-  local solutions = {}
-  local rules = self:rules()
-  local ids = {}
-  for i = 1, #self.pieces do ids[i] = self.pieces[i].id end
-  -- ★★ 2026-10-11：★ 读**槽位表** ✓ ＋ ★ **先看有没有"真判据"** ✗
-  --   ★ 槽位（★ 由棋盘规格生成 ✓ 内容待 `row.*` 填 ✓）**没有 `type`** ✗
-  --     ⇒ ★ 它们**还不能判真假** ⇒ ★★ **`solve` 无从下嘴** ✓
-  --   ⇒ ★ 如实返回**空解表** ✓ ★ **不猜、不编解** ✗✓
-  --     ★（★ 上层：`validate_levels` 报"未测" ✓ ★ 作者拿到的是"还没内容"而不是"多解" ✓）
-  local clues = self.clues or {}
-  local real = 0
-  for i = 1, #clues do if clues[i] and clues[i].type then real = real + 1 end end
-  if real == 0 then return {} end
-  local allowed = self.allowed_false or 0
-
-  -- 角色候选：盗窃者不能是受害者；同伙可以为 nil
-  local rpairs = {}
-  for i = 1, #ids do
-    local t = ids[i]
-    if t ~= self.victim_id then
-      rpairs[#rpairs + 1] = { thief = t, accomplice = nil }
-      for j = 1, #ids do
-        local a = ids[j]
-        if a ~= t and a ~= self.victim_id then
-          rpairs[#rpairs + 1] = { thief = t, accomplice = a }
-        end
-      end
-    end
-  end
-
-  -- 摆位状态（grid / pos / row_count / col_count）在整趟搜索里**增量维护**。
-  -- 早期版本每到一个叶子就 install() 把整盘重算一遍，7×7 时那是主要开销，
-  -- 现在由 place_at 在放置/回溯时同步这几个表；搜索结束后统一还原。
-  local grid = {}
-  for r = 1, self.rows do grid[r] = {} end
-
-  local function fits(r, c)
-    if self:is_blocked(r, c) then return false end
-    if rules.one_per_row then
-      for cc = 1, self.cols do if grid[r][cc] then return false end end
-    end
-    if rules.one_per_col then
-      for rr = 1, self.rows do if grid[rr][c] then return false end end
-    end
-    if rules.one_per_room then
-      for rr = 1, self.rows do
-        for cc = 1, self.cols do
-          if grid[rr][cc] and self.room[rr][cc] == self.room[r][c] then return false end
-        end
-      end
-    end
-    return true
-  end
-
-  -- ── 边搜边剪 ────────────────────────────────────────────────────────────
-  -- 朴素做法是"摆满整盘再看线索"，但摆位总数是 N! × N!（7×7 就是 2540 万），
-  -- 再乘上角色组合就彻底跑不完了（2026-09-26 实测：7×7 关卡校验直接超时）。
-  --
-  -- 这里改成**一放下棋子就立刻检查"它牵涉到的那些线索"**：
-  --   · 只使用**引用全是具体棋子**的线索（`col_offset A V` 这种），
-  --     带角色别名（@thief / @accomplice）的线索要等角色定下来才能判，跳过；
-  --   · 一条线索引用的棋子全放下了，才去判它；
-  --   · 违反数一旦超过 allowed 就地剪枝。
-  --
-  -- 摆位用的 grid / pos / row_count / col_count 在整趟搜索里**增量维护**，
-  -- 不再每到一个叶子就 install 重算一遍（那也是个大头）。
-  local ctx = make_context(self)          -- roles 用关卡声明的，够判具体棋子的线索
-
-  local partial = {}
-  for i = 1, #clues do
-    local cl = clues[i]
-    local def = M.clues[cl.type]
-    if def ~= nil then
-      local refs, has_alias = {}, false
-      local params = def.params or {}
-      for pi = 1, #params do
-        local v = cl[params[pi]]
-        if type(v) == "string" then
-          if M.ROLE_ALIASES[v] ~= nil then
-            has_alias = true
-          else
-            refs[#refs + 1] = v
-          end
-        end
-      end
-      -- 引用了非棋子字符串（例如 not_role 的 role、beside_object 的家具名）时，
-      -- 那个"棋子"永远不会被摆上，于是这条线索永远不会被判定 —— 自动跳过，安全。
-      if not has_alias and #refs > 0 then
-        partial[#partial + 1] = { c = cl, refs = refs, def = def }
-      end
-    end
-  end
-
-  local function partial_violations()
-    local n = 0
-    for i = 1, #partial do
-      local p = partial[i]
-      local ready = true
-      local refs = p.refs
-      for k = 1, #refs do
-        if self.pos[refs[k]] == nil then ready = false break end
-      end
-      if ready and not p.def.validate(ctx, p.c) then
-        n = n + 1
-        if n > allowed then return n end
-      end
-    end
-    return n
-  end
-
-  local saved_grid, saved_pos = self.grid, self.pos
-  local saved_rc, saved_cc = self.row_count, self.col_count
-  self.row_count, self.col_count = {}, {}
-  for r = 1, self.rows do self.row_count[r] = 0 end
-  for c = 1, self.cols do self.col_count[c] = 0 end
-
-  -- 一个完整摆位 + 一组角色归属是否成立
-  -- （此时 self.grid / self.pos 就是当前搜索路径上的摆位，不需要 install）
-  local function consider()
-    local stop = false
-    for i = 1, #rpairs do
-      local roles = {
-        thief = rpairs[i].thief,
-        accomplice = rpairs[i].accomplice,
-        victim = self.victim_id,
-      }
-      local sok = self:structure_report(roles)
-      if sok then
-        local rctx = make_context(self, roles)
-        local failed = 0
-        for ci = 1, #clues do
-          local def = M.clues[clues[ci].type]
-          if not def or not def.validate(rctx, clues[ci]) then
-            failed = failed + 1
-            if failed > allowed then break end
-          end
-        end
-        if failed <= allowed then
-          local snap = {}
-          for r = 1, self.rows do
-            snap[r] = {}
-            for c = 1, self.cols do snap[r][c] = grid[r][c] end
-          end
-          solutions[#solutions + 1] = {
-            placement  = snap,
-            thief      = roles.thief,
-            accomplice = roles.accomplice,
-          }
-          if #solutions >= limit then
-            stop = true
-            break
-          end
-        end
-      end
-    end
-    return stop
-  end
-
-  local function place_at(k)
-    if k > #ids then return consider() end
-    local id = ids[k]
-    local preferred = self.solution[id]
-    local order = {}
-    if preferred then order[#order + 1] = preferred end
-    for r = 1, self.rows do
-      for c = 1, self.cols do
-        if not (preferred and preferred.r == r and preferred.c == c) then
-          order[#order + 1] = { r = r, c = c }
-        end
-      end
-    end
-    for i = 1, #order do
-      local p = order[i]
-      if not grid[p.r][p.c] and fits(p.r, p.c) then
-        grid[p.r][p.c] = id
-        self.pos[id] = p
-        self.row_count[p.r] = self.row_count[p.r] + 1
-        self.col_count[p.c] = self.col_count[p.c] + 1
-
-        -- ★ 放下就剪：这一层已经违反了太多线索的分支不用再往下走
-        local stop = false
-        if partial_violations() <= allowed then
-          stop = place_at(k + 1)
-        end
-
-        grid[p.r][p.c] = nil
-        self.pos[id] = nil
-        self.row_count[p.r] = self.row_count[p.r] - 1
-        self.col_count[p.c] = self.col_count[p.c] - 1
-        if stop then return true end
-      end
-    end
-    return false
-  end
-
-  self.grid = grid
-  self.pos = {}
-  place_at(1)
-  self.grid, self.pos = saved_grid, saved_pos
-  self.row_count, self.col_count = saved_rc, saved_cc
-  return solutions
-end
 
 return M

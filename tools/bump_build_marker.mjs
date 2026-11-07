@@ -35,8 +35,25 @@ const CHECK = process.argv.includes('--check');
 const SET = arg('set');
 const NOTE = arg('note');
 
-// ★ 标记的形状：`构建标记 vNNN / YYYY-MM-DD / 说明`（与 `entry_client_script.lua` 一致 ✓）
-const RE = /构建标记 (v\d{2,4}) \/ (\d{4}-\d{2}-\d{2}) \/ ([^"\\]*?)(?=\s*=====)/;
+// ★ 标记的形状：`print("[murdoku] ===== 构建标记 vNNN / YYYY-MM-DD / 说明")`
+//   （`entry_client_script.lua:194` 就是这么写的一行 ✓ `tools/gil/gilwrite.mjs:137` 也记着它 ✓）
+//
+// ⚠️⚠️ 2026-10-20 修 v281 那一轮的工具债：**旧 RE 只认"带尾部 `=====`"的形状** ✗
+//   · 旧写法是 `([^"\\]*?)(?=\s*=====)` ⇒ 说明后面**还必须跟一串 `=====`** ✓
+//   · 但 v240~v270 之间**尾部那串丢了** ⇒ 现在是 `… 说明")` ✓
+//   ⇒ 后果（本轮实测 ✓）：**两种模式一起废掉** ✗
+//     · `--check` 在标记明明是新的时候报「找不到构建标记」**exit 1** ✗
+//       ⇒ `check_all` 的闸门 2c2 **永远红** ⇒ 闸门退化成噪音 ✓（正是它要防的那种退化 ✓）
+//     · `bump` 模式同样 exit 1 ⇒ **递增彻底停摆** ⇒ 又回到 D2 那个"标记落后十几版"的病根 ✗
+//   ⇒ 新判据：说明 = **除 `"` / `\` / 换行以外的一串** ✓ —— 由**引号**收尾，不靠 `=====` ✓
+//     尾巴（空白＋可能还在的那串 `=====`）单独切出来、写回时**原样保留** ✓
+//     ⇒ 两种形状（带尾巴 / 不带尾巴）都认 ✓ 哪天加回去也不会坏 ✓
+//   ⚠️ 但「**标记必须存在**」这条**一个字都没放松** ✓：
+//     整行对不上（标记行被删了 / 日期写坏了 / 版本号不是 vNNN）⇒ 照样 exit 1 ✓
+const RE = /构建标记 (v\d{2,4}) \/ (\d{4}-\d{2}-\d{2}) \/ ([^"\\\r\n]*)/;
+// 说明尾部那些**空白与 `=====`** 不算说明 ✓（人看的时候只留说明本身 ✓）
+const bodyOf = (s) => s.replace(/[\s=]+$/, '');
+const tailOf = (s) => s.slice(bodyOf(s).length);
 
 const src = fs.readFileSync(ENTRY, 'utf8');
 const m = src.match(RE);
@@ -44,11 +61,13 @@ if (!m) {
   console.error('✗ 在 ' + path.relative(ROOT, ENTRY) + ' 里找不到构建标记（形状应为 `构建标记 vNNN / YYYY-MM-DD / 说明`）');
   process.exit(1);
 }
-const [full, curV, curDate, curNote] = m;
+const [full, curV, curDate] = m;
+const curNote = bodyOf(m[3]);
+const curTail = tailOf(m[3]);              // ★ 说明后面原样留着的那截（空白 + 可能还有的 `=====`）
 const fmt = (n) => 'v' + String(n).padStart(3, '0');
 
 console.log('当前标记：' + curV + ' / ' + curDate);
-console.log('  说明：' + curNote.trim().slice(0, 100) + (curNote.trim().length > 100 ? '…' : ''));
+console.log('  说明：' + curNote.slice(0, 100) + (curNote.length > 100 ? '…' : ''));
 
 if (SHOW) process.exit(0);
 
@@ -130,8 +149,11 @@ if (NOTE.length > NOTE_MAX) {
   console.error('   ⇒ 建议：一行说完"做了什么" ✓ 细节写进 git 提交信息 ✓\n');
 }
 
-const next = '构建标记 ' + nextV + ' / ' + today + ' / ' + NOTE;
-const out = src.replace(RE, next);
+// ★ 尾巴**原样带回去** ✓（今天没有那串 `=====` ⇒ 也不替人补；哪天补回来了也不会被吃掉 ✓）
+const next = '构建标记 ' + nextV + ' / ' + today + ' / ' + NOTE + curTail;
+// ⚠️ 必须用**函数式**替换：`NOTE` 里若出现 `$&` / `$1` / `$'` 之类，
+//   字符串形式的 replacement 会被当场当成"替换模式" ✗（今天没人这么写，但它不该是个雷 ✓）
+const out = src.replace(RE, () => next);
 if (out === src) { console.error('✗ 替换没生效（形状可能变了）'); process.exit(1); }
 
 fs.writeFileSync(ENTRY, out, 'utf8');       // ★ 不加 BOM ✓

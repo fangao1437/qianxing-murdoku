@@ -105,7 +105,14 @@ local BEACON = { OnInit = 300, OnStart = 380 }
 
 local function beacon(a, v)
   if a == nil then return end
+  -- ★ 2026-10-18 修（优化组 · 缺陷 3）：**开关在 `a.cfg.cells_beacon`**（见下面 CONFIG，
+  --   经 `Qianxing.new(CONFIG)` 变成 `adapter.cfg`），而这里原来只读 `a.cells_beacon`
+  --   ⇒ 恒为 nil ⇒ `nil == false` 为假 ⇒ **早退从不生效** ⇒ 信标在"默认关闭"下照样跑
+  --   （它会改 `cell.1.1` 的尺寸 ⇒ 肉眼可见，CONFIG 注释写的就是"正式游玩保持 false"）。
+  --   两处都认：老路径 `a.cells_beacon` 保留，任一为 false 即关 —— 这样离线夹具
+  --   （直接往 adapter 上挂字段的那种）不会被误伤。
   if a.cells_beacon == false then return end
+  if a.cfg ~= nil and a.cfg.cells_beacon == false then return end
   if a._cells_beacon_button ~= nil then
     pcall(function() a:_cells_beacon_button(v) end)
   end
@@ -184,7 +191,7 @@ local function check_canvas()
       --   ⇒ ★ 待办（`接手待办.md` P1）：把"递增标记"并进安装脚本或 `archive_version.mjs`，
       --     由工具强制递增，而不是靠人记得 ✓
       if print then
-        print("[murdoku] ===== 构建标记 v214 / 2026-10-12 / 胜利界面(result)改四键:下一关/退出至菜单/返回首页/存档并结算;几何复用exit_menu的设计稿B(374x72,偏移50/146/242/338) =====")
+        print("[murdoku] ===== 构建标记 v350 / 2026-10-27 / 按设计稿色板逐项染色 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -351,7 +358,87 @@ local function build_adapter()
     --     它是在**客户端控件容器里**另存的 ⇒ 属于「客户端控件模板」⇒ 脚本能实例化。
     --     （1073742356 是在 root 下另存的 ⇒ 服务器模板 ⇒ 返回 nil，已作废。）
     prefab_icon = 1073742357,
-    widgets     = true,    -- ★ 打开：启动时创建并显示 selbtn.1..N（102 验证过"能完成选关"的那四个方块）
+    -- ★★★★★★★★ 2026-10-16 **`geom_by_editor`：把位置/尺寸交回编辑器** ✗✓✓
+    --   ★ 用户原话 ✓：「★ **把我调整过的东西那里的相关位置大小调整脚本关掉，交由编辑器决定**」✓
+    --   ★ `true` ⇒ ★ 脚本**不再抢**这些几何 ✓：
+    --     · `stage`（棋盘容器）—— ★ 建控件前那段 ＋ `on_update` 每帧兜底那段，**两处都跳过** ✓
+    --       ⇒ ★ 编辑器里把 stage 调多大，棋盘就是多大 ✓（★ 格子尺寸是按 stage 尺寸算的 ✓）
+    --     · `settle.btn`（结算按钮）—— ★ 那一段（含探针）**整段跳过** ✓
+    --   ★ `false` ⇒ 恢复旧行为（强制 584×584 @ (100,20) ／ 结算按钮那两个数 ✓）
+    --   ⚠️ ★ **这是"把权威交出去"的开关，不是"关掉功能"** ✓：★ 几何仍在，只是改由**编辑器**给 ✓
+    --     ⇒ ★ 你在编辑器里调一次就永久生效，脚本之后再也不会覆盖 ✓
+    --   ★★★★★★★★ 2026-10-16 **v248：这个开关现在【真的】管住了全部四条路** ✗✓✓
+    --     ★ 上一版（v246/v247）只覆盖 `main.lua` 的四处 ✓ —— ★ 而**真正在覆盖的是
+    --       规划侧那条**（`ui_controller` 的 `rect` ＋ `pos_runtime` ⇒ `adapter.runtime_rect`）✗
+    --     ⇒ ★ 模拟器实测：`select.card.1` 编辑器 `208.98×291.6` ⇒ 运行时 **`233×324`** ✗
+    --       （= 规划里那份 100% 的卡 ✓）；`clues.grid` 编辑器 `360×490` ⇒ 运行时 `400×544` ✗
+    --     ⇒ ★ v248 起：★ **继承来的 `pos_runtime` 一律不受理** ✓（显式 `true` 仍然受理 ✓
+    --       例如房间名标签、缩略图色块、脚本自己建的格子 ✓）
+    --     ★ 同时修掉一个 Lua 语义错 ✓：`inherit_pos_runtime` 里原来用 `not n.pos_runtime`
+    --       判"没表态" ✗ —— ★ **`not false` 也是 `true`** ⇒ ★ 显式写 `false` **拦不住继承** ✗
+    --       （`clues` / `clue.*` 就是这么被接管的 ✓ 用户原话「网格视窗的大小我已经改了」✗）
+    -- ★★★★★★★★ 2026-10-16 **v253：`geom_by_editor` 这个开关【已删除】** ✗✓✓
+    --   ★ 用户指令 ✓：「把所有失效的几何/文字脚本代码从脚本中删除」✓
+    --   ★ 它为什么失效 ✗：★ `render` 现在**只看两件事** ——
+    --     ① 控件是不是脚本建的 ✓ ② 有没有**显式**写 `pos_runtime = true` ✓
+    --     ⇒ ★ "归编辑器"已经成了**默认** ✓ ⇒ 不再需要这个开关去"关掉接管" ✓
+    --   ★ 位置/尺寸从哪来 ✓：★ **全部以 `.gil` 为准** ✓
+    --     ★ 适配层的 `respect_editor_rect = true`（见下 ✓）是第二道闸 ✓
+    --   ★ 仍然由脚本摆的那几类 ✓（★ 别当死代码删 ✓）：
+    --     ★ 房间名标签 / 选卡文字与附件 / 房间缩略图 / 确认卡与其热区 / 脚本实例化的 `cell.*` ✓
+    -- ★★★★★★★★ 2026-10-16 **v252：这些控件的文案"编辑器优先"** ✗✓✓
+    --   ★ 用户原话 ✓：「★ **让所有按钮的文本内容也交由编辑器** ✓
+    --     ★ **你如果能直接填内容进控件你就填，不能就把位置告诉我**」✓
+    --   ★★ 答复（先说结论 ✓）：★ **`.gil` 存不下控件的文字** ✗ ——
+    --     ★ 只读实测：`node tools/gil/_probe_texts.mjs 393.gil` ⇒
+    --       ★ **338 条记录里，一条"非名字文本"都没有** ✓（与项目 2026-09-28 的结论一致 ✓）
+    --     ⇒ ★ **填不了** ✗ ⇒ ★ 只能**在编辑器里逐颗填** ✓（★ 要填哪些：见本名单 ✓
+    --       ＋ 回执 §〇·补5 那张表 ✓ —— ★ 你已经填好的 **主页四键** 就在名单里 ✓）
+    --   ★ 语义 ✓：★ 名单里的控件 ⇒ ★ 脚本**只在它当前是空的时候**才写 ✓
+    --     ⇒ ★ 你填过 ⇒ 脚本一个字都不动 ✓✓；★ 没填 ⇒ 仍然有字（兜底 ✓ 界面不会空 ✓）
+    --   ⚠️ **不在名单里的**（★ 这类**必须**由脚本写 ✓ 别加进来 ✗）：
+    --     ★ `select.card.*.title` / `.info`（每关现算 ✓ 会随翻页变 ✓）
+    --     ★ `clues.*` 的计数、`hud.timer` / `hud.progress`（每秒在变 ✓）
+    --     ★ `clue.N.*` 的字母（分级现算 ✓）、`modal.stats`（用时/步数 ✓）
+    --     ★ `modal.title`（"恭喜破案" / "没能找齐所有人" **两态** ✓ —— ★ 编辑器只能存一份 ✗）
+    text_editor_first = {
+      -- ★ 首页四键（★ 你 2026-10-16 已经填好了 ✓）
+      "home.select", "home.continue", "home.shop", "home.bag",
+      -- ★ 结算键
+      "settle.btn",
+      -- ★ 返回弹窗四键
+      "modal.exit", "modal.save", "modal.settle", "modal.cancel",
+      -- ★ 通关弹窗四键
+      "result.next", "result.exit", "result.home", "result.settle",
+      -- ★ 线索区上下箭头（老路径，留着）
+      "clues.up", "clues.down",
+      -- ★ 通关弹窗的**分析标语区**（★ 每关一颗 ✓ 你要填的就是这四颗 ✓）
+      --   ★ 父级 `win`、子控件 `win.1..win.4`（= 第 1..4 关 ✓ 顺序与关卡注册表一致 ✓）
+      --   ★ 脚本只在"它是空的"时候写兜底 ✓ ⇒ ★ 你填了就以你的为准 ✓
+      "win.1", "win.2", "win.3", "win.4",
+    },
+    widgets     = false,   -- ★★★★★★★★ 2026-10-15 **关掉：四个方块删掉** ✗✓✓
+    --
+    --   ★★★ 用户原话 ✓：「**把原来四个方块删掉**」✓（★ 功能已通过的下一句 ✓）
+    --
+    --   ★ 那四个方块是什么 ✓：★ 脚本**运行时**用容器模板现建的
+    --     `selbar`（容器）＋ `selbtn.1..4`（四个按钮）✓
+    --     ★ 它们是"卡片还点不动"那段时间**唯一能完成选关的路** ✓
+    --       （★ 102 那轮验证过"能完成选关" ✓ 见旧注释 ✓）
+    --   ★★ 为什么现在可以删 ✓：★ **选关卡片已经能点了** ✓
+    --     （★ 用户真机确认「功能通过了」✓ —— 命中层被 `"hit."` 前缀藏掉那件事修好之后 ✓）
+    --     ⇒ ★ 两套入口并存 ⇒ ★ 玩家会看到**重复的四块白方块**压在卡片上 ✓
+    --
+    --   ★★ 关掉这一个开关 = **两件事一起停** ✓（main.lua 里两处都读它 ✓）：
+    --     · `main.lua:560` ⇒ **不再调 `ensure_widgets`** ✓ ⇒ `selbar`/`selbtn.*` **根本不建** ✓
+    --     · `main.lua:1524` ⇒ `on_select` 恒假 ⇒ **不再每帧同步它们的显隐** ✓（省下每帧的 find+写 ✓）
+    --   ★ 判据 ✓：`tests/perframe_throttle.lua` §A 已改成
+    --     「**`selbar` 压根不该存在，也不该有一笔同步**」✓（★ 跟着**意图**改 ✓ 不是放宽 ✓）
+    --   ⚠️ 要回退 ✓：★ 把这一行改回 `true` 即可 ✓（脚本一个字都不用动 ✓）
+    --
+    --   ★ 顺带 ✓：★ `selbtn.*` **从来不在 `.gil` 里** ✓（实测 `list_names 370 | sel` 里没有 ✓）
+    --     ⇒ ★ 所以"删掉"就是"不再创建" ✓ ★ **不需要动存档** ✓✓
+
     stage = {
       prefab = 1073742330,   -- 「容器节点」模板（用户 2026-10-02 提供）
       parent = "stage",
@@ -474,10 +561,24 @@ local function build_adapter()
       --
       -- 前提：墙/门控件的尺寸**别手动改**，让编辑器按素材自动定（= 素材原尺寸）。
       -- 脚本第一次试玩会把基准与倍率打进日志，可以核对：
-      --   [murdoku] 边缘适配 wall.up：基准 24x8 → 目标 135x8（倍率 5.63 / 1.00）
-      edge_thickness = 8,
+      --   [murdoku] 边缘适配 wall.up：基准 80x20 → 目标 99x10（倍率 1.24 / 0.50）
+      --
+      -- ★★★★★ 2026-10-18（v266）用户原话：「**位置对了，再把门墙加粗 2 加长 4**」
+      --   ⇒ 这一版的四个数就是全部真相（改观感只动这四个，不用碰脚本逻辑）：
+      --       厚：8 → **10**（thickness，墙门同厚 ✓）
+      --       长：墙 = 格子 + 缝补 4 + **额外 4** = **格子 + 8**；门 = 格子×0.30 + **额外 4**
+      --   实机一旦再调，只改下面 4 行；`tests/wall_overlap.lua` §③ 钉着这组数 ✓
+      edge_thickness = 10,
       -- 门比墙短一点（占格子边长的比例），看起来才像"门"
-      door_length_ratio = 0.45,
+      -- ★ 2026-10-17：0.45 → **0.30**（对齐设计图：门只是墙线上的**一小段**橙标 ✓）
+      -- ★ 2026-10-18（v266）用户原话：「**门也改 0.44**」⇒ 0.30 → **0.44**（设计图实测 44.1–44.5%×格）
+      door_length_ratio = 0.44,
+      -- ★ 缝补：墙在"格子边长"之外多出的长度（相邻两格在角上重叠，填掉缝）
+      --   ★ 2026-10-18 之前是 4；v266 墙再加长 4 是通过下面的 `edge_extra_len` 实现的 ⇒ 这里保持 4
+      edge_overlap = 4,
+      -- ★ v266 用户要的「加长 4」：**墙和门一起** +4 画布 px（墙最终 = 格子 + 4 + 4；门 = 格子×0.30 + 4）
+      --   ⚠️ 不要把它并进 `edge_overlap` —— 那个只作用于墙，并进去门就加不长了 ✓
+      edge_extra_len = 4,
       -- 边缘适配的日志每个方向只打一次（调完可设 false 关掉）
       edge_fit_log = true,
 
@@ -493,6 +594,8 @@ local function build_adapter()
       --
       -- 规划理由：
       --   face  最底 —— 它是格面底图，也是"放置角色"时被换图的那张
+      --   ★ hint 2026-10-17 新增 —— 线索位置提示的**半透明底色**：压在格面之上、
+      --     **在家具图标之下**（用户要求"家具不要被提示盖住"✓ 颜色归编辑器 ✓）
       --   obj   在底图之上 —— 家具图标要能看见
       --   wall  压住底图 —— 墙贴在格子边上，必须显出来
       --   door  压住墙 —— 同一段边可能既是墙又是门，门要在墙上面
@@ -500,7 +603,25 @@ local function build_adapter()
       --   note  铅笔笔记最上 —— 玩家写的信息永远可读，不能被图挡
       layer_order = {
         "face",
+        "hint",
         "obj",
+        -- ★★★★★★★★ 2026-10-22（v301）**家具 = 最多 12 层**（第三轮美术）✗✓
+        --   第一轮 3 层（用户打回"像色块 / 跨格被拆开"）→ 第二轮 6 层 → 本轮按原作部件表逐件照搭。
+        --   用户原话：「其它家具的细节保留（包括阴影），**横桌竖桌明显需要分开做**；图层3是肯定不够了，
+        --   **你可以任意添加**」⇒ 层数上限一次给到 **12**（模板 `obj`…`obj12`）。
+        --   件数：桌 7（另有横放 h2 / 竖放 v2 两套独立美术）/ 椅 9 / 书架 12 / 植物 12 / 雕塑 8。
+        --   数据在 `lua/furn_art.lua`；12 层控件由存档模板给（`tools/gil/gen_art_containers.mjs` 的 v2 版）。
+        --   ⚠️ 老存档只有 3/6 层时，`_paint_obj` 拿到 nil 会当"还没就绪"逐帧重放（幂等，不报错）。
+        "obj2", "obj3", "obj4", "obj5", "obj6",
+        "obj7", "obj8", "obj9", "obj10", "obj11", "obj12",
+        -- ★★★★★ 2026-10-20（v283）**新增 `portrait` 层：放置的头像画在这里** ✗✓
+        --   用户原话：「现在家具图层会盖在放置的头像上，把这个问题解决」
+        --   · 旧：头像走 `image` 落在 **face（最底）** ⇒ 家具 `obj` 压在上面 ✗
+        --   · 新：头像落在 `portrait`，位置 = **obj 之上、wall 之下** ⇒ 头像压住家具、又不压墙 ✓
+        --   房间色仍留在 face（`tint` 写），所以格子底色不会丢 ✓
+        --   ⚠️ 这一层在存档里是**新加的控件**（克隆自 face，两份 content 各一份，
+        --      id 1073743800 / 1073743801，见 `tools/gil/gen_portrait_layer.mjs`）✓
+        "portrait",
         "wall.up", "wall.down", "wall.left", "wall.right",
         "door.up", "door.down", "door.left", "door.right",
         "x",
@@ -515,6 +636,119 @@ local function build_adapter()
     --   脚本只摆"自己运行时生成的控件"（格子等）。
     --   想回到"布局全由代码说了算"：改成 false。
     respect_editor_rect = true,
+
+    -- ★★★★★★★★ 2026-10-22（v302，第四轮）**图元拼法家具的运行时模板** ✗✓
+    --
+    --   用户原话：「桌子椅子植物依然没有达到参考效果，仓库里有一个能兼容千星的外部图片网站，
+    --     **你先用他把参考拼出来，再按结果文件拆解出正确拼法导入存档**」
+    --   ⇒ 用「千星奇域拼图工具」把原作图标拟合成图元（每件 151~200 条，含旋转 + 逐图元 RGBA），
+    --      结果文件由 `_work/art-tools/gen_art_records.py` 拆成 `lua/furn_art_records.lua`，
+    --      游戏里由适配层 `_paint_furn_art` **逐条运行时实例化**图片控件来画。
+    --   · `furn_prim_prefab` = 存档里「仅存为模板」的图片控件 **tpl.prim 的模板源 GUID**
+    --     （integrator 交付的 `502-一二关美术-容器-v3.gil`：模板源 #1073746302 / 母本 #1073746303 / 族 78）。
+    --     适配层优先用这个值；为 0/nil 时回退到"按名字找 tpl.prim 再读 prefabIndex"。
+    --   · `furn_prim_cap` = 每格最多几条图元（防止极端情况把帧率拖死；超出的截掉）。
+    --   · 宿容器 = 格子 `content` 下的 `furn`（502 新增，位置在 obj12 与 x 之间 ⇒
+    --     家具压住地板、但仍在墙/门/笔记/头像之下）。
+    furn_prim_prefab = 1073746302,
+    furn_prim_cap = 260,
+
+    -- ★★★★★★★★ 2026-10-22（v310，第十三轮）**家具模板（客户端控件模板）** ✗✓
+    --   用户：「采用模板来手搭构建，模板里放多少层都可以（一个模板引用控件只算一层），
+    --   然后像 cell 一样把模板创建出来」。
+    --   键与 `FurnArt.layout().pieces` 对齐：chair / plant / statue / shelf 单格；table 有 1/h2/v2。
+    -- ★ v316：换成 524 里"用户编辑器建的空模板"真实源 GUID（integrator 524 回执）
+    --   主路径是从 `root/things` 的引用控件读 `referencedPrefabIndex`；这张表只作回退。
+    furn_tpl_prefab = {
+      chair    = 1073747134,
+      plant    = 1073747135,
+      statue   = 1073747136,
+      table    = 1073747137,
+      table_h2 = 1073747138,
+      table_v2 = 1073747139,
+      shelf    = 1073747140,
+      rug      = 1073747149,
+      rug_2    = 1073748252,
+      rug_3    = 1073749968,
+    },
+    furn_parent = "fart.furn",   -- 实例挂载容器（root 下，默认隐藏；关卡内由脚本打开）
+    furn_tpl_base = 108,
+    -- ★ v326：家具整体再缩小一点；地毯额外再缩小（用户要求"地毯在控件层单独额外缩小"）
+    furn_scale = 0.93,
+    furn_scale_by_kind = { rug = 0.82, rug_2 = 0.82, rug_3 = 0.82, statue = 0.85 },
+    -- ★ v327：多格地毯控件层加长（长轴恢复 0.93、短轴保持 0.93*0.82≈0.762）
+    furn_scale_axis_by_kind = {
+      rug_2 = { x = 0.93, y = 0.762 },
+      rug_3 = { x = 0.762, y = 0.93 },
+    },
+    -- ★ v320：模板 content 画布尺寸（键 = 归一化家具键）。缺省 108×108；
+    --   多格地毯模板是 216×108，竖放时实例 108×216 ⇒ 子层按 fx/fy 各向异性缩放。
+    furn_tpl_canvas = { rug_2 = { 216, 108 }, rug_3 = { 108, 216 }, table_h2 = { 216, 108 }, table_v2 = { 108, 216 } },
+
+    -- ★ 2026-10-22（v311）**模板探针**：只回答两个问题，结果全在日志（前缀 `[tplprobe]`）
+    --   ① 模板里的模板引用控件（第二层）能不能正常展开；
+    --   ② 客户端脚本能不能在运行时改引用控件引用的模板。
+    --   测试存档里把 tpl_probe 改 true；GUID 由 integrator 的 516 存档给出后填。
+    tpl_probe = false,
+    tpl_probe_ref_name = "furn",      -- 要摸的模板引用控件名（cell.1.1/content/furn）
+    tpl_probe_plant_src = 1073747081,   -- furn.plant 的**源** GUID（integrator 516 实测：引用值指向源）
+    tpl_probe_nest_src = 1073747096,    -- furn.nest 的源 GUID
+    tpl_probe_parent = "board",         -- 模板层基准画布像素（1 格 = 108px）
+
+    -- ★★★★★★★★ 2026-10-18 **家具/障碍物素材：直接写在脚本里，不新建控件** ✗✓✓
+    --
+    --   用户实测（关键判据）：「**395 是没错的**」「错误从 **396** 就存在」
+    --   —— 396 正是我第一次在**存档里新建** `things` 素材区（7 个新控件）的那一版 ✗
+    --   ⇒ 只要**不新增控件**，编辑器就不会报 "GUID 重复" ✓
+    --
+    --   ★ 家具图标本来只需要「一张图 + 一个颜色」两件事 ✓ ⇒ 放脚本里足够了 ✓
+    --   · `id`  = 官方素材 id（100001 = 白色矩形，着色后就是干净色块）
+    --   · `color` = 0xAARRGGBB（与 `imageColor` 同格式，乘算）
+    --   ★ 优先级：编辑器里若**真有** `things` / `assets` 下的同名控件，**以控件为准** ✓
+    --     （见 `Adapter:read_palette`：控件先扫，这里只补缺 ✓）
+    --   ★ 换真素材：把 `id` 换成编辑器素材库里的图即可（不用动存档）✓
+    -- ★★★★★★★★ 2026-10-22（v299）**家具 = 多层拼装（复刻原作的双层剪影美术）** ✗✓
+    --
+    --   原作 Murdoku 的家具是「base 剪影 染 obj_color_base ＋ overlay 剪影 染 obj_color_overlay」，
+    --   两色叠出体积感。官方素材库里没有俯视家具 ⇒ 我们用「官方基础形状 × 3 层」拼：
+    --     L1 = 深色外形（充当描边/木框）  L2 = 主体  L3 = 细节
+    --   层控件由存档模板给（`obj` / `obj2` / `obj3`，见 `tools/gil/gen_obj_art.mjs`）。
+    --
+    --   字段：`id` 官方素材 id；`color` = 0xAARRGGBB（**与素材乘算**，白色底板才上得去亮色）；
+    --        `w/h` = 相对格子边长的比例（缺省 1 = 铺满）；`dx/dy` = 相对格子边长的偏移
+    --        （**dy 正 = 向下**）。
+    --   ★ 第 1 层的图/色仍可在编辑器里改（`things/obj.<kind>` 优先），几何以本表为准。
+    obj_art = {
+      table = {   -- 桌子
+        { id = 100001, color = 0xFF4A3524, w = 0.9, h = 0.64 },
+        { id = 100001, color = 0xFFD4CCA0, w = 0.82, h = 0.56 },
+        { id = 100001, color = 0xFFE8E2C0, w = 0.72, h = 0.46 },
+      },
+      chair = {   -- 椅子
+        { id = 106053, color = 0xFF4A3A2A, w = 0.74, h = 0.76, dy = 0.04 },
+        { id = 106053, color = 0xFFF2EBD4, w = 0.66, h = 0.5, dy = 0.13 },
+        { id = 100001, color = 0xFFCBBE97, w = 0.62, h = 0.2, dy = -0.16 },
+      },
+      carpet = {   -- 地毯
+        { id = 100001, color = 0xFF9C8A63, w = 0.92, h = 0.92 },
+        { id = 100001, color = 0xFFDCCBAA, w = 0.84, h = 0.84 },
+      },
+      plant = {   -- 植物
+        { id = 100002, color = 0xFF3E7D3A, w = 0.64, h = 0.52, dy = -0.08 },
+        { id = 106053, color = 0xFF8A6A48, w = 0.32, h = 0.24, dy = 0.26 },
+        { id = 100002, color = 0xFF58A046, w = 0.34, h = 0.26, dy = -0.2 },
+      },
+      shelf = {   -- 书架
+        { id = 100001, color = 0xFF4A3524, w = 0.82, h = 0.66 },
+        { id = 100001, color = 0xFFB4874F, w = 0.76, h = 0.6 },
+        { id = 100001, color = 0xFF4A2E17, w = 0.68, h = 0.07, dy = -0.05 },
+      },
+      statue = {   -- 雕塑
+        { id = 100001, color = 0xFF4E4E56, w = 0.54, h = 0.24, dy = 0.28 },
+        { id = 105090, color = 0xFFC9C9D2, w = 0.6, h = 0.5, dy = 0.02 },
+        { id = 100002, color = 0xFFE2E2E8, w = 0.14, h = 0.1, dy = -0.22 },
+      },
+    },
 
     -- 2026-09-27 踩过：我一开始把它们加在 `cells = { … }` 里（挨着 `debug_signal`），
     -- 而 adapter 读的是 `self.cfg.debug_key` → **永远 nil** → 诊断一行都不打，
@@ -535,10 +769,8 @@ local function build_adapter()
     key_control = "root",
     key_control_fallbacks = { "board", "cell.1.1", "topbar" },
 
-    -- ★ 参照格子体检（cell.1.1）：把"类型/射线/子控件/图片来源/光标门控"逐条读出来
-    --   并给 ✅/❌ 与修法。搭界面阶段非常有用，**每个会话只打一次**。
-    --   界面搭完、验收通过之后可以改成 false 让日志干净些。
-    diagnose_cell = true,
+    -- ★ 2026-10-18（优化组 · B 类清理）：`diagnose_cell` 配置项**已删除**
+    --   （配套的适配层体检函数与 main 的调用一起删；结案证据见真机日志「这一格配好了」）
   })
 
   -- ★ 线索卡底条：每条线索一个（最多 18 条），索引 1073742333（murdoku-clue-row）。
@@ -557,7 +789,10 @@ local function build_adapter()
   -- 离线测试钩子：让 tests/entry_smoke.lua 能直接驱动适配层
   -- （验调色板 / 染色 / 墙门这些需要构造场景的东西）。
   -- 生产环境无副作用：只是一个可读的全局引用，名字够独特不会撞上游戏自己的全局。
-  __murdoku_debug = { adapter = adapter, Murdoku = Murdoku }
+  __murdoku_debug = { adapter = adapter, Murdoku = Murdoku, beacon = beacon }
+  -- ★ 2026-10-18（优化组 · 缺陷 3）：把 `beacon` 也挂上，供 `tests/optin_gates.lua` 做**双向**断言 ——
+  --   `beacon` 是**文件局部函数**，不挂出来就只能靠"跑一次 OnInit 看尺寸有没有变"间接观察，
+  --   那样测不到"打开开关后仍然会跑"这一半。挂一个**只读引用**，生产行为零变化。
   return adapter
 end
 
@@ -777,6 +1012,272 @@ end
 
 -- ===== 官方生命周期 =====
 
+-- ★★★★★★★★ 2026-10-21（v287）**教程浮层（`teach.*`）的接线：第一关 / 第二关各一套** ✗✓✓
+--
+--   控件在存档里（`teach.*`，工具 `tools/gil/gen_tutorial_teach.mjs`，**仍然全部从主档母本克隆**）：
+--     · `teach.l1` / `teach.l2`  两关各一套面板（页面本体 + 上一页 / 下一页 / 关闭；**没有页签**）
+--     · `teach.text.l1` / `teach.text.l2`  文本区域（标题 / 三页正文 / 按钮字）
+--   ★ 文字**全部由编辑器填**（`.gil` 存不下文字，工作约定见 `docs/交接报告.md`）⇒ **本处一个字都不写**，
+--     只做显隐与绑定。**本处也一个控件都不创建**（用户明确的规矩）。
+--   ★ 两关**各自一个实例、各自一段配置**（`TUT_LEVELS`）：内容以后会分叉，不许共用一套。
+--
+--   这里做四件事：懒加载模块 → 两套实例都 init（先各自藏起来）→ 进到哪一关就弹哪一套 → 各跑一次自检。
+--   ★ 自检：`lua/tut_verify.lua` 把"控件在不在 / 重名 / 父对不对 / 尺寸 0"打进日志首屏：
+--       通过 `[tut] 自检 OK N/N`；失败 `[tut] 自检 FAIL N 项: 名字=缺失; …`（只读，不改任何状态）
+--
+--   ⚠️ 为什么放在 OnUpdate 里懒初始化：`OnInit` 时控件树还是空的（本项目反复验证过），
+--      在 OnInit 里 init 必定拿到 nil，然后**再也不会重试**。
+local tutorial_mod_state = nil   -- nil = 还没试 / false = 加载失败 / table = 模块
+local tutorial_inst = {}         -- tag → 实例（每关一个，互不影响）
+local tutorial_seen = {}         -- 关卡 id → 这一局已经弹过
+local tutorial_checked = {}      -- tag → 已经跑过自检
+local tutorial_wait = {}         -- tag → 等了多少帧
+
+-- ★ v289：**三套各自独立**（用户 2026-10-21 晚：首页那套保留，第一关再单独接一套，第二关本来就是自己一套）
+--   每条 = 一个实例 + 一段配置；以后哪一套要改内容/页数，只改自己那一段。
+local TUT_SETS = {
+  home = { tag = "home", root = "teach.home", text = "teach.text.home", pages = 3 },
+  l1   = { tag = "l1",   root = "teach.l1",   text = "teach.text.l1",   pages = 3 },
+  l2   = { tag = "l2",   root = "teach.l2",   text = "teach.text.l2",   pages = 3 },
+}
+
+-- 触发键 → 用哪一套：`home` = 首页；`case_001` / `case_002` = 关卡内
+-- ★ 关键：`Murdoku.current().screen == nil` 才算"真的进了关卡"；首页时 screen = "home"。
+--   v287 那版只看 level.id ⇒ 首页时 level 已经是 case_001 ⇒ 首页就把第一关那套弹掉了，
+--   真进第一关反而"已经弹过"不再弹（用户实测：首页有、第一关没有）。
+local TUT_TRIGGER = { home = "home", case_001 = "l1", case_002 = "l2" }
+
+-- ⚠️ 这里原来还有**另一份** `current_tut_key()`（v289 的"只看 cur.screen"版）。
+--   ★ v298 删掉它：`local function` 后定义者会**盖掉**先定义者 ⇒ 它是一份**死代码**，
+--     但谁要是照着它的位置改（它排在上面），改完**运行时一点效果都没有** ——
+--     这正是"连续两版改错方向"的现成陷阱。**这个文件里 current_tut_key 只允许有一处定义**（见下方 v298 版）。
+
+local function tutorial_module()
+  if tutorial_mod_state ~= nil then
+    if tutorial_mod_state == false then return nil end
+    return tutorial_mod_state
+  end
+  local ok, mod = pcall(require, "tutorial_ui")
+  if not ok or type(mod) ~= "table" or type(mod.new) ~= "function" then
+    if printerr then printerr("[murdoku] 教程模块没加载上：" .. tostring(mod)) end
+    tutorial_mod_state = false     -- 记"试过了"，避免每帧重试刷屏
+    return nil
+  end
+  tutorial_mod_state = mod
+  return mod
+end
+
+-- 取某一关的实例（第一次调用时创建；控件没进树时 init 自己会早退，下次再来）
+local function tutorial_instance(spec)
+  if spec == nil then return nil end
+  local inst = tutorial_inst[spec.tag]
+  if inst ~= nil then return inst end
+  local mod = tutorial_module()
+  if mod == nil or adapter == nil then return nil end
+  local ok, made = pcall(function()
+    local content = (type(mod.CONTENT) == "table") and mod.CONTENT[spec.tag] or nil
+    return mod.new(adapter, { tag = spec.tag, root = spec.root, text = spec.text, pages = spec.pages, content = content })
+  end)
+  if not ok or type(made) ~= "table" then
+    if printerr then printerr("[murdoku] 教程实例建不出来（" .. tostring(spec.tag) .. "）：" .. tostring(made)) end
+    return nil
+  end
+  tutorial_inst[spec.tag] = made
+  return made
+end
+
+-- 教程控件自检（每关一次；全程 pcall，失败只影响"日志少一行"，绝不影响游戏）
+local function verify_tutorial_once(tag)
+  if tutorial_checked[tag] then return end
+  tutorial_checked[tag] = true
+  pcall(function()
+    local ok, mod = pcall(require, "tut_verify")
+    if not ok or type(mod) ~= "table" or type(mod.check) ~= "function" then
+      if printerr then printerr("[murdoku] 自检模块没加载上：" .. tostring(mod)) end
+      return
+    end
+    mod.check({
+      find = function(n) return adapter:find(n) end,
+      -- 注入根表 ⇒ 自检能查全树的"同名多条"（不注入就只能查同级，会在日志里降级说明）
+      roots = function()
+        if game == nil or game.GetClientUIRoots == nil then return nil end
+        return game.GetClientUIRoots()
+      end,
+    })
+  end)
+end
+
+-- ★ v292：**"现在到底在哪一屏"以【看得见的控件】为准**
+--
+--   真机实测（用户 2026-10-21 04:59 日志）：开局那条 `on_start` 之后 `cur.screen` 是 nil，
+--   但屏幕上其实还是**首页**（随后玩家点了 `home.select` 进选关）。
+--   ⇒ v289 直接信 `cur.screen == nil` ⇒ 在首页就把第一关那套弹了一次（然后立刻关掉），
+--     等真进第一关时它已经"弹过" ⇒ 第一关永远看不到教程。
+--   修法：首页判据改成"**`home` 控件可见**"（这是渲染事实，不依赖状态字段的时序），
+--        再叠加"触发键稳定 N 帧才动手"，两道一起挡住过渡期。
+--
+-- ★★★ v298（2026-10-21 22:31 真机日志的证据，用户要求）：**board/stage 不能当"进了关卡"的判据** ✗
+--   · 日志开头**首页阶段**就有 `★ 几何归编辑器：stage 回读 584.0x584.0`
+--     ⇒ `board` / `stage` 是**全屏常驻容器**，首页 / 选关页也**存在** ⇒ "存在即可见"⇒ 一律误判成关卡内
+--   · 选关页时：`cur.screen` 仍是 **nil**、`home` **已隐藏**
+--     ⇒ 所以既不能靠 screen，也不能靠 home 的否定面来判"在哪一屏"
+--   · 选关页**独有**、且**读得到**的是 `select.card.1`（日志里有 `选关卡框 select.card.1：w=209.0 …`）
+--     ⚠️ 而容器名 `select` 本身 `find` 不到（项目自己的诊断也印 `select=**找不到**`）⇒ 只能判**子控件**
+--   ⇒ v298 判据（顺序即优先级，全部以"**可见**"为准，取不到一律按不可见）：
+--       ① `home` 可见                     ⇒ "home"
+--       ② `select.card.1`（退而 `select.title`）可见 ⇒ **选关页 ⇒ nil（不弹）**
+--       ③ `clues` 或 `board` 可见          ⇒ 才认为在关卡里 ⇒ `tostring(cur.level.id)`
+--       ④ 其它                            ⇒ nil
+local function tut_visible(name)
+  if adapter == nil or name == nil then return false end
+  local c = nil
+  pcall(function() c = adapter:find(name) end)
+  if c == nil then return false end
+  local v = nil
+  pcall(function() v = c.visible end)
+  return v == true
+end
+
+local function tutorial_home_visible()
+  return tut_visible("home")
+end
+
+local TUT_STABLE_NEED = 20   -- 触发键连续稳定 20 帧（≈0.67s）才弹，躲开切屏过渡
+local TUT_KEEP_NEED = 10     -- 面板出现后还要稳 10 帧才算"真的弹成了"（才记 seen）
+local tut_key_prev = nil
+local tut_key_frames = 0
+local tut_shown_frames = 0
+local tut_key_logged = false -- v298：触发键诊断日志是否已经打过（首帧那行也要打）
+local tut_miss_frames = {}   -- tag -> 连续不该弹的帧数（>=10 才关，抗抖动）
+
+-- 当前触发键 + 一份**判据快照**（诊断日志用）。
+--   ★ 同一帧只读一次可见性 ⇒ "日志里看到的值"和"实际用来判的值"**一定是同一份**（不做二次读）。
+--   ★ 返回 `(key, probe)`；`key == nil` = 现在不该弹任何一套。
+local function tut_key_and_probe()
+  local cur = nil
+  pcall(function()
+    if Murdoku ~= nil and Murdoku.current ~= nil then cur = Murdoku.current() end
+  end)
+
+  -- 三个判据各读一次（`tut_visible` 内部全 pcall，取不到 = false）
+  local home  = tut_visible("home")
+  local card1 = tut_visible("select.card.1")
+  if not card1 then card1 = tut_visible("select.title") end   -- 兜底：选关页标题，同样是选关页独有
+  local clues = tut_visible("clues")
+  local board = tut_visible("board")
+
+  local scr, id = nil, nil
+  if cur ~= nil then
+    pcall(function() scr = cur.screen end)
+    pcall(function() id = cur.level and cur.level.id end)
+  end
+
+  local key = nil
+  if cur ~= nil then
+    if home then
+      key = "home"                       -- ① 首页
+    elseif card1 then
+      key = nil                          -- ② 选关页：**不弹**（log 里 card1=true 一眼能看出来）
+    elseif clues or board then
+      if id ~= nil then key = tostring(id) end   -- ③ 关卡内
+    end
+    -- ④ 其它（过渡态 / 未知屏）：key 保持 nil
+  end
+
+  return key, { home = home, card1 = card1, clues = clues, board = board, scr = scr, id = id }
+end
+
+-- 当前触发键（拿不到返回 nil）—— 对外保持这个名字：本文件里**只有这一处定义**。
+--   ★ 判据快照随手存进 `tut_last_probe`：调用方要打诊断日志就读它，
+--     **不要为日志再读一次可见性**（否则"日志里的值"和"实际判的值"可能不是同一帧的）。
+local tut_last_probe = nil
+local function current_tut_key()
+  local key, probe = tut_key_and_probe()
+  tut_last_probe = probe
+  return key
+end
+
+local function tick_tutorial()
+  if adapter == nil then return end
+  if tutorial_module() == nil then return end
+
+  -- ① 三套实例都做惰性 init：谁先就绪谁先被藏起来（避免教程面板在别的界面露出来）
+  for _, spec in pairs(TUT_SETS) do
+    local inst = tutorial_instance(spec)
+    if inst ~= nil and not inst.inited then
+      pcall(function() inst:init() end)
+      if not inst.inited then
+        -- ★ 兜底：根容器迟迟没进树 ⇒ 这条失败路径原来是纯静默的；约 2 秒后照样跑一次自检
+        tutorial_wait[spec.tag] = (tutorial_wait[spec.tag] or 0) + 1
+        if tutorial_wait[spec.tag] >= 120 then verify_tutorial_once(spec.tag) end
+      else
+        verify_tutorial_once(spec.tag)
+      end
+    end
+  end
+
+  -- ② 只在"该出现的那一屏"弹对应那一套；离开就收起
+  --   ★ v292：**触发键稳定 20 帧才动手**，并且**面板稳 10 帧才记 seen**
+  --     真机实测：开局 `cur.screen` 会短暂为 nil 而屏幕其实还是首页 ⇒ 旧逻辑在那一刻就把 l1 弹掉并记 seen，
+  --     真进第一关时反而"已弹过"，第一关永远看不到教程。
+  local key, probe = nil, nil
+  if started then
+    key = current_tut_key()          -- ★ 唯一入口：判据在 `tut_key_and_probe` 里
+    probe = tut_last_probe           -- ★ 同一帧的那份快照（诊断日志用，不二次读）
+  end
+  local key_changed = (key ~= tut_key_prev)
+  if not key_changed then
+    tut_key_frames = tut_key_frames + 1
+  else
+    tut_key_prev = key
+    tut_key_frames = 0
+    tut_shown_frames = 0
+  end
+  -- ★★★ v298 诊断（用户要求"一行定位"）：触发键**一变**就打一行；**首次评估**（就算结果是 nil）也打一行。
+  --   值全部来自这一帧**运行时读到的**可见性/字段（`probe` 与"实际用来判的"是同一份，不二次读）。
+  --   真机日志里看到的样子：
+  --     [tutorial] 触发键 -> home  (home=true card1=false clues=false board=false scr=nil)
+  --     [tutorial] 触发键 -> nil   (home=false card1=true clues=false board=false scr=nil)   ← 选关页：不弹
+  --     [tutorial] 触发键 -> case_001  (home=false card1=false clues=true board=true scr=nil)  ← 关卡内
+  if print and probe ~= nil and (key_changed or not tut_key_logged) then
+    tut_key_logged = true
+    print("[tutorial] 触发键 -> " .. tostring(key)
+      .. "  (home=" .. tostring(probe.home)
+      .. " card1=" .. tostring(probe.card1)
+      .. " clues=" .. tostring(probe.clues)
+      .. " board=" .. tostring(probe.board)
+      .. " scr=" .. tostring(probe.scr) .. ")")
+  end
+  local want_tag = nil
+  if key ~= nil and tut_key_frames >= TUT_STABLE_NEED then want_tag = TUT_TRIGGER[key] end
+  for tag, spec in pairs(TUT_SETS) do
+    local inst = tutorial_inst[spec.tag]
+    if inst ~= nil and inst.inited then
+      if want_tag == tag then
+        tut_miss_frames[tag] = 0
+        -- ★ v293：**只有"还没弹过"才自动打开** —— 否则玩家点了关闭，下一帧又被自动打开（真机实测：关不掉）
+        if not tutorial_seen[tag] then
+          if not inst.open then
+            pcall(function() inst:open_ui() end)
+          end
+          tut_shown_frames = tut_shown_frames + 1
+          -- 面板真的稳住了才记"已弹过"（弹一下就被关不记账 —— 那是 v291 第一关丢失的形态）
+          if tut_shown_frames >= TUT_KEEP_NEED then tutorial_seen[tag] = true end
+        end
+      else
+        -- ★ v293：**抗抖动**：连续 10 帧都不是这一套才关；单帧闪烁不关
+        tut_miss_frames[tag] = (tut_miss_frames[tag] or 0) + 1
+        if inst.open and tut_miss_frames[tag] >= TUT_KEEP_NEED then
+          pcall(function() inst:close() end)
+          tut_miss_frames[tag] = 0
+        end
+      end
+    end
+  end
+end
+
+local TPL_PROBE_DONE = false   -- v311 模板探针只跑一次
+
 function OnInit()
   -- ① 逐帧更新开关（OnUpdate 全靠它）—— 内部已 pcall
   pcall(enable_update)
@@ -851,7 +1352,30 @@ function OnEnable() end
 function OnDisable() end
 
 function OnUpdate(dt)
+  -- ★ 2026-10-22（v311/v312）**模板探针**：等格子实例建出来之后跑一次（OnInit 时格子还没建）。
+  --   结果只在日志（前缀 `[tplprobe]`）；配置项在 build_adapter 的 cfg 表里（`adapter.cfg`）。
+  if not TPL_PROBE_DONE and adapter ~= nil then
+    local acfg = adapter.cfg
+    if acfg ~= nil and acfg.tpl_probe then
+      local cell = nil
+      pcall(function() cell = adapter:find("cell.1.1") end)
+      if cell ~= nil then
+        TPL_PROBE_DONE = true
+        pcall(function()
+          local okp, probe = pcall(require, "tpl_probe")
+          if okp and probe ~= nil and probe.run ~= nil then
+            pcall(probe.run, acfg)
+          elseif print then
+            print("[tplprobe] 载入失败：" .. tostring(probe))
+          end
+        end)
+      end
+    end
+  end
+
   if LOAD_ERR ~= nil or Murdoku == nil then return end
+  -- ★ v284：教程浮层的懒初始化 / 首次弹出（内部全程 pcall，失败只影响教程）
+  pcall(tick_tutorial)
   if not started then
     -- 惰性重试：等客户端控件容器/控件就绪后再开局
     retry_elapsed = retry_elapsed + (dt or 0)
@@ -899,3 +1423,4 @@ function OnDestroy()
   Murdoku.on_destroy()
   if print then print("[murdoku] destroyed") end
 end
+

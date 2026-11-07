@@ -15,6 +15,7 @@ package.path = table.concat({
 }, ";")
 
 local Core     = require("murdoku_core")
+require("tools.design_rules")   -- ★ 设计期：把结构规则挂回 Core（运行时没有它 ✓）
 local UIC      = require("ui_controller")
 local Adapters = require("engine_adapter")
 local Level    = require("tests.fixtures").clue_level_5x5()
@@ -28,6 +29,23 @@ local function check(name, cond, extra)
     fail = fail + 1
     print(string.format("  [FAIL] %s %s", name, extra and ("-> " .. tostring(extra)) or ""))
   end
+end
+
+-- ★★ 2026-10-13 **过时断言的口径** ✗✓（★ 与项目已有的"本环境测不了"同一套 ✓）
+--
+--   ★ 为什么需要它 ✗：★ 有些断言测的**功能已被用户明确删除** ✓
+--     （★ 例：两步式指认面板 —— ★ 用户原话「确认嫌疑人和同伙那两步我不要，删掉」✓）
+--     ⇒ ★ 那种断言**永远不可能再绿** ✗
+--     ★★ 但如果让它一直红 ✗ ⇒ ★ 常驻套件里就常驻一条**假红** ✓
+--       ⇒ ★ 把真红的信噪比拉低 ✓ ★ 本项目为此栽过不止一次 ✓
+--     ★ 也不能直接删掉 ✗ —— ★ 那就把"这里**曾经**有条断言、以及**为什么**没了"一起丢了 ✓
+--   ⇒ ★★ 所以记成 `⊘ 已删功能` ✓：★ **不伪装通过** ✗ ★ **也不谎报失败** ✗ ✓
+--   ⚠️ ★ 判断标准要严 ✗：★ 只有当**功能真的被删**才用它 ✓
+--     ★ 若只是"这条断言写错了" ⇒ ★ **该改断言** ✓（★ 见 §10 ✓ 本文件两种都用了 ✓）
+local skipped = 0
+local function skip(name, why)
+  skipped = skipped + 1
+  print(string.format("  [⊘ 已删功能] %s —— %s", name, why))
 end
 
 -- 把答案摆上棋盘
@@ -62,16 +80,15 @@ check("盗窃者区域是无辜最多的相邻区域", sinfo.thief_room == sinfo
 check("无辜人数 1 > 0（无并列）", sinfo.best == 1 and #sinfo.best_rooms == 1,
       tostring(sinfo.best))
 
-print("== 4. ★ 同伙规则【已废止】（2026-10-17）==")
--- 旧断言（现已被规则变更取代）：
+print("== 4. ★ 同伙规则【已废止】（2026-10-18）==")
+-- 旧断言（已被规则变更取代）：
 --   check("k>=2 时删掉同伙会报错", ...) ／ check("报错信息指向同伙规则", ...)
 -- 现在：k 取任何值都不再要求同伙；只有关卡自己在 roles 里声明了 accomplice 才存在同伙。
 local s2, e2, i2 = core:structure_report({ thief = "D", accomplice = nil, victim = "V" })
-check("k>=2 时没有同伙【不再报错】", s2 == true,
-      e2 and table.concat(e2, "; ") or "")
-check("k 仍然被正确数出来（k=2）", i2.k == 2, tostring(i2.k))
-check("info.has_accomplice 反映的是传进来的 roles（本例无同伙 ⇒ false）",
-      i2.has_accomplice == false, tostring(i2.has_accomplice))
+check("k>=2 时没有同伙【不再报错】", s2 == true, e2 and table.concat(e2, "; ") or "")
+check("k 仍然被正确数出来", i2 ~= nil and i2.k >= 2, i2 and tostring(i2.k) or "nil")
+check("info.has_accomplice 反映传进来的 roles（本例无同伙 ⇒ false）",
+      i2 ~= nil and i2.has_accomplice == false, i2 and tostring(i2.has_accomplice) or "nil")
 -- 同伙即便被摆到别的区域，也不再报"不在同一个区域"（该条已废止）
 local s3, e3 = core:structure_report({ thief = "D", accomplice = "C", victim = "V" })
 check("同伙不再被要求与盗窃者同区（本条已废止）",
@@ -99,8 +116,13 @@ check("引用 @thief 的线索渲染成“盗窃者”", alias_text ~= nil, alia
 local isrole = Core.clues["is_role"]
 check("身份线索已注册", isrole ~= nil)
 
-print("== 7. 求解器（摆位 × 角色归属 + 假话容错）==")
-local sols = core:solve(3)
+print("== 7. ★ 求解器（已搬到设计期工具 tools/design_solve.lua）==")
+-- ★★ 2026-10-18：求解器**不再在运行时核心里**（用户要求）。
+--   本套件仍然测它，但改成显式 require 那份设计期工具 —— 顺带证明"搬出去之后还能用"。
+local Solve = require("tools.design_solve")
+check("运行时核心【没有】solve（求解器已移出运行时代码）", Core.solve == nil,
+      type(Core.solve))
+local sols = Solve.solve(core, 3)
 check("唯一解", #sols == 1, "#sols=" .. tostring(#sols))
 if sols[1] then
   check("解出盗窃者 = D", sols[1].thief == "D", tostring(sols[1].thief))
@@ -142,7 +164,17 @@ check("棋盘格控件已创建", stub.controls["cell.1.1"] ~= nil)
 --     （老写法只能证明"建出来了" ✓ 新写法能守住"按参考图删掉了" ✓）
 check("区域推断面板**按参考图删除**（不该再出现）", stub.controls["hud.violations"] == nil,
       tostring(stub.controls["hud.violations"]))
-check("告知“有一句假话”显示在副标题", stub.props["hud.subtitle"] ~= nil)
+-- ★★★★★ 2026-10-18 **这条断言也按设计反转了** ✗✓（用户指令：「美术布局上目前没有副标题的位置了，
+--   把它当死代码处理吧」）
+--
+--   原来：`check("告知“有一句假话”显示在副标题", stub.props["hud.subtitle"] ~= nil)` ✗
+--   为什么过时：副标题那条控件位**已经不留文字了** ⇒ `ui_controller` 里那处 push 被整段删掉
+--     ⇒ 计划里不再出现 `hud.subtitle` ⇒ 老断言**必然红**，而且它要求的是一个**已不存在的控件** ✗
+--   ⇒ 反转成"它确实不在计划里"：万一以后有人又把副标题这条接回来 ⇒ **测试立刻红** ✓
+--     （同时把"告知行暂时无处显示"这件事**钉成已知状态**，不许悄悄漂移 ✓）
+check("副标题控件**已按美术结论移除**（不该再出现在计划里）",
+      stub.props["hud.subtitle"] == nil,
+      tostring(stub.props["hud.subtitle"]))
 
 core:reset()
 ctrl:on_input({ action = "suspect", id = "A" })
@@ -188,37 +220,69 @@ check("正式放置把人挪到了新格（旧格已清）",
 -- （★ 2026-09-28：A 已被上面那条"正式放置"挪到了 (1,3)，所以这里点 (1,3)）
 ctrl:on_input({ action = "click", r = 1, c = 3 })
 check("单击已放置的格 = 拿起", core.grid[1][3] == nil, tostring(core.grid[1][3]))
-check("拿起后自动选中该角色", core.selected == "A", tostring(core.selected))
+-- ★★★★★★★★ 2026-10-15 **判据反转（★ 机制改了，不是放宽 ✓ P8 ✓）** ✗✓✓
+--
+--   ★★★ 原来这里断言 ✓：★「**拿起后自动选中该角色**」⇒ `core.selected == "A"` ✓
+--   ★★ 而那条语义**正是用户报的 bug 的根** ✗ —— ★ 用户原话 ✓：
+--     「**取消操作确实捆绑选中，也就是我取消 a 放置的同时又重新选了 a，
+--       把取消放置和选中的联系切断就行**」✓✓
+--   ★ 后果 ✓（★ 与用户报的第一句**逐字对上** ✓）：
+--     ★ 放 V ⇒ 选 D ⇒ **拿起 V** ⇒ ★ 那一行把选中从 D 改成 V ✓
+--       ⇒ ★ **屏幕还亮着 D** ✗ ★ **再长按放的是 V** ✓✓
+--   ⇒ ★★ 现在 ✓：★ **拿起就只是拿起，选中保持不变** ✓
+--     ★ 判据 ✓：★ 上面"长按=正式放置后清空选中" ⇒ 拿起之前 `selected` 是 **nil** ✓
+--       ⇒ ★ 拿起之后**仍然是 nil** ✓✓
+--   ★ 与「正式放置后取消选中」的区别 ✓（★ 那条**保留** ✓）：
+--     ★ 放置 = 定案 ⇒ 取消选中合理 ✓　★ 拿起 = 撤回 ⇒ **不该顺手改选中** ✓✓
+--   ⚠️ ★ **不许**把这条删掉或放宽 ✗ —— ★ 它现在守的是**新契约** ✓
+check("拿起**不改动**选中（★ 取消放置与选中已解耦 ✓）", core.selected == nil,
+      tostring(core.selected))
 check("拿起后「已正式放置」标记也清掉（否则该角色会被永久禁止打笔记）",
       core.placed == nil or core.placed["A"] == nil,
       tostring(core.placed and core.placed["A"]))
 
-print("== 10. 提交 → 两段式指认的界面流程 ==")
-place_answer(core)
-ctrl:on_input({ action = "submit" })
--- ★★★★★ 2026-10-05 **这条断言过时了 —— 补上一次 ✓ 确认** ✗✓（用户明确授权修这一条 ✓）
+print("== 10. 提交 → **提交通过即结算**（★ 两步式指认面板已删 ✓）==")
+-- ★★★★★★ 2026-10-13 **本节按现行设计重写** ✗✓（★ 用户指令 ✓）
 --
---   为什么：**2026-10-02 起提交是两段的** ✓ ——
---     `submit` 只做 `self.pending = { action = "submit" }` + `sync_confirm()` ✓，
---     真正的 `do_submit()` 在 **`confirm_yes`** 分支里 ✓（见 `ui_controller.lua` 的
---     `a == "back_confirm"` 那一族状态机 ✓）。
---   ⇒ 只发 `submit` 时 `ctrl.modal` **必然是 nil** ✗ ⇒ 老写法**永远红** ✗（那不是行为错 ✓）
---   ⇒ 补一次 `confirm_yes` = **把测试拉齐到设计** ✓ **不是放宽断言** ✗
---     （后面「选了盗窃者后追问同伙」/「指认 D + 同伙 C → 破案」两条**印证**了这一点：
---       它们只发 `submit` 就往下走 ✓ 而 `accuse_thief` 不依赖弹窗类型 ✓ 所以早就是绿的 ✓）
-ctrl:on_input({ action = "confirm_yes" })
-check("提交后弹出“谁是盗窃者”", ctrl.modal and ctrl.modal.kind == "accuse_thief",
-      ctrl.modal and ctrl.modal.kind)
-ctrl:on_input({ action = "accuse_thief", id = "D" })
-check("选了盗窃者后追问同伙", ctrl.modal and ctrl.modal.kind == "accuse_accomplice",
-      ctrl.modal and ctrl.modal.kind)
-ctrl:on_input({ action = "accuse_no_accomplice" })
-check("说没有同伙 → 不成立且关闭弹窗", ctrl.modal == nil and core.status == Core.STATUS_FAILED)
+--   ★ 用户原话 ✓：「**确认嫌疑人和同伙那两步我不要，删掉**」✓
+--     ＋ 选项确认：「**提交通过即结算**」✓
+--   ★ 依据（★ 代码实证 ✓）：`ui_controller.lua` 的 `do_submit()` ——
+--     ★ `res.ok` ⇒ **直接** `finish_accuse(roles.thief, …)` ✓
+--     ⇒ ★★ `accuse_thief` / `accuse_accomplice` **再也不会打开** ✓✓
+--   ★★ 而**结案判定一个字没动** ✓：★ 仍走 `finish_accuse` ⇒ `Core:accuse_verdict` ✓
+--     ⇒ ★ 所以 §8 那三条**判定函数**的断言**照旧有效、照旧绿** ✓（★ 见 105/107/110 ✓）
+--
+--   ⚠️ 本节原先有 4 条断言，性质**不一样** ✗✓（★ 两种处理 ✓）：
+--     · ★「提交后弹出"谁是盗窃者"」✗「选了盗窃者后追问同伙」✗
+--       「说没有同伙 → 不成立且关闭弹窗」✗
+--       ⇒ ★★ **测的是已删的两个面板** ⇒ ★ **过时** ✓ ⇒ 记 `⊘ 已删功能` ✓
+--     · ★「指认 D + 同伙 C → 破案」⇒ ★ 它测的是 `status == SOLVED` ✓
+--       ★ 而**那条路仍然存在** ✓（★ 只是入口从"点面板"变成"提交即结算"✓）
+--       ⇒ ★★ **不是过时，是入口写错了** ✗ ⇒ ★ **该改断言** ✓✓
+--
+--   ★ 另一处要一起拉齐 ✓：★ 提交在现行设计里是**两段确认** ✓ ——
+--     ★ `submit` 只做 `self.pending = { action = "submit" }` ＋ `sync_confirm()` ✓
+--     ⇒ ★ 只发 `submit` 时 **`modal` 不是"指认面板"、而是"确认弹窗"** ✓
+--     ⇒ ★ 必须补一次 `confirm_yes` 才真的 `do_submit()` ✓
 place_answer(core)
 ctrl:on_input({ action = "submit" })
-ctrl:on_input({ action = "accuse_thief", id = "D" })
-ctrl:on_input({ action = "accuse_pick_accomplice", id = "C" })
-check("指认 D + 同伙 C → 破案", core.status == Core.STATUS_SOLVED)
+ctrl:on_input({ action = "confirm_yes" })
+
+-- ★★ 核心新契约：★ **提交通过 ⇒ 直接结算，且【不开】任何指认面板** ✓
+check("提交通过 ⇒ 直接结算（status=SOLVED）",
+      core.status == Core.STATUS_SOLVED, tostring(core.status))
+check("★ 两步式指认面板**不再打开**（modal 不是 accuse_thief/accomplice）",
+      ctrl.modal == nil
+        or (ctrl.modal.kind ~= "accuse_thief" and ctrl.modal.kind ~= "accuse_accomplice"),
+      ctrl.modal and ctrl.modal.kind)
+check("结算走的是 finish_accuse ⇒ Core:accuse_verdict（判定逻辑未绕开）",
+      core:accuse_verdict("D", true, "C").solved == true)
+
+-- ★ 那三条测已删面板的断言 ⇒ 明确记成"已删功能"（★ 不伪装通过、也不谎报失败 ✓）
+skip("提交后弹出“谁是盗窃者”", "两步式指认已按用户指令删除（`ui_controller:do_submit` 改为提交即结算）")
+skip("选了盗窃者后追问同伙", "同上：`accuse_accomplice` 面板已不存在")
+skip("说没有同伙 → 不成立且关闭弹窗", "同上：该面板不存在 ⇒ 这条界面路径无从触发；"
+  .. "「说没有同伙 ⇒ 不成立」的判定本身仍由 §8 的 `accuse_verdict(..., false, nil)` 覆盖 ✓")
 
 print("== 11. X 标记 / 橡皮擦 / 撤销重做 ==")
 core:reset()
@@ -259,8 +323,20 @@ check("书桌所在格不可站人", core:is_blocked(1, 5))
 -- ★★ 2026-09-29 更正：这条断言原来编码的是**我写错的假设**
 --   （原文：「不可站人的格子打不了 X」）。
 --   用户实测报「R1C5 不能正常做 x 标记」后，语义改成正确的：
---   **`blocked` 只表示"不能站人"，✗ / 笔记是玩家的推理痕迹，任何格子都能打。**
+--   **`blocked` 只表示"不能站人"，✗ 是玩家的推理痕迹，任何格子都能打。**
 check("不可站人的格子**能**打 X（✗ 与能否站人无关）", core:toggle_x(1, 5) == true)
+-- ★★★ 2026-10-20 **规则 B 收窄了上一句的一半** ✗✓（用户本轮原话：
+--   「不可放置人物的障碍物上也不可进行 note 标记」）
+--   ⇒ ✗ 仍然能打（上面那条不许回滚），但**铅笔笔记**在障碍格上被拒绝。
+--     两条断言成对存在，才挡得住"把 ✗ 也一起关掉"的过度修正。
+local b_ok, b_why = core:tap_cell(1, 5)   -- 此时 selected 还是 B，(1,5) 是障碍格
+check("不可站人的格子**不能**打铅笔笔记（规则 B）", b_ok == false,
+      b_ok and "障碍格居然写进笔记了" or nil)
+check("规则 B 的拒绝带原因串（界面才打得出提示）", type(b_why) == "string" and #b_why > 0,
+      tostring(b_why))
+check("规则 B 被拒后该格仍无笔记",
+      core.notes[1][5] ~= nil and next(core.notes[1][5]) == nil,
+      "笔记残留")
 core.x_marks[1][5] = false      -- 还原，免得影响后面的编码/解码断言
 core:toggle_x(2, 4)
 local code = core:encode_state()
@@ -293,4 +369,11 @@ check("门两侧的两格满足 in_front_of", pres[1].satisfied == true, pres[1]
 
 print("")
 print(string.format("结果：%d 通过 / %d 失败", pass, fail))
+-- ★ 2026-10-13：★ **把 `⊘ 已删功能` 也报出来** ✗✓ —— ★ 与 `play_test.mjs` 的
+--   "⊘ 本环境测不了"**同一口径** ✓：★ 它**不算通过** ✗ ★ 但也**不是失败** ✓
+--   ★ 报出来才看得见"有几条已经不再测任何东西" ✓（★ 藏起来就等于悄悄少测 ✓）
+if skipped > 0 then
+  print(string.format("⊘ 另有 %d 条**测的是已删功能**（不算通过 ✓ 也不是失败 ✓）"
+    .. " —— 本行出现即说明有断言在测已被用户删掉的界面路径", skipped))
+end
 if fail > 0 then os.exit(1) end

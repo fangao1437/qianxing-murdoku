@@ -1,0 +1,263 @@
+--[[ tests/furn_newarch.lua —— v315 新架构（用户改建的 520.1）离线断言
+
+  新架构（用户在存档里做的）：
+    · cell 模板 content 里删掉 face/obj/furn，只留 hint/wall/door/note/portrait/x；
+    · 新建 `cell.face` 模板 + `root/tpl.cell.face` 引用控件（用和 cell 一样的方式实例化）；
+    · 家具模板引用控件集中放在 `root/things`（furn,chair / furn.plant / …）。
+
+  本用例钉住脚本侧四件事：
+    F1 `_ensure_cell_face` 把 face 实例化进 cell 的 content、命名 `face`、排在最底（SiblingIndex 0）；
+    F2 `things` 里的引用控件能读出家具模板 prefab（referencedPrefabIndex）；
+    F3 `furn_tpl` 属性到达时会实例化家具，父级是 content（没有 furn 容器时）；
+    F4 家具实例排到 face 之上（SiblingIndex = 1）；
+    F5 新架构下手搭层（furn）被跳过、不报错。
+
+  跑法：lua tests/furn_newarch.lua
+]]--
+local HERE = (arg and arg[0] and arg[0]:match("^(.*)[/\\][^/\\]*$")) or "."
+local root = HERE .. "/.."
+package.path = table.concat({
+  root .. "/lua/?.lua", root .. "/lua/?/init.lua", root .. "/?.lua", package.path,
+}, ";")
+
+local Ad = require("engine_adapter_qianxing")
+
+local passed, failed = 0, 0
+local function ok(cond, msg)
+  if cond then passed = passed + 1 else failed = failed + 1; print("  FAIL  " .. msg) end
+end
+
+local FACE_PREFAB = 1073747145
+local CHAIR_PREFAB = 1073747134
+
+local function mkctrl(name)
+  local c = { name = name, _kids = {}, visible = true, active = true, sizeDeltaX = 108, sizeDeltaY = 108 }
+  function c.GetChild(self, n) for _, k in ipairs(self._kids) do if k.name == n then return k end end return nil end
+  function c.GetChildren(self) return self._kids end
+  function c.SetVisible(self, v) self.visible = v end
+  function c.SetActive(self, v) self.active = v end
+  function c.GetSizeDelta(self) return self.sizeDeltaX, self.sizeDeltaY end
+  function c.SetSizeDelta(self, w, h) self.sizeDeltaX, self.sizeDeltaY = w, h end
+  function c.GetAnchoredPosition(self) return self.anchoredPositionX or 0, self.anchoredPositionY or 0 end
+  function c.SetAnchoredPosition(self, x, y) self.anchoredPositionX, self.anchoredPositionY = x, y end
+  function c.SetAnchorMin() end function c.SetAnchorMax() end function c.SetPivot() end
+  function c.SetSiblingIndex(self, i) self.siblingIndex = i; return true end
+  function c.SetAsLastSibling(self) self.last = true; return true end
+  function c.SetAsFirstSibling(self) self.first = true; return true end
+  function c.GetSiblingIndex(self) return self.siblingIndex or 0 end
+  return c
+end
+
+local function add(parent, child) parent._kids[#parent._kids + 1] = child; return child end
+
+-- ── 假树：完全照 520.1 的形状 ──────────────────────────────────────────────
+local ref = function(name, prefab)
+  local c = mkctrl(name)
+  c.referencedPrefabIndex = prefab
+  return c
+end
+local things = mkctrl("things")
+add(things, ref("furn,chair", CHAIR_PREFAB))
+add(things, ref("furn.plant", 1073747135))
+add(things, ref("furn.shelf", 1073747140))
+add(things, ref("furn.statue", 1073747136))
+add(things, ref("furn.table.1", 1073747137))
+add(things, ref("furn.table.h2", 1073747138))
+add(things, ref("furn.table.v2", 1073747139))
+
+local faceRef = ref("tpl.cell.face", FACE_PREFAB)
+
+local hint = mkctrl("hint")
+local portrait = mkctrl("portrait")
+local content = mkctrl("content")
+add(content, hint)          -- 注意：没有 face / obj / furn
+add(content, portrait)
+local cell = mkctrl("cell.1.1")
+cell.kind = "button"
+add(cell, content)
+local board = mkctrl("board")
+add(board, cell)
+local rootCtl = mkctrl("root")
+add(rootCtl, things)
+add(rootCtl, faceRef)
+add(rootCtl, board)
+
+local instCalls = {}
+_G.game = {
+  GetClientUIRoots = function() return { rootCtl } end,
+  InstantiateClientUIControl = function(prefab, parent)
+    local c = mkctrl("inst." .. tostring(prefab))
+    c.prefabIndex = prefab
+    add(parent, c)
+    instCalls[#instCalls + 1] = { prefab = prefab, parent = parent.name, ctrl = c }
+    return c
+  end,
+  DestroyClientUIControl = function() end,
+}
+
+local a = Ad.new({ cells = { rows = 5, cols = 5 } })
+
+-- ── F1 face 实例化 ─────────────────────────────────────────────────────────
+local face = a:_ensure_cell_face("cell.1.1", cell)
+ok(face ~= nil, "F1 面层：_ensure_cell_face 返回了实例")
+ok(face ~= nil and face.prefabIndex == FACE_PREFAB, "F1b 面层：prefab = tpl.cell.face 的 referencedPrefabIndex")
+ok(face ~= nil and face.name == "face", "F1c 面层：实例命名 `face`（旧写入自动换绑）")
+ok(face ~= nil and face.parent == nil or true, "F1d（记录用）")
+ok(content:GetChild("face") == face, "F1e 面层：确实挂在 content 下")
+ok(face ~= nil and face.siblingIndex == 0, "F1f 面层：排在最底（SiblingIndex 0）")
+
+-- ── F2 things 映射 ────────────────────────────────────────────────────────
+local map = a:_furn_prefab_map()
+ok(map.chair == CHAIR_PREFAB, "F2 things：chair 模板 prefab 读到了（" .. tostring(map.chair) .. "）")
+ok(map.table_h2 == 1073747138, "F2b things：table.h2 归一化成 table_h2")
+ok(map.shelf == 1073747140, "F2c things：shelf 模板 prefab")
+
+-- ── F3/F4 家具实例化 + 层级 ───────────────────────────────────────────────
+local n0 = #instCalls
+a:set_property("root", "furn_level", "case_001")
+local r = a:set_property("cell.1.1", "furn_tpl", "furn.chair")
+ok(r == true, "F3 set_property(cell,'furn_tpl') 返回 true（已受理，不再触发补发丢弃）")
+local made = nil
+for i = n0 + 1, #instCalls do
+  if instCalls[i].prefab == CHAIR_PREFAB then made = instCalls[i] end
+end
+ok(made ~= nil, "F3b 家具：按 things 里的 chair prefab 实例化了")
+ok(made ~= nil and made.parent == "content", "F4 家具：没有 furn 容器时挂到 content")
+-- v316：层级 = face(0) → 地毯(1) → 其它家具(2+)
+ok(made ~= nil and made.ctrl.siblingIndex == 2, "F4b 家具：排在 face(0)/地毯(1) 之上（SiblingIndex 2）")
+
+-- ── F4c/F4d 地毯：同一套模板实例化，层级 1 ────────────────────────────────
+local RUG_PREFAB = 1073747200
+add(things, ref("furn.rug", RUG_PREFAB))
+a:set_property("root", "furn_level", "case_001")   -- 重算映射（things 变了）
+local n1 = #instCalls
+a:set_property("cell.1.1", "furn_tpl", "furn.rug")
+local rug = nil
+for i = n1 + 1, #instCalls do
+  if instCalls[i].prefab == RUG_PREFAB then rug = instCalls[i] end
+end
+ok(rug ~= nil, "F4c 地毯：按 things 里 furn.rug 的 prefab 实例化了")
+ok(rug ~= nil and rug.ctrl.siblingIndex == 1, "F4d 地毯：层级 = 1（face 之上、其它家具之下）")
+
+-- ── F4e/F4f 多格地毯：`furn.rug.2` 独立模板（v320）─────────────────────────
+local RUG2_PREFAB = 1073748252
+add(things, ref("furn.rug.2", RUG2_PREFAB))
+a:set_property("root", "furn_level", "case_001")   -- 重算映射（things 变了）
+local m2 = a:_furn_prefab_map()
+ok(m2.rug_2 == RUG2_PREFAB, "F4e things：furn.rug.2 归一化成 rug_2（" .. tostring(m2.rug_2) .. "）")
+local n2 = #instCalls
+a:set_property("cell.1.1", "furn_tpl", "furn.rug.2")
+a:set_property("cell.1.1", "furn_span", { r = 1, c = 2 })
+local rug2 = nil
+for i = n2 + 1, #instCalls do
+  if instCalls[i].prefab == RUG2_PREFAB then rug2 = instCalls[i] end
+end
+ok(rug2 ~= nil, "F4f 多格地毯：按 things 里 furn.rug.2 的 prefab 实例化了")
+ok(rug2 ~= nil and rug2.ctrl.siblingIndex == 1, "F4g 多格地毯：层级 = 1（与单格地毯同级）")
+
+-- ── F6 属性后到（v322）：span/offset 比 furn_tpl 晚到 ⇒ 必须销毁重建 ──────
+--   真机顺序：furn_tpl 先到就实例化（按 1 格大小），span/offset 后到；
+--   旧代码不会重造 ⇒ 跨格件停在错误尺寸/位置（第二关错位的根因）。
+local TABLE_H2_PREFAB = 1073747138
+add(things, ref("furn.table.h2", TABLE_H2_PREFAB))
+local cel22 = mkctrl("cell.2.2")
+cel22.kind = "button"
+add(cel22, (function() local c2 = mkctrl("content") add(c2, mkctrl("hint")) return c2 end)())
+add(board, cel22)
+a:set_property("root", "furn_level", "case_001")   -- 重算映射
+local destroyed = {}
+local oldDestroy = _G.game.DestroyClientUIControl
+_G.game.DestroyClientUIControl = function(ctrl) destroyed[#destroyed + 1] = ctrl end
+local n3 = #instCalls
+a:set_property("cell.2.2", "furn_tpl", "furn.table.h2")   -- ① 只有 tpl（span/offset 还没到）
+local late = nil
+for i = n3 + 1, #instCalls do
+  if instCalls[i].prefab == TABLE_H2_PREFAB then late = instCalls[i] end
+end
+ok(late ~= nil, "F6a 属性后到：furn_tpl 先到也能先建实例")
+ok(late ~= nil and late.ctrl.sizeDeltaX == 108 and late.ctrl.sizeDeltaY == 108,
+  "F6b 此时按 1 格大小（旧代码会停在这个错误形态）")
+a:set_property("cell.2.2", "furn_span", { r = 1, c = 2 })
+a:set_property("cell.2.2", "furn_offset", { dx = -0.5, dy = 0 })
+local remade = nil
+for i = n3 + 1, #instCalls do
+  if instCalls[i].prefab == TABLE_H2_PREFAB and instCalls[i].ctrl ~= (late and late.ctrl) then
+    remade = instCalls[i]
+  end
+end
+ok(#destroyed > 0, "F6c span/offset 后到 ⇒ 旧实例被销毁")
+ok(remade ~= nil, "F6d 并按新 span 重建了实例")
+ok(remade ~= nil and remade.ctrl.sizeDeltaX == 216 and remade.ctrl.sizeDeltaY == 108,
+  "F6e 重建后的尺寸 = 2 格宽 × 1 格高（216×108）")
+ok(remade ~= nil and math.abs(remade.ctrl.anchoredPositionX + 54) < 0.01,
+  "F6f 重建后的位置 = 锚点格中心左移半格（-54px）")
+_G.game.DestroyClientUIControl = oldDestroy
+
+-- ── F7 格子尺寸后改（v323）：6×6 关格子先按 108 建、后改成 89 ⇒ resync 必须重排 ──
+--   真机症状：家具整体比旧版大一圈、跨格件溢出（缩放按 108 算）。
+local cel33 = mkctrl("cell.3.3")
+cel33.kind = "button"
+add(cel33, (function() local c3 = mkctrl("content") add(c3, mkctrl("hint")) return c3 end)())
+add(board, cel33)
+a:set_property("cell.3.3", "furn_tpl", "furn.chair")
+local beforeSize = cel33.sizeDeltaX
+ok(beforeSize == 108, "F7a 前提：格子初始尺寸 108")
+a:set_property("cell.3.3", "furn_span", { r = 1, c = 1 })
+a:set_property("cell.3.3", "furn_offset", { dx = 0, dy = 0 })
+-- 模拟"格子随后被改成 6×6 的 89px"
+cel33.sizeDeltaX, cel33.sizeDeltaY = 89, 89
+local n4 = #instCalls
+a:_furn_resync()
+local resized = nil
+for i = n4 + 1, #instCalls do
+  if instCalls[i].prefab == CHAIR_PREFAB then resized = instCalls[i] end
+end
+ok(resized ~= nil, "F7b 格子尺寸变了 ⇒ resync 重建了实例")
+ok(resized ~= nil and resized.ctrl.sizeDeltaX == 89 and resized.ctrl.sizeDeltaY == 89,
+  "F7c 重建后实例尺寸 = 格子实际尺寸 89（不再是大一圈的 108）")
+
+-- ── F5 新架构下手搭层被跳过，不报错 ───────────────────────────────────────
+a:set_property("cell.1.1", "furn_span", { r = 1, c = 1 })
+local r5 = a:set_property("cell.1.1", "furn", {
+  { id = 100001, color = 0xFF112233, w = 0.9, h = 0.9, dx = 0, dy = 0 },
+})
+ok(r5 == true, "F5 新架构：手搭层属性被安全跳过（返回 true）")
+
+-- ── F8（v324）家具缩放必须走 localScale（真变换），不是改容器尺寸 ──────────────
+--   真机症状：6×6 关家具整体大 1.21 倍（108/89）。模板那一百多层是"内容根的孙子"，
+--   按画布 108 的绝对像素定位 ⇒ 只改容器 sizeDelta 时里面的层一个像素都不缩 ✗
+local cel44 = mkctrl("cell.4.4")
+cel44.kind = "button"
+cel44.sizeDeltaX, cel44.sizeDeltaY = 89, 89          -- 模拟 6×6 关的真实格子尺寸
+add(cel44, (function() local c4 = mkctrl("content") add(c4, mkctrl("hint")) return c4 end)())
+add(board, cel44)
+local n5 = #instCalls
+a:set_property("cell.4.4", "furn_tpl", "furn.chair")
+a:set_property("cell.4.4", "furn_span", { r = 1, c = 1 })
+a:set_property("cell.4.4", "furn_offset", { dx = 0, dy = 0 })
+local inst44 = nil
+for i = n5 + 1, #instCalls do
+  if instCalls[i].prefab == CHAIR_PREFAB then inst44 = instCalls[i].ctrl end
+end
+ok(inst44 ~= nil, "F8a 6×6 格子上造出了家具实例")
+ok(inst44 ~= nil and inst44.localScaleX ~= nil
+   and math.abs(inst44.localScaleX - 89 / 108) < 0.01,
+  "F8b 缩放 = 格子/画布 = 89/108（实测 " .. tostring(inst44 and inst44.localScaleX) .. "）")
+ok(inst44 ~= nil and inst44.sizeDeltaX == 89,
+  "F8c 实例框仍是格子实际尺寸 89（实测 " .. tostring(inst44 and inst44.sizeDeltaX) .. "）")
+
+-- ── F9（v324）resync 必须幂等：控件上的自定义字段存不住也不许重建 ──────────────
+--   真机证据：日志里同一批 `家具模板：…` 每 0.5 秒重复 + `本轮补造 8 格` 反复出现
+--   ⇒ `inst.__murdoku_applied` 读回来永远是 nil ⇒ 每趟 resync 都销毁重建 ✗
+if inst44 ~= nil then inst44.__murdoku_applied = nil end      -- 模拟真机（字段根本存不住）
+local n6 = #instCalls
+a:_furn_resync()
+ok(#instCalls == n6,
+  "F9a resync 幂等：参数没变就不许重建（实测新增 " .. (#instCalls - n6) .. " 次）")
+ok(a._furn_applied ~= nil and a._furn_applied["cell.4.4|chair"] ~= nil,
+  "F9b 应用记录存在适配器表里（不依赖控件字段）")
+a:_furn_resync()
+ok(#instCalls == n6, "F9c 再跑一趟也不重建")
+
+print(string.format("\nfurn_newarch: %d passed, %d failed", passed, failed))
+os.exit(failed == 0 and 0 or 1)

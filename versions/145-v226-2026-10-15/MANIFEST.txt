@@ -1,0 +1,52 @@
+145-v226-2026-10-15
+===================
+
+构建标记：v226 / 2026-10-15
+说明：选中残留:卡片高亮改为按core.selected派生;点卡片不再重复选人;补兜底时钟断言
+
+来源提交：6c243c8（★ 这一份不是"重新打一遍包" ✗ ——
+  是从 git 里**原样取出当时交付的那 8 个文件** ✓
+  ⇒ ★ 所以它与"当时真机上跑的那一份"**逐字节同源** ✓）
+
+取法（可复跑）：
+    git cat-file blob 6c243c8:lua/<文件> > versions/145-v226-2026-10-15/<文件>
+    git cat-file blob 6c243c8:dist/client_script.lua > versions/145-v226-2026-10-15/client_script.lua
+
+★ 对账判据 ✓：★ 每个文件的字节数与 `git cat-file -s` **逐项相等** ✓
+  （★ 实测 8/8 相等 ✓ ★ 不相等就说明取出来的不是 git 里那一份 ✓）
+
+内容（8 个文件）
+----------------
+  client_script.lua             1231456   ← ★ **真机跑的那份**（7 个模块打成一个 chunk）
+  engine_adapter.lua               5397
+  engine_adapter_qianxing.lua    338614
+  entry_client_script.lua         50324   ← ★ 挂到客户端控件上的入口
+  main.lua                       152322
+  murdoku_core.lua               106306
+  room_map.lua                     5227
+  ui_controller.lua              522999
+
+sha256 前 16（便于事后核对是否被改过）
+-------------------------------------
+  client_script.lua   54C32B9E752D7EF2
+  ui_controller.lua   3E39DD6785F440C3
+
+这一版修的是什么
+----------------
+★ 他人实测报的：★「**放置 v 后选择了 d，一不小心把 v 取消了，
+  点出来的标记是 v 的，但显示选择的 d，此时再长按放置，放的会是 v**」✓
+★★ 根因：★ 卡片高亮是"谁被选中"的**第二份副本** ⇒ 与 `core.selected` **必然漂移** ✓
+★ 修法：★ 高亮降级成**派生值**（唯一写点 `_sync_clue_focus` ✓）
+★ 完整记录：见 `docs/缺陷-选中残留-2026-10-15.md` ✓（★ 判据与复跑命令都在那份 ✓）
+
+⚠️ 未验证的部分
+----------------
+★ **真机未验证** ✗ ⇒ ★ 这一版的状态是「**模拟器候选**」✓
+★ 真机要验的三件事见 `docs/缺陷-选中残留-2026-10-15.md` §六 ✓
+
+回退步骤（与 versions/README.md 一致 ✓）
+-----------------------------------------
+  1. 把本目录的 7 个 `*.lua` 拷回 `lua\`
+  2. `node tools/bundle_client_script.lua`
+  3. `powershell -File tools/install_script_to_sandbox.ps1`
+  4. 导入配套的 `.gil`

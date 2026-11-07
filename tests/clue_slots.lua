@@ -82,20 +82,52 @@ do
 end
 
 --------------------------------------------------------------------------------
--- 2. ★★ 真关卡不再靠手写线索表 ⇒ 引擎照旧补满槽位
+-- 2. ★★★ 2026-10-17 **口径反转：真关卡现在【有】线索，而且必须"有内容"**
+--
+--   ★ 旧断言（已作废 ✗）：真关卡不该有手写 `clues` 表
+--     ★ 它钉的是 2026-10-11「线索表整段删掉、等内容设计」那一步 ✓
+--   ★★ 而设计定稿（2026-10-17）把两关的线索**写回了关卡表** ✓：
+--     ★ 一条线索 = `{type=…, who/object/c/…}` ✓ `type` 必须在注册表里 ✓
+--     ★ 顺序 = **卡序**（卡 i ↔ 线索 i ↔ 第 i 枚棋子）✓ —— 高亮就是这么取的 ✓
+--   ★★★ 所以新判据是**双向**的 ✗✓：
+--     ① 真关卡如果有 `clues` ⇒ 每条都必须有**已注册的 type**（不许留空壳 ✓）
+--     ② 真关卡如果**没有** `clues` ⇒ 引擎照旧按棋盘容量补满槽位（老路不许坏 ✓）
+--   ★ 为什么两条都要 ✗：只有 ① 会让"没写内容的关卡"在别处静默炸掉；
+--     只有 ② 又会让"写了类型但拼错名字"的关卡一路绿到真机 ✓✓
 --------------------------------------------------------------------------------
 do
   local all = init.all()
   for i = 1, #all do
     local lv = all[i]
-    ok(type(lv.clues) ~= "table" or #lv.clues == 0,
-      "真关卡 " .. tostring(lv.id) .. " 不该再有手写的 clues 表（★ 那套已被替换 ✓）")
+    local has = (type(lv.clues) == "table" and #lv.clues > 0)
+    local core = Core.new(lv)
+    if has and core ~= nil then
+      ok(#core.clues == core:clue_slot_count(),
+        string.format("%s：线索条数 %d 应等于卡位 %d",
+          tostring(lv.id), #core.clues, core:clue_slot_count()))
+      local bad = {}
+      for j = 1, #core.clues do
+        local t = core.clues[j].type
+        if t == nil or Core.clues[t] == nil then
+          bad[#bad + 1] = tostring(j) .. ":" .. tostring(t)
+        end
+      end
+      ok(#bad == 0, "真关卡 " .. tostring(lv.id) .. " 的线索类型都必须在注册表里（坏项：" ..
+        table.concat(bad, ",") .. "）")
+    elseif core ~= nil then
+      -- 没有手写线索 ⇒ 槽位补满（老路）
+      ok(core.clue_slots == core:clue_slot_count(),
+        "真关卡 " .. tostring(lv.id) .. " 没有线索时，槽位应补满")
+    end
   end
-  print("  [PASS] 真关卡无手写线索表，槽位由棋盘规格生成")
+  print("  [PASS] 真关卡线索：有内容则类型合法、无内容则补满槽位（双向）")
 end
 
 --------------------------------------------------------------------------------
--- 3. ★★ 槽位是"待填"：没有 type ⇒ 不编内容（★ 如实报占位 ✓）
+-- 3. ★★★ 2026-10-17 **内容已定稿：case_001 第 1 条必须"有类型、有文案"**
+--
+--   ★ 旧断言是「槽位没有 type ⇒ 如实报占位」✓ —— 它测的正是"还没内容"那一步 ✗
+--   ★ 现在两关都定稿了 ⇒ 反过来钉：**类型在、文案在、且不再是占位串** ✓
 --------------------------------------------------------------------------------
 do
   local lv = require("levels.case_001")
@@ -103,10 +135,19 @@ do
   local vm = core:view() or {}
   local c1 = (vm.clues or {})[1]
   ok(c1 ~= nil, "第 1 张卡存在")
-  ok(c1 ~= nil and c1.type == nil, "槽位没有 type（★ 内容还没填 ✓）")
-  -- ★ 文案要**看得出是占位** ✗ 而不是编一条像真的线索 ✓
-  ok(c1 ~= nil and type(c1.text) == "string" and #c1.text > 0, "占位文案非空（便于肉眼看出待填）")
-  print("  [PASS] 槽位如实报占位，不编内容")
+  ok(c1 ~= nil and c1.type ~= nil, "第 1 张卡有 type（内容已定稿 ✓）")
+  ok(c1 ~= nil and type(c1.text) == "string" and #c1.text > 0, "第 1 张卡有文案")
+  ok(c1 ~= nil and not tostring(c1.text):find("待填内容", 1, true),
+    "第 1 张卡的文案不是占位串（实测：" .. tostring(c1 and c1.text) .. "）")
+  -- ★ 反向：占位文案这条**仍然要能用**（没写内容的关卡照旧如实报 ✓）
+  local bare = require("levels.demo_selftest")
+  local bcore = Core.new(bare)
+  local bvm = bcore:view() or {}
+  local b1 = (bvm.clues or {})[1]
+  ok(b1 ~= nil and b1.type == nil, "没有线索的关卡：槽位没有 type")
+  ok(b1 ~= nil and tostring(b1.text):find("待填内容", 1, true) ~= nil,
+    "没有线索的关卡：文案如实报占位")
+  print("  [PASS] 定稿关卡有内容；未填关卡仍如实报占位（双向）")
 end
 
 --------------------------------------------------------------------------------
@@ -165,6 +206,7 @@ do
   end
   local core = Core.new(best_lv)
   local ctl = UIC.new(core, {})
+  ctl._level_ordinal = function() return 1 end   -- 关序由测试注入（不依赖已交付关卡清单）
   local plan = ctl:layout_plan()
 
   -- ★ ① 条数 = 棋子数 ✓（★ 读的是网格视窗发 RefreshItems 用的那个同一个来源 ✓）
@@ -219,7 +261,7 @@ do
   local LV = require("levels.demo_selftest")
   local core = Core.new(LV)
   local c = UIC.new(core, { skip_intro = true })
-
+  c._level_ordinal = function() return 1 end   -- 关序由测试注入（不依赖已交付关卡清单）
   local function ctrl(name, kids, text)
     local x = { name = name, _kids = kids or {} }
     if text ~= nil then x.text = text end
@@ -298,7 +340,7 @@ do
   local LV = require("levels.demo_selftest")
   local core = Core.new(LV)
   local c = UIC.new(core, { skip_intro = true })
-
+  c._level_ordinal = function() return 1 end   -- 关序由测试注入（不依赖已交付关卡清单）
   local function ctrl(name, kids, text)
     local x = { name = name, _kids = kids or {} }
     if text ~= nil then x.text = text end
@@ -327,6 +369,7 @@ do
   local function build(use_name)
     local co = Core.new(LV)
     local c2 = UIC.new(co, { skip_intro = true })
+    c2._level_ordinal = function() return 1 end   -- 关序由测试注入（不依赖已交付关卡清单）
     -- ★★ 必须先清空那张模块级表 ✗✓（★ 不清 ⇒ 上一节的行还在 ⇒ 本次**一个字都不落账** ✓）
     --   ★ 机制 ✓：`_fill_grid_item` 落账时是 **"只填一次"** ✓（`if _by_pos[slot] == nil` ✓）
     --     ⇒ ★ 表里已经有值 ⇒ ★ **这次的配置被静默忽略** ✓✓
@@ -407,7 +450,25 @@ do
   do
     local fired = {}
     -- ★ 只认 `ev` ✓（★ 原来写成 `(_, ev)` = 方法调用形式 ⇒ ★ 拿到的其实是 `self` ✗）
-    local ad = { on_input = function(ev) fired[#fired + 1] = ev end }
+    --
+    -- ★★★★★★★★ 2026-10-15 **这个假适配器必须【转发给控制器】，不能只是个收件箱** ✗✓✓
+    --
+    --   ★ 为什么 ✗（★ 它原来让"点卡片"这件事**少了一半** ✓）：
+    --     ★ 真机上"引擎手势只会**进来**" ✓ ★ 而适配器的 `on_input` 是**出**的方向 ✓
+    --       ★★ 它转手就调 `controller:on_input(ev)` ✓（★ `main.lua:471` ✓）
+    --     ★★ 只把事件塞进 `fired` 就完事 ⇒ ★ **控制器那条回路是断的** ✗
+    --       ⇒ ★ 这里测到的行为与真机**不是同一套** ✓✓
+    --   ★ 修法 ✓：★ `on_input` **一边记账、一边原样转发** ✓ ⇒ ★ 与真机同构 ✓✓
+    --   ★★ 为什么转发**不会**把选中打两遍 ✗（★ 2026-10-15 的实现已保证 ✓）：
+    --     ★ `_on_grid_item_click` 现在**自己就把选中做实** ✓
+    --       ★ 而它**不再**对着 `suspect` 绕一圈 ✓（★ 那条路是"转一圈回到自己" ✓）
+    --     ⇒ ★ 被转发进控制器的只有 `focus_clue` ✓ ★ 那一条**不碰任何状态** ✓✓
+    --   ★ 下面第 442 行那条**显式** `on_input` 就是"玩家手点了一下" ✓
+    --     ★ 它必须**幂等**（★ 点同一个人两次 = 还是选中他 ✓ 不是取消 ✓）✓
+    local ad = { on_input = function(ev)
+      fired[#fired + 1] = ev
+      c3:on_input(ev)          -- ★ 真机的适配器就是这么做的（`main.lua:471` ✓）
+    end }
     local it = ctrl("item", {})
     local bound = 0
     it.AddCursorEventListener = function() bound = bound + 1 end
@@ -427,19 +488,39 @@ do
     -- ★ 直接走"被点到"那一步 ✓（★ 引擎回调里就是它 ✓）
     c3:_on_grid_item_click(ad, g, it)
     _G.Enum = _saved_enum
-    local got_suspect = nil
-    for i = 1, #fired do
-      if fired[i].action == "suspect" then got_suspect = fired[i].id end
-    end
-    ok(got_suspect ~= nil,
-      "★ 点卡片 ⇒ 真的发出 `suspect` 事件（★ 不发就永远选不中 ✓ 实测 " .. tostring(got_suspect) .. "）")
-    ok(got_suspect == ids[1],
-      "★ 事件里带的是**第 1 张卡那个人** ✓（实测 " .. tostring(got_suspect)
+    -- ★★★★★★★★ 2026-10-15 **判据改成"选中真的落地了"，不再看那条事件** ✗✓✓
+    --
+    --   ★ 为什么改 ✗（★ 改的是**机制**，不是判定标准 ✓ P8 ✓）：
+    --     ★ 原来这条断言是"**发出了 `suspect` 事件**" ✓
+    --       ★ 而那正是**没生效**的那条路 ✗ —— ★ 发了它也只是**转一圈回到自己** ✓
+    --       ★★ 依据 ✓：★ 适配器的 `on_input` 是**出**的方向 ✓
+    --         （★ `main.lua:471`：`adapter.on_input = function(event) controller:on_input(event) end` ✓）
+    --         ⇒ ★ 控制器**从不**"对着控件凭空发事件" ✓ ⇒ ★ 那一下点击**没有任何状态落地** ✓✓
+    --     ★★★ 更要命的是它**和下面那句重复** ✗：
+    --       ★ `_on_grid_item_click` 自己先选一次 ⇒ 这条事件再选一次 ⇒
+    --       ★★ **切换 ⇒ 又变回没选中** ✓✓（★ 于是第 461 行那条也跟着红 ✓）
+    --   ⇒ ★★ 新判据 ✓：★ **点一下 = `core.selected` 就是卡上那个人** ✓
+    --     ★ 这一条**更强** ✗ —— ★ 它直接钉住"选人这件事发生了" ✓
+    --       ★ 而老的"发了事件"只钉住"发了个消息"（★ 消息可以是空的 ✓）✓✓
+    ok(c3.core.selected ~= nil,
+      "★ 点卡片 ⇒ **选中真的落地了**（★ 不只是「发了个消息」✗ 实测 "
+      .. tostring(c3.core.selected) .. "）")
+    ok(tostring(c3.core.selected or "") == tostring(ids[1]),
+      "★ 选中的是**第 1 张卡那个人** ✓（实测 " .. tostring(c3.core.selected)
       .. " 该是 " .. tostring(ids[1]) .. "）")
+    -- ★ 顺带记下"这条路上到底发过哪些事件" ✓ —— ★ 只观测、不断言 ✓
+    --   ★ 目的 ✓：★ 万一以后有人又往这里塞一条"会改状态"的事件 ⇒ 这一行**看得见** ✓
+    do
+      local names = {}
+      for i = 1, #fired do names[#names + 1] = tostring(fired[i].action) end
+      print("       （点卡片这条路上发出的事件：" .. table.concat(names, ", ") .. "）")
+    end
   end
 
   if pid ~= nil then
-    c3:on_input({ action = "suspect", id = pid })
+    -- ★ 这一下**不重复选人** ✓ —— ★ `_on_grid_item_click` 已经把他选上了 ✓
+    --   ★ 原来这里再发一次 `suspect` ⇒ ★ **把它切换掉了** ✓（★ 见上面那段 ✓）
+    --   ★★ 判据不变 ✓：★ 点完卡片之后，选中就是他 ✓
     ok(c3.core.selected == pid, "★ 点卡片 ⇒ **选中卡上那个人** ✓（实测 " .. tostring(c3.core.selected) .. "）")
     local okN = c3.core:tap_cell(2, 3)
     ok(okN == true and c3.core.notes[2][3] ~= nil and c3.core.notes[2][3][pid] == true,
@@ -468,7 +549,7 @@ do
   local LV = require("levels.demo_selftest")
   local core = Core.new(LV)
   local c = UIC.new(core, { skip_intro = true })
-
+  c._level_ordinal = function() return 1 end   -- 关序由测试注入（不依赖已交付关卡清单）
   local function ctrl(name, kids, text)
     local x = { name = name, _kids = kids or {} }
     if text ~= nil then x.text = text end
@@ -576,6 +657,7 @@ do
   local LV = require("levels.demo_selftest")
   local core = Core.new(LV)
   local c = UIC.new(core, { skip_intro = true })
+  c._level_ordinal = function() return 1 end   -- 关序由测试注入（不依赖已交付关卡清单）
   c._grid_base = 0
 
   local function ctrl(name, kids, text)

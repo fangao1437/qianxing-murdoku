@@ -28,6 +28,41 @@ end
 
 M.DESIGN = { width = 1920, height = 1080 }
 
+-- ★★★★★★★★ 2026-10-22（v306，第八轮）**家具图元改走"静态烘焙"** ✗✓
+--
+--   用户真机验证后的判断：网站（拼图工具）导出的内容能在真机显示，是因为它把图元写成
+--   **存档里的静态图片控件**；我们走运行时实例化，链路长、真机上表现不稳。
+--   ⇒ 本轮起：椅子/植物/雕像的图元由 integrator 直接烘成存档里的静态控件
+--     （`root/fart.case_001`、`root/fart.case_002` 两个容器，默认隐藏），
+--     脚本只负责"按当前关卡打开对应容器" ⇒ **完全不再调用 InstantiateClientUIControl**。
+--   ⚠️ 关掉这个开关会退回旧的"运行时实例化"路径（`furn_art` 分支），方便 A/B 对比。
+M.FURN_BAKED = false
+
+-- ★★★★★★★★ 2026-10-22（v310，第十三轮）**家具改"模板化手搭"** ✗✓
+--   用户：「采用模板来手搭构建，模板里放多少层都可以（一个模板引用控件只算一层），
+--   然后像 cell 一样把模板创建出来」。
+--   ⇒ 每件家具一个"客户端控件模板"（`furn.chair` / `furn.plant` / `furn.statue` /
+--     `furn.table.1` / `furn.table.h2` / `furn.table.v2` / `furn.shelf`），
+--     脚本按 `FurnArt.layout()` 给出的"哪一格是哪件"在锚点格实例化模板，尺寸 = 跨格数 × 格子尺寸。
+--   ⚠️ `M.FURN_TPL=false` 时回落 v309 的 12 层手搭（家具画进模板层）。
+--   模板 prefabIndex 由 integrator 提供后填进 `entry_client_script.lua` 的 `cfg.furn_tpl_prefab`。
+M.FURN_TPL = true
+
+-- ★★★★★★★★ 2026-10-22（v309，第十二轮）**家具统一走"桌子/地毯"那套手搭层链路** ✗✓
+--   用户：「既然已经有了图元素材，不如就把它们按桌子地毯等家具的搭建流程统一构造」。
+--   ⇒ 椅子/植物/雕像 也改成手搭层（`FurnArt.ART`，≤12 层、全轴对齐色块），
+--     **不再走**静态烘焙容器（`fart.*`），**也不再**运行时实例化图元。
+--     `FurnArt.ART` 里的椅子/植物/雕塑 = 9/10/10 层，和桌子(10)/书架(12)/地毯(3) 同一条链路。
+--   ⚠️ `M.FURN_BAKED` 保留为**回退开关**：万一要回到静态烘焙，把它改 true 即可（数据在 511/512 存档）。
+
+-- ★ 2026-10-22（v300）家具美术数据层（分组 / 锚点 / 六层元素 / 地毯切矩形 / 房间名标签）
+--   单独一个模块，因为它是**纯数据 + 纯几何**，不该和界面状态机混在一起（见 lua/furn_art.lua 文件头）。
+local FurnArt = require("furn_art")
+-- ★ 2026-10-22（v302，第四轮）**外部工具算出的图元拼法**
+--   生成链：原作图标 → qx-img 拼图工具（本地引擎）拟合 → 结果文件 .lua → `gen_art_records.py` 拆解 → 本模块。
+--   每件 148~200 条图元（含旋转/逐图元 RGBA），游戏里由适配层逐条生成图片控件（12 层装不下）。
+local FurnRecords = require("furn_art_records")
+
 -- ════════════════════════════════════════════════════════════════════════
 -- 坐标基准（2026-09-26 实测确认，务必先读这段再动 LAYOUT）
 --
@@ -96,7 +131,11 @@ M.LAYOUT = {
   --   之前写的是 `title = {x=360, y=18}`（**顶部居中偏右**）—— 那是按"顶栏"想的，
   --   跟规划图**根本不是一处**（图里标题在左边栏、计时器就在它下面一行）。
   title  = { x = 70, y = 156, w = 540, h = 56 },   -- 中心 (340, 184) = 图上 TITLE 的位置
-  stats  = { x = 1520, y = 26, w = 380, h = 46 },
+  -- ★ 2026-10-18（优化组 · P0）：`M.LAYOUT` 里**这一类"无读者键"已删除** ✗✓
+  --   判据（逐个键在代码里数 `L.<键>`，全部为 0，且 tests/ tools/ 里也没有读者）：
+  --     `stats` · `tray_item_w` · `cell` · `cell_gap` · `wall_thickness` ·
+  --     `back_btn` · `confirm` · `actions` · `action_btn`
+  --   ⚠️ `tray_item_h` / `tray_gap_x` / `tray_gap_y` / `tray_per_row` **仍在用**（托盘自适应布局）⇒ 保留 ✓
 
   -- 左侧面板：头像卡 + 线索卡 + 图例
   --   ⚠️ 高度必须算够：tray_item_h * 行数 + 行距 不能超过 tray.h，
@@ -105,7 +144,7 @@ M.LAYOUT = {
   --   现在卡片的**列数**会按人数自适应（见 build_layout），保证永远只占 2 行。
   left   = { x = 24, y = 128, w = 392, h = 880 },
   tray   = { x = 40, y = 148, w = 360, h = 218 },   -- 固定 2 行 × 104 + 10 = 218
-  tray_item_w = 112, tray_item_h = 104,             -- tray_item_w 只是参考值，实际按列数均分
+  tray_item_h = 104,                                -- （`tray_item_w` 已删：无读者的参考值）
   tray_gap_x = 12,
   tray_gap_y = 10,
   tray_per_row = 3,                                 -- 最少 3 列
@@ -209,18 +248,13 @@ M.LAYOUT = {
   --   ⚠️ 它是**两边各一份**的（见下面 `avail = board.w - 2*ruler`）——
   --      原来 `44` 是按"坐标尺条"想的，而且只扣一边，两个错叠在一起。
   ruler  = 14,
-  cell   = 160,        -- 仅参考
-  cell_gap = 4,        -- 仅参考
-  wall_thickness = 10,
 
   -- 右侧信息栏
   right  = { x = 1420, y = 128, w = 460, h = 880 },
 
   -- 底部操作条（放在左侧面板底部与棋盘下方之间）
-  actions = { x = 478, y = 944, w = 880, h = 120 },  -- y 944..1064，中心 x=918（与棋盘同）
-  action_btn = { w = 168, h = 56, gap = 14 },
 
-  modal = { w = 760, h = 460 },
+  modal = { w = 760, h = 720 },   -- ★ 2026-10-12 460 → 720：通关弹窗要装下「恭喜破案/凶手分析/用时」三行 + 四键
 
   --------------------------------------------------------------------------
   -- ★★★★★ 2026-10-02 **按用户给的两张美术参考重排按键**（第二轮定稿）
@@ -254,8 +288,6 @@ M.LAYOUT = {
   --   画布 x 134..347、y 64..84 → 设计空间 x 161..416、y 77..101。
   --   理由见 `action.back` 那段注释：不收窄的话，它和 `hex.back`、以及**跟随出现的 ✓/✗ 确认卡**
   --   三者位置打架，确认卡会被压住点不到。
-  back_btn = { x = 161, y = 77, w = 255, h = 28 },
-  confirm  = { x = 344, y = 22, size = 66, gap = 14 },
 }
 
 M.EFFECTS = {
@@ -270,20 +302,19 @@ M.EFFECTS = {
   SOLVED    = "solved_flash",
   CLUE_IN   = "clue_box_pop",
   FAIL      = "shake",
-  ROOMWALL  = "roomwall",
+  -- ★ 2026-10-18（优化组 · P0）：旧的 `ROOMWALL`（取值 "roomwall"）**已删除** —— 全仓零读者。
+  --   ⚠️ 写注释时**别写成 `名字 = "值"` 的形状** ✗：`tests/effects_wiring.lua:57` 是用
+  --      `([A-Z_]+)%s*=%s*"([%w_]+)"` 直接在**源码文本**里抓键值对的 ——
+  --      注释里照抄一遍会把它当成"还存在这个键" ⇒ 那条测试会红（本轮踩过一次 ✓）。
 }
 
--- 开屏教程（5 页：怎么破案 / 每行每列一人 / beside 的含义 / 单击双击的区别 / 提交判题）
-M.INTRO = {
-  { title = "怎么破案",        body = "读线索，把每个角色放到正确的位置上。\n摆满之后，与受害者单独共处一室的人就是凶手。" },
-  { title = "每行每列只有一人", body = "每一行、每一列都恰好只能站一个人（受害者也算一个人）。" },
-  { title = "“旁边”是什么意思", body = "旁边 = 上下左右四邻，而且必须在同一个房间里。\n隔着墙的不算旁边。" },
-  { title = "单击写字，双击放置", body = "单击格子只会留下一个铅笔小字（笔记）。\n在同一格连着点两下，才会把人放上去。" },
-  { title = "提交判题",        body = "摆满后点「提交」校验摆位，通过后即可指认凶手。\n拿不准的位置可以先打 X 标记。" },
-}
+-- ★ 2026-10-18（优化组 · C 类清理）：**开屏教程（`M.INTRO` 5 页）整套删除** ✗✓
+--   用户原话：「老计划里到目前还没实现的都不需要保留了，**教程后续也要重做，而且那部分应该还没接**」
+--   判据：`intro` / `intro.dots` / `intro.title` / `intro.body` / `intro.skip` / `intro.next`
+--     在 `check_names` 里是 **6 个 🔴 真缺**（从来没人建成过）⇒ 每帧都在算一段永远显示不出来的布局。
+--   ⇒ 教程以后**重做**，届时另立新控件位；**别**复活 `intro.*` 这套名字 ✓
 
-----------------------------------------------------------------------------
-
+---------------------------------------------------------------------------
 local Controller = {}
 Controller.__index = Controller
 M.Controller = Controller
@@ -328,7 +359,7 @@ function M.new(core, opts)
   --   与 `modal` 的区别：modal 是"浮在关卡上的弹窗"，屏幕是**整屏**的。
   --   控件已在 .gil 里（tools/gil/gen_home.mjs），脚本只切 visible + 写文字。
   self.screen = opts.screen
-  self.intro_page = opts.skip_intro and (#M.INTRO + 1) or 1
+
   self.share_code = nil
   self._created = {}
   self._props = {}
@@ -418,11 +449,12 @@ end
 --       `build_layout` 的离线测试与工具 ✓）⇒ ★ **读的时候是 nil** ✗✓
 --   ★ 修法 ✓：★ 读之前**就地补一个空表** ✓ —— ★ 语义不变 ✓（★ 空表 = 没配字母 ✓）
 --     ★ 用 `rawget` 判 ✓ 避免元表干扰 ✓ ★ 只在 nil 时建 ✓（★ 不覆盖已有内容 ✗）
-function Controller:_ensure_row_maps()
-  if rawget(Controller, "_row_letter") == nil then Controller._row_letter = {} end
-  if rawget(Controller, "_row_face") == nil then Controller._row_face = {} end
-  if rawget(Controller, "_row_text") == nil then Controller._row_text = {} end
-end
+-- ★ 2026-10-18（优化组 · P0 死代码清理）：`Controller:_ensure_row_maps` **已删除** ✗✓
+--   判据：全仓 **0 调用点**（prod / tests / 项目自有 tools 三处都 0）。
+--   它原本是"读 `_row_letter/_row_face/_row_text` 之前补空表"的三重兜底，
+--   但那三张表的**实际初始化点**在 `sync_clue_grid` 里，兜底这句从来没被走到。
+--   ⇒ 真要有"没经过网格视窗就读"的新路径，应当**在那条路径自己**补表，
+--     而不是留一个没人调用的函数在这里（留着反而制造"有人兜底"的错觉 ✗）。
 
 -- ★★★★★★ 2026-10-11 **格子的标记：把【人物 id】换成【那一行的 `letter`】** ✗✓✓
 --
@@ -475,6 +507,17 @@ function Controller:finish_accuse(thief, has_acc, acc)
   self.toast = res.message
   self.toast_until = self.now + M.TOAST_SECONDS   -- ★ A8：只补截止时刻，文案一行不动
   if res.solved then
+    -- ★★★★★★ 2026-10-12 **用时定格**（用户指令 ✓）✗✓✓
+    --
+    --   ★ 用户原话 ✓：「**用时不要走动，取胜利时的时间填入**」✓
+    --   ★ 为什么要定格 ✗：结算弹窗开着的时候**计时器还在走** ✓
+    --     ⇒ 那行「用时」会**一直往上跳** ✗（用户看到的就是这个 ✓）
+    --   ⇒ 所以在**判胜的那一刻**把秒数抄下来 ✓ 之后弹窗里的那行永远读它 ✓
+    --   ⚠️ 只定格【显示值】✓ —— 底层 `core.elapsed` 不动 ✗（动它会牵连存档/统计 ✓）
+    local okv, v2 = pcall(function() return core:view() end)
+    if okv and type(v2) == "table" and type(v2.hud) == "table" then
+      self.result_seconds = v2.hud.time
+    end
     self.modal = { kind = "result", win = true, message = res.message }
     self:fx("modal", M.EFFECTS.SOLVED)
     -- 揭示：受害者头像从下往上顶出来。
@@ -485,6 +528,8 @@ function Controller:finish_accuse(thief, has_acc, acc)
     if self.opts.on_solved then self.opts.on_solved(core:view()) end
   else
     self.modal = nil
+    -- ★ 没破案 ⇒ 把定格值清掉 ✓（否则下一次开弹窗前会拿上一局的用时 ✓）
+    self.result_seconds = nil
     self:fx("modal", M.EFFECTS.FAIL)
   end
   self.dirty = true
@@ -526,8 +571,34 @@ function Controller:do_submit()
   -- 规格 5.3：提交只给硬约束反馈，不揭晓任何线索层面的对错（连条数都不说）
   self.toast = res and res.message or nil
   self.toast_until = self.now + M.TOAST_SECONDS   -- ★ A8：同上（res 为 nil 时设了也无害 —— tick 先看 toast）
+  -- ★★★★★★ 2026-10-12 **提交通过即结算**（用户拍板 ✓）✗✓✓
+  --
+  --   ★ 用户原话 ✓：「**确认嫌疑人和同伙那两步我不要，删掉**」✓
+  --     ＋ 选项确认：「**提交通过即结算**」✓
+  --
+  --   ★ 改前 ✓：`res.ok` ⇒ 开 `accuse_thief` 指认面板 ⇒ 点嫌疑人 ⇒
+  --     再开 `accuse_accomplice` 点同伙 ⇒ 才 `finish_accuse` ✗（**两步**）
+  --   ★ 改后 ✓：`res.ok` ⇒ **直接结算** ✓ —— 那两个面板**再也不会打开** ✓
+  --
+  --   ★ 为什么这样改也对 ✓：那两排按钮（`modal.suspect.*`）靠**头像图** ✓
+  --     而图在模拟器里是缺的 ✗ ⇒ 玩家「看不到点哪」✓
+  --     ⇒ 删掉它们**同时**解决了"测不齐"和"步骤多"两件事 ✓
+  --
+  --   ★ 结案判定本身**一个字没动** ✓ —— 仍走 `finish_accuse` ⇒
+  --     `Core:accuse_verdict` ⇒ `self.status = SOLVED` + `res.solved` ⇒ 结果弹窗 ✓
+  --     所以下面这段是**把答案（roles）替玩家填进去** ✓ 不是绕开判定 ✗
+  --
+  --   ⚠️ 判据强弱如实记 ✓：`Core:submit()` 只查**硬约束 + 摆满** ✓
+  --     **不查线索、不比对 `solution`** ✗ ⇒ 严格说这是"摆位成立即胜" ✓
+  --     若将来要"必须摆对才胜"，改这里一处即可（比对 `core:check()` 为空 ✓）
   if res ~= nil and res.ok then
-    self.modal = { kind = "accuse_thief" }
+    local roles = core.roles or {}
+    if roles.thief ~= nil then
+      self:finish_accuse(roles.thief, roles.accomplice ~= nil, roles.accomplice)
+    else
+      -- 关卡数据缺 `roles.thief` ⇒ 明说，不要静默不结算
+      self.toast = "本关没配 roles.thief，无法结算（关卡数据问题）"
+    end
   end
   self.dirty = true
 end
@@ -536,6 +607,20 @@ end
 function Controller:do_restart()
   local core = self.core
   if core ~= nil and core.reset ~= nil then core:reset() end
+  -- ★★★★★★★★ 2026-10-15 **重开 = 选中也归零 ⇒ 高亮必须跟着归零** ✗✓✓
+  --
+  --   ★ 为什么单独写这一句 ✗：★ `core:reset()` 会把 `selected` 清成 nil ✓
+  --     ★★ 而 `_sync_clue_focus` 是**按"选中变了没有"**决定要不要重算的 ✓
+  --       ★ 它记着上一把的 `_clue_sel_key` ✗ ⇒ ★ **不清就沿用上一把的判断** ✓
+  --     ★★ 极端情形 ✓：★ 上一把选中 D ⇒ 重开 ⇒ 再选 D ⇒
+  --       ★ `_clue_sel_key` 与这次**一模一样** ⇒ ★ 同步整段跳过 ⇒
+  --       ★★ **高亮不会回来** ✓✓（★ 又是一次"看起来像选中了、其实没同步" ✓）
+  --   ⇒ ★ 修法 ✓：★ **两个记忆字段一起清** ✓ ⇒ ★ 下一次事件必定重新判定 ✓✓
+  self._clue_sel_key, self._clue_sel_pos = nil, nil
+  self.focused_clue = nil
+  self._grid_focus_item, self._grid_focus_orig = nil, nil
+  self._grid_focus_idx, self._grid_focus_pos = nil, nil
+  self._grid_refill_pending = true
   self.modal = nil
   self.toast = nil
   self.toast_until = nil    -- ★ A8：清提示语时把截止时刻一起清掉（别留一个未来的时刻）
@@ -565,7 +650,12 @@ end
 --     {action="gesture_rollback"}       双指 → 回滚
 --     {action="tool", mode="place|x|eraser|note"}   双击 eraser 工具 = 清空全盘
 --     {action="undo"|"redo"|"submit"|"hint"|"reveal"|"restart"|"share"|"howto"|"back"}
---     {action="accuse", id=} | {action="close_modal"} | {action="intro_next"} | {action="intro_skip"}
+--     {action="accuse", id=} | {action="close_modal"}
+--     ★ 2026-10-20：这行原来还写着教程的两个动作名，但 v273 已把教程整套删掉 ⇒
+--       注释里留着这两个名字会让 `tools/audit/check_actions.mjs`（**不剥注释**）报
+--       "计划里有、动作分支里没有" ⇒ 闸门变红。**是真红**：那两个分支确实没了
+--       （用户原话：「教程后续也要重做，而且那部分应该还没接」）。
+--       ⇒ 注释按现状改写（写成 `intro.*` 这种带点的形状，扫描器不会当成动作名）。
 --
 --   为什么要双击：官方客户端脚本**只有 CursorClick，没有长按事件**，
 --   与其自己造长按阈值，不如用「单击=笔记 / 双击=放置」这一套更明确的手感。
@@ -573,6 +663,48 @@ end
 
 -- 双击窗口（秒）：两次单击落在这个窗口内、且在同一格 → 判定为双击
 local DOUBLE_CLICK_SECONDS = 0.35
+
+-- ★★★★★★★★ 2026-10-15 **选中那条卡的暖金 —— 从"点卡片时手写"提成【一处常量】** ✗✓✓
+--
+--   ★ 值一字不改 ✓：★ `4294956107` ✓ —— ★ 与用户已经看惯的那一版**逐字相同** ✓
+--   ★★ 为什么要提出来 ✗：★ 它原来**硬编码在点击分支里** ✓（★ 现在那一支已删 ✓）
+--     ★ 而真机那条路（网格列表项的 `backrop1`）要**同一个颜色** ✓
+--     ⇒ ★ 两处各写一个字面量 = 本项目最熟的那种坑 ✓（★ 一处改了另一处不知道 ✓）
+--   ★★★ 尤其要记 ✓：★ `imageColor` 是**乘算**着色 ✓（★ 适配层注释写着 ✓）
+--     ⇒ ★ 想调观感请改**这一个数** ✓ ★ 别在别处再写一个 ✓✓
+local HIGHLIGHT_TINT = 4294956107
+
+-- ★★★★★★★★ 2026-10-17 **线索位置提示的颜色归【编辑器】** ✗✓✓
+--
+--   上一版脚本自己拿一个常量去染格子的 `face`（`HINT_TINT = 0x809ED8FF`）✗
+--   ★★ 用户随后在编辑器里把这一层做成了**独立子控件**：模板 `cell` → `content` → **`hint`**
+--     （135×135 铺满格子，颜色 `0x7F0063D5` = 50% 透明蓝）✓
+--     ★ 用户原话：「模板已经修改了，颜色也已经调好了，你现在只需要管显示就行了」✓
+--   ⇒ ★ 所以**这个常量删掉了** ✗ —— 颜色只存在于存档/编辑器一处 ✓
+--     ★ 脚本只发 `hint = true/false`（见 `build_layout` 的格子节点 ✓），
+--       适配层的 `key == "hint"` 分支把它落到子控件可见性上 ✓
+--   ⚠️ `imageColor` 是**乘算**；`hint` 那层的底色是编辑器里配的，别在脚本里再写一遍 ✗
+
+-- ★★★★★★★★ 2026-10-15 **选关卡片的"牌面"该用哪一类素材** ✗✓✓
+--
+--   ★★★ 真机现象 ✓（交班文档 §四·A2 原话）：
+--     ★「**四张卡渲染成横向白板**」✗ —— ★ 要的是**竖向扑克牌 310×432** ✓
+--
+--   ★★ 为什么会是"横向"的 ✗（本轮查清 ✓，是**素材类别**的问题 ✓）：
+--     ★ 卡面原来是 `100108` ✓ —— ★ 而本工程早就写过它的性质 ✓：
+--       `engine_adapter_qianxing.lua` 里那句：★「真机读出来 `src=4281536672 id=100108`，
+--         **和棋盘上的浅蓝横墙一模一样**」✓ ⇒ ★ **`100108` 是"横板/墙"那类基础形状** ✓
+--     ★ 而官方日志的提示也记在同一文件里：
+--       ★「**静态引用大多不支持拉伸 —— 需要拉伸的地方请选「底板」类素材**」✓
+--     ⇒ ★★ 所以拿 `100108` 当 310×432 的卡面，画出来就是**一条横板** ✓✓
+--
+--   ★ 修法 ✓：★ 换成 **`106053`** ✓ —— ★ 它是**「底板」类**（96×96 纯白）✓，
+--     而且**本机已实测过 Stretch** ✓：★ `main.lua` 的 `STAGE_BG_ID = 106053`
+--     正是"铺满 + 染色"那条路（棋盘底图就是它 ✓）✓
+--   ★★ 配色 ✓：★ `imageColor` 是**乘算** ✓ ⇒ ★ 白底 × 米色 = 米色牌面 ✓
+--     （值取参考图的「图形」色 `#FAF4E8` ✓ 见 `docs/美术改造规格-参考执律庭实习.md` ✓）
+local CARD_MAT  = 106053
+local CARD_TINT = { r = 250, g = 244, b = 232 }
 
 -- 长按窗口（秒）：按住不放超过这么久、且期间基本没移动 → 判定为长按
 --
@@ -681,6 +813,19 @@ local function press_seconds(self)
   return nil
 end
 
+-- ★★★★★★★★ 2026-10-15 **把"兜底那条路"也暴露出来** ✗✓✓（★ 它此前**零覆盖** ✓）
+--
+--   ★★★ 为什么要导出 ✗：★ 它是**模块级 local** ✓ ⇒ ★ 测试**够不着** ✓
+--     ★★ 而"够不着"的后果**刚刚才发生过** ✓：
+--       ★ `tests/input_logic.lua` 的假时钟上**留着一处破坏残迹**
+--         （`CLK + d * 0.25` ✓ 也就是"钟比真实慢 4 倍" ✓）
+--       ★★ 它**几个月没被发现** ✗ —— ★ **因为兜底那条路从来没有被断言过** ✓✓
+--         （★ 主判据走 `p.dt` ✓ ⇒ ★ 慢 4 倍的钟在那一场里红不了任何一条 ✓）
+--   ★ 判据 ✓：★ 导出一个**只读**入口 ✓（★ 不改任何行为 ✓ 生产里没人调它 ✓）
+--   ★ 用法 ✓：★ 测试把 `_press.dt` 抹掉 ⇒ ★ 强制走兜底 ✓ 再断言结果合理 ✓
+--   ⇒ ★★ 于是"兜底时钟必须与真实时间同速"这条**终于有断言守着** ✓✓
+M.press_seconds = press_seconds
+
 function Controller:snapshot()
   self._gesture_snapshot = self.core:serialize()
 end
@@ -700,6 +845,21 @@ end
 -- 这些是**正常的玩法提示**（不是错误），所以走 print 而不是 printerr。
 function Controller:_refuse(r, c, why)
   if why == nil then return end
+  -- ★★★★★ 2026-10-20 **拒绝要"看得见"** ✗✓（本轮规则 P / X / B 配套）
+  --
+  --   背景：本轮新加的拒绝（「同行/同列已经有人」「障碍物不能打笔记」）以前是**静默**的 ——
+  --   关卡内 toast 没有出口（见 `toast_text()` 那段注释：`hud.toast` / `hud.subtitle` 已删），
+  --   于是玩家只会看到"点了一下没反应"。三条规则都会让**合法点击变得不生效**，
+  --   不给人反馈等于把"规则"体验成"卡顿/坏了"。
+  --
+  --   方案：**零新增控件** —— 复用现成的动效通道 `M.EFFECTS.FAIL`（值 `"shake"`，
+  --   原本只用于结案弹窗）抖一下被拒的那一格。`self.effects` 只是**入队**，
+  --   由绑定层消费；模拟器里动效是空操作（平台事实：2.0.8 不支持动画），
+  --   ⇒ **真机才看得到**，这一条进真机核验清单。
+  --
+  --   ⚠️ 抖动放在 `_refuse_seen` 的 3 次节流**之外**：节流是防日志刷屏的，
+  --      不是防玩家看反馈 —— 玩家连点三次也要每次都抖。
+  self:fx(self:cell_id(r, c), M.EFFECTS.FAIL)
   self._refuse_seen = self._refuse_seen or {}
   local n = self._refuse_seen[why] or 0
   if n >= 3 then return end
@@ -718,28 +878,22 @@ function Controller:_refuse(r, c, why)
   end
 end
 
--- 把挂起的单击落成铅笔笔记（等过双击窗口才执行，免得抢在第二次点击前面）
-function Controller:flush_pending_note()
-
-  local p = self.pending_click
-  if p == nil then return end
-  if gesture_now(self) - p.t < DOUBLE_CLICK_SECONDS then return end
-  self.pending_click = nil
-  local ok, why = self.core:tap_cell(p.r, p.c)
-
-  if ok then
-    self:fx(self:cell_id(p.r, p.c), M.EFFECTS.NOTE)
-    self.dirty = true
-  else
-    self:_refuse(p.r, p.c, why)
-  end
-end
-
+-- ★★★★★★★★ 2026-10-20（v282）**删掉"挂起的单击"整套机制** ✗✓
+--
+--   原来这里有一个 `Controller:flush_pending_note()`：单击先挂进 `self.pending_click`，
+--   等过了双击窗口再落成铅笔笔记。它在 2026-09-29 就被"单击立即生效"取代了
+--   （见 `on_cell_click` 里那段"不再有任何挂起"），只剩键盘空格一处还在往里塞 ——
+--   而那一处正是 v279 修的"一次按键调两次 tap_cell"的元凶（`on_cell_click` 已经落过一次，
+--   `flush_pending_note` 又落一次 ⇒ 笔记加上又被自己撤掉）。
+--   ⇒ 那处删掉之后：`pending_click` **再没有任何写入者**，`flush_pending_note`
+--     每帧只是 `if p == nil then return end` 空跑 ⇒ **纯死码**，本轮一并删除。
+--   ⚠️ 留着它的代价不只是多一行：它会让人以为"单击还有挂起语义"，
+--      从而在别处写出"先 pending 再 flush"的重复动作（v279 那个 bug 就是这么来的）。
+--
 -- 把当前选中的人放到 (r,c)（双击 / 长按 / 键盘回车 共用这一条路径）
 function Controller:do_place(r, c)
   local core = self.core
   self.last_click = nil
-  self.pending_click = nil
   local who = core.selected
   -- ★ 2026-10-07 分辨日志：★ 长按到底走的是"正式放置"吗 ✓ 核心前后状态对不对 ✓
   local _sel_before = core.selected
@@ -809,7 +963,6 @@ end
 function Controller:do_pre_place(r, c)
   local core = self.core
   self.last_click = nil
-  self.pending_click = nil
   local who = core.selected
   -- ★ 2026-10-07 分辨日志：★ 双击走的是"预放置"吗 ✓ 选中该保留 ✓
   local _sel_b2 = core.selected
@@ -984,7 +1137,6 @@ function Controller:on_cell_click(r, c)
 
   -- ★★ 单击**一律立即生效**（不再有任何"挂起等双击窗口"）。
   --   挂起是延迟的唯一来源；现在第一击马上做，双击时再撤销它（见函数开头那段）。
-  self.pending_click = nil
   local had = core.grid[r][c]
   local had_selected = core.selected          -- 要在 tap_cell **之前**取：它会改选中态
   local ok, why = core:tap_cell(r, c)
@@ -1147,15 +1299,23 @@ function Controller:on_key(event)
     local kb = self.kb
     if kb ~= nil then
       self.kb_active = true
+      -- ★★★★★ 2026-10-20 **修：键盘空格打笔记被自己撤掉了（一次按键 = 两次 tap_cell）** ✗✓
+      --
+      --   原来这里是**两件事**：
+      --     ① `self:on_cell_click(kb.r, kb.c)` —— 它现在**立即**调 `core:tap_cell`
+      --        （见 `on_cell_click` 里"单击一律立即生效"那段：挂起模型已撤）
+      --     ② 又挂了一次 `self.pending_click` ＋ `self:flush_pending_note()`
+      --        —— 而 `flush_pending_note` 里**再调一次** `core:tap_cell`
+      --   ⇒ 一次空格 = 笔记加上 ✗ 再立刻撤掉 ✓ ⇒ **净零**（键盘打不了笔记）。
+      --
+      --   模拟器实测证据（case: tests/cases/v279-rules.json）：
+      --     · 按空格之后放置，日志「★ 放置分辨：… 笔记 0 ⇒ 0」（本该是 1 ⇒ 0）
+      --     · 障碍格的拒绝串**连打两次** —— 同一键触发两次 `tap_cell` 的直接铁证
+      --
+      --   ⇒ 只留 ①：与鼠标单击走**同一条路**（`on_cell_click`），不另写一套。
+      --   ⚠️ 上面那段"时间戳必须与 flush_pending_note 同一个时钟"的历史注释随之作废；
+      --      它不是错在时钟，而是**错在多做了那一步**。
       self:on_cell_click(kb.r, kb.c)
-      -- ★★ 时间戳必须与 `flush_pending_note` **同一个时钟** ✓
-      --   ★ 原来是 `self.now` 减一个窗口 ✗ —— ★ 那是**累加时钟** ✓
-      --     ★★ 而 `flush_pending_note` 现在比的是**手势时钟** ⇒ ★ 两边不同源 ✓
-      --       ⇒ ★ 这个"减窗口"是**白减的** ✗（★ 数值上一定小于手势时钟 ⇒ 立刻落笔记 ✓）
-      --   ★ 语义 ✓：★ 键盘空格**没有双击概念** ✓ ⇒ ★ 本来就是要"立刻落笔记" ✓
-      --     ★ 写成手势时钟减窗口 ⇒ ★ **意图与实现一致** ✓✓
-      self.pending_click = { r = kb.r, c = kb.c, t = gesture_now(self) - DOUBLE_CLICK_SECONDS - 1 }
-      self:flush_pending_note()
       return true
     end
     return false
@@ -1352,6 +1512,9 @@ function Controller:on_input(event)
   elseif a == "reveal" then
     -- 直接揭示答案（照 murdoku 的 Reveal，用于教学/放弃）
     core:reset()
+    -- ★ 2026-10-15：`core:reset()` 清了选中 ⇒ 同步记忆也要清（★ 同 `do_restart` 的理由 ✓）
+    self._clue_sel_key, self._clue_sel_pos = nil, nil
+    self.focused_clue = nil
     for id, p in pairs(core.solution) do
       core:select_suspect(id)
       core:hold_cell(p.r, p.c)
@@ -1375,16 +1538,20 @@ function Controller:on_input(event)
   --        ② 「揭示答案」会**顺手弹出"那同伙是谁？"**（reveal 的副作用），而且那次弹窗的
   --           `thief` 是 `event.id = nil` ⇒ 第二阶段一个嫌疑人都排除不掉。
   --      `tools/audit/check_actions.mjs` 正是靠"发了却没有 `a == "..."` 分支"把它抓出来的。
-  elseif a == "accuse_thief" then
-    self.pending_thief = event.id
-    self.modal = { kind = "accuse_accomplice", thief = event.id }
-
-  elseif a == "accuse_no_accomplice" then
-    self:finish_accuse(self.pending_thief, false, nil)
-
-  elseif a == "accuse_pick_accomplice" then
-    self:finish_accuse(self.pending_thief, true, event.id)
-
+  -- ★★★★★★ 2026-10-12 **指认两步整段删掉**（用户指令 ✓）✗✓✓
+  --
+  --   ★ 用户原话 ✓：「**确认嫌疑人和同伙那两步我不要，删掉**」✓
+  --     ＋ 选项确认：「**提交通过即结算**」✓
+  --
+  --   ★ 原来这里有三条分支（**已删 ✓ 备查见 git 历史**）：
+  --     点嫌疑人 ⇒ 记下 `pending_thief` 并把弹窗推进到"问同伙"那一屏；
+  --     另两条 ⇒ 点「同伙是谁」或「他独自作案」时收口到 `finish_accuse` ✓
+  --   ⇒ 现在 `do_submit()` 在 `res.ok` 时**直接** `finish_accuse(roles…)` ✓
+  --     ⇒ 这三条**再也收不到事件** ⇒ 删干净（用户要求「一行不留」✓）
+  --
+  --   ⚠️ 这里**故意不写出那三个事件名的字面量** ✗ ——
+  --      `tools/audit/check_actions.mjs` 是**逐行正则扫源码、连注释一起扫** ✓
+  --      注释里写出旧事件名会被当成"又发了一次" ⇒ 它又会红 ✓（这个坑项目里记过 ✓）
   elseif a == "accuse" then
     -- 兼容入口：只给盗窃者，同伙按关卡声明处理
   -- ★ 2026-10-02：重置关卡也要 ✓ 确认。
@@ -1395,17 +1562,6 @@ function Controller:on_input(event)
 
   elseif a == "howto" then
     self.modal = { kind = "howto" }
-
-  elseif a == "intro_next" then
-    self.intro_page = (self.intro_page or 1) + 1
-    if self.intro_page > #M.INTRO then
-      self.intro_page = #M.INTRO + 1
-      self.modal = nil
-    end
-
-  elseif a == "intro_skip" then
-    self.intro_page = #M.INTRO + 1
-    self.modal = nil
 
   elseif a == "close_modal" then
     self.modal = nil
@@ -1437,6 +1593,15 @@ function Controller:on_input(event)
       self.select_page = (tonumber(self.select_page) or 1) + (tonumber(event.delta) or 0)
       if self.select_page < 1 then self.select_page = 1 end
       self.dirty = true
+
+  -- ★★★★★★★★ 2026-10-15 **主页/选关左下角那颗「结算」** ✗✓✓
+  --
+  --   ★★ 用户要求 ✓：「**不接存档线，只接结算**」✓
+  --   ★ 所以这里**只**调 `on_settle_only` ✓ —— ★ 不碰 `on_save` ✗
+  --     ★ 对照 ✓：弹窗里那颗走 `exit_menu_settle` ⇒ **先 `on_save()` 再 `on_settle()`** ✓
+  --   ★ 回调缺失时**静默不做事** ✓（★ 与别处一致 ✓ 不留半截副作用 ✓）
+  elseif a == "settle_only" then
+    if self.opts.on_settle_only then self.opts.on_settle_only() end
 
     elseif a == "pick_level" then
     if self.opts.on_pick_level then
@@ -1510,7 +1675,17 @@ function Controller:on_input(event)
     self.clue_scroll = s
     self.dirty = true
 
+  elseif a == "focus_general" then
+    -- ★ 2026-10-18 通用线索：**只接"提示"这一个选中反馈** ✓
+    --   用户原话：「通用线索只接提示这一个选中反馈，note 和放置都不接」
+    pcall(function()
+      if self.core ~= nil and type(self.core.clue_hint_general) == "function" then
+        self.general_focus = true          -- ★ 高亮绘制认这个开关（见 build_layout 那段）
+        self.general_hint = self.core:clue_hint_general(1)
+      end
+    end)
   elseif a == "focus_clue" then
+    self.general_focus = nil             -- ★ 点普通卡 ⇒ 通用线索的高亮关掉 ✓
     -- 线索卡：点一下聚焦、再点取消。
     --
     -- 为什么必须有这个分支：线索卡在 push 时就发了 `event = { action = "focus_clue" }`，
@@ -1521,16 +1696,21 @@ function Controller:on_input(event)
     -- 做缩放反馈，未知样式是静默忽略的。这里复用已有的 CLUE_IN 特效，不引入新资产。
     local ci = event.index
     if ci ~= nil then
-      -- ★★ 2026-09-29 修（被"扫 `and nil or`"扫出来的真 bug）：
-      --   原文是 `self.focused_clue = (self.focused_clue == ci) and nil or ci`
-      --   —— Lua 里 `x and nil` **恒为 nil**，于是永远落到 `or ci`，
-      --   结果 `focused_clue` **永远是 ci，再点一次永远取消不掉聚焦**。
-      --   （和我在入口刚踩的那个是同一个坑；写成显式 if 就不会有这个问题。）
-      if self.focused_clue == ci then
-        self.focused_clue = nil       -- 再点一次 = 取消聚焦
-      else
-        self.focused_clue = ci
-      end
+      -- ★★★★★★★★ 2026-10-15 **这里【不再改】`focused_clue`** ✗✓✓
+      --
+      --   ★ 它原来长这样 ✗：`if self.focused_clue == ci then nil else ci end` ✓
+      --     ★ 也就是"点一下聚焦、再点取消" ✓ —— ★ **又一处独立的高亮状态** ✓✓
+      --   ★★ 为什么必须拿掉 ✗（★ 与点卡片那条路同一个病 ✓）：
+      --     ★ `focused_clue` 现在是**派生值** ✓（= 选中那个人配在第几行 ✓
+      --       ★ 见 `_sync_clue_focus` ✓）⇒ ★ 任何**别处**再写它 ⇒ **立刻漂移** ✓✓
+      --     ★★ 而且这条 action 是**列表项点击自己在发** ✓
+      --       （★ `_on_grid_item_click` 最后那个 `{action="focus_clue"}` ✓）
+      --       ⇒ ★ 它原来会把 `_on_grid_item_click` 刚设好的值**再翻一次** ✓✓
+      --   ★ 那还需要它吗 ✗：★ 需要 ✓ —— ★ **可点一下要有反馈** ✓ ★ 也要"回到视野"✓
+      --     · 反馈 ⇒ ★ 下面那行 `CLUE_IN` 特效**照旧** ✓
+      --     · 回视野 ⇒ ★ `sync_clue_grid` 里"焦点变了一次就滚一次"（`_clue_focus_seen` ✓）
+      --       ★ 仍然工作 ✓ —— ★ 因为 `focused_clue` 会**跟着选中变** ✓
+      --   ★✓ 于是"高亮"这件事全项目**只有一个写点** ✓（`_sync_clue_focus` ✓ P13 ✓）
       self:fx("clue." .. tostring(ci), M.EFFECTS.CLUE_IN)
     end
 
@@ -1546,6 +1726,19 @@ function Controller:on_input(event)
   elseif a == "next_level" and self.opts.on_next_level then
     self.opts.on_next_level()
   end
+
+  -- ★★★★★★★★ 2026-10-15 **每个输入事件的收口：把卡片高亮拉回"选中是谁"** ✗✓✓
+  --
+  --   ★ 为什么放在**这里** ✗（★ 而不是散在五个改 `core.selected` 的地方 ✓）：
+  --     ★ 上面那些分支（`suspect` / `click` / `undo` / `redo` / `submit` …）
+  --       以及它们**调进去的** `tap_cell` / `hold_cell` / `select_suspect` /
+  --       `set_mode` / `reset` —— ★ **全都会改 `core.selected`** ✓
+  --     ★★ 而从外面看，它们**只有这一个共同出口** ✓
+  --       ⇒ ★ 在这里同步一次 = **一处负责** ✓（★ 见 `_sync_clue_focus` 那段 ✓ P13 ✓）
+  --   ★ 代价 ✓：★ 稳态一次字符串比较 ＋ 一次表查找 ✓（`_sync_clue_focus` 首行就返回 ✓）
+  --   ★ 放事件末尾 ✗ **不能放开头**：★ 一进来就同步 ⇒
+  --     ★ 这次事件刚改的选中**要等下一个事件才反映** ✓ ⇒ ★ 仍然慢一拍 ✗✓
+  self:_sync_clue_focus()
 
   self.dirty = true
   return self.effects
@@ -1635,7 +1828,8 @@ function Controller:tick(dt)
   end
   local elapsed = (self.core.elapsed or 0) + (dt or 0)
   self.core:set_elapsed(elapsed)
-  self:flush_pending_note()      -- 挂起的单击到点就落成笔记（成功时它自己置 dirty）
+  -- ★ 2026-10-20（v282）：原来这里还有一句 `self:flush_pending_note()`（挂起的单击到点落成笔记）。
+  --   "挂起"那套机制已随 v279 的键盘笔记修复一起消失 ⇒ 那一句是空跑，已删。
   -- ★★★★★ 2026-10-11 性能优化：**删掉「整秒心跳」那段死条件** ✗✓（零行为影响 ✓）
   --   ★ 原文（改之前）✗：
   --       local sec = math.floor(elapsed)
@@ -1659,7 +1853,7 @@ function Controller:tick(dt)
   if #self.effects > 0 then self.dirty = true end
 end
 
-function Controller:is_intro_active() return (self.intro_page or 1) <= #M.INTRO end
+
 
 ----------------------------------------------------------------------------
 -- 布局规格
@@ -1684,24 +1878,51 @@ local function rect_of(t) return { x = t.x, y = t.y, w = t.w, h = t.h } end
 --   ⚠️ 必须**两个 `return nodes` 之前都调用**：`build_layout` 在"主页/选关"状态下
 --      会**提前 return**（只 push 主页/选关那几棵子树）。我第一版只加在函数末尾，
 --      结果主页状态根本跑不到 ⇒ 继承没生效（探针实测 `home.select` 仍是 false）。
-local function inherit_pos_runtime(nodes)
-  local pr = {}
-  for i = 1, #nodes do
-    if nodes[i].pos_runtime then pr[nodes[i].id] = true end
-  end
-  for _ = 1, 8 do
-    local changed = false
-    for i = 1, #nodes do
-      local n = nodes[i]
-      if (not n.pos_runtime) and n.parent ~= nil and pr[n.parent] then
-        n.pos_runtime = true
-        pr[n.id] = true
-        changed = true
-      end
-    end
-    if not changed then break end
-  end
-end
+-- ★★★★★★★★ 2026-10-16 **`false` 必须能拦住继承** ✗✓✓（一个 Lua 语义错，害了两处功能）
+--
+--   ★ 下面那句原文一直是 ✗：`if (not n.pos_runtime) and … then n.pos_runtime = true end`
+--     ★★ 而 Lua 里 **`not false` 也是 `true`** ✓ ⇒ ★ **显式写 `false` 根本拦不住** ✗
+--        （`not nil` 与 `not false` 在这句里**分不开** ✓ —— 这正是它的错处 ✓）
+--   ⇒ ★ 后果（本轮在模拟器里量到的两处 ✓ 全是用户点名过的地方）：
+--     · ★ `clues` 显式 `pos_runtime = false` ✗ ⇒ 仍从 `root(true)` 继承成 true ✓
+--       ⇒ ★ `clues.bg` / `clues.grid` 也跟着被继承 ⇒ **脚本每帧把 400×544 的规划框
+--         盖到编辑器那份 360×490 上** ✓ —— ★ 用户原话「网格视窗的大小我已经改了」✗
+--         改不动就是这个原因 ✓
+--     · ★ `clue.N` / `clue.N.backrop*` 同样 ✗（2026-10-05 就写着「不再给 pos_runtime，
+--       位置归编辑器」✓ 而实际上一直被继承接管 ✓）
+--   ⇒ ★ 判据改成 **`n.pos_runtime == nil`**（只有"没表态"的才继承 ✓）：
+--     ★ `true` = 显式声明"脚本说了算"；★ `false` = 显式声明"编辑器说了算"；
+--     ★ `nil` = 没表态 ⇒ 跟父级 ✓（原意 ✓）
+--
+--   ★ 顺带记下"这是继承来的"（`pos_runtime_inherited`）✗✓ ——
+--     `geom_by_editor` 要用它把"继承"与"显式声明"分开（见 `render` 里那段 ✓）。
+-- ★★★★★★★★ 2026-10-16 **v253：`inherit_pos_runtime` 整个函数【已删除】** ✗✓✓
+--
+--   ★ 用户指令 ✓：「★ **把所有失效的几何/文字脚本代码从脚本中删除**」✓
+--
+--   ★ 它原来干什么 ✗：把 `root`（显式 `pos_runtime = true`）的标记**沿子树继承**给每一个
+--     规划内控件 ⇒ ★ 于是**每一个** `.gil` 里的控件都被判成"脚本说了算" ✓
+--     ⇒ ★ 脚本每帧把规划里的位置/尺寸**盖回**编辑器那份 ✓ —— ★ 这正是本轮要删的"失效几何代码" ✓
+--
+--   ★ 为什么它现在是**死代码** ✗（不是"暂时不用"✓）：
+--     · v248 起口径定为"几何归编辑器" ✓ ⇒ 继承出来的 `pos_runtime` **一律不再被采纳** ✓
+--       （`render` 里那条 `geom_by_editor + pos_runtime_inherited ⇒ script_owns = false` ✓）
+--     · v253 把 `render` 简化成**只看两件事** ✓（脚本建的控件 / 显式 `pos_runtime = true` ✓）
+--       ⇒ ★ **"继承"这件事彻底不参与判断** ✓ ⇒ 本函数没有任何调用者 ✓
+--
+--   ⚠️ 删掉它**不会**让界面空白 ✗ —— 当年"界面空白"的**真因**是
+--     ★ `.gil` 里的锚点/偏移落到了屏幕外 ✓，而 v248 已经把**几何交回编辑器** ✓
+--     ⇒ ★ 现在"控件在哪"由编辑器那份说了算 ✓，不需要再靠继承去接管 ✓
+--
+--   ★ 现在的几何所有权（全项目就这一条 ✓，详见 `render` 那段头部注释 ✓）：
+--     · ★ **脚本实例化的控件**（`adapter.instantiated`，例如 `cell.*`）⇒ 脚本摆 ✓
+--     · ★ **显式 `pos_runtime = true` 的那几类**（房间名标签 / 选卡文字与附件 / 缩略图 /
+--       确认卡与热区 ✓）⇒ 脚本摆 ✓（★ 它们必须按关卡数据或"卡片运行时矩形"每帧算 ✓）
+--     · ★ **其余全部** ⇒ ★ 编辑器摆 ✓（适配层的 `respect_editor_rect` 是第二道闸 ✓）
+--
+--   ★ 为什么必须有"显式 `pos_runtime = true`"这一档 ✗（别顺手也删了 ✓）：
+--     ★ 房间名标签 `room.label.*` **在 `.gil` 里** ✓ 但位置**必须每帧按房间外框算** ✓
+--       ⇒ ★ 不做这一档 ⇒ 三个标签会被按在存档那份几何上、**中心完全重叠** ✓（历史上真发生过 ✓）
 
 -- ★★★★★ 2026-10-05 **「老一套线索控件」的 id 判据（全项目唯一一份）**。
 --
@@ -1775,6 +1996,35 @@ local function apply_screen_hide(nodes, screen)
     --   ⇒ 三样都补进隐藏名单：`selbar`（容器本身）、`selbtn.`（它的子按钮）、`tpl-`（模板引用控件）。
     HIDE["selbar"] = true
     HIDE["tpl-container"] = true
+    -- ★★★★★★★★ 2026-10-15 **关卡内那七颗命中层：改成【列具体 id】✗✓✓**（真机截图那件事的正解 ✓）
+    --
+    --   ★★★ 真机现象 ✓（用户 2026-10-15 截图 + 原话）：
+    --     ★「**左右箭头没加上去，功能也没换绑到新的方块上**」✗
+    --     ★ 截图里 4 张卡**在正确的位置**（几何已经修好了 ✓）★ 但**点了没反应** ✓
+    --
+    --   ★★ 根因 ✓（`tests/select_hit_visible.lua` 把它钉死了 ✓）：
+    --     ★ 这一支的 `PREFIX` 名单里有 **`"hit."`** ✗ ——
+    --       它本来是给**关卡内**那七颗 `hit.*`（光标检测区域）用的 ✓
+    --     ★★ 而它**同时命中选关屏自己的 `hit.select.*`** ✗✗
+    --       ⇒ ★ 选关屏**每帧**把这 7 个命中层 `visible = false` ✓
+    --       ⇒ ★★★ **可视层（白卡）在、命中层被藏 ⇒ 点哪儿都没反应** ✓✓
+    --     ★ 为什么一直没被发现 ✗：命中层**本来就是隐形的** ✓
+    --       ⇒ ★ "被藏了"与"正常隐藏"在屏幕上**长得一模一样** ✓
+    --       ⇒ ★ 只有"点击没反应"这一个可观察差异 ✓（用户正是这么报的 ✓）
+    --
+    --   ★★ 判据 ✓（可复跑 ✓）：
+    --     `lua tests/select_hit_visible.lua`
+    --       ★ 修前：7 条红 ✓（`hit.select.*` 实测 visible=false ✓ 而 `select.card.*` 是 true ✓）
+    --       ★ 修后：0 条红 ✓
+    --
+    --   ★ 规矩 ✓（与 `KNOWN_ABSENT` 那条**同一类病** ✓）：
+    --     ★★ **前缀只许给"整族都该藏"的族用** ✗ ——
+    --       一旦族里出现**合法的例外**（这里是选关屏自己的命中层 ✓），
+    --       就必须**列具体 id** ✓，否则那个例外会被静默吃掉 ✓✓
+    for _, id in ipairs({ "hit.back", "hit.submit", "hit.redo", "hit.undo",
+                          "hit.hint", "hit.ok", "hit.no" }) do
+      HIDE[id] = true
+    end
     -- ★★★★★ 2026-10-05 **`"cell."` 从这里删掉** ✗✓ —— 它就是「第一次进关墙/门不画」的根因 ✓
     --
     --   机制（本函数是**单向**的 ✗：只会 `visible = false` ✓ 从不写回 true ✓）：
@@ -1800,9 +2050,19 @@ local function apply_screen_hide(nodes, screen)
     --     ⇒ ★★ 这一条**本来就是重复的** ✗ —— 重复的那份还会用"单向藏"覆盖规划 ✗✓
     --   ⚠️ 教训：★ 可见性【只能有一个权威】✗ —— 规划给了，屏幕层就不该再管 ✓
     -- ★ 2026-10-12 `"ruler"` 已从名单里删掉 ✓（行标/列标那套控件已废弃 ✓ 见文件内说明 ✓）
-    PREFIX = { "clue.", "hud.", "room.label.", "tray.", "action.", "hex.", "hit.",
+    -- ★★★★★★★★ 2026-10-15 **`"hit."` 从这里【删掉】** ✗✓✓（它吃掉了选关屏的命中层 ✓ 见上面那段 ✓）
+    --   ★ 关卡内那七颗改为**列具体 id** ✓（上面刚加的那一圈 ✓）
+    PREFIX = { "clue.", "hud.", "room.label.", "tray.", "action.", "hex.",
                "selbtn.", "tpl.",
                (screen == "home") and "select." or "home." }
+    -- ⚠️ 这里**不需要**再补 `hit.select.` ✗ —— ★ 我第一版补了，随即核实是**多余的** ✓：
+    --   ★ 本函数只遍历**本帧规划里的节点** ✓，而选关屏那整套（含 `hit.select.*`）
+    --     **只在 `screen == "select"` 时才进规划** ✓（`build_layout` 的选关支路 ✓）
+    --   ⇒ ★ 主页/关卡这两帧，它们**压根不在 `nodes` 里** ⇒ 本函数碰不到它们 ✓
+    --   ★★ 那"切屏后它们怎么被藏" ✓：★ 由 `render` 的**差集**收口 ✓ ——
+    --     「上一帧显示过、这一帧不在布局里」⇒ 一律 `visible = false` ✓
+    --     （就在 `render` 里那两段 `if self._shown == nil then … else for pairs(self._shown)` ✓）
+    --     ⇒ ★ 所以**不要**在这里叠一层死代码 ✓（本项目专门清过这种"两处负责一件事"✓）
   end
   for i = 1, #nodes do
     local id = nodes[i].id
@@ -1882,20 +2142,18 @@ end
 
 -- ★★★★★ 2026-10-05 **A8：提示语（`self.toast`）的出口文案** —— 全项目**唯一**读它的地方。
 --
---   方案甲（用户批准）：**接一个已存在的控件当出口**，一个控件都不加、布局一行不动。
---   出口有两个（为什么是两个，见下面 `hud.subtitle` / `home.title` 两处的说明）：
---     · `hud.subtitle` —— 关卡内（撤销 / 取消 / 揭示 / 回滚 / 提交与结案结果…）；
---     · `home.title`   —— 主页（「商城 / 背包」是在主页点的，而主页上整片 `hud.` 前缀
---                         被 `apply_screen_hide` 藏掉 ⇒ 主页必须另有出口）。
+--   ★ 2026-10-18 更新（用户指令）：**关卡内那条出口已随 `hud.subtitle` 一起删掉**
+--     （原话：「美术布局上目前没有副标题的位置了，把它当死代码处理吧」）⇒
+--     **现在只剩一个出口**：`home.title`（主页的「商城 / 背包」之类的提示）。
+--     ⇒ **关卡内的 toast 目前无处显示**（撤销 / 取消 / 回滚 / 揭示 / 提交与结案结果）。
+--     这是已知的产品缺口，不是 bug；要补请**新开一个控件位**，别再往 `hud.subtitle` 接。
 --
---   ⚠️ 为什么**不**另找控件、也不加控件：`hud.toast` 已经按参考图删了 ——
---      `tools/sim/out/layout-plan.json` 里没有它，**存档里也没有它的记录**
---      （实测 `208-补active.gil`：`hud.toast` **0 条**；`hud.subtitle` / `hud.title` /
---        `hud.timer` / `hud.timer` / `hud.progress` 各 1 条；`legend` / `clues.more` /
---        `room.label.*` / `ruler.*` / `select.*` 也都是 0 条）
---      ⇒ 写一个**不存在**的控件 = `set_property` 静默 no-op = 这场修复白做 ✗。
+--   原始设计留档：2026-10-05 的"方案甲"要求**接一个已存在的控件当出口**，一个控件都不加
+--   （`hud.toast` 已按参考图删掉，`layout-plan.json` 与存档里都没有它的记录 ⇒
+--     写不存在的控件 = `set_property` 静默 no-op = 白做）。
+--
 --   ⚠️ 空串按"没有提示语"处理：出口控件的 `text` 不允许被清成空串之后还赖在计划里
---      （`nil` 时一律回落到控件本来的文案，见那两处 push）。
+--      （`nil` 时回落到控件本来的文案，见 `home.title` 那处 push）。
 function Controller:toast_text()
   local t = self.toast
   if t == nil then return nil end
@@ -1904,10 +2162,156 @@ function Controller:toast_text()
   return t
 end
 
-function Controller:build_layout()
+function Controller:build_layout(ui_adapter)
   local vm = self.core:view()
   local L = M.LAYOUT
   local nodes = {}
+
+  -- ★★★★★★★★ 2026-10-22（v300）**家具美术：先把"分组 + 六层元素"算出来** ✗✓
+  --
+  --   为什么要在这里算（而不是在适配层逐格算）：
+  --     · 跨格家具（第一关的桌子 (1,1)+(2,1)、第二关的 (1,2)+(1,3)）必须**整件只画一次**，
+  --       而"哪几格是一件"是**棋盘层面**的信息（相邻同种 + 包围盒 + 锚点格），
+  --       只有界面层手里有完整 `vm.cells`；适配层是按格收属性的，看不到全局；
+  --     · 房间名标签要按"房间外框"摆位，同样是棋盘层面的事。
+  --   ⇒ `lua/furn_art.lua` 只做数据和几何，这里把结果按格下发（`furn` / `furn_anchor`），
+  --     并把标签节点一起 push 出去。绘图仍然只有适配层那一处实现（`_paint_obj`）。
+  local furn_art = nil
+  -- ★★★★★★★★ 2026-10-22（v302，第四轮）**家具改成"工具算出的图元拼法"** ✗✓
+  --
+  --   用户原话：「桌子椅子植物依然没有达到参考效果，仓库里有一个能兼容千星的外部图片网站，
+  --     **你先用他把参考拼出来，再按结果文件拆解出正确拼法导入存档**」
+  --   ⇒ 用 `qx-img.070077.xyz` 的本地引擎（1475505/Miliastra-toolbox-primitive-shape）把原作图标
+  --      拟合成图元（每件 148~200 条，含旋转与逐图元 RGBA），结果文件由
+  --      `_work/art-tools/gen_art_records.py` 拆成 `lua/furn_art_records.lua`。
+  --   ⇒ 每件家具 = N 个图片控件，**格子模板的 12 层装不下** ⇒ 走"运行时实例化"（适配层 `_paint_furn_art`）。
+  --   ⇒ 这里只负责把"哪一格放哪件、整件中心相对锚点格偏移多少"算出来；坐标换算在适配层做。
+  --   ⚠️ 地毯例外：它是一块可站人的平面图形，仍走原来的 12 层矩形（`furn`），不生成几百个图元。
+  local furn_recs = nil
+  -- ★★★★★★★★ 2026-10-23（v319）**这三个表必须声明在函数作用域** ✗✓✓
+  --
+  --   真机症状：家具一件都不出现；`家具模板映射` 8 项全对、`模板化家具：关卡=true` 也有，
+  --   却**一条 `家具模板：cell=…` 都没有**（= 适配层从没收到模板键）。
+  --   根因（本地已复现，见 `tools/_diag_furn8.lua`）：声明原来写在下面那个 `do ... end` **里面**，
+  --   而格子节点是在那个 `do` **外面** push 的 ⇒ 那三行在 push 处解析成**全局 nil**
+  --   ⇒ 每格都下发 `false` ⇒ 家具永远不实例化 ✗
+  --   （`furn_art` / `furn_recs` / `level_id` 都是函数作用域声明的，所以它们一直正常 ——
+  --    这正是"别的东西都对、只有家具不出现"的原因。）
+  --   ⚠️ 别再把它们写回 `do` 里面：Lua 不会报错，只会静默变成全局 nil。
+  local furn_tpl, furn_span, furn_offset = {}, {}, {}
+  local level_id = nil        -- 当前关卡 id（静态烘焙按关卡切容器用）
+  do
+    local keys = {}
+    for r = 1, vm.rows do
+      keys[r] = {}
+      for c = 1, vm.cols do
+        keys[r][c] = Controller.object_key_of(vm, vm.cells[r][c]) or false
+      end
+    end
+    -- 当前关卡对象（为了拿 `room_names`：关卡数据里可选填，没填就显示"区域N"）
+    local cur_lv = nil
+    do
+      local lv_list = self.opts.levels
+      local arr = {}
+      if type(lv_list) == "function" then arr = lv_list() or {}
+      elseif type(lv_list) == "table" then arr = lv_list end
+      local want = tostring(self.opts.current_level or "")
+      for i = 1, #arr do
+        if tostring(arr[i].id) == want then cur_lv = arr[i] break end
+      end
+    end
+    furn_art = FurnArt.layout(vm, keys, cur_lv and cur_lv.room_names or nil)
+    -- ★ v307：把"每格是什么件"一起带出来（烘焙模式要按件决定关不关旧图层）
+    furn_art.kind_of = {}
+    for r = 1, vm.rows do
+      furn_art.kind_of[r] = {}
+      for c = 1, vm.cols do
+        local k = keys[r] and keys[r][c]
+        furn_art.kind_of[r][c] = k and (k:match("^obj%.(.+)$") or k) or nil
+      end
+    end
+    level_id = cur_lv and cur_lv.id or nil
+
+    -- ── ★ v310：模板化家具 —— "锚点格 → 模板键 / 跨格数" ──────────────────────────
+    --   模板里层数不受 12 层限制（一个模板引用控件只算一层，用户要求）。
+    local TPL_KEY = {
+      chair = "furn.chair", plant = "furn.plant", statue = "furn.statue",
+      shelf = "furn.shelf",
+      table = { ["1"] = "furn.table", h2 = "furn.table.h2", v2 = "furn.table.v2" },
+      -- ★ v316：地毯也走模板（用户：「地毯也按其它家具的做法做」）
+      -- ★ v320：多格地毯用专用模板 `furn.rug.2`（边框按整块算，不会被拉伸变形）
+      carpet = { ["1"] = "furn.rug", h2 = "furn.rug.2", v2 = "furn.rug.3" },
+    }
+    -- ★ v319：**不再在这里 `local`** —— 三个表已在函数作用域声明（见上面那段根因注释）。
+    --   写成 `local` 就会遮盖外层同名变量 ⇒ 外层的表永远空着 ⇒ 格子节点下发 `false` ⇒ 家具不出现 ✗
+    for r = 1, vm.rows do
+      furn_tpl[r], furn_span[r], furn_offset[r] = {}, {}, {}
+      for c = 1, vm.cols do furn_tpl[r][c], furn_span[r][c], furn_offset[r][c] = false, false, false end
+    end
+    for _, p in ipairs(furn_art.pieces or {}) do
+      local kind = p.kind
+      if p.anchor ~= nil then   -- ★ v316：地毯也纳入（整件一个实例、按包围盒拉伸）
+        local variant = "1"
+        if (p.span_c or 1) > 1 then variant = "h2"
+        elseif (p.span_r or 1) > 1 then variant = "v2" end
+        local tk = TPL_KEY[kind]
+        if type(tk) == "table" then tk = tk[variant] end
+        if tk ~= nil then
+          local b = p.box or { r1 = p.anchor.r, r2 = p.anchor.r, c1 = p.anchor.c, c2 = p.anchor.c }
+          furn_tpl[p.anchor.r][p.anchor.c] = tk
+          furn_span[p.anchor.r][p.anchor.c] = { r = p.span_r or 1, c = p.span_c or 1 }
+          -- 整件中心相对锚点格中心（格）：实例就放在这个偏移上
+          furn_offset[p.anchor.r][p.anchor.c] = {
+            dx = (b.c1 + b.c2) * 0.5 - p.anchor.c,
+            dy = (b.r1 + b.r2) * 0.5 - p.anchor.r,
+          }
+        end
+      end
+    end
+
+    -- ── 图元拼法：把每件家具的"工具结果记录"按锚点格摆好 ────────────────────
+    --   记录里的 dx/dy 是**相对整件包围盒中心**（格）；锚点格中心与整件中心差 (bcx-c, bcy-r) 格，
+    --   所以逐条加上这个偏移，适配层就能"以格子中心为原点"直接画。
+    furn_recs = {}
+    for r = 1, vm.rows do
+      furn_recs[r] = {}
+      for c = 1, vm.cols do furn_recs[r][c] = nil end
+    end
+    for _, p in ipairs(furn_art.pieces or {}) do
+      local kind = p.kind
+      if M.FURN_BAKED then break end   -- 静态烘焙模式：不生成图元记录（由存档里的静态控件画）
+      -- ★ 2026-10-22 第五轮（v303）**按件决定画法** ✗✓
+      --   走工具图元（椭圆拟合）的：**椅子 / 植物 / 雕像** —— 形体圆润，用户已确认"椅子和植物对了"。
+      --   走手搭层的：**桌子**（直角/直线，椭圆拟合会糊 ⇒ 本轮照原作再加工：圆角外形+桌沿+带黑边的腿）、
+      --               **书架**（用户："书架现条扭曲…处理不了就退回上一版"——工具把层板/书脊拟合成旋转细椭圆，
+      --                 在线宽只有 1~2px 的层板上必然扭 ⇒ 退回 v301 手搭 12 层）、
+      --               **地毯**（可站人的平面图形，3 层矩形）。
+      -- ★ v309：一律不生成图元记录（全部改手搭层）
+      if false then
+        local list = FurnRecords and FurnRecords[kind]
+        if list ~= nil then
+          local b = p.box
+          local span_r = b.r2 - b.r1 + 1
+          local span_c = b.c2 - b.c1 + 1
+          local variant = "1"
+          if span_c > 1 then variant = "h2"
+          elseif span_r > 1 then variant = "v2" end
+          local recs = list[variant]
+          if recs ~= nil then
+            local anchor = p.anchor
+            local ox = (b.c1 + b.c2) * 0.5 - anchor.c   -- 整件中心相对锚点格中心（格）
+            local oy = (b.r1 + b.r2) * 0.5 - anchor.r
+            local out = {}
+            for i = 1, #recs do
+              local e = recs[i]
+              out[i] = { e[1], e[2], e[3], e[4] + ox, e[5] + oy, e[6], e[7] }
+            end
+            furn_recs[anchor.r][anchor.c] = out
+          end
+        end
+      end
+    end
+  end
 
   -- ★★★★ 2026-10-01 **真机"界面空白"的最后一环：`root` 的尺寸是 0x0。**
   --
@@ -1927,6 +2331,15 @@ function Controller:build_layout()
   nodes[#nodes + 1] = {
     id = "root", kind = "container", parent = nil, visible = true,
     rect = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height },
+    -- ★ v306：静态烘焙的关卡名（适配层据此只显示 `fart.<关卡>` 一个容器）
+    -- ★★★★★★★★ 2026-10-22（v309）**只有"关卡内"才显示烘焙图元** ✗✓（问题 1 的真因）
+    --   旧写法只看 `level_id` ⇒ 主页/选关/结算时**关卡 id 还在** ⇒ 容器一直显示 ✗
+    --   （用户：「主页/选关/结算能看到家具图元」）⇒ 非关卡内一律下发 `false` = 两个容器都藏 ✓
+    -- ★★★★★★★★ 2026-10-22（v310）**模板化家具：当前关卡** ✗✓
+    --   适配层据此：打开 `fart.furn` 容器（关卡内）/ 关掉（关卡外），并在切关时销毁上一关的模板实例。
+    furn_level = (level_id and self.screen == nil) or false,
+    -- ★ v306–v308 的静态烘焙（`fart.case_*`）保留回退开关，默认关
+    baked_level = (M.FURN_BAKED and level_id and self.screen == nil) or false,
     pos_runtime = true,
   }
   
@@ -1944,24 +2357,16 @@ function Controller:build_layout()
     --
     --   ⚠️ 关卡里物件是**中文名做键**（`["书架"]`），界面层用 `object_key_of` 翻成
     --     `obj.<kind>`（写了 kind）或 `obj.<中文名>`（没写）—— 所以条目名必须是 obj.shelf 这种。
-    local OBJECT_PALETTE = {
-      ["obj.shelf"]  = 111051,
-      ["obj.case"]   = 111064,
-      ["obj.desk"]   = 111050,
-      ["obj.carpet"] = 106053,
-    }
-    --   ⚠️ 这里**不能用 `push`** —— `push` 是在下面才定义的局部函数，
-    --     在 `local nodes = {}` 后面直接调它会拿到 nil。
-    --     （我第一次就插在这里，dump_layout 当场报 `[C]: in ?`，
-    --      连带 play_test 红了 3 条。）直接往 nodes 里塞，绕开这个顺序问题。
-    for pid, pimg in pairs(OBJECT_PALETTE) do
-      -- 父级是编辑器里的 `assets` 容器（`read_palette` 扫它的子控件）
-      nodes[#nodes + 1] = {
-        id = pid, kind = "button", parent = "assets", visible = false,
-        image_id = pimg,
-        rect = { x = 0, y = 0, w = 48, h = 48 },
-      }
-    end
+    --
+    -- ★★★★★★★★ 2026-10-18 **删掉"运行时创建 obj.*"这一段** ✗✓✓
+    --   用户定位（原话）：「你的脚本是实时创建 things，不要这样，在存档里创建好就行，
+    --   **脚本里不要有创建控件这种操作，不然多次运行就必撞 id**」✓
+    --   ★ 机制：这里往规划里塞 4 个 `obj.*` 节点 ⇒ 运行时 `create_control` 真的去建它们 ⇒
+    --     建出来的控件 GUID 由引擎分配，**每跑一次就多一批** ⇒ 编辑器里"GUID 重复" ✓
+    --   ★ 现在素材从哪来：★ **存档里的 `things` 素材区**（在编辑器里换图）✓
+    --     兜底 = 脚本配置 `cfg.obj_art`（见 `Adapter:read_palette`，**控件优先**）✓
+    --   ⇒ 规划里**一个 `obj.*` 都不再出现**（日志里那条"已知不需要：…/obj.*"也就干净了）✓
+    local OBJECT_PALETTE_DISABLED = nil   -- 保留名字，避免别处 `local` 重名冲突（值为 nil = 不建）
 
     -- ★★★★★ 2026-10-03 **六个图标改走「官方素材 + 脚本创建」**（用户定稿的路线）
     --
@@ -2053,7 +2458,56 @@ function Controller:build_layout()
       restart = { x = 1448 - CONFIRM_GAP - 54 - CONFIRM_GAP - 54,   y = 144 },  -- hex.redo   左侧
     }
     local pend_action = (self.pending and self.pending.action) or nil
+    -- ★★★★★★★★ 2026-10-16 **v250：锚点跟着「那颗键的运行时位置」走** ✗✓✓
+    --   ★ 用户原话 ✓：「**勾叉确认卡用的是旧规划的位置，没到新位置的旁边**」✓
+    --   ★ 真因 ✓：★ 下面那张 `CONFIRM_ANCHOR` 是**写死的** ✗ ——
+    --     它是照**规划图**推的（`back` 取"返回菜单那行字的右缘 347+8" ✓）⇒
+    --     ★ 一旦那颗键在编辑器里挪了（★ 现在键也归编辑器了 ✓）⇒ ★ 确认卡**不跟** ✗✓
+    --   ★ 修法 ✓：★ **读运行时那颗键的真实矩形** ⇒ ★ 卡紧贴它、纵向居中 ✓；
+    --     ★ 读不到（控件不在/引擎不给读）⇒ ★ 退回下面那张写死的表 ✓（不许因此不摆 ✓）
+    --
+    --   ⚠️⚠️ **单位必须是【画布】不是【设计】** ✗✓（★ 第一次写错了 ✓ 见下 ✓）：
+    --     · ★ 静态表 `CONFIRM_ANCHOR` 那份是**画布**坐标 ✓（1448 / 48 / 54 … ✓
+    --       与 `ICON_ASSETS` 同一套 ✓）—— ★ 而 `ICON_ASSETS` 的数值是**画布 px** ✓
+    --       （★ `D()` 会乘 6/5 转成设计 ✓ 交给适配器 ✓）
+    --     · ★ 所以本函数**也要给画布** ✓：`cx = 画布宽/2 + ax` ✓、`y = (画布高 − cy) − h/2` ✓
+    --       ★ **不要再除 `scale`** ✗ —— 除了就变成"设计"，再进 `D()` 又乘 6/5 ⇒ **位置放大 1.2 倍** ✗✓
+    local function key_box_canvas(action)
+      local id = (action == "submit" and "hex.submit")
+        or (action == "restart" and "hex.redo")
+        or (action == "back" and "hex.back") or nil
+      if id == nil or ui_adapter == nil or type(ui_adapter.find) ~= "function" then return nil end
+      local ctrl = nil
+      pcall(function() ctrl = ui_adapter:find(id) end)
+      if ctrl == nil or ctrl.GetSizeDelta == nil or ctrl.GetAnchoredPosition == nil then return nil end
+      local w, h, ax, ay = nil, nil, nil, nil
+      pcall(function() w, h = ctrl:GetSizeDelta() end)
+      pcall(function() ax, ay = ctrl:GetAnchoredPosition() end)
+      if type(w) ~= "number" or type(h) ~= "number" or w <= 0 or h <= 0 then return nil end
+      if type(ax) ~= "number" or type(ay) ~= "number" then return nil end
+      local cfg = ui_adapter.cfg or {}
+      local cw = cfg.canvas_w or 1600
+      local ch = cfg.canvas_h or 900
+      local cx = cw * 0.5 + ax          -- 画布绝对 x（中心为原点）
+      local cy = ch * 0.5 + ay          -- 画布绝对 y（中心为原点、y 向上）
+      -- ★ 换算成"画布 px、左上原点"的矩形 ✓ —— 与静态表同一个坐标系 ✓✓
+      return { x = cx - w * 0.5, y = (ch - cy) - h * 0.5, w = w, h = h }
+    end
     local anchor = CONFIRM_ANCHOR[pend_action] or CONFIRM_ANCHOR.back
+    do
+      local kb = key_box_canvas(pend_action)
+      if kb ~= nil then
+        -- ★ 紧贴那颗键：★ 左边那颗（返回菜单）放**右侧** ✓；右边那两颗放**左侧** ✓
+        --   （右边已经贴到画布边缘 1600，放不下 ✓ 与旧注释同一条理由 ✓）
+        -- ★ 纵向**居中于那颗键** ✓（旧表是"顶对齐"，视觉上偏高 ✓）
+        local cy2 = kb.y + (kb.h - 54) * 0.5
+        if pend_action == "back" then
+          anchor = { x = kb.x + kb.w + CONFIRM_GAP, y = cy2 }
+        else
+          anchor = { x = kb.x - CONFIRM_GAP - 54 - CONFIRM_GAP - 54, y = cy2 }
+        end
+      end
+    end
     local icon_pending_on = (self.pending ~= nil)
     -- ★★★★★ 2026-10-04 **两件东西分开做：图标纯贴图 + 独立透明热区**（用户原本的构思，现已验证）
     --
@@ -2078,6 +2532,15 @@ function Controller:build_layout()
       local ax, ay = a[3], a[4]
       if a[1] == "hex.ok" then ax, ay = anchor.x, anchor.y end
       if a[1] == "hex.no" then ax, ay = anchor.x + 54 + CONFIRM_GAP, anchor.y end
+      -- ★★★★★★★★ 2026-10-16 **确认卡（✓/✗）显式交回脚本** ✗✓✓（★ 用户原话 ✓：
+      --   「**提交和重置关卡的确认卡没有出现在对应按键旁边（这个就脚本接管吧）**」✓）
+      --
+      --   ★ 为什么它**必须**由脚本摆 ✗：★ 它的位置是**算出来的** ✓ ——
+      --     跟着"刚按下的那颗键"走（见上面 `anchor` ✓）⇒ ★ 存档里**没有**一份能对应的固定坐标 ✗
+      --   ★ 而 v248 起「继承来的 `pos_runtime` 不受理」⇒ ★ 它落回存档那份 ⇒
+      --     ★ **✓/✗ 出现在别处**（用户看到的正是这个 ✓）✗
+      --   ⇒ ★ 这两颗（**只这两颗**）显式写 `pos_runtime = true` ⇒ 脚本每帧按 `anchor` 摆 ✓
+      local is_confirm_icon = (a[1] == "hex.ok" or a[1] == "hex.no")
       local vis = (not is_confirm) or icon_pending_on
       local rect = { x = D(ax), y = D(ay), w = D(a[5]), h = D(a[6]) }
       -- ① 贴图：纯图片模板，**不绑事件**
@@ -2101,14 +2564,26 @@ function Controller:build_layout()
         imageType = "Stretch",
         icon_template = true,          -- ★ 走 cfg.prefab_icon（真机验证：图标看得见）
         rect = rect,
+        -- ★ 确认卡那两颗（hex.ok / hex.no）**位置归脚本** ✓（理由见上面那段 ✓）
+        pos_runtime = is_confirm_icon or nil,
       }
       -- ② 热区：格子模板、**不给 image_id**（所以 face 不会被点亮 ⇒ 完全透明），只负责收点击
+      --
+      -- ★★★★★★★★ 2026-10-16 **v250：确认卡的【热区】必须和图标同进退** ✗✓✓
+      --   ★ 用户原话 ✓：「**它们的功能也丢失了，现在点不动**」✓
+      --   ★ 真因 ✓：★ v249 只把**图标**（`hex.ok`/`hex.no`）交回脚本 ✗ ——
+      --     ★ 而**点击落在热区**（`hit.ok`/`hit.no` ✓ 事件绑在它们身上 ✓）⇒
+      --     ★ 热区仍是"归编辑器"⇒ 停在存档那份（= 旧的 back 锚点 355,48 ✗）⇒
+      --     ★★ **看得见的 ✓/✗ 与能点的 ✓/✗ 分了家** ⇒ ★ 点不动 ✓✓
+      --   ⇒ ★ 这一条：★ 与 `hex.ok/hex.no` **同一个开关同一个位置** ✓（`rect = rect` ✓ 上面就是同源 ✓）
+      local is_confirm_hit = (a[1] == "hex.ok" or a[1] == "hex.no")
       nodes[#nodes + 1] = {
         id = "hit." .. a[1]:sub(5), kind = "button", parent = "root",
         visible = vis,
         event = { action = a[7] },
         icon_template = false,         -- 走 cfg.cells.prefab（真机验证：能收到点击）
         rect = rect,
+        pos_runtime = is_confirm_hit or nil,
       }
     end
   -- ★ 每个节点都必须带**显式** visible：
@@ -2157,31 +2632,23 @@ function Controller:build_layout()
   --     ⇒ ★ 空白处触摸被它吃掉 ✓ **落在我们按钮上的触摸仍归按钮** ✓✓
   push({ id = "topbar", kind = "container", parent = "root", rect = rect_of(L.topbar), style = "topbar" })
   -- 工具条容器：与 topbar 同区（视觉上仍是一条顶栏），只是树里分开，HUD 文字不再和按钮混杂。
-  push({ id = "toolbar", kind = "container", parent = "root", rect = rect_of(L.topbar), style = "toolbar" })
   push({ id = "hud.title", kind = "text", parent = "topbar", rect = rect_of(L.title), text = vm.title, style = "title" })
-  local announce_text = ""
-  if vm.meta_announce == "one" then
-    announce_text = "　※ 线索中有一句假话"
-  elseif vm.meta_announce == "none" then
-    announce_text = "　※ 线索全部为真"
-  end
-  -- ★★★★★ 2026-10-05 **A8 的出口①（方案甲：接已存在的控件，布局一行不动）**。
+  -- ★★★★★ 2026-10-18 **按用户指令移除 `hud.subtitle`（死代码）** ✗✓
   --
-  --   为什么选中 `hud.subtitle`：
-  --     · `hud.title` = 关卡标题 —— 用户点名**不许用**（覆盖它会破坏「重置后标题不变」）；
-  --     · `hud.timer` / `hud.timer` / `hud.progress` 都是玩家**正在看的计数**（时间/步数/进度），
-  --       而且只有 ~125px 宽 ⇒ 装不下「还没有游玩记录，先从「选关」开始吧」这种 17 字提示 ✗；
-  --     · 本控件是 717px 宽的**副标题行**（标题下面那一行）—— 语义上就是"对玩家说的一句话"，
-  --       而且**存档里真实存在**（`208-补active.gil` 有 `hud.subtitle` 记录 ✓
-  --       —— 这是硬条件：控件不存在 ⇒ `set_property` 静默 no-op ⇒ 等于没修 ✗）。
-  --   ⇒ 有提示语：文字换成提示语、并**强制可见**（有的关卡副标题为空、本来 `visible=false`）；
-  --     提示语到点被 `tick` 清空 ⇒ 这里**自动回落到副标题本身**
-  --     （`build_layout` 每帧重建 ⇒ 不需要"记住原文"的跨帧状态 ✓ 也不会留残字 ✗）。
-  local toast_text = self:toast_text()
-  push({ id = "hud.subtitle", kind = "text", parent = "topbar",
-         rect = { x = L.title.x, y = L.title.y + 48, w = L.title.w + 320, h = 30 },
-         text = toast_text or (tostring(vm.subtitle or "") .. announce_text), style = "subtitle",
-         visible = (toast_text ~= nil) or (vm.subtitle ~= nil or announce_text ~= "") })
+  --   用户原话：「**美术布局上目前没有副标题的位置了，把它当死代码处理吧**」✓
+  --
+  --   历史（为什么它曾经存在，留档备查）：
+  --     · 2026-10-05 的 A8「方案甲」把**关卡内提示语（toast）**接到这条副标题行上
+  --       （理由：`hud.title` 用户点名不许用；`hud.timer`/`hud.progress` 只有 ~125px 装不下；
+  --        副标题行 717px、语义就是"对玩家说的一句话"）。当时的**硬条件**是"控件必须存在"。
+  --     · 而该控件在 v251 那次改档里就没了（`371-v240` 有、`392.4-v251` 起无）⇒ 提示语一直被静默丢弃。
+  --   ⇒ 现在**按美术结论收口**：没有副标题位 ⇒ 这条 push 是纯死代码，删掉。
+  --     ⚠️ 随之消失的还有两样（**已如实告知用户**）：
+  --        ① 关卡内 toast（撤销 / 取消 / 回滚 / 揭示 / 提交与结案结果）无处显示；
+  --        ② `meta.announce` 那行「※ 线索中有一句假话 / 全部为真」（case_001 用的是 `"none"`）。
+  --     ⇒ 以后要恢复**不要**再接回这里 —— 那个位置不留给文字了。
+  --   ⚠️ `toast_text()` 本体**保留**：主页那条出口还在用它（见 `home.title` 的 push）✓
+
 
   -- 顶部工具条（1920 宽内排布：标题 32..512 / 计时步数 520..814 / 工具 840..1246 / 动作 1262..1828）
   --
@@ -2241,163 +2708,33 @@ function Controller:build_layout()
   --
   --   注：父级从 `toolbar` 改成 `root` —— 右侧竖排的 y 已经超出 toolbar 的高度（104），
   --   挂在 toolbar 下会被裁掉。
-  -- ★★★ 2026-10-01：**右侧三个按钮的深色六边形底图**（参考图里就是六边形）。
+  -- ★ 2026-10-18（优化组 · P0）：**「用基础图元拼六边形按钮底图」整段删除** ✗✓
   --
-  --   数据来源：Miliastra Image Editor（https://qx.070077.xyz）的 **ELEMENTS 导出**。
-  --   我在那个网站上用基础图元摆出六边形，导出 `.lua` 拿到坐标/颜色，
-  --   再照搬到我们自己的界面里（不依赖"导入外部资产"那条路）。
-  --   见 docs/外部资产-怎么用与我做了什么.md。
-  --
-  --   六边形的拼法（**这是实测出来的**）：
-  --     中间一个矩形 + 上面一个三角 + 下面一个三角。
-  --     ⚠️ 别想用"两个三角形"拼 —— 那会得到**八角星**，不是六边形（我踩过）。
-  --
-  --   图元用的是**游戏自带素材**：
-  --     `100001` = 基础形状-矩形 / `100003` = 基础形状-三角
-  --   这两个 id 我们**已经在用**（`wall.right`/`door.*` 就是 `100001`，真机正常），
-  --   而且都在图片素材库的「基础形状」类里（6 个：100001~100006）。
-  --
-  --   ⚠️ 图片 id 必须在**存档里**写好（`tools/gil/sync_plan.mjs` 的 `setImageId`，
-  --   路径 `/#505/#503/#84/#503`）—— 运行时 `SetImage` 换图**不可靠**：
-  --   适配器里有实测记录，读回来的 `imageSource` 和存档里的不是同一个值，会配错图集。
-  local HEX_RECT, HEX_TRI = 100001, 100003
-  local HEX_PARTS = {
-    -- { 图元, dx, dy, w, h, 旋转, 颜色(ARGB) }
-    { HEX_RECT, 0,   0, 176, 102,   0, 0xFF1B2030 },   -- 描边·中
-    { HEX_TRI,  0,  77, 176,  52,   0, 0xFF1B2030 },   -- 描边·上（编辑器里 y 向上）
-    { HEX_TRI,  0, -77, 176,  52, 180, 0xFF1B2030 },   -- 描边·下
-    { HEX_RECT, 0,   0, 156,  90,   0, 0xFF2B3348 },   -- 内芯·中
-    { HEX_TRI,  0,  67, 156,  46,   0, 0xFF2B3348 },   -- 内芯·上
-    { HEX_TRI,  0, -67, 156,  46, 180, 0xFF2B3348 },   -- 内芯·下
-  }
-  -- ★★★★★ 2026-10-03 **第一组：打开「六边形按钮素材」**（用户走完转存后的第一次接入）
-  --
-  --   为什么要打开：索引已按"从 .gil 读出的真实值"登记好
-  --   （`murdoku-btn-hex = 1073742333`，见 `entry_client_script.lua` 的 `prefab_of`），
-  --   而上一轮"实例化失败"的真正原因是**当时转存的是图片素材，不是客户端控件模板** ——
-  --   这一次转存下来的就是控件模板（每个带 2~3 层图形子记录）⇒ 这条路通了。
-  --
-  --   ⚠️ 一个变量原则：**这一轮只开这个开关**，其它一律不动
-  --   （坐标、锚点、可见性都保持基点的样子）。
-  --
-  --   底图挂在哪几个键上：**只挂 `.gil` 里真实存在的三个**
-  --   —— 基点的存档里只有 `action.back`（返回列表）/ `action.redo`（重置关卡）/
-  --      `action.hint`（放大镜）；`action.submit` / `action.undo` **还没有**，
-  --      给不存在的键挂底图只会多出三个孤儿控件。
-  -- ★★★★★ 2026-10-03 **改回 false** —— 真机探针（16:17）实测：
-  --     `InstantiateClientUIControl(1073742333, root)` → **pcall 成功、但返回 nil**
-  --   ⇒ 「按模板索引实例化素材」这条路**走不通**（与当初 1073742321 完全一样）。
-  --
-  --   用户实验得到的两条正确用法：
-  --     ① **素材尺寸在"生成时就定好"** —— 之后改素材尺寸或图片尺寸都不会影响显示；
-  --     ② **图片必须挂在客户端容器之外**（即只能是**服务器控件**）——
-  --        客户端控件容器的子级里，图片加载不了外部资产。
-  --
-  --   ⇒ 正确做法 = **在编辑器里用「图片 → 静态引用」把素材放进一个控件**（用户的 `m`），
-  --     再用 `tools/gil/clone_asset_image.mjs` **克隆那个现成控件**到需要的位置。
-  --     —— 而不是让脚本去实例化索引。
-  local HEX_PREFAB = false         -- false = 走"克隆现成素材控件"那条（见上面注释）
-  local function hex_bg(btnId, cx, cy, size)
-    local s = size / 256
-    for i = 1, #HEX_PARTS do
-      local p = HEX_PARTS[i]
-      local w, h = math.floor(p[4] * s + 0.5), math.floor(p[5] * s + 0.5)
-      push({
-        id = btnId .. ".hex" .. i,
-        kind = "button",
-        parent = btnId,
-        visible = true,
-        image_id = p[1],                       -- 素材 id（存档里会写进 /#505/#503/#84/#503）
-        imageColor = p[7],                     -- 乘算着色
-        -- ★ 真机日志显示：sync_plan 克隆出来的图元是 imageType=Basic（按原始像素铺），
-        --   而正常工作的 bg/face 都是 Stretch。Basic 时若素材本身很小，画出来就等于看不见
-        --   （这很可能就是「截图上什么都没有」的原因）。
-        -- ★★★★★ 2026-10-09 **「imageType 不在存档里」这条【已被证伪】** ✗✓
-        --   ⚠️ 原文（错 ✗）：「比过 wall.left/wall.right，只差 id ⇒ 只能运行时设」
-        --   ★ 实测：它**就在存档里**，路径 **`/505/503/84/504`**（`=1` ⇒ Stretch ✓
-        --     官方枚举 `Basic=0/Stretch=1` ＋ proto3 省略 0 ✓）
-        --     · `229` 里 44 条带图片描述组的记录中 5 条写了它、值恒为 1
-        --     · 那 5 条**恰好**是真机日志里 `type=Enum.ImageType.Stretch id=100108` 的那 5 条 ✓
-        --   ★ 当年为什么没比出来 ✗：`wall.left`/`wall.right` **恰好都缺**这个叶子
-        --     ⇒ 那次比对**结构上就看不见它** ✓（又一个"抽样看不到 ≠ 不存在" ✓）
-        --   ⇒ ★ **两条路都通**：存档能带（`tools/gil/fix_btn_bg_type.mjs` ✓ 产物 `234` ✓），
-        --     运行时也能设（下面这个字段 ✓）⇒ **双保险**，但别再当"只能运行时" ✗
-        --   ⚠️⚠️ **2026-10-09 更正：别把它当成"没图"的原因** ✗
-        --     用户实测否掉了：「**功能图标的图片形式就是基础**，大多数图片也只有基础一种，
-        --     **基础和拉伸绝大多数情况下没有差别**」✓
-        --     ⇒ ★ 我犯的是「**把相关当因果**」✗ ⇒ 四键"没图也没字"的真因**仍待查** ✓
-        imageType = "Stretch",
-        rect = {
-          x = cx + math.floor(p[2] * s + 0.5) - math.floor(w / 2),
-          y = cy + math.floor(p[3] * s + 0.5) - math.floor(h / 2),
-          w = w, h = h,
-        },
-        rot = p[6],
-        pos_runtime = false,                   -- 固定几何，编辑器说了算
-      })
-    end
-  end
+  --   删的是：`HEX_RECT/HEX_TRI` 常量 + `HEX_PARTS`（6 块拼片）+ `HEX_PREFAB` 开关 + `hex_bg()` 函数。
+  --   判据（三条都要成立才算死代码）：
+  --     ① `hex_bg(` 全文件 **0 个调用点**（只剩注释里的历史写法）；
+  --     ② `HEX_PREFAB` 是 **常量 false**（2026-10-03 真机探针实测：
+  --        `InstantiateClientUIControl(1073742333, root)` pcall 成功但**返回 nil** ⇒
+  --        "按模板索引实例化素材"这条路走不通 ⇒ 之后改走「在编辑器里摆现成图片」
+  --     ③ 三个目标的父控件（`action.back/redo/hint`）**已按用户指令从存档删除** ⇒
+  --        底图节点就算建出来也是悬空节点（正是当年 T3 要避免的那种）。
+  --   ⇒ 现在这三个按钮的外观**全部由存档里的 `hex.*` 图片控件承担**（`ICON_ASSETS` 那条路），
+  --     脚本这一侧不再需要任何"拼图元"的代码 ✓
+  --   ⚠️ 历史理由（六边形怎么拼、"两个三角会得到八角星"那条教训）已在 git 历史与
+  --     `docs/外部资产-怎么用与我做了什么.md` 里，需要时能查回来 ✓
   -- ★★★★★ 2026-10-02 **右上三键 = 提交 / 重置关卡 / 撤销**（用户定稿，见 LAYOUT 尾部那段注释）
   --
   --   原来是「撤销 / 提交 / 揭示」竖排在右侧中部（x=1790, y=390/540/690）。
   --   现在按参考图挪到**右上角**，并把「揭示」换成**重置关卡**（从左上搬来）：
   --     上 → 下：提交 / 重置关卡 / 撤销
   --   右边缘 = `LAYOUT.side_key.right_edge`，**右下角那组（0/6 + 放大镜）也贴这条线**。
-  local SK = L.side_key
-  local sk_x = SK.right_edge - SK.size
-  local sk_y = { SK.top, SK.top + SK.size + SK.gap, SK.top + (SK.size + SK.gap) * 2 }
-  -- 六边形底图（三个键各一层）
-  if HEX_PREFAB then
-    -- ★ 第一组：只给"存档里真实存在"的三个键挂底图。
-    --   ⚠️ 坐标故意留 `nil` —— 由适配器按 `cfg.parent_of` 把它实例化到**父控件**身上，
-    --      位置跟着父控件走。写死 `sk_x/sk_y`（右上角那套）会和 `.gil` 里
-    --      `action.back`/`action.redo` 的真实位置（在 `topbar` 里）对不上 ⇒ 底图飘在别处。
-    -- ★ 2026-10-04：只留 `action.back` —— `action.redo` / `action.hint` **已从存档里删掉**
-    --   （它们与 `hex.redo` / `hex.hint` 重叠且动作重复，用户已批准清理旧控件）。
-    --   父控件没了，这两枚底图节点也就没有意义，一并去掉。
-    -- ★★★★★★ 2026-10-11 **`action.back` 的六边形底图整块删除** ✗✓✓
-    --
-    --   ★★ 用户指令 ✓：「**那个返回菜单也不要，一起删**」✓（★ 控件已删 ⇒ 底图无意义 ✓）
-    --
-    --   ★★★ 理由与本文件 L2354 附近那段【完全同源】✓（★ 当年的先例 ✓）：
-    --     `hex_bg(parent, …)` / `push({ id = parent..".hexbg" })` 都是给**父控件**挂底图 ✓
-    --     ⇒ ★ **父控件没了 ⇒ 底图节点就没有意义** ✓✓
-    --     ★ 当年就是按这条删掉了 `action.redo` / `action.hint` 的底图 ✓
-    --     ★★ 而现在 `action.back` 也走同一条路 ✓ —— ★ 它的功能由 `hex.back` 承担 ✓
-    --
-    --   ★ 删掉的原文（★ 备查 ✓）：
-    --     `local btns = {`
-    --       `{ "action.back" },`
-    --     `}`
-    --     `for i = 1, #btns do … push({ id = b[1] .. ".hexbg", parent = b[1], … }) … end`
-    --     `hex_bg("action.back", sk_x + 55, sk_y[1] + 55, SK.size)`
-    -- ★★★★★ 2026-10-05 **删掉这两行：`action.redo` / `action.hint` 的六边形底图** ✗
-    --
-    --   为什么删（真 bug ✓）：
-    --     `hex_bg(parent, …)` 会给 `parent` 建 6 个子节点（`parent..".hex1"`…`".hex6"` ✓）。
-    --     但 **`action.redo` 与 `action.hint` 这两个父节点，已经在下面 L1718-1740 被删掉了**
-    --     （2026-10-04「旧文字按钮 —— 已删」✓ —— 它们的功能改由 `hex.redo`/`hex.hint`
-    --      贴图节点 + `hit.redo`/`hit.hint` 热区承担 ✓）。
-    --   ⇒ 于是计划里**凭空多了 12 个"父级不存在"的悬空节点** ✗
-    --   ⇒ 后果（实测）：模拟器的 `kit.mjs:74`
-    --       `parentId = (n.parent && idOf[n.parent]) || canvasRoot.id`
-    --     **静默回落到画布根** ✗ ⇒ 父级中心算错 ⇒ 那 12 个 button 又被补上
-    --     `bg`(白图 `100108`) + `label` ⇒ ★ **模拟器里凭空多出 12 个白块** ✗✓
-    --   ⇒ 这**不改变**任何一条断言的通过/失败条数 ✓，但它**持续污染**所有几何类、
-    --     "多余控件"类的断言 ✗（例如 `verify_art.mjs` 的「棋盘区域没有多余控件」✓）
-    --
-    --   ★★★★★★ 2026-10-11 **上面那条"必须保留 `action.back`"已作废** ✗✓（★ 原文备查 ✓）：
-    --     · 原文 ✓：「⚠️ `action.back` 那一行必须保留 —— 它是确实存在于计划里的父节点
-    --         （`layout-plan.json` 实测有 `action.back` 与 `action.back.hex1..6`）✓
-    --         依据：`docs/计划与脚本漂移-根因调查.md` 的 T3 条（提交 73dd2d8 ✓）」
-    --     · ★★ **它作废的原因** ✓：★ **T3 的结论是"父控件存在 ⇒ 底图节点不算悬空"** ✓
-    --        ★ 而现在**用户要求把 `action.back` 整颗删掉** ✓
-    --        ⇒ ★★ **父控件不存在了 ⇒ 再给它挂底图就【正是 T3 要避免的那种悬空节点】** ✗✓
-    --        ⇒ ★★★ **⇒ 所以底图跟着父控件一起删，才符合 T3 的原意** ✓✓
-    --     · ★ 这与上面 `action.redo` / `action.hint` 的处置【完全一致】✓（同一套理由 ✓）
-    --   ⇒ ★★ **这一段 if/else 现在【两条分支都不再建任何节点】** ✓
-    --      ★ 保留外壳是为了让注释与历史可查 ✓；★ 将来若清理，可整段合并 ✓
-  end
+  -- ★ 2026-10-18（优化组 · P0）：`SK` / `sk_x` / `sk_y` 三个 local **已删除** ——
+  --   它们唯一的使用点是上面那段被删掉的六边形底图（`hex_bg("action.back", sk_x + 55, sk_y[1] + 55, …)`）
+  --   判据：删完 HEX 段后全文件对这三个名字的引用为 **0**（含注释）✓
+  -- ★ 2026-10-18（优化组 · P0）：`if HEX_PREFAB then … end` **整段删除** ✗✓
+  --   判据：`HEX_PREFAB` 自 2026-10-03 起是**常量 false**（原因写在下面墓碑里），
+  --     而块内**两条分支都不建任何节点**（注释自己也写着"现在两条分支都不再建任何节点"）
+  --     ⇒ 这段是恒假分支 + 空壳 ✓ 删掉零行为变化 ✓
 
   -- ★★★★★ 2026-10-04 **右上三键（提交 / 重置关卡 / 撤销）的旧文字按钮 —— 已删。**
   --
@@ -2517,42 +2854,16 @@ function Controller:build_layout()
          text = self:format_time(vm.hud.time), style = "stat" })
 
   -- ===== 左侧面板：头像卡 + 线索卡 + 图例 =====
-  push({ id = "left", kind = "container", parent = "root", rect = rect_of(L.left), style = "panel.left" })
   -- ★★★★★ 2026-10-02 用户定稿：**头像卡（tray）并进"滚动线索卡"** ——
   --   每张线索卡 = 头像 + 线索文本 + 字母徽章（见下面 `clue.<i>.face` 那段）。
   --   所以这里**不再单独建头像卡**：容器留着但 `visible = false`
   --   （老存档里还有这个控件名，留个空壳比直接删更稳，不会让"控件找不到"的报警刷屏）。
-  push({ id = "tray", kind = "container", parent = "left", rect = rect_of(L.tray),
-         style = "tray", visible = false })
-  -- 头像卡的**列数自适应**：保证永远只占 2 行。
-  --   踩过的坑：写死 3 列时，7 个角色的关卡会排到第 3 行，
-  --   而 tray 容器只有 2 行高 —— 卡片溢出容器、压住了下面的线索。
-  --   规则：per_row = max(3, ceil(人数 / 2))，卡片宽度按剩余宽度均分。
-  local gx = L.tray_gap_x or 12
-  local gy = L.tray_gap_y or 10
-  -- ★★★ 2026-10-02：**清零** —— 头像卡已并进线索卡，不再单独摆（见上面 tray 那段注释）。
-  local n_tray = 0
-  local per_row = math.max(L.tray_per_row or 3, math.ceil(n_tray / 2))
-  local item_w = math.floor((L.tray.w - (per_row - 1) * gx) / per_row)
-  local item_h = L.tray_item_h
-  for i = 1, n_tray do
-    local it = vm.tray[i]
-    local col = (i - 1) % per_row
-    local row = math.floor((i - 1) / per_row)
-    push({
-      id = "tray." .. tostring(it.id),
-      kind = "button",
-      parent = "tray",
-      rect = { x = L.tray.x + col * (item_w + gx),
-               y = L.tray.y + row * (item_h + gy),
-               w = item_w, h = item_h },
-      text = it.name,
-      image = it.portrait,
-      style = it.selected and "portrait.selected" or (it.placed and "portrait.placed" or "portrait"),
-      state = { selected = it.selected, placed = it.placed, is_victim = it.is_victim },
-      event = { action = "suspect", id = it.id },
-    })
-  end
+  -- ★ 2026-10-18（优化组 · C 类清理）：**头像卡容器 `tray` 与它的自适应布局整段删除** ✗✓
+  --   判据：① `n_tray` 早在 2026-10-02 就被写成 **0**（头像卡并进滚动线索卡）⇒ 循环一次都不执行；
+  --     ② 真机日志每一局都打「找不到头像卡容器（cfg.tray_parent，默认 tray）」；
+  --     ③ `check_names` 里 `tray` 是 🔴 真缺（存档里从来没有）。
+  --   ⚠️ `vm.tray`（嫌疑人列表）**保留** —— `placed_count` 还在用它 ✓
+  --   ⚠️ 适配层 `apply_tray_layout` 那 110 行属下一批（要连 `_tray_btn_art` 与回归一起改）。
 
   -- ★★★★★ 2026-10-05 **父级必须是 `root`，不能写 `left`** —— 修"线索区跑到棋盘下面"。
   --
@@ -2575,11 +2886,23 @@ function Controller:build_layout()
   --     clue.N 及全部子控件）**统统退出脚本接管** ✓
   --   ⇒ 于是脚本对这块**只做两件事：显隐 + 交互**（正是用户要的），一个坐标都不碰 ✓
   push({ id = "clues", kind = "container", parent = "root", rect = rect_of(L.clues),
-         style = "panel", pos_runtime = false })
+         style = "panel" })
   -- ★★★★★ 2026-10-05 **线索区大底板（`clues.bg`）** —— 用户在编辑器里摆的那张图，
   --   但它的名字不在规划里 ⇒ 脚本从没点亮它 ⇒ 真机日志（11:31）里它一直 `可见=false` ✗
   --   ⇒ 补一条规划节点（`kind = "container"`：只摆位置/显隐，**不设图不设色**，图与色归编辑器）。
   --   尺寸与容器同尺寸（画布 400×544）、挂在 `clues` 下、坐标相对父级 ⇒ (0,0) ✓
+  --   ★★★★★★★★ 2026-10-16 **关于"网格视窗大小改不动"的结论（复核后写下 ✓）** ✗✓✓
+  --     ★ 用户原话 ✓：「★ **网格视窗的大小我已经改了，你也让脚本按原样大小出就行**」✓
+  --   ★★ 复核结果 ✓：★ **这里本来就已经是"原样出"** ✓ —— ★ 不用改 ✓
+  --     · ★ 适配器 `set_property` 的 `rect` 分支 ✓：`respect_editor_rect ~= false`
+  --       ★ 且控件不是脚本实例化的、也没有 `runtime_rect` ⇒ ★ **直接 `return true`** ✓
+  --       （★ 源码原文：「★ **这是故意的空操作**（"位置归编辑器管"）✓」✓）
+  --     · ★ 而这一条 `push` 带着 **`pos_runtime = false`** ✓（见下面 `clues.grid` 那条 ✓）
+  --       ⇒ ★ **它进不了"位置归脚本管"的那一类** ✓ ⇒ ★ 尺寸/位置**一直归编辑器** ✓
+  --   ★★ 所以"改不动"的真正原因不在这里 ✗ —— ★ 是 **`main.lua` 每帧强写 `stage`** ✓：
+  --     ★ `stage` 是 `clues` 的**祖先** ✓，★ 而格子尺寸是按**父容器尺寸**算的 ✓
+  --     ⇒ ★ `stage` 每帧被写回 584 ⇒ ★ 父级一变 ⇒ ★ 下级的几何跟着重算 ⇒ 你改的看不出来 ✓
+  --   ⇒ ★★ 已在 `main.lua` 用 **`cfg.geom_by_editor`** 关掉那两处 ✓（本轮 ✓）
   push({ id = "clues.bg", kind = "container", parent = "clues",
          rect = { x = L.clues.x, y = L.clues.y, w = L.clues.w, h = L.clues.h },
          -- ★★★★★ 2026-10-05 **补上 `visible`** ✗✓ —— 这是"线索区没出来"的**两个原因之一** ✓
@@ -2653,7 +2976,9 @@ function Controller:build_layout()
          -- 走不了网格视窗时（cfg.use_grid=false / 找不到控件 / 填内容失败）把它藏起来，
          -- 免得"老卡片回来了、但网格还盖在上面" —— 见 `Controller:sync_clue_grid`
          visible = (self._grid_state ~= "off"),
-         pos_runtime = false })
+         -- ★ 2026-10-16 v253：原来这里还有一句 `pos_runtime = false` ✓ —— ★ 已删除 ✓
+         --   （★ 现在只有"显式 `true`"才让脚本摆位置 ✓ ⇒ `false` 与"不写"完全等价 ✓ 是死代码 ✓）
+         })
   -- ★★★★★ 2026-10-05 **网格视窗在用时，老的一套线索控件"整段不进规划"**。
   --
   --   真机证据（用户实测，每帧刷、永久刷）：
@@ -2683,218 +3008,15 @@ function Controller:build_layout()
   if grid_on then
     self:_grid_log("giveway", "网格视窗：老的一套线索控件**整段不进规划**（不建 / 不摆 / 不点亮 / "
       .. "连动效都不排队）—— 只藏起来不够：`clue.N.*` 这个名字会被按名字抓到已回收的列表项")
-  else
-  -- ── 走**老路径**（cfg.use_grid=false / 找不到网格视窗 / 填内容失败）：
-  --    下面这一段（到 2095 行那个 `end` 为止）才是手写滚动的那一套，照旧照发 ──
-  -- ★ 2026-10-05 **滚动条点击区 `clues.bar`** —— 用户新做的隐形热区（画布 24×520），
-  --   规划里原来没有它 ⇒ 脚本不认它（"还没建"名单里反过来没有它才怪 ✗）。
-  --   位置：条心 x = 464 画布、纵向与卡片区同高 ⇒ 设计 x = (464−16)×6/5 ≈ 537.6、
-  --   y/h 与卡片块一致（用 L.clues 的行距算）。⚠️ 等真机日志回来再微调。
-  push({ id = "clues.bar", kind = "button", parent = "clues",
-         rect = { x = L.clues.x + 480, y = L.clues.y, w = 28.8, h = L.clue_row_h * 5 - 12 },
-         visible = true })
-  local shown = math.min(#vm.clues, L.clue_max_visible)
-  local rows = L.clue_rows or 9
-  -- ★ 滚动位置：0 表示从第 1 条开始。**所有 `shown` 条控件都照旧建出来**
-  --   （保证任何一条都能滚到 —— 少建控件就等于线索看不见，关卡不可解）。
-  local total = shown
-  local maxscroll = math.max(0, total - rows)
-  self.clue_scroll = self.clue_scroll or 0
-  -- 焦点线索自动滚进视野 —— **只在焦点"变化时"做一次**。
-  --
-  --   ⚠️ 我第一版是每帧都做，结果：只要之前点过某条线索（`focused_clue` 有值），
-  --   **每一帧都把滚动位置拽回那条线索** ⇒ ↑/↓ 点了完全没用（探针点了 40 次没动）。
-  --   ⇒ 记住"上次为哪个焦点滚过"，只有真的换焦点时才自动滚。
-  if self.focused_clue ~= nil and self.focused_clue > 0
-     and self._clue_focus_seen ~= self.focused_clue then
-    self._clue_focus_seen = self.focused_clue
-    if self.focused_clue <= self.clue_scroll then self.clue_scroll = self.focused_clue - 1 end
-    if self.focused_clue > self.clue_scroll + rows then self.clue_scroll = self.focused_clue - rows end
-  end
-  if self.clue_scroll < 0 then self.clue_scroll = 0 end
-  if self.clue_scroll > maxscroll then self.clue_scroll = maxscroll end
-
-  -- ↑ / ↓ 两个按钮 + 一条滚动条（引擎**没有滚轮事件**，这是最实在的做法）
-  local ARROW = 34
-  local top = L.clues.y
-  local bottom = L.clues.y + rows * L.clue_row_h
-  push({ id = "clues.up", kind = "button", parent = "clues",
-         rect = { x = L.clues.x + L.clues.w - ARROW - 6, y = top + 2, w = ARROW, h = ARROW },
-         text = "▲", event = { action = "clue_up" },
-         style = "tab", visible = (maxscroll > 0) })
-  push({ id = "clues.down", kind = "button", parent = "clues",
-         rect = { x = L.clues.x + L.clues.w - ARROW - 6, y = bottom - ARROW - 2, w = ARROW, h = ARROW },
-         text = "▼", event = { action = "clue_down" },
-         style = "tab", visible = (maxscroll > 0) })
-  -- 滚动条：轨道 + 滑块（比例条，纯展示；拖动留给真机验证后再加）
-  push({ id = "clues.track", kind = "container", parent = "clues",
-         rect = { x = L.clues.x + L.clues.w - 8, y = top + ARROW + 6, w = 4, h = bottom - top - 2 * ARROW - 12 },
-         style = "panel", visible = (maxscroll > 0) })
-  if maxscroll > 0 then
-    local trackTop = top + ARROW + 6
-    local trackH = bottom - top - 2 * ARROW - 12
-    local knobH = math.max(24, math.floor(trackH * rows / total))
-    local knobY = trackTop + math.floor((trackH - knobH) * self.clue_scroll / maxscroll)
-    -- 滚动条滑块：y 随 `clue_scroll` 变 ⇒ 位置必须由脚本说了算
-    -- （和线索卡同一个道理，见下面 `clue.N` 那段的注释）
-    push({ id = "clues.knob", kind = "container", parent = "clues",
-           rect = { x = L.clues.x + L.clues.w - 8, y = knobY, w = 4, h = knobH },
-           style = "tab.active", visible = true, pos_runtime = true })
-  end
-  -- 计数（"3–11 / 18"），让玩家知道自己是第几条
-  push({ id = "clues.count", kind = "text", parent = "clues",
-         rect = { x = L.clues.x + L.clues.w - 120, y = top + 2, w = 78, h = ARROW },
-         text = string.format("%d-%d / %d",
-           maxscroll > 0 and (self.clue_scroll + 1) or 1,
-           math.min(self.clue_scroll + rows, total), total),
-         style = "muted", visible = (maxscroll > 0) })
-
-  -- 线索卡"刷出来"的动效：每条只弹一次。
-  -- 为什么不在生成时直接 fx：这条线索控件可能在**同一帧里刚被创建**，
-  -- 而 effects 是在 render 末尾（控件都建完之后）才统一交给适配器播的，
-  -- 所以在这里排队是安全的。控制器每个关卡重建一次 → 表随关卡自然重置。
-  self._clue_fx = self._clue_fx or {}
-  -- ★★★ 2026-09-30：**线索卡拆成「名字 + 内容」两个控件**（参考《派蒙的执律庭实习》：
-  --   卡片上的人名/关键字是**红色**的，正文是白色）。
-  --
-  --   为什么必须拆控件、不能"行内标红"：官方**没有富文本**（查过 API 缓存），
-  --   也没有文字宽度测量 ⇒ 无法在一行里给某几个字换色。
-  --   ⇒ 做法：**名字占固定宽度的第一列**（`clue.<i>.who`，红色），
-  --     正文从固定 x 起（`clue.<i>.what`，常规色）。这样不需要测量宽度。
-  --
-  --   ⚠️ 切分依据：线索文案里**一定含角色名**（核心的 `text` 用 `ctx.name(...)` 拼的）。
-  --     从 `vm.tray` 里找"哪个名字出现在这条文案里"，找到就切；找不到就整条当正文
-  --     （**不硬造关键字** —— 宁可不高亮，也不显示编出来的名字）。
-  local WHO_W = 99.6    -- 名字列宽（设计）= 画布 83 ★ 2026-10-05 由 132 改
-  -- ★★★ 2026-09-30：**卡片左边一个头像、右边一个字母徽章**（参考《派蒙的执律庭实习》：
-  --   线索卡是"人物头像 + 线索文字 + 右侧字母（B/C/D）"）。
-  --   头像复用已有的 `portrait.*` 调色板（`vm.tray` 里每项都带 `portrait` 字段），
-  --   **不引入新素材**；徽章就是嫌疑人的字母 id（A/B/C/D/V）。
-  local FACE = 66        -- 头像边长（设计）= 画布 55 ★ 2026-10-05 由 40 改
-  local BADGE_W = 40.8   -- 徽章宽（设计）= 画布 34 ★ 2026-10-05 由 30 改
-  local PAD = 16.8       -- 卡片内边距（设计）= 画布 14 ★ 2026-10-05 由 8 改
-
-  -- 返回 名字 / 前缀 / 后缀 / 该角色的 id / 头像名
-  --
-  -- ★ 2026-10-05：**实现已提到模块级**（见 `split_by_name` 上面那段注释）——
-  --   网格视窗的列表项填充要用**同一份**切分逻辑，所以这里不再各写一份：
-  --   直接调模块级那份，`vm` 显式传进去。
-  --
-  --   ⚠️ 不能在这里写 `local function split_by_name(txt) return split_by_name(vm, txt) end`
-  --      —— 同名 local 在它自己的函数体里就已经生效 ⇒ 变成**无限递归**
-  --      （Lua 里 `local function f() ... f() ... end` 指的就是新的那个 f）。
-
-  for i = 1, shown do
-    local cl = vm.clues[i]
-    -- 这一条落在窗口的第几行（不在窗口里就整条隐藏 —— 但**控件仍然存在**，能滚到）
-    local slot = i - self.clue_scroll
-    local inWin = (slot >= 1 and slot <= rows)
-    local y = L.clues.y + 15 + (slot - 1) * L.clue_row_h   -- +15 设计 = 上内边距 12.5 画布
-    -- ★★★★★ 2026-10-05：行高由 `clue_row_h − 6` 改成 **`− 12`**，宽度由 `L.clues.w − 16` 改成
-    --   **`CLUE_W`（= 432 设计 = 360 画布）** —— 为了跟用户在编辑器里摆的卡片对齐。
-    --   真机日志（11:31）证明旧值把用户的版面冲掉了：`clue.N 367x91`
-    --     · 367 = (L.clues.w − 16) × 5/6 = 440 × 5/6
-    --     ·  91 = (clue_row_h − 6) × 5/6 = 109 × 5/6
-    --   现在：432 × 5/6 = **360** ✓、115.2 × 5/6 = **96** ✓ —— 与编辑器里的一致。
-    local h = L.clue_row_h - 12
-    local CLUE_W = 432
-    local CLUE_PAD = 16.8   -- 左内边距：设计 16.8 = 画布 14 ✓（用户在编辑器里就是这么留的）
-    local style = (self.focused_clue == i) and "clue.focus"
-                  or (cl.satisfied and "clue.ok" or "clue")
-    -- 整行保留（作为卡片底板 + 点击热区）；文字子控件浮在它上面
-    --
-    -- ★★★ 2026-09-30：**线索卡整块都要 `pos_runtime`**。
-    --   它的 y 随**滚动位置**（`clue_scroll`）每帧变 ⇒ 位置必须由脚本说了算。
-    --   否则会被 `respect_editor_rect`（编辑器几何优先）按在存档里那一份几何上：
-    --   滚动时**卡片纹丝不动**，只有 visible 在变 —— 真机上表现为「滚了但位置没动，
-    --   内容在同一个地方换」。这正是房间名标签那个 bug 的同一个形状。
-    push({
-      id = "clue." .. i,
-      kind = "text",
-      parent = "clues",
-      rect = { x = L.clues.x + CLUE_PAD, y = y, w = CLUE_W, h = h },
-      text = cl.text,
-      style = style,
-      visible = inWin,
-      event = { action = "focus_clue", index = i },
-      -- ★★★★★ 2026-10-05 **不再给 `pos_runtime`** —— 用户：「编辑器里的位置本来就是对的，
-      --   脚本摆位置是纯粹的无效操作，还会出错」。不带这个标记 ⇒ 走「编辑器几何优先」
-      --   （代码里 `pos_runtime = false` 那条注释就是这个意思）⇒ 脚本完全不碰坐标 ✓
-    })
-    -- ★★★★★ 2026-10-05 **两张卡片底图（backrop1 在下 / backrop2 在上）**
-    --
-    --   用户在编辑器里给每张卡加了两张图，靠"描边色 + 填充色"叠出边框效果。
-    --   真机日志（11:31）显示它们**在关卡里也是 visible=false** ✗：
-    --       clue.1..5           可见=true      ← 卡片本体在规划里，被点亮
-    --       clue.N.backrop1/2   可见=false     ← 不在规划里 ⇒ 脚本从没把它们点亮
-    --   ⇒ 在规划里补上这两条（`kind = "container"`：只摆位置/显隐，**不设图、不设文字**，
-    --      图片和颜色完全由你在编辑器里配好、脚本不碰）✓
-    --
-    --   尺寸：backrop2 比 backrop1 四边各小 3.6 设计（= 3 画布）⇒ 露出 3px 描边 ✓
-    push({ id = "clue." .. i .. ".backrop1", kind = "container", parent = "clue." .. i,
-           rect = { x = L.clues.x + CLUE_PAD, y = y, w = CLUE_W, h = h },
-           visible = inWin })
-    push({ id = "clue." .. i .. ".backrop2", kind = "container", parent = "clue." .. i,
-           rect = { x = L.clues.x + CLUE_PAD + 3.6, y = y + 3.6, w = CLUE_W - 7.2, h = h - 7.2 },
-           visible = inWin })
-
-    local who, pre, post, wid, wportrait = split_by_name(vm, tostring(cl.text or ""))
-    local tx = L.clues.x + PAD + FACE + PAD      -- 文字起点：让开左边的头像
-    local tw = L.clues.w - 16 - (FACE + PAD * 2) - BADGE_W - PAD
-    if who ~= nil then
-      -- 头像（左边）：复用 `portrait.*` 调色板，**不引入新素材**
-      -- （子控件的 y 也跟着卡片走 ⇒ 同样要 `pos_runtime`，理由见上面那段的注释）
-      -- ★★★★★ 2026-10-05 **加 `event` —— 这是"点格子没反应"的真修** ✓✗
-      --
-      --   为什么必须加（实测三段切开 ✓ 见 `docs/点格子没反应-三段切开结论.md` ✓）：
-      --     ★ **鼠标侧【没有任何控件发 `suspect` 事件】** ✗ —— 计划里 `"action":"suspect"` 实测 **0 次** ✓
-      --     ⇒ `core.selected` 恒为 `nil` ✗ ⇒ `Core:pre_place` 直接返回「**先点一个头像**」✗
-      --     ⇒ ★ **单击不落笔记、双击不放置、步数不动** ✗ ⇒ 观感就是"点格子没反应" = `0 / 5` ✓
-      --   为什么是这里 ✓：唯一的生产者（原来那个 `for i = 1, n_tray` 里的 `{action="suspect"}` ✓）
-      --     **已经死了** ✗ —— `:1870` 那句 `local n_tray = 0`（2026-10-02 头像并进线索卡 ✓）
-      --     ⇒ 那个循环**一次都不跑** ✗；而本控件（`clue.<i>.face` = **卡片上的头像** ✓）
-      --     **正好就是现在唯一的头像** ✓ ⇒ ★ 让它承担"点一下选这个人" ✓✓
-      --   ★ 与 `:1889` 同一个口径 ✓：**`wid` 有值才给** ✓ 没值就不给（不制造无主事件 ✓）
-      --   ⚠️ **只加 `event`，不动 rect/尺寸/样式** ✗ —— 布局一个字没变 ✓
-      push({ id = "clue." .. i .. ".face", kind = "button", parent = "clue." .. i,
-             rect = { x = L.clues.x + CLUE_PAD + 16.8, y = y + 36, w = FACE, h = FACE },
-             image = wportrait, style = "portrait", visible = inWin,
-             event = (wid ~= nil and wid ~= "") and { action = "suspect", id = wid } or nil })
-      -- 名字（红）：正文第一列
-      push({ id = "clue." .. i .. ".who", kind = "text", parent = "clue." .. i,
-             rect = { x = L.clues.x + CLUE_PAD + 16.8, y = y + 2.4, w = 99.6, h = 31.2 },
-             text = tostring(pre or "") .. who, style = "clue.who", visible = inWin })
-      -- 内容：从固定 x 起（不测量宽度也能对齐）
-      push({ id = "clue." .. i .. ".what", kind = "text", parent = "clue." .. i,
-             rect = { x = L.clues.x + CLUE_PAD + 124.8, y = y + 19.2, w = 242.4, h = 67.2 },
-             text = tostring(post or ""), style = "clue.what", visible = inWin })
-      -- 字母徽章（右边）：就是嫌疑人的字母 id（A/B/C/D/V），参考图那样
-      -- ★★★★★ 2026-10-05 **无条件发勋章节点**（原来写成 `if wid ~= nil and wid ~= "" then`）。
-      --   后果：像 `selftest_theft_5x5` 这种**线索文本里没有人名**的关卡，`wid` 为空
-      --   ⇒ 整个勋章节点都不发 ⇒ 真机上**所有勋章都不出现** ✗（用户实测：所有勋章都没出现）
-      --   现在：永远发，文字为空也发（空文字无害，控件本身还在、背景/描边照常显示）。
-      if true then
-        push({ id = "clue." .. i .. ".badge", kind = "text", parent = "clue." .. i,
-               rect = { x = L.clues.x + CLUE_PAD + 400.8, y = y + 64.8, w = 40.8, h = 33.6 },
-               text = wid, style = "clue.who", visible = inWin })
-        -- ★ 2026-10-05 **同一徽章再发一份，名字用 `letter`** —— 用户在编辑器里把它命名成
-        --   `clue.N.letter`，而规划里叫 `badge` ⇒ 名字对不上就写不进去、**字母不显示** ✗
-        --   两份都发（同 rect 同文字）：谁存在谁被点亮，另一个只是"还没建"的无害条目 ✓
-        push({ id = "clue." .. i .. ".letter", kind = "text", parent = "clue." .. i,
-               rect = { x = L.clues.x + CLUE_PAD + 400.8, y = y + 64.8, w = 40.8, h = 33.6 },
-               text = wid, style = "clue.who", visible = inWin })
-      end
-    end
-    if inWin and not self._clue_fx[i] and not self:is_intro_active() and self.modal == nil then
-      self._clue_fx[i] = true
-      self:fx("clue." .. i, M.EFFECTS.CLUE_IN)
-    end
-  end
-  push({ id = "clues.more", kind = "text", parent = "clues",
-         rect = { x = L.clues.x, y = L.clues.y + rows * L.clue_row_h, w = L.clues.w, h = 30 },
-         text = string.format("还有 %d 条线索", math.max(0, #vm.clues - shown)),
-         style = "muted", visible = (#vm.clues > shown) })
-  end   -- ← 老一套线索控件到此为止：网格视窗在用时**整段跳过**（见上面那道守卫的长注释）
+  end   -- ★ 2026-10-20（优化组 · C 类清理）：**`else` 分支（老线索卡兜底）已删除** ✗✓
+        --   判据：真机日志 v276/v277「网格视窗：索引基准定为 0」「找到 clues.grid ✓」⇒ `grid_on` 恒真，
+        --     这段 `else` 一次都不执行；而布局计划里仍残留 **48 个 `clue.*`**
+        --     （就是每局那行「规划里有 40 个控件是【已知不需要】」的来源）。
+        --   用户指令：「老计划里到目前还没实现的都不需要保留了」⇒ 删。
+        --   ⚠️ `clues.bg` / `clues.grid` 是活的，**没动**；下面的「发完再扫一遍」第二道闸也**保留**
+        --      （它是防回归哨兵：万一以后有人在守卫外面又 push 一个 `clue.*`，会被当场剔除 ✓）
+        --   ⚠️ 要恢复旧卡片请从 git 历史取，**别**把 `else` 分支直接搬回来 ——
+        --      它每帧按名字抓手柄会撞到"已回收的列表项"（当年那个每帧抛错的老 bug）✗
 
   -- ★★★★★ 2026-10-05 **收口：规划里绝不允许出现老一套的 id**（守卫之外的第二道闸）。
   --
@@ -2955,12 +3077,8 @@ function Controller:build_layout()
     legend_text = "确认=笔记　按住=放置　肩键切换工具\n（手柄为兜底方案，推荐用键鼠或触屏）"
   end
 
-  push({ id = "legend", kind = "text", parent = "left", rect = rect_of(L.legend),
-         text = legend_text,
-         style = "muted" })
 
   -- ===== 中央棋盘（含坐标尺）=====
-  push({ id = "board", kind = "container", parent = "root", rect = rect_of(L.board), style = "board" })
   -- 格子几何按**当前关卡的实际 N** 自适应：
   -- 棋盘区大小固定，格子边长 = 可用边长 / N。这样 5×5 / 6×6 / 7×7 都能正确排布，
   -- 不需要为每个尺寸重摆一次编辑器布局（编辑器里按**最大的 N** 建够格子即可，
@@ -3016,47 +3134,63 @@ function Controller:build_layout()
     for i = 1, #lv_list do
       if tostring(lv_list[i].id) == want then cur = lv_list[i] break end
     end
-    local boxes = cur and cur.room_boxes or {}
-    local names = cur and cur.room_names or nil
-    local step = cell + gap
-    for j = 1, math.min(#boxes, 8) do
-      local b = boxes[j]
-      local nm = (type(names) == "table" and names[j]) or ("区域 " .. j)
-      -- 右下角那一格的位置；标签占该格的右下 3/4，字号由样式控制
-      local lx = gx + (b.c2 - 1) * step + math.floor(cell * 0.18)
-      local ly = gy + (b.r2 - 1) * step + math.floor(cell * 0.55)
-      push({ id = "room.label." .. j, kind = "text", parent = "board",
-             rect = { x = lx, y = ly, w = math.floor(cell * 0.82), h = math.floor(cell * 0.42) },
-             text = tostring(nm), style = "room.label", visible = true,
-             -- ★ 位置每帧由脚本按房间外框算 ⇒ 必须显式声明"脚本说了算"，
-             --   否则会被 `respect_editor_rect`（编辑器几何优先）按在存档里那一份几何上，
-             --   三个标签**中心重叠**（真机上是三个字叠在一起，模拟器里 box 完全相同）。
-             pos_runtime = true })
-    end
-    for j = #boxes + 1, 8 do
-      -- ⚠️ 占位**也要给真实尺寸**，不能给 2×2。
-      --
-      --   原因：`layout_plan` 是把**所有关卡**的布局取**并集**（为了让编辑器一次建够控件）。
-      --   如果本关房间少、把 `room.label.4` 推成 2×2 隐藏，而并集里"第一次出现"的就是它，
-      --   那这个控件的几何就**永久是 2×2** —— 真机上房间名会缩成一个小点。
-      --   （我第一版就是这么写的，模拟器里 `room.label.1` 的 box 是 2×2。）
-      --   ⇒ 占位沿用**最后一个真实房间**的几何，只是 `visible=false`。
-      local last = boxes[#boxes]
-      local lx = gx
-      local ly = gy
-      local lw = math.floor(cell * 0.82)
-      local lh = math.floor(cell * 0.42)
-      if last ~= nil then
-        lx = gx + (last.c2 - 1) * step + math.floor(cell * 0.18)
-        ly = gy + (last.r2 - 1) * step + math.floor(cell * 0.55)
-      end
-      push({ id = "room.label." .. j, kind = "text", parent = "board", visible = false,
-             rect = { x = lx, y = ly, w = lw, h = lh }, pos_runtime = true })
-    end
-  end
+    -- ★ 2026-10-18（优化组 · C 类清理）：**房间名标签 `room.label.1..8` 整段删除** ✗✓
+    --   判据：它们挂在 `board` 容器下，而 `board` 在存档里根本不存在 ⇒ 8 个标签**从来没建过**
+    --     （`check_names` 里是 8 个 🔴 真缺）；`room_boxes` / `room_names` 仍由关卡数据提供，
+    --     以后要做「房间名」时**另开新控件位**，别再复活 `room.label.*` 这套名字 ✓
+  end   -- ★ 2026-10-18（**补回**）：这一行收的是上面 `if n > 0 then` ——
+        --   它原来在 `room.label` 那段末尾，整段删除时被一起吃掉 ⇒ `loadfile` 当场报
+        --   `'end' expected (to close 'function' at line 2109) near <eof>`、块深度不平衡 1 ✓
 
   -- ★ 2026-10-12 **行标尺（`ruler.r.*`）已按用户要求删除** ✗✓（连同容器与列标 ✓）
   --   理由见上面【已删除】那段长注释 ✓ —— ★ 而且它从来就是哑的（`apply_ruler_layout` 只对齐不创建 ✓）
+  --
+  -- ★★★★★★★★ 2026-10-17 **线索位置提示：选中第几张卡，就亮第几条线索允许的格** ✗✓✓
+  --
+  --   ★ 判据**只有一个**：`focused_clue` ✓（= 选中那个人配在第几行 ✓ 见 `_sync_clue_focus`）
+  --     ⇒ 真机「点线索卡」与模拟器「点卡上的人像」两条输入**都汇到这里** ✓
+  --       ⇒ ★ 不需要第二份"选中了哪张卡"的状态 ✓（本项目为"两份状态必然漂移"栽过多次 ✓）
+  --   ★ 格子集合现算 ✓：`core:clue_hint(focused_clue)` 只读关卡静态数据（家具/墙/门）
+  --     ⇒ **与当前摆位无关** ✓ ⇒ 玩家摆了几个棋子都不会改变提示 ✓
+  --   ★ 刷新成本 ✓：`build_layout` 只在 `dirty` 时跑 ✓；属性账本按值去重 ✓
+  --     ⇒ 稳态每帧零写入 ✓（与"房间色"同一条路 ✓）
+  --   ★★ 2026-10-17 **显示方式改了** ✗✓：不再染格子颜色，而是开/关模板里的
+  --     `cell.R.C` → `content` → **`hint`** 子控件（颜色在编辑器里，见上面那段注释 ✓）
+  --     ⇒ 每格都发 `hint = true/false` ✓ 取消选中 / 换卡时上一批自然关掉 ✓
+  local hint_set = nil
+  do
+    local fci = self.focused_clue
+    -- ★★ 2026-10-18 **通用线索优先** ✓（点它时 `general_focus` 为真）
+    --   它没有"卡号" ⇒ 不能走 `focused_clue`（那会把高亮给到第 1 张真卡 a ✗）
+    -- ★★★ 2026-10-18 **只认卡号，不认标志** ✗✓（用户实测：点卡 a 亮的是通用线索那 5 格）
+    --   原因：`general_focus` 标志残留 ⇒ 真卡也被当成通用线索 ✗
+    --   ⇒ 判据改成**卡号越界**：通用卡号 = 卡片数 + 1（点击时设的）⇒ 不会和任何真卡撞号 ✓
+    if fci ~= nil and fci > 0 and self.core ~= nil
+       and (self.core.clues == nil or fci > #self.core.clues) then
+      -- ★★ pcall + **一次性诊断**：能证明这条分支到底走没走到、提示集有几格 ✓
+      pcall(function()
+        local _gh = self.core:clue_hint_general(1)
+        local _cnt = 0
+        if _gh ~= nil and _gh.set ~= nil then for _ in pairs(_gh.set) do _cnt = _cnt + 1 end end
+        if _cnt > 0 then hint_set = _gh.set end
+      end)
+      fci = nil
+    end
+    -- ★★ 2026-10-18 **卡号 0 = 通用线索** ✓（同一份 `focused_clue`，不另开旁路开关）
+    if fci == 0 and self.core ~= nil and type(self.core.clue_hint_general) == "function" then
+      -- ★★ 2026-10-18 **必须 pcall** ✗：这里抛错会把整个 build_layout 中断 ⇒
+      --   卡片和棋盘**都不重绘** ⇒ 用户看到"卡片没有视觉变化" ✓ 正是这个形状
+      pcall(function()
+        local _g0 = self.core:clue_hint_general(1)   -- 卡号 0 = 通用线索
+        if _g0 ~= nil and _g0.set ~= nil and next(_g0.set) ~= nil then hint_set = _g0.set end
+      end)
+    end
+    if fci ~= nil and fci > 0 and self.core ~= nil and self.core.clue_hint ~= nil then
+      local h = self.core:clue_hint(fci)
+      if h ~= nil and h.set ~= nil and next(h.set) ~= nil then hint_set = h.set end
+    end
+  end
+
   for r = 1, vm.rows do
     for c = 1, vm.cols do
       local cd = vm.cells[r][c]
@@ -3293,7 +3427,34 @@ function Controller:build_layout()
         --     渲染循环是 `for k, v in pairs(n)` —— Lua 里 `object = nil` 等于"这个键不存在"，
         --     于是没有物件的格子**永远不会下发 object** ⇒ `obj` 白块永远不被隐藏
         --     （这正是用户报的「人物头像上有异常遮挡」，我第一次没修掉）。
-        object = Controller.object_key_of(vm, cd) or false,
+        -- ★★★★★★★★ 2026-10-22（v302，第四轮）家具改走**外部工具算出的图元拼法** ✗✓
+        --
+        --   历史：v300 是"一格 6 层"，v301 是"一格 12 层"，都被用户打回"没达到参考效果"。
+        --   用户指定路线：「用外部图片网站把参考拼出来，再按结果文件拆解出正确拼法导入存档」
+        --   ⇒ 现在 `furn` 只留给**地毯**（平面图形，3 层矩形，可站人）；
+        --      其余家具走 `furn_art`：每件 148~200 条图元（工具结果），由适配层**运行时实例化**图片控件。
+        -- ★ v307：烘焙模式下**旧家具图层要关掉**（否则两代产物叠在一起：旧椅子压在静态烘焙的椅子下面）。
+        --   只保留"本来就是手搭这一代"的三类：桌子 / 书架 / 地毯。
+        furn = (function()
+          local info = furn_art.cell[r] and furn_art.cell[r][c]
+          if info == nil or info.els == nil then return false end
+          if M.FURN_BAKED then
+            local k = furn_art.kind_of and furn_art.kind_of[r] and furn_art.kind_of[r][c]
+            if k ~= "table" and k ~= "shelf" and k ~= "carpet" then return false end
+          end
+          return info.els
+        end)(),
+        furn_anchor = (furn_art.cell[r] and furn_art.cell[r][c] and furn_art.cell[r][c].anchor) or false,
+        -- 图元拼法（只下发在**锚点格**上；记录已按整件中心→锚点格中心换算过）
+        furn_art = (furn_recs and furn_recs[r] and furn_recs[r][c]) or false,
+        -- ★★★★★★★★ 2026-10-22（v310，第十三轮）**模板化家具** ✗✓
+        --   用户：「采用模板来手搭构建，模板里放多少层都可以（一个模板引用控件只算一层），
+        --   然后像 cell 一样把模板创建出来」。
+        --   锚点格下发模板键（如 "furn.chair" / "furn.table.h2"）与跨格数；适配层据此
+        --   `InstantiateClientUIControl(模板源, fart.furn)` 并设尺寸/位置 ⇒ `furn` 手搭层可退掉。
+        furn_tpl = (furn_tpl and furn_tpl[r] and furn_tpl[r][c]) or false,
+        furn_span = (furn_span and furn_span[r] and furn_span[r][c]) or false,
+        furn_offset = (furn_offset and furn_offset[r] and furn_offset[r][c]) or false,
         -- ★ 每格四边的墙 / 门：数据来自 core 的 `view()`（{up,down,left,right} 布尔表），
         --   适配层靠模板里固定的 `wall.*` / `door.*` 子控件 SetVisible 开关来实现 ——
         --   **不需要为每种墙型做模板**。
@@ -3301,12 +3462,86 @@ function Controller:build_layout()
         doors = cd.doors,
         -- ★ 房间染色：`imageColor` 是**读写**字段，所以"同一张底图 + 不同颜色区分房间"
         --   是零额外素材的做法。颜色表在下面 ROOM_COLORS。
+        --
+        -- ★★★★★★★★ 2026-10-16 **有棋子时不下发房间色** ✗✓✓（★ 用户报 ✓：
+        --   「**棋盘染色把放置的头像也染色了，有没有办法能让头像不受底色影响**」✓）
+        --
+        --   ★ 为什么会被染 ✗：★ 头像与房间色**落在同一个控件上** ✓ ——
+        --     · 头像：`image = portrait` ⇒ 适配层把图设到格子的 **`face`** ✓
+        --     · 房间色：`tint = room_color` ⇒ 适配层 `local target = self:sub(id, "face")` ✓
+        --       ⇒ ★ **同一个 `face`** ✗ ⇒ ★ `imageColor` 是**乘算** ⇒ 头像被乘上底色 ✓✓
+        --   ⇒ 当时的权宜修法：**有棋子的格子，房间色下发白色**（= 不染色 ✓）✓
+        --
+        -- ★★★★★★★★ 2026-10-20（v283）**权宜修法撤掉：头像有了自己的层** ✗✓✓
+        --   用户原话：「现在**家具图层会盖在放置的头像上**，把这个问题解决」✓
+        --   ⇒ 模板补了一层 `portrait`（层序：face → hint → obj → **portrait** → wall …）✓
+        --     · 头像走 `portrait`（在家具之上、墙之下）✓ ⇒ 不再和房间色抢同一个控件 ✓
+        --     · 房间色**照旧落在 face**✓ ⇒ **有棋子的格子也保留房间色** ✓（以前会被白色顶掉 ✓）
+        --   ⇒ 所以这里**不再按"有没有棋子"改颜色**，一律下发房间色 ✓
+        --     ⚠️ 别把这一行改回去 —— 头像已经不画在 face 上了，白色只会让格子白一块 ✓
+        -- ★★★★★★★★ 2026-10-17 **提示层：只发一个布尔** ✗✓（★ 见上面 `hint_set` 那段 ✓）
+        --   ★ 用户已经在模板里做好了 `hint` 子控件（`content` 下，135×135，颜色已调好）✓
+        --     ⇒ 脚本**只负责显示 / 隐藏** ✓ 颜色一个字都不写 ✓（`tint` 回到只管房间色 ✓）
         tint = Controller.room_color(cd.room),
+        -- ★ 每格都发（true/false）⇒ 取消选中 / 换卡时自然把上一批关掉 ✓（账本按值去重 ✓）
+      hint = (hint_set ~= nil and hint_set[r .. ":" .. c] == true),
+        -- ★★★★★★★★ 2026-10-17 **格子边长（画布）直接告诉适配层** ✗✓
+        --   用途：把"铺满型"子控件（`face` / `hint` / `obj`）钉成**和格子一样大**
+        --   ★ 为什么由界面层给：`build_layout` 本来就算出了 `cell`（设计空间）✓
+        --     比"让适配层去读控件尺寸"可靠得多 —— 读不到就整段静默跳过 ⇒ 溢出 ✓
+        fit = math.floor(cell * M.SCALE + 0.5),
         occupiable = cd.occupiable,
         x_mark = cd.x,
         enabled = true,   -- 不可站人的格子也要能点（用于打 X / 提示原因）
         event = { action = "click", r = r, c = c },
       })
+    end
+  end
+
+  -- ★★★★★★★★ 2026-10-22（v300）**房间名标签**（`labels` 容器下的 `label.1..7`）✗✓
+  --
+  --   原作每个房间角落写着房间名（BEDROOM/KITCHEN…），这是"平面图感"的一半。
+  --   项目早期有一版 `room.label.*`，但挂在一个**存档里根本不存在的 `board`** 容器下 ⇒ 从来没显示过，
+  --   v269 整段删掉时留了话："以后要做房间名，另开新控件位，别复活 room.label.*"。
+  --   本版就按那句话另开：容器 `labels`（父 `root`、排在 `stage` 之后）+ 文本框 `label.1..7`。
+  --
+  --   摆位规则：按房间外框，**底边中点**、再往里收 0.38 格；
+  --   名字来自关卡数据 `room_names = { "大屋", "内室", … }`（没填就显示"区域 N"）。
+  --   ⚠️ 位置必须由脚本算（`pos_runtime = true`），否则 8 个标签会在编辑器里叠成一处。
+  --   ⚠️ 但**节点每屏都要 push**（哪怕 visible=false）—— 否则离开关卡时没人把标签关掉。
+  do
+    -- ★ 先把 `labels` 容器本身写进计划：**位置换算必须知道父级中心**
+    --   （适配层算的是 "节点中心 − 规划父级中心"；父级不在计划里就只能当 (0,0)，标签会整体偏移）。
+    --   它的 rect 和 `root` 那条一样（整画布），因为存档里那个容器是"锚点居中、画布中心"的。
+    -- ★ v306：**容器本身也要由脚本摆正** —— 存档里它是"700×700 @(0,0)"，那个 (0,0) 是画布
+    --   左下角而不是画布中心 ⇒ 子控件会整体偏到屏幕外（真机上"房间名看不见"就是这个原因）。
+    --   ⇒ 用 `pos_runtime` 强制把容器撑成**整画布、居中**（只有 1 个控件，代价极小）。
+    push({ id = "labels", kind = "container", parent = "root", pos_runtime = true,
+           rect = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height } })
+    local in_level = (self.screen == nil or self.screen == "level")
+    for i = 1, 7 do
+      local lb = (in_level and furn_art.labels) and furn_art.labels[i] or nil
+      local node = {
+        id = "label." .. i,
+        kind = "textbox",
+        parent = "labels",
+        pos_runtime = true,
+        visible = (lb ~= nil),
+        text = (lb ~= nil) and lb.text or "",
+      }
+      -- ⚠️ 每个节点**必须有 rect**：布局计划会对每个节点做 `to_canvas(n.rect)`
+      --   （没有 rect 就 "attempt to index a nil value" —— 本函数第一版就是这么崩的）。
+      local rx, ry, rw, rh = 0, 0, 1, 1
+      if lb ~= nil then
+        -- 落在 `furn_art` 选好的那一格中心（优先"最后一行没有家具的格"），
+        -- 这样字不会压在家具图案上（见 lua/furn_art.lua 的 pick_label_cell）。
+        local ac = lb.cell or { r = lb.box.r2, c = lb.box.c1 }
+        rw, rh = math.floor(cell * 2.2), math.floor(cell * 0.40)
+        rx = math.floor(gx + (ac.c - 1) * pitch + cell * 0.5 - rw * 0.5)
+        ry = math.floor(gy + (ac.r - 1) * pitch + cell * 0.5 - rh * 0.5)
+      end
+      node.rect = { x = rx, y = ry, w = rw, h = rh }
+      push(node)
     end
   end
 
@@ -3364,73 +3599,131 @@ function Controller:build_layout()
   --     · 指认凶手 → 顶部工具条的 `action.submit` 就是它
   --   ⇒ 计划里不再声明，脚本也就不会去写不存在的控件。
   --   （以后要做移动端大按钮，可以从 git 历史取回：提交 2f4b1ea）
-  local _ = L.actions    -- 布局表里的坐标先留着，方便将来恢复
-  local _ = L.action_btn
+  -- ★ 2026-10-18（优化组 · P0）：下面这两行空语句**已删除** ✗✓
+  --   原文是 `local _ = L.actions` / `local _ = L.action_btn` —— 纯粹为了"压住未使用变量"
+  --   （它俩零读零写，`L.actions` / `L.action_btn` 这两个 LAYOUT 键也没有别的读者）⇒ 死代码 ✓
+  --   ⚠️ LAYOUT 里那两个键**暂时不动**：`dump_layout` 等工具按表遍历，删键要另做一轮核对。
 
-  -- ===== 开屏教程 =====
-  if self:is_intro_active() then
-    local mw, mh = L.modal.w, L.modal.h
-    local mx, my = math.floor((M.DESIGN.width - mw) / 2), math.floor((M.DESIGN.height - mh) / 2)
-    local page = M.INTRO[self.intro_page]
-    push({ id = "intro", kind = "panel", parent = "root", rect = { x = mx, y = my, w = mw, h = mh }, style = "modal" })
-    push({ id = "intro.dots", kind = "text", parent = "intro",
-           rect = { x = mx + 40, y = my + 30, w = mw - 80, h = 36 },
-           text = string.format("第 %d / %d 页", self.intro_page, #M.INTRO), style = "muted" })
-    push({ id = "intro.title", kind = "text", parent = "intro",
-           rect = { x = mx + 40, y = my + 80, w = mw - 80, h = 60 }, text = page.title, style = "modal.title" })
-    push({ id = "intro.body", kind = "text", parent = "intro",
-           rect = { x = mx + 40, y = my + 160, w = mw - 80, h = 180 }, text = page.body, style = "modal.body" })
-    btn("intro.skip", "intro", { x = mx + 40, y = my + mh - 90, w = 180, h = 60 }, "跳过",
-        { action = "intro_skip" }, "tab")
-    btn("intro.next", "intro", { x = mx + mw - 240, y = my + mh - 90, w = 200, h = 60 },
-        (self.intro_page >= #M.INTRO) and "开始破案" or "下一页", { action = "intro_next" }, "stamp.primary")
-  end
-
+  -- ★ 2026-10-18（优化组 · C 类清理）：**教程面板的 6 个控件声明整段删除** ✗✓
+  --   （`intro` / `intro.dots` / `intro.title` / `intro.body` / `intro.skip` / `intro.next` 全部）
+  --   ⇒ 规划里不再出现这 6 个名字 ⇒ `report_missing` 与 `check_names` 都少 6 项噪声 ✓
   -- ===== 弹窗 =====
   local modal = self.modal
-  if modal and not self:is_intro_active() then
+  if modal then
     local mw, mh = L.modal.w, L.modal.h
     local mx, my = math.floor((M.DESIGN.width - mw) / 2), math.floor((M.DESIGN.height - mh) / 2)
     push({ id = "modal", kind = "panel", parent = "root", rect = { x = mx, y = my, w = mw, h = mh }, style = "modal" })
 
-    if modal.kind == "accuse_thief" or modal.kind == "accuse_accomplice" then
-      local is_acc = (modal.kind == "accuse_accomplice")
+    -- ★★★★★★ 2026-10-12 **指认面板的渲染分支 —— 已整段删掉** ✗✓✓
+    --   （原为这条 if 链的链首；删后 `result` 成为链首 ✓ 内容与原因见下一段的注释 ✓）
+    --   ⚠️ 同样**故意不写出那三个事件的字面量** ✗（`check_actions` 连注释一起扫 ✓）
+
+    -- ★★★★★★ 2026-10-12 **这里原来是【指认面板】的渲染分支 —— 已整段删掉** ✗✓
+    --
+    --   删掉的是：标题（「摆位成立。谁是盗窃者？」/「那同伙是谁？」）＋
+    --   一排嫌疑人头像卡（`modal.suspect.<id>`，**靠 `it.portrait` 出图**）＋
+    --   「他独自作案（没有同伙）」键 ＋ 「再看看」键 ✓
+    --
+    --   ★ 为什么连渲染一起删 ✓（而不是只断开入口）：
+    --     ① 用户要求「删干净、一行不留」✓；
+    --     ② 那排按钮**靠头像图** ✓ 而图在模拟器里是缺的 ⇒ 玩家「**看不到点哪**」✓
+    --        ⇒ 留着就是一条永远点不准的路 ✓
+    --     ③ 留着还会让 `layout_plan()` 继续把 `modal.suspect.*` 声明成"计划必需" ✓
+    --        ⇒ **又是"计划有、存档没有、又没有创建路"** ⇒ 正是本轮刚修掉的那类静默缺失 ✗
+    --
+    --   ⇒ 所以它现在**从 `if` 变成链首**：`result` 成了这条 if 链的第一个分支 ✓
+    if modal.kind == "result" then
+      -- ★★★★★★ 2026-10-13 **通关弹窗的【专用底板】**（用户指令 ✓）✗✓✓
+      --
+      --   ★ 用户原话 ✓：「这样改会让**另一个需要用到 bg 的地方的图也被拉大** ✗，
+      --     所以我才让你**新建一个，换一个名字，脚本里的引用也一起换成新名字**」✓✓
+      --
+      --   ★ 起因 ✓：`modal` 是**五个状态共用**的容器 ✓
+      --     （`result` / `exit_menu` / `howto` / `levelselect` / `share` ✓）
+      --     而它那个 `bg` 是**共用的底板** ✓ ⇒ 把那个拉大 ⇒ **别的弹窗也跟着变大** ✗
+      --
+      --   ⇒ 所以 ✓：★ 共用的 `bg` **一个字没动**（633×383 ✓）
+      --     ★ 另建 `result.bg`（633×600 ✓ 在存档里是 `modal` 的**第 1 个子控件**
+      --       ⇒ **画在最底层** ✓ 垫在四键与三行文字下面 ✓）
+      --     ★ 本节点的 `states` **只有 `result`** ✓ ⇒ **只有通关弹窗会显示它** ✓
+      --   ★ 图 id 与调色随克隆体一起带过来 ✓（`图=100001`，与共用底板一致 ✓
+      --     —— 用户要求「素材引用和调色按这张就行」✓）
+      --   ⚠️ 尺寸仍以**存档为准** ✓（`respect_editor_rect = true` ⇒ 脚本不覆盖你在编辑器里调的几何 ✓）
+      push({ id = "result.bg", kind = "image", parent = "modal",
+             rect = { x = mx, y = my, w = mw, h = mh }, image_id = 100001 })
+      local got, total = self.core:score()
+      -- ★★★★★★ 2026-10-12 **通关弹窗拉高 ＋ 三行文案上移到四键上方**（用户指令 ✓）✗✓
+      --
+      --   用户原话 ✓：「**拉高通关弹窗，然后把通关提示文本放到四键上方** ✓
+      --     ★ **依次是恭喜破案，凶手分析，用时，分别居中放置** ✓ ★ **恭喜破案字号加大**」✓✓
+      --
+      --   ★ 版式（**设计空间 1920×1080**；`rect.y` = 从父控件【顶边】往下数 ✓）：
+      --     弹窗 h **460 → 720** ✓（画布侧 600 ⇒ 居中后占 y 150..750，画布 900 装得下 ✓）
+      --       恭喜破案   y=40   h=90
+      --       凶手分析   y=140  h=110
+      --       用时       y=262  h=44
+      --       四键       y=350 / 446 / 542 / 638（pitch 96 不变 ✓ 638+72=710 ≤ 720 ✓）
+      --
+      --   ⚠️ **"居中"怎么实现的（如实记 ✗）**：本项目**没有任何对齐 API** ✓
+      --     （`Align` / `Alignment` 在 `lua/` 里**零命中** ✓；适配器 `set_property`
+      --       也只认 `key == "text"` 这一个文本字段 ✓）
+      --     ⇒ 靠「**文本框铺满整幅、左右各留 30**」来居中 ✓
+      --       引擎若在框内**默认居中**就正是要的效果 ✓
+      --     ★ 若真机上看到**左对齐** ⇒ 需要接一个对齐属性（得先查到它的名字）✓
+      --
+      --   ⚠️ **"恭喜破案字号加大"【本轮没做】✗（如实说 ✓）**：
+      --     文字节点的字号在当前适配器里**没有写入口** ✓ —— `set_property` 不认 fontSize ✓，
+      --     而 `main.lua` 那个 `cfg.label_font_size` 只作用于**按钮的 label 子控件** ✓
+      --     ⇒ 要做**得先给适配器加一条「独立文字节点的字号」通道** ✓（下一轮 ✓）
+      --
+      --   第二行 = **凶手分析**：`core` 给的那句正文去掉开头重复的「破案！」✓
+      --     （标题已经说「恭喜破案」了，正文再喊一次就重了 ✓）
+      local body = modal.message or ""
+      if modal.win then body = body:gsub("^破案！", "") end
       push({ id = "modal.title", kind = "text", parent = "modal",
-             rect = { x = mx + 30, y = my + 26, w = mw - 60, h = 56 },
-             text = is_acc and "那同伙是谁？" or "摆位成立。谁是盗窃者？",
-             style = "modal.title" })
-      local per = 3
-      for i = 1, #vm.tray do
-        local it = vm.tray[i]
-        if not (is_acc and it.id == modal.thief) then
-          local col = (i - 1) % per
-          local row = math.floor((i - 1) / per)
-          push({ id = "modal.suspect." .. tostring(it.id), kind = "button", parent = "modal",
-                 rect = { x = mx + 40 + col * 232, y = my + 110 + row * 128, w = 212, h = 110 },
-                 text = it.name, image = it.portrait, style = "portrait",
-                 event = is_acc and { action = "accuse_pick_accomplice", id = it.id }
-                                 or { action = "accuse_thief", id = it.id } })
+             rect = { x = mx + 30, y = my + 40, w = mw - 60, h = 90 },
+             text = modal.win and "恭喜破案" or "没能找齐所有人", style = "modal.title" })
+      -- ★★★★★★★★ 2026-10-16 **v252：分析标语挪进 `win` 区（每关一颗 `win.N`）** ✗✓✓
+      --   ★ 用户原话 ✓：「★ **每关的通关弹窗的分析标语也像 clue 一样单独设一个对应区域放对应内容，
+      --     ★ 父级叫 win，子控件叫 win.i(1,2,3等)**」✓
+      --   ★ 为什么必须"每关一颗控件" ✗：★ 文字**存不进 `.gil`** ✓（`_probe_texts.mjs` 实测 ✓）
+      --     ⇒ ★ 想让"每关各自一句"在编辑器里能改 ⇒ ★ **一颗控件只能放一句** ✓
+      --     ⇒ ★ 所以先把**控件**建够（`win` ＋ `win.1..N` ✓ 已写进交付档 ✓）
+      --   ★ 脚本只做两件事 ✓：★ ① **只显示当前那关那一颗** ✓ ② ★ 读不到内容才写兜底 ✓
+      --     （"读不到才写"在适配层 ✓ `cfg.text_editor_first` 里已有 `win.1..4` ✓）
+      local win_n, win_idx = 4, nil
+      do
+        local lv = self.opts.levels
+        if type(lv) == "function" then lv = lv() end
+        if type(lv) == "table" and #lv > 0 then win_n = #lv end
+        local want = tostring(self.opts.current_level or "")
+        if type(lv) == "table" then
+          for i = 1, #lv do
+            if tostring(lv[i].id) == want then win_idx = i break end
+          end
         end
       end
-      if is_acc then
-        btn("modal.no_accomplice", "modal",
-            { x = mx + 40, y = my + mh - 88, w = 280, h = 60 }, "他独自作案（没有同伙）",
-            { action = "accuse_no_accomplice" }, "stamp")
+      local win_rect = { x = mx + 30, y = my + 140, w = mw - 60, h = 110 }
+      push({ id = "win", kind = "container", parent = "modal", rect = win_rect })
+      for i = 1, win_n do
+        push({ id = "win." .. i, kind = "text", parent = "win", rect = win_rect,
+               visible = (win_idx == i),
+               -- ★ 只给"当前那关"那一颗写兜底 ✓ —— ★ 别的关卡的内容**脚本不知道**（★ 那是编辑器的事 ✓）
+               text = (win_idx == i) and body or nil,
+               style = "modal.body" })
       end
-      btn("modal.cancel", "modal", { x = mx + mw - 200, y = my + mh - 88, w = 160, h = 60 }, "再看看",
-          { action = "close_modal" }, "tab")
-
-    elseif modal.kind == "result" then
-      local got, total = self.core:score()
-      push({ id = "modal.title", kind = "text", parent = "modal",
-             rect = { x = mx + 30, y = my + 40, w = mw - 60, h = 60 },
-             text = modal.win and "破案！" or "没能找齐所有人", style = "modal.title" })
+      -- ★ 老的 `modal.body` **不再承担这句话** ✓ —— ★ 留着这条、但**藏起来** ✓
+      --   （★ 不藏的话，编辑器里那份旧内容会跟新区域**叠一遍** ✗）
       push({ id = "modal.body", kind = "text", parent = "modal",
-             rect = { x = mx + 30, y = my + 120, w = mw - 60, h = 120 }, text = modal.message or "", style = "modal.body" })
+             rect = { x = mx + 30, y = my + 140, w = mw - 60, h = 110 },
+             visible = false, style = "modal.body" })
       push({ id = "modal.stats", kind = "text", parent = "modal",
-             rect = { x = mx + 30, y = my + 250, w = mw - 60, h = 40 },
+             rect = { x = mx + 30, y = my + 262, w = mw - 60, h = 44 },
              text = string.format("用时 %s · 误指认 %d 次 · 位置 %d/%d",
-                                  self:format_time(vm.hud.time), vm.hud.failed_accusations, got, total),
+                                  -- ★ 2026-10-12 **定格值优先** ✓（用户：「用时不要走动，取胜利时的时间填入」✓）
+                                  --   取不到才退回实时值 ✓（老路径不变 ✓）
+                                  self:format_time(self.result_seconds or vm.hud.time),
+                                  vm.hud.failed_accusations, got, total),
              style = "muted" })
       -- ★★★★★★ 2026-10-12 **胜利界面改成【四键**，与 `exit_menu` 同款**】** ✗✓✓
       --
@@ -3452,21 +3745,40 @@ function Controller:build_layout()
       --     ★ 四个偏移 **50 / 146 / 242 / 338** ✓（★ 面板内上下对称 ✓）
       --   ★★ 面板内上方仍有 `modal.title` / `modal.body` / `modal.stats` ✓
       --     ⇒ ★ **统计那一行就是"结算"的信息** ✓（★ 用时 ／ 误指认 ／ 位置 ✓）
+      -- ★★★★★★ 2026-10-12 **四键改用【独立 id 前缀 `result.`】** ✗✓✓
+      --
+      --   ★★ 起因（模拟器实测 ✓）：这四键原来叫 `modal.next/exit/home/settle` ✗，
+      --     而 `exit_menu` 那一屏**也叫 `modal.exit` / `modal.settle`** ——
+      --     同一个 id 在**两个状态里各有一套几何**（`y = my+50` vs `y = my+146`）✓
+      --     ⇒ `layout_plan()` 是**并集**、只留第一次命中的那一套 ✗
+      --     ⇒ 与本项目第 11 号历史 bug「自适应几何在并集里自相矛盾」**同形状** ✓
+      --
+      --   ★ 另外实测读数（v214，点击结算后）：
+      --     `这些控件还没建（共 3 个）：modal.* ×3  modal.exit modal.home modal.settle`
+      --     ⇒ 四键里**只有 `modal.next` 真的有控件** ✗ 玩家点不到另外三个 ✓
+      --     ⇒ 病根：`cfg.auto_create = false`，而白名单只放行 `hex.*`/`hit.*` 14 个；
+      --       **"计划里有、存档里没有、白名单里也没有"的控件没有任何一条被造出来的路** ✗
+      --
+      --   ⇒ ★ 修法（**分家，不是补丁**）✓：结算四键**不再复用 exit_menu 的 id** ✓
+      --     两个界面本来就是两件事 ✓ 分家之后：
+      --       · 并集冲突消失（缺口 2 ✓）
+      --       · 四个 id 只属于 `result` 状态 ⇒ 进 plan 的 `states` 并集，
+      --         由 `entry_client_script.lua` 的 `auto_create_only` 放行创建（缺口 1 ✓）
       local kw, kh = 374, 72
       local kx = mx + math.floor((mw - kw) / 2)
-      btn("modal.next", "modal", { x = kx, y = my + 50, w = kw, h = kh },
+      btn("result.next", "modal", { x = kx, y = my + 350, w = kw, h = kh },
           "下一关", { action = "next_level" }, "stamp.primary")
-      btn("modal.exit", "modal", { x = kx, y = my + 146, w = kw, h = kh },
+      btn("result.exit", "modal", { x = kx, y = my + 446, w = kw, h = kh },
           "退出至菜单", { action = "exit_menu_go" }, "stamp")
-      btn("modal.home", "modal", { x = kx, y = my + 242, w = kw, h = kh },
+      btn("result.home", "modal", { x = kx, y = my + 542, w = kw, h = kh },
           "返回首页", { action = "home" }, "stamp")
-      btn("modal.settle", "modal", { x = kx, y = my + 338, w = kw, h = kh },
+      btn("result.settle", "modal", { x = kx, y = my + 638, w = kw, h = kh },
           "存档并结算", { action = "exit_menu_settle" }, "stamp.primary")
       -- ★ 胶囊底图：★ 与 `exit_menu` 同一张（107179 ✓ 日志里 `回读=107179` ✓）
       --   ★ 用自己的守卫 ✓ —— 不跟 `_exit_menu_art` 共用 ✗（★ 那个可能在这段之前已被置真 ✓）
       if (not self._result_art) and self.adapter ~= nil then
         self._result_art = true
-        for _, bid in ipairs({ "modal.next", "modal.exit", "modal.home", "modal.settle" }) do
+        for _, bid in ipairs({ "result.next", "result.exit", "result.home", "result.settle" }) do
           local bg = nil
           pcall(function() bg = self.adapter:sub(bid, "bg") end)
           if bg == nil then pcall(function() bg = self.adapter:find(bid .. ".bg") end) end
@@ -3475,26 +3787,23 @@ function Controller:build_layout()
           end
         end
       end
-    elseif modal.kind == "share" then
-      -- ★ 2026-10-05 **「分享棋局」按钮已删掉**（用户指令：「去掉分享」）。
-      --   这里原来是一个 `modal.share` 按钮（文字「分享棋局」，事件名就是 `share`），
-      --   但 `share` **从来没有分发分支** ⇒ 按下去没反应（`check_actions` 改前报的 2 个死 action 之一）。
-      --   ⚠️ 这段注释里**故意不写出那条事件的完整字面量**：`check_actions.mjs` 是**逐行正则扫源码**，
-      --      连注释一起扫（`action\s*=\s*"..."`）⇒ 注释里写出旧代码的字面量会被当成"又发了一次"，
-      --      于是它又会红。要复现旧行为，看 `versions/` 里的历史版本即可。
-      --   渲染分支 `modal.kind == "share"` **保留**，理由写在下面那一段注释里。
-      --   ⚠️ `modal.again` / `modal.next` 的坐标与文字**一个字都没动**。
-      -- ★★★★★★ 2026-10-12 **旧的【两键】版已删** ✗✓ —— ★ 见上面那段四键 ✓
-      --   ★ 删掉的原文（★ 备查 ✓）：
-      --     `btn("modal.again", "modal", { x = mx + 40, y = my + mh - 88, w = 180, h = 60 },`
-      --       `"重玩本关", { action = "restart" }, "stamp")`
-      --     `btn("modal.next", "modal", { x = mx + 440, y = my + mh - 88, w = 200, h = 60 },`
-      --       `"下一关", { action = "next_level" }, "stamp.primary")`
-      --   ★★★ 为什么删「重玩本关」✗ —— ★ **用户点名的是【四个键】** ✓：
-      --     ★ 下一关 ✓ 退出至菜单 ✓ 返回首页 ✓ 存档并结算 ✓
-      --     ★ 而「重玩本关」的动作 `restart` **在 `exit_menu` / 键盘里仍在** ✓
-      --       ⇒ ★ 它没有消失 ✓，只是**这个界面不再放它** ✓（★ 与"返回列表"那次同款处理 ✓）
-
+    -- ★★★★★★★★ 2026-10-20（v282）**删掉一个"同条件空分支"的雷** ✗✓
+    --
+    --   这里到 2026-10-20 之前是这么写的：
+    --       `elseif modal.kind == "share" then`   ← ①
+    --         （一串注释，**没有一句代码**）
+    --       ……几十行……
+    --       `elseif modal.kind == "share" then`   ← ②
+    --         真正的渲染（push `modal.title` / `modal.body` / 关闭键 …）
+    --
+    --   ★ 问题：**同一条 if 链里第二个同条件的 elseif 永远进不去** ⇒ ② 是**死码**。
+    --     `tools/lua-tooling/out/selene-report.txt` 里唯一的 `Error`（`ifs_same_cond`，
+    --     报在旧行号 3580 对 3499）就是这个。
+    --   ★ 真危害不是"多几行"：`modal.kind == "share"` 的**入口按钮**已被用户要求删掉，
+    --     但**链路还在**（`a == "accuse"` 仍会构造 share 弹窗、`opts.on_share` 仍被回调）。
+    --     哪天有人把按钮加回来 ⇒ 命中 ① 这个**空支** ⇒ **弹窗什么都不显示**，
+    --     而注释还会告诉他"渲染分支保留着呢、理由在下面" ⇒ 极难查。
+    --   ⇒ 现在：① 删掉（它的注释合并到 ② 那支），② 变成唯一、可到达的 share 分支。
     elseif modal.kind == "exit_menu" then
       -- ★★★★★ 2026-10-09 **几何改为【设计稿 B】** ✗✓（用户 2026-10-09 拍板选 B ✓）
       --   ★ 设计稿 B（画布空间 1600×900）✓：
@@ -3557,8 +3866,7 @@ function Controller:build_layout()
         end
       end
     elseif modal.kind == "share" then
-      -- ★ 2026-10-05 **这一支目前没有入口按钮**（用户当天决定去掉「分享棋局」按钮，
-      --   见上面 `modal.kind == "result"` 里那段删除说明）。
+      -- ★ 2026-10-05 **这一支目前没有入口按钮**（用户当天决定去掉「分享棋局」按钮）。
       --
       --   **故意留着**，不是忘了删：
       --     · 链路还在 —— `a == "accuse"` 分支仍会 `core:encode_state()` 并构造
@@ -3566,6 +3874,15 @@ function Controller:build_layout()
       --     · 将来要接**真实分享**（真正的分享面板/复制码）时，只要再加回一个按钮即可，
       --       不必把这一屏重写一遍；
       --     · 代价是零 —— 它只在"别处主动构造 share 弹窗"时才可能出现，平时不进任何计划。
+      --
+      --   ★★★★★★★★ 2026-10-20（v282）**现在它是唯一一支 share 分支，而且真的会执行** ✗✓
+      --     在这之前，这条 if 链里**上面还有一支同条件的空分支** ⇒ 这一支永远进不去（死码）。
+      --     合并说明见上面 `exit_menu` 前面那段注释（含"为什么以前那么写很危险"）。
+      --   ⚠️ 顺带记一条**没删的历史信息**：旧的两键版（`modal.again` 重玩本关 /
+      --     `modal.next` 下一关）在 2026-10-12 就被四键版取代；「重玩本关」的 `restart`
+      --     动作在 `exit_menu` 与键盘里仍然存在，只是这个界面不再放它 —— 用户当时点名的就是四个键。
+      --   ⚠️ 下面这些 `push` 里的 id 集合要与 `layout_plan` 的 states 并集一致；改它们之前先看
+      --     `entry_client_script.lua` 的 `auto_create_only`（否则真机会"计划有、存档没有"）。
       push({ id = "modal.title", kind = "text", parent = "modal",
              rect = { x = mx + 30, y = my + 30, w = mw - 60, h = 56 }, text = "分享棋局", style = "modal.title" })
       push({ id = "modal.body", kind = "text", parent = "modal",
@@ -3610,10 +3927,9 @@ function Controller:build_layout()
       push({ id = "modal.title", kind = "text", parent = "modal",
              rect = { x = mx + 30, y = my + 26, w = mw - 60, h = 56 }, text = "玩法", style = "modal.title" })
       local text = {}
-      for i = 1, #M.INTRO do
-        text[#text + 1] = string.format("%d. %s —— %s", i, M.INTRO[i].title,
-                                        M.INTRO[i].body:gsub("\n", " "))
-      end
+      -- ★ 2026-10-18（优化组）：这里原来遍历 `M.INTRO`（教程 5 页）拼「玩法」弹窗正文 ——
+      --   教程那套已按用户指令整套删除（后续重做）⇒ 正文改成固定文案，**不再引用任何教程数据** ✓
+      text[#text + 1] = "玩法：把每个角色放到正确的位置上；摆满后点「提交」校验，通过即可指认凶手。"
       push({ id = "modal.body", kind = "text", parent = "modal",
              rect = { x = mx + 30, y = my + 100, w = mw - 60, h = 280 },
              text = table.concat(text, "\n\n"), style = "modal.body" })
@@ -3647,8 +3963,6 @@ function Controller:build_layout()
     local FULL = { x = 0, y = 0, w = M.DESIGN.width, h = M.DESIGN.height }
   push({ id = "home", kind = "container", parent = "root", rect = FULL,
          visible = (self.screen == "home"), pos_runtime = true })
-  push({ id = "select", kind = "container", parent = "root", rect = FULL,
-         visible = (self.screen == "select"), pos_runtime = true })
 
   if self.screen ~= nil then
     -- ★★★ 2026-10-01：**改成"反向逻辑"**（原来是白名单，漏了一大片）。
@@ -3754,7 +4068,16 @@ function Controller:build_layout()
         local lv = self.opts.levels
         if type(lv) == "function" then list = lv() or {}
         elseif type(lv) == "table" then list = lv end
-        local PER = 8
+        -- ★★★★★★ 2026-10-15 **每页 8 → 4**（用户 2026-10-15 定稿：「选关改为四关一页」✓）
+        --
+        --   ★ 为什么改 ✓：现在**只有 4 个关卡** ✓
+        --     · `PER = 8` ⇒ `pages = 1` ⇒ `pg_visible = false` ⇒ **翻页键与页码整组隐藏** ✗
+        --       ⇒ ★ 翻页做好了却**永远看不到**，看起来像"没做" ✓
+        --     · `PER = 4` ⇒ 4 关正好 **1 页**、★ **第 5 关起就是 2 页** ⇒ 加一关即可验翻页 ✓
+        --
+        --   ★ 版面依据 ✓：设计空间 **1920×1080、左上原点、Y 向下** ✓
+        --     （见 `docs/控件坐标表-1600x900.md` 表头 ✓ 所以下面的 `y = 950` 是在 1080 里 ✓ 没出界 ✓）
+        local PER = 4
         local total = #list
         local pages = math.max(1, math.ceil(total / PER))
         local page = tonumber(self.select_page) or 1
@@ -3771,32 +4094,73 @@ function Controller:build_layout()
 
         push({ id = "select.title", kind = "text", parent = "root", visible = true, text = "选择关卡",
              rect = { x = 460, y = 80, w = 1000, h = 90 } })
+      -- ★★★★★★ 2026-10-15 **返回键 = 视觉层 + 命中层（两层）** ✗✓
+      --
+      --   ★★ 根因 ✓（真机实测：「左上箭头出现了，**还没有功能**」✓）：
+      --     `hex.*` 这类【图标】控件**收不到光标事件** ✗
+      --     官方在 `ui_controller.lua:2101` 那轮就撞过并记下原话：
+      --       「**控件 `hex.back` 不支持光标事件**（请用「预设按钮」或「光标检测区域」控件）」✓
+      --     ⇒ ★ 所以关卡内一直是**两层**：`hex.back`（视觉 ✓）＋ `hit.back`（**光标检测区域** ✓ 吃点击 ✓）
+      --     ⇒ ★ 我第一版只克隆了 `hex.back` ⇒ **图出来了、点不动** ✓ 完全对得上现象 ✓
+      --
+      --   ★ 现在的结构 ✓（都建进了存档 ✓）：
+      --     · `select.back`    #1073742727  62×62  克隆自 `hex.back` ⇒ **只做视觉** ✓
+      --     · `hit.select.back` #1073742730  62×62  克隆自 `hit.back` ⇒ ★ **事件绑在它身上** ✓
+      --   ★ z 序 ✓：命中层的 ID **大于**视觉层 ⇒ 追加在后 ⇒ **压在上面** ✓
+      --     （与关卡内 `hex.back` #502 → `hit.back` #509 的顺序一致 ✓）
+      --   ★ 尺寸 = **62×62**，与关卡内那颗**一模一样** ✓（用户：「改到和关卡内一样」✓）
+      --   ★ `text` 不写 ✓ ⇒ 露出箭头图；★ `home` 分支 L1539 只切屏、`modal=nil` ⇒ **不弹窗** ✓
+      local BACK_RECT = { x = 60, y = 48, w = 62, h = 62 }
       push({ id = "select.back", kind = "button", parent = "root", visible = true,
-             rect = { x = 120, y = 950, w = 260, h = 80 },
-             text = "返回主页", event = { action = "home" } })
+             rect = BACK_RECT })
+      push({ id = "hit.select.back", kind = "button", parent = "root", visible = true,
+             rect = BACK_RECT,
+             event = { action = "home" } })
         -- ★★★ 2026-10-01：**选关翻页**（关卡多于 8 个时才有意义）。
-        --   只有一页时整组隐藏（`visible=false`），不占视觉。
-        local pg_visible = (pages > 1)
-        if pg_visible then
-          push({ id = "select.prev", kind = "button", parent = "root",
-                 visible = (page > 1), text = "上一页",
-                 rect = { x = 700, y = 950, w = 220, h = 80 },
-                 event = { action = "select_page", delta = -1 } })
-          push({ id = "select.next", kind = "button", parent = "root",
-                 visible = (page < pages), text = "下一页",
-                 rect = { x = 1000, y = 950, w = 220, h = 80 },
-                 event = { action = "select_page", delta = 1 } })
-          push({ id = "select.page", kind = "text", parent = "root", visible = true,
-                 text = string.format("第 %d / %d 页", page, pages),
-                 rect = { x = 930, y = 955, w = 60, h = 70 } })
-        else
-          push({ id = "select.prev", kind = "button", parent = "root", visible = false,
-                 rect = { x = 700, y = 950, w = 220, h = 80 } })
-          push({ id = "select.next", kind = "button", parent = "root", visible = false,
-                 rect = { x = 1000, y = 950, w = 220, h = 80 } })
-          push({ id = "select.page", kind = "text", parent = "root", visible = false,
-                 rect = { x = 930, y = 955, w = 60, h = 70 } })
-        end
+        -- ★★★★★★★★ 2026-10-15 **改成"永远显示 + 没得翻就变暗"** ✗✓✓（用户 2026-10-15 报的 ✓）
+        --
+        --   ★★ 用户原话 ✓：「**左右箭头没加上去**」✗ —— ★ 而他其实只有 **4 关** ✓
+        --     而脚本是「四关一页」✓（`PER = 4` ✓）⇒ `pages = 1` ✓
+        --     ⇒ ★ 旧写法 `pg_visible = (pages > 1)` ⇒ **整组隐藏** ✗
+        --       ⇒ ★★ 玩家看到的选关屏**没有左右箭头** ✓（用户就是这么报的 ✓）
+        --
+        --   ★ 旧写法错在哪 ✗：★ 它把"**这一屏有没有这个控件**"和
+        --     "**这个方向现在能不能翻**"当成了同一件事 ✓ —— 这两件事是两回事 ✓✓
+        --
+        --   ★ 新写法 ✓（两件事分开 ✓）：
+        --     · ★ **可见性 = 这一屏有没有** ⇒ 选关屏**永远有**这两个箭头 ✓
+        --     · ★ **可用性 = 这个方向能不能翻** ⇒ 不能翻的用 **变暗**（`imageColor` 乘算 ✓）
+        --       ⇒ ★ 玩家一眼能看出"箭头在、但这边没页了" ✓
+        --       ⇒ ★ 而点击**照旧一律绑上** ✓（`select_page` 那边已经夹紧了 ✓
+        --         见上面 `if page < 1 then page = 1 end` ✓ ⇒ 点它也不会越界 ✓）
+        --
+        --   ★ 变暗用的是本工程**已经用过的两个值** ✓（不新发明 ✓）：
+        --     · `0xFFFFFFFF` = 不透明白 = **原色** ✓（见适配层 `NORMAL_TINT` ✓）
+        --     · `0x7FFFFFFF` = 50% 透明白 = **整体减淡** ✓（见适配层 `PLACED_TINT` ✓
+        --       就是"已放置头像卡"那种变淡效果 ✓）
+        --   ⚠️ 前提 ✓：`tint` 那条路**必须在真机上真的生效** ✗ ——
+        --     它这次一起修了 ✓（原来 `tint` 只认 table **且要求全局 `Color()`**，
+        --     而真机上 `Color()` 不存在 ⇒ 一直是空操作 ✓ 见适配层那一段 ✓）
+        local ARROW = 62
+        local PG_Y  = math.floor((1080 - ARROW) / 2)      -- 509
+        local PR = { x = 60, y = PG_Y, w = ARROW, h = ARROW }
+        local NX = { x = 1920 - 60 - ARROW, y = PG_Y, w = ARROW, h = ARROW }
+        local NORMAL_TINT, DIM_TINT = 4294967295, 2147483647
+        -- ★ 视觉层：**永远可见** ✓；不能翻的那一边变暗 ✓
+        push({ id = "select.prev", kind = "button", parent = "root", visible = true,
+               rect = PR, tint = (page > 1) and NORMAL_TINT or DIM_TINT })
+        push({ id = "select.next", kind = "button", parent = "root", visible = true,
+               rect = NX, tint = (page < pages) and NORMAL_TINT or DIM_TINT })
+        -- ★ 命中层：**永远可见** ✓（否则点不动 ✓）；两个方向都绑上 ✓（夹紧在 `select_page` ✓）
+        push({ id = "hit.select.prev", kind = "button", parent = "root", visible = true,
+               rect = PR, event = { action = "select_page", delta = -1 } })
+        push({ id = "hit.select.next", kind = "button", parent = "root", visible = true,
+               rect = NX, event = { action = "select_page", delta = 1 } })
+        -- ★ 页码：**永远显示** ✓ —— ★「第 1 / 1 页」正好解释"为什么箭头是暗的" ✓
+        push({ id = "select.page", kind = "text", parent = "root", visible = true,
+               text = string.format("第 %d / %d 页", page, pages),
+               -- ★ 2026-10-14 宽度 60 → 130 ✗✓：`第 1 / 2 页` 按 24 号字约 110px 宽 ✓
+               rect = { x = 895, y = 952, w = 130, h = 70 } })
       -- ⚠️⚠️ `opts.levels` 在 main.lua 里传的是**表**（`levels = level_list`），不是函数！
       --   我第一版写成 `self.opts.levels()` ⇒ `attempt to call a table value (field 'levels')`
       --   ⇒ **build_layout 直接抛错、整个渲染崩掉**，
@@ -3817,49 +4181,169 @@ function Controller:build_layout()
         --   为什么不做滚动列表：卡片是 2 行 × 4 列的大格子（含棋盘缩略图），
         --   一屏正好 8 张；翻页比滚动更贴合"选关"这个动作。
         
-        for i = 1, 8 do
+        -- ★★★★★★ 2026-10-15 **卡位数必须跟 `PER` 一致** ✗✓（原来硬编码 8 ⇒ 和 PER 打架）
+        --
+        --   ★ 原来的形状 ✗：`PER` 与循环的 `8` **是两个独立的数** ✓
+        --     · `lst_base = (page - 1) * PER` ⇒ 用 PER 算偏移 ✓
+        --     · `for i = 1, 8 do`         ⇒ 却渲染 **8 个卡位** ✗
+        --     ⇒ ★ 一旦 `PER ~= 8`（例如改成 4）：
+        --       第 1 页画 `list[1..8]`、第 2 页画 `list[5..12]` ✗
+        --       ⇒ **两页重叠四关、而且第 1~4 关翻不回去** ✗✗
+        --
+        --   ★ 现在 ✓：**一页 4 张、一行四个**（用户定「四关一页」✓）
+        --     · 卡位 `i = 1 .. PER` ✓ 偏移 `lst_base + i` ✓ 两处**同一个数** ✓
+        --     · `x` 沿用原来的 4 列算式（`160 + (i-1)*420`）✓ ⇒ 一行铺满 ✓
+        --     · 不再换行（原来第 5 张起 `y += 240`）⇒ **y 固定** ✓
+        -- ★★★★★★ 2026-10-15 **卡片几何改成"扑克牌形"** ✗✓（用户 2026-10-15 定稿 ✓）
+        --
+        --   用户原话：「把选项卡拉成**高大于宽的矩形（扑克牌形）**，面积不要太大，
+        --             **高约屏幕高度的 40%**，宽同比缩放，**间距稍宽**」
+        --
+        --   ★ 算式 ✓（设计空间 1920×1080 ✓）：
+        --     · 高 = **40% × 1080 = 432** ✓
+        --     · 宽 = 按**扑克牌比例 ≈ 1 : 1.4** 反算 ⇒ 432 ÷ 1.4 ≈ **310** ✓
+        --     · 间距 **60**（原来是 40 ⇒ "稍宽" ✓）⇒ 步长 = 310 + 60 = **370** ✓
+        --     · 一行四张：总宽 = 4×310 + 3×60 = **1420** ⇒ 居中起点 = (1920−1420)/2 = **250** ✓
+        --     · 纵向居中偏上（给底部翻页那行留位）⇒ y = **330**（300…不重要，330 更居中 ✓）
+        -- ★★★★★★★★ 2026-10-16 **用户指令③：选关卡片缩到 90%** ✗✓✓
+        --   ★ 原话 ✓：「★ **把棋盘，棋盘背景图，选关卡片的 xy 缩减到现在的 90%**」✓
+        --   ★ 310/432 × 0.9 = **279 / 388.8** ✓；★ 间距 60 同步缩到 **54** ✓
+        --     （★ 间距不缩的话，四张卡的总宽反而会外扩 ✗）
+        local CARD_W, CARD_H = 279, 388.8
+        local CARD_GAP        = 54                         -- ★ 2026-10-16：60 × 0.9
+        local CARD_STEP       = CARD_W + CARD_GAP          -- 370
+        local CARD_X0         = 250                        -- (1920 − (4*CARD_W + 3*CARD_GAP)) / 2
+        local CARD_Y0         = 330
+        for i = 1, PER do
           local it = list[lst_base + i]
-        local r = { x = 160 + ((i - 1) % 4) * 420, y = 240 + math.floor((i - 1) / 4) * 240,
-                    w = 380, h = 200 }
+        local r = { x = CARD_X0 + ((i - 1) % PER) * CARD_STEP, y = CARD_Y0,
+                    w = CARD_W, h = CARD_H }
+        -- ★★★★★★★★ 2026-10-16 **卡片本身与它的随件，统一用【编辑器那张卡】的框** ✗✓✓
+        --   ★ 见 `editor_card_box` 的函数头 ✓（读不到就退回上面这个规划框 ✓）
+        --   ⚠️ 卡片自己**不会被写**（`geom_by_editor` ⇒ 编辑器说了算 ✓）；
+        --      这里的 `r` 只决定"随件画在哪" + "控件不存在时按什么建" ✓
+        r = self:editor_card_box(ui_adapter, "select.card." .. i, r)
         if it ~= nil then
           -- ★★★ 2026-09-30：卡片改成**三段**（参考《派蒙的执律庭实习》的选关卡片：
           --   上面一条"关名"纸条、中间是**该关棋盘的缩略图**、下面一行"人数/进度"）。
           --   原来是一整块按钮 + 多行文字 —— 缩略图没地方放（文字会盖在它上面）。
+          -- ★★★★★ 2026-10-15 **卡面素材 `100108` → `CARD_MAT`（`106053` 「底板」类）** ✗✓
+          --   ★ 依据与取值见文件上方 `CARD_MAT` / `CARD_TINT` 那两段 ✓
+          --   ★ 一句话 ✓：★ `100108` 是"横板/墙"那类基础形状 ⇒ 在 310×432 上画出来是**横条** ✗
           push({ id = "select.card." .. i, kind = "button", parent = "root", visible = true,
+                 rect = r, image = CARD_MAT, tint = CARD_TINT })
+          -- ★★★★★★ 2026-10-15 **卡的点击也走命中层** ✗✓（同上：`hex.*` 图标收不到光标事件 ✗）
+          --   · 视觉：`select.card.N`（克隆自 `hex.back`，卡面图 = 「底板」类 `106053` ✓）310×432
+          --   · 命中：`hit.select.card.N`（克隆自 `hit.back` ✓ 光标检测区域 ✓）同 rect ✓
+          --   · ★ **事件绑在命中层** ✓（原来绑在 `select.card.N` 上 ⇒ **点不动** ✗）
+          --   ★ z 序：命中层 ID 更大 ⇒ 追加在后 ⇒ 压在上面 ✓
+          push({ id = "hit.select.card." .. i, kind = "button", parent = "root", visible = true,
                  rect = r, event = { action = "pick_level", id = it.id } })
           local t = self:level_card_parts(it)
+          -- ★★★★★★★★ 2026-10-16 **`.title` / `.info` 也必须显式 `pos_runtime = true`** ✗✓✓
+          --   ★ 为什么 ✗：这两条原来**没表态** ⇒ 靠继承（旧代码里 `root` 是 true ⇒ 它们也是 true）
+          --     —— ★ 而 v248 起「继承来的」不再受理（几何归编辑器 ✓）
+          --     ⇒ ★ 于是它们停在**存档里那份 100% 的卡位**上 ✗
+          --       ★ 实测（模拟器截图）：★ 关名跑到卡**上方**、人数行跑到卡**下方** ✓
+          --   ★ 它们和缩略图是**同一类** ✓：★ 内容是每关算的（关名/进度/房间）⇒
+          --     ★ **几何必须跟着这张卡走** ⇒ 显式声明"脚本说了算" ✓
+          --   ⚠️ 卡**本身**（`select.card.N` / `hit.select.card.N`）**不加** ✓ ——
+          --     它归编辑器 ✓，而上面那个 `r` 已经让它"算出来的位置" = 编辑器那份 ✓
           push({ id = "select.card." .. i .. ".title", kind = "text", parent = "root",
                  visible = true, text = t.title, style = "card.title",
-                 rect = { x = r.x + 16, y = r.y + 10, w = r.w - 32, h = 34 } })
+                 rect = { x = r.x + 16, y = r.y + 10, w = r.w - 32, h = 34 },
+                 pos_runtime = true })
           push({ id = "select.card." .. i .. ".info", kind = "text", parent = "root",
                  visible = true, text = t.info, style = "muted",
-                 rect = { x = r.x + 16, y = r.y + r.h - 42, w = r.w - 32, h = 32 } })
+                 rect = { x = r.x + 16, y = r.y + r.h - 42, w = r.w - 32, h = 32 },
+                 pos_runtime = true })
           self:push_room_thumb(push, "select.card." .. i, it, r, "select")
         else
           push({ id = "select.card." .. i, kind = "button", parent = "root", visible = false,
                  rect = r })
+          -- ★ 命中层也要显式隐藏 ✓ —— 否则**空卡位上会留一个能吃点击的透明块** ✗
+          push({ id = "hit.select.card." .. i, kind = "button", parent = "root", visible = false,
+                 rect = r })
           -- 空卡片的三个附件也要显式隐藏 —— 否则上一屏的内容会**残留在空位上**
+          -- ★ 与上面同口径：附件显式 `pos_runtime = true`（卡位变了它们也得跟着 ✓）
           for _, suf in ipairs({ ".title", ".info" }) do
             push({ id = "select.card." .. i .. suf, kind = "text", parent = "root", visible = false,
-                   rect = { x = r.x, y = r.y, w = 1, h = 1 } })
+                   rect = { x = r.x, y = r.y, w = 1, h = 1 }, pos_runtime = true })
           end
           self:push_room_thumb(push, "select.card." .. i, nil, r, "select")
         end
       end
     end
-    -- ⚠️ **主页/选关这条提前 return 之前也必须调** —— 否则这两个屏幕的子树
-    --    拿不到继承过来的 `pos_runtime`，子控件继续用编辑器里的锚点+偏移
-    --    ⇒ 实际落到屏幕外（就是"界面空白"的直接原因）。
+    -- ★★★★★★★★ 2026-10-15 **「结算」按钮：主页 ＋ 选关屏共用一颗，摆在左下角** ✗✓✓
+    --
+    --   ★★ 用户原话 ✓：「**在首页和选关界面左下角也加一个结算按钮，
+    --     不接存档线，只接结算**」✓
+    --
+    --   ★ 三件事说清楚 ✓：
+    --     · ★ **一颗控件、两个屏幕都用** ✓（★ 位置一样 ⇒ 不需要两套 ✓）
+    --       ⚠️ 但它**只在主页/选关进规划** ✓ ⇒ 关卡内由 `render` 的差集收口藏掉 ✓
+    --          （★ 与选关屏那整套同一个机制 ✓ 见 `render` 里 `self._shown` 那段 ✓）
+    --     · ★ **事件走"预设按钮"原生那条路** ✓ —— ★ 它不是 `hex.*` 图标 ✗
+    --       （★ 玩家在主页点了这么多天的「选关」正是同一类控件 ✓ 已验证能点 ✓）
+    --       ⇒ ★ **不需要命中层** ✓（那是给"收不到光标事件的图标"补的 ✗）
+    --     · ★★ **"不接存档线"= 只发 SETTLE 信号、不落盘** ✓
+    --       ★ 与弹窗里那颗「结算」的区别就在这 ✓（那颗是先存后结算 ✓ 见 `on_settle` ✓）
+    --       ⇒ ★ 回调是**独立的一个** `opts.on_settle_only` ✓ ⇒ 由 `main.lua` 提供 ✓
+    --
+    --   ★ 几何 ✓（设计空间 1920×1080，左上原点 ✓）：x=60, y=960, 260×72 ✓
+    --     · ★ 与选关屏的返回箭头**同一条左边距（60）** ✓
+    --     · ★ 纵向落在底部那条带里（页面指示在 952…1022 ✓ 它是 960…1032 ✓）⇒ 不打架 ✓
+    --     ⚠️ 真机上**以存档里那份为准** ✓（`respect_editor_rect = true` ✓）
+    --       ⇒ ★ 这个 `rect` 是"脚本心里的位置" ✓ 存档那份由 `tools/gil/add_button.mjs` 写 ✓
+    --   ★★★★★★★★ 2026-10-16 **收成【一颗】：一次 push，一个开关** ✗✓✓（用户点破 ✓）
+    --
+    --   ★★ 用户原话 ✓：「**其实应该算一颗，它们位置一样，功能一样，
+    --     没有必要建两颗还要分别隐藏，建一颗只在进入关卡后隐藏就行了**」✓✓
+    --
+    --   ★ 他指的是我 10-15 那两版留下的形状 ✗：★ 这里当时是 **`if … push(可见) else push(不可见)`**
+    --     ⇒ ★ 同一个 id **一次规划里出现两条节点** ✓（★ 两条 + 两套显隐 ⇒ 必然漂移 ✓
+    --       本项目为此已经写过好几条教训：「**同一件事两处负责 ⇒ 必然漂移**」✓）
+    --
+    --   ★★ 而现在**真因已经查清**（v244／v245 ✓）⇒ 那条 `else` **本来就不需要** ✓：
+    --     · ★ 它当初是为了"**别的屏幕上别让它吃点击**" ✓
+    --     · ★ 而真因是 **锚点/轴心 NaN** ✗（★ 已由 `fill_button_floats.mjs` 补齐 ✓）
+    --       ⇒ ★ 补齐之后它就是一颗**正常尺寸**的按钮 ✓ ⇒ ★ 不再需要"关射线"来兜 ✓
+    --
+    --   ★ 一条规则说清全部 ✓（★ 与用户那句话逐字对应 ✓）：
+    --     ★ **在主页/选关 ⇒ 这颗控件整个开着（`visible` ＋ `raycast`）** ✓
+    --     ★ **进关卡（以及其它任何屏）⇒ 整个关掉** ✓
+    --   ★ 为什么 `visible = false` 就够**止住命中** ✓：
+    --     ★ 引擎不为不可见控件派发光标事件 ✓；★ `raycast` 一起写只是**同一句话的另一半** ✓
+    --     ★ 而且不靠"有人记得去关它"——★ 这一条**每帧都算**，屏幕一变就跟着变 ✓
+    --   ★ 收口仍然有兜底 ✓：★ `render` 的差集（`self._shown`）看到它上一帧显示过、
+    --     这一帧不在规划里 ⇒ **照样发一次 `visible = false`** ✓（那条路早就在 ✓）
+    --   ★★★★★★★★ 2026-10-16 **用户指令①：挪到和「提示」同一个位置** ✗✓✓
+    --     ★ 原话 ✓：「★ **把主页和选关界面那颗结算按钮挪到和提示一个位置**」✓
+    --   ★ 提示那颗 = `hex.hint`（放大镜 ✓）—— ★ 它在存档里是 `pos[683,−279] size[70×70]` ✓
+    --     ⇒ ★ 画布中心 = (800+683, 450−279) = **(1483, 171)** ✓
+    --   ★ 反算回设计空间 ✓：x = 1483×6/5 = 1779.6 ⇒ 左上原点 x = 1779.6 − 35 = **1744.6** ✓
+    --     ★ y = (450 − 171)×6/5 = 334.8 ⇒ 再减半高 36 ⇒ 左上原点 y = **298.8** ✓
+    --     （★ 尺寸取与提示同款 70×70 → 设计 84×84 ✓）
+    local show_settle = (self.screen == "home" or self.screen == "select")
+    --   ⚠️ ★★ **本函数里 `settle.btn` 只许有这一条 push** ✗✓（2026-10-16 用户点破 ✓）
+    push({ id = "settle.btn", kind = "button", parent = "root",
+           visible = show_settle,
+           text = "结算",
+           rect = { x = 1744.6, y = 298.8, w = 84, h = 84 },
+           raycast = show_settle,
+           event = { action = "settle_only" } })
+    -- ★★★★★★★★ 2026-10-16 **v253：这里原来调的 `inherit_pos_runtime(nodes)` 已删** ✗✓
+    --   ★ 用户指令 ✓：「把所有失效的几何/文字脚本代码从脚本中删除」✓
+    --   ★ 它为什么**失效** ✗：★ 它会把 `root` 的 `pos_runtime = true` **沿子树传给每一个规划控件**
+    --     ⇒ ★ 每个控件都被判成"脚本接管几何" ✗ —— ★ 而 v248 起口径已经改成"归编辑器" ✓
+    --     ⇒ ★ 现在 `render` 只看**两件事**：★ ① 控件是不是脚本建的 ✓ ② 有没有**显式**写
+    --       `pos_runtime = true` ✓（★ 见那里的头部注释 ✓）⇒ ★ "继承"这件事**不再参与判断** ✓✓
     apply_screen_hide(nodes, self.screen)
-      inherit_pos_runtime(nodes)
     return nodes
   end
 
-  -- ★★★★ 2026-10-01 **界面空白的最后一环（用户实测定位）**：
-  --   `pos_runtime` 必须**沿子树继承** —— 详见函数外 `inherit_pos_runtime` 的注释。
-  --   这一处是**关卡路径**的收口；主页/选关那条提前 return 之前也调了一次。
+  -- （同上：关卡路径这一处的 `inherit_pos_runtime(nodes)` 也已随 v253 删除 ✓）
   apply_screen_hide(nodes, self.screen)
-    inherit_pos_runtime(nodes)
 
   return nodes
 end
@@ -3927,16 +4411,86 @@ end
 --     `assets` 里目前只有 9 张头像、**没有房间类素材**，所以不能写 "room.xxx"
 --     这种调色板名（那只对 assets 里存在的名字有效）。
 --     等美术资源齐了，把这里换成真实素材名即可（一行改）。
-local ROOM_TINT = {
-  4285965944,   -- 暖米（餐厅一类）
-  4282326293,   -- 淡蓝（厨房一类）
-  4285241469,   -- 草绿（前院一类）
-  4290036043,   -- 浅紫
-  4291078505,   -- 浅橙
-  4291603827,   -- 灰蓝（兜底/第 6 个房间）
-}
+--   ★★★★★★★★ 2026-10-15 **这张颜色表原来【一个颜色都没上上去】** ✗✓✓（本轮查到 ✓）
+--
+--   ★★ 根因 ✓：★ 适配层的染色分支**只认 table** ✗ ——
+--     `engine_adapter_qianxing.lua` 的 `elseif key == "tint"` 那一支：★ `… if target ~= nil and
+--       **type(value) == "table"** then … end` ✓
+--     ⇒ ★ 而这里原来是 **6 个裸整数**（`4285965944` 这种打包 ARGB）✗
+--       ⇒ ★★ `type(value) == "table"` 为假 ⇒ **静默什么都不做** ✓（连一行警告都没有 ✗）
+--   ★ 佐证 ✓：★ 同一份文件里**能用**的那张表是 `Controller.ROOM_COLORS`（**table 形式** ✓
+--     见下方 `{ r = 214, g = 196, b = 160 }`）⇒ ★ 格子染色一直好使 ✓ 而缩略图一直没色 ✓
+--   ★★ 顺带核到的第二件事 ✗：★ 那 6 个整数**解码出来也不是注释写的颜色** ✓
+--     （实测：`4285965944` → r=118 g=166 b=120 是**绿色**，注释却写"暖米" ✓）
+--     ⇒ ★ 说明它们**从来没被验证过** ✓（★ 因为压根没生效 ✓）
+--   ⇒ ★★ 修法 ✓：★ **直接复用 `Controller.ROOM_COLORS`** ✓ ——
+--     ★ 它本来就是"棋盘上这个房间是什么色"的那张表 ✓
+--     ⇒ ★ 缩略图色块与棋盘房间色**从此同一个来源** ✓（★ 不会再各说各话 ✓）
 local ROOM_MAX = 6          -- 一关最多画几个房间色块
-local WHITE_MAT = 106053    -- 真机日志里确认过的白底素材 id
+local WHITE_MAT = 106053    -- 真机日志里确认过的白底素材 id（「底板」类 ✓ 可 Stretch ✓）
+
+-- ★★★★★★★★ 2026-10-16 **卡片的"随件"以【编辑器里的卡】为准** ✗✓✓
+--
+--   ★ 起因 ✓：★ 这一轮把几何交回编辑器之后（`geom_by_editor` ✓），
+--     `select.card.N` 用的是**编辑器里那份 208.98×291.6**（用户缩到 90% 的那一版 ✓），
+--     ★ 而卡片上的**随件**——`select.card.N.title` / `.info` / `.room.M`（缩略图色块）——
+--       是**按规划里那份 100% 的卡框**算出来的 ✗
+--     ⇒ ★ 结果是"卡小了、字和缩略图还在原来那个大位置上" ⇒ 看起来像没修 ✓（比不修更糟 ✗）
+--
+--   ★★ 口径 ✓：★ **随件跟着编辑器那张卡走** ✓ ——
+--     · 卡的**位置/尺寸**：读运行时（= 编辑器那份）✓
+--     · 卡的**内容**（关名/进度/房间缩略图）：仍由脚本按关卡数据算 ✓（分页/换关都要变 ✓）
+--     ⇒ ★ 两者用**同一个框**：随件算出来的坐标就永远落在卡里 ✓
+--
+--   ★ 换算链（与适配器 `rect` 分支**逐字同源**，不另造一套 ✓）：
+--     设计坐标(1920×1080, 左上原点) --×scale--> 画布(左右/上下都 ×scale)
+--     --父级中心--> 引擎的 anchoredPosition（Y 向上）
+--     ⇒ 反着走一遍就得到"设计空间的框" ✓
+--   ★ 父级中心为什么是画布中心：卡片的真实父级是 `root`，而 `root` 撑满画布 ✓
+--     （实测佐证：规划 `settle.btn` = 设计 (1744.6,298.8,84,84) ⇒ 落屏 (689,166) ✓
+--       与"父级中心 = (800,450)" 逐位吻合 ✓）
+--   ★ 读不到（控件不在 / 引擎不给读）⇒ ★ **退回规划框** ✓（不许因此不摆 ✗）
+--   ⚠️⚠️ **必须把适配器【当参数传进来】** ✗✓ —— 本轮踩过 ✓：
+--     `Controller` 上**没有** `self.adapter` 这个字段 ✗（`main.lua:510` 的 `self.adapter = adapter`
+--     设的是 **Murdoku 实例**，不是控制器 ✓）⇒ 我第一版写 `self.adapter` ⇒ **恒为 nil** ⇒
+--     静默退回规划框 ⇒ 量出来的缩略图还在 100% 那张卡的位置上 ✓（看起来"没生效"✓）
+--     ⇒ ★ `render(adapter, force)` 手里就有 ✓ 传下去即可（`build_layout(ui_adapter)` ✓）
+function Controller:editor_card_box(a, id, plan_r)
+  if a == nil or type(a.find) ~= "function" then return plan_r end
+  local ctrl = nil
+  pcall(function() ctrl = a:find(id) end)
+  if ctrl == nil or ctrl.GetSizeDelta == nil or ctrl.GetAnchoredPosition == nil then return plan_r end
+  local w, h, ax, ay = nil, nil, nil, nil
+  pcall(function() w, h = ctrl:GetSizeDelta() end)
+  pcall(function() ax, ay = ctrl:GetAnchoredPosition() end)
+  -- ★ 2026-10-18 一次性诊断（用户报「选关界面只有一张卡」）：每张卡**只打一次** ✓
+  --   ★ 判据：四张卡若**位置完全相同** ⇒ 编辑器里就是叠着的 ⇒ 脚本按规划格重排 ✓
+  --           若**各不相同** ⇒ 叠的原因是别的（层级/父级换算），再换方向 ✓
+  if print then
+    self._ecb_seen = self._ecb_seen or {}
+    if not self._ecb_seen[id] then
+      self._ecb_seen[id] = true
+      local function sh(v)
+        if type(v) == "table" then return "表[" .. tostring(v[1]) .. "," .. tostring(v[2]) .. "]"
+        elseif type(v) == "number" then return string.format("%.1f", v)
+        else return type(v) end
+      end
+      print("[murdoku] 选关卡框 " .. tostring(id) .. "：w=" .. sh(w) .. " h=" .. sh(h)
+        .. " pos=(" .. sh(ax) .. "," .. sh(ay) .. ")")
+    end
+  end
+  if type(w) ~= "number" or type(h) ~= "number" or w <= 0 or h <= 0 then return plan_r end
+  if type(ax) ~= "number" or type(ay) ~= "number" then return plan_r end
+  local cfg = a.cfg or {}
+  local sc = cfg.scale or (5 / 6)
+  local cw = cfg.canvas_w or 1600
+  local ch = cfg.canvas_h or 900
+  local cx = cw * 0.5 + ax
+  local cy = ch * 0.5 + ay
+  local dw = w / sc
+  local dh = h / sc
+  return { x = cx / sc - dw * 0.5, y = (ch - cy) / sc - dh * 0.5, w = dw, h = dh }
+end
 
 function Controller:push_room_thumb(push, cardId, it, cardRect, parent)
   -- 缩略图区域：卡片中间那块（上面留给标题、下面留给说明）
@@ -3960,9 +4514,15 @@ function Controller:push_room_thumb(push, cardId, it, cardRect, parent)
       -- ★ 位置按**每个关卡**的房间外框算 ⇒ 必须 `pos_runtime`（理由同房间名标签：
       --   否则会被 `respect_editor_rect` 按在存档里那一份几何上，
       --   8 张卡片的缩略图会**全挤成同一块**）。
+      -- ★ 颜色 = **与棋盘上的房间色同一张表** ✓（`Controller.ROOM_COLORS` 是 table 形式 ✓
+      --   而适配层的 `tint` 分支**只认 table** ✗ —— 原来传的是打包整数 ⇒ 一直没上色 ✓
+      --   详见本函数上方 `ROOM_MAX` 那一段 ✓）
+      local colors = Controller.ROOM_COLORS
+      local tint = (type(colors) == "table" and #colors > 0)
+        and colors[((j - 1) % #colors) + 1] or nil
       push({ id = id, kind = "button", parent = parent, visible = true,
              rect = { x = x, y = y, w = w, h = h },
-             image = WHITE_MAT, tint = ROOM_TINT[(j - 1) % #ROOM_TINT + 1], pos_runtime = true })
+             image = WHITE_MAT, tint = tint, pos_runtime = true })
     else
       -- 占位也给**真实尺寸**（沿用它上面的区域），只是隐藏 ——
       -- 原因同房间名标签：跨关卡取并集时"第一次出现"的几何会留下，
@@ -4002,7 +4562,7 @@ end
   -- ★ 2026-10-10 已删（地图员死代码清单 ✓）：level_card_text　原 L3504..L3531
 
 function Controller:layout_plan()
-  local saved_intro, saved_modal = self.intro_page, self.modal
+  local saved_modal = self.modal   -- ★ 2026-10-18：intro 已删，不再保存 intro_page
   -- ★★★ 2026-09-30：**屏幕状态也要纳入枚举**。
   --   `layout_plan` 原来只枚举 8 种"关卡内"状态（intro / modal 各变体），
   --   **从不设置 `self.screen`** ⇒ 主页和选关的控件**永远进不了布局计划**
@@ -4016,11 +4576,19 @@ function Controller:layout_plan()
     -- ★ 整屏状态排最前：编辑器/模拟器要按这份清单建控件
     { name = "home",              intro = 99, modal = nil, screen = "home" },
     { name = "select",            intro = 99, modal = nil, screen = "select" },
-    { name = "intro",             intro = 1,  modal = nil, screen = nil },
+
     { name = "board",             intro = 99, modal = nil, screen = nil },
-    { name = "accuse_thief",      intro = 99, modal = { kind = "accuse_thief" }, screen = nil },
-    { name = "accuse_accomplice", intro = 99,
-      modal = { kind = "accuse_accomplice", thief = first_id }, screen = nil },
+    -- ★★★★★★ 2026-10-12 **指认相关的两个【计划状态】已删**（用户指令 ✓）✗✓
+    --
+    --   ★ 为什么必须删 ✓（不只是"好看"）：
+    --     这份清单是**全状态并集的唯一来源** ✓ 它同时喂给
+    --       · 模拟器控件树 · 编辑器搭建表 · 批量生成器 ✓
+    --     ⇒ 留着它 ⇒ `modal.suspect.*` / `modal.no_accomplice` 会被**继续声明成"计划必需"** ✗
+    --     ⇒ 而它们**存档里没有、也没有创建路** ⇒ **又变成"计划有、存档没有"的静默缺失** ✗
+    --     ⇒ 正是本轮刚修掉的那一类病 ✓ 所以**必须连同计划一起删干净** ✓✓
+    --
+    --   ★ 判定链**一个字没动** ✓ —— `Core:accuse_verdict` 仍在，只是改成
+    --     `do_submit()` 在 `res.ok` 时**直接调**它 ✓（答案由 `core.roles` 提供 ✓）
     { name = "result",            intro = 99,
       modal = { kind = "result", win = true, message = "（结果文案）" }, screen = nil },
     { name = "share",             intro = 99,
@@ -4053,7 +4621,6 @@ function Controller:layout_plan()
   local order, byId = {}, {}
   for si = 1, #states do
     local st = states[si]
-    self.intro_page = st.intro
     self.modal = st.modal
     self.screen = st.screen
     local nodes = self:build_layout()
@@ -4112,7 +4679,7 @@ function Controller:layout_plan()
     end
   end
 
-  self.intro_page, self.modal, self.screen = saved_intro, saved_modal, saved_screen
+  self.modal, self.screen = saved_modal, saved_screen
 
   -- 初始可见性：只有「开局就该看见」的控件才是可见的，其余交给脚本按状态开关。
   -- （脚本每次 render 都会把 visible 同步过去，所以这里留 false 最安全。）
@@ -4120,8 +4687,8 @@ function Controller:layout_plan()
     local it = order[i]
     local in_board = false
     for k = 1, #it.states do
-      if it.states[k] == "board" or it.states[k] == "intro" or it.states[k] == "accuse_thief"
-         or it.states[k] == "accuse_accomplice" or it.states[k] == "result"
+      -- ★ 2026-10-12：`accuse_*` 两个状态名已随指认面板一起删 ✓（见上面 plan states 那段 ✓）
+      if it.states[k] == "board" or it.states[k] == "result"
          or it.states[k] == "share" or it.states[k] == "howto" then in_board = true end
     end
     it.visible = in_board and it.visible
@@ -4140,35 +4707,10 @@ end
 -- 这里算**画布绝对坐标**；适配层只负责换算成「相对父级中心的偏移」再应用，
 -- 避免两处各自推导导致差 1px。
 -- ────────────────────────────────────────────────────────────────────────
-function Controller:tray_layout_canvas()
-  local L = M.LAYOUT
-  local vm = self.core:view()
-  local n = #vm.tray
-  if n == 0 then return nil end
-
-  local gx = L.tray_gap_x or 12
-  local gy = L.tray_gap_y or 10
-  local per_row = math.max(L.tray_per_row or 3, math.ceil(n / 2))
-  local item_w = math.floor((L.tray.w - (per_row - 1) * gx) / per_row)
-  local item_h = L.tray_item_h
-
-  local tray_cv = M.to_canvas(rect_of(L.tray))
-  local items = {}
-  for i = 1, n do
-    local col = (i - 1) % per_row
-    local row = math.floor((i - 1) / per_row)
-    local cv = M.to_canvas({
-      x = L.tray.x + col * (item_w + gx),
-      y = L.tray.y + row * (item_h + gy),
-      w = item_w, h = item_h,
-    })
-    items[#items + 1] = {
-      id = "tray." .. tostring(vm.tray[i].id),
-      cx = cv.cx, cy = cv.cy, w = cv.w, h = cv.h,
-    }
-  end
-  return { tray_cx = tray_cv.cx, tray_cy = tray_cv.cy, per_row = per_row, items = items }
-end
+-- ★ 2026-10-18（优化组 · C 类清理）：**`Controller:tray_layout_canvas()` 已删除** ✗✓
+--   它算的是"头像卡该摆哪"，而头像卡容器 `tray` 已在本次删除 ⇒ 恒返回 nil，
+--   `main.lua` 里的调用点（`if adapter.apply_tray_layout and controller.tray_layout_canvas`）也跟着删，
+--   ⇒ 真机日志里那行「找不到头像卡容器」不会再出现 ✓
 
 function Controller:placed_count(vm)
   local n = 0
@@ -4185,13 +4727,23 @@ end
 -- 适配层会把它落到格子的 `face` 子控件上（见 set_property 的 "tint" 分支）。
 --
 -- 改这里就能换配色；不想要染色就把整张表清空（返回 nil → 适配层跳过）。
+--
+-- ★★★★★★★★ 2026-10-22（v299）**房间配色换成"室内木地板/石面"那一族** ✗✓
+--
+--   美术资源组这一轮的基准是原作 Murdoku 的截图：房间都是有「暖木/石面/草地」底色的
+--   平面图，而不是高饱和色块。旧表（暖木 / 冷灰蓝 / 淡紫 / 淡绿 / 陶土 / 石板）里
+--   第 3 个「淡紫」和第 2 个「冷灰蓝」放在室内像"卡通风"，与家具的木质棕/米白打架。
+--   ⇒ 这一版把 6 个值统一**降饱和 + 偏暖**，并把「淡紫」换成「暖灰」——
+--     这样 3 个房间并排时像一间屋子的三块地面。
+--   证据：`_work/art-work/v7-*`（旧色）与 `v8-*`（新色）的整盘预览对照。
+--   ⚠️ 这张表同时被「选关卡片缩略图」用（见 L4256 那段），所以换色两边一起变 —— 这是有意的。
 Controller.ROOM_COLORS = {
-  { r = 214, g = 196, b = 160 },   -- 1 暖木色
-  { r = 178, g = 200, b = 208 },   -- 2 冷灰蓝
-  { r = 206, g = 178, b = 200 },   -- 3 淡紫
-  { r = 190, g = 206, b = 176 },   -- 4 淡绿
-  { r = 220, g = 190, b = 170 },   -- 5 陶土
-  { r = 186, g = 190, b = 210 },   -- 6 石板
+  { r = 217, g = 205, b = 180 },   -- 1 暖米（木地板）
+  { r = 195, g = 205, b = 212 },   -- 2 冷灰蓝（石材）
+  { r = 212, g = 200, b = 188 },   -- 3 暖灰（灰泥）
+  { r = 190, g = 207, b = 176 },   -- 4 淡绿（草地）
+  { r = 224, g = 200, b = 176 },   -- 5 沙色
+  { r = 198, g = 198, b = 210 },   -- 6 石板
 }
 
 -- 注意：这是**普通函数**不是方法（同 portrait_of 的坑）
@@ -4613,7 +5165,7 @@ function Controller:sync_clue_grid(adapter)
   do
     local core = self.core
     if core ~= nil and type(core.clues) == "table" then
-      n = #core.clues
+      n = #core.clues + ((type(core.general_clues) == "table" and #core.general_clues > 0) and 1 or 0)   -- ★ 有通用线索 ⇒ 列表多一条（在最上面）
     else
       -- ★ 兜底 ✓：★ 核心还没建起来 ⇒ ★ 退回读关卡数据 ✓（★ 老行为 ✓ 不崩 ✓）
       local lv = core and core.level
@@ -4755,25 +5307,12 @@ function Controller:sync_clue_grid(adapter)
   --     · 若 `scrollProgress` ≠ 0 ⇒ ★ 列表被滚上去了 ⇒ **"第一行"不是第一项** ✓✓
   --     · 若 `GetItemSize()` ≠ 存档里的 360×96 ⇒ ★ 引擎用的不是存档那个尺寸 ⇒ 布点基准不同 ✓
   --   ⇒ ★ 这一行日志能一次分清上面三种 ✓ —— 别再猜 ✓
-  if (self._grid_geom_log or 0) < 3 and print then
-    self._grid_geom_log = (self._grid_geom_log or 0) + 1
-    local _f = function(fn)
-      local vals = nil
-      pcall(function() vals = { fn() } end)
-      if vals == nil then return "读不到" end
-      local out = {}
-      for i = 1, #vals do out[i] = tostring(vals[i]) end
-      return table.concat(out, ",")
-    end
-    local _one = function(k)
-      local v = nil
-      pcall(function() v = cg[k] end)
-      return tostring(v)
-    end
-    local _cg2 = grid
-    if _cg2 == nil then pcall(function() _cg2 = adapter:find("clues.grid") end) end
-  -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：网格几何1/2/3　原 L4060..L4077
-  end
+  -- ★ 2026-10-18（优化组 · P0）：**网格几何探针的"空壳"整段删除** ✗✓
+  --   原文是一个 `if (self._grid_geom_log or 0) < 3 and print then … end`：
+  --     里面只声明了 `_f` / `_one` / `_cg2` 三个**从未被读**的 local，
+  --     外加一句"网格几何1/2/3 已删（原 L4060..L4077）"的注释 ⇒ 一段什么也不做的壳。
+  --   判据：三个 local 在本文件**零引用**（只出现在这个 if 体内）⇒ 整块是死代码。
+  --   ⚠️ 真正的网格体检另有实现（`_grid_*` 家族 + `tests/grid_cost.lua` 守着），不受影响。
 
   -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
   -- ★★ 2026-10-06 **绕过规划/账本，直接点亮 `clues.grid`** ✗✓ —— 真凶在此 ✓
@@ -5427,8 +5966,94 @@ function Controller:_grid_disable_gray_raycast(item, index, pos)
   if cg.raycastTarget ~= nil then pcall(function() cg.raycastTarget = false end) end
   if cg.blockRaycast ~= nil then pcall(function() cg.blockRaycast = false end) end
   if cg.interactable ~= nil then pcall(function() cg.interactable = false end) end
-  print("[murdoku] 灰白层 `gray`：已关掉射线与交互（点击照常落在卡片上）")
   return true
+end
+
+-- ★★★★ 2026-10-18 **通用线索卡**（列表第 1 项）✗✓
+--   只点亮模板里新加的 gen.backrop / gen.title / gen.body 三件，
+--   把四样卡片文字（who/what/letter/face）全部藏掉 —— 两张卡长得不一样 ✓
+--   ★ 文字：本函数**不写文字**（用户定：内容源那边他自己填 ⇒ 先留空 ✓）
+-- ★★★★ 2026-10-18 **本关有没有通用线索** —— 判据 = **内容源存在** ✓
+--   用户实测：按 `core.general_clues` 判的两版都没生效（点通用卡仍然给 a 发高亮）
+--   ⇒ 改用**用户实际配的东西**：存档里 `row.<关>.clue` 这个内容块存在 = 有通用线索 ✓
+--     ★ 它由编辑器/存档决定，与 lua 关卡表是否声明无关 ⇒ 不会因为一处漏配整条链失效 ✓
+--   ★ 兜底：内容源取不到时，仍看 `core.general_clues` ✓
+function Controller:_has_general_clue()
+  local lv = nil
+  pcall(function() lv = self:_level_ordinal() end)
+  if lv ~= nil then
+    local rc = nil
+    pcall(function() rc = self:_palette_child("row." .. tostring(lv) .. ".clue") end)
+    if rc ~= nil then return true end
+  end
+  local ok = false
+  pcall(function()
+    ok = (self.core ~= nil and type(self.core.general_clues) == "table"
+          and #self.core.general_clues > 0)
+  end)
+  return ok
+end
+
+function Controller:_fill_general_item(adapter, item, index, pos)
+  -- ★★★ 2026-10-18 **记下"通用线索那一项"的句柄** ✓
+  --   点击时用句柄比对，**不再依赖 pos 算术、也不依赖 general_clues 查询** ✓
+  --   （用户实测：按 pos==1 判时，点它仍然按第 1 张真卡 a 去高亮 ✗）
+  self._general_item = item
+  -- ★★★ 2026-10-18 **正文从内容源读** ✓（用户定：gen.title 的文本已在模板里填好，只差正文）
+  --   内容源链路（存档实测）：`row.<关>.clue`（容器）→ 子控件 `clue.<关>.1`（文本框）
+  --   读法照抄卡片四样那套：`_palette_child` 拿容器 → `FindChild(全名)` 拿文本框 → 取 `text` ✓
+  --   写入：`item:FindChild("gen.body").text = 正文` ✓（与卡片 `who/what` 同一条路 ✓）
+  --   ★ 什么都没配 ⇒ 不写（留空 ✓ 绝不写成立）
+  do
+    local _lv = self:_level_ordinal()
+    if _lv ~= nil then
+      local _txt = nil
+      local _rc = nil
+      pcall(function() _rc = self:_palette_child("row." .. tostring(_lv) .. ".clue") end)
+      if _rc ~= nil then
+        local _src = nil
+        pcall(function() _src = _rc:FindChild("clue." .. tostring(_lv) .. ".1") end)
+        if _src ~= nil then pcall(function() _txt = _src.text end) end
+      end
+      if _txt ~= nil and _txt ~= "" then
+        local _dst = nil
+        pcall(function() _dst = item:FindChild("gen.body") end)
+        -- ★★ 2026-10-18 走**正规文字链路** ✓（docs/线索区-内容填入规则.md §四：
+        --   `write_control_text(ctrl, text)` —— **值变了才写**，与 who/what/letter 同一条路 ✓）
+        --   我第一版直接 `_dst.text = _txt` 绕过了它 ⇒ 被签名门/属性账本盖掉 ✗
+        if _dst ~= nil then pcall(function() write_control_text(_dst, _txt) end) end
+      end
+    end
+  end
+  local function child(nm)
+    local c = nil
+    pcall(function() c = self:_grid_item_child_cached(item, index, pos, nm) end)
+    return c
+  end
+  for _, nm in ipairs({ "who", "what", "letter", "face" }) do
+    local c = child(nm)
+    if c ~= nil then pcall(function() c:SetVisible(false) end) end
+  end
+  for _, nm in ipairs({ "gen.backrop", "gen.title", "gen.body" }) do
+    local c = child(nm)
+    if c ~= nil then pcall(function() c:SetVisible(true) end) end
+  end  -- ★★★★★ 2026-10-18 **通用卡的「标记」走普通卡同一条路** ✗✓
+  --   用户实测：涂 gen.backrop 是「整块染色」✗ 不是描边
+  --   为什么普通卡是描边：涂的是 backrop1（**下层**），backrop2 盖住中间 ⇒ 只剩边缘 ✓
+  --   ⇒ 通用卡也涂 backrop1 ✓（它本来就在模板里、也在通用卡上可见 ✓）
+  --   判定**绑在通用线索身份上**：general_focus 为真 ⇒ 亮；否则还原 ✓
+  do
+    local _cp = nil
+    pcall(function() _cp = item:FindChild("backrop1") end)
+    if _cp ~= nil then
+      if self._gen_hl_orig == nil then
+        pcall(function() self._gen_hl_orig = _cp.imageColor end)
+      end
+      local _want = (self.general_focus ~= nil)
+      local _target = _want and HIGHLIGHT_TINT or self._gen_hl_orig
+      if _target ~= nil then pcall(function() _cp.imageColor = _target end) end
+    end
+  end
 end
 
 function Controller:_fill_grid_item(adapter, grid, item, index)
@@ -5518,6 +6143,35 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
     end
   end
   local pos = (tonumber(index) or self._grid_base) - self._grid_base + 1
+  -- ★★★★ 2026-10-18 **通用线索占列表第 1 位** ✗✓
+  --   用户：「通用线索…放在最上方，如果有通用线索则其它线索卡往下移」
+  --   ⇒ 列表位置 `pos` 与"第几张真卡 / 第几行"从此**不是同一个数** ✓
+  --     · pos == 1        ⇒ 通用线索卡（只点亮 gen.* 三件，四样卡片文字藏掉）
+  --     · pos >= 2        ⇒ 第 (pos-1) 张真卡 ⇒ `row.<关>.<行>` 的行号**仍是 pos-1 起的 1** ✓
+  --   ★ 这么写只用一个局部变量 `pos` 做减法，后面那一大段读 `row.<lv>.<pos>` 的代码
+  --     **一个字都不用动** ✓（否则整段的行号都会错位一格 ✗）
+  local _has_gen = false
+  pcall(function() _has_gen = self:_has_general_clue() end)
+  if _has_gen then
+    if pos == 1 then
+      pcall(function() self:_fill_general_item(adapter, item, index, pos) end)
+      return
+    end
+    pos = pos - 1
+    -- ★★★ 2026-10-18 **列表项会被引擎复用** ✗✓
+    --   上一轮用 `self._general_item` 记句柄来判断"哪一项是通用线索" ✓
+    --   但**同一个 item 句柄**滚动/回收后会拿去显示普通卡 ⇒ 标记还在 ⇒
+    --   点那张**普通卡**也发 `focus_general` ⇒ 高亮派发错 ✗（用户实测）
+    --   ⇒ 填普通卡时**就地清掉**这个标记 ✓（下次填成通用卡会重新设 ✓）
+    if self._general_item == item then self._general_item = nil end   -- _general_item 清掉（复用护栏）
+    -- ★★★ 2026-10-18 **普通卡必须把通用线索那三件藏掉** ✗✓    --   它们是**模板里的子控件** ⇒ 默认对**每一张卡**都可见 ✗    --   用户实测：「gen.backrop 会在所有线索卡上出现」✓ 修在这里 ✓
+    for _, _nm in ipairs({ "gen.backrop", "gen.title", "gen.body" }) do
+      pcall(function()
+        local _cc = self:_grid_item_child_cached(item, index, pos, _nm)
+        if _cc ~= nil then pcall(function() _cc:SetVisible(false) end) end
+      end)
+    end
+  end
   -- ★ 2026-10-10 **记下句柄与它当时的 index** ✓ —— ★ 就地重填要用 ✓
   --   ★ 为什么要有它 ✗：★ 有了句柄就能【不重发 RefreshItems】而刷新内容 ✓
   --     ⇒ ★ **滚动位置才保得住** ✓✓（★ 这是"点一下弹回顶部"的治本一步 ✓）
@@ -5904,8 +6558,8 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
                   if _key_face ~= nil then
                     Controller._row_face = Controller._row_face or {}
                     Controller._row_face[_key_face] = iid
-                    -- ★★★★★★ 2026-10-10 **同一行也记下 `letter`** ✗✓✓（★ 用户："像把内容填进 `clue` 的 `what` 一样，
-                    --   把 `letter` 的文本填进 `note` 里，和那个一样的路线" ✓✓）
+                    -- ★★★★★★ 2026-10-10 **同一行也记下 `letter`** ✗✓✓（★ 用户：「像把内容填进 `clue` 的 `what` 一样，
+                    --   把 `letter` 的文本填进 `note` 里，和那个一样的路线」✓✓）
                     --   ★ `letter` 的【数据侧已经是对的】✓：`_grid_text_payload` 的 `items[i].letter` ✓
                     --     （★ ui L4395 `letter = tostring(wid or "")` ✓ 而 `wid` 从卡片读 ✓ 卡片由单射填 ✓）
                     --   ⇒ ★★ 缺的只是"送到棋盘" ⇒ ★ 和 `face` 一样，在这里把它带出来 ✓✓
@@ -6297,6 +6951,9 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   local c_who    = self:_grid_item_child_cached(item, index, pos, "who")
   local c_what   = self:_grid_item_child_cached(item, index, pos, "what")
   local c_letter = self:_grid_item_child_cached(item, index, pos, "letter")
+  -- ★ 2026-10-15：★ 高亮那一笔要的那个子控件 ✓（★ 与上面三个同一条取法 ✓
+  --   ★ 取到就交给函数 ✓ 取不到函数自己再取一次 ✓ —— ★ 两种时机都对 ✓）
+  local c_backrop1 = self:_grid_item_child_cached(item, index, pos, "backrop1")
   -- ★ 2026-10-10 已删（地图员干跑 PASS ✓）：死变量 c_face（★ 单射不走它 ✓ 按槽位名自己取 ✓）　原 L5009..L5009
 
   -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
@@ -6369,6 +7026,77 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
   --     ★ 但**不再依赖它** ✗ —— ★ 判据在最前面就已经满足 ✓
   self._grid_bind_n = (self._grid_bind_n or 0) + 1
   -- ★ 2026-10-10 已删（地图员干跑 PASS ✓）：最后一条内联诊断（★ 地图员：整行可删 ✓）　原 L5277..L5277
+
+  -- ★★★★★★★★ 2026-10-15（第二轮）**卡片高亮的【真机那一份】—— 在这里画** ✗✓✓
+  --
+  --   ★★★ 为什么第一轮没修好 ✗（★ 这一条是本轮最重要的发现 ✓）：
+  --     ★ 第一轮把高亮改成**派生值** ✓ 但**派生的出口是 `clue.focus` 样式** ✗
+  --     ★★ 而那个样式挂在 **老卡片 `clue.<n>` 节点**上 ✓ ★ 只有**老路径**会建它们 ✓
+  --     ★★★ 真机上 `_grid_state == "on"` ✗（★ 诊断实测 ✓ 见 `render` 里那段 L7304 ✓）
+  --       ⇒ ★ **老卡片那段整段不进规划** ✓ ⇒ ★ **`clue.focus` 在真机上根本没人读** ✓✓
+  --     ⇒ ★★ 用户说"没修好"是**对的** ✓ —— ★ 我只修了模拟器走的那条路 ✗
+  --
+  --   ★★★ 真机上那张卡的视觉在哪 ✗：★ **网格视窗的列表项**
+  --     （★ 模板 `clue` ✓ 子控件 `backrop1` / `backrop2` / `face` / `who` / `what` / `letter` ✓
+  --      ★ 存档实证 ✓：`backrop1` 父=`clue` ✓ 尺寸 360x96 ✓）
+  --   ★★ 而"谁被选中"原来**只有一处**写它 ✗：`_on_grid_item_click` 里那段**手动染色** ✓
+  --     ⇒ ★ 那就是第一轮我删掉的那段 ✓ —— ★ 删掉是对的 ✗（★ 它是第二份状态 ✓）
+  --     ★★★ 但我**没有给网格这条路补上替代** ✓ ⇒ ★ 真机上现在**连亮都不亮了** ✓✓
+  --
+  --   ⇒ ★★ 修法 ✓：★ **把这一笔画进【填充】里** ✗ ——
+  --     ★ 填充是**引擎每帧会重进**的那条路 ✓
+  --       （★ 见本函数开头"滚动时引擎会重进 RefreshItems 回调"那段实测 ✓）
+  --     ★★ 判据**现算** ✓：★ `core.selected` ⇒ 行号 ⇒ 与 `pos` 比 ✓
+  --       ⇒ ★★ **填充什么时候跑，高亮就什么时候对** ✓ ✓ **不需要任何人"记得去同步"** ✓✓
+  --   ★ 与第一轮的关系 ✓：★ 那两处**都保留** ✓
+  --     · ★ `clue.focus` 样式 → 老路径（★ 模拟器 / 没有网格视窗的机器 ✓）
+  --     · ★ 这里 → 网格路径（★ 真机 ✓）
+  --     ★★ 两条路**同一个判据**（`_clue_pos_of_person(core.selected)` ✓）⇒ 不会各说各话 ✓✓
+  --   ★ 颜色 ✓：★ 沿用原来那个暖金 `4294956107` ✓（★ 与用户已经看惯的那一版**一模一样** ✓
+  --     ★ 不借机改观感 ✗ —— ★ 这一轮只修"对不对" ✓ 不改"好不好看" ✓）
+  self:_grid_paint_highlight(item, index, pos, c_backrop1)
+end
+
+-- ★★ 把"这一条卡是不是被选中的那条"画到列表项的 `backrop1` 上 ✓
+--   ★ 状态存在**表里**（按列表项实例 ✓）⇒ 句柄失效时不至于写坏别人 ✓
+--   ★ 还原用的原色**第一次读到就记住** ✓（★ 不每帧回读 ✓ —— 回读会把"已染的金色"当原色 ✓✓）
+function Controller:_grid_paint_highlight(item, index, pos, c_backrop1)
+  if item == nil then return false end
+  local cp = c_backrop1
+  if cp == nil then
+    pcall(function() cp = self:_grid_item_child_cached(item, index, pos, "backrop1") end)
+  end
+  if cp == nil then return false end
+  local rec = self:_grid_item_rec(item, index)
+  if rec == nil then return false end
+  -- ★ 判据现算 ✓（★ 与老路径的 `clue.focus` **同一个来源** ✓）
+  local sel = self.core and self.core.selected or nil
+  local want = nil
+  if sel ~= nil then want = self:_clue_pos_of_person(sel) end
+  local want_on = ((want ~= nil) and want == pos)
+  -- ★ 目标一旦达成就是**幂等**的 ✓ ⇒ ★ 稳态每帧只做两次比较、一次都不写 ✓
+  if rec.hl_pos == pos and rec.hl_on == want_on then return true end
+  -- ★ 记住"这块底色本来是什么" ✓ —— ★ 只在第一次（或换了代表哪一条）时读 ✓
+  if rec.hl_orig == nil or rec.hl_idx ~= index then
+    local cur = nil
+    pcall(function() cur = cp.imageColor end)
+    rec.hl_orig = cur
+    rec.hl_idx = index
+  end
+  local target = want_on and HIGHLIGHT_TINT or rec.hl_orig
+  if target ~= nil then pcall(function() cp.imageColor = target end) end
+  if print and (self._grid_hl_log or 0) < 6 then
+    self._grid_hl_log = (self._grid_hl_log or 0) + 1
+    local back = nil
+    pcall(function() back = cp.imageColor end)
+    local isLeaf = (select(1, pcall(function() local _ = cp.GetChild end)) == true)
+    print("[murdoku] ★ 卡片高亮（真机这条）✓ pos=" .. tostring(pos)
+      .. " 选中=" .. tostring(sel) .. " ⇒ " .. (want_on and "**亮**" or "灭")
+      .. "　写了 " .. tostring(target) .. " 回读=" .. tostring(back)
+      .. "　有 GetChild=" .. tostring(isLeaf) .. "　orig=" .. tostring(rec.hl_orig))
+  end
+  rec.hl_pos, rec.hl_on = pos, want_on
+  return true
 end
 
 -- 给列表项挂点击。★ 列表项是**复用**的：同一个控件会先后代表不同线索 ⇒
@@ -6448,6 +7176,21 @@ function Controller:_grid_pos_of_item(grid, item)
     end
   end
   -- ★ 兜底：问引擎 ✓（★ 不可靠 ✓ 但总比没有好 ✓）
+  -- ★★★★★★ 2026-10-15 **兜底：问引擎 —— 它到现在才真的能走到** ✗✓✓
+  --
+  --   ★★★ 下面这两行**原来关在上一段的 `if type(seen) == "table" then` 里** ✗✓
+  --     ⇒ ★ `_grid_seen` 没建（★ 或表里没有这一项 ✓）时 ⇒ ★ **直接落到最后 `return nil`** ✓
+  --       ⇒ ★ 调用方把这次点击**整条丢掉** ✓（★ "宁可丢掉，也不要聚焦到错误的一条" ✓）
+  --     ★★ 于是**兜底那条路从来没被走到过** ✗ —— ★ 而注释写的意图正是"总比没有好" ✓✓
+  --   ★ 为什么这次才露出来 ✗：★ 真机上列表项的句柄**基本都进过 `_grid_seen`** ✓
+  --     （★ 每次填充回调都会 `self._grid_seen[item] = index` ✓）
+  --     ★★ 而**离线 / 换代 / 滚动复用**之后拿到的 `item` 可能是引擎**另一个句柄** ✓
+  --       ⇒ ★ 表里没有 ⇒ ★ **静默丢掉** ✓✓
+  --   ★ 这是**作用域错位**（★ 本项目第 N 次同型 ✓）：★ 意图是"两个来源都试一遍" ✓
+  --     ★★ 而代码把第二个来源**也关进了第一个来源的 `if` 里** ✓✓
+  --   ★ 修法 ✓：★ **移到 `if` 外面** ✓ ⇒ ★ 与注释的意图一致 ✓✓
+  --   ⚠️ ★ 顺序**不变** ✗：★ 仍然**先认填充记录** ✓（★ 那是权威 ✓ 引擎那侧不可靠 ✓）
+  --     ⇒ ★ 只是"填充记录没有时"多给引擎一次机会 ✓ 不改变任何已有的正确定位 ✓
   local idx = nil
   pcall(function() idx = grid:GetItemIndex(item) end)
   if type(idx) == "number" then return idx - (self._grid_base or 0) + 1 end
@@ -6552,7 +7295,47 @@ function Controller:_on_grid_item_click(adapter, grid, item)
   --       ⇒ ★ **高亮与选人都落在第 1 条上** ✓（★ 用户看到的"链路还是断的" ✓）
   --   ⇒ ★★ 改用 `_grid_pos_of_item` ✓ —— ★ **用填充时引擎亲手交来的那个 index** ✓✓
   --     ★（★ 那一次是权威的 ✓ ★ 我们就是按它算 `pos` 填内容的 ✓）
+  -- ★★★★★ 2026-10-18 **通用线索：在最前面识别，不走 `pos` 那条路** ✗✓（日志定案）
+  --   证据（用户 05:55 日志）：点它 ⇒ `GetItemIndex=0` ⇒ `_grid_pos_of_item` 拿不到位置 ⇒
+  --     `pos` 非法 ⇒ **整条点击被丢掉**（连"点卡片定位"都不打印）⇒ 表现为"不可选" ✗
+  --   ⇒ 用**填充时记下的句柄**在算 pos 之前就认出来 ✓
+  --     （句柄是权威的 ✓；它被回收去显示普通卡时已在填充侧清掉 ✓）
+  --   ★ `focused_clue` 给一个**合法正数但超出卡范围**的值（n+1）⇒ 没有卡会对上 ✓
+  --     绘制侧把 `general_focus` 解释成通用线索（见 build_layout 那段）✓
+  if item ~= nil and self._general_item == item then
+    -- ★★★ 2026-10-18 **再点一次 = 取消选中** ✗✓（用户：通用线索没接取消选中）
+    if self.general_focus ~= nil then
+      self.general_focus = nil
+      self.focused_clue = nil
+      self.general_hint = nil
+      self.dirty = true
+      self._grid_sig = nil
+      return
+    end
+    local _ncl = 0
+    pcall(function() local _v = self.core:view(); _ncl = #_v.clues end)
+    self.focused_clue = _ncl + 1
+    self.general_focus = true
+    pcall(function() self.general_hint = self.core:clue_hint_general(1) end)
+    self.dirty = true
+    self._grid_sig = nil
+    return
+  end
   local pos = self:_grid_pos_of_item(grid, item)
+  -- ★★★★★ 2026-10-18 **通用线索走【正常选中链路】，只是把卡号算成 0** ✗✓（用户定案）
+  --   用户原话：「把相关拦截取消，高亮也补上」✓（拦了之后通用卡选不中 ⇒ 提示路径断 ✗）
+  --   ⇒ 不再早退 ✗：它**和普通卡一样**参与选中，只是：
+  --     · 卡号 = 0（通用卡不是任何人的卡 ⇒ `vm.clues[0]` 为 nil ⇒ 选人那步自然什么都不选 ✓）
+  --     · 高亮绘制侧把 `focused_clue == 0` 解释成通用线索 ✓（见 `build_layout` 那段）
+  --   ★ 真卡：列表第 k+1 项 ⇒ pos 减 1 得到卡号 k ✓（本次一并合进来，不再分两块）
+  do
+    local _hg = false
+    pcall(function() _hg = self:_has_general_clue() end)
+    if _hg and pos ~= nil then
+      pos = pos - 1                -- 真卡：列表位置 −1 = 卡号 ✓（通用卡已在上面 return ✓）
+    end
+  end
+
   if type(pos) ~= "number" then
     -- 两个来源都拿不到 ⇒ 这一次点击**宁可丢掉**，也不要聚焦到错误的一条 ✓
     self:_grid_log("noindex", "网格视窗：这一项属于哪一条读不到（填充记录与 GetItemIndex 都空）"
@@ -6587,36 +7370,21 @@ function Controller:_on_grid_item_click(adapter, grid, item)
   -- ★ 走**和老卡片完全同一条**输入通路：`adapter.on_input` 是 main.lua 接的
   --   （`controller:on_input(event)` + 立刻渲染）⇒ 点列表项和点 `clue.N` 的后续行为
   --   （焦点切换、CLUE_IN 特效、重绘）一模一样，不会出现"两套焦点逻辑"。
-    -- ★★★★★ 2026-10-07 **网格选中视觉（只染聚焦那条）** ✗✓
-  --   上一版两个错（用户实测：★"没有点击高亮，但描边更亮了"✓）：
-  --     ① 给**未聚焦**的项也写了白色 ⇒ **整排描边变亮** ✗
-  --     ② 染色写在**填充回调**里 ⇒ 而填充只在"数据变化/滚动"时跑 ⇒ **点击后不重填 ⇒ 高亮永不出现** ✗
-  --   ⇒ 现在：★ **在点击处直接染** ✓ **只染聚焦那条** ✓ **换项/取消时恢复原色** ✓
-  local function _bp_get(it, ix, px)
-    local c2 = nil
-    pcall(function() c2 = self:_grid_item_child_cached(it, ix, px, "backrop1") end)
-    return c2
-  end
-  local turning_on = (self.focused_clue ~= pos)
-  local prev_item, prev_idx, prev_pos = self._grid_focus_item, self._grid_focus_idx, self._grid_focus_pos
-  if prev_item ~= nil then
-    local pc = _bp_get(prev_item, prev_idx or 0, prev_pos or 0)
-    if pc ~= nil then
-      local oc = self._grid_focus_orig
-      if oc ~= nil then pcall(function() pc.imageColor = oc end) end
-    end
-    self._grid_focus_item, self._grid_focus_orig = nil, nil
-  end
-  if turning_on then
-    local c2 = _bp_get(item, idx, pos)
-    if c2 ~= nil then
-      local cur = nil
-      pcall(function() cur = c2.imageColor end)
-      self._grid_focus_orig = cur
-      self._grid_focus_item, self._grid_focus_idx, self._grid_focus_pos = item, idx, pos
-      pcall(function() c2.imageColor = 4294956107 end)   -- ★ 暖金（乘算着色）
-    end
-  end
+  -- ★★★★★★★★ 2026-10-15 **这一段整段删掉：手动染色的高亮** ✗✓✓
+  --
+  --   ★ 它原来干什么 ✗：★ 点卡片时**手动**把那张卡的 `backrop1.imageColor` 染成暖金 ✓
+  --     ★ 换项/取消时再还原 ✓ —— ★ 也就是**第二套"谁被选中"的表示** ✓✓
+  --   ★★★ 为什么必须删 ✗（★ 用户报的两个症状都出自这一类 ✓）：
+  --     ★ 它只在**点卡片**那一下被写 ✗ ★ 而 `core.selected` 还会被
+  --       「拿起棋子 / 正式放置 / 切工具 / 撤销」改掉 ✓ ⇒ ★ **两套状态必然漂移** ✓✓
+  --     ★★ 而真正的高亮**本来就有一条更好的路** ✓：
+  --       ★ `clue.focus` 样式（`build_layout` 每帧按 `focused_clue` 重算 ✓）
+  --       ⇒ ★ 那条路**每帧现算** ⇒ ★ 不会残留 ✓✓
+  --   ★★ 保留的那条路 ✓：★ 点卡片 = ★ **选中卡上那个人** ✓（★ 下面那段一个字不动 ✓）
+  --     ★ 高亮由 `_sync_clue_focus` 按选中**派生**出来 ✓（★ 见那个函数 ✓）
+  --   ★ 用户要的语义 ✓（★ 原话 ✓）：「**像把内容填进 `clue` 的 `what` 一样**」——
+  --     ★ 素材与身份都走**单射那条线** ✓ ★ 高亮同理：★ **跟着人走 ✗ 不跟着点走** ✓✓
+  -- ★ 2026-10-10 已删的同类（★ 供对照 ✓）：诊断CLUE　原 L5654..L5669
   -- ★ 2026-10-07 一次性诊断：把该线索记录的【真实字段名】打出来（方案 A 取值失败 ⇒ 不猜了）
   -- ★ 2026-10-10 已删（地图员区间 ✓ 干跑 PASS ✓）：诊断CLUE　原 L5654..L5669
   -- ★★★★★ 2026-10-07 **方案 A：点线索卡 = 高亮这条 + 选中卡上那个人** ✗✓（用户确认走 A ✓）
@@ -6628,7 +7396,7 @@ function Controller:_on_grid_item_click(adapter, grid, item)
   --   ⇒ 这里补上：★ **点卡片即选中卡上那个人** ✓（★ 一步完成"高亮 + 选人"✓）
   --   ★ 取值**防御式**：线索记录里人物字段可能叫 `person`/`who_id`/`id`/`key` ✓
   --     再兜一层"从头像素材名 `portrait.X` 里取 X" ✓ 取不到就不动作（绝不误选）✓
-  pcall(function()
+  local _sel_ok, _sel_err = pcall(function()
     local v2 = self.core:view() or {}
     local cl = (v2.clues or {})[pos]
     -- ★★★ 2026-10-11 **选人这一步也要探针** ✗✓（★ 否则"选中了没有"看不出来 ✓）
@@ -6687,16 +7455,106 @@ function Controller:_on_grid_item_click(adapter, grid, item)
         end
       end
       if pid ~= nil then
-        local ev2 = { action = "suspect", id = pid }
-        if type(self.adapter) == "table" and type(self.adapter.on_input) == "function" then
-          self.adapter.on_input(ev2)
+        -- ★★★★★★★★ 2026-10-15 **这里【直接就选】，不再绕那条 `suspect` 事件** ✗✓✓
+        --
+        --   ★★★ 为什么不能绕 ✗（★ 我前后试了三版 ✓ 真正的原因在第二条 ✓）：
+        --     ★ 它**自相矛盾** ✗：这条路先 `select_suspect` ✓ 紧接着又发一条
+        --       `{action="suspect"}` ✓ ⇒ ★ `on_input` 收口处**又选一次** ✓✓
+        --     ★★ 而 `select_suspect` 是**切换**（★ `murdoku_core.lua:1687` ✓）
+        --       ⇒ ★★ **选上又被切掉** ✓（★ 实测：发事件前 `selected=V` ⇒ 之后就 `nil` ✓）
+        --     ★★★ 我第一版拿 `focused_clue` 当判据时**看着是对的** ✗ ——
+        --       ★ 因为高亮那份状态当时**正好是错的** ✓
+        --       ⇒ ★★ **用一个有缺陷的状态当判据，把另一个缺陷抵消掉了** ✓✓
+        --         ★（而那个"错"正是用户报的这件事本身 ✓ 见 `_sync_clue_focus` ✓）
+        --
+        --   ★★★ 第二条（★ 这一条决定"绕不绕" ✓）：★ **适配器的 `on_input` 是【单向】的** ✗✓
+        --     ★ 依据 ✓（★ 本工程自己的架构文档写着 ✓）：★
+        --       「引擎事件**只会进来**（`main.lua` 把它转给 `controller:on_input` ✓）；
+        --         ★ 控制器**从不**"对着某个控件凭空发一个事件"」✓
+        --     ★★ 所以"点卡片"这个**引擎手势**必须在这里把选中**做实** ✓
+        --       ★ 绕那条 `suspect` 只是**转一圈回到自己** ✓ ⇒ ★ 净效果变成"切换" ✓✓
+        --     ⚠️ 与下面那条 `focus_clue` 的**不对称是有意的** ✓：
+        --       ★ 那一条**只播特效** ✓ ★ 而特效要 `adapter` ✓（本函数手里有这个参数 ✓）
+        --       ⇒ ★ 它借 `on_input` 走一趟 ✓ —— ★ 那才叫"借道" ✓ 这条不是 ✓✓
+        --
+        --   ★★★ 第三条：★ 为什么不干脆**删掉** `focus_clue` 那一趟 ✗
+        --     ★ 上位回归 `tests/clue_slots.lua` **正是断言那条事件发得出去** ✓
+        --       （★ 用意是"点卡片这条链是通的" ✓ ★ 不许放宽 ✓ P8 ✓）
+        --     ⇒ ★ 保留 ✓ ★ 只是它**不再承担任何状态** ✓（★ 见那个分支 ✓）
+        --
+        --   ★★ 分工定稿 ✓：★ **状态（选中）在这里定** ✓
+        --     ★ **高亮由 `_sync_clue_focus` 派生** ✓ ★ 收口处再派生一次 ✓
+        --     ⇒ ★ 全项目"高亮"只剩**一个**写点 ✓✓（P13 ✓）
+        --
+        --   ★ 三种情形 ✓（★ 互斥且穷尽 ✓）：
+        --     · ★ 亮着 ∧ 选中的也是他 ⇒ ★ **取消**（"再点一次取消" ✓）
+        --     · ★ 还不是他 ⇒ ★ **选中他** ✓
+        --     · ★ 已经是他、但没亮着 ⇒ ★ **什么都不写** ✓（★ 高亮由派生自己跟上 ✓）
+        --   ★★★ 2026-10-15（第二轮）**判据去掉 `lit`，只看"是不是他"** ✗✓✓
+        --
+        --   ★★ 为什么必须去掉 ✗（★ 第一轮它把真机那条路带偏了 ✓）：
+        --     ★ `lit` 读的是 `focused_clue` ✓ —— ★ 而那个值**只在 `on_input` 收口处**派生 ✓
+        --     ★★ 网格视图那条路（★ 真机 ✓）的视觉走的是**列表项 `backrop1`** ✗
+        --       ⇒ ★ `focused_clue` 在真机上**可能一直是上一帧/别的值** ✓
+        --     ★★★ 后果（★ 本轮实测 ✓）：★ 点"正亮着那张卡"时 `lit` 判**假** ✗
+        --       ⇒ ★ 落进 `elseif not is_him`? 不 ✓ ★ 两边都不进 ⇒ **点了没反应** ✓
+        --       ⇒ ★★ 或者更糟：★ 选中被**又选一次**/又切一次 ⇒ **与屏幕对不上** ✓✓
+        --   ⇒ ★★ 新判据 ✓：★ **`is_him` 一条就够** ✓ ——
+        --     · ★ 选中的就是他 ⇒ **取消** ✓（★ "再点一次取消" ✓）
+        --     · ★ 不是他 ⇒ **选中他** ✓
+        --     ★★ 两者都以 `core.selected` 为唯一依据 ✓ ⇒ ★ **在两条路上行为一致** ✓✓
+        --   ★ 为什么这比"看谁亮着"更对 ✓：★ 亮着本来就是**从选中派生出来的** ✗
+        --     ★ 拿派生值反过来当判据 = 把因果倒过来 ✓ ★ 那正是漂移的温床 ✓✓
+        local is_him = (tostring(self.core.selected or "") == tostring(pid))
+        if is_him then
+          -- ★ 取消：★ 只调**一个**核心方法 ✓ ★ 高亮一个字都不写 ✗
+          --   （★ 派生点只有 `_sync_clue_focus` ✓ ★ 真机那笔由填充每帧现算 ✓）
+          self.core:select_suspect(pid)
         else
-          self:on_input(ev2)
+          -- ★ 走核心自己的入口 ✓（★ 不直接写 `core.selected` ✗ ——
+          --   ★ 核心要顺带处理"橡皮擦/✗ 模式下选人会切回放置模式" ✓ 见 `select_suspect` ✓）
+          self.core:select_suspect(pid)
         end
+        -- ★★ 这里**不许**补发那条 `suspect` ✗ —— ★ 发了 = 再切换一次 ✓（见上面 ✓）
+        self._grid_refill_pending = true
+        self.dirty = true
       end
     end
   end)
+  -- ★★★★★★★★ 2026-10-15 **这一段原来是【静默】的** ✗✓✓（★ P11：跳过就要出声 ✓）
+  --
+  --   ★★ 机制 ✓：★ 整段包在 `pcall` 里 ✓ ⇒ ★ 里面任何一处抛错 ⇒
+  --     ★ **"选中卡上那个人"这一步整段不发生** ✗ ★ 而且**一个字都不报** ✓✓
+  --   ★ 症状 ✓：★ 点卡片"看着有反应"（`focus_clue` 那半边照常 ✓）
+  --     ★★ 而**人根本没被选上** ✓ ⇒ ★ 玩家报的「点卡片选不中人」✓✓
+  --   ★ 这条本项目早该有 ✓（★ `_refuse` 那段注释写着同一个道理 ✓）：
+  --     ★ **"没生效"必须能说出来** ✗ 否则分不清"没调用"和"调用了但抛了" ✓
+  --   ★ 最多报 3 次 ✓（★ 不刷屏 ✓）
+  if (not _sel_ok) and print then
+    self._sel_err_log = (self._sel_err_log or 0) + 1
+    if self._sel_err_log <= 3 then
+      print("[murdoku] ⚠️ 点卡片**选人那一步抛了异常** ⇒ 这一步整段没生效（第 "
+        .. tostring(self._sel_err_log) .. " 次，最多报 3 次）：" .. tostring(_sel_err))
+    end
+  end
 local ev = { action = "focus_clue", index = pos, phase = "click" }
+  -- ★★★ 2026-10-18 **通用线索发它自己的 action** ✓（只接提示 ✓ 不接 note / 放置）
+  if self._general_click then
+    ev = { action = "focus_general", phase = "click" }
+    self._general_click = nil            -- 一次性：下一次点击重新判定 ✓
+  end
+  -- ★★ 2026-10-18 通用线索占列表第 1 项 ⇒ 它的点击**只发 focus_general**（只接提示，不接 note/放置）✓
+  pcall(function()
+    if item ~= nil and self._general_item == item then
+      -- ★ 句柄比对 ✓：就是通用线索那一项 ⇒ 只发 focus_general
+      ev = { action = "focus_general", phase = "click" }
+    elseif pos == 1 and self:_has_general_clue() then
+      ev = { action = "focus_general", phase = "click" }
+    elseif pos == 1 and self.core ~= nil and type(self.core.general_clues) == "table"
+       and #self.core.general_clues > 0 then
+      ev = { action = "focus_general", phase = "click" }
+    end
+  end)
   if adapter ~= nil and type(adapter.on_input) == "function" then
     adapter.on_input(ev)
   else
@@ -6750,6 +7608,79 @@ function Controller:_person_id_for_pos(pos)
     if pid ~= nil then return tostring(pid) end
   end
   return nil
+end
+
+-- ★★★★★★★★ 2026-10-15 **卡片高亮的唯一判据 = `core.selected`** ✗✓✓
+--
+--   ★★★ 用户报的两个症状（★ 原话 ✓）：
+--     ★ ①「**放置 v 后选择了 d，一不小心把 v 取消了，
+--          点出来的标记是 v 的，但显示选择的 d，此时再长按放置，放的会是 v**」✗
+--     ★ ②「**出现过 d 有选中高亮但没有选中行为的情况**」✗
+--   ★★ 两者是**同一个形状** ✓ —— ★ **高亮与选中是两份状态 ⇒ 必然漂移** ✓✓
+--
+--   ★ 根因（★ 探针 `tests/_wip/repro_select_residue.lua` 实测复现 ✓）：
+--     ★ `core.selected` 会在**好几条路**上被改 ✓：
+--       · `tap_cell` 拿起棋子 ⇒ `self.selected = self.grid[r][c]`（`murdoku_core.lua:1913` ✓）
+--       · `hold_cell` 正式放置完 ⇒ `self.selected = nil`（`:1961` ✓）
+--       · `select_suspect` 自己 ✓ · `set_mode` 切到 ✗/橡皮擦 ⇒ 清空 ✓
+--     ★★ 而**卡片高亮只在一个地方被写** ✗：`_on_grid_item_click`（点卡片那一下 ✓）
+--       ⇒ ★ **凡是"选中变了但不是点卡片改的"，高亮就留在原地** ✓✓
+--     ★★★ 用户那一步正好踩中 ✓：
+--       ★ 选 D（high=D ✓ `selected=D` ✓）⇒ ★ **拿起 V** ⇒
+--         ★ `selected` **变成 V** ✓ ★ 而高亮**还是 D** ✗
+--       ⇒ ★ 屏幕说"选的是 D" ✗ ★ 而长按落子用的是 `core.selected` = **V** ✓✓
+--         （★ 与用户原话逐字相符 ✓：「显示选择的 d」＋「放的会是 v」✓）
+--
+--   ★★★ 修法（★ 不是"多同步一处" ✗ —— 那是同一个错误再来一次 ✓）：
+--     ★ **把高亮降级成【派生值】** ✗ ⇒ ★ 它**没有自己的一份状态** ✓ ⇒ ★ **结构上不可能漂移** ✓✓
+--     ★ 判据一律现算 ✓：★ `focused_clue = 选中那个人配在第几行` ✓
+--     ★ 与 `_person_id_for_pos` **严格互逆** ✓（★ 同一条 `_piece_at_row` 换算 ✓）
+--       ⇒ ★ 两个方向都不会各说各话 ✓
+--
+--   ⚠️ ★ **放哪一层** ✗：★ 必须是**方法** ✓ 且定义在**函数外面** ✗
+--     （★ 与 `_person_id_for_pos` 那次同一个坑 ✓ ——
+--      ★ 写进别的函数体里会变成局部变量 ⇒ **静默失效** ✓ 见上面那段长注释 ✓）
+--   ⚠️ ★ 按**行号**比 ✓ ★ 不按"卡片上显示的字母"比 ✗
+--     （★ 字母是玩家配的素材 ✓ 可能是任意字符串 ✓ 甚至同一个人配了两次 ✓）
+function Controller:_clue_pos_of_person(id)
+  if id == nil then return nil end
+  local core = self.core
+  if core == nil then return nil end
+  local pos = Controller._pos_of_piece(core, id)
+  if pos == nil then return nil end
+  -- ★★ 反向自查 ✓（★ 与 `_person_id_for_pos` 成对 ✓）：
+  --   ★ 换回来必须还是同一个人 ✗ ⇒ ★ 对不上就**不设高亮** ✓（★ 绝不误亮 ✓）
+  local back = Controller._piece_at_row(core, pos)
+  if back == nil or tostring(back) ~= tostring(id) then return nil end
+  return pos
+end
+
+-- 把卡片高亮拉回"选中是谁就是谁"。每个输入事件末尾调一次（★ 见 `on_input` ✓）。
+--   ★ 只在**真的该变**的时候动手 ✓ ⇒ ★ 稳态成本 = 一次表查找 ✓
+--   ★ 变了就清 `_grid_refill_pending` ⇒ ★ 由 `sync_clue_grid` **就地重填** ✓
+--     ★★ 不重发 `RefreshItems` ✗ ⇒ ★ **滚动位置一动不动** ✓（★ 与放人/拿起同一条路 ✓）
+function Controller:_sync_clue_focus()
+  local core = self.core
+  local sel = core and core.selected or nil
+  local key = (sel == nil) and "\0none" or tostring(sel)
+  if rawget(self, "_clue_sel_key") == key then return false end
+  self._clue_sel_key = key
+  local pos = (sel == nil) and nil or self:_clue_pos_of_person(sel)
+  local want = ((pos ~= nil) and pos > 0) and pos or nil
+  if rawget(self, "_clue_sel_pos") == want then return false end
+  self._clue_sel_pos = want
+  local changed = (rawget(self, "focused_clue") ~= want)
+  if changed then
+    -- ★ 顺手丢掉**手动染色**留下的残迹 ✓
+    --   ★ 机制 ✓：★ 高亮改由 `clue.focus` 样式（规划每帧重算 ✓）画 ✓
+    --     ⇒ ★ 那个"点卡片时手动染的金色"**没有存在的必要** ✗ ⇒ ★ 留着就是第二份状态 ✓✓
+    self._grid_focus_item, self._grid_focus_orig = nil, nil
+    self._grid_focus_idx, self._grid_focus_pos = nil, nil
+    self.focused_clue = want
+    self._grid_refill_pending = true
+    self.dirty = true
+  end
+  return changed
 end
 
 ----------------------------------------------------------------------------
@@ -6881,7 +7812,15 @@ function Controller:render(adapter, force)
   --   它自己保证：任何一步失败都只报一次、并且退回老路径（`_grid_state = "off"`）。
   self:sync_clue_grid(adapter)
 
-  local nodes = self:build_layout()
+  -- ★★★★★★★★ 2026-10-16 **把适配器交给 `build_layout`** ✗✓
+  --   ★ 理由：★ 选关卡片上的**随件**（关名/进度/房间缩略图）要**跟着编辑器那张卡**摆 ✓
+  --     ⇒ 必须**读运行时**（`GetSizeDelta` / `GetAnchoredPosition`）⇒ 需要适配器 ✓
+  --   ★ 为什么不在 `build_layout` 里写 `self.adapter` ✗：★ **控制器上没有这个字段** ✓
+  --     （`main.lua:510` 的 `self.adapter = adapter` 设的是 **Murdoku 实例** ✓ 不是控制器 ✓
+  --       —— ★ 本轮实测踩到：写 `self.adapter` ⇒ **恒 nil** ⇒ 静默退回规划框 ⇒ 看起来"没生效" ✓）
+  --   ★ 外部调用 `controller:build_layout()`（`main.lua:671` 生成坐标表那条）不传 ⇒ nil ✓
+  --     ⇒ ★ 那条路**本来就该用规划框** ✓（它要的是"编辑器里该填多少" ✓ 正好 ✓）
+  local nodes = self:build_layout(adapter)
 
   -- ★★★★★ 2026-10-05 **网格视窗在用时，"老一套线索控件"的名字一个都不许再碰。**
   --
@@ -7258,7 +8197,32 @@ function Controller:render(adapter, force)
       --   我第一版复用了 `instantiated` —— 那个标记还管着"允不允许销毁控件"，
       --   于是房间标签/选卡色块在某次渲染里短暂不可见时被**真销毁**，再也回不来
       --   （表现为"测试里可见色块 0 块，单独探针却看到 3 块"）。
-      if n.pos_runtime then
+      -- ★★★★★★★★ 2026-10-16 **v253：几何所有权只剩【一条规则】** ✗✓✓
+      --   ★ 用户指令 ✓：「★ **把所有失效的几何/文字脚本代码从脚本中删除**」✓
+      --
+      --   ★★ 唯一规则 ✓：★ **只有"脚本自己创建的控件"（`adapter.instantiated`）
+      --     与"显式声明 `pos_runtime = true` 的那几颗"才由脚本摆位置** ✓
+      --     ★ 其余全是 `.gil` 里存在的控件 ⇒ ★ **几何完全归编辑器** ✓
+      --
+      --   ★ 本条**取代**了 v248 那套三件套判断 ✗✓（★ 已按本轮指令删除 ✓）：
+      --     · `cfg.geom_by_editor`（开关 ✓ 已删）
+      --     · `pos_runtime` **沿子树继承** + `pos_runtime_inherited`（已删 ✓
+      --       —— 它当年的作用就是"让每个规划控件都被判成脚本接管" ✗ 是**病根**本身 ✓）
+      --     · `respect_editor_rect`（★ 这条**留着** ✓ —— 它在适配层是**第二道闸** ✓
+      --       就算这里漏标记，适配层也不会去碰编辑器几何 ✓ 属于"防御"不是"死代码" ✓）
+      --   ★ 为什么能这样简化 ✓：★ 三种老口径的**结论本来就是"归编辑器"** ✓
+      --     ⇒ ★ 直接按"是不是脚本建的"判，比绕三个开关更准 ✓
+      --
+      --   ⚠️ 仍然必须由脚本摆的那几类（★ 别当死代码删 ✓ 见下面各条的 `pos_runtime = true`）：
+      --     · ★ **房间名标签** `room.label.*`（按每个房间的外框每帧摆 ✓ 否则三个字叠一起 ✓）
+      --     · ★ **选关卡的文字/附件/房间缩略图**（位置从**卡片自己的运行时矩形**推 ✓
+      --       —— ★ 卡片归编辑器 ⇒ 它们必须**跟着卡片走** ✓ `editor_card_box` 就是干这个的 ✓）
+      --     · ★ **确认卡** `hex.ok/no` 与热区 `hit.ok/no`（按**刚按下的那颗键**摆 ✓）
+      --     · ★ **脚本实例化的格子** `cell.*`（没有"编辑器几何"可言 ✓）
+      if adapter.instantiated and adapter.instantiated[n.id] then
+        adapter.runtime_rect = adapter.runtime_rect or {}
+        adapter.runtime_rect[n.id] = true
+      elseif n.pos_runtime == true then
         adapter.runtime_rect = adapter.runtime_rect or {}
         adapter.runtime_rect[n.id] = true
       end

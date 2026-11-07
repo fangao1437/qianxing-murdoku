@@ -221,11 +221,17 @@ do
   --   （用户定案 ruler 功能废弃 ⇒ 那个方法按设计不存在了 ✓
   --    ⇒ 留在这里会变成"拿旧设计当判据"，本项目栽过多次 ✓）
   --   ⚠️ 反向哨兵在 §C：**如果它又出现**，说明有人把已删功能加回来了 ✓
+  -- ★ 2026-10-18（优化组）：`apply_tray_layout` **已从这个名单里删掉** ✗✓
+  --   （头像卡容器 `tray` 按用户指令从布局计划删除、`tray_layout_canvas` 同批删除
+  --    ⇒ 那个方法按设计不存在了 ✓ 留在这里会变成"拿旧设计当判据"）
+  --   同轮新增：`apply_btn_art`（按钮上色的**唯一入口**，缺陷 1 的开关就在它里面 ✓
+  --   它必须一直存在 —— 缺了就等于"开关还在、功能没了" ✓）
   local names = {
     "_cells_beacon_button", "_cells_signal", "count_names", "dump_names", "near_names",
     "invalidate_lookups", "ensure_raycast", "rearm_raycast", "input_profile", "hide_unlisted",
-    "ensure_widgets", "ensure_cells", "apply_tray_layout",
-    "diagnose_overlap", "diagnose_cell", "diagnose_grid", "diagnose_template",
+    "ensure_widgets", "ensure_cells", "apply_btn_art",
+    -- ★ 2026-10-18：`diagnose_cell` / `diagnose_template` 已按"结案探针"删除 ⇒ 从名单里拿掉
+    "diagnose_overlap", "diagnose_grid",
     "seal_containers", "seal_container", "enable_cursor", "enable_raycast", "report_missing",
     "find", "sub", "set_property", "create_control", "destroy_control", "play_effect",
     "on_tick", "signal_emit", "set_image_deep", "cell_geometry", "enforce_hidden_subtrees",
@@ -294,9 +300,24 @@ local d_bar  = vis_of("selbar") - base_bar
 ok(d_cell >= 55,
   "★ 关卡内 60 帧里 `cell.*` 被按屏同步（注释：**每帧**压住）",
   "实测 cell.1.1 SetVisible " .. d_cell .. " 次（每帧应为 60；每 30 帧为 2；每 300 帧为 0）")
-ok(d_bar >= 55,
-  "★ 关卡内 60 帧里 `selbar` 被压住（注释 L1522-1525：**必须每帧压住才稳**）",
-  "实测 selbar SetVisible " .. d_bar .. " 次")
+-- ★★★★★★★★ 2026-10-15 **改判：`selbar` 那条从"每帧压住"改成"压根不该存在"** ✗✓✓
+--
+--   ★ 依据 = **用户指令** ✓（不是为了让红变绿 ✓）：★「**把原来四个方块删掉**」✓
+--     ⇒ ★ `cfg.widgets = false` ⇒ `selbar` / `selbtn.*` **不再被创建** ✓
+--   ★ 旧断言 ✗：`ok(d_bar >= 55, "selbar 每帧被压住")` ——
+--     ★ 那测的是"**四个方块还在**"的行为 ✓ ⇒ ★ 东西删了，它自然就红了 ✓
+--   ★★ 新断言 ✓ 是**更强**的一条 ✗：★ 不只要求"没有同步" ✓
+--     ★ 还要求 **`selbar` 这个控件根本不存在** ✓（★ 顺带证明"不再建"这一步真的生效 ✓）
+--   ★ 为什么必须留着它 ✗：★ 否则**"删了没有"这件事没有任何检查** ✓
+--     ★ 一旦哪天有人把 `widgets` 改回 true ⇒ **四块白方块会静默回来** ✓
+--   ⚠️⚠️ **"不存在"那半条不放在这里** ✗ —— ★ 本文件的假树**自己就挂了一个 `selbar`** ✓
+--     （★ 它是夹具 ✓ 不是脚本建的 ✓）⇒ ★ `find("selbar")` 在这里**恒为真** ✓
+--     ⇒ ★ "脚本有没有建它"的判据放在 **`tests/entry_smoke.lua` §6e** ✓
+--       （★ 那里跑的是**真入口 + 真 OnInit** ✓ 且夹具不预建 selbar ✓ 实测通过 ✓）
+--   ★ 本文件只管**行为** ✓：★ 关掉之后**一笔同步都不该再发** ✓（省下每帧的 find+写 ✓）
+ok(d_bar == 0,
+  "★ `selbar`/`selbtn.*` 已按用户指令删除：**不再有每帧同步**（存在性判据见 entry_smoke §6e）",
+  "实测 selbar SetVisible " .. d_bar .. " 次（删除前是 60 ✓）")
 
 ----------------------------------------------------------------------------
 out("\n== B. 帧号 == 300 那一帧：这两段**确实存在**，只是节流位错 ==")
