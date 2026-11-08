@@ -1,0 +1,70 @@
+const fs = require('fs');
+const { createCanvas, loadImage } = require('D:/新建文件夹/miHoYo Launcher/qianxing-murdoku-tool/node_modules/@napi-rs/canvas');
+const OUT = 'C:/Users/18182/AppData/Local/Temp/wb-art-build';
+const boxes = [
+  { id: '①', text: 'POLICE TIME', x: 1365, y: 181, w: 480, h: 120, rot: 9 },
+  { id: '②', text: 'POLICE TIME', x: 330, y: 680, w: 480, h: 120, rot: -7.6 },
+  { id: '③', text: 'POLICE TIME', x: 1281, y: 807, w: 480, h: 120, rot: -7.6 },
+];
+(async () => {
+  const src = await loadImage(OUT + '/police-v11-notext.png');
+  const s = createCanvas(src.width, src.height), sx = s.getContext('2d'); sx.drawImage(src, 0, 0);
+  for (const b of boxes) {
+    sx.save(); sx.translate(b.x, b.y); sx.rotate(-b.rot * Math.PI / 180);
+    sx.font = '700 48px "Arial Black", Arial, sans-serif'; sx.textAlign = 'center'; sx.textBaseline = 'middle';
+    sx.fillStyle = '#241309'; sx.fillText(b.text, 0, 0); sx.restore();
+  }
+  fs.writeFileSync(OUT + '/police-v11-simulated.png', s.toBuffer('image/png'));
+
+  const params = {
+    canvas: { width: 1600, height: 900, origin: '左上(0,0), Y向下, 设计像素' },
+    source: { shot: 'v10 提交 22b6abf 的实机截图 1604×960 → crop(4,58,1600,900)', design: '原始设计图 1280×720 → ×1.25', clean: 'scene-no-cup.png / background.png（去杯子、干净背景）' },
+    method: '实机截图与 v10 离线导出 PNG 逐像素一致（可离线迭代）；用 A/B 差分剥前景、紧阈值分类 + 逐行边界拟合量出所有区域；暗角按 background.png 的 R 通道剖面拟合。',
+    measured: {
+      alignment: '实机标题栏到 y≈58；游戏画布 crop(4,58,1600,900)。shot 与 police-v10.png 的背景采样差 0~1。',
+      vignette: {
+        designProfile: '中心183 / 四角49~51 / 上边中182 / 左边中178 / 右边中76 / (1200,60)=130',
+        v10: '四角80 / 左边中139 / 右边中141（径向对称，过淡且左右反了）',
+        v11: '四角52 / 左边中182 / 右边中75 / (1500,450)=101 / (1580,450)=75',
+        recipe: '底色 #B64A20 + 右侧 52 条 10px 实色渐变条（R=183-113·((x-1080)/520)^1.6）+ 4 个 106056 柔光圆（左 0.72 / 右 0.30，360²）+ 上下纯黑边（45 / 38 px）。全部置于胶带之下。',
+      },
+      bagShadow: { name: '档案袋硬边四边形投影', measured1280: '斜边 x=1030-0.9y、右边界 x=1010、下边界 y=610；色 (151,56,19)', design1600: [[1263, 28], [1263, 763], [1107, 763], [1014, 304]], v10: '106056 柔光圆 708×944 op0.28（模糊、无形）', v11: '3px 竖条扫描填充实色 #973813' },
+      redFold: {
+        name: '橘红弧边楔形', v10: '单个 100003 直三角（64×520、局部 (-258,120)），实机变成从 (380,270) 斜到 (520,770) 的宽三角',
+        measured1280: '右边界 x≈390.7-0.05y（近竖直）；左边界抛物线，y=190 时 x≈379，y=390 最左 x≈331，y=510 回到 x≈361；y 范围 190..510',
+        design1600: '顶 (474,238) → 右下 (456,638) → 左缘 (414,488) 最宽 → 顶；宽 40~62、长 400',
+        v11: '按实测逐点多边形 + 2px 竖条填充 #C85D11',
+      },
+      darkQuad: {
+        name: '深橙四边形', v10: '斜边 v=105+0.492(300-u)、底 v=395（实机偏左偏下、面积过大）',
+        measured1600: '斜边 X=1288-0.901Y；底边 (623,738)-(1107,763)；A(1015,303)',
+        v11: '袋体放大到 620×900 后换算局部斜边 v=263.2-0.6384u、底 v=445；110 条局部竖矩形。',
+      },
+      bag: { v10: [666, 331, 600, 800], v11: [674, 350, 620, 900], rotation: 15.4, reason: '设计图左下角 (507,844) / 右缘 X=923+0.272Y，v10 短约 45px；放大后深橙区可下延。' },
+      polaroid: { designFrameBbox1280: [831, 247, 1167, 580], designPhotoBbox1280: [871, 286, 1153, 520], rotation: '+8（右端更高，设计图顶边斜率 -0.113）', v10: '438×419、PHOTO #3D3359 蓝紫单色、白框 #F7F1DC', v11: '375×365、白框 #FBF3CF、照片左 #4A313D / 右 #513C57 双色、硬边投影 (34,40)' },
+      tape: { geometry: '上带中心 (800,241) rot+9；下带中心 (800,713) rot-7.6；宽 100（v10 几何经复核正确）', v10: '#FFC400 被 106060 压暗成 (229,176,0)', design: '左 (252,202,0) 亮黄 → 右 (209,103,0) 橙', v11: '不透明实色 72 条渐变条（半透明条带重叠会产生竖条纹，已实测排除）' },
+      photoColors: { designLeft: [74, 49, 61], designRight: [81, 57, 85], v10: [61, 51, 89] },
+      frameColor: { design: [251, 243, 207], v10: [247, 241, 220] },
+      splitLines: '设计图 y=-0.27X+220 / +880（1600）；v11 改屏幕坐标旋转细矩形，不再依赖袋体局部坐标',
+      buttons: '设计图中心 (605,6) / (641,131)（1600），外径 84、圆心 20；v11 改屏幕坐标',
+      blackBars: '设计图 1280 图 y<36 / y>690 纯黑（1600：45 / 38 px），v10 缺失',
+      paws: '首组由 (150,120) 修正到 (210,135)（1280）',
+    },
+    textboxes: boxes.map(b => ({ ...b, fontSize: 48, minimumFontSize: 24, textColor: '#241309', alignH: 'center', alignV: 'middle', bgOpacity: 0,
+      editor: { posX: b.x - 800, posY: 450 - b.y, rotationZ: b.rot } })),
+    verification: {
+      gia: 'v11 text 460 图元 / 331,102 B；notext 457 图元 / 328,848 B；根层无 field 4 经典模式标记；.gia+4=2a05362e',
+      artkit: '两份均 ok=true / budgetExceeded=false / kind=3 / trailer 0x679',
+      textInGia: 'text 版含 POLICE TIME，notext 版不含',
+      previewNote: '导出 PNG 预览器忽略 textbox 的 fontSize/rotation（固定小字）；police-v11-simulated.png 是按 48px 粗体 + 旋转模拟的游戏内文字效果。',
+    },
+    knownDiffs: [
+      '设计图档案袋底部另有一片浅橙折角（透视梯形），v11 仍用刚体旋转矩形近似，右下角比设计图高约 60px',
+      '设计图 (1200,60) 附近有一片上缘压暗（R≈130），v11 为 171；其余暗角采样点误差多在 1~6',
+      '设计图右下胶带末端受暗角压暗，v11 用胶带自身橙色渐变近似',
+      '未做 v11 真机导入验证（需用户在游戏内导入并截图复核）',
+    ],
+  };
+  fs.writeFileSync(OUT + '/v11-params.json', JSON.stringify(params, null, 2));
+  console.log('wrote simulated preview + v11 params');
+})();
