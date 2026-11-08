@@ -1,0 +1,174 @@
+{
+  "canvas": {
+    "width": 1600,
+    "height": 900,
+    "origin": "左上(0,0), Y向下, 设计像素"
+  },
+  "method": "先在设计图(1280×720)上做 A/B 差分去背景 + 颜色分区/凸包/直线拟合，量出三区域顶点，换算到 1600×900 设计坐标与档案袋局部坐标 (u,v)，再按值近似。",
+  "measured": {
+    "bag": {
+      "centerDesign": [
+        666,
+        331
+      ],
+      "sizeDesign": [
+        600,
+        800
+      ],
+      "rotation": 15.4,
+      "localTransform": "X=666+u·cos15.4+v·sin15.4; Y=331-u·sin15.4+v·cos15.4",
+      "cornersLocal": [
+        [
+          -300,
+          -400
+        ],
+        [
+          300,
+          -400
+        ],
+        [
+          300,
+          400
+        ],
+        [
+          -300,
+          400
+        ]
+      ]
+    },
+    "darkQuad": {
+      "name": "深橙四边形阴影",
+      "measuredVerticesOriginal1280": [
+        [
+          820,
+          250
+        ],
+        [
+          460,
+          590
+        ],
+        [
+          820,
+          485
+        ]
+      ],
+      "measuredVerticesDesign": [
+        [
+          1025,
+          313
+        ],
+        [
+          575,
+          738
+        ],
+        [
+          1025,
+          606
+        ]
+      ],
+      "measuredVerticesLocal": [
+        [
+          351,
+          78
+        ],
+        [
+          -196,
+          368
+        ],
+        [
+          273,
+          361
+        ]
+      ],
+      "edgeSlopeLocal": -0.53,
+      "bottomEdge": "v≈365",
+      "finalApprox": "夹到档案袋右边缘 u=300 得 A′(300,105)；按「大小足够」把左下扩到档案袋左下边缘 (-300,400)、底边抬到 v=395；斜边 v=105+0.492·(300-u)",
+      "implementation": "100 条局部竖矩形（每条 6px）随档案袋旋转铺满，形状精确贴合、单条平滑斜边、零溢出",
+      "whyNotTriangles": "100003 是等腰直角三角形，斜边固定 45°；3 个错开拼接必然形成 M 形山峰（v8 实测），且无法表达原图两直角边不等（469 vs 293）的三角形。用户允许「两到三个近似」，但按精测顶点铺细矩形更准。"
+    },
+    "redFold": {
+      "name": "橘红细长楔形",
+      "measured": "原图每行稳定 x 区间约 330..380，y 从 ~200 延到 ~590；换算局部 u∈[-265,-225]、v∈[-125,225] 附近，实测宽约 40~60、长约 460~520（设计像素）",
+      "final": "100003 细长三角，局部中心 (-258,120)、64×520、rotation=TH、#C85D11",
+      "note": "v7 曾做成 150×440 宽三角，位置形状大小都偏，本版按实测收窄加长"
+    },
+    "vignette": {
+      "name": "官方暗角（不再用圆环）",
+      "assetId": 106060,
+      "recipe": "单层 106060 染黑，1800×1040 铺满，opacity 1；无 100006 圆环",
+      "measuredVsDesign": "原设计图 中心183 / 四角51 / 上边中182 / 左边中180 / 右边中84；本版实测 中心182 / 四角77 / 上边中153 / 左边中143 / 右边中145",
+      "whyNoRing": "用户指出有更好的暗角实现就不必圆环。实测单层 100006 放大有硬椭圆边；106060 单层最柔和，6 组尺寸对比后选 1800×1040。"
+    },
+    "splitLines": "原图 y=-0.27x+176 与 y=-0.27x+704（1280图）→ 档案袋局部 v=-281 / +356",
+    "textOffset": "原设计图文字相对黄带中心 -3~+3px；v3 游戏内 -28~-33px（偏上），文本框统一 y+30"
+  },
+  "textboxes": [
+    {
+      "id": "①",
+      "text": "POLICE TIME",
+      "x": 1365,
+      "y": 181,
+      "w": 480,
+      "h": 120,
+      "rot": 9,
+      "fontSize": 48,
+      "minimumFontSize": 24,
+      "textColor": "#241309",
+      "alignH": "center",
+      "alignV": "middle",
+      "bgOpacity": 0,
+      "editor": {
+        "posX": 565,
+        "posY": 269,
+        "rotationZ": 9
+      }
+    },
+    {
+      "id": "②",
+      "text": "POLICE TIME",
+      "x": 330,
+      "y": 680,
+      "w": 480,
+      "h": 120,
+      "rot": -7.6,
+      "fontSize": 48,
+      "minimumFontSize": 24,
+      "textColor": "#241309",
+      "alignH": "center",
+      "alignV": "middle",
+      "bgOpacity": 0,
+      "editor": {
+        "posX": -470,
+        "posY": -230,
+        "rotationZ": -7.6
+      }
+    },
+    {
+      "id": "③",
+      "text": "POLICE TIME",
+      "x": 1281,
+      "y": 807,
+      "w": 480,
+      "h": 120,
+      "rot": -7.6,
+      "fontSize": 48,
+      "minimumFontSize": 24,
+      "textColor": "#241309",
+      "alignH": "center",
+      "alignV": "middle",
+      "bgOpacity": 0,
+      "editor": {
+        "posX": 481,
+        "posY": -357,
+        "rotationZ": -7.6
+      }
+    }
+  ],
+  "previewNote": "导出 PNG 预览器忽略 textbox 的 fontSize/rotation（固定小字），GIA 内已写入；看 police-v10-simulated.png 更接近游戏内效果。",
+  "knownDiffs": [
+    "橘红折面是直楔形，原设计图带弧边",
+    "暗角是径向渐变，原设计图右侧另有额外压暗",
+    "深橙区左下按「大小足够」略超出精测 B 点",
+    "未做真机导入验证"
+  ]
+}
