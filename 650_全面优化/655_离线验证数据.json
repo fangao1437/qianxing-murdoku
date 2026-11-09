@@ -1,0 +1,377 @@
+{
+  "method": {
+    "tree": "由 654_退出拦截修复.gil 原样导出的运行时 root 子树（3847 节点）+ 42 个顶层模板",
+    "engine": "murdoku-pro/tools/perf_faithful 的 Lua 5.4 假引擎，29 阶段固定场景",
+    "determinism": "测试器内固定 pairs 迭代顺序；未固定时 Lua 字符串哈希种子跨进程随机，654 自身连跑 4 次有 2 次出现 20 行地毯实例兄弟序号差异，属测试噪声",
+    "scope": "引擎边界调用次数（interop），不是实机帧率/CPU/显存；实例化节点数单独计"
+  },
+  "totals": {
+    "interop": {
+      "before": 1422898,
+      "after": 1052527,
+      "delta": -370371,
+      "pct": -26.03
+    },
+    "getChildrenGetChild": {
+      "before": 592584,
+      "after": 463095,
+      "delta": -129489,
+      "pct": -21.85
+    },
+    "getName": {
+      "before": 596428,
+      "after": 375200,
+      "delta": -221228,
+      "pct": -37.09
+    },
+    "instantiatedNodes": {
+      "before": 4650,
+      "after": 4650,
+      "delta": 0,
+      "pct": 0
+    },
+    "setVisible": {
+      "before": 16416,
+      "after": 16416,
+      "delta": 0,
+      "pct": 0
+    },
+    "engineErrors": {
+      "before": 41,
+      "after": 41,
+      "delta": 0,
+      "pct": 0
+    }
+  },
+  "lookupProbe": {
+    "before654": {
+      "builds": 74,
+      "nodes": 450126,
+      "finds": 49433,
+      "pathhits": 1130,
+      "pathmiss": 635,
+      "indexcalls": 635
+    },
+    "after655": {
+      "builds": 53,
+      "nodes": 323835,
+      "finds": 49433,
+      "pathhits": 1439,
+      "pathmiss": 326,
+      "indexcalls": 326
+    }
+  },
+  "phases": [
+    {
+      "phase": "compile+chunk",
+      "before654": 0,
+      "after655": 0,
+      "pct": null,
+      "instBefore": 0,
+      "instAfter": 0,
+      "errorsBefore": 0,
+      "errorsAfter": 0
+    },
+    {
+      "phase": "OnInit+OnStart",
+      "before654": 103992,
+      "after655": 95629,
+      "pct": -8.04,
+      "instBefore": 494,
+      "instAfter": 494,
+      "errorsBefore": 26,
+      "errorsAfter": 26
+    },
+    {
+      "phase": "first 30 frames",
+      "before654": 54199,
+      "after655": 27847,
+      "pct": -48.62,
+      "instBefore": 171,
+      "instAfter": 171,
+      "errorsBefore": 0,
+      "errorsAfter": 0
+    },
+    {
+      "phase": "next 120 frames",
+      "before654": 77644,
+      "after655": 38148,
+      "pct": -50.87,
+      "instBefore": 1615,
+      "instAfter": 1615,
+      "errorsBefore": 0,
+      "errorsAfter": 0
+    },
+    {
+      "phase": "steady home 60f",
+      "before654": 2935,
+      "after655": 1255,
+      "pct": -57.24,
+      "instBefore": 0,
+      "instAfter": 0,
+      "errorsBefore": 0,
+      "errorsAfter": 0
+    },
+    {
+      "phase": "go levelselect",
+      "before654": 53368,
+      "after655": 53511,
+      "pct": 0.27,
+      "instBefore": 0,
+      "instAfter": 0,
+      "errorsBefore": 0,
+      "errorsAfter": 0
+    },
+    {
+      "phase": "levelselect +30f",
+      "before654": 62592,
+      "after655": 26017,
+      "pct": -58.43,
+      "instBefore": 0,
+      "instAfter": 0,
+      "errorsBefore": 0,
+      "errorsAfter": 0
+    },
+    {
+      "phase": "pick case_001",
+      "before654": 76291,
+      "after655": 63403,
+      "pct": -16.89,
+      "instBefore": 412,
+      "instAfter": 412,
+      "errorsBefore": 0,
+      "errorsAfter": 0
+    },
+    {
+      "phase": "case_001 +30f",
+      "before654": 42376,
+      "after655": 21923,
+      "pct": -48.27,
+      "instBefore": 0,
+      "instAfter": 0,
+      "errorsBefore": 0,
+      "errorsAfter": 0
+    },
+    {
+      "phase": "case_001 +120f",
+      "before654": 118139,
+      "after655": 73873,
+      "pct": -37.47,
+      "instBefore": 0,
+      "instAfter": 0,
+      "errorsBefore": 0,
+      "errorsAfter": 0
+    },
+    {
+      "phase": "steady level 60f",
+      "before654": 21944,
+      "after655": 18584,
+      "pct": -15.31,
+      "instBefore": 0,
+      "instAfter": 0,
+      "errorsBefore": 0,
+      "errorsAfter": 0
+    },
+    {
+      "phase": "tutorial l1 next x3",
+      "before654": 1628,
+      "after655": 1460,
+      "pct": -10.32,
+      "instBefore": 0,
+      "instAfter": 0,
+      "errorsBefore": 0,
+      "errorsAfter": 0
+    },
+    {
+      "phase": "tutorial l1 prev+close",
+      "before654": 1034,
+      "after655": 866,
+      "pct": -16.25,
+      "instBefore": 0,
+      "instAfter": 0,
+      "errorsBefore": 0,
+      "errorsAfter": 0
+    },
+    {
+      "phase": "grid card clicks",
+      "before654": 3045,
+      "after655": 2765,
+      "pct": -9.2,
+      "instBefore": 0,
+      "instAfter": 0,
+      "errorsBefore": 0,
+      "errorsAfter": 0
+    },
+    {
+      "phase": "tap suspect +1f",
+      "before654": 13666,
+      "after655": 13582,
+      "pct": -0.61,
+      "instBefore": 0,
+      "instAfter": 0,
+      "errorsBefore": 0,
+      "errorsAfter": 0
+    },
+    {
+      "phase": "click cell(1,1) +1f",
+      "before654": 318,
+      "after655": 290,
+      "pct": -8.81,
+      "instBefore": 0,
+      "instAfter": 0,
+      "errorsBefore": 0,
+      "errorsAfter": 0
+    },
+    {
+      "phase": "after place +10f",
+      "before654": 3360,
+      "after655": 2800,
+      "pct": -16.67,
+      "instBefore": 0,
+      "instAfter": 0,
+      "errorsBefore": 0,
+      "errorsAfter": 0
+    },
+    {
+      "phase": "undo +1f",
+      "before654": 345,
+      "after655": 289,
+      "pct": -16.23,
+      "instBefore": 0,
+      "instAfter": 0,
+      "errorsBefore": 0,
+      "errorsAfter": 0
+    },
+    {
+      "phase": "back_confirm +1f",
+      "before654": 426,
+      "after655": 370,
+      "pct": -13.15,
+      "instBefore": 0,
+      "instAfter": 0,
+      "errorsBefore": 0,
+      "errorsAfter": 0
+    },
+    {
+      "phase": "close_modal +1f",
+      "before654": 505,
+      "after655": 449,
+      "pct": -11.09,
+      "instBefore": 0,
+      "instAfter": 0,
+      "errorsBefore": 0,
+      "errorsAfter": 0
+    },
+    {
+      "phase": "solve case_001",
+      "before654": 61028,
+      "after655": 60188,
+      "pct": -1.38,
+      "instBefore": 0,
+      "instAfter": 0,
+      "errorsBefore": 4,
+      "errorsAfter": 4
+    },
+    {
+      "phase": "submit + accuse",
+      "before654": 4971,
+      "after655": 4299,
+      "pct": -13.52,
+      "instBefore": 0,
+      "instAfter": 0,
+      "errorsBefore": 0,
+      "errorsAfter": 0
+    },
+    {
+      "phase": "result +30f",
+      "before654": 10919,
+      "after655": 9239,
+      "pct": -15.39,
+      "instBefore": 0,
+      "instAfter": 0,
+      "errorsBefore": 0,
+      "errorsAfter": 0
+    },
+    {
+      "phase": "pick case_002",
+      "before654": 258935,
+      "after655": 212960,
+      "pct": -17.76,
+      "instBefore": 1486,
+      "instAfter": 1486,
+      "errorsBefore": 11,
+      "errorsAfter": 11
+    },
+    {
+      "phase": "case_002 +60f",
+      "before654": 120586,
+      "after655": 74828,
+      "pct": -37.95,
+      "instBefore": 0,
+      "instAfter": 0,
+      "errorsBefore": 0,
+      "errorsAfter": 0
+    },
+    {
+      "phase": "pick case_003",
+      "before654": 215216,
+      "after655": 165152,
+      "pct": -23.26,
+      "instBefore": 472,
+      "instAfter": 472,
+      "errorsBefore": 0,
+      "errorsAfter": 0
+    },
+    {
+      "phase": "case_003 +60f",
+      "before654": 101723,
+      "after655": 72823,
+      "pct": -28.41,
+      "instBefore": 0,
+      "instAfter": 0,
+      "errorsBefore": 0,
+      "errorsAfter": 0
+    },
+    {
+      "phase": "home",
+      "before654": 347,
+      "after655": 291,
+      "pct": -16.14,
+      "instBefore": 0,
+      "instAfter": 0,
+      "errorsBefore": 0,
+      "errorsAfter": 0
+    },
+    {
+      "phase": "home +30f",
+      "before654": 11366,
+      "after655": 9686,
+      "pct": -14.78,
+      "instBefore": 0,
+      "instAfter": 0,
+      "errorsBefore": 0,
+      "errorsAfter": 0
+    }
+  ],
+  "stateEquivalence": {
+    "finalStateRows": 6844,
+    "finalStateDiffLines": 0,
+    "perStageSnapshotRows": 184050,
+    "perStageSnapshotDiffLines": 0,
+    "failedPhases654": 0,
+    "failedPhases655": 0,
+    "firstLevelStatus": "filled（654 与 655 一致，不等于完整成功结算证明）"
+  },
+  "targetedRegression": {
+    "summary654": "passed=54 failed=0",
+    "summary655": "passed=54 failed=0",
+    "detailsIdentical": true,
+    "coverage": "退出后进入 select / modal 与 pending 清空、5 组 block640 父级门控与子级显示、拦截按钮静音、确认前景层序、退出后再次操作不破坏遮罩",
+    "notCovered": "离线场景末尾无法触发换关，故未断言「退出后进入 case_002」的关卡 ID；该逻辑 655 未改动，由 654 的 133 项回归与逐阶段快照覆盖"
+  },
+  "limitations": [
+    "离线调用次数不能直接换算为实机帧率或加载秒数。",
+    "假引擎 41 条已有错误日志两版一致，忽略文件名与行号后分类一致。",
+    "未做实机导入、截图、真实射线命中与静音听感验收。"
+  ]
+}
