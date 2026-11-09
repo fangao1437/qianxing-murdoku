@@ -1,0 +1,923 @@
+{
+  "phaseCount": 34,
+  "phaseSnapshotDiffs": 0,
+  "diffSample": [],
+  "sameOrderedSnapshots": true,
+  "before": {
+    "calls": 3548709,
+    "traversals": 1630232,
+    "inst": 5101,
+    "visibleWrites": 30862,
+    "errors": 43,
+    "cpuMs": 4798
+  },
+  "after": {
+    "calls": 1963598,
+    "traversals": 840847,
+    "inst": 5101,
+    "visibleWrites": 20127,
+    "errors": 43,
+    "cpuMs": 2918
+  },
+  "phases": [
+    {
+      "phase": "compile+chunk",
+      "before": {
+        "name": "compile+chunk",
+        "calls": 0,
+        "traversals": 0,
+        "names": 0,
+        "inst": 0,
+        "visibleWrites": 0,
+        "errors": 0,
+        "cpuMs": 33,
+        "failure": ""
+      },
+      "after": {
+        "name": "compile+chunk",
+        "calls": 0,
+        "traversals": 0,
+        "names": 0,
+        "inst": 0,
+        "visibleWrites": 0,
+        "errors": 0,
+        "cpuMs": 50,
+        "failure": ""
+      },
+      "reductionPct": 0
+    },
+    {
+      "phase": "OnInit+OnStart",
+      "before": {
+        "name": "OnInit+OnStart",
+        "calls": 139742,
+        "traversals": 70420,
+        "names": 65488,
+        "inst": 494,
+        "visibleWrites": 1082,
+        "errors": 26,
+        "cpuMs": 153,
+        "failure": ""
+      },
+      "after": {
+        "name": "OnInit+OnStart",
+        "calls": 130058,
+        "traversals": 65410,
+        "names": 60808,
+        "inst": 494,
+        "visibleWrites": 1082,
+        "errors": 26,
+        "cpuMs": 146,
+        "failure": ""
+      },
+      "reductionPct": 6.929913698100785
+    },
+    {
+      "phase": "first 30 frames",
+      "before": {
+        "name": "first 30 frames",
+        "calls": 85562,
+        "traversals": 37022,
+        "names": 37892,
+        "inst": 171,
+        "visibleWrites": 781,
+        "errors": 0,
+        "cpuMs": 94,
+        "failure": ""
+      },
+      "after": {
+        "name": "first 30 frames",
+        "calls": 52254,
+        "traversals": 21045,
+        "names": 21664,
+        "inst": 171,
+        "visibleWrites": 428,
+        "errors": 0,
+        "cpuMs": 63,
+        "failure": ""
+      },
+      "reductionPct": 38.928496295084265
+    },
+    {
+      "phase": "next 120 frames",
+      "before": {
+        "name": "next 120 frames",
+        "calls": 81826,
+        "traversals": 33540,
+        "names": 33622,
+        "inst": 1615,
+        "visibleWrites": 1700,
+        "errors": 0,
+        "cpuMs": 146,
+        "failure": ""
+      },
+      "after": {
+        "name": "next 120 frames",
+        "calls": 76482,
+        "traversals": 31202,
+        "names": 31284,
+        "inst": 1615,
+        "visibleWrites": 20,
+        "errors": 0,
+        "cpuMs": 136,
+        "failure": ""
+      },
+      "reductionPct": 6.530931488768851
+    },
+    {
+      "phase": "steady home 60f",
+      "before": {
+        "name": "steady home 60f",
+        "calls": 2995,
+        "traversals": 60,
+        "names": 0,
+        "inst": 0,
+        "visibleWrites": 840,
+        "errors": 0,
+        "cpuMs": 36,
+        "failure": ""
+      },
+      "after": {
+        "name": "steady home 60f",
+        "calls": 2995,
+        "traversals": 60,
+        "names": 0,
+        "inst": 0,
+        "visibleWrites": 0,
+        "errors": 0,
+        "cpuMs": 36,
+        "failure": ""
+      },
+      "reductionPct": 0
+    },
+    {
+      "phase": "go levelselect",
+      "before": {
+        "name": "go levelselect",
+        "calls": 69771,
+        "traversals": 33516,
+        "names": 33658,
+        "inst": 0,
+        "visibleWrites": 936,
+        "errors": 0,
+        "cpuMs": 78,
+        "failure": ""
+      },
+      "after": {
+        "name": "go levelselect",
+        "calls": 66430,
+        "traversals": 31846,
+        "names": 31985,
+        "inst": 0,
+        "visibleWrites": 921,
+        "errors": 0,
+        "cpuMs": 73,
+        "failure": ""
+      },
+      "reductionPct": 4.788522452021613
+    },
+    {
+      "phase": "levelselect +30f",
+      "before": {
+        "name": "levelselect +30f",
+        "calls": 76924,
+        "traversals": 31280,
+        "names": 32243,
+        "inst": 0,
+        "visibleWrites": 1209,
+        "errors": 0,
+        "cpuMs": 84,
+        "failure": ""
+      },
+      "after": {
+        "name": "levelselect +30f",
+        "calls": 72917,
+        "traversals": 29610,
+        "names": 30570,
+        "inst": 0,
+        "visibleWrites": 767,
+        "errors": 0,
+        "cpuMs": 86,
+        "failure": ""
+      },
+      "reductionPct": 5.209037491550101
+    },
+    {
+      "phase": "pick case_001",
+      "before": {
+        "name": "pick case_001",
+        "calls": 123715,
+        "traversals": 59946,
+        "names": 60451,
+        "inst": 412,
+        "visibleWrites": 1148,
+        "errors": 0,
+        "cpuMs": 130,
+        "failure": ""
+      },
+      "after": {
+        "name": "pick case_001",
+        "calls": 115835,
+        "traversals": 56007,
+        "names": 56506,
+        "inst": 412,
+        "visibleWrites": 1109,
+        "errors": 0,
+        "cpuMs": 127,
+        "failure": ""
+      },
+      "reductionPct": 6.369478236268844
+    },
+    {
+      "phase": "case_001 +30f",
+      "before": {
+        "name": "case_001 +30f",
+        "calls": 119068,
+        "traversals": 52420,
+        "names": 53297,
+        "inst": 0,
+        "visibleWrites": 1258,
+        "errors": 0,
+        "cpuMs": 158,
+        "failure": ""
+      },
+      "after": {
+        "name": "case_001 +30f",
+        "calls": 41382,
+        "traversals": 13742,
+        "names": 14619,
+        "inst": 0,
+        "visibleWrites": 840,
+        "errors": 0,
+        "cpuMs": 68,
+        "failure": ""
+      },
+      "reductionPct": 65.24507004400847
+    },
+    {
+      "phase": "case_001 +120f",
+      "before": {
+        "name": "case_001 +120f",
+        "calls": 424616,
+        "traversals": 190813,
+        "names": 193813,
+        "inst": 0,
+        "visibleWrites": 2441,
+        "errors": 0,
+        "cpuMs": 607,
+        "failure": ""
+      },
+      "after": {
+        "name": "case_001 +120f",
+        "calls": 116525,
+        "traversals": 37103,
+        "names": 40103,
+        "inst": 0,
+        "visibleWrites": 761,
+        "errors": 0,
+        "cpuMs": 277,
+        "failure": ""
+      },
+      "reductionPct": 72.55755788759727
+    },
+    {
+      "phase": "steady level 60f",
+      "before": {
+        "name": "steady level 60f",
+        "calls": 174044,
+        "traversals": 79291,
+        "names": 80791,
+        "inst": 0,
+        "visibleWrites": 858,
+        "errors": 0,
+        "cpuMs": 263,
+        "failure": ""
+      },
+      "after": {
+        "name": "steady level 60f",
+        "calls": 22004,
+        "traversals": 3271,
+        "names": 4771,
+        "inst": 0,
+        "visibleWrites": 18,
+        "errors": 0,
+        "cpuMs": 84,
+        "failure": ""
+      },
+      "reductionPct": 87.35722001332996
+    },
+    {
+      "phase": "tutorial l1 next x3",
+      "before": {
+        "name": "tutorial l1 next x3",
+        "calls": 9233,
+        "traversals": 3960,
+        "names": 4490,
+        "inst": 0,
+        "visibleWrites": 72,
+        "errors": 0,
+        "cpuMs": 18,
+        "failure": ""
+      },
+      "after": {
+        "name": "tutorial l1 next x3",
+        "calls": 1631,
+        "traversals": 159,
+        "names": 689,
+        "inst": 0,
+        "visibleWrites": 30,
+        "errors": 0,
+        "cpuMs": 9,
+        "failure": ""
+      },
+      "reductionPct": 82.33510235026536
+    },
+    {
+      "phase": "tutorial l1 prev+close",
+      "before": {
+        "name": "tutorial l1 prev+close",
+        "calls": 8634,
+        "traversals": 3957,
+        "names": 3999,
+        "inst": 0,
+        "visibleWrites": 55,
+        "errors": 0,
+        "cpuMs": 16,
+        "failure": ""
+      },
+      "after": {
+        "name": "tutorial l1 prev+close",
+        "calls": 1036,
+        "traversals": 156,
+        "names": 198,
+        "inst": 0,
+        "visibleWrites": 15,
+        "errors": 0,
+        "cpuMs": 13,
+        "failure": ""
+      },
+      "reductionPct": 88.00092656937689
+    },
+    {
+      "phase": "grid card clicks",
+      "before": {
+        "name": "grid card clicks",
+        "calls": 14677,
+        "traversals": 6645,
+        "names": 6705,
+        "inst": 0,
+        "visibleWrites": 81,
+        "errors": 0,
+        "cpuMs": 27,
+        "failure": ""
+      },
+      "after": {
+        "name": "grid card clicks",
+        "calls": 2007,
+        "traversals": 310,
+        "names": 370,
+        "inst": 0,
+        "visibleWrites": 11,
+        "errors": 0,
+        "cpuMs": 14,
+        "failure": ""
+      },
+      "reductionPct": 86.32554336717313
+    },
+    {
+      "phase": "tap suspect +1f",
+      "before": {
+        "name": "tap suspect +1f",
+        "calls": 5685,
+        "traversals": 2638,
+        "names": 2666,
+        "inst": 0,
+        "visibleWrites": 19,
+        "errors": 0,
+        "cpuMs": 12,
+        "failure": ""
+      },
+      "after": {
+        "name": "tap suspect +1f",
+        "calls": 617,
+        "traversals": 104,
+        "names": 132,
+        "inst": 0,
+        "visibleWrites": 5,
+        "errors": 0,
+        "cpuMs": 7,
+        "failure": ""
+      },
+      "reductionPct": 89.14687774846087
+    },
+    {
+      "phase": "click cell(1,1) +1f",
+      "before": {
+        "name": "click cell(1,1) +1f",
+        "calls": 313,
+        "traversals": 50,
+        "names": 40,
+        "inst": 0,
+        "visibleWrites": 15,
+        "errors": 0,
+        "cpuMs": 5,
+        "failure": ""
+      },
+      "after": {
+        "name": "click cell(1,1) +1f",
+        "calls": 313,
+        "traversals": 50,
+        "names": 40,
+        "inst": 0,
+        "visibleWrites": 1,
+        "errors": 0,
+        "cpuMs": 4,
+        "failure": ""
+      },
+      "reductionPct": 0
+    },
+    {
+      "phase": "after place +10f",
+      "before": {
+        "name": "after place +10f",
+        "calls": 28700,
+        "traversals": 13190,
+        "names": 13330,
+        "inst": 0,
+        "visibleWrites": 140,
+        "errors": 0,
+        "cpuMs": 44,
+        "failure": ""
+      },
+      "after": {
+        "name": "after place +10f",
+        "calls": 3360,
+        "traversals": 520,
+        "names": 660,
+        "inst": 0,
+        "visibleWrites": 0,
+        "errors": 0,
+        "cpuMs": 14,
+        "failure": ""
+      },
+      "reductionPct": 88.29268292682927
+    },
+    {
+      "phase": "undo +1f",
+      "before": {
+        "name": "undo +1f",
+        "calls": 5688,
+        "traversals": 2638,
+        "names": 2666,
+        "inst": 0,
+        "visibleWrites": 15,
+        "errors": 0,
+        "cpuMs": 8,
+        "failure": ""
+      },
+      "after": {
+        "name": "undo +1f",
+        "calls": 620,
+        "traversals": 104,
+        "names": 132,
+        "inst": 0,
+        "visibleWrites": 1,
+        "errors": 0,
+        "cpuMs": 8,
+        "failure": ""
+      },
+      "reductionPct": 89.09985935302392
+    },
+    {
+      "phase": "back_confirm +1f",
+      "before": {
+        "name": "back_confirm +1f",
+        "calls": 395,
+        "traversals": 70,
+        "names": 40,
+        "inst": 0,
+        "visibleWrites": 22,
+        "errors": 0,
+        "cpuMs": 6,
+        "failure": ""
+      },
+      "after": {
+        "name": "back_confirm +1f",
+        "calls": 399,
+        "traversals": 70,
+        "names": 40,
+        "inst": 0,
+        "visibleWrites": 10,
+        "errors": 0,
+        "cpuMs": 6,
+        "failure": ""
+      },
+      "reductionPct": -1.0126582278481013
+    },
+    {
+      "phase": "close_modal +1f",
+      "before": {
+        "name": "close_modal +1f",
+        "calls": 3036,
+        "traversals": 1419,
+        "names": 1374,
+        "inst": 0,
+        "visibleWrites": 37,
+        "errors": 0,
+        "cpuMs": 10,
+        "failure": ""
+      },
+      "after": {
+        "name": "close_modal +1f",
+        "calls": 506,
+        "traversals": 152,
+        "names": 107,
+        "inst": 0,
+        "visibleWrites": 25,
+        "errors": 0,
+        "cpuMs": 6,
+        "failure": ""
+      },
+      "reductionPct": 83.33333333333334
+    },
+    {
+      "phase": "solve case_001",
+      "before": {
+        "name": "solve case_001",
+        "calls": 144705,
+        "traversals": 69414,
+        "names": 69856,
+        "inst": 0,
+        "visibleWrites": 390,
+        "errors": 5,
+        "cpuMs": 216,
+        "failure": ""
+      },
+      "after": {
+        "name": "solve case_001",
+        "calls": 102019,
+        "traversals": 48071,
+        "names": 48513,
+        "inst": 0,
+        "visibleWrites": 180,
+        "errors": 5,
+        "cpuMs": 184,
+        "failure": ""
+      },
+      "reductionPct": 29.498635154279395
+    },
+    {
+      "phase": "submit + accuse",
+      "before": {
+        "name": "submit + accuse",
+        "calls": 49396,
+        "traversals": 23196,
+        "names": 23260,
+        "inst": 5,
+        "visibleWrites": 302,
+        "errors": 1,
+        "cpuMs": 75,
+        "failure": ""
+      },
+      "after": {
+        "name": "submit + accuse",
+        "calls": 18328,
+        "traversals": 7658,
+        "names": 7722,
+        "inst": 5,
+        "visibleWrites": 140,
+        "errors": 1,
+        "cpuMs": 45,
+        "failure": ""
+      },
+      "reductionPct": 62.89578103490161
+    },
+    {
+      "phase": "result +30f",
+      "before": {
+        "name": "result +30f",
+        "calls": 86996,
+        "traversals": 39645,
+        "names": 40417,
+        "inst": 0,
+        "visibleWrites": 426,
+        "errors": 0,
+        "cpuMs": 137,
+        "failure": ""
+      },
+      "after": {
+        "name": "result +30f",
+        "calls": 10976,
+        "traversals": 1635,
+        "names": 2407,
+        "inst": 0,
+        "visibleWrites": 6,
+        "errors": 0,
+        "cpuMs": 47,
+        "failure": ""
+      },
+      "reductionPct": 87.38332796910203
+    },
+    {
+      "phase": "pick case_002",
+      "before": {
+        "name": "pick case_002",
+        "calls": 396554,
+        "traversals": 193013,
+        "names": 187161,
+        "inst": 1486,
+        "visibleWrites": 3055,
+        "errors": 11,
+        "cpuMs": 445,
+        "failure": ""
+      },
+      "after": {
+        "name": "pick case_002",
+        "calls": 325438,
+        "traversals": 157457,
+        "names": 151926,
+        "inst": 1486,
+        "visibleWrites": 2965,
+        "errors": 11,
+        "cpuMs": 342,
+        "failure": ""
+      },
+      "reductionPct": 17.93349707732112
+    },
+    {
+      "phase": "case_002 +60f",
+      "before": {
+        "name": "case_002 +60f",
+        "calls": 293568,
+        "traversals": 128757,
+        "names": 130839,
+        "inst": 0,
+        "visibleWrites": 4140,
+        "errors": 0,
+        "cpuMs": 428,
+        "failure": ""
+      },
+      "after": {
+        "name": "case_002 +60f",
+        "calls": 135854,
+        "traversals": 50399,
+        "names": 52481,
+        "inst": 0,
+        "visibleWrites": 3302,
+        "errors": 0,
+        "cpuMs": 181,
+        "failure": ""
+      },
+      "reductionPct": 53.72315783736647
+    },
+    {
+      "phase": "pick case_003",
+      "before": {
+        "name": "pick case_003",
+        "calls": 298062,
+        "traversals": 142540,
+        "names": 142588,
+        "inst": 472,
+        "visibleWrites": 1689,
+        "errors": 0,
+        "cpuMs": 308,
+        "failure": ""
+      },
+      "after": {
+        "name": "pick case_003",
+        "calls": 232620,
+        "traversals": 109990,
+        "names": 110031,
+        "inst": 472,
+        "visibleWrites": 1620,
+        "errors": 0,
+        "cpuMs": 235,
+        "failure": ""
+      },
+      "reductionPct": 21.955834692111036
+    },
+    {
+      "phase": "case_003 +60f",
+      "before": {
+        "name": "case_003 +60f",
+        "calls": 256112,
+        "traversals": 112999,
+        "names": 114795,
+        "inst": 0,
+        "visibleWrites": 2982,
+        "errors": 0,
+        "cpuMs": 383,
+        "failure": ""
+      },
+      "after": {
+        "name": "case_003 +60f",
+        "calls": 100068,
+        "traversals": 35309,
+        "names": 37105,
+        "inst": 0,
+        "visibleWrites": 2144,
+        "errors": 0,
+        "cpuMs": 180,
+        "failure": ""
+      },
+      "reductionPct": 60.928031486224775
+    },
+    {
+      "phase": "pick case_004",
+      "before": {
+        "name": "pick case_004",
+        "calls": 282135,
+        "traversals": 134647,
+        "names": 134685,
+        "inst": 446,
+        "visibleWrites": 1643,
+        "errors": 0,
+        "cpuMs": 320,
+        "failure": ""
+      },
+      "after": {
+        "name": "pick case_004",
+        "calls": 216691,
+        "traversals": 102097,
+        "names": 102128,
+        "inst": 446,
+        "visibleWrites": 1572,
+        "errors": 0,
+        "cpuMs": 223,
+        "failure": ""
+      },
+      "reductionPct": 23.19598773636734
+    },
+    {
+      "phase": "case_004 +60f",
+      "before": {
+        "name": "case_004 +60f",
+        "calls": 255831,
+        "traversals": 112913,
+        "names": 114709,
+        "inst": 0,
+        "visibleWrites": 2973,
+        "errors": 0,
+        "cpuMs": 361,
+        "failure": ""
+      },
+      "after": {
+        "name": "case_004 +60f",
+        "calls": 99783,
+        "traversals": 35223,
+        "names": 37019,
+        "inst": 0,
+        "visibleWrites": 2133,
+        "errors": 0,
+        "cpuMs": 164,
+        "failure": ""
+      },
+      "reductionPct": 60.99651723207899
+    },
+    {
+      "phase": "settle unlock +3f",
+      "before": {
+        "name": "settle unlock +3f",
+        "calls": 8946,
+        "traversals": 3960,
+        "names": 4032,
+        "inst": 0,
+        "visibleWrites": 60,
+        "errors": 0,
+        "cpuMs": 26,
+        "failure": ""
+      },
+      "after": {
+        "name": "settle unlock +3f",
+        "calls": 1360,
+        "traversals": 159,
+        "names": 231,
+        "inst": 0,
+        "visibleWrites": 18,
+        "errors": 0,
+        "cpuMs": 26,
+        "failure": ""
+      },
+      "reductionPct": 84.79767493852
+    },
+    {
+      "phase": "select arrows page1",
+      "before": {
+        "name": "select arrows page1",
+        "calls": 5762,
+        "traversals": 2638,
+        "names": 2666,
+        "inst": 0,
+        "visibleWrites": 28,
+        "errors": 0,
+        "cpuMs": 9,
+        "failure": ""
+      },
+      "after": {
+        "name": "select arrows page1",
+        "calls": 694,
+        "traversals": 104,
+        "names": 132,
+        "inst": 0,
+        "visibleWrites": 0,
+        "errors": 0,
+        "cpuMs": 4,
+        "failure": ""
+      },
+      "reductionPct": 87.95557098229781
+    },
+    {
+      "phase": "select arrows next",
+      "before": {
+        "name": "select arrows next",
+        "calls": 5762,
+        "traversals": 2638,
+        "names": 2666,
+        "inst": 0,
+        "visibleWrites": 28,
+        "errors": 0,
+        "cpuMs": 7,
+        "failure": ""
+      },
+      "after": {
+        "name": "select arrows next",
+        "calls": 694,
+        "traversals": 104,
+        "names": 132,
+        "inst": 0,
+        "visibleWrites": 0,
+        "errors": 0,
+        "cpuMs": 3,
+        "failure": ""
+      },
+      "reductionPct": 87.95557098229781
+    },
+    {
+      "phase": "home",
+      "before": {
+        "name": "home",
+        "calls": 2881,
+        "traversals": 1319,
+        "names": 1333,
+        "inst": 0,
+        "visibleWrites": 14,
+        "errors": 0,
+        "cpuMs": 5,
+        "failure": ""
+      },
+      "after": {
+        "name": "home",
+        "calls": 347,
+        "traversals": 52,
+        "names": 66,
+        "inst": 0,
+        "visibleWrites": 0,
+        "errors": 0,
+        "cpuMs": 3,
+        "failure": ""
+      },
+      "reductionPct": 87.95557098229781
+    },
+    {
+      "phase": "home +30f",
+      "before": {
+        "name": "home +30f",
+        "calls": 87375,
+        "traversals": 39678,
+        "names": 40571,
+        "inst": 0,
+        "visibleWrites": 423,
+        "errors": 0,
+        "cpuMs": 150,
+        "failure": ""
+      },
+      "after": {
+        "name": "home +30f",
+        "calls": 11355,
+        "traversals": 1668,
+        "names": 2561,
+        "inst": 0,
+        "visibleWrites": 3,
+        "errors": 0,
+        "cpuMs": 54,
+        "failure": ""
+      },
+      "reductionPct": 87.00429184549357
+    }
+  ],
+  "baselineWarnings": 43,
+  "optimizedWarnings": 43,
+  "newWarningMessages": [],
+  "limitations": [
+    "离线假引擎，不是原神实机；不能证明帧率、加载秒数或像素级一致",
+    "快照排除被删teach子树，并归一化它移除后的兄弟序号",
+    "不支持的引擎API和旧诊断警告按基线对照保留，不视为通过",
+    "构建标记保留源脚本v635；版本身份使用文件名和SHA256"
+  ],
+  "snapshotLines": 222030,
+  "warningClassesAndCountsEqualAfterNormalizingSourceLocation": true,
+  "warningExplanation": "原新均43条；唯一文本差别为精简后的脚本文件名和行号，归一化后类别与数量一致。",
+  "fullPuzzleWinConfirmed": false,
+  "firstLevelFinalState": "filled",
+  "testInterpreter": "Lua 5.4.6; 另有Lua 5.3编译及chunk执行检查"
+}

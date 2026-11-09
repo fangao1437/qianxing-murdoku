@@ -1,0 +1,662 @@
+{
+  "base": "651_撕边修复.gil",
+  "inputSha256": "c903960185d1c4b288f7a9d12a456297235120b8c6a33c9b264187db297a3440",
+  "output": "652_分类整理优化.gil",
+  "outputSha256": "57aefad84dc151d0f80fd3102ac7d1b5fbb2fb5fb1988c1d5afe8e8a48a727e2",
+  "inputBytes": 5659656,
+  "outputBytes": 5678019,
+  "scriptBytesBefore": 617032,
+  "scriptBytesAfter": 631282,
+  "recordsBefore": 6324,
+  "recordsAfter": 6330,
+  "addedGroups": [
+    {
+      "id": 1073757837,
+      "name": "grp652.select.tear.tr.paper",
+      "parent": "art642.select.board",
+      "count": 141
+    },
+    {
+      "id": 1073757838,
+      "name": "grp652.select.tear.bl.paper",
+      "parent": "art642.select.board",
+      "count": 79
+    },
+    {
+      "id": 1073757839,
+      "name": "grp652.select.tear.tr.white",
+      "parent": "art642.select.board",
+      "count": 183
+    },
+    {
+      "id": 1073757840,
+      "name": "grp652.select.tear.tr.joint",
+      "parent": "art642.select.board",
+      "count": 17
+    },
+    {
+      "id": 1073757841,
+      "name": "grp652.select.tear.bl.white",
+      "parent": "art642.select.board",
+      "count": 150
+    },
+    {
+      "id": 1073757842,
+      "name": "grp652.select.tear.bl.joint",
+      "parent": "art642.select.board",
+      "count": 21
+    }
+  ],
+  "movedControls": 591,
+  "changedParents": 1,
+  "retainedByteIdentical": 5732,
+  "exactRoutes": 226,
+  "checks": {
+    "diskReread": true,
+    "roundtrip": true,
+    "allOriginalVisualAndInteractionFieldsUnchanged": true,
+    "flattenedOriginalDrawOrderUnchanged": true,
+    "noDanglingIds": true,
+    "bidirectionalTree": true,
+    "scriptEqualsDeliveredLua": true,
+    "trailerUnchanged": true,
+    "nonUiTopFieldsUnchanged": true
+  },
+  "limitations": [
+    "离线验证不能代替实机视觉与点击验收",
+    "父级门控不减少引擎内部渲染成本的幅度，须实机量测",
+    "烘焙动态容器仍保留第一次后代显示初始化"
+  ],
+  "offline": {
+    "stateLinesBefore": 183655,
+    "stateLinesAfter": 183655,
+    "stateDifferences": 0,
+    "phaseCount": 29,
+    "interopBefore": 1617963,
+    "interopAfter": 1430368,
+    "warningsBefore": 43,
+    "warningsAfter": 43,
+    "phases": [
+      {
+        "phase": "compile+chunk",
+        "before": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "after": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "interopChangePercent": 0
+      },
+      {
+        "phase": "OnInit+OnStart",
+        "before": [
+          126315,
+          63475,
+          59002,
+          494,
+          1082,
+          26
+        ],
+        "after": [
+          103762,
+          52224,
+          47700,
+          494,
+          1082,
+          26
+        ],
+        "interopChangePercent": -17.855
+      },
+      {
+        "phase": "first 30 frames",
+        "before": [
+          51425,
+          20648,
+          21267,
+          171,
+          426,
+          0
+        ],
+        "after": [
+          53899,
+          21600,
+          22151,
+          171,
+          420,
+          0
+        ],
+        "interopChangePercent": 4.811
+      },
+      {
+        "phase": "next 120 frames",
+        "before": [
+          75162,
+          30547,
+          30629,
+          1615,
+          20,
+          0
+        ],
+        "after": [
+          78686,
+          32272,
+          32354,
+          1615,
+          20,
+          0
+        ],
+        "interopChangePercent": 4.689
+      },
+      {
+        "phase": "steady home 60f",
+        "before": [
+          2995,
+          60,
+          0,
+          0,
+          0,
+          0
+        ],
+        "after": [
+          2635,
+          60,
+          0,
+          0,
+          0,
+          0
+        ],
+        "interopChangePercent": -12.02
+      },
+      {
+        "phase": "go levelselect",
+        "before": [
+          65140,
+          31201,
+          31340,
+          0,
+          921,
+          0
+        ],
+        "after": [
+          53283,
+          25299,
+          25391,
+          0,
+          921,
+          0
+        ],
+        "interopChangePercent": -18.202
+      },
+      {
+        "phase": "levelselect +30f",
+        "before": [
+          72113,
+          29213,
+          30173,
+          0,
+          767,
+          0
+        ],
+        "after": [
+          62342,
+          24038,
+          24943,
+          0,
+          766,
+          0
+        ],
+        "interopChangePercent": -13.55
+      },
+      {
+        "phase": "pick case_001",
+        "before": [
+          112987,
+          54588,
+          55087,
+          412,
+          1109,
+          0
+        ],
+        "after": [
+          76132,
+          36212,
+          36613,
+          412,
+          1109,
+          0
+        ],
+        "interopChangePercent": -32.619
+      },
+      {
+        "phase": "case_001 +30f",
+        "before": [
+          41109,
+          13608,
+          14485,
+          0,
+          840,
+          0
+        ],
+        "after": [
+          42176,
+          14028,
+          14897,
+          0,
+          839,
+          0
+        ],
+        "interopChangePercent": 2.596
+      },
+      {
+        "phase": "case_001 +120f",
+        "before": [
+          115721,
+          36706,
+          39706,
+          0,
+          761,
+          0
+        ],
+        "after": [
+          117419,
+          37518,
+          40518,
+          0,
+          761,
+          0
+        ],
+        "interopChangePercent": 1.467
+      },
+      {
+        "phase": "steady level 60f",
+        "before": [
+          22004,
+          3271,
+          4771,
+          0,
+          18,
+          0
+        ],
+        "after": [
+          21644,
+          3271,
+          4771,
+          0,
+          18,
+          0
+        ],
+        "interopChangePercent": -1.636
+      },
+      {
+        "phase": "tutorial l1 next x3",
+        "before": [
+          1631,
+          159,
+          689,
+          0,
+          30,
+          0
+        ],
+        "after": [
+          1613,
+          159,
+          689,
+          0,
+          30,
+          0
+        ],
+        "interopChangePercent": -1.104
+      },
+      {
+        "phase": "tutorial l1 prev+close",
+        "before": [
+          1036,
+          156,
+          198,
+          0,
+          15,
+          0
+        ],
+        "after": [
+          1019,
+          156,
+          198,
+          0,
+          14,
+          0
+        ],
+        "interopChangePercent": -1.641
+      },
+      {
+        "phase": "grid card clicks",
+        "before": [
+          2005,
+          310,
+          370,
+          0,
+          11,
+          0
+        ],
+        "after": [
+          1980,
+          310,
+          370,
+          0,
+          11,
+          0
+        ],
+        "interopChangePercent": -1.247
+      },
+      {
+        "phase": "tap suspect +1f",
+        "before": [
+          615,
+          104,
+          132,
+          0,
+          5,
+          0
+        ],
+        "after": [
+          610,
+          104,
+          132,
+          0,
+          5,
+          0
+        ],
+        "interopChangePercent": -0.813
+      },
+      {
+        "phase": "click cell(1,1) +1f",
+        "before": [
+          313,
+          50,
+          40,
+          0,
+          1,
+          0
+        ],
+        "after": [
+          308,
+          50,
+          40,
+          0,
+          1,
+          0
+        ],
+        "interopChangePercent": -1.597
+      },
+      {
+        "phase": "after place +10f",
+        "before": [
+          3360,
+          520,
+          660,
+          0,
+          0,
+          0
+        ],
+        "after": [
+          3310,
+          520,
+          660,
+          0,
+          0,
+          0
+        ],
+        "interopChangePercent": -1.488
+      },
+      {
+        "phase": "undo +1f",
+        "before": [
+          620,
+          104,
+          132,
+          0,
+          1,
+          0
+        ],
+        "after": [
+          615,
+          104,
+          132,
+          0,
+          1,
+          0
+        ],
+        "interopChangePercent": -0.806
+      },
+      {
+        "phase": "back_confirm +1f",
+        "before": [
+          399,
+          70,
+          40,
+          0,
+          10,
+          0
+        ],
+        "after": [
+          392,
+          70,
+          40,
+          0,
+          9,
+          0
+        ],
+        "interopChangePercent": -1.754
+      },
+      {
+        "phase": "close_modal +1f",
+        "before": [
+          506,
+          152,
+          107,
+          0,
+          25,
+          0
+        ],
+        "after": [
+          500,
+          152,
+          107,
+          0,
+          24,
+          0
+        ],
+        "interopChangePercent": -1.186
+      },
+      {
+        "phase": "solve case_001",
+        "before": [
+          100165,
+          47168,
+          47610,
+          0,
+          180,
+          5
+        ],
+        "after": [
+          74150,
+          34200,
+          34638,
+          0,
+          180,
+          5
+        ],
+        "interopChangePercent": -25.972
+      },
+      {
+        "phase": "submit + accuse",
+        "before": [
+          18070,
+          7529,
+          7593,
+          5,
+          140,
+          1
+        ],
+        "after": [
+          4994,
+          1026,
+          1090,
+          5,
+          137,
+          1
+        ],
+        "interopChangePercent": -72.363
+      },
+      {
+        "phase": "result +30f",
+        "before": [
+          10976,
+          1635,
+          2407,
+          0,
+          6,
+          0
+        ],
+        "after": [
+          10796,
+          1635,
+          2407,
+          0,
+          6,
+          0
+        ],
+        "interopChangePercent": -1.64
+      },
+      {
+        "phase": "pick case_002",
+        "before": [
+          319077,
+          154227,
+          148825,
+          1486,
+          2954,
+          11
+        ],
+        "after": [
+          257112,
+          123246,
+          117640,
+          1486,
+          2953,
+          11
+        ],
+        "interopChangePercent": -19.42
+      },
+      {
+        "phase": "case_002 +60f",
+        "before": [
+          134777,
+          49868,
+          51950,
+          0,
+          3302,
+          0
+        ],
+        "after": [
+          138070,
+          51092,
+          53170,
+          0,
+          3301,
+          0
+        ],
+        "interopChangePercent": 2.443
+      },
+      {
+        "phase": "pick case_003",
+        "before": [
+          228460,
+          107921,
+          107962,
+          472,
+          1620,
+          0
+        ],
+        "after": [
+          209985,
+          98543,
+          98486,
+          472,
+          1620,
+          0
+        ],
+        "interopChangePercent": -8.087
+      },
+      {
+        "phase": "case_003 +60f",
+        "before": [
+          99264,
+          34912,
+          36708,
+          0,
+          2144,
+          0
+        ],
+        "after": [
+          101373,
+          35724,
+          37520,
+          0,
+          2143,
+          0
+        ],
+        "interopChangePercent": 2.125
+      },
+      {
+        "phase": "home",
+        "before": [
+          347,
+          52,
+          66,
+          0,
+          0,
+          0
+        ],
+        "after": [
+          342,
+          52,
+          66,
+          0,
+          0,
+          0
+        ],
+        "interopChangePercent": -1.441
+      },
+      {
+        "phase": "home +30f",
+        "before": [
+          11371,
+          1668,
+          2561,
+          0,
+          5,
+          0
+        ],
+        "after": [
+          11221,
+          1668,
+          2561,
+          0,
+          5,
+          0
+        ],
+        "interopChangePercent": -1.319
+      }
+    ]
+  }
+}

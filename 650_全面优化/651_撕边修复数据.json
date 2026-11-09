@@ -1,0 +1,57 @@
+{
+  "base": "650_优化版.gil",
+  "baseSha256": "393db254fc7635361c0fc8269190c886d7d77ced45bb337a8b19599a2a0c4a22",
+  "output": "651_撕边修复.gil",
+  "outputSha256": "c903960185d1c4b288f7a9d12a456297235120b8c6a33c9b264187db297a3440",
+  "inputBytes": 5767510,
+  "outputBytes": 5659656,
+  "records": {
+    "before": 6453,
+    "removed": 720,
+    "added": 591,
+    "after": 6324
+  },
+  "scriptBytesUnchanged": 617032,
+  "retainedRecordBytesUnchanged": 5731,
+  "changedParentRecords": [
+    1073754872,
+    1073754877
+  ],
+  "designTrace": {
+    "design": [
+      1920,
+      1080
+    ],
+    "trPoints": 206,
+    "blPoints": 123,
+    "extendDesignPx": 64,
+    "resampleStepDesignPx": 7
+  },
+  "rebuild": {
+    "whiteWidthDesignPx": 8,
+    "segmentOverlapDesignPx": 5,
+    "jointSizeDesignPx": 11,
+    "paperStepDesignPx": 3.5,
+    "trSegments": 183,
+    "blSegments": 151,
+    "layers": {
+      "paperTR": 141,
+      "paperBL": 79,
+      "whiteTR": 183,
+      "whiteBL": 150,
+      "joint": 38
+    }
+  },
+  "layerOrder": "board 子列表与全局记录表同序：tr/bl 纸片 → tr/bl 白线 → 折点接头",
+  "checks": {
+    "inputShaLocked": true,
+    "scriptUnchanged": true,
+    "retainedRecordsByteIdentical": true,
+    "nonUiNonScriptFieldsUnchanged": true,
+    "trailerUnchanged": true,
+    "noDanglingChildIds": true,
+    "noOldTearLayers": true,
+    "noExternalRefsToRemoved": true,
+    "diskReread": true
+  }
+}

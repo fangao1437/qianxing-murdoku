@@ -1,0 +1,548 @@
+{
+  "base": "653_全树分类优化.gil",
+  "inputSha256": "2be12c5f544cb866deeeba625f2ba09ff9254ada5b542bbb3742b99875cff9ec",
+  "output": "654_退出拦截修复.gil",
+  "outputSha256": "fd8b3e7d422f5fa626b103e5cf993fad68bdb926d8e84e6bb70f44dc4d8f68d3",
+  "inputBytes": 5685004,
+  "outputBytes": 5685629,
+  "recordsBefore": 6340,
+  "recordsAfter": 6340,
+  "retainedBlockers": [
+    "block640.modal",
+    "block640.confirm",
+    "block640.home",
+    "block640.l1",
+    "block640.l2"
+  ],
+  "removedRecords": 0,
+  "changedControlRecords": 10,
+  "nonTargetRecordsUnchanged": 6330,
+  "scriptBytesBefore": 631362,
+  "scriptBytesAfter": 631982,
+  "cause": "exit_menu_go 清空 modal 并切到 select 后，on_back 回调又设置 modal.kind=levelselect，导致 block640.modal 持续启用。",
+  "fixes": [
+    "on_back 统一进入独立选关页并清空 modal/pending",
+    "5组拦截父级默认隐藏，保留子级显示与几何层级",
+    "5个拦截按钮音效ID设为0",
+    "父级统一控制整树显隐，保留原有射线补扫和置顶顺序"
+  ],
+  "checks": {
+    "diskReread": true,
+    "roundtrip": true,
+    "expectedBodyExact": true,
+    "recordIdsUnchanged": true,
+    "nonTargetRecordsByteIdentical": true,
+    "targetArtGeometryHierarchyUnchanged": true,
+    "trailerUnchanged": true
+  },
+  "limitation": "离线回归不替代实机点击命中、听感及视觉验收；0音效ID需实机确认静音。",
+  "regression": {
+    "baselineReproducedFailures": [
+      "FAIL exit modal cleared",
+      "FAIL modal parent visible=false"
+    ],
+    "targetedSummary": "passed=133 failed=0",
+    "targetedAssertions": [
+      "PASS modal parent visible=true",
+      "PASS modal child remains visible",
+      "PASS modal effective hit follows parent",
+      "PASS modal silent",
+      "PASS modal foreground above blocker",
+      "PASS exit screen select",
+      "PASS exit modal cleared",
+      "PASS exit pending cleared",
+      "PASS modal parent visible=false",
+      "PASS modal child remains visible",
+      "PASS modal effective hit follows parent",
+      "PASS modal silent",
+      "PASS enter case_002 after exit",
+      "PASS modal parent visible=false",
+      "PASS modal child remains visible",
+      "PASS modal effective hit follows parent",
+      "PASS modal silent",
+      "PASS modal parent visible=false",
+      "PASS modal child remains visible",
+      "PASS modal effective hit follows parent",
+      "PASS modal silent",
+      "PASS confirm parent visible=true",
+      "PASS confirm child remains visible",
+      "PASS confirm effective hit follows parent",
+      "PASS confirm silent",
+      "PASS hex.ok above confirm",
+      "PASS hex.no above confirm",
+      "PASS hit.ok above confirm",
+      "PASS hit.no above confirm",
+      "PASS confirm parent visible=false",
+      "PASS confirm child remains visible",
+      "PASS confirm effective hit follows parent",
+      "PASS confirm silent",
+      "PASS confirm parent visible=true",
+      "PASS confirm child remains visible",
+      "PASS confirm effective hit follows parent",
+      "PASS confirm silent",
+      "PASS hex.ok above confirm",
+      "PASS hex.no above confirm",
+      "PASS hit.ok above confirm",
+      "PASS hit.no above confirm",
+      "PASS confirm parent visible=false",
+      "PASS confirm child remains visible",
+      "PASS confirm effective hit follows parent",
+      "PASS confirm silent",
+      "PASS home parent visible=true",
+      "PASS home child remains visible",
+      "PASS home effective hit follows parent",
+      "PASS home silent",
+      "PASS home tutorial above blocker",
+      "PASS home parent visible=false",
+      "PASS home child remains visible",
+      "PASS home effective hit follows parent",
+      "PASS home silent",
+      "PASS l1 parent visible=true",
+      "PASS l1 child remains visible",
+      "PASS l1 effective hit follows parent",
+      "PASS l1 silent",
+      "PASS l1 tutorial above blocker",
+      "PASS l1 parent visible=false",
+      "PASS l1 child remains visible",
+      "PASS l1 effective hit follows parent",
+      "PASS l1 silent",
+      "PASS l2 parent visible=true",
+      "PASS l2 child remains visible",
+      "PASS l2 effective hit follows parent",
+      "PASS l2 silent",
+      "PASS l2 tutorial above blocker",
+      "PASS l2 parent visible=false",
+      "PASS l2 child remains visible",
+      "PASS l2 effective hit follows parent",
+      "PASS l2 silent",
+      "PASS modal parent visible=true",
+      "PASS modal child remains visible",
+      "PASS modal effective hit follows parent",
+      "PASS modal silent",
+      "PASS modal parent visible=false",
+      "PASS modal child remains visible",
+      "PASS modal effective hit follows parent",
+      "PASS modal silent",
+      "PASS modal parent visible=true",
+      "PASS modal child remains visible",
+      "PASS modal effective hit follows parent",
+      "PASS modal silent",
+      "PASS modal parent visible=false",
+      "PASS modal child remains visible",
+      "PASS modal effective hit follows parent",
+      "PASS modal silent",
+      "PASS modal parent visible=true",
+      "PASS modal child remains visible",
+      "PASS modal effective hit follows parent",
+      "PASS modal silent",
+      "PASS modal parent visible=false",
+      "PASS modal child remains visible",
+      "PASS modal effective hit follows parent",
+      "PASS modal silent",
+      "PASS modal parent visible=true",
+      "PASS modal child remains visible",
+      "PASS modal effective hit follows parent",
+      "PASS modal silent",
+      "PASS modal parent visible=false",
+      "PASS modal child remains visible",
+      "PASS modal effective hit follows parent",
+      "PASS modal silent",
+      "PASS modal parent visible=true",
+      "PASS modal child remains visible",
+      "PASS modal effective hit follows parent",
+      "PASS modal silent",
+      "PASS modal parent visible=false",
+      "PASS modal child remains visible",
+      "PASS modal effective hit follows parent",
+      "PASS modal silent",
+      "PASS enter case_003",
+      "PASS modal parent visible=false",
+      "PASS modal child remains visible",
+      "PASS modal effective hit follows parent",
+      "PASS modal silent",
+      "PASS confirm parent visible=false",
+      "PASS confirm child remains visible",
+      "PASS confirm effective hit follows parent",
+      "PASS confirm silent",
+      "PASS home parent visible=false",
+      "PASS home child remains visible",
+      "PASS home effective hit follows parent",
+      "PASS home silent",
+      "PASS l1 parent visible=false",
+      "PASS l1 child remains visible",
+      "PASS l1 effective hit follows parent",
+      "PASS l1 silent",
+      "PASS l2 parent visible=false",
+      "PASS l2 child remains visible",
+      "PASS l2 effective hit follows parent",
+      "PASS l2 silent"
+    ],
+    "baseline": {
+      "stages": 29,
+      "interop": 1439825,
+      "errors": 43,
+      "failedPhases": 0,
+      "firstLevelStatus": "filled",
+      "phases": [
+        {
+          "phase": "compile+chunk",
+          "interop": 0,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "OnInit+OnStart",
+          "interop": 103992,
+          "errors": 26,
+          "failed": false
+        },
+        {
+          "phase": "first 30 frames",
+          "interop": 54057,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "next 120 frames",
+          "interop": 78966,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "steady home 60f",
+          "interop": 2695,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "go levelselect",
+          "interop": 53365,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "levelselect +30f",
+          "interop": 62469,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "pick case_001",
+          "interop": 76307,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "case_001 +30f",
+          "interop": 42237,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "case_001 +120f",
+          "interop": 117659,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "steady level 60f",
+          "interop": 21704,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "tutorial l1 next x3",
+          "interop": 1616,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "tutorial l1 prev+close",
+          "interop": 1022,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "grid card clicks",
+          "interop": 1980,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "tap suspect +1f",
+          "interop": 610,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "click cell(1,1) +1f",
+          "interop": 308,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "after place +10f",
+          "interop": 3310,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "undo +1f",
+          "interop": 615,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "back_confirm +1f",
+          "interop": 393,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "close_modal +1f",
+          "interop": 502,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "solve case_001",
+          "interop": 74250,
+          "errors": 5,
+          "failed": false
+        },
+        {
+          "phase": "submit + accuse",
+          "interop": 5001,
+          "errors": 1,
+          "failed": false
+        },
+        {
+          "phase": "result +30f",
+          "interop": 10826,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "pick case_002",
+          "interop": 259231,
+          "errors": 11,
+          "failed": false
+        },
+        {
+          "phase": "case_002 +60f",
+          "interop": 138281,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "pick case_003",
+          "interop": 215363,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "case_003 +60f",
+          "interop": 101503,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "home",
+          "interop": 342,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "home +30f",
+          "interop": 11221,
+          "errors": 0,
+          "failed": false
+        }
+      ]
+    },
+    "fixed": {
+      "stages": 29,
+      "interop": 1440490,
+      "errors": 43,
+      "failedPhases": 0,
+      "firstLevelStatus": "filled",
+      "phases": [
+        {
+          "phase": "compile+chunk",
+          "interop": 0,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "OnInit+OnStart",
+          "interop": 103992,
+          "errors": 26,
+          "failed": false
+        },
+        {
+          "phase": "first 30 frames",
+          "interop": 54202,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "next 120 frames",
+          "interop": 77764,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "steady home 60f",
+          "interop": 2995,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "go levelselect",
+          "interop": 53370,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "levelselect +30f",
+          "interop": 62619,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "pick case_001",
+          "interop": 76312,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "case_001 +30f",
+          "interop": 42387,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "case_001 +120f",
+          "interop": 118259,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "steady level 60f",
+          "interop": 22004,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "tutorial l1 next x3",
+          "interop": 1631,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "tutorial l1 prev+close",
+          "interop": 1037,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "grid card clicks",
+          "interop": 2005,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "tap suspect +1f",
+          "interop": 615,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "click cell(1,1) +1f",
+          "interop": 313,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "after place +10f",
+          "interop": 3360,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "undo +1f",
+          "interop": 620,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "back_confirm +1f",
+          "interop": 398,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "close_modal +1f",
+          "interop": 507,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "solve case_001",
+          "interop": 74325,
+          "errors": 5,
+          "failed": false
+        },
+        {
+          "phase": "submit + accuse",
+          "interop": 5061,
+          "errors": 1,
+          "failed": false
+        },
+        {
+          "phase": "result +30f",
+          "interop": 10976,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "pick case_002",
+          "interop": 258618,
+          "errors": 11,
+          "failed": false
+        },
+        {
+          "phase": "case_002 +60f",
+          "interop": 138581,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "pick case_003",
+          "interop": 215018,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "case_003 +60f",
+          "interop": 101803,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "home",
+          "interop": 347,
+          "errors": 0,
+          "failed": false
+        },
+        {
+          "phase": "home +30f",
+          "interop": 11371,
+          "errors": 0,
+          "failed": false
+        }
+      ]
+    },
+    "engineLimitations": "模拟验证父级显隐及相对层序，不等于实机像素射线测试；音效验证为ID=0字段检查。"
+  }
+}

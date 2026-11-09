@@ -1,0 +1,481 @@
+{
+  "base": "652_分类整理优化.gil",
+  "inputSha256": "57aefad84dc151d0f80fd3102ac7d1b5fbb2fb5fb1988c1d5afe8e8a48a727e2",
+  "output": "653_全树分类优化.gil",
+  "outputSha256": "2be12c5f544cb866deeeba625f2ba09ff9254ada5b542bbb3742b99875cff9ec",
+  "inputBytes": 5678019,
+  "outputBytes": 5685004,
+  "scriptBytesBefore": 631282,
+  "scriptBytesAfter": 631362,
+  "recordsBefore": 6330,
+  "recordsAfter": 6340,
+  "addedGroups": [
+    {
+      "id": 1073757843,
+      "name": "grp653.static.1.art641.home",
+      "parent": "art641.home",
+      "parentId": 1073754771,
+      "count": 12
+    },
+    {
+      "id": 1073757844,
+      "name": "grp653.static.1.art642.select.backdrop",
+      "parent": "art642.select.backdrop",
+      "parentId": 1073754871,
+      "count": 323
+    },
+    {
+      "id": 1073757845,
+      "name": "grp653.static.1.art642.select.paper",
+      "parent": "art642.select.paper",
+      "parentId": 1073754873,
+      "count": 42
+    },
+    {
+      "id": 1073757846,
+      "name": "grp653.static.1.art642.select.thread",
+      "parent": "art642.select.thread",
+      "parentId": 1073754874,
+      "count": 22
+    },
+    {
+      "id": 1073757847,
+      "name": "grp653.static.1.art642.select.lighting",
+      "parent": "art642.select.lighting",
+      "parentId": 1073754875,
+      "count": 4
+    },
+    {
+      "id": 1073757848,
+      "name": "grp653.static.1.art642.select.frames",
+      "parent": "art642.select.frames",
+      "parentId": 1073754876,
+      "count": 16
+    },
+    {
+      "id": 1073757849,
+      "name": "grp653.static.1.art642.select.buttons",
+      "parent": "art642.select.buttons",
+      "parentId": 1073754877,
+      "count": 7
+    },
+    {
+      "id": 1073757850,
+      "name": "grp653.static.1.art641.select",
+      "parent": "art641.select",
+      "parentId": 1073754772,
+      "count": 40
+    },
+    {
+      "id": 1073757851,
+      "name": "grp653.static.1.art641.game",
+      "parent": "art641.game",
+      "parentId": 1073754773,
+      "count": 45
+    },
+    {
+      "id": 1073757852,
+      "name": "grp653.static.1.labels",
+      "parent": "labels",
+      "parentId": 1073746110,
+      "count": 7
+    }
+  ],
+  "movedControls": 518,
+  "changedParents": 10,
+  "retainedRecordCount": 5802,
+  "exactRoutes": 227,
+  "exclusions": {
+    "tutorialTrees": true,
+    "assetsRows": true,
+    "stage": true,
+    "boardCellsAndFurniture": true,
+    "modalAndHitAreas": true,
+    "templates": true,
+    "directGetChildNames": [
+      "assets",
+      "face",
+      "verdict_ring",
+      "hold_ring",
+      "stage",
+      "board.bg"
+    ]
+  },
+  "checks": {
+    "diskReread": true,
+    "roundtrip": true,
+    "originalVisualAndInteractionFieldsUnchanged": true,
+    "flattenedOriginalDrawOrderUnchanged": true,
+    "noDanglingIds": true,
+    "bidirectionalTree": true,
+    "scriptEqualsDeliveredLua": true,
+    "trailerUnchanged": true
+  },
+  "limitations": [
+    "离线验证不能代替实机视觉与点击验收",
+    "分类父级主要减少查找/显隐调用，不等同于同等幅度的渲染成本下降",
+    "教程与动态控件未重挂，保留原直接子列表语义"
+  ],
+  "offline": {
+    "scene": "开局→首页→选关→第一关完整交互→第二关→第三关→回首页",
+    "phaseCount": 29,
+    "firstLevelStatus": {
+      "base": "filled",
+      "new": "filled"
+    },
+    "totalInterop": {
+      "base": 1435291,
+      "new": 1430929,
+      "delta": -4362,
+      "pct": -0.304,
+      "baseGet": 597662,
+      "newGet": 595433,
+      "baseName": 601613,
+      "newName": 599364
+    },
+    "totalGetChildrenOrGetChild": {
+      "base": 597662,
+      "new": 595433,
+      "delta": -2229
+    },
+    "totalNameReads": {
+      "base": 601613,
+      "new": 599364,
+      "delta": -2249
+    },
+    "stateLinesBase": 6839,
+    "stateLinesNew": 6839,
+    "canonicalStateDifferences": 0,
+    "errors": {
+      "base": 43,
+      "new": 43
+    },
+    "phases": [
+      {
+        "phase": "compile+chunk",
+        "baseInterop": 0,
+        "newInterop": 0,
+        "delta": 0,
+        "changePercent": null,
+        "baseErrors": 0,
+        "newErrors": 0,
+        "baseInstances": 0,
+        "newInstances": 0
+      },
+      {
+        "phase": "OnInit+OnStart",
+        "baseInterop": 103762,
+        "newInterop": 103992,
+        "delta": 230,
+        "changePercent": 0.222,
+        "baseErrors": 26,
+        "newErrors": 26,
+        "baseInstances": 494,
+        "newInstances": 494
+      },
+      {
+        "phase": "first 30 frames",
+        "baseInterop": 53929,
+        "newInterop": 54049,
+        "delta": 120,
+        "changePercent": 0.223,
+        "baseErrors": 0,
+        "newErrors": 0,
+        "baseInstances": 171,
+        "newInstances": 171
+      },
+      {
+        "phase": "next 120 frames",
+        "baseInterop": 76884,
+        "newInterop": 77044,
+        "delta": 160,
+        "changePercent": 0.208,
+        "baseErrors": 0,
+        "newErrors": 0,
+        "baseInstances": 1615,
+        "newInstances": 1615
+      },
+      {
+        "phase": "steady home 60f",
+        "baseInterop": 2635,
+        "newInterop": 2635,
+        "delta": 0,
+        "changePercent": 0,
+        "baseErrors": 0,
+        "newErrors": 0,
+        "baseInstances": 0,
+        "newInstances": 0
+      },
+      {
+        "phase": "go levelselect",
+        "baseInterop": 53283,
+        "newInterop": 53363,
+        "delta": 80,
+        "changePercent": 0.15,
+        "baseErrors": 0,
+        "newErrors": 0,
+        "baseInstances": 0,
+        "newInstances": 0
+      },
+      {
+        "phase": "levelselect +30f",
+        "baseInterop": 62342,
+        "newInterop": 62442,
+        "delta": 100,
+        "changePercent": 0.16,
+        "baseErrors": 0,
+        "newErrors": 0,
+        "baseInstances": 0,
+        "newInstances": 0
+      },
+      {
+        "phase": "pick case_001",
+        "baseInterop": 76132,
+        "newInterop": 76286,
+        "delta": 154,
+        "changePercent": 0.202,
+        "baseErrors": 0,
+        "newErrors": 0,
+        "baseInstances": 412,
+        "newInstances": 412
+      },
+      {
+        "phase": "case_001 +30f",
+        "baseInterop": 42176,
+        "newInterop": 42226,
+        "delta": 50,
+        "changePercent": 0.119,
+        "baseErrors": 0,
+        "newErrors": 0,
+        "baseInstances": 0,
+        "newInstances": 0
+      },
+      {
+        "phase": "case_001 +120f",
+        "baseInterop": 117419,
+        "newInterop": 117539,
+        "delta": 120,
+        "changePercent": 0.102,
+        "baseErrors": 0,
+        "newErrors": 0,
+        "baseInstances": 0,
+        "newInstances": 0
+      },
+      {
+        "phase": "steady level 60f",
+        "baseInterop": 21644,
+        "newInterop": 21644,
+        "delta": 0,
+        "changePercent": 0,
+        "baseErrors": 0,
+        "newErrors": 0,
+        "baseInstances": 0,
+        "newInstances": 0
+      },
+      {
+        "phase": "tutorial l1 next x3",
+        "baseInterop": 1613,
+        "newInterop": 1613,
+        "delta": 0,
+        "changePercent": 0,
+        "baseErrors": 0,
+        "newErrors": 0,
+        "baseInstances": 0,
+        "newInstances": 0
+      },
+      {
+        "phase": "tutorial l1 prev+close",
+        "baseInterop": 1019,
+        "newInterop": 1019,
+        "delta": 0,
+        "changePercent": 0,
+        "baseErrors": 0,
+        "newErrors": 0,
+        "baseInstances": 0,
+        "newInstances": 0
+      },
+      {
+        "phase": "grid card clicks",
+        "baseInterop": 1980,
+        "newInterop": 1980,
+        "delta": 0,
+        "changePercent": 0,
+        "baseErrors": 0,
+        "newErrors": 0,
+        "baseInstances": 0,
+        "newInstances": 0
+      },
+      {
+        "phase": "tap suspect +1f",
+        "baseInterop": 610,
+        "newInterop": 610,
+        "delta": 0,
+        "changePercent": 0,
+        "baseErrors": 0,
+        "newErrors": 0,
+        "baseInstances": 0,
+        "newInstances": 0
+      },
+      {
+        "phase": "click cell(1,1) +1f",
+        "baseInterop": 308,
+        "newInterop": 308,
+        "delta": 0,
+        "changePercent": 0,
+        "baseErrors": 0,
+        "newErrors": 0,
+        "baseInstances": 0,
+        "newInstances": 0
+      },
+      {
+        "phase": "after place +10f",
+        "baseInterop": 3310,
+        "newInterop": 3310,
+        "delta": 0,
+        "changePercent": 0,
+        "baseErrors": 0,
+        "newErrors": 0,
+        "baseInstances": 0,
+        "newInstances": 0
+      },
+      {
+        "phase": "undo +1f",
+        "baseInterop": 615,
+        "newInterop": 615,
+        "delta": 0,
+        "changePercent": 0,
+        "baseErrors": 0,
+        "newErrors": 0,
+        "baseInstances": 0,
+        "newInstances": 0
+      },
+      {
+        "phase": "back_confirm +1f",
+        "baseInterop": 392,
+        "newInterop": 392,
+        "delta": 0,
+        "changePercent": 0,
+        "baseErrors": 0,
+        "newErrors": 0,
+        "baseInstances": 0,
+        "newInstances": 0
+      },
+      {
+        "phase": "close_modal +1f",
+        "baseInterop": 500,
+        "newInterop": 500,
+        "delta": 0,
+        "changePercent": 0,
+        "baseErrors": 0,
+        "newErrors": 0,
+        "baseInstances": 0,
+        "newInstances": 0
+      },
+      {
+        "phase": "solve case_001",
+        "baseInterop": 74150,
+        "newInterop": 74250,
+        "delta": 100,
+        "changePercent": 0.135,
+        "baseErrors": 5,
+        "newErrors": 5,
+        "baseInstances": 0,
+        "newInstances": 0
+      },
+      {
+        "phase": "submit + accuse",
+        "baseInterop": 4994,
+        "newInterop": 4994,
+        "delta": 0,
+        "changePercent": 0,
+        "baseErrors": 1,
+        "newErrors": 1,
+        "baseInstances": 5,
+        "newInstances": 5
+      },
+      {
+        "phase": "result +30f",
+        "baseInterop": 10796,
+        "newInterop": 10796,
+        "delta": 0,
+        "changePercent": 0,
+        "baseErrors": 0,
+        "newErrors": 0,
+        "baseInstances": 0,
+        "newInstances": 0
+      },
+      {
+        "phase": "pick case_002",
+        "baseInterop": 258775,
+        "newInterop": 257717,
+        "delta": -1058,
+        "changePercent": -0.409,
+        "baseErrors": 11,
+        "newErrors": 11,
+        "baseInstances": 1486,
+        "newInstances": 1486
+      },
+      {
+        "phase": "case_002 +60f",
+        "baseInterop": 138070,
+        "newInterop": 138240,
+        "delta": 170,
+        "changePercent": 0.123,
+        "baseErrors": 0,
+        "newErrors": 0,
+        "baseInstances": 0,
+        "newInstances": 0
+      },
+      {
+        "phase": "pick case_003",
+        "baseInterop": 215017,
+        "newInterop": 210309,
+        "delta": -4708,
+        "changePercent": -2.19,
+        "baseErrors": 0,
+        "newErrors": 0,
+        "baseInstances": 472,
+        "newInstances": 472
+      },
+      {
+        "phase": "case_003 +60f",
+        "baseInterop": 101373,
+        "newInterop": 101493,
+        "delta": 120,
+        "changePercent": 0.118,
+        "baseErrors": 0,
+        "newErrors": 0,
+        "baseInstances": 0,
+        "newInstances": 0
+      },
+      {
+        "phase": "home",
+        "baseInterop": 342,
+        "newInterop": 342,
+        "delta": 0,
+        "changePercent": 0,
+        "baseErrors": 0,
+        "newErrors": 0,
+        "baseInstances": 0,
+        "newInstances": 0
+      },
+      {
+        "phase": "home +30f",
+        "baseInterop": 11221,
+        "newInterop": 11221,
+        "delta": 0,
+        "changePercent": 0,
+        "baseErrors": 0,
+        "newErrors": 0,
+        "baseInstances": 0,
+        "newInstances": 0
+      }
+    ]
+  },
+  "finalAssessment": {
+    "treeClassificationConfirmed": true,
+    "overallInteropReduced": true,
+    "averageRuntimeImpact": "总账减少0.304%；启动/首帧约增加0.2%，主要换关阶段下降",
+    "realMachineValidationRequired": true
+  }
+}
