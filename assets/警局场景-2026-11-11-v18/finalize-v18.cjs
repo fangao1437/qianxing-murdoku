@@ -4,7 +4,7 @@ const { createCanvas, loadImage } = require('D:/新建文件夹/miHoYo Launcher/
 const TMP = 'C:/Users/18182/AppData/Local/Temp/wb-art-build';
 const ROOT = 'D:/新建文件夹/miHoYo Launcher/qianxing-murdoku/assets';
 const DIR = ROOT + '/警局场景-2026-11-11-v18';
-const DESIGN = 'D:/新建文件夹/miHoYo Launcher/_work/tmp-v17-ref/design-1600.png';
+const DESIGN = 'D:/新建文件夹/miHoYo Launcher/_work/tmp-v16-ref/design-1600.png';
 const boxes = [
   { x: 1365, y: 181, w: 480, h: 120, rot: 9 },
   { x: 330, y: 680, w: 480, h: 120, rot: -7.6 },
