@@ -1,0 +1,251 @@
+{
+  "version": 1,
+  "name": "game-ui-657",
+  "title": "655 之后美术调整 · 关卡内棋盘屏按设计图复刻（方案，不产出 .gil）",
+  "date": "2026-11-10",
+  "status": "SPEC_ONLY",
+  "statusNote": "本目录只交付构建方案 + 机器可读规格 + 未执行的构建器；不含任何 .gil 存档，也未对任何存档执行写入。",
+  "canvas": [1600, 900],
+
+  "base": {
+    "primary": {
+      "file": "../650_全面优化/655_遍历负载优化.gil",
+      "sha256": "7bc1ece2518d2d5368943cb9f55de34915f9adc07be5b15a118b645689fcd8b6",
+      "bytes": 5689988,
+      "records": 6340,
+      "note": "本地已提交 b737f55；与并行的 656_首页设计 同源，规格锁定此 SHA。"
+    },
+    "optionalMerge": {
+      "file": "../656_首页设计/656_首页设计.gil",
+      "note": "若主控已定稿 656 首页成果，可把本规格的 base 换成 656 存档（需更新 SHA256）。两条链改动的控件集不相交：656 只动 art656.home.* / art641.home.*，本方案只动 art641.game.* / clues.* / board.bg / art657.game.*，可按层组合并，不需要 force。",
+      "conflictPoint": "root 的 childList 顺序：本方案不新增 root 直属组，也不改 root 顺序，因此与 656 无冲突。"
+    }
+  },
+
+  "reference": {
+    "design": {
+      "file": "../../美术参考/7836B9C55A22F86B556DBDAA5E18EDA2.png",
+      "originalSize": [6236, 3508],
+      "mapping": "等比缩放到 1600x900（0.256574）；用户贴的 1080x631 jpg 为同一图"
+    },
+    "actual": {
+      "file": "clipboard-2026-11-10T13-22-42-682Z-1347d402.png",
+      "originalSize": [1604, 960],
+      "mapping": "crop(4,58,1600,900)；白色标题栏到 y≈58"
+    },
+    "measurement": "预览/657_设计图_坐标网格.png、预览/657_实机_坐标网格.png（100px 网格）；逐行/逐列颜色分段扫描与连通域，坐标为 1600x900 屏幕像素"
+  },
+
+  "excluded": [
+    "背景：police-v12 独立项目（qianxing-murdoku/assets/警局场景-2026-11-09-v12/，761 图元 GIA）。橙棕底、档案袋、POLICE TIME 黄带、爪印、拍立得白框、右上黄色圆盘、暗角、右侧渐暗、上下黑边，全部不改一行。存档内对应控件 police-v12 #1073755751 及其 761 个子控件，0 改动。",
+    "棋盘上内容：stage #1073742328、board.floors #1073754315、board.rugs #1073754316、cell.*、家具/头像/X 标记/格子配色，全部不动。",
+    "线索卡文本：row.*、clue.*、letterA..V 的文字内容、字母、卡内排版文案，全部不动。",
+    "设计图未画但游戏需要的功能信息：案件编号/计时（hud.title/hud.timer）；默认保留，见 options.hideHudText。"
+  ],
+
+  "scopeOwnership": [
+    { "item": "橙棕拼贴 / 爪印 / 黄带 / 拍立得 / 暗角 / 咖啡杯", "owner": "背景独立项目 v12", "action": "不改" },
+    { "item": "棋盘 5x5 格子与棋子、头像、X 标记", "owner": "关卡内容", "action": "不改" },
+    { "item": "线索卡文本、字母 A/B/C/D/V", "owner": "关卡内容", "action": "不改" },
+    { "item": "左侧笔记本白框 / 暗红内页 / 横线 / 活页环 / 行首方块", "owner": "本方案", "action": "重建" },
+    { "item": "线索卡底板 backrop1/backrop2（颜色，不是文本）", "owner": "本方案", "action": "改为全透明，透出暗红内页" },
+    { "item": "棋盘米黄纸框 / 上下格纹胶带 / 深紫内框", "owner": "本方案", "action": "改色 + 补纹理" },
+    { "item": "左上返回 / 右上三键 / 右下放大镜 的旗形底板", "owner": "本方案", "action": "改色 + 加宽 + V 凹口 + 描边" },
+    { "item": "hex.* / hit.* 图标与命中区", "owner": "本方案（交互）", "action": "默认不动；options.syncIcons 可同步右移 32px" },
+    { "item": "红色圆形图钉 / 红色缎带 / 问号便利贴 / 格纹胶带", "owner": "本方案", "action": "新增（背景 v12 未包含鲜红 #AA0400 图元，已核对 scene-v12.json 颜色表）" },
+    { "item": "hud.title / hud.timer", "owner": "功能文字", "action": "默认保留；设计图无此项，隐藏开关见 options" }
+  ],
+
+  "coordinateSystem": {
+    "screen": "1600x900，左上原点，y 向下；规格中所有 cx/cy/x1/y1 均为屏幕坐标",
+    "save": "中心原点，y 向上；setGeom(r,cx,cy,w,h) 写入 (cx-800, 450-cy, w, h) 到 4 个状态块的 #504/#505",
+    "fieldPaths": {
+      "color": "#505/#503/#84/#502 = 0xAARRGGBB (uint32)",
+      "imageId": "#505/#503/#84/#503 = 100001 矩形 / 100002 圆 / 107102 圆角条",
+      "imageTint": "#505/#503/#84/#504 = 1",
+      "position": "四个状态块 #504 的浮点对 (x,y)",
+      "size": "四个状态块 #505 的浮点对 (w,h)",
+      "rotation": "状态块 #508/#3 的 float（度）",
+      "text": "#505/#503/#75/#510/#501/#502 的 UTF-8 payload；框高必须 >= 2x 字号",
+      "hidden": "setHiddenRecord(record.field, true)（qianxing-murdoku-tool/dsh-plugin-qianxing-art-pipeline/src/gil/ops.js）"
+    }
+  },
+
+  "palette": {
+    "notebookPage": "#68252A",
+    "notebookPageLower": "#611F23",
+    "notebookFrame": "#FDFAEF",
+    "notebookRule": "#FDFAF5",
+    "notebookSlot": "#2E1F1A",
+    "ring": "#6C6962",
+    "ringHole": "#262229",
+    "boardPaper": "#FAEFCC",
+    "boardTape": "#FDFDE7",
+    "boardGridLine": "#E4D2A8",
+    "boardInner": "#382D3B",
+    "tapeCream": "#F7EFD0",
+    "buttonBrown": "#855244",
+    "buttonBorder": "#1E1210",
+    "iconWhite": "#F5ECD2",
+    "pinRed": "#AA0400",
+    "ribbonRed": "#B23928",
+    "stickerBrown": "#8F2D0C"
+  },
+
+  "geometry": {
+    "note": "全部为设计图 1600x900 实测；实机同区块几何基本重合（偏差 <= 10px），因此只换材质/配色/装饰，不移动棋盘与线索区容器。",
+    "notebookFrame": { "x1": 24, "y1": 256, "x2": 394, "y2": 771, "cx": 209, "cy": 513.5, "w": 370, "h": 515 },
+    "notebookPage": { "x1": 61, "y1": 277, "x2": 386, "y2": 745, "cx": 223.5, "cy": 511, "w": 325, "h": 468 },
+    "notebookRules": { "x1": 61, "x2": 386, "centersY": [368, 463, 559, 654], "thickness": 7, "measuredRuns": [[365, 371], [459, 467], [555, 563], [651, 657]] },
+    "notebookRows": { "centersY": [322.5, 415.5, 511, 606.5, 699.5], "slot": { "x1": 61, "x2": 115, "w": 54, "h": 72 } },
+    "rings": { "cx": 15, "centersY": [322, 415, 511, 606, 699], "w": 38, "h": 9 },
+    "boardPaper": { "x1": 581, "y1": 43, "x2": 1227, "y2": 775, "cx": 904, "cy": 409, "w": 646, "h": 732 },
+    "boardTapeTop": { "cx": 904, "cy": 74.5, "w": 646, "h": 63 },
+    "boardTapeBottom": { "cx": 904, "cy": 754, "w": 646, "h": 42 },
+    "boardInner": { "x1": 600, "y1": 107, "x2": 1207, "y2": 733, "cx": 903.5, "cy": 420, "w": 607, "h": 626 },
+    "backButton": { "cx": 85, "cy": 157, "w": 116, "h": 100 },
+    "tapeLeft": { "cx": 166.5, "cy": 211.5, "w": 267, "h": 37 },
+    "stickerQ": { "cx": 350, "cy": 210, "w": 140, "h": 100, "rot": -5 },
+    "ribbon": { "cx": 440, "cy": 350, "w": 80, "h": 60 },
+    "pin": { "cx": 1320, "cy": 340, "d": 120 },
+    "rightButtons": {
+      "cx": 1486, "w": 172, "h": 89,
+      "centersY": [151.5, 240.5, 330],
+      "note": "x1400..1572；x=1500 竖向扫描得 y107..375，三条各约 89；白色箭头落在其上"
+    },
+    "magnifier": { "cx": 1486, "cy": 731.5, "w": 172, "h": 77 },
+    "actualComparison": {
+      "cluePanel": { "x1": 33, "y1": 260, "x2": 387, "y2": 740 },
+      "boardWhiteFrame": { "x1": 578, "y1": 67, "x2": 1226, "y2": 780 },
+      "boardInnerFrame": { "x1": 600, "y1": 133, "x2": 1200, "y2": 727 },
+      "rightButtons": { "x1": 1412, "x2": 1496, "centersY": [153, 252, 346] },
+      "note": "实机按钮是 84x96 窄矩形，设计图是 172x89 宽旗形；其余区块几何基本重合。"
+    }
+  },
+
+  "options": {
+    "hideHudText": false,
+    "hideHudTextNote": "true 时隐藏 hud.title / hud.timer / hud.subtitle（设计图未画），但会丢失案件编号与计时；需用户确认后再开。",
+    "syncIcons": false,
+    "syncIconsNote": "true 时把 hex.back/submit/redo/undo/hint 与对应 hit.* 的 x 从 654 -> 686（屏幕 1454 -> 1486），使图标居中于新旗面；同时必须回归点击热区。",
+    "keepBoardShadow": true,
+    "keep641NotebookLayers": false,
+    "keep641NotebookLayersNote": "641 的 notebook.* 36 层绘制在 clues 之前，会被线索卡背板完全盖住，改色无效；默认全部隐藏（不删记录，保护 653 分类父的 childList 与 655 名字索引）。"
+  },
+
+  "existingOps": [
+    { "name": "clues.bg", "id": 1073742369, "parent": "clues", "action": "retint+resize", "field": "#505/#503/#84/#502", "from": "0x00FFFFFF", "to": "0xFF68252A", "geometry": { "cx": 223.5, "cy": 511, "w": 325, "h": 468 }, "note": "透明大底板改成暗红内页；它在 art641.game 之后绘制，正好盖住白框中央，只留四周白边。" },
+    { "name": "backrop1", "ids": [1073742422, 1073742429], "action": "retint", "field": "#505/#503/#84/#502", "from": "0xFF56565E", "to": "0x00000000", "note": "两套 clue 模板的卡片底板改全透明，透出暗红内页；不动任何文本字段。" },
+    { "name": "backrop2", "ids": [1073742423, 1073742430], "action": "retint", "field": "#505/#503/#84/#502", "from": "0xFF26262E", "to": "0x00000000", "note": "同上。" },
+    { "name": "art641.game.notebook.*", "count": 36, "action": "hide", "ids": "1073754826..1073754861", "note": "shadow/cover/paper + 19 条 rule + 14 个 ring/ringhole 全部 setHiddenRecord(true)；白框改由 art657.game.notebook.frame 承担（见 layers）。" },
+    { "name": "art641.game.boardframe.paper", "id": 1073754863, "action": "retint+resize", "field": "#505/#503/#84/#502", "from": "0xFFFDFBEA", "to": "0xFFFAEFCC", "geometry": { "cx": 904, "cy": 409, "w": 646, "h": 732 } },
+    { "name": "art641.game.boardframe.shadow", "id": 1073754862, "action": "keep", "note": "保留原投影（设计图纸框边缘有轻微暗边）；options.keepBoardShadow=false 可隐藏。" },
+    { "name": "art641.game.boardbottom", "id": 1073754864, "action": "retint+resize", "field": "#505/#503/#84/#502", "from": "0xFFEDE5C8", "to": "0xFFFDFDE7", "geometry": { "cx": 904, "cy": 754, "w": 646, "h": 42 }, "note": "作为底部格纹胶带的底色。" },
+    { "name": "board.bg", "id": 1073742358, "action": "retint", "field": "#505/#503/#84/#502", "from": "0xFF1D1B1B", "to": "0xFF382D3B", "note": "深黑内边框改设计图深紫；几何 590x590 不动，棋盘内容不受影响。" },
+    { "name": "art641.game.flag.back", "id": 1073754866, "action": "retint+resize", "field": "#505/#503/#84/#502", "from": "0xFF29252D", "to": "0xFF855244", "geometry": { "cx": 85, "cy": 157, "w": 116, "h": 100 } },
+    { "name": "art641.game.flag.submit", "id": 1073754867, "action": "retint+resize", "field": "#505/#503/#84/#502", "from": "0xFFA44B24", "to": "0xFF855244", "geometry": { "cx": 1486, "cy": 151.5, "w": 172, "h": 89 } },
+    { "name": "art641.game.flag.redo", "id": 1073754868, "action": "retint+resize", "field": "#505/#503/#84/#502", "from": "0xFFA44B24", "to": "0xFF855244", "geometry": { "cx": 1486, "cy": 240.5, "w": 172, "h": 89 } },
+    { "name": "art641.game.flag.undo", "id": 1073754869, "action": "retint+resize", "field": "#505/#503/#84/#502", "from": "0xFFA44B24", "to": "0xFF855244", "geometry": { "cx": 1486, "cy": 330, "w": 172, "h": 89 } },
+    { "name": "art641.game.flag.hint", "id": 1073754870, "action": "retint+resize", "field": "#505/#503/#84/#502", "from": "0xFFA44B24", "to": "0xFF855244", "geometry": { "cx": 1486, "cy": 731.5, "w": 172, "h": 77 } },
+    { "name": "art641.game.help.tab", "id": 1073754865, "action": "retint+resize", "field": "#505/#503/#84/#502", "from": "0xFFB64B25", "to": "0xFF8F2D0C", "geometry": { "cx": 350, "cy": 210, "w": 140, "h": 100 }, "note": "放大成设计图的问号便利贴；必须同步移动 clues.help617 与 clues.help627.hit，否则热区错位。" },
+    { "name": "clues.help617", "id": 1073754496, "action": "resize", "geometry": { "cx": 350, "cy": 210, "w": 140, "h": 100 } },
+    { "name": "clues.help627.hit", "id": 1073754508, "action": "resize", "geometry": { "cx": 350, "cy": 210, "w": 140, "h": 100 } },
+    { "name": "hex.* / hit.*", "ids": [1073742502, 1073742503, 1073742504, 1073742505, 1073742506, 1073742509, 1073742510, 1073742511, 1073742512, 1073742513], "action": "keep", "note": "图标与命中区默认不动，交互零风险；options.syncIcons=true 才整体右移 32px。" },
+    { "name": "hud.title / hud.timer / hud.subtitle", "ids": [1073741923, 1073741933, 1073742810], "action": "keep", "note": "设计图无此项；options.hideHudText=true 才隐藏。" }
+  ],
+
+  "layers": [
+    { "name": "art657.game.notebook.frame", "parent": "clues", "insert": "after:clues.bg", "cx": 209, "cy": 513.5, "w": 370, "h": 515, "color": "#FDFAEF", "imageId": 100001, "note": "白色粗框；clues.bg 暗红内页后绘制，自动盖住中央只留四周白边（左 37 / 右 8 / 上 21 / 下 26，与设计图吻合）。" },
+    { "generator": "repeat", "prefix": "art657.game.notebook.rule", "parent": "clues", "insert": "after:clues.bg", "items": [368, 463, 559, 654], "cx": 223.5, "cyFromItem": true, "w": 325, "h": 7, "color": "#FDFAF5", "imageId": 100001 },
+    { "generator": "repeat", "prefix": "art657.game.notebook.slot", "parent": "clues", "insert": "after:clues.bg", "items": [322.5, 415.5, 511, 606.5, 699.5], "cx": 88, "cyFromItem": true, "w": 54, "h": 72, "color": "#2E1F1A", "imageId": 100001 },
+    { "generator": "repeat", "prefix": "art657.game.notebook.ring", "parent": "clues", "insert": "after:clues.grid", "items": [322, 415, 511, 606, 699], "cx": 15, "cyFromItem": true, "w": 38, "h": 9, "color": "#6C6962", "imageId": 107102 },
+    { "generator": "repeat", "prefix": "art657.game.notebook.ringhole", "parent": "clues", "insert": "after:clues.grid", "items": [322, 415, 511, 606, 699], "cx": 30, "cyFromItem": true, "w": 8, "h": 11, "color": "#262229", "imageId": 100002 },
+    { "generator": "grid", "name": "art657.game.tape.left", "parent": "clues", "insert": "after:clues.grid", "cx": 166.5, "cy": 211.5, "w": 267, "h": 37, "base": "#F7EFD0", "line": "#E4D2A8", "step": 18, "lineWidth": 2, "imageId": 100001 },
+    { "name": "art657.game.notebook.ribbon", "parent": "clues", "insert": "after:clues.grid", "cx": 440, "cy": 350, "w": 80, "h": 60, "color": "#B23928", "imageId": 100001, "notch": "right", "notchDepth": 18, "note": "右侧 V 形凹口用 2 个旋转三角补出（647 旗形做法）。" },
+    { "name": "art657.game.sticker.q.dot", "parent": "clues", "insert": "after:clues.grid", "cx": 350, "cy": 210, "w": 34, "h": 34, "color": "#FDFAF5", "imageId": 100002 },
+    { "name": "art657.game.sticker.q.mark", "parent": "clues", "insert": "after:clues.grid", "cx": 350, "cy": 210, "w": 26, "h": 40, "text": "?", "fontSize": 28, "color": "#8F2D0C", "note": "文本框高度 40 >= 2x 字号 28，满足项目实测的可见门槛。" },
+    { "generator": "grid", "name": "art657.game.board.tape.top", "parent": "grp653.static.1.art641.game", "insert": "append", "cx": 904, "cy": 74.5, "w": 646, "h": 63, "base": "#FDFDE7", "line": "#E4D2A8", "step": 26, "lineWidth": 2, "imageId": 100001 },
+    { "generator": "grid", "name": "art657.game.board.tape.bottom", "parent": "grp653.static.1.art641.game", "insert": "append", "cx": 904, "cy": 754, "w": 646, "h": 42, "base": "#FDFDE7", "line": "#E4D2A8", "step": 26, "lineWidth": 2, "imageId": 100001 },
+    { "name": "art657.game.pin", "parent": "grp653.static.1.art641.game", "insert": "append", "cx": 1320, "cy": 340, "w": 120, "h": 120, "color": "#AA0400", "imageId": 100002 },
+    { "name": "art657.game.pin.hilite", "parent": "grp653.static.1.art641.game", "insert": "append", "cx": 1303, "cy": 323, "w": 34, "h": 22, "color": "#D2402C", "imageId": 100002 },
+    { "generator": "notchedFlag", "prefix": "art657.game.flag", "parent": "grp653.static.1.art641.game", "insert": "append", "targets": [
+      { "key": "back", "cx": 85, "cy": 157, "w": 116, "h": 100 },
+      { "key": "submit", "cx": 1486, "cy": 151.5, "w": 172, "h": 89 },
+      { "key": "redo", "cx": 1486, "cy": 240.5, "w": 172, "h": 89 },
+      { "key": "undo", "cx": 1486, "cy": 330, "w": 172, "h": 89 },
+      { "key": "hint", "cx": 1486, "cy": 731.5, "w": 172, "h": 77 }
+    ], "color": "#855244", "borderColor": "#1E1210", "borderWidth": 7, "notchDepth": 18, "tailJag": 6, "imageId": 100001, "note": "每个按钮 = 深色描边矩形(外扩 7) + 2 条 ±45° 旋转矩形 + 旗面矩形 + 2 条 ±45° 旋转矩形补 V 凹口 + 右端锯齿条；深色层先画，褐层后画。沿用 647 的旗形/描边配方，但凹口改用 100001 旋转矩形实现：项目实测 100003 三角只在 rot 0/180/90 出图，rot -90 不出图；651 撕边修复已验证旋转矩形可靠。" }
+  ],
+
+  "layerOrder": {
+    "rule": "全局记录表顺序与父 childList 同序（651 撕边修复的硬约束）；新层不新建 root 直属组，不新增分类容器（655 审查结论：继续分类只会增加节点与重挂风险）。",
+    "clues": ["clues.bg", "clues.grid", "新 notebook 下层(frame/rule/slot)", "新 notebook 上层(ring/ringhole/tape/ribbon/sticker)"],
+    "note": "frame/rule/slot 插在 clues.bg 之后、clues.grid 之前；ring/tape/ribbon/sticker 追加在 clues.grid 之后。这样卡片文本/头像夹在底板与外围装饰之间，不会被盖住。",
+    "board": ["art641.game.boardframe.shadow", "art641.game.boardframe.paper", "art657.game.board.tape.top/bottom", "board.bg(深紫内框)", "stage/棋盘内容"],
+    "gameGroup": "art657.game.board.tape.* / pin.* / flag.* 追加到现有 grp653.static.1.art641.game #1073757851 的 childList 末尾；该父容器已存在，不新建。"
+  },
+
+  "layerBudget": {
+    "measuredByDryRun": true,
+    "expandedNewLayers": 119,
+    "byParent": { "clues": 38, "grp653.static.1.art641.game": 81 },
+    "breakdown": "格纹线约 70 / 按钮旗形 30 / 笔记本 20 / 图钉·缎带·问号贴 5（含少量交叠取整）",
+    "recordsBefore": 6340,
+    "recordsAfter": 6459,
+    "existingWrites": 66,
+    "hiddenExisting": 36,
+    "note": "655 刚做完遍历减负，+119 静态叶会部分抵消；641 shared 当年也用了 100 条 gridv 线，属既有做法。减负选项（只改生成器参数，不动 existingOps）：把三个 grid.step 从 26/26/18 调到 52/52/36 => 约 85 层；或把三条格纹胶带改成各 1 张图片素材 => 约 50 层。"
+  },
+
+  "writer": {
+    "toolchain": [
+      "qianxing-murdoku/tools/gil/gilread.mjs  -> readGil / stateBlocks / pairOf / setPair / cloneField / ensureChildListTop / findChildListTop / asIdList / setChildList / textsOf / encodeMsg",
+      "qianxing-murdoku/tools/gil/gilwrite.mjs -> writeGil（唯一安全写通道，禁止自己 fs.writeFileSync 一个 .gil）",
+      "qianxing-murdoku-tool/dsh-plugin-qianxing-art-pipeline/src/gil/ops.js -> setHiddenRecord"
+    ],
+    "clonePrototypes": {
+      "image": "td.home.page.1.help619.icon",
+      "text": "td.l1.page.1.heading"
+    },
+    "cloneRecipe": "cloneField(proto.field) -> 递增 maxId -> remap 旧 id 到新 id -> 用 textsOf 定位名字字段并覆写为 art657.game.* -> 去掉旧 #504 父引用并写入新 parent.id -> 清空克隆来的 childList -> 追加到 g.tree.field 9 的记录列表 -> ensureChildListTop(parent) + setChildList 追加新 id -> place/setGeom 写四个状态块 -> setHiddenRecord(f,false)",
+    "idAllocation": "从 g.maxId 递增，禁止复用已删除 id；新增记录数与 expectRecs 断言一致。",
+    "writeGilAssertions": [
+      "输出与输入字节不同（编辑确实落地）",
+      "落盘后从磁盘重新 readGil（不复用内存对象）",
+      "重新编码与落盘字节逐字节一致",
+      "字段级 diff 条数符合预期",
+      "内嵌 Lua 叶子与输入逐字节相同（655 基准实测 636,341 B，与 656 审计 scriptBytes 一致；651 报告里的 617,032 B 是 650_优化版口径，勿混用）",
+      "police-v12 组及 761 个子控件 0 改动",
+      "stage / board.floors / board.rugs / cell.* 0 改动",
+      "clue / row / letter 的文本字段 0 改动",
+      "无悬空 parent、无对被隐藏记录的外部引用"
+    ],
+    "dryRun": "构建657_关卡内UI.mjs 默认 DRY-RUN：只打印操作清单与预计记录数，不调用 writeGil、不产生任何 .gil；只有显式 --apply 才执行写入。"
+  },
+
+  "validation": [
+    "node tools/gil/check_names.mjs <输出> --strict",
+    "node tools/gil/check_childlist_top.mjs  —— 父 childList 与全局记录表同序",
+    "node tools/gil/roundtrip.mjs / diff_fields.mjs —— 往返编码与字段级 diff",
+    "lua tools/bundle_client_script.lua + 7 套回归（selftest/ui_math/entry_smoke/hide_safety/board_bg/effects_wiring/input_logic）",
+    "离线渲染对照：预览/657_并排对照.png 的四栏（设计图 / 现档离线 / 新档离线 / 实机）",
+    "真机导入复核：笔记本白框与 5 行是否完整、卡片文字是否仍可读、按钮命中区是否跟随、问号帮助是否点得中、棋盘内容是否未移位"
+  ],
+
+  "risks": [
+    "clue 模板 backrop 改全透明后，白字/头像落在暗红 #68252A 上；需真机确认对比度（设计图内页本身是留白，无文字可比）。",
+    "art641.game.notebook.* 36 层隐藏而非删除：653 分类父 grp653.static.1.art641.game 的 childList 不变，655 名字索引不受影响；代价是存档里留 36 条不可见记录。",
+    "问号便利贴放大到 140x100 并同步移动热区，需回归 help617 点击链路；Lua 若有硬编码坐标要一并核对。",
+    "按钮旗面加宽到 172px 但 hex.*/hit.* 不动，图标会略偏旗面左侧；options.syncIcons 可同步右移，但必须重测热区。",
+    "本方案未做设计图的纸张纹理/撕边毛边（沿用纯色 + 格纹线），与 651 撕边修复同一取舍口径。",
+    "hud.title / hud.timer 设计图未画，默认保留；是否隐藏需用户确认。",
+    "与并行 656 首页成果合流时，若 656 又改了 root childList 顺序，需按本方案 layerOrder 章节复核一次（本方案不改 root 顺序）。"
+  ],
+
+  "files": [
+    "657_构建方案.md —— 主方案文档",
+    "关卡内UI规格_657.json —— 本文件，机器可读规格",
+    "构建657_关卡内UI.mjs —— 默认 dry-run 的构建器（未执行）",
+    "预览/657_设计图_坐标网格.png / 657_实机_坐标网格.png / 657_并排对照.png —— 测量依据"
+  ]
+}
