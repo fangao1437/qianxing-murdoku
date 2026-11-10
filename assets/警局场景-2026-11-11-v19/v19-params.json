@@ -1,0 +1,65 @@
+{
+  "version": "v19",
+  "date": "2026-11-11",
+  "base": "v18",
+  "canvas": { "width": 1600, "height": 900 },
+  "reference": {
+    "design": "1600x900 (美术参考/3F829B39767D3A9ADFD081F948500918.png 等比缩放)",
+    "defectGroups": {
+      "group1": { "design": "Clipboard_Screenshot-2.png (1176x330)", "live": "Clipboard_Screenshot.png (584x134)" },
+      "group2": { "design": "Clipboard_Screenshot-3.png (412x536)", "live": "屏幕截图 2026-11-11 062127.png (182x228)" },
+      "fullDesign": "Clipboard_Screenshot-1.png (1920x1080)"
+    }
+  },
+  "measuredLines": {
+    "L1_tapeShadowEdge": { "eq": "x = -0.8847*y + 1283.75", "residualMAE_px": 1.06, "range_y": [140, 250],
+      "keyPoints": [[1230.7, 60], [1151.0, 150], [1106.8, 200], [1064.3, 248], [1009.5, 310]] },
+    "bagRightEdge": { "eq": "x = 924 + 0.2755*y", "intersectsL1At": [1009, 310] },
+    "bagBottomEdge": { "eq": "x = -3.6426*y + 3565.9", "residualMAE_px": 1.64,
+      "alternative": "y = 978.7 - 0.2745*x", "range_y": [700, 840] },
+    "rightSplit": 1263,
+    "lowerHardEdge": { "y": 805, "above": [152, 59, 26], "below": [183, 75, 37] }
+  },
+  "shapes": {
+    "shadow": {
+      "file": "shadow-elements.json", "parts": 22, "elements": 319,
+      "blocks": ["S1 (y60..310, left=L1)", "S2 (y310..695, left=bagRightEdge)", "S3T (triangle along bagBottomEdge)", "TUP (dark triangle, left=L1)"],
+      "colors": ["#94391A", "#8F381A", "#873619", "#6C2D15"],
+      "coverage": "100% (grid-inset backing rect per part)", "overflow": 0
+    },
+    "tapeShadow": {
+      "file": "tape-elements.json", "parts": 3, "elements": 45,
+      "polygon": [[1166.08, 133], [1600, 65], [1600, 169], [1063.46, 249]],
+      "colors": ["#FCA903", "#F89D04", "#F59403"],
+      "drawOrder": "after tape(), before textboxes", "coverage": "100%", "overflow": 0
+    },
+    "bottomWedge": { "file": "wedge-bottom.json", "elements": 9,
+      "polygon": [[740, 755.4], [1111.8, 805], [740, 805]], "color": "#983B1A", "coverage": "100%" },
+    "lowerBand": { "file": "lower-band-rects.json", "rects": 6, "y": [805, 862],
+      "colors": ["#B74B25", "#B54A24", "#AD4622", "#A04121", "#952D0F", "#8C2B0E"] }
+  },
+  "removedFromV18": ["TUP [(1250,50),(1185,150),(1270,150)] 旧位置", "TLEFT 亮红棕三角 #B44926",
+    "shadow-elements.json 旧 8 块 114 枚 / 99.5% 覆盖", "Q2 水平下边界 y=763"],
+  "unchanged": ["拍立得配色 #FDFADB/#FCFAF0 + #753323/#803A29", "官方 106060 圆形渐晕 1800x1040",
+    "52 条右侧渐变", "胶带渐变", "爪印", "档案袋几何 BAG_U0=-291",
+    "橙红楔形 wedge-fit.json (MAE 0.5px / 26 枚)", "分割线", "圆扣", "上下黑边"],
+  "validation": {
+    "uiReviewImageLayer": {
+      "v18": { "matchRatio": 0.5170, "mismatchPixels": 695574, "regions": 24 },
+      "v19": { "matchRatio": 0.5406, "mismatchPixels": 661498, "regions": 24 }
+    },
+    "brownMAE": {
+      "full": { "v18": 19.43, "v19": 18.71 },
+      "bottomContour": { "v18": 30.11, "v19": 22.44 },
+      "shadowInterior": { "v18": 23.16, "v19": 23.09 },
+      "leftShadowEdge": { "v18": 4.41, "v19": 4.38 }
+    },
+    "gia": {
+      "text": { "bytes": 468560, "elements": 649 },
+      "notext": { "bytes": 466309, "elements": 646 },
+      "artkitOk": true, "kind": 3, "trailer": "0x679"
+    }
+  },
+  "caveats": ["未真机导入验证", "黄带阴影/亮背景带若真机出现色带可加密分带",
+    "ui-review 为 B 档图像层对照，不给元素级结论"]
+}

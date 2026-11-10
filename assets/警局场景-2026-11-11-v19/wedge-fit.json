@@ -1,0 +1,495 @@
+{
+  "tool": "fit-primitive-shape",
+  "version": 1,
+  "color": "#C85D11",
+  "polygon": [
+    [
+      477.458,
+      220.703
+    ],
+    [
+      449.654,
+      298.66
+    ],
+    [
+      412.101,
+      499.382
+    ],
+    [
+      456.168,
+      653.161
+    ]
+  ],
+  "lines": {
+    "left": [
+      {
+        "range": [
+          233,
+          320
+        ],
+        "a": -0.357,
+        "b": 556.173,
+        "mae": 1.7,
+        "max": 3.666,
+        "n": 87
+      },
+      {
+        "range": [
+          320,
+          500
+        ],
+        "a": -0.187,
+        "b": 505.53,
+        "mae": 0.325,
+        "max": 1.112,
+        "n": 180
+      },
+      {
+        "range": [
+          500,
+          649
+        ],
+        "a": 0.287,
+        "b": 268.998,
+        "mae": 0.608,
+        "max": 4.054,
+        "n": 149
+      }
+    ],
+    "right": [
+      {
+        "range": [
+          233,
+          649
+        ],
+        "a": -0.049,
+        "b": 488.323,
+        "mae": 0.286,
+        "max": 1.52,
+        "n": 416
+      }
+    ]
+  },
+  "residual": {
+    "mae": 0.5,
+    "max": 4.054
+  },
+  "samples": 416,
+  "adaptive": {
+    "strategy": "A+B+C",
+    "cornerScales": [
+      0.3,
+      0.55,
+      0.8,
+      1
+    ],
+    "coverage": 100,
+    "elements": 26
+  },
+  "verification": {
+    "elements": 26,
+    "overflowVertices": 0,
+    "maxViolation": 0,
+    "overflowSamples": [],
+    "coverage": 100,
+    "sampled": 12488,
+    "bbox": [
+      412.101,
+      220.703,
+      477.458,
+      653.161
+    ]
+  },
+  "elements": [
+    {
+      "id": "fit1",
+      "zIndex": 0,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 469.444,
+      "y": 261.781,
+      "width": 82.767,
+      "height": 12.503,
+      "rotation": -109.629,
+      "color": "#C85D11",
+      "opacity": 1
+    },
+    {
+      "id": "fit2",
+      "zIndex": 1,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 449.606,
+      "y": 402.525,
+      "width": 204.205,
+      "height": 38.107,
+      "rotation": -100.597,
+      "color": "#C85D11",
+      "opacity": 1
+    },
+    {
+      "id": "fit3",
+      "zIndex": 2,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 447.228,
+      "y": 572.519,
+      "width": 159.969,
+      "height": 27.242,
+      "rotation": -74.01,
+      "color": "#C85D11",
+      "opacity": 1
+    },
+    {
+      "id": "fit4",
+      "zIndex": 3,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 445.495,
+      "y": 435.883,
+      "width": 432.982,
+      "height": 42.687,
+      "rotation": 87.182,
+      "color": "#C85D11",
+      "opacity": 1
+    },
+    {
+      "id": "fit5",
+      "zIndex": 4,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 465.752,
+      "y": 260.465,
+      "width": 82.767,
+      "height": 4.664,
+      "rotation": -109.629,
+      "color": "#C85D11",
+      "opacity": 1
+    },
+    {
+      "id": "fit6",
+      "zIndex": 5,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 433.157,
+      "y": 399.447,
+      "width": 204.205,
+      "height": 4.64,
+      "rotation": -100.597,
+      "color": "#C85D11",
+      "opacity": 1
+    },
+    {
+      "id": "fit7",
+      "zIndex": 6,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 441.613,
+      "y": 359.3,
+      "width": 286.24,
+      "height": 6.503,
+      "rotation": 76.801,
+      "color": "#C85D11",
+      "opacity": 1
+    },
+    {
+      "id": "fit8",
+      "zIndex": 7,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 457.541,
+      "y": 363.035,
+      "width": 286.24,
+      "height": 26.217,
+      "rotation": -103.199,
+      "color": "#C85D11",
+      "opacity": 1
+    },
+    {
+      "id": "fit9",
+      "zIndex": 8,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 447.228,
+      "y": 572.519,
+      "width": 159.969,
+      "height": 27.242,
+      "rotation": -74.01,
+      "color": "#C85D11",
+      "opacity": 1
+    },
+    {
+      "id": "fit10",
+      "zIndex": 9,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 447.008,
+      "y": 435.957,
+      "width": 432.982,
+      "height": 39.657,
+      "rotation": 87.182,
+      "color": "#C85D11",
+      "opacity": 1
+    },
+    {
+      "id": "fit11",
+      "zIndex": 10,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 475.067,
+      "y": 232.75,
+      "width": 7.259,
+      "height": 24.563,
+      "rotation": -11.224,
+      "color": "#C85D11",
+      "opacity": 1
+    },
+    {
+      "id": "fit12",
+      "zIndex": 11,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 473.075,
+      "y": 242.789,
+      "width": 13.308,
+      "height": 45.033,
+      "rotation": -11.224,
+      "color": "#C85D11",
+      "opacity": 1
+    },
+    {
+      "id": "fit13",
+      "zIndex": 12,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 471.083,
+      "y": 252.828,
+      "width": 19.358,
+      "height": 65.502,
+      "rotation": -11.224,
+      "color": "#C85D11",
+      "opacity": 1
+    },
+    {
+      "id": "fit14",
+      "zIndex": 13,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 469.489,
+      "y": 260.859,
+      "width": 24.197,
+      "height": 81.878,
+      "rotation": -11.224,
+      "color": "#C85D11",
+      "opacity": 1
+    },
+    {
+      "id": "fit15",
+      "zIndex": 14,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 450.598,
+      "y": 298.915,
+      "width": 49.506,
+      "height": 1.955,
+      "rotation": 74.887,
+      "color": "#C85D11",
+      "opacity": 1
+    },
+    {
+      "id": "fit16",
+      "zIndex": 15,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 451.384,
+      "y": 299.127,
+      "width": 90.761,
+      "height": 3.584,
+      "rotation": 74.887,
+      "color": "#C85D11",
+      "opacity": 1
+    },
+    {
+      "id": "fit17",
+      "zIndex": 16,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 452.17,
+      "y": 299.339,
+      "width": 132.016,
+      "height": 5.214,
+      "rotation": 74.887,
+      "color": "#C85D11",
+      "opacity": 1
+    },
+    {
+      "id": "fit18",
+      "zIndex": 17,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 452.8,
+      "y": 299.509,
+      "width": 165.02,
+      "height": 6.517,
+      "rotation": 74.887,
+      "color": "#C85D11",
+      "opacity": 1
+    },
+    {
+      "id": "fit19",
+      "zIndex": 18,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 417.612,
+      "y": 499.122,
+      "width": 93.41,
+      "height": 11.035,
+      "rotation": 92.697,
+      "color": "#C85D11",
+      "opacity": 1
+    },
+    {
+      "id": "fit20",
+      "zIndex": 19,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 422.205,
+      "y": 498.906,
+      "width": 171.251,
+      "height": 20.231,
+      "rotation": 92.697,
+      "color": "#C85D11",
+      "opacity": 1
+    },
+    {
+      "id": "fit21",
+      "zIndex": 20,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 426.798,
+      "y": 498.689,
+      "width": 249.092,
+      "height": 29.427,
+      "rotation": 92.697,
+      "color": "#C85D11",
+      "opacity": 1
+    },
+    {
+      "id": "fit22",
+      "zIndex": 21,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 430.472,
+      "y": 498.516,
+      "width": 311.366,
+      "height": 36.783,
+      "rotation": 92.697,
+      "color": "#C85D11",
+      "opacity": 1
+    },
+    {
+      "id": "fit23",
+      "zIndex": 22,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 453.453,
+      "y": 629.645,
+      "width": 15.683,
+      "height": 47.346,
+      "rotation": -173.414,
+      "color": "#C85D11",
+      "opacity": 1
+    },
+    {
+      "id": "fit24",
+      "zIndex": 23,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 451.19,
+      "y": 610.047,
+      "width": 28.753,
+      "height": 86.801,
+      "rotation": -173.414,
+      "color": "#C85D11",
+      "opacity": 1
+    },
+    {
+      "id": "fit25",
+      "zIndex": 24,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 448.927,
+      "y": 590.45,
+      "width": 41.822,
+      "height": 126.255,
+      "rotation": -173.414,
+      "color": "#C85D11",
+      "opacity": 1
+    },
+    {
+      "id": "fit26",
+      "zIndex": 25,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 447.117,
+      "y": 574.772,
+      "width": 52.278,
+      "height": 157.819,
+      "rotation": -173.414,
+      "color": "#C85D11",
+      "opacity": 1
+    }
+  ]
+}
