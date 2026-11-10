@@ -1,0 +1,65 @@
+{
+  "version": "v18",
+  "date": "2026-11-11",
+  "base": "assets/警局场景-2026-11-11-v17",
+  "trigger": "用户反馈：v17 的四边形大块阴影引用的边界形状不完整，包括左侧、上侧、下侧多个区域，依照设计图形状做阴影；第二张图文件袋橙红色区域没贴到文件袋边、与设计图不符，下方的黑色细线也是；左侧不要漏",
+  "changes": {
+    "1_shadowFullShape": {
+      "problem": "v17 用 x[900,1263]/y[170,763] 半透明黑矩形，上/左边界是水平与垂直线，靠胶带与档案袋遮挡才显出斜边；遮挡不完整处（左/上/下）边界缺失",
+      "shadowPolygon": {
+        "top": [[990, 255], [1263, 212]],
+        "left": [[990, 255], [1115, 695]],
+        "bottom": [[1115, 695], [869, 763]],
+        "right": [[1263, 212], [1263, 763]],
+        "split": "凹角拆成 Q1 [(990,255),(1263,212),(1263,695),(1115,695)] 与 Q2 [(1115,695),(1263,695),(1263,763),(869,763)] 两个凸块"
+      },
+      "extraTriangles": {
+        "TUP": { "vertices": [[1250, 50], [1185, 150], [1270, 150]], "color": "#6C2D15", "note": "胶带上方咖啡杯左下的深棕三角（上侧阴影）" },
+        "TLEFT": { "vertices": [[996, 255], [1055, 255], [1013, 303]], "color": "#B44926", "measuredRows": { "y260": [996, 1053], "y280": [1001, 1035], "y300": [1006, 1017] }, "note": "胶带下方较亮红棕三角（左侧缺口）" }
+      },
+      "xBands": [
+        { "range": [-1, 1100], "color": "#94391A" },
+        { "range": [1100, 1200], "color": "#8F381A" },
+        { "range": [1200, 1600], "color": "#873619" }
+      ],
+      "primitives": "tool 仓 fit-primitive-shape.mjs 的 A+B+C 顶角三角，不透明 100003；同色不透明重叠无缝、避免半透明叠层压暗",
+      "shadowElements": { "parts": 8, "count": 114, "coverageRange": [99.555, 100], "overflow": 0 },
+      "errorVsDesign": {
+        "shadowWhole": { "v17": 22.63, "v18": 22.03 },
+        "upper": { "v17": 11.76, "v18": 11.24 },
+        "left": { "v17": 5.80, "v18": 4.35 },
+        "whole": { "v17": 20.16, "v18": 19.43 }
+      }
+    },
+    "2_redFlushToBagEdge": {
+      "measurement": { "y520": { "design_BAG_to_RED": 419, "v17_BAG_band": [400, 417] }, "y560": { "design": 430, "v17_BAG_band": [411, 428] }, "y600": { "design": 440, "v17_BAG_band": [422, 439] } },
+      "fix": "BAG_U0 -310 -> -291，档案袋左缘沿局部 u 右移 19px（屏幕约 19.6px），与 RED 楔形左缘重合",
+      "result": "v18 楔形左侧直接接深红背景，亮橙 BAG 带消失"
+    },
+    "3_lowerLine": {
+      "from": [488, 750, 1060, 596],
+      "to": [483, 750, 1045, 598],
+      "note": "设计图实测端点；保持在档案袋/DARK/RED 之后绘制，连续可见"
+    }
+  },
+  "unchanged": [
+    "拍立得 FRAME #FDFADB / FRAME_LIT #FCFAF0 / PHOTO_L #753323 / PHOTO_R #803A29 / POL_TH=-14 / 分界 x=1263",
+    "官方 106060 1800x1040 op1 圆形渐晕",
+    "52 条右侧渐变与 v15 alpha 补偿",
+    "胶带、爪印、文本框、DARK 大三角、上方分割线、圆扣、上下黑边",
+    "v17 楔形拟合 wedge-fit.json（MAE 0.5px / 26 枚 100003 / 100% 覆盖 / 0 溢出）"
+  ],
+  "verification": {
+    "elements": { "text": 384, "notext": 381 },
+    "triangles": 149,
+    "gia": { "textBytes": 278455, "notextBytes": 276204, "f4": "NO", "giaPlus4": "2a05362e" },
+    "artkit": "两份 ok=true / budgetExceeded=false / kind=3 / trailer 0x679",
+    "shadowShapeElements": 114,
+    "wedgeFit": { "residualMAE": 0.5, "coverage": 100, "overflow": 0, "elements": 26 }
+  },
+  "knownRisks": [
+    "未做真机导入验证；100003 旋转角历史风险沿用",
+    "阴影改不透明分带，牺牲 v16 的背景×0.82 渐晕连续性换取完整清晰边界；段间色差 <14/255，预览无明显色带",
+    "官方 106060 渐晕固有限制未改；左侧暗角、咖啡杯、档案袋底部浅橙折角未做"
+  ]
+}
