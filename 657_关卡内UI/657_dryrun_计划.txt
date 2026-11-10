@@ -1,0 +1,50 @@
+[DRY-RUN] 只打印计划，不写任何 .gil；加 --apply 才会落盘。
+
+[op] retint+resize   1 个  clues.bg
+[op] retint          2 个  backrop1
+[op] retint          2 个  backrop2
+[op] hide           36 个  art641.game.notebook.*
+[op] retint+resize   1 个  art641.game.boardframe.paper
+[op] keep            1 个  art641.game.boardframe.shadow
+[op] retint+resize   1 个  art641.game.boardbottom
+[op] retint          1 个  board.bg
+[op] retint+resize   1 个  art641.game.flag.back
+[op] retint+resize   1 个  art641.game.flag.submit
+[op] retint+resize   1 个  art641.game.flag.redo
+[op] retint+resize   1 个  art641.game.flag.undo
+[op] retint+resize   1 个  art641.game.flag.hint
+[op] retint+resize   1 个  art641.game.help.tab
+[op] resize          1 个  clues.help617
+[op] resize          1 个  clues.help627.hit
+[op] keep           10 个  hex.* / hit.*
+[op] keep            3 个  hud.title / hud.timer / hud.subtitle
+
+[layers] 展开后 119 层；父容器分布：
+   clues  ->  38 层
+   grp653.static.1.art641.game  ->  81 层
+
+[dry-run] 前 20 层预览：
+   art657.game.notebook.frame                     (209, 513.5) 370x515 #FDFAEF
+   art657.game.notebook.rule.1                    (223.5, 368) 325x7 #FDFAF5
+   art657.game.notebook.rule.2                    (223.5, 463) 325x7 #FDFAF5
+   art657.game.notebook.rule.3                    (223.5, 559) 325x7 #FDFAF5
+   art657.game.notebook.rule.4                    (223.5, 654) 325x7 #FDFAF5
+   art657.game.notebook.slot.1                    (88, 322.5) 54x72 #2E1F1A
+   art657.game.notebook.slot.2                    (88, 415.5) 54x72 #2E1F1A
+   art657.game.notebook.slot.3                    (88, 511) 54x72 #2E1F1A
+   art657.game.notebook.slot.4                    (88, 606.5) 54x72 #2E1F1A
+   art657.game.notebook.slot.5                    (88, 699.5) 54x72 #2E1F1A
+   art657.game.notebook.ring.1                    (15, 322) 38x9 #6C6962
+   art657.game.notebook.ring.2                    (15, 415) 38x9 #6C6962
+   art657.game.notebook.ring.3                    (15, 511) 38x9 #6C6962
+   art657.game.notebook.ring.4                    (15, 606) 38x9 #6C6962
+   art657.game.notebook.ring.5                    (15, 699) 38x9 #6C6962
+   art657.game.notebook.ringhole.1                (30, 322) 8x11 #262229
+   art657.game.notebook.ringhole.2                (30, 415) 8x11 #262229
+   art657.game.notebook.ringhole.3                (30, 511) 8x11 #262229
+   art657.game.notebook.ringhole.4                (30, 606) 8x11 #262229
+   art657.game.notebook.ringhole.5                (30, 699) 8x11 #262229
+
+[dry-run] 预计：修改 66 处控件写入 / 隐藏 36 条 / 新增 119 条
+[dry-run] 记录数 6340 -> 6459
+[dry-run] 未调用 writeGil，未创建任何 .gil。
