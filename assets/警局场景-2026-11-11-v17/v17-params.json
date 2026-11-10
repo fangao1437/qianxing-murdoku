@@ -1,0 +1,67 @@
+{
+  "version": "v17",
+  "date": "2026-11-11",
+  "base": "assets/警局场景-2026-11-11-v16",
+  "reference": {
+    "githubRepo": "qianxing-murdoku (origin https://github.com/fangao1437/qianxing-murdoku.git)",
+    "methodDoc": "docs/美术资产-原生图形构造与v12-v15演进.md",
+    "fittingTool": "qianxing-murdoku-tool/art/tools/fit-primitive-shape.mjs",
+    "fittingToolDoc": "qianxing-murdoku-tool/art/docs/原生图形拟合工具.md"
+  },
+  "trigger": "用户实机反馈：取消 v14→v15 的过渡柔化、阴影形状按设计图质感做清晰；边缘有溢出、顶部有分叉，重新按设计图形状严格构造，并指出三角形的斜边构造法完全够拟合该形状；可顺便写一个拟合工具到 tool 仓",
+  "changes": {
+    "1_hardShadowEdge": {
+      "problem": "设计图 x=1263 是清晰竖直分界（y=300 时 x1260 R=129 → x1266 R=154，跳变 +25）；v15 的 20 条渐隐带把它抹成 +3，v16 沿用",
+      "solution": "删除全部 20 条渐隐带；单个染黑 0.18 主矩形 x[900,1263] / y[170,763] 直接到 x=1263",
+      "verified": { "design": { "x1260": 129, "x1266": 154, "jump": 25 }, "v16": { "x1260": 147, "x1266": 150, "jump": 3 }, "v17": { "x1260": 130, "x1266": 157, "jump": 27 } },
+      "fadeStrips": 0,
+      "shadowMAE": { "whole": { "v16": 22.84, "v17": 22.63 }, "mid": { "v16": 19.44, "v17": 19.19 } }
+    },
+    "2_strictWedgeFit": {
+      "diagnosis": {
+        "edgeOverflow": "v16 长钝角三角顶点 (409.6,458.4) 把楔形左缘向左鼓出，越过档案袋左缘；y=450 溢出10px、y=550 溢出23px、y=600 溢出18px，且 RED 一直拖到 y=710（设计图止于 653）",
+        "forkedApex": "v16 顶端由多枚 fillTri 三角拼成，收不成单一尖点，留下两条细尖角夹亮橙缝（用户图2，v16 x442,y218）"
+      },
+      "samples": "设计图 1600x900 按 #C75C18 逐行取最长连续段，416 行 {y,left,right}",
+      "fittedLines": {
+        "leftUpper": { "y": [233, 320], "a": -0.357, "b": 556.173, "mae": 1.7, "max": 3.666 },
+        "leftMid": { "y": [320, 500], "a": -0.187, "b": 505.53, "mae": 0.325, "max": 1.112 },
+        "leftLower": { "y": [500, 649], "a": 0.287, "b": 268.998, "mae": 0.608, "max": 4.054 },
+        "right": { "y": [233, 649], "a": -0.049, "b": 488.323, "mae": 0.286, "max": 1.52 }
+      },
+      "residual": { "mae": 0.5, "max": 4.054 },
+      "polygon": [[477.458, 220.703], [449.654, 298.66], [412.101, 499.382], [456.168, 653.161]],
+      "primitives": "A 整幅每边等腰三角 + B 扇形剖分补尖角 + C 顶角三角（顶点贴多边形顶点、两腰贴相邻边）=> 26 枚 100003",
+      "geometryCheck": { "coverage": 100, "overflowVertices": 0, "elements": 26, "sampled": 12488 },
+      "removed": ["v15 rot=90 钝角三角 w323 h58", "v16 rot=86 长钝角三角 w460 h45", "两组 fillTri 拼三角"],
+      "renderedBoundary": {
+        "y450": { "design": 422, "v16": 412, "v17": 421 },
+        "y550": { "design": 427, "v16": 404, "v17": 426 },
+        "y600": { "design": 440, "v16": 422, "v17": 441 },
+        "y640": { "design": 452, "v16": 433, "v17": 452 },
+        "interiorBagHoles": { "v16": 163, "v17": 0 }
+      }
+    }
+  },
+  "unchanged": [
+    "拍立得 FRAME #FDFADB / FRAME_LIT #FCFAF0 / PHOTO_L #753323 / PHOTO_R #803A29 / POL_TH=-14 / 分界 x=1263（照片与相框纯色块与 v16 逐像素差 0）",
+    "官方 106060 1800x1040 op1 圆形渐晕",
+    "52 条右侧渐变与 v15 alpha 补偿（x>=1300 与 v16 逐像素差 0）",
+    "胶带橙黄渐变、爪印、文本框、档案袋几何、DARK 大三角、分割线、圆扣、上下黑边"
+  ],
+  "verification": {
+    "elements": { "text": 271, "notext": 268 },
+    "triangles": 35,
+    "gia": { "textBytes": 197202, "notextBytes": 194951, "f4": "NO", "giaPlus4": "2a05362e" },
+    "artkit": "两份 ok=true / budgetExceeded=false / kind=3 / trailer 0x679",
+    "fadeStrips": 0,
+    "fitting": { "residualMAE": 0.5, "coverage": 100, "overflow": 0, "elements": 26 },
+    "rightSideDiffVsV16": { "x>=1300_mean": 0.0, "x>=1300_max": 0 },
+    "polaroidDiffVsV16": { "photoBlock_mean": 0.0 }
+  },
+  "knownRisks": [
+    "未做真机导入验证；100003 在 .gil 图片控件个别旋转角曾不出图，本轮为 .gia scene image，API 预览正常",
+    "官方 106060 固有限制：四角 85 / 边中 136 弱于设计图 52 / 180，本轮未改暗角",
+    "左侧暗角、咖啡杯、档案袋底部浅橙折角未做"
+  ]
+}
