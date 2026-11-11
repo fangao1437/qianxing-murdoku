@@ -1,0 +1,612 @@
+[
+  {
+    "level": "case_001",
+    "cards": [
+      {
+        "type": "only_on_object",
+        "who": "A",
+        "object": "地毯",
+        "speaker": "A",
+        "display_text": "只有我站在地毯上"
+      },
+      {
+        "type": "beside_object",
+        "who": "B",
+        "object": "植物",
+        "speaker": "B",
+        "display_text": "我在植物旁边"
+      },
+      {
+        "type": "on_object",
+        "who": "C",
+        "object": "椅子",
+        "speaker": "C",
+        "display_text": "我站在椅子上"
+      },
+      {
+        "type": "not_beside_object",
+        "who": "D",
+        "object": "桌子",
+        "speaker": "D",
+        "display_text": "我不在桌子旁边"
+      },
+      {
+        "type": "in_col",
+        "who": "V",
+        "c": 5,
+        "speaker": "V",
+        "display_text": "我在第五列"
+      }
+    ],
+    "audit": {
+      "good": true,
+      "count": 1,
+      "target_truth": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "audit": [
+        {
+          "person": "A",
+          "boards": 1,
+          "positions": [
+            [
+              2,
+              0
+            ]
+          ],
+          "solutions": 0
+        },
+        {
+          "person": "B",
+          "boards": 1,
+          "positions": [
+            [
+              1,
+              1
+            ]
+          ],
+          "solutions": 0
+        },
+        {
+          "person": "C",
+          "boards": 5,
+          "positions": [
+            [
+              0,
+              2
+            ],
+            [
+              1,
+              1
+            ]
+          ],
+          "solutions": 0
+        },
+        {
+          "person": "D",
+          "boards": 2,
+          "positions": [
+            [
+              0,
+              2
+            ],
+            [
+              1,
+              1
+            ]
+          ],
+          "solutions": 1
+        }
+      ],
+      "examples": [
+        {
+          "thief": "D",
+          "coords": [
+            [
+              2,
+              0
+            ],
+            [
+              1,
+              1
+            ],
+            [
+              4,
+              3
+            ],
+            [
+              0,
+              2
+            ],
+            [
+              3,
+              4
+            ]
+          ]
+        }
+      ]
+    },
+    "texts": [
+      "只有我站在地毯上",
+      "我在植物旁边",
+      "我站在椅子上",
+      "我不在桌子旁边",
+      "我在第五列"
+    ]
+  },
+  {
+    "level": "case_002",
+    "cards": [
+      {
+        "type": "beside_object",
+        "who": "A",
+        "object": "书架",
+        "speaker": "A",
+        "display_text": "我在书架旁边"
+      },
+      {
+        "type": "all_of",
+        "clauses": [
+          {
+            "type": "beside_object",
+            "who": "B",
+            "object": "桌子"
+          },
+          {
+            "type": "n_on_object",
+            "object": "椅子",
+            "n": 2
+          }
+        ],
+        "speaker": "B",
+        "display_text": "我在桌子旁边；有两人坐在椅子上"
+      },
+      {
+        "type": "below_in_other_room",
+        "who": "C",
+        "a": "C",
+        "b": "V",
+        "speaker": "C",
+        "display_text": "我在馆长下方的不同区域中"
+      },
+      {
+        "type": "on_object",
+        "who": "D",
+        "object": "地毯",
+        "speaker": "D",
+        "display_text": "我站在地毯上"
+      },
+      {
+        "type": "only_beside",
+        "who": "E",
+        "object": "植物",
+        "speaker": "E",
+        "display_text": "只有我在植物旁边"
+      },
+      {
+        "type": "alone_in_room",
+        "who": "V",
+        "speaker": "V",
+        "display_text": "我独自一人在一个区域中"
+      }
+    ],
+    "audit": {
+      "good": true,
+      "count": 1,
+      "target_truth": [
+        true,
+        true,
+        true,
+        false,
+        true,
+        true
+      ],
+      "audit": [
+        {
+          "person": "A",
+          "boards": 0,
+          "positions": [],
+          "solutions": 0
+        },
+        {
+          "person": "B",
+          "boards": 0,
+          "positions": [],
+          "solutions": 0
+        },
+        {
+          "person": "C",
+          "boards": 0,
+          "positions": [],
+          "solutions": 0
+        },
+        {
+          "person": "D",
+          "boards": 1,
+          "positions": [
+            [
+              1,
+              3
+            ]
+          ],
+          "solutions": 1
+        },
+        {
+          "person": "E",
+          "boards": 0,
+          "positions": [],
+          "solutions": 0
+        }
+      ],
+      "examples": [
+        {
+          "thief": "D",
+          "coords": [
+            [
+              4,
+              1
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              3,
+              4
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              5,
+              2
+            ],
+            [
+              2,
+              5
+            ]
+          ]
+        }
+      ]
+    },
+    "texts": [
+      "我在书架旁边",
+      "我在桌子旁边；有两人坐在椅子上",
+      "我在馆长下方的不同区域中",
+      "我站在地毯上",
+      "只有我在植物旁边",
+      "我独自一人在一个区域中"
+    ]
+  },
+  {
+    "level": "case_003",
+    "cards": [
+      {
+        "type": "all_of",
+        "clauses": [
+          {
+            "type": "beside_object",
+            "who": "A",
+            "object": "植物"
+          },
+          {
+            "type": "row_offset",
+            "who": "A",
+            "other": "B",
+            "d": -1
+          }
+        ],
+        "speaker": "A",
+        "display_text": "我在植物旁边；我比B靠上一行"
+      },
+      {
+        "type": "all_of",
+        "clauses": [
+          {
+            "type": "on_object",
+            "who": "B",
+            "object": "椅子"
+          },
+          {
+            "type": "beside_object",
+            "who": "B",
+            "object": "植物"
+          }
+        ],
+        "speaker": "B",
+        "display_text": "我坐在椅子上，且在植物旁边"
+      },
+      {
+        "type": "only_on_object",
+        "who": "C",
+        "object": "地毯",
+        "speaker": "C",
+        "display_text": "只有我站在地毯上"
+      },
+      {
+        "type": "all_of",
+        "clauses": [
+          {
+            "type": "in_room",
+            "who": "D",
+            "room": 3
+          },
+          {
+            "type": "in_col",
+            "who": "D",
+            "c": 4
+          }
+        ],
+        "speaker": "D",
+        "display_text": "我在R3房间的第四列"
+      },
+      {
+        "type": "in_room",
+        "who": "E",
+        "room": 4,
+        "speaker": "E",
+        "display_text": "我在R4房间"
+      },
+      {
+        "type": "in_room",
+        "who": "V",
+        "room": 2,
+        "speaker": "V",
+        "display_text": "我在R2房间"
+      }
+    ],
+    "audit": {
+      "good": true,
+      "count": 1,
+      "target_truth": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "audit": [
+        {
+          "person": "A",
+          "boards": 2,
+          "positions": [
+            [
+              0,
+              1
+            ],
+            [
+              0,
+              2
+            ]
+          ],
+          "solutions": 1
+        },
+        {
+          "person": "B",
+          "boards": 1,
+          "positions": [
+            [
+              1,
+              0
+            ]
+          ],
+          "solutions": 0
+        },
+        {
+          "person": "C",
+          "boards": 1,
+          "positions": [
+            [
+              2,
+              2
+            ]
+          ],
+          "solutions": 0
+        },
+        {
+          "person": "D",
+          "boards": 0,
+          "positions": [],
+          "solutions": 0
+        },
+        {
+          "person": "E",
+          "boards": 0,
+          "positions": [],
+          "solutions": 0
+        }
+      ],
+      "examples": [
+        {
+          "thief": "A",
+          "coords": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              2
+            ],
+            [
+              4,
+              3
+            ],
+            [
+              5,
+              4
+            ],
+            [
+              3,
+              5
+            ]
+          ]
+        }
+      ]
+    },
+    "texts": [
+      "我在植物旁边；我比B靠上一行",
+      "我坐在椅子上，且在植物旁边",
+      "只有我站在地毯上",
+      "我在R3房间的第四列",
+      "我在R4房间",
+      "我在R2房间"
+    ]
+  },
+  {
+    "level": "case_004",
+    "cards": [
+      {
+        "type": "same_room",
+        "a": "A",
+        "b": "D",
+        "speaker": "A",
+        "display_text": "我与D在同一房间"
+      },
+      {
+        "type": "on_object",
+        "who": "B",
+        "object": "椅子",
+        "speaker": "B",
+        "display_text": "我坐在椅子上"
+      },
+      {
+        "type": "all_of",
+        "clauses": [
+          {
+            "type": "only_on_object",
+            "who": "C",
+            "object": "地毯"
+          },
+          {
+            "type": "row_offset",
+            "who": "C",
+            "other": "E",
+            "d": -1
+          }
+        ],
+        "speaker": "C",
+        "display_text": "只有我站在地毯上；我比E靠上一行"
+      },
+      {
+        "type": "on_object",
+        "who": "D",
+        "object": "椅子",
+        "speaker": "D",
+        "display_text": "我坐在椅子上"
+      },
+      {
+        "type": "on_object",
+        "who": "E",
+        "object": "椅子",
+        "speaker": "E",
+        "display_text": "我坐在椅子上"
+      },
+      {
+        "type": "beside_object",
+        "who": "V",
+        "object": "植物",
+        "speaker": "V",
+        "display_text": "我在植物旁边"
+      }
+    ],
+    "audit": {
+      "good": true,
+      "count": 1,
+      "target_truth": [
+        true,
+        true,
+        true,
+        true,
+        false,
+        true
+      ],
+      "audit": [
+        {
+          "person": "A",
+          "boards": 0,
+          "positions": [],
+          "solutions": 0
+        },
+        {
+          "person": "B",
+          "boards": 0,
+          "positions": [],
+          "solutions": 0
+        },
+        {
+          "person": "C",
+          "boards": 0,
+          "positions": [],
+          "solutions": 0
+        },
+        {
+          "person": "D",
+          "boards": 0,
+          "positions": [],
+          "solutions": 0
+        },
+        {
+          "person": "E",
+          "boards": 1,
+          "positions": [
+            [
+              2,
+              0
+            ]
+          ],
+          "solutions": 1
+        }
+      ],
+      "examples": [
+        {
+          "thief": "E",
+          "coords": [
+            [
+              4,
+              3
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              5,
+              4
+            ],
+            [
+              2,
+              0
+            ],
+            [
+              3,
+              5
+            ]
+          ]
+        }
+      ]
+    },
+    "texts": [
+      "我与D在同一房间",
+      "我坐在椅子上",
+      "只有我站在地毯上；我比E靠上一行",
+      "我坐在椅子上",
+      "我坐在椅子上",
+      "我在植物旁边"
+    ]
+  }
+]

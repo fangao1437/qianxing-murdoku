@@ -1,0 +1,95 @@
+{
+  "recordsBefore": 7040,
+  "recordsAfter": 7044,
+  "added": 4,
+  "removed": 0,
+  "changed": 68,
+  "unexpectedChanges": [],
+  "scriptIdentical": true,
+  "scriptBytes": 636660,
+  "textRecordsChanged": 0,
+  "policeV19Descendants": 650,
+  "bgChanged": 0,
+  "staticBackdropHidden": true,
+  "tplOk": true,
+  "tpl": [
+    {
+      "rootId": 1073742421,
+      "backrop1": {
+        "geom": [
+          800,
+          450,
+          330,
+          85.4
+        ],
+        "color": "FF56565E"
+      },
+      "backrop2": {
+        "geom": [
+          800,
+          450,
+          324,
+          79.4
+        ],
+        "color": "FF68262A"
+      },
+      "visibleArt": 2,
+      "artNames": [
+        "art671.clue1.hi",
+        "art671.clue1.lo"
+      ],
+      "artAllBeforeText": true,
+      "artAllTriangles": true,
+      "allVerticesInside": true,
+      "oldAllHidden": true,
+      "oldCount": 32,
+      "childListOk": true,
+      "text": {
+        "who": "FFFFFFFF",
+        "what": "FFFFFFFF",
+        "letter": "FFFFFFFF"
+      }
+    },
+    {
+      "rootId": 1073742428,
+      "backrop1": {
+        "geom": [
+          800,
+          450,
+          330,
+          85.4
+        ],
+        "color": "FF56565E"
+      },
+      "backrop2": {
+        "geom": [
+          800,
+          450,
+          324,
+          79.4
+        ],
+        "color": "FF68262A"
+      },
+      "visibleArt": 2,
+      "artNames": [
+        "art671.clue2.hi",
+        "art671.clue2.lo"
+      ],
+      "artAllBeforeText": true,
+      "artAllTriangles": true,
+      "allVerticesInside": true,
+      "oldAllHidden": true,
+      "oldCount": 32,
+      "childListOk": true,
+      "text": {
+        "who": "FFFFFFFF",
+        "what": "FFFFFFFF",
+        "letter": "FFFFFFFF"
+      }
+    }
+  ],
+  "visibleLayersPerTemplate": 4,
+  "previousVisibleLayersPerTemplate": 32,
+  "dangling": 0,
+  "verdict": true
+}

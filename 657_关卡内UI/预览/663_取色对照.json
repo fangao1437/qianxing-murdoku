@@ -1,0 +1,74 @@
+[
+  {
+    "element": "票券主体",
+    "design": "#AD3711",
+    "base": "#8B2800",
+    "v663": "#8B2800",
+    "deltaEBase": 11.05,
+    "deltaE663": 11.05,
+    "improved": false
+  },
+  {
+    "element": "票券亮部",
+    "design": "#AF3300",
+    "base": "#C04712",
+    "v663": "#A83408",
+    "deltaEBase": 6.65,
+    "deltaE663": 4.97,
+    "improved": true
+  },
+  {
+    "element": "白底板·右",
+    "design": "#FDFBE4",
+    "base": "#FAEFCC",
+    "v663": "#FDFCE7",
+    "deltaEBase": 8.06,
+    "deltaE663": 1.13,
+    "improved": true
+  },
+  {
+    "element": "白底板·上",
+    "design": "#FDFCE7",
+    "base": "#FDFDE7",
+    "v663": "#FDFDE7",
+    "deltaEBase": 0.66,
+    "deltaE663": 0.66,
+    "improved": false
+  },
+  {
+    "element": "火漆中心",
+    "design": "#A90400",
+    "base": "#BE1B12",
+    "v663": "#A60400",
+    "deltaEBase": 6.38,
+    "deltaE663": 1.25,
+    "improved": true
+  },
+  {
+    "element": "火漆左缘",
+    "design": "#D70400",
+    "base": "#BE1B12",
+    "v663": "#AD0603",
+    "deltaEBase": 15.1,
+    "deltaE663": 17.35,
+    "improved": false
+  },
+  {
+    "element": "线索卡底板",
+    "design": "#6A282C",
+    "base": "#68252A",
+    "v663": "#68262A",
+    "deltaEBase": 1.16,
+    "deltaE663": 0.83,
+    "improved": true
+  },
+  {
+    "element": "活页环",
+    "design": "#0D0000",
+    "base": "#6C6962",
+    "v663": "#241710",
+    "deltaEBase": 43.97,
+    "deltaE663": 10.33,
+    "improved": true
+  }
+]

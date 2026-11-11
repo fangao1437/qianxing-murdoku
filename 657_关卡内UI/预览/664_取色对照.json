@@ -1,0 +1,119 @@
+[
+  {
+    "element": "票券·亮阶",
+    "at": [
+      340,
+      195
+    ],
+    "design": "#CB4C19",
+    "v663": "#A83408",
+    "v664": "#CB4C19",
+    "deltaE663": 11.33,
+    "deltaE664": 0,
+    "improved": true
+  },
+  {
+    "element": "票券·中阶",
+    "at": [
+      365,
+      215
+    ],
+    "design": "#B43100",
+    "v663": "#FDFAF5",
+    "v664": "#FDFAF5",
+    "deltaE663": 91.84,
+    "deltaE664": 91.84,
+    "improved": false
+  },
+  {
+    "element": "票券·底色",
+    "at": [
+      425,
+      200
+    ],
+    "design": "#8C2804",
+    "v663": "#8B2800",
+    "v664": "#982D00",
+    "deltaE663": 1.47,
+    "deltaE664": 5.97,
+    "improved": false
+  },
+  {
+    "element": "白底板·右",
+    "at": [
+      1210,
+      400
+    ],
+    "design": "#FDFBE4",
+    "v663": "#FDFCE7",
+    "v664": "#FDFCE7",
+    "deltaE663": 1.13,
+    "deltaE664": 1.13,
+    "improved": false
+  },
+  {
+    "element": "白底板·上",
+    "at": [
+      900,
+      90
+    ],
+    "design": "#FDFCE7",
+    "v663": "#FDFDE7",
+    "v664": "#FDFCE7",
+    "deltaE663": 0.66,
+    "deltaE664": 0,
+    "improved": true
+  },
+  {
+    "element": "白底板·下",
+    "at": [
+      900,
+      760
+    ],
+    "design": "#FCF5D8",
+    "v663": "#FDFDE7",
+    "v664": "#FDFDE7",
+    "deltaE663": 5.08,
+    "deltaE664": 5.08,
+    "improved": false
+  },
+  {
+    "element": "火漆·左亮环",
+    "at": [
+      1284,
+      342
+    ],
+    "design": "#D30700",
+    "v663": "#AB0501",
+    "v664": "#D70601",
+    "deltaE663": 16.04,
+    "deltaE664": 1.46,
+    "improved": true
+  },
+  {
+    "element": "火漆·中心",
+    "at": [
+      1320,
+      340
+    ],
+    "design": "#A90400",
+    "v663": "#A60400",
+    "v664": "#A60400",
+    "deltaE663": 1.25,
+    "deltaE664": 1.25,
+    "improved": false
+  },
+  {
+    "element": "火漆·右亮环",
+    "at": [
+      1370,
+      342
+    ],
+    "design": "#DB0505",
+    "v663": "#AA0400",
+    "v664": "#D70601",
+    "deltaE663": 18.6,
+    "deltaE664": 1.45,
+    "improved": true
+  }
+]

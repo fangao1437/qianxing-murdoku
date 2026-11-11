@@ -1,0 +1,542 @@
+{
+  "version": 1,
+  "name": "663 build audit",
+  "date": "2026-11-11",
+  "base": {
+    "file": "662v19.gil",
+    "sha256": "2d500750924fceb6cff7d6879d6d6050e61ecd580da137776e40bccbad917049",
+    "records": 6901,
+    "scriptBytes": 636612
+  },
+  "output": {
+    "file": "663_关卡内UI.gil",
+    "sha256": "60ebb1a18abe893d654380ae1ca4a33db5525850538774d4743e2f042d8b458c",
+    "bytes": 6246985,
+    "records": 6984
+  },
+  "spec": {
+    "coordinate": "1600x900 屏幕坐标；设计图 1920x1080 → ×0.8333；实机 1604x960 → crop(2,38)",
+    "fiveItems": [
+      "① 注释票券：保持 140×66 @(384,211) rot−13 / 描边 146×72 #3A1A12（与设计图、基线同尺寸），主体 #8B2800、亮部 #A83408；两端各 4 枚重叠小椭圆连成连续浅锯齿撕边；? 本体与热区逐字节不动",
+      "② 活页扣：5 组弧形金属环（outer/hi/shade/tip 各 1 枚 100002 椭圆，rot −14、末端圆头下坠），色 #241710/#6C6962/#3B1C14，替换原 38×9 扁条与环孔",
+      "③ 棋盘下第一张（图层更上 boardframe.paper）→ #FDFCE7 白色底板，shadow → #FBF3D8；第二张 art656.home.grid 大小/颜色/角度零改动，仅补 19 条横线 h04..h22（step 29.84，x=828.9−0.091(y−126.4)）",
+      "④ 火漆：中心 (1326,342)，12 瓣浅起伏（R=32/d=38~42）+ 暗沿 + 左右亮红弧 + 淡压印共 28 层 100002；原 4 层完美圆图钉隐藏",
+      "⑤ 线索卡背后：page 统一 #68262A 纯色，隐藏 page.mid/page.lower 与 4 条静态白线，消除 5 张静态红卡的滚动负反馈"
+    ],
+    "method": "本机 GitHub v15《美术资产-原生图形构造与v12-v15演进》：同色不透明图元重叠无缝、不用父级裁剪、childList 与全局记录表同序、落盘走 writeGil 六道闸。",
+    "ignored": "v19 背景资产 (murdoku-police-v19-text.gia) 为独立内容，其差异忽略；police-v19 子树 649 条零改动。"
+  },
+  "counts": {
+    "recordsBefore": 6901,
+    "recordsAfter": 6984,
+    "added": 83,
+    "hidden": 30,
+    "modified": 124
+  },
+  "addedByGroup": {
+    "tab": 16,
+    "ring": 20,
+    "grid": 19,
+    "wax": 28
+  },
+  "protectedRecords": 847,
+  "modified": [
+    "art661.tab.outline",
+    "art641.game.help.tab",
+    "art661.tab.light.rect",
+    "art661.tab.light.tri",
+    "art661.tab.light.patch1",
+    "art661.tab.light.patch2",
+    "art661.tab.notch.l1",
+    "art661.tab.notch.l2",
+    "art661.tab.notch.l3",
+    "art661.tab.notch.r1",
+    "art661.tab.notch.r2",
+    "art661.tab.notch.r3",
+    "art661.tab.tip.lt",
+    "art661.tab.tip.lb",
+    "art661.tab.tip.rt",
+    "art661.tab.tip.rb",
+    "art663.tab.edge.l0",
+    "art663.tab.edge.l1",
+    "art663.tab.edge.l2",
+    "art663.tab.edge.l3",
+    "art663.tab.edge.r0",
+    "art663.tab.edge.r1",
+    "art663.tab.edge.r2",
+    "art663.tab.edge.r3",
+    "art663.tab.tooth.l0",
+    "art663.tab.tooth.l1",
+    "art663.tab.tooth.l2",
+    "art663.tab.tooth.l3",
+    "art663.tab.tooth.r0",
+    "art663.tab.tooth.r1",
+    "art663.tab.tooth.r2",
+    "art663.tab.tooth.r3",
+    "art657.game.notebook.ring.1",
+    "art657.game.notebook.ringhole.1",
+    "art657.game.notebook.ring.2",
+    "art657.game.notebook.ringhole.2",
+    "art657.game.notebook.ring.3",
+    "art657.game.notebook.ringhole.3",
+    "art657.game.notebook.ring.4",
+    "art657.game.notebook.ringhole.4",
+    "art657.game.notebook.ring.5",
+    "art657.game.notebook.ringhole.5",
+    "art663.ring.1.outer",
+    "art663.ring.1.hi",
+    "art663.ring.1.shade",
+    "art663.ring.1.tip",
+    "art663.ring.2.outer",
+    "art663.ring.2.hi",
+    "art663.ring.2.shade",
+    "art663.ring.2.tip",
+    "art663.ring.3.outer",
+    "art663.ring.3.hi",
+    "art663.ring.3.shade",
+    "art663.ring.3.tip",
+    "art663.ring.4.outer",
+    "art663.ring.4.hi",
+    "art663.ring.4.shade",
+    "art663.ring.4.tip",
+    "art663.ring.5.outer",
+    "art663.ring.5.hi",
+    "art663.ring.5.shade",
+    "art663.ring.5.tip",
+    "art641.game.boardframe.paper",
+    "art641.game.boardframe.shadow",
+    "art663.grid.h04",
+    "art663.grid.h05",
+    "art663.grid.h06",
+    "art663.grid.h07",
+    "art663.grid.h08",
+    "art663.grid.h09",
+    "art663.grid.h10",
+    "art663.grid.h11",
+    "art663.grid.h12",
+    "art663.grid.h13",
+    "art663.grid.h14",
+    "art663.grid.h15",
+    "art663.grid.h16",
+    "art663.grid.h17",
+    "art663.grid.h18",
+    "art663.grid.h19",
+    "art663.grid.h20",
+    "art663.grid.h21",
+    "art663.grid.h22",
+    "art657.game.pin.border",
+    "art657.game.pin",
+    "art657.game.pin.mid",
+    "art657.game.pin.hilite",
+    "art663.wax.edge.0",
+    "art663.wax.edge.1",
+    "art663.wax.edge.2",
+    "art663.wax.edge.3",
+    "art663.wax.edge.4",
+    "art663.wax.edge.5",
+    "art663.wax.edge.6",
+    "art663.wax.edge.7",
+    "art663.wax.edge.8",
+    "art663.wax.edge.9",
+    "art663.wax.edge.10",
+    "art663.wax.edge.11",
+    "art663.wax.lobe.0",
+    "art663.wax.lobe.1",
+    "art663.wax.lobe.2",
+    "art663.wax.lobe.3",
+    "art663.wax.lobe.4",
+    "art663.wax.lobe.5",
+    "art663.wax.lobe.6",
+    "art663.wax.lobe.7",
+    "art663.wax.lobe.8",
+    "art663.wax.lobe.9",
+    "art663.wax.lobe.10",
+    "art663.wax.lobe.11",
+    "art663.wax.core",
+    "art663.wax.glow.l",
+    "art663.wax.glow.r",
+    "art663.wax.inner",
+    "art657.game.notebook.page",
+    "art657.game.notebook.page.mid",
+    "art657.game.notebook.page.lower",
+    "art657.game.notebook.rule.1",
+    "art657.game.notebook.rule.2",
+    "art657.game.notebook.rule.3",
+    "art657.game.notebook.rule.4",
+    "grp653.static.1.art641.game",
+    "art657.grid.reuse"
+  ],
+  "hidden": [
+    "art661.tab.notch.l1",
+    "art661.tab.notch.l2",
+    "art661.tab.notch.l3",
+    "art661.tab.notch.r1",
+    "art661.tab.notch.r2",
+    "art661.tab.notch.r3",
+    "art661.tab.tip.lt",
+    "art661.tab.tip.lb",
+    "art661.tab.tip.rt",
+    "art661.tab.tip.rb",
+    "art657.game.notebook.ring.1",
+    "art657.game.notebook.ringhole.1",
+    "art657.game.notebook.ring.2",
+    "art657.game.notebook.ringhole.2",
+    "art657.game.notebook.ring.3",
+    "art657.game.notebook.ringhole.3",
+    "art657.game.notebook.ring.4",
+    "art657.game.notebook.ringhole.4",
+    "art657.game.notebook.ring.5",
+    "art657.game.notebook.ringhole.5",
+    "art657.game.pin.border",
+    "art657.game.pin",
+    "art657.game.pin.mid",
+    "art657.game.pin.hilite",
+    "art657.game.notebook.page.mid",
+    "art657.game.notebook.page.lower",
+    "art657.game.notebook.rule.1",
+    "art657.game.notebook.rule.2",
+    "art657.game.notebook.rule.3",
+    "art657.game.notebook.rule.4"
+  ],
+  "addedLayers": [
+    {
+      "id": 1073759587,
+      "name": "art663.tab.edge.l0"
+    },
+    {
+      "id": 1073759588,
+      "name": "art663.tab.edge.l1"
+    },
+    {
+      "id": 1073759589,
+      "name": "art663.tab.edge.l2"
+    },
+    {
+      "id": 1073759590,
+      "name": "art663.tab.edge.l3"
+    },
+    {
+      "id": 1073759591,
+      "name": "art663.tab.edge.r0"
+    },
+    {
+      "id": 1073759592,
+      "name": "art663.tab.edge.r1"
+    },
+    {
+      "id": 1073759593,
+      "name": "art663.tab.edge.r2"
+    },
+    {
+      "id": 1073759594,
+      "name": "art663.tab.edge.r3"
+    },
+    {
+      "id": 1073759595,
+      "name": "art663.tab.tooth.l0"
+    },
+    {
+      "id": 1073759596,
+      "name": "art663.tab.tooth.l1"
+    },
+    {
+      "id": 1073759597,
+      "name": "art663.tab.tooth.l2"
+    },
+    {
+      "id": 1073759598,
+      "name": "art663.tab.tooth.l3"
+    },
+    {
+      "id": 1073759599,
+      "name": "art663.tab.tooth.r0"
+    },
+    {
+      "id": 1073759600,
+      "name": "art663.tab.tooth.r1"
+    },
+    {
+      "id": 1073759601,
+      "name": "art663.tab.tooth.r2"
+    },
+    {
+      "id": 1073759602,
+      "name": "art663.tab.tooth.r3"
+    },
+    {
+      "id": 1073759603,
+      "name": "art663.ring.1.outer"
+    },
+    {
+      "id": 1073759604,
+      "name": "art663.ring.1.hi"
+    },
+    {
+      "id": 1073759605,
+      "name": "art663.ring.1.shade"
+    },
+    {
+      "id": 1073759606,
+      "name": "art663.ring.1.tip"
+    },
+    {
+      "id": 1073759607,
+      "name": "art663.ring.2.outer"
+    },
+    {
+      "id": 1073759608,
+      "name": "art663.ring.2.hi"
+    },
+    {
+      "id": 1073759609,
+      "name": "art663.ring.2.shade"
+    },
+    {
+      "id": 1073759610,
+      "name": "art663.ring.2.tip"
+    },
+    {
+      "id": 1073759611,
+      "name": "art663.ring.3.outer"
+    },
+    {
+      "id": 1073759612,
+      "name": "art663.ring.3.hi"
+    },
+    {
+      "id": 1073759613,
+      "name": "art663.ring.3.shade"
+    },
+    {
+      "id": 1073759614,
+      "name": "art663.ring.3.tip"
+    },
+    {
+      "id": 1073759615,
+      "name": "art663.ring.4.outer"
+    },
+    {
+      "id": 1073759616,
+      "name": "art663.ring.4.hi"
+    },
+    {
+      "id": 1073759617,
+      "name": "art663.ring.4.shade"
+    },
+    {
+      "id": 1073759618,
+      "name": "art663.ring.4.tip"
+    },
+    {
+      "id": 1073759619,
+      "name": "art663.ring.5.outer"
+    },
+    {
+      "id": 1073759620,
+      "name": "art663.ring.5.hi"
+    },
+    {
+      "id": 1073759621,
+      "name": "art663.ring.5.shade"
+    },
+    {
+      "id": 1073759622,
+      "name": "art663.ring.5.tip"
+    },
+    {
+      "id": 1073759623,
+      "name": "art663.grid.h04"
+    },
+    {
+      "id": 1073759624,
+      "name": "art663.grid.h05"
+    },
+    {
+      "id": 1073759625,
+      "name": "art663.grid.h06"
+    },
+    {
+      "id": 1073759626,
+      "name": "art663.grid.h07"
+    },
+    {
+      "id": 1073759627,
+      "name": "art663.grid.h08"
+    },
+    {
+      "id": 1073759628,
+      "name": "art663.grid.h09"
+    },
+    {
+      "id": 1073759629,
+      "name": "art663.grid.h10"
+    },
+    {
+      "id": 1073759630,
+      "name": "art663.grid.h11"
+    },
+    {
+      "id": 1073759631,
+      "name": "art663.grid.h12"
+    },
+    {
+      "id": 1073759632,
+      "name": "art663.grid.h13"
+    },
+    {
+      "id": 1073759633,
+      "name": "art663.grid.h14"
+    },
+    {
+      "id": 1073759634,
+      "name": "art663.grid.h15"
+    },
+    {
+      "id": 1073759635,
+      "name": "art663.grid.h16"
+    },
+    {
+      "id": 1073759636,
+      "name": "art663.grid.h17"
+    },
+    {
+      "id": 1073759637,
+      "name": "art663.grid.h18"
+    },
+    {
+      "id": 1073759638,
+      "name": "art663.grid.h19"
+    },
+    {
+      "id": 1073759639,
+      "name": "art663.grid.h20"
+    },
+    {
+      "id": 1073759640,
+      "name": "art663.grid.h21"
+    },
+    {
+      "id": 1073759641,
+      "name": "art663.grid.h22"
+    },
+    {
+      "id": 1073759642,
+      "name": "art663.wax.edge.0"
+    },
+    {
+      "id": 1073759643,
+      "name": "art663.wax.edge.1"
+    },
+    {
+      "id": 1073759644,
+      "name": "art663.wax.edge.2"
+    },
+    {
+      "id": 1073759645,
+      "name": "art663.wax.edge.3"
+    },
+    {
+      "id": 1073759646,
+      "name": "art663.wax.edge.4"
+    },
+    {
+      "id": 1073759647,
+      "name": "art663.wax.edge.5"
+    },
+    {
+      "id": 1073759648,
+      "name": "art663.wax.edge.6"
+    },
+    {
+      "id": 1073759649,
+      "name": "art663.wax.edge.7"
+    },
+    {
+      "id": 1073759650,
+      "name": "art663.wax.edge.8"
+    },
+    {
+      "id": 1073759651,
+      "name": "art663.wax.edge.9"
+    },
+    {
+      "id": 1073759652,
+      "name": "art663.wax.edge.10"
+    },
+    {
+      "id": 1073759653,
+      "name": "art663.wax.edge.11"
+    },
+    {
+      "id": 1073759654,
+      "name": "art663.wax.lobe.0"
+    },
+    {
+      "id": 1073759655,
+      "name": "art663.wax.lobe.1"
+    },
+    {
+      "id": 1073759656,
+      "name": "art663.wax.lobe.2"
+    },
+    {
+      "id": 1073759657,
+      "name": "art663.wax.lobe.3"
+    },
+    {
+      "id": 1073759658,
+      "name": "art663.wax.lobe.4"
+    },
+    {
+      "id": 1073759659,
+      "name": "art663.wax.lobe.5"
+    },
+    {
+      "id": 1073759660,
+      "name": "art663.wax.lobe.6"
+    },
+    {
+      "id": 1073759661,
+      "name": "art663.wax.lobe.7"
+    },
+    {
+      "id": 1073759662,
+      "name": "art663.wax.lobe.8"
+    },
+    {
+      "id": 1073759663,
+      "name": "art663.wax.lobe.9"
+    },
+    {
+      "id": 1073759664,
+      "name": "art663.wax.lobe.10"
+    },
+    {
+      "id": 1073759665,
+      "name": "art663.wax.lobe.11"
+    },
+    {
+      "id": 1073759666,
+      "name": "art663.wax.core"
+    },
+    {
+      "id": 1073759667,
+      "name": "art663.wax.glow.l"
+    },
+    {
+      "id": 1073759668,
+      "name": "art663.wax.glow.r"
+    },
+    {
+      "id": 1073759669,
+      "name": "art663.wax.inner"
+    }
+  ],
+  "writeGilReport": {
+    "bytes": 6246985,
+    "diffs": 136817,
+    "compared": 1326513,
+    "recs": 6984,
+    "marker": null
+  }
+}

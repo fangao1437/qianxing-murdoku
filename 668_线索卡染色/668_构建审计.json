@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "name": "668 build audit",
+  "date": "2026-11-11",
+  "base": {
+    "file": "666_线索换位.gil",
+    "sha256": "8e588a62540aa1669f2c06da8c6c9812abe3c6668ac92813cddb20c36db83f46",
+    "records": 6976,
+    "scriptBytes": 636660
+  },
+  "output": {
+    "file": "668_线索卡染色.gil",
+    "sha256": "2f6c1ac87c7661d7cfe5d888596f5a2d95fb747951936a26a71367e85051d9b3",
+    "bytes": 6241064,
+    "records": 6976
+  },
+  "spec": {
+    "correction": "撤销 667 误把卡片本身的阶梯渐变染色一起隐藏的改动；只保留上轮「删掉卡片区背后大红底板」的要求。",
+    "onlyChange": "隐藏 art657.game.notebook.page 一条记录 ⇒ 卡片区背景露出白色底板 art657.game.notebook.frame(#FDFAEF)。",
+    "cardKept": "两套 clue 模板的 art658.clueN.bg + art661.clueN.*(28 层阶梯渐变) + rule 白线 + backrop1/backrop2(#00FFFFFF) + who/what/letter(#FFFFFFFF 白字) 全部保持 666 原样。",
+    "backrop1Position": "666 层序中渐变组(23..69) → rule(70) → backrop1(71) → backrop2(72)，渐变素材本就紧邻 backrop1 之前；保持该层序使脚本 _grid_paint_highlight 给 backrop1 写 HIGHLIGHT_TINT 时整张卡染黄，染色不会被 28 层渐变盖住。",
+    "untouched": "内嵌 Lua、26 条 666 文本、控件几何/父子/childList、层序、v19 背景子树均未改动。"
+  },
+  "counts": {
+    "recordsBefore": 6976,
+    "recordsAfter": 6976,
+    "changed": 1
+  },
+  "hidden": [
+    "art657.game.notebook.page"
+  ],
+  "tplSummary": [
+    {
+      "rootId": 1073742421,
+      "visibleGradientLayers": 28,
+      "bgVisible": true,
+      "bgColor": "FF68282A",
+      "backrop1": "FFFFFF",
+      "backrop2": "FFFFFF",
+      "textColors": {
+        "who": "FFFFFFFF",
+        "what": "FFFFFFFF",
+        "letter": "FFFFFFFF"
+      }
+    },
+    {
+      "rootId": 1073742428,
+      "visibleGradientLayers": 28,
+      "bgVisible": true,
+      "bgColor": "FF68282A",
+      "backrop1": "FFFFFF",
+      "backrop2": "FFFFFF",
+      "textColors": {
+        "who": "FFFFFFFF",
+        "what": "FFFFFFFF",
+        "letter": "FFFFFFFF"
+      }
+    }
+  ],
+  "writeGilReport": {
+    "bytes": 6241064,
+    "diffs": 1,
+    "compared": 1409342,
+    "recs": 6976,
+    "marker": null
+  }
+}

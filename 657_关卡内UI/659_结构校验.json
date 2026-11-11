@@ -1,0 +1,60 @@
+{
+  "base": "658_关卡内UI.gil",
+  "output": "659_关卡内UI.gil",
+  "recordsBefore": 6639,
+  "recordsAfter": 6752,
+  "added": 113,
+  "removed": 0,
+  "changedExisting": 105,
+  "policeV12": {
+    "descendantsBefore": 762,
+    "descendantsAfter": 762,
+    "changed": 0,
+    "added": 0,
+    "removed": 0,
+    "untouched": true
+  },
+  "script": {
+    "identical": true,
+    "bytes": 636612
+  },
+  "hiddenRecords": {
+    "count": 127,
+    "allEffective": true
+  },
+  "threeFixes": {
+    "p1_clipFallback": {
+      "clipsHidden": true,
+      "rotatedHidden": true,
+      "rotatedStillVisible": [],
+      "clipCount": 2,
+      "rotatedCount": 12,
+      "templateStepLayers": [
+        10,
+        10
+      ],
+      "allZeroOverflow": true
+    },
+    "p2_evenGaps": {
+      "centers": [
+        152,
+        247,
+        342
+      ],
+      "gaps": [
+        95,
+        95
+      ],
+      "gapsEven": true,
+      "hitIconSync": true
+    },
+    "p3_clueBackground": {
+      "newGridLayers": 87,
+      "gridOnGrp": true,
+      "beforeWhiteFrame": true
+    }
+  },
+  "childListFollowsRecordOrder": true,
+  "keyControlsMissing": [],
+  "verdict": true
+}

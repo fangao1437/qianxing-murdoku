@@ -1,0 +1,181 @@
+{
+  "tool": "fit-primitive-shape",
+  "version": 1,
+  "color": "#CB4C19",
+  "polygon": [
+    [
+      323.217,
+      163.099
+    ],
+    [
+      382.654,
+      176.821
+    ],
+    [
+      309.495,
+      222.536
+    ]
+  ],
+  "lines": null,
+  "residual": null,
+  "samples": null,
+  "adaptive": {
+    "strategy": "A+B+C",
+    "cornerScales": [
+      0.62
+    ],
+    "coverage": 100,
+    "elements": 9
+  },
+  "verification": {
+    "elements": 9,
+    "overflowVertices": 0,
+    "maxViolation": 0,
+    "overflowSamples": [],
+    "coverage": 100,
+    "sampled": 1859,
+    "bbox": [
+      309.495,
+      163.099,
+      382.654,
+      222.536
+    ]
+  },
+  "elements": [
+    {
+      "id": "fit1",
+      "zIndex": 0,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 349.505,
+      "y": 184.819,
+      "width": 61,
+      "height": 30.5,
+      "rotation": 167,
+      "color": "#CB4C19",
+      "opacity": 1
+    },
+    {
+      "id": "fit2",
+      "zIndex": 1,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 334.646,
+      "y": 181.389,
+      "width": 86.268,
+      "height": 43.134,
+      "rotation": 32,
+      "color": "#CB4C19",
+      "opacity": 1
+    },
+    {
+      "id": "fit3",
+      "zIndex": 2,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 331.215,
+      "y": 196.248,
+      "width": 61,
+      "height": 30.5,
+      "rotation": -103,
+      "color": "#CB4C19",
+      "opacity": 1
+    },
+    {
+      "id": "fit4",
+      "zIndex": 3,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 349.505,
+      "y": 184.819,
+      "width": 61,
+      "height": 30.5,
+      "rotation": 167,
+      "color": "#CB4C19",
+      "opacity": 1
+    },
+    {
+      "id": "fit5",
+      "zIndex": 4,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 334.646,
+      "y": 181.389,
+      "width": 86.268,
+      "height": 43.134,
+      "rotation": 32,
+      "color": "#CB4C19",
+      "opacity": 1
+    },
+    {
+      "id": "fit6",
+      "zIndex": 5,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 331.215,
+      "y": 196.248,
+      "width": 61,
+      "height": 30.5,
+      "rotation": -103,
+      "color": "#CB4C19",
+      "opacity": 1
+    },
+    {
+      "id": "fit7",
+      "zIndex": 6,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 330.303,
+      "y": 174.439,
+      "width": 53.486,
+      "height": 26.743,
+      "rotation": 32,
+      "color": "#CB4C19",
+      "opacity": 1
+    },
+    {
+      "id": "fit8",
+      "zIndex": 7,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 365.423,
+      "y": 179.705,
+      "width": 28.946,
+      "height": 34.941,
+      "rotation": -80.5,
+      "color": "#CB4C19",
+      "opacity": 1
+    },
+    {
+      "id": "fit9",
+      "zIndex": 8,
+      "type": "image",
+      "imageAssetId": 100003,
+      "imageType": "stretch",
+      "imageTint": true,
+      "x": 319.64,
+      "y": 208.313,
+      "width": 28.946,
+      "height": 34.941,
+      "rotation": 144.5,
+      "color": "#CB4C19",
+      "opacity": 1
+    }
+  ]
+}

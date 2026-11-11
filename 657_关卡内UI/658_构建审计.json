@@ -1,0 +1,721 @@
+{
+  "version": 1,
+  "name": "658 build audit",
+  "date": "2026-11-10",
+  "base": {
+    "file": "657改.gil",
+    "sha256": "bf3b6e8a36ba8ed68a1a4cbdb32d40615755eb8945a91f592f6db9a07b0941ee",
+    "records": 6537,
+    "scriptBytes": 636612
+  },
+  "output": {
+    "file": "658_关卡内UI.gil",
+    "sha256": "ec077aa61702599e66da10991b05cf14904e1ffa3c8137e4346501018417009e",
+    "bytes": 5934726,
+    "records": 6639
+  },
+  "findings": {
+    "clip": "docs/回执-教程UI并入-v284.md 明确「引擎按父级矩形裁剪」（真机验证）；docs/7.1-脚本API速查.md 另有图片控件 enableMask / fillType+fillAmount；docs/research-raw/bs-control-support.md 记网格视窗有裁切。故采用单旋转矩形 + 父级裁剪做多色斜向渐变，不拼碎块。",
+    "sizes": "art647.select.back.ribbon 139.2x79.2、settle.ribbon 134.6x79.2；三角 68x39.6 / 79.2x39.6，描边 152.7x90.8 / 148.7x90.8，投影 139.2x84.2 / 174.2x79.2。关卡内按钮按该配方平移（返回按钮按设计图缩到 0.78）。",
+    "hintMaterial": "clues.help617 恢复 0xffffffff / imageId 100113；隐藏自绘 sticker.q.*；底图与热区位置不变。",
+    "clueTemplate": "两套 clue 模板各加 1 底色 + 3 旋转渐变 + 1 行间白线，共 10 层；插在 backrop1 之前，卡片文本/头像仍在其上。",
+    "noBlackSlots": "notebook.slot.1..5 隐藏（设计图黑框是头像预留位示意）。"
+  },
+  "counts": {
+    "recordsBefore": 6537,
+    "recordsAfter": 6639,
+    "added": 102,
+    "hidden": 7,
+    "modified": 159
+  },
+  "modified": [
+    "clues.help617",
+    "art657.game.sticker.q.dot",
+    "art657.game.sticker.q.mark",
+    "art641.game.flag.submit",
+    "art657.game.flag.submit.shadow",
+    "art657.game.flag.submit.outline",
+    "art657.game.flag.submit.outline.tri.top",
+    "art657.game.flag.submit.outline.tri.bottom",
+    "art657.game.flag.submit.ribbon.tri.top",
+    "art657.game.flag.submit.ribbon.tri.bottom",
+    "hex.submit",
+    "hit.submit",
+    "art641.game.flag.redo",
+    "art657.game.flag.redo.shadow",
+    "art657.game.flag.redo.outline",
+    "art657.game.flag.redo.outline.tri.top",
+    "art657.game.flag.redo.outline.tri.bottom",
+    "art657.game.flag.redo.ribbon.tri.top",
+    "art657.game.flag.redo.ribbon.tri.bottom",
+    "hex.redo",
+    "hit.redo",
+    "art641.game.flag.undo",
+    "art657.game.flag.undo.shadow",
+    "art657.game.flag.undo.outline",
+    "art657.game.flag.undo.outline.tri.top",
+    "art657.game.flag.undo.outline.tri.bottom",
+    "art657.game.flag.undo.ribbon.tri.top",
+    "art657.game.flag.undo.ribbon.tri.bottom",
+    "hex.undo",
+    "hit.undo",
+    "art641.game.flag.hint",
+    "art657.game.flag.hint.shadow",
+    "art657.game.flag.hint.outline",
+    "art657.game.flag.hint.outline.tri.top",
+    "art657.game.flag.hint.outline.tri.bottom",
+    "art657.game.flag.hint.ribbon.tri.top",
+    "art657.game.flag.hint.ribbon.tri.bottom",
+    "hex.hint",
+    "hit.hint",
+    "art641.game.flag.back",
+    "art657.game.flag.back.shadow",
+    "art657.game.flag.back.outline",
+    "art657.game.flag.back.outline.tri.top",
+    "art657.game.flag.back.outline.tri.bottom",
+    "art657.game.flag.back.ribbon.tri.top",
+    "art657.game.flag.back.ribbon.tri.bottom",
+    "hex.back",
+    "hit.back",
+    "art641.game.help.tab",
+    "art658.help.tab.jag.l1",
+    "art658.help.tab.jag.l2",
+    "art658.help.tab.jag.r1",
+    "art658.help.tab.jag.r2",
+    "art658.help.tab.clip",
+    "art658.help.tab.g1",
+    "art658.help.tab.g2",
+    "art658.help.tab.g3",
+    "art658.clues.binding",
+    "art658.clues.binding.dash1",
+    "art658.clues.binding.dash2",
+    "art658.clues.binding.dash3",
+    "art658.clues.binding.dash4",
+    "art658.clues.binding.dash5",
+    "art658.clues.binding.dash6",
+    "art658.clues.binding.dash7",
+    "art658.clues.binding.dash8",
+    "art658.clues.binding.dash9",
+    "art658.clues.binding.dash10",
+    "art658.clues.binding.dash11",
+    "art658.clues.binding.dash12",
+    "art658.clues.grid.top.base",
+    "art658.clues.grid.top.l1",
+    "art658.clues.grid.top.l2",
+    "art658.clues.grid.top.l3",
+    "art658.clues.grid.top.l4",
+    "art658.clues.grid.top.l5",
+    "art658.clues.grid.top.l6",
+    "art658.clues.grid.top.l7",
+    "art658.clues.grid.top.l8",
+    "art658.clues.grid.top.l9",
+    "art658.clues.grid.top.l10",
+    "art658.clues.grid.top.l11",
+    "art658.clues.grid.top.l12",
+    "art658.clues.grid.top.l13",
+    "art658.clues.grid.top.l14",
+    "art658.clues.grid.top.l15",
+    "art658.clues.grid.top.l16",
+    "art658.clues.grid.top.l17",
+    "art658.clues.grid.top.l18",
+    "art658.clues.grid.top.l19",
+    "art658.clues.grid.right.base",
+    "art658.clues.grid.right.l1",
+    "art658.clues.grid.right.l2",
+    "art658.clues.grid.right.l3",
+    "art658.clues.grid.right.l4",
+    "art658.clues.grid.right.l5",
+    "art658.clues.grid.right.l6",
+    "art658.clues.grid.right.l7",
+    "art658.clues.grid.right.l8",
+    "art658.clues.grid.right.l9",
+    "art658.clues.grid.right.l10",
+    "art658.clues.grid.right.l11",
+    "art658.clues.grid.right.l12",
+    "art658.clues.grid.right.l13",
+    "art658.clues.grid.right.l14",
+    "art658.clues.grid.right.l15",
+    "art658.clues.grid.right.l16",
+    "art658.clues.grid.right.l17",
+    "art658.clues.grid.right.l18",
+    "art658.clues.grid.right.l19",
+    "art658.clues.grid.right.l20",
+    "art658.clues.grid.right.l21",
+    "art658.clues.grid.right.l22",
+    "art658.clues.grid.right.l23",
+    "art658.clues.grid.right.l24",
+    "art658.clues.grid.right.l25",
+    "art658.clues.grid.bottom.base",
+    "art658.clues.grid.bottom.l1",
+    "art658.clues.grid.bottom.l2",
+    "art658.clues.grid.bottom.l3",
+    "art658.clues.grid.bottom.l4",
+    "art658.clues.grid.bottom.l5",
+    "art658.clues.grid.bottom.l6",
+    "art658.clues.grid.bottom.l7",
+    "art658.clues.grid.bottom.l8",
+    "art658.clues.grid.bottom.l9",
+    "art658.clues.grid.bottom.l10",
+    "art658.clues.grid.bottom.l11",
+    "art658.clues.grid.bottom.l12",
+    "art658.clues.grid.bottom.l13",
+    "art658.clues.grid.bottom.l14",
+    "art658.clues.grid.bottom.l15",
+    "art658.clues.grid.bottom.l16",
+    "art658.clues.grid.bottom.l17",
+    "art658.clues.grid.bottom.l18",
+    "art658.clues.grid.bottom.l19",
+    "art658.clues.page.edge",
+    "art658.clue1.bg",
+    "art658.clue1.grad1",
+    "art658.clue1.grad2",
+    "art658.clue1.grad3",
+    "art658.clue1.rule",
+    "art658.clue2.bg",
+    "art658.clue2.grad1",
+    "art658.clue2.grad2",
+    "art658.clue2.grad3",
+    "art658.clue2.rule",
+    "art658.ribbon.clip",
+    "art658.ribbon.g1",
+    "art658.ribbon.g2",
+    "art658.ribbon.g3",
+    "art657.game.notebook.slot.1",
+    "art657.game.notebook.slot.2",
+    "art657.game.notebook.slot.3",
+    "art657.game.notebook.slot.4",
+    "art657.game.notebook.slot.5",
+    "grp653.static.1.art641.game",
+    "clues",
+    "clue"
+  ],
+  "hidden": [
+    "art657.game.sticker.q.dot",
+    "art657.game.sticker.q.mark",
+    "art657.game.notebook.slot.1",
+    "art657.game.notebook.slot.2",
+    "art657.game.notebook.slot.3",
+    "art657.game.notebook.slot.4",
+    "art657.game.notebook.slot.5"
+  ],
+  "addedLayers": [
+    {
+      "id": 1073758054,
+      "name": "art658.help.tab.jag.l1",
+      "parent": "grp653.static.1.art641.game"
+    },
+    {
+      "id": 1073758055,
+      "name": "art658.help.tab.jag.l2",
+      "parent": "grp653.static.1.art641.game"
+    },
+    {
+      "id": 1073758056,
+      "name": "art658.help.tab.jag.r1",
+      "parent": "grp653.static.1.art641.game"
+    },
+    {
+      "id": 1073758057,
+      "name": "art658.help.tab.jag.r2",
+      "parent": "grp653.static.1.art641.game"
+    },
+    {
+      "id": 1073758058,
+      "name": "art658.help.tab.clip",
+      "parent": "grp653.static.1.art641.game"
+    },
+    {
+      "id": 1073758059,
+      "name": "art658.help.tab.g1",
+      "parent": "art658.help.tab.clip"
+    },
+    {
+      "id": 1073758060,
+      "name": "art658.help.tab.g2",
+      "parent": "art658.help.tab.clip"
+    },
+    {
+      "id": 1073758061,
+      "name": "art658.help.tab.g3",
+      "parent": "art658.help.tab.clip"
+    },
+    {
+      "id": 1073758062,
+      "name": "art658.clues.binding",
+      "parent": "grp653.static.1.art641.game"
+    },
+    {
+      "id": 1073758063,
+      "name": "art658.clues.binding.dash1",
+      "parent": "grp653.static.1.art641.game"
+    },
+    {
+      "id": 1073758064,
+      "name": "art658.clues.binding.dash2",
+      "parent": "grp653.static.1.art641.game"
+    },
+    {
+      "id": 1073758065,
+      "name": "art658.clues.binding.dash3",
+      "parent": "grp653.static.1.art641.game"
+    },
+    {
+      "id": 1073758066,
+      "name": "art658.clues.binding.dash4",
+      "parent": "grp653.static.1.art641.game"
+    },
+    {
+      "id": 1073758067,
+      "name": "art658.clues.binding.dash5",
+      "parent": "grp653.static.1.art641.game"
+    },
+    {
+      "id": 1073758068,
+      "name": "art658.clues.binding.dash6",
+      "parent": "grp653.static.1.art641.game"
+    },
+    {
+      "id": 1073758069,
+      "name": "art658.clues.binding.dash7",
+      "parent": "grp653.static.1.art641.game"
+    },
+    {
+      "id": 1073758070,
+      "name": "art658.clues.binding.dash8",
+      "parent": "grp653.static.1.art641.game"
+    },
+    {
+      "id": 1073758071,
+      "name": "art658.clues.binding.dash9",
+      "parent": "grp653.static.1.art641.game"
+    },
+    {
+      "id": 1073758072,
+      "name": "art658.clues.binding.dash10",
+      "parent": "grp653.static.1.art641.game"
+    },
+    {
+      "id": 1073758073,
+      "name": "art658.clues.binding.dash11",
+      "parent": "grp653.static.1.art641.game"
+    },
+    {
+      "id": 1073758074,
+      "name": "art658.clues.binding.dash12",
+      "parent": "grp653.static.1.art641.game"
+    },
+    {
+      "id": 1073758075,
+      "name": "art658.clues.grid.top.base",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758076,
+      "name": "art658.clues.grid.top.l1",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758077,
+      "name": "art658.clues.grid.top.l2",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758078,
+      "name": "art658.clues.grid.top.l3",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758079,
+      "name": "art658.clues.grid.top.l4",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758080,
+      "name": "art658.clues.grid.top.l5",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758081,
+      "name": "art658.clues.grid.top.l6",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758082,
+      "name": "art658.clues.grid.top.l7",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758083,
+      "name": "art658.clues.grid.top.l8",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758084,
+      "name": "art658.clues.grid.top.l9",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758085,
+      "name": "art658.clues.grid.top.l10",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758086,
+      "name": "art658.clues.grid.top.l11",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758087,
+      "name": "art658.clues.grid.top.l12",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758088,
+      "name": "art658.clues.grid.top.l13",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758089,
+      "name": "art658.clues.grid.top.l14",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758090,
+      "name": "art658.clues.grid.top.l15",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758091,
+      "name": "art658.clues.grid.top.l16",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758092,
+      "name": "art658.clues.grid.top.l17",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758093,
+      "name": "art658.clues.grid.top.l18",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758094,
+      "name": "art658.clues.grid.top.l19",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758095,
+      "name": "art658.clues.grid.right.base",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758096,
+      "name": "art658.clues.grid.right.l1",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758097,
+      "name": "art658.clues.grid.right.l2",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758098,
+      "name": "art658.clues.grid.right.l3",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758099,
+      "name": "art658.clues.grid.right.l4",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758100,
+      "name": "art658.clues.grid.right.l5",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758101,
+      "name": "art658.clues.grid.right.l6",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758102,
+      "name": "art658.clues.grid.right.l7",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758103,
+      "name": "art658.clues.grid.right.l8",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758104,
+      "name": "art658.clues.grid.right.l9",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758105,
+      "name": "art658.clues.grid.right.l10",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758106,
+      "name": "art658.clues.grid.right.l11",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758107,
+      "name": "art658.clues.grid.right.l12",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758108,
+      "name": "art658.clues.grid.right.l13",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758109,
+      "name": "art658.clues.grid.right.l14",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758110,
+      "name": "art658.clues.grid.right.l15",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758111,
+      "name": "art658.clues.grid.right.l16",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758112,
+      "name": "art658.clues.grid.right.l17",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758113,
+      "name": "art658.clues.grid.right.l18",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758114,
+      "name": "art658.clues.grid.right.l19",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758115,
+      "name": "art658.clues.grid.right.l20",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758116,
+      "name": "art658.clues.grid.right.l21",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758117,
+      "name": "art658.clues.grid.right.l22",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758118,
+      "name": "art658.clues.grid.right.l23",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758119,
+      "name": "art658.clues.grid.right.l24",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758120,
+      "name": "art658.clues.grid.right.l25",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758121,
+      "name": "art658.clues.grid.bottom.base",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758122,
+      "name": "art658.clues.grid.bottom.l1",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758123,
+      "name": "art658.clues.grid.bottom.l2",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758124,
+      "name": "art658.clues.grid.bottom.l3",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758125,
+      "name": "art658.clues.grid.bottom.l4",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758126,
+      "name": "art658.clues.grid.bottom.l5",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758127,
+      "name": "art658.clues.grid.bottom.l6",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758128,
+      "name": "art658.clues.grid.bottom.l7",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758129,
+      "name": "art658.clues.grid.bottom.l8",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758130,
+      "name": "art658.clues.grid.bottom.l9",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758131,
+      "name": "art658.clues.grid.bottom.l10",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758132,
+      "name": "art658.clues.grid.bottom.l11",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758133,
+      "name": "art658.clues.grid.bottom.l12",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758134,
+      "name": "art658.clues.grid.bottom.l13",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758135,
+      "name": "art658.clues.grid.bottom.l14",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758136,
+      "name": "art658.clues.grid.bottom.l15",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758137,
+      "name": "art658.clues.grid.bottom.l16",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758138,
+      "name": "art658.clues.grid.bottom.l17",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758139,
+      "name": "art658.clues.grid.bottom.l18",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758140,
+      "name": "art658.clues.grid.bottom.l19",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758141,
+      "name": "art658.clues.page.edge",
+      "parent": "clues"
+    },
+    {
+      "id": 1073758142,
+      "name": "art658.clue1.bg",
+      "parent": "clue"
+    },
+    {
+      "id": 1073758143,
+      "name": "art658.clue1.grad1",
+      "parent": "clue"
+    },
+    {
+      "id": 1073758144,
+      "name": "art658.clue1.grad2",
+      "parent": "clue"
+    },
+    {
+      "id": 1073758145,
+      "name": "art658.clue1.grad3",
+      "parent": "clue"
+    },
+    {
+      "id": 1073758146,
+      "name": "art658.clue1.rule",
+      "parent": "clue"
+    },
+    {
+      "id": 1073758147,
+      "name": "art658.clue2.bg",
+      "parent": "clue"
+    },
+    {
+      "id": 1073758148,
+      "name": "art658.clue2.grad1",
+      "parent": "clue"
+    },
+    {
+      "id": 1073758149,
+      "name": "art658.clue2.grad2",
+      "parent": "clue"
+    },
+    {
+      "id": 1073758150,
+      "name": "art658.clue2.grad3",
+      "parent": "clue"
+    },
+    {
+      "id": 1073758151,
+      "name": "art658.clue2.rule",
+      "parent": "clue"
+    },
+    {
+      "id": 1073758152,
+      "name": "art658.ribbon.clip",
+      "parent": "grp653.static.1.art641.game"
+    },
+    {
+      "id": 1073758153,
+      "name": "art658.ribbon.g1",
+      "parent": "art658.ribbon.clip"
+    },
+    {
+      "id": 1073758154,
+      "name": "art658.ribbon.g2",
+      "parent": "art658.ribbon.clip"
+    },
+    {
+      "id": 1073758155,
+      "name": "art658.ribbon.g3",
+      "parent": "art658.ribbon.clip"
+    }
+  ],
+  "backgroundUntouched": "police-v12 + 761 个直接子控件",
+  "writeGilReport": {
+    "bytes": 5934726,
+    "diffs": 188406,
+    "compared": 1228963,
+    "recs": 6639,
+    "marker": null
+  }
+}

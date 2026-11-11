@@ -1,0 +1,629 @@
+{
+  "version": 1,
+  "name": "670 build audit",
+  "date": "2026-11-11",
+  "base": {
+    "file": "669_旧高亮方案.gil",
+    "sha256": "567a1045db72dedd7900dfe516c0a5e28501cee63713da947e0fbf75e6d5c55d",
+    "records": 6976,
+    "scriptBytes": 636660
+  },
+  "output": {
+    "file": "670_渐变收敛.gil",
+    "sha256": "13f6a790ccb53d12e13f46434604917709ad258875b7424ccbde8db56961ff72",
+    "bytes": 6294010,
+    "records": 7040
+  },
+  "spec": {
+    "problem": "669 把 661 针对 330×85.4 精算的 28 层 fillRegion 图元非等比缩放，三角斜边与补漏矩形失配 ⇒ 图元溢出(毛刺)、局部漏暗底色；art658.clueN.rule 白线落在卡片顶边 ⇒ 设计图没有的白带。",
+    "fix": "隐藏 669 那 30 层(含白线)，用 661 的 fillRegion 针对 324×79.4 重新生成：base 铺满整卡 + 4 级 45° 斜向阶梯，每级「零溢出顶点 + 覆盖率≥99%」自检。",
+    "rect": {
+      "x0": 638,
+      "y0": 410.3,
+      "x1": 962,
+      "y1": 489.7
+    },
+    "scaleForD": 0.9818181818181818,
+    "steps": [
+      {
+        "tag": "s300",
+        "D": 294.55,
+        "color": "#68262A"
+      },
+      {
+        "tag": "s250",
+        "D": 245.45,
+        "color": "#70272E"
+      },
+      {
+        "tag": "s200",
+        "D": 196.36,
+        "color": "#68262A"
+      },
+      {
+        "tag": "s095",
+        "D": 93.27,
+        "color": "#9D3033"
+      }
+    ],
+    "guarantee": "所有拼接图元顶点都在 324×79.4 矩形内；边缘由 base 矩形与各级安全矩形给出，平直无毛刺；base 与 backrop2 同色 #611F23 兜底，整卡不漏底色。",
+    "kept": "backrop1 #FF56565E 染色区(选中只染 3px 一圈)、backrop2 #FF611F23、白字、白色底板、内嵌 Lua、26 条文本、v19 背景子树全部保持 669 原样。"
+  },
+  "counts": {
+    "recordsBefore": 6976,
+    "recordsAfter": 7040,
+    "added": 64,
+    "hidden": 60,
+    "modified": 125
+  },
+  "regionStats": [
+    {
+      "name": "art670.clue1.s300",
+      "shapes": 6,
+      "coverage": 0.9998,
+      "overflow": false,
+      "triRot": 45,
+      "bad": [],
+      "holes": 1
+    },
+    {
+      "name": "art670.clue1.s250",
+      "shapes": 6,
+      "coverage": 0.9998,
+      "overflow": false,
+      "triRot": 45,
+      "bad": [],
+      "holes": 1
+    },
+    {
+      "name": "art670.clue1.s200",
+      "shapes": 7,
+      "coverage": 0.9997,
+      "overflow": false,
+      "triRot": 45,
+      "bad": [],
+      "holes": 1
+    },
+    {
+      "name": "art670.clue1.s095",
+      "shapes": 12,
+      "coverage": 0.9991,
+      "overflow": false,
+      "triRot": 45,
+      "bad": [],
+      "holes": 1
+    },
+    {
+      "name": "art670.clue2.s300",
+      "shapes": 6,
+      "coverage": 0.9998,
+      "overflow": false,
+      "triRot": 45,
+      "bad": [],
+      "holes": 1
+    },
+    {
+      "name": "art670.clue2.s250",
+      "shapes": 6,
+      "coverage": 0.9998,
+      "overflow": false,
+      "triRot": 45,
+      "bad": [],
+      "holes": 1
+    },
+    {
+      "name": "art670.clue2.s200",
+      "shapes": 7,
+      "coverage": 0.9997,
+      "overflow": false,
+      "triRot": 45,
+      "bad": [],
+      "holes": 1
+    },
+    {
+      "name": "art670.clue2.s095",
+      "shapes": 12,
+      "coverage": 0.9991,
+      "overflow": false,
+      "triRot": 45,
+      "bad": [],
+      "holes": 1
+    }
+  ],
+  "minCoverage": 0.9991,
+  "allZeroOverflow": true,
+  "summary": [
+    {
+      "rootId": 1073742421,
+      "hiddenOld": 30,
+      "newLayers": 32,
+      "rect": {
+        "x0": 638,
+        "y0": 410.3,
+        "x1": 962,
+        "y1": 489.7
+      },
+      "backrop1": [
+        329.99993896484375,
+        85.39997100830078
+      ],
+      "backrop2": [
+        323.99993896484375,
+        79.4000473022461
+      ]
+    },
+    {
+      "rootId": 1073742428,
+      "hiddenOld": 30,
+      "newLayers": 32,
+      "rect": {
+        "x0": 638,
+        "y0": 410.3,
+        "x1": 962,
+        "y1": 489.7
+      },
+      "backrop1": [
+        329.99993896484375,
+        85.39997100830078
+      ],
+      "backrop2": [
+        323.99993896484375,
+        79.4000473022461
+      ]
+    }
+  ],
+  "hidden": [
+    "art658.clue1.bg",
+    "art661.clue1.base",
+    "art661.clue1.s300.rect",
+    "art661.clue1.s300.tri",
+    "art661.clue1.s300.patch2",
+    "art661.clue1.s300.patch3",
+    "art661.clue1.s300.patch4",
+    "art661.clue1.s300.patch5",
+    "art661.clue1.s250.rect",
+    "art661.clue1.s250.tri",
+    "art661.clue1.s250.patch2",
+    "art661.clue1.s250.patch3",
+    "art661.clue1.s250.patch4",
+    "art661.clue1.s250.patch5",
+    "art661.clue1.s200.rect",
+    "art661.clue1.s200.tri",
+    "art661.clue1.s200.patch2",
+    "art661.clue1.s200.patch3",
+    "art661.clue1.s200.patch4",
+    "art661.clue1.s200.patch5",
+    "art661.clue1.s095.rect",
+    "art661.clue1.s095.tri",
+    "art661.clue1.s095.patch2",
+    "art661.clue1.s095.patch3",
+    "art661.clue1.s095.patch4",
+    "art661.clue1.s095.patch5",
+    "art661.clue1.s095.patch6",
+    "art661.clue1.s095.patch7",
+    "art661.clue1.s095.patch8",
+    "art658.clue1.rule",
+    "art658.clue2.bg",
+    "art661.clue2.base",
+    "art661.clue2.s300.rect",
+    "art661.clue2.s300.tri",
+    "art661.clue2.s300.patch2",
+    "art661.clue2.s300.patch3",
+    "art661.clue2.s300.patch4",
+    "art661.clue2.s300.patch5",
+    "art661.clue2.s250.rect",
+    "art661.clue2.s250.tri",
+    "art661.clue2.s250.patch2",
+    "art661.clue2.s250.patch3",
+    "art661.clue2.s250.patch4",
+    "art661.clue2.s250.patch5",
+    "art661.clue2.s200.rect",
+    "art661.clue2.s200.tri",
+    "art661.clue2.s200.patch2",
+    "art661.clue2.s200.patch3",
+    "art661.clue2.s200.patch4",
+    "art661.clue2.s200.patch5",
+    "art661.clue2.s095.rect",
+    "art661.clue2.s095.tri",
+    "art661.clue2.s095.patch2",
+    "art661.clue2.s095.patch3",
+    "art661.clue2.s095.patch4",
+    "art661.clue2.s095.patch5",
+    "art661.clue2.s095.patch6",
+    "art661.clue2.s095.patch7",
+    "art661.clue2.s095.patch8",
+    "art658.clue2.rule"
+  ],
+  "modified": [
+    "art658.clue1.bg",
+    "art661.clue1.base",
+    "art661.clue1.s300.rect",
+    "art661.clue1.s300.tri",
+    "art661.clue1.s300.patch2",
+    "art661.clue1.s300.patch3",
+    "art661.clue1.s300.patch4",
+    "art661.clue1.s300.patch5",
+    "art661.clue1.s250.rect",
+    "art661.clue1.s250.tri",
+    "art661.clue1.s250.patch2",
+    "art661.clue1.s250.patch3",
+    "art661.clue1.s250.patch4",
+    "art661.clue1.s250.patch5",
+    "art661.clue1.s200.rect",
+    "art661.clue1.s200.tri",
+    "art661.clue1.s200.patch2",
+    "art661.clue1.s200.patch3",
+    "art661.clue1.s200.patch4",
+    "art661.clue1.s200.patch5",
+    "art661.clue1.s095.rect",
+    "art661.clue1.s095.tri",
+    "art661.clue1.s095.patch2",
+    "art661.clue1.s095.patch3",
+    "art661.clue1.s095.patch4",
+    "art661.clue1.s095.patch5",
+    "art661.clue1.s095.patch6",
+    "art661.clue1.s095.patch7",
+    "art661.clue1.s095.patch8",
+    "art658.clue1.rule",
+    "art670.clue1.base",
+    "art670.clue1.s300.rect",
+    "art670.clue1.s300.tri",
+    "art670.clue1.s300.patch2",
+    "art670.clue1.s300.patch3",
+    "art670.clue1.s300.patch4",
+    "art670.clue1.s300.patch5",
+    "art670.clue1.s250.rect",
+    "art670.clue1.s250.tri",
+    "art670.clue1.s250.patch2",
+    "art670.clue1.s250.patch3",
+    "art670.clue1.s250.patch4",
+    "art670.clue1.s250.patch5",
+    "art670.clue1.s200.rect",
+    "art670.clue1.s200.tri",
+    "art670.clue1.s200.patch2",
+    "art670.clue1.s200.patch3",
+    "art670.clue1.s200.patch4",
+    "art670.clue1.s200.patch5",
+    "art670.clue1.s200.patch6",
+    "art670.clue1.s095.rect",
+    "art670.clue1.s095.tri",
+    "art670.clue1.s095.patch2",
+    "art670.clue1.s095.patch3",
+    "art670.clue1.s095.patch4",
+    "art670.clue1.s095.patch5",
+    "art670.clue1.s095.patch6",
+    "art670.clue1.s095.patch7",
+    "art670.clue1.s095.patch8",
+    "art670.clue1.s095.patch9",
+    "art670.clue1.s095.patch10",
+    "art670.clue1.s095.patch11",
+    "art658.clue2.bg",
+    "art661.clue2.base",
+    "art661.clue2.s300.rect",
+    "art661.clue2.s300.tri",
+    "art661.clue2.s300.patch2",
+    "art661.clue2.s300.patch3",
+    "art661.clue2.s300.patch4",
+    "art661.clue2.s300.patch5",
+    "art661.clue2.s250.rect",
+    "art661.clue2.s250.tri",
+    "art661.clue2.s250.patch2",
+    "art661.clue2.s250.patch3",
+    "art661.clue2.s250.patch4",
+    "art661.clue2.s250.patch5",
+    "art661.clue2.s200.rect",
+    "art661.clue2.s200.tri",
+    "art661.clue2.s200.patch2",
+    "art661.clue2.s200.patch3",
+    "art661.clue2.s200.patch4",
+    "art661.clue2.s200.patch5",
+    "art661.clue2.s095.rect",
+    "art661.clue2.s095.tri",
+    "art661.clue2.s095.patch2",
+    "art661.clue2.s095.patch3",
+    "art661.clue2.s095.patch4",
+    "art661.clue2.s095.patch5",
+    "art661.clue2.s095.patch6",
+    "art661.clue2.s095.patch7",
+    "art661.clue2.s095.patch8",
+    "art658.clue2.rule",
+    "art670.clue2.base",
+    "art670.clue2.s300.rect",
+    "art670.clue2.s300.tri",
+    "art670.clue2.s300.patch2",
+    "art670.clue2.s300.patch3",
+    "art670.clue2.s300.patch4",
+    "art670.clue2.s300.patch5",
+    "art670.clue2.s250.rect",
+    "art670.clue2.s250.tri",
+    "art670.clue2.s250.patch2",
+    "art670.clue2.s250.patch3",
+    "art670.clue2.s250.patch4",
+    "art670.clue2.s250.patch5",
+    "art670.clue2.s200.rect",
+    "art670.clue2.s200.tri",
+    "art670.clue2.s200.patch2",
+    "art670.clue2.s200.patch3",
+    "art670.clue2.s200.patch4",
+    "art670.clue2.s200.patch5",
+    "art670.clue2.s200.patch6",
+    "art670.clue2.s095.rect",
+    "art670.clue2.s095.tri",
+    "art670.clue2.s095.patch2",
+    "art670.clue2.s095.patch3",
+    "art670.clue2.s095.patch4",
+    "art670.clue2.s095.patch5",
+    "art670.clue2.s095.patch6",
+    "art670.clue2.s095.patch7",
+    "art670.clue2.s095.patch8",
+    "art670.clue2.s095.patch9",
+    "art670.clue2.s095.patch10",
+    "art670.clue2.s095.patch11",
+    "clue"
+  ],
+  "addedLayers": [
+    {
+      "id": 1073759715,
+      "name": "art670.clue1.base"
+    },
+    {
+      "id": 1073759716,
+      "name": "art670.clue1.s300.rect"
+    },
+    {
+      "id": 1073759717,
+      "name": "art670.clue1.s300.tri"
+    },
+    {
+      "id": 1073759718,
+      "name": "art670.clue1.s300.patch2"
+    },
+    {
+      "id": 1073759719,
+      "name": "art670.clue1.s300.patch3"
+    },
+    {
+      "id": 1073759720,
+      "name": "art670.clue1.s300.patch4"
+    },
+    {
+      "id": 1073759721,
+      "name": "art670.clue1.s300.patch5"
+    },
+    {
+      "id": 1073759722,
+      "name": "art670.clue1.s250.rect"
+    },
+    {
+      "id": 1073759723,
+      "name": "art670.clue1.s250.tri"
+    },
+    {
+      "id": 1073759724,
+      "name": "art670.clue1.s250.patch2"
+    },
+    {
+      "id": 1073759725,
+      "name": "art670.clue1.s250.patch3"
+    },
+    {
+      "id": 1073759726,
+      "name": "art670.clue1.s250.patch4"
+    },
+    {
+      "id": 1073759727,
+      "name": "art670.clue1.s250.patch5"
+    },
+    {
+      "id": 1073759728,
+      "name": "art670.clue1.s200.rect"
+    },
+    {
+      "id": 1073759729,
+      "name": "art670.clue1.s200.tri"
+    },
+    {
+      "id": 1073759730,
+      "name": "art670.clue1.s200.patch2"
+    },
+    {
+      "id": 1073759731,
+      "name": "art670.clue1.s200.patch3"
+    },
+    {
+      "id": 1073759732,
+      "name": "art670.clue1.s200.patch4"
+    },
+    {
+      "id": 1073759733,
+      "name": "art670.clue1.s200.patch5"
+    },
+    {
+      "id": 1073759734,
+      "name": "art670.clue1.s200.patch6"
+    },
+    {
+      "id": 1073759735,
+      "name": "art670.clue1.s095.rect"
+    },
+    {
+      "id": 1073759736,
+      "name": "art670.clue1.s095.tri"
+    },
+    {
+      "id": 1073759737,
+      "name": "art670.clue1.s095.patch2"
+    },
+    {
+      "id": 1073759738,
+      "name": "art670.clue1.s095.patch3"
+    },
+    {
+      "id": 1073759739,
+      "name": "art670.clue1.s095.patch4"
+    },
+    {
+      "id": 1073759740,
+      "name": "art670.clue1.s095.patch5"
+    },
+    {
+      "id": 1073759741,
+      "name": "art670.clue1.s095.patch6"
+    },
+    {
+      "id": 1073759742,
+      "name": "art670.clue1.s095.patch7"
+    },
+    {
+      "id": 1073759743,
+      "name": "art670.clue1.s095.patch8"
+    },
+    {
+      "id": 1073759744,
+      "name": "art670.clue1.s095.patch9"
+    },
+    {
+      "id": 1073759745,
+      "name": "art670.clue1.s095.patch10"
+    },
+    {
+      "id": 1073759746,
+      "name": "art670.clue1.s095.patch11"
+    },
+    {
+      "id": 1073759747,
+      "name": "art670.clue2.base"
+    },
+    {
+      "id": 1073759748,
+      "name": "art670.clue2.s300.rect"
+    },
+    {
+      "id": 1073759749,
+      "name": "art670.clue2.s300.tri"
+    },
+    {
+      "id": 1073759750,
+      "name": "art670.clue2.s300.patch2"
+    },
+    {
+      "id": 1073759751,
+      "name": "art670.clue2.s300.patch3"
+    },
+    {
+      "id": 1073759752,
+      "name": "art670.clue2.s300.patch4"
+    },
+    {
+      "id": 1073759753,
+      "name": "art670.clue2.s300.patch5"
+    },
+    {
+      "id": 1073759754,
+      "name": "art670.clue2.s250.rect"
+    },
+    {
+      "id": 1073759755,
+      "name": "art670.clue2.s250.tri"
+    },
+    {
+      "id": 1073759756,
+      "name": "art670.clue2.s250.patch2"
+    },
+    {
+      "id": 1073759757,
+      "name": "art670.clue2.s250.patch3"
+    },
+    {
+      "id": 1073759758,
+      "name": "art670.clue2.s250.patch4"
+    },
+    {
+      "id": 1073759759,
+      "name": "art670.clue2.s250.patch5"
+    },
+    {
+      "id": 1073759760,
+      "name": "art670.clue2.s200.rect"
+    },
+    {
+      "id": 1073759761,
+      "name": "art670.clue2.s200.tri"
+    },
+    {
+      "id": 1073759762,
+      "name": "art670.clue2.s200.patch2"
+    },
+    {
+      "id": 1073759763,
+      "name": "art670.clue2.s200.patch3"
+    },
+    {
+      "id": 1073759764,
+      "name": "art670.clue2.s200.patch4"
+    },
+    {
+      "id": 1073759765,
+      "name": "art670.clue2.s200.patch5"
+    },
+    {
+      "id": 1073759766,
+      "name": "art670.clue2.s200.patch6"
+    },
+    {
+      "id": 1073759767,
+      "name": "art670.clue2.s095.rect"
+    },
+    {
+      "id": 1073759768,
+      "name": "art670.clue2.s095.tri"
+    },
+    {
+      "id": 1073759769,
+      "name": "art670.clue2.s095.patch2"
+    },
+    {
+      "id": 1073759770,
+      "name": "art670.clue2.s095.patch3"
+    },
+    {
+      "id": 1073759771,
+      "name": "art670.clue2.s095.patch4"
+    },
+    {
+      "id": 1073759772,
+      "name": "art670.clue2.s095.patch5"
+    },
+    {
+      "id": 1073759773,
+      "name": "art670.clue2.s095.patch6"
+    },
+    {
+      "id": 1073759774,
+      "name": "art670.clue2.s095.patch7"
+    },
+    {
+      "id": 1073759775,
+      "name": "art670.clue2.s095.patch8"
+    },
+    {
+      "id": 1073759776,
+      "name": "art670.clue2.s095.patch9"
+    },
+    {
+      "id": 1073759777,
+      "name": "art670.clue2.s095.patch10"
+    },
+    {
+      "id": 1073759778,
+      "name": "art670.clue2.s095.patch11"
+    }
+  ],
+  "writeGilReport": {
+    "bytes": 6294010,
+    "diffs": 211170,
+    "compared": 1283970,
+    "recs": 7040,
+    "marker": null
+  }
+}

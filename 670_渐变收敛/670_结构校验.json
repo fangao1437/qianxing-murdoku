@@ -1,0 +1,99 @@
+{
+  "recordsBefore": 6976,
+  "recordsAfter": 7040,
+  "added": 64,
+  "removed": 0,
+  "changed": 62,
+  "unexpectedChanges": [],
+  "scriptIdentical": true,
+  "scriptBytes": 636660,
+  "textRecordsChanged": 0,
+  "policeV19Descendants": 650,
+  "bgChanged": 0,
+  "staticBackdropHidden": true,
+  "tplOk": true,
+  "tpl": [
+    {
+      "rootId": 1073742421,
+      "backrop1": {
+        "geom": [
+          800,
+          450,
+          330,
+          85.4
+        ],
+        "color": "FF56565E"
+      },
+      "backrop2": {
+        "geom": [
+          800,
+          450,
+          324,
+          79.4
+        ],
+        "color": "FF611F23"
+      },
+      "base": [
+        800,
+        450,
+        324,
+        79.4
+      ],
+      "oldHidden": true,
+      "oldCount": 30,
+      "whiteRuleHidden": true,
+      "freshVisible": 32,
+      "layerOrderOk": true,
+      "childListOk": true,
+      "text": {
+        "who": "FFFFFFFF",
+        "what": "FFFFFFFF",
+        "letter": "FFFFFFFF"
+      }
+    },
+    {
+      "rootId": 1073742428,
+      "backrop1": {
+        "geom": [
+          800,
+          450,
+          330,
+          85.4
+        ],
+        "color": "FF56565E"
+      },
+      "backrop2": {
+        "geom": [
+          800,
+          450,
+          324,
+          79.4
+        ],
+        "color": "FF611F23"
+      },
+      "base": [
+        800,
+        450,
+        324,
+        79.4
+      ],
+      "oldHidden": true,
+      "oldCount": 30,
+      "whiteRuleHidden": true,
+      "freshVisible": 32,
+      "layerOrderOk": true,
+      "childListOk": true,
+      "text": {
+        "who": "FFFFFFFF",
+        "what": "FFFFFFFF",
+        "letter": "FFFFFFFF"
+      }
+    }
+  ],
+  "fitOk": true,
+  "regions": 8,
+  "minCoverage": 0.9991,
+  "allZeroOverflow": true,
+  "dangling": 0,
+  "verdict": true
+}

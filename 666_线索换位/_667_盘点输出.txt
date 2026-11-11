@@ -1,0 +1,148 @@
+
+========== 515 recs=678 clue层=55 模板=["clue","clue"] ==========
+   41   clue                                          800,   450    334x  85.4 -           img=null    ROOT
+   42   backrop1                                      800,   450    330x  85.4 #FF56565E   img=100001  clue
+   43   backrop2                                      800,   450    324x  79.4 #FF26262E   img=100001  clue
+   49 H gen.backrop                                   800,   450    330x  79.4 #FFFFFFFF   img=107133  clue
+   96   clue                                          800,   450    334x  85.4 -           img=null    #1073741844
+  115   backrop1                                      800,   450    330x  85.4 #FF56565E   img=100001  clue
+  116   backrop2                                      800,   450    324x  79.4 #FF26262E   img=100001  clue
+  122 H gen.backrop                                   800,   450    330x  79.4 #FFFFFFFF   img=107133  clue
+  300   clue.2.1                                      800,   450    100x    40 -           img=null    row.2.clue
+
+========== 523 recs=491 clue层=55 模板=["clue","clue"] ==========
+   40   clue                                          800,   450    334x  85.4 -           img=null    ROOT
+   41   backrop1                                      800,   450    330x  85.4 #FF56565E   img=100001  clue
+   42   backrop2                                      800,   450    324x  79.4 #FF26262E   img=100001  clue
+   48 H gen.backrop                                   800,   450    330x  79.4 #FFFFFFFF   img=107133  clue
+  104   clue                                          800,   450    334x  85.4 -           img=null    #1073741844
+  124   backrop1                                      800,   450    330x  85.4 #FF56565E   img=100001  clue
+  125   backrop2                                      800,   450    324x  79.4 #FF26262E   img=100001  clue
+  131 H gen.backrop                                   800,   450    330x  79.4 #FFFFFFFF   img=107133  clue
+  330   clue.2.1                                      800,   450    100x    40 -           img=null    row.2.clue
+
+========== 544 recs=1571 clue层=55 模板=["clue","clue"] ==========
+   40   clue                                          800,   450    334x  85.4 -           img=null    ROOT
+   41   backrop1                                      800,   450    330x  85.4 #FF56565E   img=100001  clue
+   42   backrop2                                      800,   450    324x  79.4 #FF26262E   img=100001  clue
+   48 H gen.backrop                                   800,   450    330x  79.4 #FFFFFFFF   img=107133  clue
+  451   clue                                          800,   450    334x  85.4 -           img=null    #1073741844
+  481   backrop1                                      800,   450    330x  85.4 #FF56565E   img=100001  clue
+  482   backrop2                                      800,   450    324x  79.4 #FF26262E   img=100001  clue
+  488 H gen.backrop                                   800,   450    330x  79.4 #FFFFFFFF   img=107133  clue
+ 1005   clue.2.1                                      800,   450    100x    40 -           img=null    row.2.clue
+
+========== 650 recs=6453 clue层=219 模板=["clue","clue"] ==========
+   44   clue                                          800,   450    334x  85.4 -           img=null    ROOT
+   45   backrop1                                      800,   450    330x  85.4 #FF56565E   img=100001  clue
+   46   backrop2                                      800,   450    324x  79.4 #FF26262E   img=100001  clue
+   52 H gen.backrop                                   800,   450    330x  79.4 #FFFFFFFF   img=107133  clue
+ 1676   clue                                          800,   450    334x  85.4 -           img=null    #1073741844
+ 1707   backrop1                                      800,   450    330x  85.4 #FF56565E   img=100001  clue
+ 1708   backrop2                                      800,   450    324x  79.4 #FF26262E   img=100001  clue
+ 1714 H gen.backrop                                   800,   450    330x  79.4 #FFFFFFFF   img=107133  clue
+ 2855   hint635.menu.clue.hit                         800,   500    390x    48 -           img=null    hint635.menu
+ 3313   clue.2.1                                      800,   450    100x    40 -           img=null    row.2.clue
+ 3894   td.l1.page.2.clue.border                    458.1,   640  717.8x   116 #FF28303F   img=107102  td.l1.page.2
+ 4249   td.l1.page.4.clue.border                    458.1,   576  717.8x   116 #FF28303F   img=107102  td.l1.page.4
+ 4407   td.l1.page.5.clue.border                    458.1,   660  717.8x   116 #FF28303F   img=107102  td.l1.page.5
+ 4550   td.l1.page.6.clue.border                    458.1,   660  717.8x   116 #FF28303F   img=107102  td.l1.page.6
+ 4704   td.l1.page.7.clue.border                    458.1,   660  717.8x   140 #FF28303F   img=107102  td.l1.page.7
+ 5360   td.l2.page.2.clue.border                    458.1,   660  717.8x   116 #FF28303F   img=107102  td.l2.page.2
+ 5484   td.l2.page.3.clue.border                    458.1,   640  717.8x   116 #FF28303F   img=107102  td.l2.page.3
+ 5662   td.l2.page.4.clue.border                    458.1,   660  717.8x   116 #FF28303F   img=107102  td.l2.page.4
+
+========== 656 recs=6421 clue层=219 模板=["clue","clue"] ==========
+   44   clue                                          800,   450    334x  85.4 -           img=null    ROOT
+   45   backrop1                                      800,   450    330x  85.4 #FF56565E   img=100001  clue
+   46   backrop2                                      800,   450    324x  79.4 #FF26262E   img=100001  clue
+   52 H gen.backrop                                   800,   450    330x  79.4 #FFFFFFFF   img=107133  clue
+ 1676   clue                                          800,   450    334x  85.4 -           img=null    #1073741844
+ 1707   backrop1                                      800,   450    330x  85.4 #FF56565E   img=100001  clue
+ 1708   backrop2                                      800,   450    324x  79.4 #FF26262E   img=100001  clue
+ 1714 H gen.backrop                                   800,   450    330x  79.4 #FFFFFFFF   img=107133  clue
+ 2940   hint635.menu.clue.hit                         800,   500    390x    48 -           img=null    hint635.menu
+ 3398   clue.2.1                                      800,   450    100x    40 -           img=null    row.2.clue
+ 3975   td.l1.page.2.clue.border                    458.1,   640  717.8x   116 #FF28303F   img=107102  td.l1.page.2
+ 4330   td.l1.page.4.clue.border                    458.1,   576  717.8x   116 #FF28303F   img=107102  td.l1.page.4
+ 4488   td.l1.page.5.clue.border                    458.1,   660  717.8x   116 #FF28303F   img=107102  td.l1.page.5
+ 4631   td.l1.page.6.clue.border                    458.1,   660  717.8x   116 #FF28303F   img=107102  td.l1.page.6
+ 4785   td.l1.page.7.clue.border                    458.1,   660  717.8x   140 #FF28303F   img=107102  td.l1.page.7
+ 5441   td.l2.page.2.clue.border                    458.1,   660  717.8x   116 #FF28303F   img=107102  td.l2.page.2
+ 5565   td.l2.page.3.clue.border                    458.1,   640  717.8x   116 #FF28303F   img=107102  td.l2.page.3
+ 5743   td.l2.page.4.clue.border                    458.1,   660  717.8x   116 #FF28303F   img=107102  td.l2.page.4
+
+========== 666 recs=6976 clue层=671 模板=["clue","clue"] ==========
+   22   clue                                          800,   450    334x  85.4 -           img=null    ROOT
+   23   art658.clue1.bg                               800,   450    330x  85.4 #FF68282A   img=100001  clue
+   24 H art658.clue1.grad1                            686, 467.6    150x    62 #FF9D3033   img=100001  clue
+   25 H art658.clue1.grad2                            728,   450    150x    62 #FF68282A   img=100001  clue
+   26 H art658.clue1.grad3                            770, 432.4    150x    62 #FF611F23   img=100001  clue
+   27 H art659.clue1.mid                              820,   450    150x  85.4 #FF68282A   img=100001  clue
+   28 H art659.clue1.hi1                            641.8,   450   13.5x  85.4 #FF9D3033   img=100001  clue
+   29 H art659.clue1.hi2                            655.3, 442.9   13.5x  71.2 #FF9D3033   img=100001  clue
+   30 H art659.clue1.hi3                            668.8, 435.8   13.5x    57 #FF9D3033   img=100001  clue
+   31 H art659.clue1.hi4                            682.3, 428.7   13.5x  42.8 #FF9D3033   img=100001  clue
+   32 H art659.clue1.hi5                            695.8, 421.6   13.5x  28.6 #FF9D3033   img=100001  clue
+   33 H art659.clue1.hi6                            709.3, 414.5   13.5x  14.4 #FF9D3033   img=100001  clue
+   34 H art659.clue1.lo1                              860, 483.7     42x    18 #FF611F23   img=100001  clue
+   35 H art659.clue1.lo2                              902, 475.7     42x    34 #FF611F23   img=100001  clue
+   36 H art659.clue1.lo3                              944, 467.7     42x    50 #FF611F23   img=100001  clue
+   37 H art660.clue1.light.rect                       652,   450     34x  85.4 #FF9D3033   img=100001  clue
+   38 H art660.clue1.light.tri                        719, 446.8   84.4x    20 #FF9D3033   img=100003  clue
+   39 H art660.clue1.light.patch1                     678,   430     30x    34 #FF9D3033   img=100001  clue
+   40 H art660.clue1.light.patch2                     678,   472     30x    30 #FF9D3033   img=100001  clue
+   41 H art660.clue1.dark.patch                       940,   468     50x    46 #FF611F23   img=100001  clue
+   42   art661.clue1.base                             800,   450    330x  85.4 #FF611F23   img=100001  clue
+   43   art661.clue1.s300.rect                      742.3,   450  214.6x  85.4 #FF68262A   img=100001  clue
+   44   art661.clue1.s300.tri                       871.3,   429  120.8x  59.5 #FF68262A   img=100003  clue
+   45   art661.clue1.s300.patch2                    887.8, 412.3   73.6x    10 #FF68262A   img=100001  clue
+   46   art661.clue1.s300.patch3                    926.8, 410.3    3.6x     6 #FF68262A   img=100001  clue
+   47   art661.clue1.s300.patch4                    929.8, 409.3    1.6x     4 #FF68262A   img=100001  clue
+   48   art661.clue1.s300.patch5                    931.8, 408.3    1.6x     2 #FF68262A   img=100001  clue
+   49   art661.clue1.s250.rect                      717.3,   450  164.6x  85.4 #FF70272E   img=100001  clue
+   50   art661.clue1.s250.tri                       821.3,   429  120.8x  59.5 #FF70272E   img=100003  clue
+   51   art661.clue1.s250.patch2                    837.8, 412.3   73.6x    10 #FF70272E   img=100001  clue
+   52   art661.clue1.s250.patch3                    876.8, 410.3    3.6x     6 #FF70272E   img=100001  clue
+   53   art661.clue1.s250.patch4                    879.8, 409.3    1.6x     4 #FF70272E   img=100001  clue
+   54   art661.clue1.s250.patch5                    881.8, 408.3    1.6x     2 #FF70272E   img=100001  clue
+   55   art661.clue1.s200.rect                      692.3,   450  114.6x  85.4 #FF68262A   img=100001  clue
+   56   art661.clue1.s200.tri                       771.3,   429  120.8x  59.5 #FF68262A   img=100003  clue
+   57   art661.clue1.s200.patch2                    787.8, 412.3   73.6x    10 #FF68262A   img=100001  clue
+   58   art661.clue1.s200.patch3                    826.8, 410.3    3.6x     6 #FF68262A   img=100001  clue
+   59   art661.clue1.s200.patch4                    829.8, 409.3    1.6x     4 #FF68262A   img=100001  clue
+   60   art661.clue1.s200.patch5                    831.8, 408.3    1.6x     2 #FF68262A   img=100001  clue
+   61   art661.clue1.s095.rect                      639.8,   450    9.6x  85.4 #FF9D3033   img=100001  clue
+   62   art661.clue1.s095.tri                       666.3,   429  120.8x  59.5 #FF9D3033   img=100003  clue
+   63   art661.clue1.s095.patch2                    682.3, 412.3   74.6x    10 #FF9D3033   img=100001  clue
+   64   art661.clue1.s095.patch3                    677.3, 422.3   64.6x    10 #FF9D3033   img=100001  clue
+   65   art661.clue1.s095.patch4                    672.3, 432.3   54.6x    10 #FF9D3033   img=100001  clue
+   66   art661.clue1.s095.patch5                    667.3, 442.3   44.6x    10 #FF9D3033   img=100001  clue
+   67   art661.clue1.s095.patch6                    722.3, 410.3    2.6x     6 #FF9D3033   img=100001  clue
+   68   art661.clue1.s095.patch7                    725.8, 408.8    1.6x     3 #FF9D3033   img=100001  clue
+   69   art661.clue1.s095.patch8                    727.8, 407.8    1.6x     1 #FF9D3033   img=100001  clue
+   70   art658.clue1.rule                             800,   410    330x     5 #FFFDFAF5   img=100001  clue
+   71   backrop1                                      800,   450    330x  85.4 #00FFFFFF   img=100001  clue
+   72   backrop2                                      800,   450    324x  79.4 #00FFFFFF   img=100001  clue
+   78 H gen.backrop                                   800,   450    330x  79.4 #FFFFFFFF   img=107133  clue
+ 1590   clue                                          800,   450    334x  85.4 -           img=null    #1073741844
+ 1621   art658.clue2.bg                               800,   450    330x  85.4 #FF68282A   img=100001  clue
+ 1622 H art658.clue2.grad1                            686, 467.6    150x    62 #FF9D3033   img=100001  clue
+ 1623 H art658.clue2.grad2                            728,   450    150x    62 #FF68282A   img=100001  clue
+ 1624 H art658.clue2.grad3                            770, 432.4    150x    62 #FF611F23   img=100001  clue
+ 1625 H art659.clue2.mid                              820,   450    150x  85.4 #FF68282A   img=100001  clue
+ 1626 H art659.clue2.hi1                            641.8,   450   13.5x  85.4 #FF9D3033   img=100001  clue
+ 1627 H art659.clue2.hi2                            655.3, 442.9   13.5x  71.2 #FF9D3033   img=100001  clue
+ 1628 H art659.clue2.hi3                            668.8, 435.8   13.5x    57 #FF9D3033   img=100001  clue
+ 1629 H art659.clue2.hi4                            682.3, 428.7   13.5x  42.8 #FF9D3033   img=100001  clue
+ 1630 H art659.clue2.hi5                            695.8, 421.6   13.5x  28.6 #FF9D3033   img=100001  clue
+ 1631 H art659.clue2.hi6                            709.3, 414.5   13.5x  14.4 #FF9D3033   img=100001  clue
+ 1632 H art659.clue2.lo1                              860, 483.7     42x    18 #FF611F23   img=100001  clue
+ 1633 H art659.clue2.lo2                              902, 475.7     42x    34 #FF611F23   img=100001  clue
+ 1634 H art659.clue2.lo3                              944, 467.7     42x    50 #FF611F23   img=100001  clue
+ 1635 H art660.clue2.light.rect                       652,   450     34x  85.4 #FF9D3033   img=100001  clue
+ 1636 H art660.clue2.light.tri                        719, 446.8   84.4x    20 #FF9D3033   img=100003  clue
+ 1637 H art660.clue2.light.patch1                     678,   430     30x    34 #FF9D3033   img=100001  clue
+... 共 454 层
+
+→ _667_盘点.json

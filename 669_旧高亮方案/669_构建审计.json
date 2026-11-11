@@ -1,0 +1,171 @@
+{
+  "version": 1,
+  "name": "669 build audit",
+  "date": "2026-11-11",
+  "base": {
+    "file": "668_线索卡染色.gil",
+    "sha256": "2f6c1ac87c7661d7cfe5d888596f5a2d95fb747951936a26a71367e85051d9b3",
+    "records": 6976,
+    "scriptBytes": 636660
+  },
+  "output": {
+    "file": "669_旧高亮方案.gil",
+    "sha256": "567a1045db72dedd7900dfe516c0a5e28501cee63713da947e0fbf75e6d5c55d",
+    "bytes": 6241080,
+    "records": 6976
+  },
+  "spec": {
+    "userClarification": "红色阶梯渐变放 backrop2（卡面 324×79.4），染色区仍是 backrop1（330×85.4，在下面、略大一圈露 3px），这才是要恢复的旧高亮方案。",
+    "measuredGeometry": "backrop1 800,450 330×85.4；backrop2 800,450 324×79.4；原渐变组 330×85.4（与 backrop1 同大，会盖住染色区）。",
+    "scale": "渐变组按 backrop2 仿射缩放 SX=0.981818 SY=0.929742，中心相对 (800,450) 偏移同比例，rot 不变；白线一并缩放。",
+    "layerOrder": "recTop 与 childList 同步重排为 backrop1 → backrop2 → bg + 28 层渐变 → rule → 文字。",
+    "result": "普通态红渐变卡 + 3px 描边；选中态 Lua 给 backrop1 写 0xFFFFD44B，只有 3px 一圈变黄，卡面红渐变不变。",
+    "kept": "白字 #FFFFFFFF、卡片区白色底板（静态红底板已隐藏）、内嵌 Lua、26 条文本、v19 背景子树全部保持 668 原样。"
+  },
+  "counts": {
+    "recordsBefore": 6976,
+    "recordsAfter": 6976,
+    "modified": 63,
+    "touched": 66
+  },
+  "summary": [
+    {
+      "rootId": 1073742421,
+      "backrop1": {
+        "cx": 800.0001430511475,
+        "cy": 449.9999189376904,
+        "w": 329.99993896484375,
+        "h": 85.39997100830078,
+        "color": "FF56565E"
+      },
+      "backrop2": {
+        "cx": 800.0001430511475,
+        "cy": 449.9999189376904,
+        "w": 323.99993896484375,
+        "h": 79.4000473022461,
+        "color": "FF611F23"
+      },
+      "outline": [
+        3,
+        2.9999618530273438
+      ],
+      "scaledLayers": 30,
+      "scale": [
+        0.9818181818181818,
+        0.9297423887587822
+      ]
+    },
+    {
+      "rootId": 1073742428,
+      "backrop1": {
+        "cx": 800.0001430511475,
+        "cy": 449.9999189376904,
+        "w": 329.99993896484375,
+        "h": 85.39997100830078,
+        "color": "FF56565E"
+      },
+      "backrop2": {
+        "cx": 800.0001430511475,
+        "cy": 449.9999189376904,
+        "w": 323.99993896484375,
+        "h": 79.4000473022461,
+        "color": "FF611F23"
+      },
+      "outline": [
+        3,
+        2.9999618530273438
+      ],
+      "scaledLayers": 30,
+      "scale": [
+        0.9818181818181818,
+        0.9297423887587822
+      ]
+    }
+  ],
+  "moved": [
+    {
+      "rootId": 1073742421,
+      "b1": 1073742422,
+      "b2": 1073742423,
+      "bg": 1073758142
+    },
+    {
+      "rootId": 1073742428,
+      "b1": 1073742429,
+      "b2": 1073742430,
+      "bg": 1073758147
+    }
+  ],
+  "modified": [
+    "backrop1",
+    "backrop2",
+    "art658.clue1.bg",
+    "art661.clue1.base",
+    "art661.clue1.s300.rect",
+    "art661.clue1.s300.tri",
+    "art661.clue1.s300.patch2",
+    "art661.clue1.s300.patch3",
+    "art661.clue1.s300.patch4",
+    "art661.clue1.s300.patch5",
+    "art661.clue1.s250.rect",
+    "art661.clue1.s250.tri",
+    "art661.clue1.s250.patch2",
+    "art661.clue1.s250.patch3",
+    "art661.clue1.s250.patch4",
+    "art661.clue1.s250.patch5",
+    "art661.clue1.s200.rect",
+    "art661.clue1.s200.tri",
+    "art661.clue1.s200.patch2",
+    "art661.clue1.s200.patch3",
+    "art661.clue1.s200.patch4",
+    "art661.clue1.s200.patch5",
+    "art661.clue1.s095.rect",
+    "art661.clue1.s095.tri",
+    "art661.clue1.s095.patch2",
+    "art661.clue1.s095.patch3",
+    "art661.clue1.s095.patch4",
+    "art661.clue1.s095.patch5",
+    "art661.clue1.s095.patch6",
+    "art661.clue1.s095.patch7",
+    "art661.clue1.s095.patch8",
+    "art658.clue1.rule",
+    "clue",
+    "art658.clue2.bg",
+    "art661.clue2.base",
+    "art661.clue2.s300.rect",
+    "art661.clue2.s300.tri",
+    "art661.clue2.s300.patch2",
+    "art661.clue2.s300.patch3",
+    "art661.clue2.s300.patch4",
+    "art661.clue2.s300.patch5",
+    "art661.clue2.s250.rect",
+    "art661.clue2.s250.tri",
+    "art661.clue2.s250.patch2",
+    "art661.clue2.s250.patch3",
+    "art661.clue2.s250.patch4",
+    "art661.clue2.s250.patch5",
+    "art661.clue2.s200.rect",
+    "art661.clue2.s200.tri",
+    "art661.clue2.s200.patch2",
+    "art661.clue2.s200.patch3",
+    "art661.clue2.s200.patch4",
+    "art661.clue2.s200.patch5",
+    "art661.clue2.s095.rect",
+    "art661.clue2.s095.tri",
+    "art661.clue2.s095.patch2",
+    "art661.clue2.s095.patch3",
+    "art661.clue2.s095.patch4",
+    "art661.clue2.s095.patch5",
+    "art661.clue2.s095.patch6",
+    "art661.clue2.s095.patch7",
+    "art661.clue2.s095.patch8",
+    "art658.clue2.rule"
+  ],
+  "writeGilReport": {
+    "bytes": 6241080,
+    "diffs": 2640,
+    "compared": 1408287,
+    "recs": 6976,
+    "marker": null
+  }
+}

@@ -1,0 +1,353 @@
+{
+  "base": "664",
+  "output": "665",
+  "records": 6976,
+  "changedTextRecords": 68,
+  "unchangedRecords": 6908,
+  "geometryAndParentListsUnchanged": true,
+  "embeddedScriptMatches": true,
+  "roundtrip": true,
+  "sha256": "1a894dbf8e39aa43122882c7c1a13c369ccb3f9ea4ef121e547874ecd02b897f",
+  "texts": [
+    {
+      "name": "what.1.1",
+      "old": "收藏家在第五列",
+      "text": "只有我站在地毯上"
+    },
+    {
+      "name": "what.1.2",
+      "old": "旧识古董商在植物旁边",
+      "text": "我在植物旁边"
+    },
+    {
+      "name": "what.1.3",
+      "old": "只有值班保安站在地毯上",
+      "text": "我站在椅子上"
+    },
+    {
+      "name": "what.1.4",
+      "old": "夜班清洁工站在椅子上",
+      "text": "我不在桌子旁边"
+    },
+    {
+      "name": "what.1.5",
+      "old": "前台姑娘在桌子旁边",
+      "text": "我在第五列"
+    },
+    {
+      "name": "what.2.1",
+      "old": "画廊助理在桌子旁边",
+      "text": "我在书架旁边"
+    },
+    {
+      "name": "what.2.2",
+      "old": "有两人坐在椅子上",
+      "text": "我在桌子旁边；有两人坐在椅子上"
+    },
+    {
+      "name": "what.2.3",
+      "old": "夜班门卫在书架旁边",
+      "text": "我在馆长下方的不同区域中"
+    },
+    {
+      "name": "what.2.4",
+      "old": "随行记者在夜班门卫的上方。",
+      "text": "我站在地毯上"
+    },
+    {
+      "name": "what.2.5",
+      "old": "只有随行记者在植物旁边",
+      "text": "只有我在植物旁边"
+    },
+    {
+      "name": "what.2.6",
+      "old": "我独自一人，且临时搬运工在我下方的不同区域中",
+      "text": "我独自一人在一个区域中"
+    },
+    {
+      "name": "what.3.1",
+      "old": "A在植物旁边",
+      "text": "我在植物旁边；我比B靠上一行"
+    },
+    {
+      "name": "what.3.2",
+      "old": "E在R4房间",
+      "text": "我坐在椅子上，且在植物旁边"
+    },
+    {
+      "name": "what.3.3",
+      "old": "D在R3房间",
+      "text": "只有我站在地毯上"
+    },
+    {
+      "name": "what.3.4",
+      "old": "B在椅子上",
+      "text": "我在R3房间的第四列"
+    },
+    {
+      "name": "what.3.5",
+      "old": "B在植物旁边",
+      "text": "我在R4房间"
+    },
+    {
+      "name": "what.3.6",
+      "old": "只有C在地毯上；V在R2房间",
+      "text": "我在R2房间"
+    },
+    {
+      "name": "what.4.1",
+      "old": "A与D在同一房间",
+      "text": "我与D在同一房间"
+    },
+    {
+      "name": "what.4.2",
+      "old": "D在椅子上；V在植物旁边",
+      "text": "我坐在椅子上"
+    },
+    {
+      "name": "what.4.3",
+      "old": "B在椅子上",
+      "text": "只有我站在地毯上；我比E靠上一行"
+    },
+    {
+      "name": "what.4.4",
+      "old": "E比C靠下1行",
+      "text": "我坐在椅子上"
+    },
+    {
+      "name": "what.4.5",
+      "old": "E坐在椅子上",
+      "text": "我坐在椅子上"
+    },
+    {
+      "name": "what.4.6",
+      "old": "只有C在地毯上",
+      "text": "我在植物旁边"
+    },
+    {
+      "name": "td.l1.page.2.body.0.0",
+      "old": "卡上写的是他提供的线索 —— 说的可能是别人。",
+      "text": "卡上是本人提供的口供，句中的“我”就是卡上的人。"
+    },
+    {
+      "name": "td.l1.page.2.notet",
+      "old": "卡上的人＝你要放下的人；卡上的话＝他提供的线索，可能说的是别人。",
+      "text": "卡序固定；卡上人物说自己的位置，关系句也以本人为主语。"
+    },
+    {
+      "name": "td.l1.page.2.caption",
+      "old": "•  选中 A，第 5 列亮起",
+      "text": "• 选中 V，第 5 列亮起"
+    },
+    {
+      "name": "td.l1.page.2.clueface",
+      "old": "A",
+      "text": "V"
+    },
+    {
+      "name": "td.l1.page.2.cluename",
+      "old": "卡 1 · 值班保安（A）",
+      "text": "卡 5 · 收藏家（V）"
+    },
+    {
+      "name": "td.l1.page.2.cluesay.0",
+      "old": "「收藏家 ",
+      "text": "「我 "
+    },
+    {
+      "name": "td.l1.page.4.body.0.0",
+      "old": "卡 3 是清洁工提供的线索：「只有值班保安站在地毯上」。",
+      "text": "卡 1 是保安的口供：「只有我站在地毯上」。"
+    },
+    {
+      "name": "td.l1.page.4.clueface",
+      "old": "C",
+      "text": "A"
+    },
+    {
+      "name": "td.l1.page.4.cluename",
+      "old": "卡 3 · 夜班清洁工（C）",
+      "text": "卡 1 · 值班保安（A）"
+    },
+    {
+      "name": "td.l1.page.4.cluesay.0",
+      "old": "「只有 值班保安 站在 ",
+      "text": "「只有 我 站在 "
+    },
+    {
+      "name": "td.l1.page.5.heading",
+      "old": "B 只能站 (2,2)，A 只能站 (3,1)",
+      "text": "结合全盘规则：B=(2,2)，A=(3,1)"
+    },
+    {
+      "name": "td.l1.page.5.body.0.0",
+      "old": "卡 5：「前台姑娘在桌子旁边」→ (2,2) 和 (3,1)。",
+      "text": "卡 2：前台姑娘说「我在植物旁边」。"
+    },
+    {
+      "name": "td.l1.page.5.body.1.0",
+      "old": "但 (3,1) 是地毯，站上去就和卡 3「只有值班保安在地毯上」冲突，",
+      "text": "植物旁候选不止一格，不能仅靠本卡直接定位；"
+    },
+    {
+      "name": "td.l1.page.5.body.1.1",
+      "old": "所以",
+      "text": "结合全盘规则，"
+    },
+    {
+      "name": "td.l1.page.5.body.1.2",
+      "old": "B = (2,2)。",
+      "text": "可得 B=(2,2)。"
+    },
+    {
+      "name": "td.l1.page.5.body.2.0",
+      "old": "第 2 行、第 2 列被占 ⇒ A 的 (2,4)(2,5)(3,2) 出局 ⇒",
+      "text": "B 占第 2 行、第 2 列，A 的另三格排除，余下"
+    },
+    {
+      "name": "td.l1.page.5.caption",
+      "old": "•  B/A 已放，3 个候选被划掉",
+      "text": "• 全部口供与规则求解后的 A/B 位置示例"
+    },
+    {
+      "name": "td.l1.page.5.clueface",
+      "old": "V",
+      "text": "B"
+    },
+    {
+      "name": "td.l1.page.5.cluename",
+      "old": "卡 5 · 收藏家（受害者）；卡 3 · 夜班清洁工（C）",
+      "text": "卡 2 · 前台姑娘（B）；卡 1 · 值班保安（A）"
+    },
+    {
+      "name": "td.l1.page.5.cluesay.0",
+      "old": "「前台姑娘 ",
+      "text": "「我 "
+    },
+    {
+      "name": "td.l1.page.5.cluesay.1",
+      "old": "在 桌子 旁边",
+      "text": "在 植物 旁边"
+    },
+    {
+      "name": "td.l1.page.6.body.0.0",
+      "old": "卡 4 是古董商提供的线索：「夜班清洁工站在椅子上」。",
+      "text": "卡 3 是清洁工的口供：「我站在椅子上」。"
+    },
+    {
+      "name": "td.l1.page.6.clueface",
+      "old": "D",
+      "text": "C"
+    },
+    {
+      "name": "td.l1.page.6.cluename",
+      "old": "卡 4 · 旧识古董商（D）",
+      "text": "卡 3 · 夜班清洁工（C）"
+    },
+    {
+      "name": "td.l1.page.6.cluesay.0",
+      "old": "「夜班清洁工 站在 ",
+      "text": "「我 站在 "
+    },
+    {
+      "name": "td.l1.page.7.heading",
+      "old": "用房间规则，定下最后两人",
+      "text": "摘卡判断身份，再核对完整摆位"
+    },
+    {
+      "name": "td.l1.page.7.body.0.0",
+      "old": "A、B、C 已定，只剩第1、4行和第3、5列。",
+      "text": "假定盗窃者后，移除本人整卡，保留其他真卡。"
+    },
+    {
+      "name": "td.l1.page.7.body.1.0",
+      "old": "V 在第5列：(1,5)或(4,5)；D 在另一行的第3列。",
+      "text": "摘 D 卡后有两种位置；D 必须说真话。"
+    },
+    {
+      "name": "td.l1.page.7.body.2.0",
+      "old": "若 D 在外间：大屋有2名无辜者，外间只有 C，故排除。",
+      "text": "加回“我不在桌子旁边”，排除 (2,2)。"
+    },
+    {
+      "name": "td.l1.page.7.body.3.0",
+      "old": "所以 V=(4,5)、D=(1,3)，D 在人多的大屋。",
+      "text": "其余身份均与严格真假条件矛盾，故仅剩 D。"
+    },
+    {
+      "name": "td.l1.page.7.cluename",
+      "old": "V 是受害者，不参与判断；A、B、C 已由线索逐一锁定。",
+      "text": "卡 4 · 旧识古董商（D）：我不在桌子旁边"
+    },
+    {
+      "name": "td.l1.page.7.cluesay.0",
+      "old": "只有 D 保留选择余地，因此盗窃者是 D（旧识古董商）。",
+      "text": "完整规则唯一解：D=(1,3)，V=(4,5)。"
+    },
+    {
+      "name": "td.l1.page.7.chipt.2",
+      "old": "D 有得选 ⇒ 盗窃者",
+      "text": "摘卡检验 ⇒ D"
+    },
+    {
+      "name": "td.l2.page.3.cluesay.0",
+      "old": "随行记者在夜班门卫的上方。",
+      "text": "我站在地毯上。"
+    },
+    {
+      "name": "td.l2.page.4.cluesay.0",
+      "old": "随行记者在夜班门卫的上方。",
+      "text": "我站在地毯上。"
+    },
+    {
+      "name": "td.l2.page.3.caption",
+      "old": "假设 b、e 为真：E? 为局部候选，须再排除",
+      "text": "通用线索排除地毯；D 的口供与之矛盾"
+    },
+    {
+      "name": "td.l2.page.3.lgt.3",
+      "old": "e：仅E在植物旁",
+      "text": ""
+    },
+    {
+      "name": "td.l2.page.4.rewrite617.2",
+      "old": "进一步推理可以得到假线索是线索 d，",
+      "text": "D 的“我站在地毯上”是假话，"
+    },
+    {
+      "name": "td.l2.page.4.rewrite617.3",
+      "old": "易得线索 b、d、e 无法同时成立，故其中必有假线索，",
+      "text": "通用线索“地毯上没有人”与 D 卡矛盾，"
+    },
+    {
+      "name": "td.l2.page.3.lgt.0",
+      "old": "假设 b、d、e 真",
+      "text": ""
+    },
+    {
+      "name": "td.l2.page.3.lgt.8",
+      "old": "E在第6行不行",
+      "text": ""
+    },
+    {
+      "name": "td.l2.page.3.lgt.9",
+      "old": "若E在(5,5)",
+      "text": ""
+    },
+    {
+      "name": "td.l2.page.3.rewrite617.1",
+      "old": "② 假设所有线索为真",
+      "text": "② D 却说自己站在地毯上，必为假话。"
+    },
+    {
+      "name": "td.l2.page.3.rewrite617.3",
+      "old": "① 看线索是否与规则或其他线索",
+      "text": "① 通用线索始终为真：地毯上没有人。"
+    },
+    {
+      "name": "td.l2.page.3.heading",
+      "old": "抓谎：三条常用的判断方法",
+      "text": "对照通用线索，识别 D 的假口供"
+    }
+  ]
+}

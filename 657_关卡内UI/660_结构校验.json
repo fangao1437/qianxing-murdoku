@@ -1,0 +1,78 @@
+{
+  "base": "659_关卡内UI.gil",
+  "output": "660_关卡内UI.gil",
+  "recordsBefore": 6752,
+  "recordsAfter": 6856,
+  "added": 104,
+  "removed": 0,
+  "changedExisting": 121,
+  "policeV12": {
+    "descendantsBefore": 762,
+    "descendantsAfter": 762,
+    "changed": 0,
+    "untouched": true
+  },
+  "script": {
+    "identical": true,
+    "bytes": 636612
+  },
+  "hiddenRecords": {
+    "count": 240,
+    "allEffective": true
+  },
+  "fixes": {
+    "p1_noteTicket": {
+      "oldBandsHidden": true,
+      "tabLayersPresent": true,
+      "tabTriIsRotatedTriangle": true,
+      "notchCount": 4,
+      "tipCount": 4,
+      "helpIconUntouched": true,
+      "hitUntouched": true
+    },
+    "p2_swallowRibbon": {
+      "oldRibBandsHidden": true,
+      "ribTriPresent": true,
+      "ribV": [
+        504.5,
+        504.5
+      ],
+      "ribVSync": true
+    },
+    "p3_gradientMethod": {
+      "visibleClipContainers": [],
+      "rotatedTriangles": [
+        "art660.clue1.light.tri",
+        "art660.clue2.light.tri",
+        "art660.ribbon.light.tri",
+        "art660.tab.light.tri"
+      ],
+      "rotatedInBounds": true
+    },
+    "p4_clueBackground": {
+      "oldGridHidden": true,
+      "gridLayers": 37,
+      "gridRotConsistent": true,
+      "coverPresent": true,
+      "dashLayers": 38,
+      "frame": [
+        222,
+        517,
+        396,
+        515
+      ],
+      "frameResized": true
+    },
+    "p5_templateGradient": {
+      "layersPerTemplate": [
+        5,
+        5
+      ],
+      "expected": 5,
+      "ok": true
+    }
+  },
+  "childListFollowsRecordOrder": true,
+  "keyControlsMissing": [],
+  "verdict": true
+}

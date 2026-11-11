@@ -1,0 +1,452 @@
+{
+  "version": 1,
+  "name": "664 build audit",
+  "date": "2026-11-11",
+  "base": {
+    "file": "663_关卡内UI.gil",
+    "sha256": "60ebb1a18abe893d654380ae1ca4a33db5525850538774d4743e2f042d8b458c",
+    "records": 6984,
+    "scriptBytes": 636612
+  },
+  "output": {
+    "file": "664_关卡内UI.gil",
+    "sha256": "cc6969292ec2ab3b49009ddaeac14130f6b0e654fbd615125c25e6ea111a96ef",
+    "bytes": 6241031,
+    "records": 6976
+  },
+  "spec": {
+    "item1_delete": "art657.game.board.tape.* 53 条（top 27 / bottom 26）从 recTop 与父 childList 真删；全仓核查无其它运行时引用、无子记录。",
+    "item1_symmetry": "棋盘深紫内框实测 y=107..732；统一 y+10.5 后 boardframe.paper 53.5..785.5（上53.5/下53.5）、art656.home.grid.paper 44.5..794.5（上62.5/下62.5），大小/颜色/角度不变。",
+    "item2_ticket": "设计图 6236×3508 原 PNG 逐点采样：#8C2800 28.0% / #AF3200 26.2% / #CB4C19 10.1%；分界（局部）lx+ly<18 与 <−42；fit-primitive-shape.mjs 生成 23 枚 100003，coverage 100%、overflow 0，rot 归一化 [0,360)。边缘用「背景色矩形盖掉两端各 13px + 4 枚票券色圆齿推回」形成内凹锯齿撕边（左 #FDF6DC 白格纹 / 右 #E7B53C 橙黄）。",
+    "item3_wax": "设计图剖面：外圈亮红 #B40806、左右最亮 #D70601、主体 #AA0400；663 的 12 瓣深色外沿收拢成一枚 106 圆（消除花朵轮廓），新增 16 枚亮环（R=42/d=18，外沿半径 51 不出轮廓）+ 顶部鼓包 + 84 主体 + 2 枚强亮 + 2 层压印，隐藏 663 的 glow.l/r 与 inner。",
+    "ignored": "v19 背景资产为独立内容，police-v19 子树零改动；内嵌 Lua 零改动。"
+  },
+  "counts": {
+    "recordsBefore": 6984,
+    "recordsAfter": 6976,
+    "removed": 53,
+    "added": 45,
+    "hidden": 7,
+    "modified": 146,
+    "shifted": 51
+  },
+  "fit": [
+    {
+      "tag": "mid",
+      "color": "#AF3200",
+      "D": 18,
+      "elements": 14,
+      "coverage": 100,
+      "overflowVertices": 0
+    },
+    {
+      "tag": "hi",
+      "color": "#CB4C19",
+      "D": -42,
+      "elements": 9,
+      "coverage": 100,
+      "overflowVertices": 0
+    }
+  ],
+  "removed": [
+    "art657.game.board.tape.top.base",
+    "art657.game.board.tape.top.v1",
+    "art657.game.board.tape.top.v2",
+    "art657.game.board.tape.top.v3",
+    "art657.game.board.tape.top.v4",
+    "art657.game.board.tape.top.v5",
+    "art657.game.board.tape.top.v6",
+    "art657.game.board.tape.top.v7",
+    "art657.game.board.tape.top.v8",
+    "art657.game.board.tape.top.v9",
+    "art657.game.board.tape.top.v10",
+    "art657.game.board.tape.top.v11",
+    "art657.game.board.tape.top.v12",
+    "art657.game.board.tape.top.v13",
+    "art657.game.board.tape.top.v14",
+    "art657.game.board.tape.top.v15",
+    "art657.game.board.tape.top.v16",
+    "art657.game.board.tape.top.v17",
+    "art657.game.board.tape.top.v18",
+    "art657.game.board.tape.top.v19",
+    "art657.game.board.tape.top.v20",
+    "art657.game.board.tape.top.v21",
+    "art657.game.board.tape.top.v22",
+    "art657.game.board.tape.top.v23",
+    "art657.game.board.tape.top.v24",
+    "art657.game.board.tape.top.h1",
+    "art657.game.board.tape.top.h2",
+    "art657.game.board.tape.bottom.base",
+    "art657.game.board.tape.bottom.v1",
+    "art657.game.board.tape.bottom.v2",
+    "art657.game.board.tape.bottom.v3",
+    "art657.game.board.tape.bottom.v4",
+    "art657.game.board.tape.bottom.v5",
+    "art657.game.board.tape.bottom.v6",
+    "art657.game.board.tape.bottom.v7",
+    "art657.game.board.tape.bottom.v8",
+    "art657.game.board.tape.bottom.v9",
+    "art657.game.board.tape.bottom.v10",
+    "art657.game.board.tape.bottom.v11",
+    "art657.game.board.tape.bottom.v12",
+    "art657.game.board.tape.bottom.v13",
+    "art657.game.board.tape.bottom.v14",
+    "art657.game.board.tape.bottom.v15",
+    "art657.game.board.tape.bottom.v16",
+    "art657.game.board.tape.bottom.v17",
+    "art657.game.board.tape.bottom.v18",
+    "art657.game.board.tape.bottom.v19",
+    "art657.game.board.tape.bottom.v20",
+    "art657.game.board.tape.bottom.v21",
+    "art657.game.board.tape.bottom.v22",
+    "art657.game.board.tape.bottom.v23",
+    "art657.game.board.tape.bottom.v24",
+    "art657.game.board.tape.bottom.h1"
+  ],
+  "modified": [
+    "art656.home.grid.paper",
+    "art656.home.grid.v0",
+    "art656.home.grid.v1",
+    "art656.home.grid.v2",
+    "art656.home.grid.v3",
+    "art656.home.grid.v4",
+    "art656.home.grid.v5",
+    "art656.home.grid.v6",
+    "art656.home.grid.v7",
+    "art656.home.grid.v8",
+    "art656.home.grid.v9",
+    "art656.home.grid.v10",
+    "art656.home.grid.v11",
+    "art656.home.grid.v12",
+    "art656.home.grid.v13",
+    "art656.home.grid.v14",
+    "art656.home.grid.v15",
+    "art656.home.grid.v16",
+    "art656.home.grid.v17",
+    "art656.home.grid.v18",
+    "art656.home.grid.v19",
+    "art656.home.grid.v20",
+    "art656.home.grid.v21",
+    "art656.home.grid.v22",
+    "art656.home.grid.v23",
+    "art656.home.grid.h0",
+    "art656.home.grid.h1",
+    "art656.home.grid.h2",
+    "art656.home.grid.h3",
+    "art663.grid.h04",
+    "art663.grid.h05",
+    "art663.grid.h06",
+    "art663.grid.h07",
+    "art663.grid.h08",
+    "art663.grid.h09",
+    "art663.grid.h10",
+    "art663.grid.h11",
+    "art663.grid.h12",
+    "art663.grid.h13",
+    "art663.grid.h14",
+    "art663.grid.h15",
+    "art663.grid.h16",
+    "art663.grid.h17",
+    "art663.grid.h18",
+    "art663.grid.h19",
+    "art663.grid.h20",
+    "art663.grid.h21",
+    "art663.grid.h22",
+    "art656.home.paper.edge",
+    "art641.game.boardframe.shadow",
+    "art641.game.boardframe.paper",
+    "art641.game.help.tab",
+    "art661.tab.outline",
+    "art661.tab.light.rect",
+    "art661.tab.light.tri",
+    "art661.tab.light.patch1",
+    "art661.tab.light.patch2",
+    "art663.tab.edge.l0",
+    "art663.tab.edge.l1",
+    "art663.tab.edge.l2",
+    "art663.tab.edge.l3",
+    "art663.tab.edge.r0",
+    "art663.tab.edge.r1",
+    "art663.tab.edge.r2",
+    "art663.tab.edge.r3",
+    "art663.tab.tooth.l0",
+    "art663.tab.tooth.l1",
+    "art663.tab.tooth.l2",
+    "art663.tab.tooth.l3",
+    "art663.tab.tooth.r0",
+    "art663.tab.tooth.r1",
+    "art663.tab.tooth.r2",
+    "art663.tab.tooth.r3",
+    "art664.tab.mid.fit01",
+    "art664.tab.mid.fit02",
+    "art664.tab.mid.fit03",
+    "art664.tab.mid.fit04",
+    "art664.tab.mid.fit05",
+    "art664.tab.mid.fit06",
+    "art664.tab.mid.fit07",
+    "art664.tab.mid.fit08",
+    "art664.tab.mid.fit09",
+    "art664.tab.mid.fit10",
+    "art664.tab.mid.fit11",
+    "art664.tab.mid.fit12",
+    "art664.tab.mid.fit13",
+    "art664.tab.mid.fit14",
+    "art664.tab.hi.fit15",
+    "art664.tab.hi.fit16",
+    "art664.tab.hi.fit17",
+    "art664.tab.hi.fit18",
+    "art664.tab.hi.fit19",
+    "art664.tab.hi.fit20",
+    "art664.tab.hi.fit21",
+    "art664.tab.hi.fit22",
+    "art664.tab.hi.fit23",
+    "art663.wax.glow.l",
+    "art663.wax.glow.r",
+    "art663.wax.inner",
+    "art663.wax.edge.0",
+    "art663.wax.edge.1",
+    "art663.wax.edge.2",
+    "art663.wax.edge.3",
+    "art663.wax.edge.4",
+    "art663.wax.edge.5",
+    "art663.wax.edge.6",
+    "art663.wax.edge.7",
+    "art663.wax.edge.8",
+    "art663.wax.edge.9",
+    "art663.wax.edge.10",
+    "art663.wax.edge.11",
+    "art663.wax.lobe.0",
+    "art663.wax.lobe.1",
+    "art663.wax.lobe.2",
+    "art663.wax.lobe.3",
+    "art663.wax.lobe.4",
+    "art663.wax.lobe.5",
+    "art663.wax.lobe.6",
+    "art663.wax.lobe.7",
+    "art663.wax.lobe.8",
+    "art663.wax.lobe.9",
+    "art663.wax.lobe.10",
+    "art663.wax.lobe.11",
+    "art664.wax.ring.0",
+    "art664.wax.ring.1",
+    "art664.wax.ring.2",
+    "art664.wax.ring.3",
+    "art664.wax.ring.4",
+    "art664.wax.ring.5",
+    "art664.wax.ring.6",
+    "art664.wax.ring.7",
+    "art664.wax.ring.8",
+    "art664.wax.ring.9",
+    "art664.wax.ring.10",
+    "art664.wax.ring.11",
+    "art664.wax.ring.12",
+    "art664.wax.ring.13",
+    "art664.wax.ring.14",
+    "art664.wax.ring.15",
+    "art664.wax.top.lobe",
+    "art664.wax.center",
+    "art664.wax.hot.l",
+    "art664.wax.hot.r",
+    "art664.wax.stamp.rim",
+    "art664.wax.stamp.core",
+    "grp653.static.1.art641.game"
+  ],
+  "hidden": [
+    "art661.tab.light.rect",
+    "art661.tab.light.tri",
+    "art661.tab.light.patch1",
+    "art661.tab.light.patch2",
+    "art663.wax.glow.l",
+    "art663.wax.glow.r",
+    "art663.wax.inner"
+  ],
+  "addedLayers": [
+    {
+      "id": 1073759670,
+      "name": "art664.tab.mid.fit01"
+    },
+    {
+      "id": 1073759671,
+      "name": "art664.tab.mid.fit02"
+    },
+    {
+      "id": 1073759672,
+      "name": "art664.tab.mid.fit03"
+    },
+    {
+      "id": 1073759673,
+      "name": "art664.tab.mid.fit04"
+    },
+    {
+      "id": 1073759674,
+      "name": "art664.tab.mid.fit05"
+    },
+    {
+      "id": 1073759675,
+      "name": "art664.tab.mid.fit06"
+    },
+    {
+      "id": 1073759676,
+      "name": "art664.tab.mid.fit07"
+    },
+    {
+      "id": 1073759677,
+      "name": "art664.tab.mid.fit08"
+    },
+    {
+      "id": 1073759678,
+      "name": "art664.tab.mid.fit09"
+    },
+    {
+      "id": 1073759679,
+      "name": "art664.tab.mid.fit10"
+    },
+    {
+      "id": 1073759680,
+      "name": "art664.tab.mid.fit11"
+    },
+    {
+      "id": 1073759681,
+      "name": "art664.tab.mid.fit12"
+    },
+    {
+      "id": 1073759682,
+      "name": "art664.tab.mid.fit13"
+    },
+    {
+      "id": 1073759683,
+      "name": "art664.tab.mid.fit14"
+    },
+    {
+      "id": 1073759684,
+      "name": "art664.tab.hi.fit15"
+    },
+    {
+      "id": 1073759685,
+      "name": "art664.tab.hi.fit16"
+    },
+    {
+      "id": 1073759686,
+      "name": "art664.tab.hi.fit17"
+    },
+    {
+      "id": 1073759687,
+      "name": "art664.tab.hi.fit18"
+    },
+    {
+      "id": 1073759688,
+      "name": "art664.tab.hi.fit19"
+    },
+    {
+      "id": 1073759689,
+      "name": "art664.tab.hi.fit20"
+    },
+    {
+      "id": 1073759690,
+      "name": "art664.tab.hi.fit21"
+    },
+    {
+      "id": 1073759691,
+      "name": "art664.tab.hi.fit22"
+    },
+    {
+      "id": 1073759692,
+      "name": "art664.tab.hi.fit23"
+    },
+    {
+      "id": 1073759693,
+      "name": "art664.wax.ring.0"
+    },
+    {
+      "id": 1073759694,
+      "name": "art664.wax.ring.1"
+    },
+    {
+      "id": 1073759695,
+      "name": "art664.wax.ring.2"
+    },
+    {
+      "id": 1073759696,
+      "name": "art664.wax.ring.3"
+    },
+    {
+      "id": 1073759697,
+      "name": "art664.wax.ring.4"
+    },
+    {
+      "id": 1073759698,
+      "name": "art664.wax.ring.5"
+    },
+    {
+      "id": 1073759699,
+      "name": "art664.wax.ring.6"
+    },
+    {
+      "id": 1073759700,
+      "name": "art664.wax.ring.7"
+    },
+    {
+      "id": 1073759701,
+      "name": "art664.wax.ring.8"
+    },
+    {
+      "id": 1073759702,
+      "name": "art664.wax.ring.9"
+    },
+    {
+      "id": 1073759703,
+      "name": "art664.wax.ring.10"
+    },
+    {
+      "id": 1073759704,
+      "name": "art664.wax.ring.11"
+    },
+    {
+      "id": 1073759705,
+      "name": "art664.wax.ring.12"
+    },
+    {
+      "id": 1073759706,
+      "name": "art664.wax.ring.13"
+    },
+    {
+      "id": 1073759707,
+      "name": "art664.wax.ring.14"
+    },
+    {
+      "id": 1073759708,
+      "name": "art664.wax.ring.15"
+    },
+    {
+      "id": 1073759709,
+      "name": "art664.wax.top.lobe"
+    },
+    {
+      "id": 1073759710,
+      "name": "art664.wax.center"
+    },
+    {
+      "id": 1073759711,
+      "name": "art664.wax.hot.l"
+    },
+    {
+      "id": 1073759712,
+      "name": "art664.wax.hot.r"
+    },
+    {
+      "id": 1073759713,
+      "name": "art664.wax.stamp.rim"
+    },
+    {
+      "id": 1073759714,
+      "name": "art664.wax.stamp.core"
+    }
+  ],
+  "writeGilReport": {
+    "bytes": 6241031,
+    "diffs": 95619,
+    "compared": 1373252,
+    "recs": 6976,
+    "marker": null
+  }
+}

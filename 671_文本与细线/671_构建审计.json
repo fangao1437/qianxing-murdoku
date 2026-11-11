@@ -1,0 +1,285 @@
+{
+  "version": 1,
+  "name": "671 build audit",
+  "date": "2026-11-11",
+  "base": {
+    "file": "670_渐变收敛.gil",
+    "sha256": "13f6a790ccb53d12e13f46434604917709ad258875b7424ccbde8db56961ff72",
+    "records": 7040,
+    "scriptBytes": 636660
+  },
+  "output": {
+    "file": "671_文本与细线.gil",
+    "sha256": "42089f79b93601a617afbbb57f777c06690ffa5b144e2f9601149b3713807f1f",
+    "bytes": 6297554,
+    "records": 7044
+  },
+  "spec": {
+    "problem1": "670 的 art670.* 64 层插在 who 之前，但 letter/what/face 比 who 更早 ⇒ 正文/字母/头像被渐变盖住，只剩 who 可见。",
+    "problem2": "art670.clueN.s250 的 fillRegion 安全矩形右边界 xb≈804 形成竖直浅红细线；补漏矩形在左下角越界形成深红细线。",
+    "minimalSolution": "隐藏 64 层拼接渐变；红色主色 #68262A 直接放 backrop2(324×79.4 整卡)；仅新增 2 枚 100003 等腰直角三角(w=2h, rot 45/225) 做左上亮红与右下暗部。每模板视觉层 32→4，新增仅 2 层。",
+    "geometry": {
+      "rect": {
+        "x0": 638,
+        "y0": 410.3,
+        "x1": 962,
+        "y1": 489.7
+      },
+      "side": 79.39999999999998,
+      "w": 112.289,
+      "h": 56.144,
+      "triangles": [
+        {
+          "tag": "hi",
+          "color": "#9D3033",
+          "rot": 45,
+          "cx": 657.85,
+          "cy": 430.15,
+          "vertices": [
+            [
+              638,
+              410.3
+            ],
+            [
+              638,
+              489.7
+            ],
+            [
+              717.4,
+              410.3
+            ]
+          ]
+        },
+        {
+          "tag": "lo",
+          "color": "#611F23",
+          "rot": 225,
+          "cx": 942.15,
+          "cy": 469.85,
+          "vertices": [
+            [
+              962,
+              489.7
+            ],
+            [
+              962,
+              410.3
+            ],
+            [
+              882.6,
+              489.7
+            ]
+          ]
+        }
+      ]
+    },
+    "guarantees": "两枚三角顶点全部落在 324×79.4 内（构建时硬校验）⇒ 零溢出、左下无细线；边缘由 backrop2 矩形给出 ⇒ 平直；整卡铺满主色 ⇒ 不漏底色；无补漏矩形/安全矩形 ⇒ 无拼接细线；新层插在最早文本控件之前 ⇒ 文本/头像完整可见。",
+    "kept": "backrop1 #FF56565E 染色区、白字、白色底板、内嵌 Lua、26 条文本、v19 背景子树全部保持 670 原样。"
+  },
+  "counts": {
+    "recordsBefore": 7040,
+    "recordsAfter": 7044,
+    "added": 4,
+    "hidden": 64,
+    "modified": 70
+  },
+  "visibleLayersPerTemplate": 4,
+  "previousVisibleLayersPerTemplate": 32,
+  "summary": [
+    {
+      "rootId": 1073742421,
+      "hiddenOld": 32,
+      "backrop1": [
+        329.99993896484375,
+        85.39997100830078
+      ],
+      "backrop2": [
+        323.99993896484375,
+        79.4000473022461
+      ],
+      "backrop2Color": "FF68262A",
+      "firstText": "letter",
+      "firstTextOrder": 73,
+      "newLayers": 2
+    },
+    {
+      "rootId": 1073742428,
+      "hiddenOld": 32,
+      "backrop1": [
+        329.99993896484375,
+        85.39997100830078
+      ],
+      "backrop2": [
+        323.99993896484375,
+        79.4000473022461
+      ],
+      "backrop2Color": "FF68262A",
+      "firstText": "letter",
+      "firstTextOrder": 1705,
+      "newLayers": 2
+    }
+  ],
+  "hidden": [
+    "art670.clue1.base",
+    "art670.clue1.s300.rect",
+    "art670.clue1.s300.tri",
+    "art670.clue1.s300.patch2",
+    "art670.clue1.s300.patch3",
+    "art670.clue1.s300.patch4",
+    "art670.clue1.s300.patch5",
+    "art670.clue1.s250.rect",
+    "art670.clue1.s250.tri",
+    "art670.clue1.s250.patch2",
+    "art670.clue1.s250.patch3",
+    "art670.clue1.s250.patch4",
+    "art670.clue1.s250.patch5",
+    "art670.clue1.s200.rect",
+    "art670.clue1.s200.tri",
+    "art670.clue1.s200.patch2",
+    "art670.clue1.s200.patch3",
+    "art670.clue1.s200.patch4",
+    "art670.clue1.s200.patch5",
+    "art670.clue1.s200.patch6",
+    "art670.clue1.s095.rect",
+    "art670.clue1.s095.tri",
+    "art670.clue1.s095.patch2",
+    "art670.clue1.s095.patch3",
+    "art670.clue1.s095.patch4",
+    "art670.clue1.s095.patch5",
+    "art670.clue1.s095.patch6",
+    "art670.clue1.s095.patch7",
+    "art670.clue1.s095.patch8",
+    "art670.clue1.s095.patch9",
+    "art670.clue1.s095.patch10",
+    "art670.clue1.s095.patch11",
+    "art670.clue2.base",
+    "art670.clue2.s300.rect",
+    "art670.clue2.s300.tri",
+    "art670.clue2.s300.patch2",
+    "art670.clue2.s300.patch3",
+    "art670.clue2.s300.patch4",
+    "art670.clue2.s300.patch5",
+    "art670.clue2.s250.rect",
+    "art670.clue2.s250.tri",
+    "art670.clue2.s250.patch2",
+    "art670.clue2.s250.patch3",
+    "art670.clue2.s250.patch4",
+    "art670.clue2.s250.patch5",
+    "art670.clue2.s200.rect",
+    "art670.clue2.s200.tri",
+    "art670.clue2.s200.patch2",
+    "art670.clue2.s200.patch3",
+    "art670.clue2.s200.patch4",
+    "art670.clue2.s200.patch5",
+    "art670.clue2.s200.patch6",
+    "art670.clue2.s095.rect",
+    "art670.clue2.s095.tri",
+    "art670.clue2.s095.patch2",
+    "art670.clue2.s095.patch3",
+    "art670.clue2.s095.patch4",
+    "art670.clue2.s095.patch5",
+    "art670.clue2.s095.patch6",
+    "art670.clue2.s095.patch7",
+    "art670.clue2.s095.patch8",
+    "art670.clue2.s095.patch9",
+    "art670.clue2.s095.patch10",
+    "art670.clue2.s095.patch11"
+  ],
+  "modified": [
+    "art670.clue1.base",
+    "art670.clue1.s300.rect",
+    "art670.clue1.s300.tri",
+    "art670.clue1.s300.patch2",
+    "art670.clue1.s300.patch3",
+    "art670.clue1.s300.patch4",
+    "art670.clue1.s300.patch5",
+    "art670.clue1.s250.rect",
+    "art670.clue1.s250.tri",
+    "art670.clue1.s250.patch2",
+    "art670.clue1.s250.patch3",
+    "art670.clue1.s250.patch4",
+    "art670.clue1.s250.patch5",
+    "art670.clue1.s200.rect",
+    "art670.clue1.s200.tri",
+    "art670.clue1.s200.patch2",
+    "art670.clue1.s200.patch3",
+    "art670.clue1.s200.patch4",
+    "art670.clue1.s200.patch5",
+    "art670.clue1.s200.patch6",
+    "art670.clue1.s095.rect",
+    "art670.clue1.s095.tri",
+    "art670.clue1.s095.patch2",
+    "art670.clue1.s095.patch3",
+    "art670.clue1.s095.patch4",
+    "art670.clue1.s095.patch5",
+    "art670.clue1.s095.patch6",
+    "art670.clue1.s095.patch7",
+    "art670.clue1.s095.patch8",
+    "art670.clue1.s095.patch9",
+    "art670.clue1.s095.patch10",
+    "art670.clue1.s095.patch11",
+    "backrop2",
+    "art671.clue1.hi",
+    "art671.clue1.lo",
+    "art670.clue2.base",
+    "art670.clue2.s300.rect",
+    "art670.clue2.s300.tri",
+    "art670.clue2.s300.patch2",
+    "art670.clue2.s300.patch3",
+    "art670.clue2.s300.patch4",
+    "art670.clue2.s300.patch5",
+    "art670.clue2.s250.rect",
+    "art670.clue2.s250.tri",
+    "art670.clue2.s250.patch2",
+    "art670.clue2.s250.patch3",
+    "art670.clue2.s250.patch4",
+    "art670.clue2.s250.patch5",
+    "art670.clue2.s200.rect",
+    "art670.clue2.s200.tri",
+    "art670.clue2.s200.patch2",
+    "art670.clue2.s200.patch3",
+    "art670.clue2.s200.patch4",
+    "art670.clue2.s200.patch5",
+    "art670.clue2.s200.patch6",
+    "art670.clue2.s095.rect",
+    "art670.clue2.s095.tri",
+    "art670.clue2.s095.patch2",
+    "art670.clue2.s095.patch3",
+    "art670.clue2.s095.patch4",
+    "art670.clue2.s095.patch5",
+    "art670.clue2.s095.patch6",
+    "art670.clue2.s095.patch7",
+    "art670.clue2.s095.patch8",
+    "art670.clue2.s095.patch9",
+    "art670.clue2.s095.patch10",
+    "art670.clue2.s095.patch11",
+    "art671.clue2.hi",
+    "art671.clue2.lo",
+    "clue"
+  ],
+  "addedLayers": [
+    {
+      "id": 1073759779,
+      "name": "art671.clue1.hi"
+    },
+    {
+      "id": 1073759780,
+      "name": "art671.clue1.lo"
+    },
+    {
+      "id": 1073759781,
+      "name": "art671.clue2.hi"
+    },
+    {
+      "id": 1073759782,
+      "name": "art671.clue2.lo"
+    }
+  ],
+  "writeGilReport": {
+    "bytes": 6297554,
+    "diffs": 165742,
+    "compared": 1377262,
+    "recs": 7044,
+    "marker": null
+  }
+}

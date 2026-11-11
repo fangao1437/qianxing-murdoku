@@ -1,0 +1,91 @@
+{
+  "base": "660_关卡内UI.gil",
+  "output": "661_关卡内UI.gil",
+  "recordsBefore": 6856,
+  "recordsAfter": 7035,
+  "added": 179,
+  "removed": 0,
+  "changedExisting": 111,
+  "policeV12": {
+    "descendantsBefore": 762,
+    "descendantsAfter": 762,
+    "changed": 0,
+    "untouched": true
+  },
+  "script": {
+    "identical": true,
+    "bytes": 636612
+  },
+  "hiddenRecords": {
+    "count": 344,
+    "allEffective": true,
+    "art660AllHidden": true
+  },
+  "fixes": {
+    "p1_threeLayerBackground": {
+      "gridLayers": 57,
+      "gridRotConsistent": true,
+      "coverColor": "#a6482a",
+      "dashLayers": 38,
+      "frame": [
+        222,
+        517,
+        396,
+        515
+      ],
+      "frameOk": true
+    },
+    "p2_annotationTicket": {
+      "helpIconUntouched": true,
+      "hitUntouched": true,
+      "ticketLayers": 15
+    },
+    "p3_steppedRibbon": {
+      "rib": [
+        447,
+        346.5,
+        62,
+        57
+      ],
+      "ribOk": true,
+      "ribbonVTriangles": [
+        [
+          478,
+          332.8,
+          54,
+          28.5
+        ],
+        [
+          478,
+          361.3,
+          54,
+          28.5
+        ]
+      ],
+      "vOk": true,
+      "ribBands": true
+    },
+    "p4_steppedClueCards": {
+      "layersPerTemplate": [
+        28,
+        28
+      ],
+      "tplOk": true,
+      "ruleAfter": true
+    },
+    "p5_v15Method": {
+      "regions": 10,
+      "minCoverage": 0.9991,
+      "zeroOverflow": true,
+      "triangleRotations": [
+        60.75,
+        45
+      ],
+      "visibleClipContainers": 0
+    },
+    "blackSlotsStillHidden": true
+  },
+  "childListFollowsRecordOrder": true,
+  "keyControlsMissing": [],
+  "verdict": true
+}

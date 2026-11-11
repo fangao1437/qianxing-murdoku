@@ -1,0 +1,51 @@
+{
+  "recordsBefore": 6976,
+  "recordsAfter": 6976,
+  "added": 0,
+  "removed": 0,
+  "changed": 1,
+  "changedNames": [
+    "art657.game.notebook.page"
+  ],
+  "scriptIdentical": true,
+  "scriptBytes": 636660,
+  "textRecordsChanged": 0,
+  "policeV19Descendants": 650,
+  "bgChanged": 0,
+  "staticBackdropHidden": true,
+  "whiteFrame": "FFFDFAEF",
+  "tplOk": true,
+  "tpl": [
+    {
+      "rootId": 1073742421,
+      "gradientLayers": 28,
+      "bgVisible": true,
+      "bgColor": "FF68282A",
+      "backrop1": "FFFFFF",
+      "backrop2": "FFFFFF",
+      "backrop1AfterGradient": true,
+      "text": {
+        "who": "FFFFFFFF",
+        "what": "FFFFFFFF",
+        "letter": "FFFFFFFF"
+      }
+    },
+    {
+      "rootId": 1073742428,
+      "gradientLayers": 28,
+      "bgVisible": true,
+      "bgColor": "FF68282A",
+      "backrop1": "FFFFFF",
+      "backrop2": "FFFFFF",
+      "backrop1AfterGradient": true,
+      "text": {
+        "who": "FFFFFFFF",
+        "what": "FFFFFFFF",
+        "letter": "FFFFFFFF"
+      }
+    }
+  ],
+  "childListOk": true,
+  "dangling": 0,
+  "verdict": true
+}

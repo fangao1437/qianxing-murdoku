@@ -1,0 +1,54 @@
+{
+  "recordsBefore": 6976,
+  "recordsAfter": 6976,
+  "added": 0,
+  "removed": 0,
+  "changed": 71,
+  "unexpectedChanges": [],
+  "textRecordsChanged": 0,
+  "scriptIdentical": true,
+  "scriptBytes": 636660,
+  "policeV19Descendants": 650,
+  "bgChanged": 0,
+  "hiddenOk": true,
+  "hiddenCount": 61,
+  "tplOk": true,
+  "tplChecks": [
+    {
+      "rootId": 1073742421,
+      "backrop1": "FF56565E",
+      "backrop2": "FFFDFAEF",
+      "outlinePx": 3,
+      "layerOrder": true,
+      "redsAllHidden": true,
+      "redsCount": 30
+    },
+    {
+      "rootId": 1073742428,
+      "backrop1": "FF56565E",
+      "backrop2": "FFFDFAEF",
+      "outlinePx": 3,
+      "layerOrder": true,
+      "redsAllHidden": true,
+      "redsCount": 30
+    }
+  ],
+  "staticRedHidden": true,
+  "whiteFrame": "FFFDFAEF",
+  "textColors": [
+    {
+      "who": "FF3A2A22",
+      "what": "FF3A2A22",
+      "letter": "FF28241E"
+    },
+    {
+      "who": "FF3A2A22",
+      "what": "FF3A2A22",
+      "letter": "FF28241E"
+    }
+  ],
+  "textColorsOk": true,
+  "childListOk": true,
+  "dangling": 0,
+  "verdict": true
+}

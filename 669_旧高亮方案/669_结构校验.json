@@ -1,0 +1,109 @@
+{
+  "recordsBefore": 6976,
+  "recordsAfter": 6976,
+  "added": 0,
+  "removed": 0,
+  "changed": 66,
+  "unexpectedChanges": [],
+  "scriptIdentical": true,
+  "scriptBytes": 636660,
+  "textRecordsChanged": 0,
+  "policeV19Descendants": 650,
+  "bgChanged": 0,
+  "staticBackdropHidden": true,
+  "tplOk": true,
+  "tpl": [
+    {
+      "rootId": 1073742421,
+      "backrop1": {
+        "geom": [
+          800,
+          450,
+          330,
+          85.4
+        ],
+        "color": "FF56565E"
+      },
+      "backrop2": {
+        "geom": [
+          800,
+          450,
+          324,
+          79.4
+        ],
+        "color": "FF611F23"
+      },
+      "outline": [
+        3,
+        3
+      ],
+      "bgGeom": [
+        800,
+        450,
+        324,
+        79.4
+      ],
+      "gradientScaled": true,
+      "gradientVisible": 30,
+      "layerOrder": [
+        23,
+        24,
+        25
+      ],
+      "layerOrderOk": true,
+      "childListOk": true,
+      "text": {
+        "who": "FFFFFFFF",
+        "what": "FFFFFFFF",
+        "letter": "FFFFFFFF"
+      }
+    },
+    {
+      "rootId": 1073742428,
+      "backrop1": {
+        "geom": [
+          800,
+          450,
+          330,
+          85.4
+        ],
+        "color": "FF56565E"
+      },
+      "backrop2": {
+        "geom": [
+          800,
+          450,
+          324,
+          79.4
+        ],
+        "color": "FF611F23"
+      },
+      "outline": [
+        3,
+        3
+      ],
+      "bgGeom": [
+        800,
+        450,
+        324,
+        79.4
+      ],
+      "gradientScaled": true,
+      "gradientVisible": 30,
+      "layerOrder": [
+        1621,
+        1622,
+        1623
+      ],
+      "layerOrderOk": true,
+      "childListOk": true,
+      "text": {
+        "who": "FFFFFFFF",
+        "what": "FFFFFFFF",
+        "letter": "FFFFFFFF"
+      }
+    }
+  ],
+  "dangling": 0,
+  "verdict": true
+}

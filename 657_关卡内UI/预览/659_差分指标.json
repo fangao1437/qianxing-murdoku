@@ -1,0 +1,35 @@
+{
+  "note": "MAE 为 659 UI 不透明像素与设计图同位置 RGB 的平均绝对误差；排除棋盘内部、线索卡文本区与图标中心 38px。模板实例化为离线模拟；659 已回退为不溢出矩形台阶，不依赖裁剪。",
+  "regions": {
+    "笔记本与装订": {
+      "coveredPx": 33219,
+      "maeRGB": 50.35
+    },
+    "棋盘纸框": {
+      "coveredPx": 29498,
+      "maeRGB": 26.58
+    },
+    "左上返回": {
+      "coveredPx": 2030,
+      "maeRGB": 24.66
+    },
+    "右上三键": {
+      "coveredPx": 8201,
+      "maeRGB": 24.14
+    },
+    "红色图钉": {
+      "coveredPx": 3097,
+      "maeRGB": 35.1
+    },
+    "右下放大镜": {
+      "coveredPx": 2718,
+      "maeRGB": 25.54
+    },
+    "问号便利贴": {
+      "coveredPx": 3250,
+      "maeRGB": 45.27
+    }
+  },
+  "layers": 259,
+  "clipContainers": 0
+}

@@ -1,0 +1,1295 @@
+{
+  "version": 1,
+  "name": "661 build audit",
+  "date": "2026-11-10",
+  "base": {
+    "file": "660_关卡内UI.gil",
+    "sha256": "7d4dd544c5c5684ea64789080fd0564664d1738d6402f3b1108d842116d3a12d",
+    "records": 6856,
+    "scriptBytes": 636612
+  },
+  "output": {
+    "file": "661_关卡内UI.gil",
+    "sha256": "4e3a851bf196dd21e4ac133c16196fefe5d4bd55c25aad0a8205140f6212b443",
+    "bytes": 6265146,
+    "records": 7035
+  },
+  "method": {
+    "source": "本机 GitHub v15 文档《美术资产-原生图形构造与v12-v15演进》: 零溢出凸区域 + 同色不透明重叠无缝 + 压矮旋转 100003 长底边做斜边 + 补漏矩形。",
+    "steppedGradient": "阶梯渐变 = 若干离散色阶，每级由「大矩形 + 1 枚旋转等腰三角 + 同色补漏矩形」构成，斜分界为干净的原生图元边，不产生锯齿/台阶外沿。",
+    "coverageCheck": "每级离线采样覆盖率 ≥ 99.3%，且全部图元顶点落在目标凸区域内。",
+    "scope": "仅选项卡区域：三层背景、注释票券、燕尾旗红色阶梯渐变胶布、线索卡阶梯渐变；其余区域差异忽略；黑色方格保持隐藏。"
+  },
+  "counts": {
+    "recordsBefore": 6856,
+    "recordsAfter": 7035,
+    "added": 179,
+    "hidden": 104,
+    "modified": 290
+  },
+  "regions": [
+    {
+      "name": "art661.ribbon.mid",
+      "shapes": 5,
+      "coverage": 1,
+      "overflow": false,
+      "triRot": 60.75,
+      "bad": [],
+      "holes": 0,
+      "holeSample": []
+    },
+    {
+      "name": "art661.ribbon.dark",
+      "shapes": 6,
+      "coverage": 1,
+      "overflow": false,
+      "triRot": 60.75,
+      "bad": [],
+      "holes": 0,
+      "holeSample": []
+    },
+    {
+      "name": "art661.clue1.s300",
+      "shapes": 6,
+      "coverage": 0.9998,
+      "overflow": false,
+      "triRot": 45,
+      "bad": [],
+      "holes": 1,
+      "holeSample": [
+        [
+          933,
+          407.3
+        ]
+      ]
+    },
+    {
+      "name": "art661.clue1.s250",
+      "shapes": 6,
+      "coverage": 0.9998,
+      "overflow": false,
+      "triRot": 45,
+      "bad": [],
+      "holes": 1,
+      "holeSample": [
+        [
+          883,
+          407.3
+        ]
+      ]
+    },
+    {
+      "name": "art661.clue1.s200",
+      "shapes": 6,
+      "coverage": 0.9997,
+      "overflow": false,
+      "triRot": 45,
+      "bad": [],
+      "holes": 1,
+      "holeSample": [
+        [
+          833,
+          407.3
+        ]
+      ]
+    },
+    {
+      "name": "art661.clue1.s095",
+      "shapes": 9,
+      "coverage": 0.9991,
+      "overflow": false,
+      "triRot": 45,
+      "bad": [],
+      "holes": 1,
+      "holeSample": [
+        [
+          729,
+          407.3
+        ]
+      ]
+    },
+    {
+      "name": "art661.clue2.s300",
+      "shapes": 6,
+      "coverage": 0.9998,
+      "overflow": false,
+      "triRot": 45,
+      "bad": [],
+      "holes": 1,
+      "holeSample": [
+        [
+          933,
+          407.3
+        ]
+      ]
+    },
+    {
+      "name": "art661.clue2.s250",
+      "shapes": 6,
+      "coverage": 0.9998,
+      "overflow": false,
+      "triRot": 45,
+      "bad": [],
+      "holes": 1,
+      "holeSample": [
+        [
+          883,
+          407.3
+        ]
+      ]
+    },
+    {
+      "name": "art661.clue2.s200",
+      "shapes": 6,
+      "coverage": 0.9997,
+      "overflow": false,
+      "triRot": 45,
+      "bad": [],
+      "holes": 1,
+      "holeSample": [
+        [
+          833,
+          407.3
+        ]
+      ]
+    },
+    {
+      "name": "art661.clue2.s095",
+      "shapes": 9,
+      "coverage": 0.9991,
+      "overflow": false,
+      "triRot": 45,
+      "bad": [],
+      "holes": 1,
+      "holeSample": [
+        [
+          729,
+          407.3
+        ]
+      ]
+    }
+  ],
+  "modified": [
+    "art660.clue1.light.rect",
+    "art660.clue1.light.tri",
+    "art660.clue1.light.patch1",
+    "art660.clue1.light.patch2",
+    "art660.clue1.dark.patch",
+    "art660.clue2.light.rect",
+    "art660.clue2.light.tri",
+    "art660.clue2.light.patch1",
+    "art660.clue2.light.patch2",
+    "art660.clue2.dark.patch",
+    "art660.clues.grid.paper",
+    "art660.clues.grid.v1",
+    "art660.clues.grid.v2",
+    "art660.clues.grid.v3",
+    "art660.clues.grid.v4",
+    "art660.clues.grid.v5",
+    "art660.clues.grid.v6",
+    "art660.clues.grid.v7",
+    "art660.clues.grid.v8",
+    "art660.clues.grid.v9",
+    "art660.clues.grid.v10",
+    "art660.clues.grid.v11",
+    "art660.clues.grid.v12",
+    "art660.clues.grid.v13",
+    "art660.clues.grid.v14",
+    "art660.clues.grid.v15",
+    "art660.clues.grid.h1",
+    "art660.clues.grid.h2",
+    "art660.clues.grid.h3",
+    "art660.clues.grid.h4",
+    "art660.clues.grid.h5",
+    "art660.clues.grid.h6",
+    "art660.clues.grid.h7",
+    "art660.clues.grid.h8",
+    "art660.clues.grid.h9",
+    "art660.clues.grid.h10",
+    "art660.clues.grid.h11",
+    "art660.clues.grid.h12",
+    "art660.clues.grid.h13",
+    "art660.clues.grid.h14",
+    "art660.clues.grid.h15",
+    "art660.clues.grid.h16",
+    "art660.clues.grid.h17",
+    "art660.clues.grid.h18",
+    "art660.clues.grid.h19",
+    "art660.clues.grid.h20",
+    "art660.clues.grid.h21",
+    "art660.clues.cover",
+    "art660.clues.cover.dash.top1",
+    "art660.clues.cover.dash.top2",
+    "art660.clues.cover.dash.top3",
+    "art660.clues.cover.dash.top4",
+    "art660.clues.cover.dash.top5",
+    "art660.clues.cover.dash.top6",
+    "art660.clues.cover.dash.top7",
+    "art660.clues.cover.dash.top8",
+    "art660.clues.cover.dash.top9",
+    "art660.clues.cover.dash.top10",
+    "art660.clues.cover.dash.top11",
+    "art660.clues.cover.dash.top12",
+    "art660.clues.cover.dash.right1",
+    "art660.clues.cover.dash.right2",
+    "art660.clues.cover.dash.right3",
+    "art660.clues.cover.dash.right4",
+    "art660.clues.cover.dash.right5",
+    "art660.clues.cover.dash.right6",
+    "art660.clues.cover.dash.right7",
+    "art660.clues.cover.dash.right8",
+    "art660.clues.cover.dash.right9",
+    "art660.clues.cover.dash.right10",
+    "art660.clues.cover.dash.right11",
+    "art660.clues.cover.dash.right12",
+    "art660.clues.cover.dash.right13",
+    "art660.clues.cover.dash.right14",
+    "art660.clues.cover.dash.bottom1",
+    "art660.clues.cover.dash.bottom2",
+    "art660.clues.cover.dash.bottom3",
+    "art660.clues.cover.dash.bottom4",
+    "art660.clues.cover.dash.bottom5",
+    "art660.clues.cover.dash.bottom6",
+    "art660.clues.cover.dash.bottom7",
+    "art660.clues.cover.dash.bottom8",
+    "art660.clues.cover.dash.bottom9",
+    "art660.clues.cover.dash.bottom10",
+    "art660.clues.cover.dash.bottom11",
+    "art660.clues.cover.dash.bottom12",
+    "art660.ribbon.light.rect",
+    "art660.ribbon.light.tri",
+    "art660.ribbon.light.patch1",
+    "art660.ribbon.light.patch2",
+    "art660.ribbon.dark.patch",
+    "art660.tab.outline",
+    "art660.tab.light.rect",
+    "art660.tab.light.tri",
+    "art660.tab.light.patch1",
+    "art660.tab.light.patch2",
+    "art660.tab.notch.lt",
+    "art660.tab.notch.lb",
+    "art660.tab.tip.lt",
+    "art660.tab.tip.lb",
+    "art660.tab.notch.rt",
+    "art660.tab.notch.rb",
+    "art660.tab.tip.rt",
+    "art660.tab.tip.rb",
+    "art661.clues.grid.paper",
+    "art661.clues.grid.v1",
+    "art661.clues.grid.v2",
+    "art661.clues.grid.v3",
+    "art661.clues.grid.v4",
+    "art661.clues.grid.v5",
+    "art661.clues.grid.v6",
+    "art661.clues.grid.v7",
+    "art661.clues.grid.v8",
+    "art661.clues.grid.v9",
+    "art661.clues.grid.v10",
+    "art661.clues.grid.v11",
+    "art661.clues.grid.v12",
+    "art661.clues.grid.v13",
+    "art661.clues.grid.v14",
+    "art661.clues.grid.v15",
+    "art661.clues.grid.v16",
+    "art661.clues.grid.v17",
+    "art661.clues.grid.v18",
+    "art661.clues.grid.v19",
+    "art661.clues.grid.v20",
+    "art661.clues.grid.v21",
+    "art661.clues.grid.v22",
+    "art661.clues.grid.v23",
+    "art661.clues.grid.v24",
+    "art661.clues.grid.v25",
+    "art661.clues.grid.h1",
+    "art661.clues.grid.h2",
+    "art661.clues.grid.h3",
+    "art661.clues.grid.h4",
+    "art661.clues.grid.h5",
+    "art661.clues.grid.h6",
+    "art661.clues.grid.h7",
+    "art661.clues.grid.h8",
+    "art661.clues.grid.h9",
+    "art661.clues.grid.h10",
+    "art661.clues.grid.h11",
+    "art661.clues.grid.h12",
+    "art661.clues.grid.h13",
+    "art661.clues.grid.h14",
+    "art661.clues.grid.h15",
+    "art661.clues.grid.h16",
+    "art661.clues.grid.h17",
+    "art661.clues.grid.h18",
+    "art661.clues.grid.h19",
+    "art661.clues.grid.h20",
+    "art661.clues.grid.h21",
+    "art661.clues.grid.h22",
+    "art661.clues.grid.h23",
+    "art661.clues.grid.h24",
+    "art661.clues.grid.h25",
+    "art661.clues.grid.h26",
+    "art661.clues.grid.h27",
+    "art661.clues.grid.h28",
+    "art661.clues.grid.h29",
+    "art661.clues.grid.h30",
+    "art661.clues.grid.h31",
+    "art661.clues.cover",
+    "art661.clues.cover.dash.top1",
+    "art661.clues.cover.dash.top2",
+    "art661.clues.cover.dash.top3",
+    "art661.clues.cover.dash.top4",
+    "art661.clues.cover.dash.top5",
+    "art661.clues.cover.dash.top6",
+    "art661.clues.cover.dash.top7",
+    "art661.clues.cover.dash.top8",
+    "art661.clues.cover.dash.top9",
+    "art661.clues.cover.dash.top10",
+    "art661.clues.cover.dash.top11",
+    "art661.clues.cover.dash.top12",
+    "art661.clues.cover.dash.right1",
+    "art661.clues.cover.dash.right2",
+    "art661.clues.cover.dash.right3",
+    "art661.clues.cover.dash.right4",
+    "art661.clues.cover.dash.right5",
+    "art661.clues.cover.dash.right6",
+    "art661.clues.cover.dash.right7",
+    "art661.clues.cover.dash.right8",
+    "art661.clues.cover.dash.right9",
+    "art661.clues.cover.dash.right10",
+    "art661.clues.cover.dash.right11",
+    "art661.clues.cover.dash.right12",
+    "art661.clues.cover.dash.right13",
+    "art661.clues.cover.dash.right14",
+    "art661.clues.cover.dash.bottom1",
+    "art661.clues.cover.dash.bottom2",
+    "art661.clues.cover.dash.bottom3",
+    "art661.clues.cover.dash.bottom4",
+    "art661.clues.cover.dash.bottom5",
+    "art661.clues.cover.dash.bottom6",
+    "art661.clues.cover.dash.bottom7",
+    "art661.clues.cover.dash.bottom8",
+    "art661.clues.cover.dash.bottom9",
+    "art661.clues.cover.dash.bottom10",
+    "art661.clues.cover.dash.bottom11",
+    "art661.clues.cover.dash.bottom12",
+    "art661.clues.frame.edge",
+    "art657.game.notebook.frame",
+    "art641.game.help.tab",
+    "art661.tab.outline",
+    "art661.tab.light.rect",
+    "art661.tab.light.tri",
+    "art661.tab.light.patch1",
+    "art661.tab.light.patch2",
+    "art661.tab.notch.l1",
+    "art661.tab.notch.l2",
+    "art661.tab.notch.l3",
+    "art661.tab.tip.lt",
+    "art661.tab.tip.lb",
+    "art661.tab.notch.r1",
+    "art661.tab.notch.r2",
+    "art661.tab.notch.r3",
+    "art661.tab.tip.rt",
+    "art661.tab.tip.rb",
+    "art657.game.notebook.ribbon",
+    "art657.game.notebook.ribbon.tri.top",
+    "art657.game.notebook.ribbon.tri.bottom",
+    "art661.ribbon.mid.rect",
+    "art661.ribbon.mid.tri",
+    "art661.ribbon.mid.patch2",
+    "art661.ribbon.mid.patch3",
+    "art661.ribbon.mid.patch4",
+    "art661.ribbon.dark.rect",
+    "art661.ribbon.dark.tri",
+    "art661.ribbon.dark.patch2",
+    "art661.ribbon.dark.patch3",
+    "art661.ribbon.dark.patch4",
+    "art661.ribbon.dark.patch5",
+    "art661.clue1.base",
+    "art661.clue1.s300.rect",
+    "art661.clue1.s300.tri",
+    "art661.clue1.s300.patch2",
+    "art661.clue1.s300.patch3",
+    "art661.clue1.s300.patch4",
+    "art661.clue1.s300.patch5",
+    "art661.clue1.s250.rect",
+    "art661.clue1.s250.tri",
+    "art661.clue1.s250.patch2",
+    "art661.clue1.s250.patch3",
+    "art661.clue1.s250.patch4",
+    "art661.clue1.s250.patch5",
+    "art661.clue1.s200.rect",
+    "art661.clue1.s200.tri",
+    "art661.clue1.s200.patch2",
+    "art661.clue1.s200.patch3",
+    "art661.clue1.s200.patch4",
+    "art661.clue1.s200.patch5",
+    "art661.clue1.s095.rect",
+    "art661.clue1.s095.tri",
+    "art661.clue1.s095.patch2",
+    "art661.clue1.s095.patch3",
+    "art661.clue1.s095.patch4",
+    "art661.clue1.s095.patch5",
+    "art661.clue1.s095.patch6",
+    "art661.clue1.s095.patch7",
+    "art661.clue1.s095.patch8",
+    "art661.clue2.base",
+    "art661.clue2.s300.rect",
+    "art661.clue2.s300.tri",
+    "art661.clue2.s300.patch2",
+    "art661.clue2.s300.patch3",
+    "art661.clue2.s300.patch4",
+    "art661.clue2.s300.patch5",
+    "art661.clue2.s250.rect",
+    "art661.clue2.s250.tri",
+    "art661.clue2.s250.patch2",
+    "art661.clue2.s250.patch3",
+    "art661.clue2.s250.patch4",
+    "art661.clue2.s250.patch5",
+    "art661.clue2.s200.rect",
+    "art661.clue2.s200.tri",
+    "art661.clue2.s200.patch2",
+    "art661.clue2.s200.patch3",
+    "art661.clue2.s200.patch4",
+    "art661.clue2.s200.patch5",
+    "art661.clue2.s095.rect",
+    "art661.clue2.s095.tri",
+    "art661.clue2.s095.patch2",
+    "art661.clue2.s095.patch3",
+    "art661.clue2.s095.patch4",
+    "art661.clue2.s095.patch5",
+    "art661.clue2.s095.patch6",
+    "art661.clue2.s095.patch7",
+    "art661.clue2.s095.patch8",
+    "grp653.static.1.art641.game",
+    "clue"
+  ],
+  "hidden": [
+    "art660.clue1.light.rect",
+    "art660.clue1.light.tri",
+    "art660.clue1.light.patch1",
+    "art660.clue1.light.patch2",
+    "art660.clue1.dark.patch",
+    "art660.clue2.light.rect",
+    "art660.clue2.light.tri",
+    "art660.clue2.light.patch1",
+    "art660.clue2.light.patch2",
+    "art660.clue2.dark.patch",
+    "art660.clues.grid.paper",
+    "art660.clues.grid.v1",
+    "art660.clues.grid.v2",
+    "art660.clues.grid.v3",
+    "art660.clues.grid.v4",
+    "art660.clues.grid.v5",
+    "art660.clues.grid.v6",
+    "art660.clues.grid.v7",
+    "art660.clues.grid.v8",
+    "art660.clues.grid.v9",
+    "art660.clues.grid.v10",
+    "art660.clues.grid.v11",
+    "art660.clues.grid.v12",
+    "art660.clues.grid.v13",
+    "art660.clues.grid.v14",
+    "art660.clues.grid.v15",
+    "art660.clues.grid.h1",
+    "art660.clues.grid.h2",
+    "art660.clues.grid.h3",
+    "art660.clues.grid.h4",
+    "art660.clues.grid.h5",
+    "art660.clues.grid.h6",
+    "art660.clues.grid.h7",
+    "art660.clues.grid.h8",
+    "art660.clues.grid.h9",
+    "art660.clues.grid.h10",
+    "art660.clues.grid.h11",
+    "art660.clues.grid.h12",
+    "art660.clues.grid.h13",
+    "art660.clues.grid.h14",
+    "art660.clues.grid.h15",
+    "art660.clues.grid.h16",
+    "art660.clues.grid.h17",
+    "art660.clues.grid.h18",
+    "art660.clues.grid.h19",
+    "art660.clues.grid.h20",
+    "art660.clues.grid.h21",
+    "art660.clues.cover",
+    "art660.clues.cover.dash.top1",
+    "art660.clues.cover.dash.top2",
+    "art660.clues.cover.dash.top3",
+    "art660.clues.cover.dash.top4",
+    "art660.clues.cover.dash.top5",
+    "art660.clues.cover.dash.top6",
+    "art660.clues.cover.dash.top7",
+    "art660.clues.cover.dash.top8",
+    "art660.clues.cover.dash.top9",
+    "art660.clues.cover.dash.top10",
+    "art660.clues.cover.dash.top11",
+    "art660.clues.cover.dash.top12",
+    "art660.clues.cover.dash.right1",
+    "art660.clues.cover.dash.right2",
+    "art660.clues.cover.dash.right3",
+    "art660.clues.cover.dash.right4",
+    "art660.clues.cover.dash.right5",
+    "art660.clues.cover.dash.right6",
+    "art660.clues.cover.dash.right7",
+    "art660.clues.cover.dash.right8",
+    "art660.clues.cover.dash.right9",
+    "art660.clues.cover.dash.right10",
+    "art660.clues.cover.dash.right11",
+    "art660.clues.cover.dash.right12",
+    "art660.clues.cover.dash.right13",
+    "art660.clues.cover.dash.right14",
+    "art660.clues.cover.dash.bottom1",
+    "art660.clues.cover.dash.bottom2",
+    "art660.clues.cover.dash.bottom3",
+    "art660.clues.cover.dash.bottom4",
+    "art660.clues.cover.dash.bottom5",
+    "art660.clues.cover.dash.bottom6",
+    "art660.clues.cover.dash.bottom7",
+    "art660.clues.cover.dash.bottom8",
+    "art660.clues.cover.dash.bottom9",
+    "art660.clues.cover.dash.bottom10",
+    "art660.clues.cover.dash.bottom11",
+    "art660.clues.cover.dash.bottom12",
+    "art660.ribbon.light.rect",
+    "art660.ribbon.light.tri",
+    "art660.ribbon.light.patch1",
+    "art660.ribbon.light.patch2",
+    "art660.ribbon.dark.patch",
+    "art660.tab.outline",
+    "art660.tab.light.rect",
+    "art660.tab.light.tri",
+    "art660.tab.light.patch1",
+    "art660.tab.light.patch2",
+    "art660.tab.notch.lt",
+    "art660.tab.notch.lb",
+    "art660.tab.tip.lt",
+    "art660.tab.tip.lb",
+    "art660.tab.notch.rt",
+    "art660.tab.notch.rb",
+    "art660.tab.tip.rt",
+    "art660.tab.tip.rb"
+  ],
+  "addedLayers": [
+    {
+      "id": 1073758373,
+      "name": "art661.clues.grid.paper"
+    },
+    {
+      "id": 1073758374,
+      "name": "art661.clues.grid.v1"
+    },
+    {
+      "id": 1073758375,
+      "name": "art661.clues.grid.v2"
+    },
+    {
+      "id": 1073758376,
+      "name": "art661.clues.grid.v3"
+    },
+    {
+      "id": 1073758377,
+      "name": "art661.clues.grid.v4"
+    },
+    {
+      "id": 1073758378,
+      "name": "art661.clues.grid.v5"
+    },
+    {
+      "id": 1073758379,
+      "name": "art661.clues.grid.v6"
+    },
+    {
+      "id": 1073758380,
+      "name": "art661.clues.grid.v7"
+    },
+    {
+      "id": 1073758381,
+      "name": "art661.clues.grid.v8"
+    },
+    {
+      "id": 1073758382,
+      "name": "art661.clues.grid.v9"
+    },
+    {
+      "id": 1073758383,
+      "name": "art661.clues.grid.v10"
+    },
+    {
+      "id": 1073758384,
+      "name": "art661.clues.grid.v11"
+    },
+    {
+      "id": 1073758385,
+      "name": "art661.clues.grid.v12"
+    },
+    {
+      "id": 1073758386,
+      "name": "art661.clues.grid.v13"
+    },
+    {
+      "id": 1073758387,
+      "name": "art661.clues.grid.v14"
+    },
+    {
+      "id": 1073758388,
+      "name": "art661.clues.grid.v15"
+    },
+    {
+      "id": 1073758389,
+      "name": "art661.clues.grid.v16"
+    },
+    {
+      "id": 1073758390,
+      "name": "art661.clues.grid.v17"
+    },
+    {
+      "id": 1073758391,
+      "name": "art661.clues.grid.v18"
+    },
+    {
+      "id": 1073758392,
+      "name": "art661.clues.grid.v19"
+    },
+    {
+      "id": 1073758393,
+      "name": "art661.clues.grid.v20"
+    },
+    {
+      "id": 1073758394,
+      "name": "art661.clues.grid.v21"
+    },
+    {
+      "id": 1073758395,
+      "name": "art661.clues.grid.v22"
+    },
+    {
+      "id": 1073758396,
+      "name": "art661.clues.grid.v23"
+    },
+    {
+      "id": 1073758397,
+      "name": "art661.clues.grid.v24"
+    },
+    {
+      "id": 1073758398,
+      "name": "art661.clues.grid.v25"
+    },
+    {
+      "id": 1073758399,
+      "name": "art661.clues.grid.h1"
+    },
+    {
+      "id": 1073758400,
+      "name": "art661.clues.grid.h2"
+    },
+    {
+      "id": 1073758401,
+      "name": "art661.clues.grid.h3"
+    },
+    {
+      "id": 1073758402,
+      "name": "art661.clues.grid.h4"
+    },
+    {
+      "id": 1073758403,
+      "name": "art661.clues.grid.h5"
+    },
+    {
+      "id": 1073758404,
+      "name": "art661.clues.grid.h6"
+    },
+    {
+      "id": 1073758405,
+      "name": "art661.clues.grid.h7"
+    },
+    {
+      "id": 1073758406,
+      "name": "art661.clues.grid.h8"
+    },
+    {
+      "id": 1073758407,
+      "name": "art661.clues.grid.h9"
+    },
+    {
+      "id": 1073758408,
+      "name": "art661.clues.grid.h10"
+    },
+    {
+      "id": 1073758409,
+      "name": "art661.clues.grid.h11"
+    },
+    {
+      "id": 1073758410,
+      "name": "art661.clues.grid.h12"
+    },
+    {
+      "id": 1073758411,
+      "name": "art661.clues.grid.h13"
+    },
+    {
+      "id": 1073758412,
+      "name": "art661.clues.grid.h14"
+    },
+    {
+      "id": 1073758413,
+      "name": "art661.clues.grid.h15"
+    },
+    {
+      "id": 1073758414,
+      "name": "art661.clues.grid.h16"
+    },
+    {
+      "id": 1073758415,
+      "name": "art661.clues.grid.h17"
+    },
+    {
+      "id": 1073758416,
+      "name": "art661.clues.grid.h18"
+    },
+    {
+      "id": 1073758417,
+      "name": "art661.clues.grid.h19"
+    },
+    {
+      "id": 1073758418,
+      "name": "art661.clues.grid.h20"
+    },
+    {
+      "id": 1073758419,
+      "name": "art661.clues.grid.h21"
+    },
+    {
+      "id": 1073758420,
+      "name": "art661.clues.grid.h22"
+    },
+    {
+      "id": 1073758421,
+      "name": "art661.clues.grid.h23"
+    },
+    {
+      "id": 1073758422,
+      "name": "art661.clues.grid.h24"
+    },
+    {
+      "id": 1073758423,
+      "name": "art661.clues.grid.h25"
+    },
+    {
+      "id": 1073758424,
+      "name": "art661.clues.grid.h26"
+    },
+    {
+      "id": 1073758425,
+      "name": "art661.clues.grid.h27"
+    },
+    {
+      "id": 1073758426,
+      "name": "art661.clues.grid.h28"
+    },
+    {
+      "id": 1073758427,
+      "name": "art661.clues.grid.h29"
+    },
+    {
+      "id": 1073758428,
+      "name": "art661.clues.grid.h30"
+    },
+    {
+      "id": 1073758429,
+      "name": "art661.clues.grid.h31"
+    },
+    {
+      "id": 1073758430,
+      "name": "art661.clues.cover"
+    },
+    {
+      "id": 1073758431,
+      "name": "art661.clues.cover.dash.top1"
+    },
+    {
+      "id": 1073758432,
+      "name": "art661.clues.cover.dash.top2"
+    },
+    {
+      "id": 1073758433,
+      "name": "art661.clues.cover.dash.top3"
+    },
+    {
+      "id": 1073758434,
+      "name": "art661.clues.cover.dash.top4"
+    },
+    {
+      "id": 1073758435,
+      "name": "art661.clues.cover.dash.top5"
+    },
+    {
+      "id": 1073758436,
+      "name": "art661.clues.cover.dash.top6"
+    },
+    {
+      "id": 1073758437,
+      "name": "art661.clues.cover.dash.top7"
+    },
+    {
+      "id": 1073758438,
+      "name": "art661.clues.cover.dash.top8"
+    },
+    {
+      "id": 1073758439,
+      "name": "art661.clues.cover.dash.top9"
+    },
+    {
+      "id": 1073758440,
+      "name": "art661.clues.cover.dash.top10"
+    },
+    {
+      "id": 1073758441,
+      "name": "art661.clues.cover.dash.top11"
+    },
+    {
+      "id": 1073758442,
+      "name": "art661.clues.cover.dash.top12"
+    },
+    {
+      "id": 1073758443,
+      "name": "art661.clues.cover.dash.right1"
+    },
+    {
+      "id": 1073758444,
+      "name": "art661.clues.cover.dash.right2"
+    },
+    {
+      "id": 1073758445,
+      "name": "art661.clues.cover.dash.right3"
+    },
+    {
+      "id": 1073758446,
+      "name": "art661.clues.cover.dash.right4"
+    },
+    {
+      "id": 1073758447,
+      "name": "art661.clues.cover.dash.right5"
+    },
+    {
+      "id": 1073758448,
+      "name": "art661.clues.cover.dash.right6"
+    },
+    {
+      "id": 1073758449,
+      "name": "art661.clues.cover.dash.right7"
+    },
+    {
+      "id": 1073758450,
+      "name": "art661.clues.cover.dash.right8"
+    },
+    {
+      "id": 1073758451,
+      "name": "art661.clues.cover.dash.right9"
+    },
+    {
+      "id": 1073758452,
+      "name": "art661.clues.cover.dash.right10"
+    },
+    {
+      "id": 1073758453,
+      "name": "art661.clues.cover.dash.right11"
+    },
+    {
+      "id": 1073758454,
+      "name": "art661.clues.cover.dash.right12"
+    },
+    {
+      "id": 1073758455,
+      "name": "art661.clues.cover.dash.right13"
+    },
+    {
+      "id": 1073758456,
+      "name": "art661.clues.cover.dash.right14"
+    },
+    {
+      "id": 1073758457,
+      "name": "art661.clues.cover.dash.bottom1"
+    },
+    {
+      "id": 1073758458,
+      "name": "art661.clues.cover.dash.bottom2"
+    },
+    {
+      "id": 1073758459,
+      "name": "art661.clues.cover.dash.bottom3"
+    },
+    {
+      "id": 1073758460,
+      "name": "art661.clues.cover.dash.bottom4"
+    },
+    {
+      "id": 1073758461,
+      "name": "art661.clues.cover.dash.bottom5"
+    },
+    {
+      "id": 1073758462,
+      "name": "art661.clues.cover.dash.bottom6"
+    },
+    {
+      "id": 1073758463,
+      "name": "art661.clues.cover.dash.bottom7"
+    },
+    {
+      "id": 1073758464,
+      "name": "art661.clues.cover.dash.bottom8"
+    },
+    {
+      "id": 1073758465,
+      "name": "art661.clues.cover.dash.bottom9"
+    },
+    {
+      "id": 1073758466,
+      "name": "art661.clues.cover.dash.bottom10"
+    },
+    {
+      "id": 1073758467,
+      "name": "art661.clues.cover.dash.bottom11"
+    },
+    {
+      "id": 1073758468,
+      "name": "art661.clues.cover.dash.bottom12"
+    },
+    {
+      "id": 1073758469,
+      "name": "art661.clues.frame.edge"
+    },
+    {
+      "id": 1073758470,
+      "name": "art661.tab.outline"
+    },
+    {
+      "id": 1073758471,
+      "name": "art661.tab.light.rect"
+    },
+    {
+      "id": 1073758472,
+      "name": "art661.tab.light.tri"
+    },
+    {
+      "id": 1073758473,
+      "name": "art661.tab.light.patch1"
+    },
+    {
+      "id": 1073758474,
+      "name": "art661.tab.light.patch2"
+    },
+    {
+      "id": 1073758475,
+      "name": "art661.tab.notch.l1"
+    },
+    {
+      "id": 1073758476,
+      "name": "art661.tab.notch.l2"
+    },
+    {
+      "id": 1073758477,
+      "name": "art661.tab.notch.l3"
+    },
+    {
+      "id": 1073758478,
+      "name": "art661.tab.tip.lt"
+    },
+    {
+      "id": 1073758479,
+      "name": "art661.tab.tip.lb"
+    },
+    {
+      "id": 1073758480,
+      "name": "art661.tab.notch.r1"
+    },
+    {
+      "id": 1073758481,
+      "name": "art661.tab.notch.r2"
+    },
+    {
+      "id": 1073758482,
+      "name": "art661.tab.notch.r3"
+    },
+    {
+      "id": 1073758483,
+      "name": "art661.tab.tip.rt"
+    },
+    {
+      "id": 1073758484,
+      "name": "art661.tab.tip.rb"
+    },
+    {
+      "id": 1073758485,
+      "name": "art661.ribbon.mid.rect"
+    },
+    {
+      "id": 1073758486,
+      "name": "art661.ribbon.mid.tri"
+    },
+    {
+      "id": 1073758487,
+      "name": "art661.ribbon.mid.patch2"
+    },
+    {
+      "id": 1073758488,
+      "name": "art661.ribbon.mid.patch3"
+    },
+    {
+      "id": 1073758489,
+      "name": "art661.ribbon.mid.patch4"
+    },
+    {
+      "id": 1073758490,
+      "name": "art661.ribbon.dark.rect"
+    },
+    {
+      "id": 1073758491,
+      "name": "art661.ribbon.dark.tri"
+    },
+    {
+      "id": 1073758492,
+      "name": "art661.ribbon.dark.patch2"
+    },
+    {
+      "id": 1073758493,
+      "name": "art661.ribbon.dark.patch3"
+    },
+    {
+      "id": 1073758494,
+      "name": "art661.ribbon.dark.patch4"
+    },
+    {
+      "id": 1073758495,
+      "name": "art661.ribbon.dark.patch5"
+    },
+    {
+      "id": 1073758496,
+      "name": "art661.clue1.base"
+    },
+    {
+      "id": 1073758497,
+      "name": "art661.clue1.s300.rect"
+    },
+    {
+      "id": 1073758498,
+      "name": "art661.clue1.s300.tri"
+    },
+    {
+      "id": 1073758499,
+      "name": "art661.clue1.s300.patch2"
+    },
+    {
+      "id": 1073758500,
+      "name": "art661.clue1.s300.patch3"
+    },
+    {
+      "id": 1073758501,
+      "name": "art661.clue1.s300.patch4"
+    },
+    {
+      "id": 1073758502,
+      "name": "art661.clue1.s300.patch5"
+    },
+    {
+      "id": 1073758503,
+      "name": "art661.clue1.s250.rect"
+    },
+    {
+      "id": 1073758504,
+      "name": "art661.clue1.s250.tri"
+    },
+    {
+      "id": 1073758505,
+      "name": "art661.clue1.s250.patch2"
+    },
+    {
+      "id": 1073758506,
+      "name": "art661.clue1.s250.patch3"
+    },
+    {
+      "id": 1073758507,
+      "name": "art661.clue1.s250.patch4"
+    },
+    {
+      "id": 1073758508,
+      "name": "art661.clue1.s250.patch5"
+    },
+    {
+      "id": 1073758509,
+      "name": "art661.clue1.s200.rect"
+    },
+    {
+      "id": 1073758510,
+      "name": "art661.clue1.s200.tri"
+    },
+    {
+      "id": 1073758511,
+      "name": "art661.clue1.s200.patch2"
+    },
+    {
+      "id": 1073758512,
+      "name": "art661.clue1.s200.patch3"
+    },
+    {
+      "id": 1073758513,
+      "name": "art661.clue1.s200.patch4"
+    },
+    {
+      "id": 1073758514,
+      "name": "art661.clue1.s200.patch5"
+    },
+    {
+      "id": 1073758515,
+      "name": "art661.clue1.s095.rect"
+    },
+    {
+      "id": 1073758516,
+      "name": "art661.clue1.s095.tri"
+    },
+    {
+      "id": 1073758517,
+      "name": "art661.clue1.s095.patch2"
+    },
+    {
+      "id": 1073758518,
+      "name": "art661.clue1.s095.patch3"
+    },
+    {
+      "id": 1073758519,
+      "name": "art661.clue1.s095.patch4"
+    },
+    {
+      "id": 1073758520,
+      "name": "art661.clue1.s095.patch5"
+    },
+    {
+      "id": 1073758521,
+      "name": "art661.clue1.s095.patch6"
+    },
+    {
+      "id": 1073758522,
+      "name": "art661.clue1.s095.patch7"
+    },
+    {
+      "id": 1073758523,
+      "name": "art661.clue1.s095.patch8"
+    },
+    {
+      "id": 1073758524,
+      "name": "art661.clue2.base"
+    },
+    {
+      "id": 1073758525,
+      "name": "art661.clue2.s300.rect"
+    },
+    {
+      "id": 1073758526,
+      "name": "art661.clue2.s300.tri"
+    },
+    {
+      "id": 1073758527,
+      "name": "art661.clue2.s300.patch2"
+    },
+    {
+      "id": 1073758528,
+      "name": "art661.clue2.s300.patch3"
+    },
+    {
+      "id": 1073758529,
+      "name": "art661.clue2.s300.patch4"
+    },
+    {
+      "id": 1073758530,
+      "name": "art661.clue2.s300.patch5"
+    },
+    {
+      "id": 1073758531,
+      "name": "art661.clue2.s250.rect"
+    },
+    {
+      "id": 1073758532,
+      "name": "art661.clue2.s250.tri"
+    },
+    {
+      "id": 1073758533,
+      "name": "art661.clue2.s250.patch2"
+    },
+    {
+      "id": 1073758534,
+      "name": "art661.clue2.s250.patch3"
+    },
+    {
+      "id": 1073758535,
+      "name": "art661.clue2.s250.patch4"
+    },
+    {
+      "id": 1073758536,
+      "name": "art661.clue2.s250.patch5"
+    },
+    {
+      "id": 1073758537,
+      "name": "art661.clue2.s200.rect"
+    },
+    {
+      "id": 1073758538,
+      "name": "art661.clue2.s200.tri"
+    },
+    {
+      "id": 1073758539,
+      "name": "art661.clue2.s200.patch2"
+    },
+    {
+      "id": 1073758540,
+      "name": "art661.clue2.s200.patch3"
+    },
+    {
+      "id": 1073758541,
+      "name": "art661.clue2.s200.patch4"
+    },
+    {
+      "id": 1073758542,
+      "name": "art661.clue2.s200.patch5"
+    },
+    {
+      "id": 1073758543,
+      "name": "art661.clue2.s095.rect"
+    },
+    {
+      "id": 1073758544,
+      "name": "art661.clue2.s095.tri"
+    },
+    {
+      "id": 1073758545,
+      "name": "art661.clue2.s095.patch2"
+    },
+    {
+      "id": 1073758546,
+      "name": "art661.clue2.s095.patch3"
+    },
+    {
+      "id": 1073758547,
+      "name": "art661.clue2.s095.patch4"
+    },
+    {
+      "id": 1073758548,
+      "name": "art661.clue2.s095.patch5"
+    },
+    {
+      "id": 1073758549,
+      "name": "art661.clue2.s095.patch6"
+    },
+    {
+      "id": 1073758550,
+      "name": "art661.clue2.s095.patch7"
+    },
+    {
+      "id": 1073758551,
+      "name": "art661.clue2.s095.patch8"
+    }
+  ],
+  "writeGilReport": {
+    "bytes": 6265146,
+    "diffs": 205619,
+    "compared": 1243389,
+    "recs": 7035,
+    "marker": null
+  }
+}

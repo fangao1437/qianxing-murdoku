@@ -1,0 +1,584 @@
+{
+  "version": 1,
+  "name": "657 build audit",
+  "date": "2026-11-10",
+  "base": {
+    "file": "../656_首页设计/656_首页设计.gil",
+    "sha256": "5b7da8b0e47f593f06e9ec6cd507f0c013566d7a9aa6975f57b1b7cca8d41dc6",
+    "records": 6421,
+    "scriptBytes": 636306
+  },
+  "script": {
+    "bytesBefore": 636306,
+    "bytesAfter": 636612,
+    "patch": "sync_art641() 切屏分支末尾加父级显隐 help_visible + 父级坐标 SetAnchoredPosition(105,46)，反向替换即与 656 逐字节相同",
+    "compileCheck": "见 657_构建报告.md（Lua 5.4 loadfile）"
+  },
+  "output": {
+    "file": "657_关卡内UI.gil",
+    "sha256": "225b161b8513b223d1f349080cf44f59b81e8f2cd90639d83aab8f63a222858c",
+    "bytes": 5856304,
+    "records": 6537
+  },
+  "source": {
+    "github": "fangao1437/qianxing-murdoku@8ff4f9d7 的 657_关卡内UI 方案（SPEC_ONLY）",
+    "spec": "关卡内UI规格_657.json"
+  },
+  "fixes": {
+    "F1": "setGeomScreen 按父链真实中心换算屏幕坐标（clues/stage 有非零偏移）",
+    "F2": "新增层统一挂 grp653.static.1.art641.game；recTop 与 childList 按索引同序重排；描边插在旗面之前",
+    "F3": "clues.bg 保持透明；暗红内页由独立新层承担；backrop1/2 用 0x00FFFFFF",
+    "F4": "hex.*/hit.* 图标与热区同步移到新旗面中心",
+    "F5": "燕尾旗按钮直接复制选关界面 647 轮真机配方（art647.select.back/settle：矩形 + 2 个 100003 三角 + 深色描边 + 106057 投影）；图钉补描边与渐变；便利贴修正到 (384,211) 144x88 rot -10",
+    "F6": "board.bg 几何按设计图对齐到 (903.5,420,607,626)，只改底板不动格子",
+    "F7": "police-v12 背景 / 棋盘内容 / 线索卡文本 / hud 功能文字 0 改动",
+    "F8": "网格纸零复制：复用 656 首页 art656.home.grid.* 31 层，整体重挂到 1 个新父 art657.grid.reuse（零位移容器，子层坐标不变）；按 652/654 父级整树门控方案，Lua 只加父级显隐 + 父级坐标两条，让同一套网格纸在 home / game 两屏各显现一次",
+    "F9": "问号帮助按钮底板 art641.game.help.tab + 本体 clues.help617 + 点击热区 clues.help627.hit 一起挪到便利贴位置；本体改透明保留（脚本 help_visible 控制显隐）",
+    "F10": "右上三键按设计图逐列扫描留约 10px 黑缝，图标 hex.* 与命中区 hit.* 同步跟随"
+  },
+  "counts": {
+    "recordsBefore": 6421,
+    "recordsAfter": 6537,
+    "added": 116,
+    "hidden": 36,
+    "modifiedExisting": 24
+  },
+  "modifiedExisting": [
+    "backrop1",
+    "backrop2",
+    "art641.game.boardframe.paper",
+    "art641.game.boardframe.shadow",
+    "art641.game.boardbottom",
+    "board.bg",
+    "art641.game.flag.back",
+    "art641.game.flag.submit",
+    "art641.game.flag.redo",
+    "art641.game.flag.undo",
+    "art641.game.flag.hint",
+    "art641.game.help.tab",
+    "clues.help617",
+    "clues.help627.hit",
+    "hex.back",
+    "hit.back",
+    "hex.submit",
+    "hit.submit",
+    "hex.redo",
+    "hit.redo",
+    "hex.undo",
+    "hit.undo",
+    "hex.hint",
+    "hit.hint"
+  ],
+  "hidden": [
+    "art641.game.notebook.shadow",
+    "art641.game.notebook.cover",
+    "art641.game.notebook.paper",
+    "art641.game.rule290",
+    "art641.game.rule314",
+    "art641.game.rule338",
+    "art641.game.rule362",
+    "art641.game.rule386",
+    "art641.game.rule410",
+    "art641.game.rule434",
+    "art641.game.rule458",
+    "art641.game.rule482",
+    "art641.game.rule506",
+    "art641.game.rule530",
+    "art641.game.rule554",
+    "art641.game.rule578",
+    "art641.game.rule602",
+    "art641.game.rule626",
+    "art641.game.rule650",
+    "art641.game.rule674",
+    "art641.game.rule698",
+    "art641.game.rule722",
+    "art641.game.ring295",
+    "art641.game.ringhole295",
+    "art641.game.ring360",
+    "art641.game.ringhole360",
+    "art641.game.ring425",
+    "art641.game.ringhole425",
+    "art641.game.ring490",
+    "art641.game.ringhole490",
+    "art641.game.ring555",
+    "art641.game.ringhole555",
+    "art641.game.ring620",
+    "art641.game.ringhole620",
+    "art641.game.ring685",
+    "art641.game.ringhole685"
+  ],
+  "addedLayers": [
+    {
+      "id": 1073757938,
+      "name": "art657.game.notebook.frame"
+    },
+    {
+      "id": 1073757939,
+      "name": "art657.game.notebook.page"
+    },
+    {
+      "id": 1073757940,
+      "name": "art657.game.notebook.page.mid"
+    },
+    {
+      "id": 1073757941,
+      "name": "art657.game.notebook.page.lower"
+    },
+    {
+      "id": 1073757942,
+      "name": "art657.game.notebook.rule.1"
+    },
+    {
+      "id": 1073757943,
+      "name": "art657.game.notebook.rule.2"
+    },
+    {
+      "id": 1073757944,
+      "name": "art657.game.notebook.rule.3"
+    },
+    {
+      "id": 1073757945,
+      "name": "art657.game.notebook.rule.4"
+    },
+    {
+      "id": 1073757946,
+      "name": "art657.game.notebook.slot.1"
+    },
+    {
+      "id": 1073757947,
+      "name": "art657.game.notebook.slot.2"
+    },
+    {
+      "id": 1073757948,
+      "name": "art657.game.notebook.slot.3"
+    },
+    {
+      "id": 1073757949,
+      "name": "art657.game.notebook.slot.4"
+    },
+    {
+      "id": 1073757950,
+      "name": "art657.game.notebook.slot.5"
+    },
+    {
+      "id": 1073757951,
+      "name": "art657.game.notebook.ring.1"
+    },
+    {
+      "id": 1073757952,
+      "name": "art657.game.notebook.ring.2"
+    },
+    {
+      "id": 1073757953,
+      "name": "art657.game.notebook.ring.3"
+    },
+    {
+      "id": 1073757954,
+      "name": "art657.game.notebook.ring.4"
+    },
+    {
+      "id": 1073757955,
+      "name": "art657.game.notebook.ring.5"
+    },
+    {
+      "id": 1073757956,
+      "name": "art657.game.notebook.ringhole.1"
+    },
+    {
+      "id": 1073757957,
+      "name": "art657.game.notebook.ringhole.2"
+    },
+    {
+      "id": 1073757958,
+      "name": "art657.game.notebook.ringhole.3"
+    },
+    {
+      "id": 1073757959,
+      "name": "art657.game.notebook.ringhole.4"
+    },
+    {
+      "id": 1073757960,
+      "name": "art657.game.notebook.ringhole.5"
+    },
+    {
+      "id": 1073757961,
+      "name": "art657.game.notebook.ribbon"
+    },
+    {
+      "id": 1073757962,
+      "name": "art657.game.notebook.ribbon.tri.top"
+    },
+    {
+      "id": 1073757963,
+      "name": "art657.game.notebook.ribbon.tri.bottom"
+    },
+    {
+      "id": 1073757964,
+      "name": "art657.game.sticker.q.dot"
+    },
+    {
+      "id": 1073757965,
+      "name": "art657.game.sticker.q.mark"
+    },
+    {
+      "id": 1073757966,
+      "name": "art657.game.board.tape.top.base"
+    },
+    {
+      "id": 1073757967,
+      "name": "art657.game.board.tape.top.v1"
+    },
+    {
+      "id": 1073757968,
+      "name": "art657.game.board.tape.top.v2"
+    },
+    {
+      "id": 1073757969,
+      "name": "art657.game.board.tape.top.v3"
+    },
+    {
+      "id": 1073757970,
+      "name": "art657.game.board.tape.top.v4"
+    },
+    {
+      "id": 1073757971,
+      "name": "art657.game.board.tape.top.v5"
+    },
+    {
+      "id": 1073757972,
+      "name": "art657.game.board.tape.top.v6"
+    },
+    {
+      "id": 1073757973,
+      "name": "art657.game.board.tape.top.v7"
+    },
+    {
+      "id": 1073757974,
+      "name": "art657.game.board.tape.top.v8"
+    },
+    {
+      "id": 1073757975,
+      "name": "art657.game.board.tape.top.v9"
+    },
+    {
+      "id": 1073757976,
+      "name": "art657.game.board.tape.top.v10"
+    },
+    {
+      "id": 1073757977,
+      "name": "art657.game.board.tape.top.v11"
+    },
+    {
+      "id": 1073757978,
+      "name": "art657.game.board.tape.top.v12"
+    },
+    {
+      "id": 1073757979,
+      "name": "art657.game.board.tape.top.v13"
+    },
+    {
+      "id": 1073757980,
+      "name": "art657.game.board.tape.top.v14"
+    },
+    {
+      "id": 1073757981,
+      "name": "art657.game.board.tape.top.v15"
+    },
+    {
+      "id": 1073757982,
+      "name": "art657.game.board.tape.top.v16"
+    },
+    {
+      "id": 1073757983,
+      "name": "art657.game.board.tape.top.v17"
+    },
+    {
+      "id": 1073757984,
+      "name": "art657.game.board.tape.top.v18"
+    },
+    {
+      "id": 1073757985,
+      "name": "art657.game.board.tape.top.v19"
+    },
+    {
+      "id": 1073757986,
+      "name": "art657.game.board.tape.top.v20"
+    },
+    {
+      "id": 1073757987,
+      "name": "art657.game.board.tape.top.v21"
+    },
+    {
+      "id": 1073757988,
+      "name": "art657.game.board.tape.top.v22"
+    },
+    {
+      "id": 1073757989,
+      "name": "art657.game.board.tape.top.v23"
+    },
+    {
+      "id": 1073757990,
+      "name": "art657.game.board.tape.top.v24"
+    },
+    {
+      "id": 1073757991,
+      "name": "art657.game.board.tape.top.h1"
+    },
+    {
+      "id": 1073757992,
+      "name": "art657.game.board.tape.top.h2"
+    },
+    {
+      "id": 1073757993,
+      "name": "art657.game.board.tape.bottom.base"
+    },
+    {
+      "id": 1073757994,
+      "name": "art657.game.board.tape.bottom.v1"
+    },
+    {
+      "id": 1073757995,
+      "name": "art657.game.board.tape.bottom.v2"
+    },
+    {
+      "id": 1073757996,
+      "name": "art657.game.board.tape.bottom.v3"
+    },
+    {
+      "id": 1073757997,
+      "name": "art657.game.board.tape.bottom.v4"
+    },
+    {
+      "id": 1073757998,
+      "name": "art657.game.board.tape.bottom.v5"
+    },
+    {
+      "id": 1073757999,
+      "name": "art657.game.board.tape.bottom.v6"
+    },
+    {
+      "id": 1073758000,
+      "name": "art657.game.board.tape.bottom.v7"
+    },
+    {
+      "id": 1073758001,
+      "name": "art657.game.board.tape.bottom.v8"
+    },
+    {
+      "id": 1073758002,
+      "name": "art657.game.board.tape.bottom.v9"
+    },
+    {
+      "id": 1073758003,
+      "name": "art657.game.board.tape.bottom.v10"
+    },
+    {
+      "id": 1073758004,
+      "name": "art657.game.board.tape.bottom.v11"
+    },
+    {
+      "id": 1073758005,
+      "name": "art657.game.board.tape.bottom.v12"
+    },
+    {
+      "id": 1073758006,
+      "name": "art657.game.board.tape.bottom.v13"
+    },
+    {
+      "id": 1073758007,
+      "name": "art657.game.board.tape.bottom.v14"
+    },
+    {
+      "id": 1073758008,
+      "name": "art657.game.board.tape.bottom.v15"
+    },
+    {
+      "id": 1073758009,
+      "name": "art657.game.board.tape.bottom.v16"
+    },
+    {
+      "id": 1073758010,
+      "name": "art657.game.board.tape.bottom.v17"
+    },
+    {
+      "id": 1073758011,
+      "name": "art657.game.board.tape.bottom.v18"
+    },
+    {
+      "id": 1073758012,
+      "name": "art657.game.board.tape.bottom.v19"
+    },
+    {
+      "id": 1073758013,
+      "name": "art657.game.board.tape.bottom.v20"
+    },
+    {
+      "id": 1073758014,
+      "name": "art657.game.board.tape.bottom.v21"
+    },
+    {
+      "id": 1073758015,
+      "name": "art657.game.board.tape.bottom.v22"
+    },
+    {
+      "id": 1073758016,
+      "name": "art657.game.board.tape.bottom.v23"
+    },
+    {
+      "id": 1073758017,
+      "name": "art657.game.board.tape.bottom.v24"
+    },
+    {
+      "id": 1073758018,
+      "name": "art657.game.board.tape.bottom.h1"
+    },
+    {
+      "id": 1073758019,
+      "name": "art657.game.pin.border"
+    },
+    {
+      "id": 1073758020,
+      "name": "art657.game.pin"
+    },
+    {
+      "id": 1073758021,
+      "name": "art657.game.pin.mid"
+    },
+    {
+      "id": 1073758022,
+      "name": "art657.game.pin.hilite"
+    },
+    {
+      "id": 1073758023,
+      "name": "art657.game.flag.back.shadow"
+    },
+    {
+      "id": 1073758024,
+      "name": "art657.game.flag.back.outline"
+    },
+    {
+      "id": 1073758025,
+      "name": "art657.game.flag.back.outline.tri.top"
+    },
+    {
+      "id": 1073758026,
+      "name": "art657.game.flag.back.outline.tri.bottom"
+    },
+    {
+      "id": 1073758027,
+      "name": "art657.game.flag.back.ribbon.tri.top"
+    },
+    {
+      "id": 1073758028,
+      "name": "art657.game.flag.back.ribbon.tri.bottom"
+    },
+    {
+      "id": 1073758029,
+      "name": "art657.game.flag.submit.shadow"
+    },
+    {
+      "id": 1073758030,
+      "name": "art657.game.flag.submit.outline"
+    },
+    {
+      "id": 1073758031,
+      "name": "art657.game.flag.submit.outline.tri.top"
+    },
+    {
+      "id": 1073758032,
+      "name": "art657.game.flag.submit.outline.tri.bottom"
+    },
+    {
+      "id": 1073758033,
+      "name": "art657.game.flag.submit.ribbon.tri.top"
+    },
+    {
+      "id": 1073758034,
+      "name": "art657.game.flag.submit.ribbon.tri.bottom"
+    },
+    {
+      "id": 1073758035,
+      "name": "art657.game.flag.redo.shadow"
+    },
+    {
+      "id": 1073758036,
+      "name": "art657.game.flag.redo.outline"
+    },
+    {
+      "id": 1073758037,
+      "name": "art657.game.flag.redo.outline.tri.top"
+    },
+    {
+      "id": 1073758038,
+      "name": "art657.game.flag.redo.outline.tri.bottom"
+    },
+    {
+      "id": 1073758039,
+      "name": "art657.game.flag.redo.ribbon.tri.top"
+    },
+    {
+      "id": 1073758040,
+      "name": "art657.game.flag.redo.ribbon.tri.bottom"
+    },
+    {
+      "id": 1073758041,
+      "name": "art657.game.flag.undo.shadow"
+    },
+    {
+      "id": 1073758042,
+      "name": "art657.game.flag.undo.outline"
+    },
+    {
+      "id": 1073758043,
+      "name": "art657.game.flag.undo.outline.tri.top"
+    },
+    {
+      "id": 1073758044,
+      "name": "art657.game.flag.undo.outline.tri.bottom"
+    },
+    {
+      "id": 1073758045,
+      "name": "art657.game.flag.undo.ribbon.tri.top"
+    },
+    {
+      "id": 1073758046,
+      "name": "art657.game.flag.undo.ribbon.tri.bottom"
+    },
+    {
+      "id": 1073758047,
+      "name": "art657.game.flag.hint.shadow"
+    },
+    {
+      "id": 1073758048,
+      "name": "art657.game.flag.hint.outline"
+    },
+    {
+      "id": 1073758049,
+      "name": "art657.game.flag.hint.outline.tri.top"
+    },
+    {
+      "id": 1073758050,
+      "name": "art657.game.flag.hint.outline.tri.bottom"
+    },
+    {
+      "id": 1073758051,
+      "name": "art657.game.flag.hint.ribbon.tri.top"
+    },
+    {
+      "id": 1073758052,
+      "name": "art657.game.flag.hint.ribbon.tri.bottom"
+    },
+    {
+      "id": 1073758053,
+      "name": "art657.grid.reuse"
+    }
+  ],
+  "backgroundUntouched": "police-v12 + 761 个直接子控件",
+  "writeGilReport": {
+    "bytes": 5856304,
+    "diffs": 114878,
+    "compared": 1233204,
+    "recs": 6537,
+    "marker": null
+  }
+}
