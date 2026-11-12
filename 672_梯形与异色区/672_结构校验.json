@@ -1,0 +1,203 @@
+{
+  "recordsBefore": 7044,
+  "recordsAfter": 7052,
+  "added": 8,
+  "removed": 0,
+  "changed": 6,
+  "unexpectedChanges": [],
+  "scriptIdentical": true,
+  "scriptBytes": 636660,
+  "textRecordsChanged": 0,
+  "policeV19Descendants": 650,
+  "bgChanged": 0,
+  "staticBackdropHidden": true,
+  "tplOk": true,
+  "tpl": [
+    {
+      "rootId": 1073742421,
+      "backrop1": {
+        "geom": [
+          800,
+          450,
+          330,
+          85.4
+        ],
+        "color": "FF491B1E"
+      },
+      "backrop2": {
+        "geom": [
+          800,
+          450,
+          324,
+          79.4
+        ],
+        "color": "FF68262A"
+      },
+      "hi": {
+        "color": "FF9D3033",
+        "geom": [
+          657.85,
+          430.15,
+          112.29,
+          56.14
+        ]
+      },
+      "lo": {
+        "color": "FF68262A",
+        "imageId": 100003,
+        "geom": [
+          873.22,
+          430.15,
+          142.46,
+          47.82
+        ],
+        "rot": 33.874
+      },
+      "trap": {
+        "color": "FF611F23",
+        "imageId": 100001,
+        "geom": [
+          910.95,
+          450,
+          102.11,
+          79.4
+        ]
+      },
+      "mid1": {
+        "color": "FF702830",
+        "imageId": 100003,
+        "rot": -111.695
+      },
+      "mid2": {
+        "color": "FF702830",
+        "imageId": 100003,
+        "rot": 40.954
+      },
+      "corner": {
+        "color": "FF611F23",
+        "imageId": 100003,
+        "rot": -146.126
+      },
+      "visibleArt": 4,
+      "artAllBeforeText": true,
+      "allVerticesInside": true,
+      "oldAllHidden": true,
+      "childListOk": true,
+      "text": {
+        "who": "FFFFFFFF",
+        "what": "FFFFFFFF",
+        "letter": "FFFFFFFF"
+      },
+      "checks": {
+        "strokeDarkRed": true,
+        "mainUnchanged": true,
+        "hiUnchanged": true,
+        "loIsCover": true,
+        "trapIsRect": true,
+        "midAreTriangles": true,
+        "cornerIsTriangle": true,
+        "backropGeom": true
+      }
+    },
+    {
+      "rootId": 1073742428,
+      "backrop1": {
+        "geom": [
+          800,
+          450,
+          330,
+          85.4
+        ],
+        "color": "FF491B1E"
+      },
+      "backrop2": {
+        "geom": [
+          800,
+          450,
+          324,
+          79.4
+        ],
+        "color": "FF68262A"
+      },
+      "hi": {
+        "color": "FF9D3033",
+        "geom": [
+          657.85,
+          430.15,
+          112.29,
+          56.14
+        ]
+      },
+      "lo": {
+        "color": "FF68262A",
+        "imageId": 100003,
+        "geom": [
+          873.22,
+          430.15,
+          142.46,
+          47.82
+        ],
+        "rot": 33.874
+      },
+      "trap": {
+        "color": "FF611F23",
+        "imageId": 100001,
+        "geom": [
+          910.95,
+          450,
+          102.11,
+          79.4
+        ]
+      },
+      "mid1": {
+        "color": "FF702830",
+        "imageId": 100003,
+        "rot": -111.695
+      },
+      "mid2": {
+        "color": "FF702830",
+        "imageId": 100003,
+        "rot": 40.954
+      },
+      "corner": {
+        "color": "FF611F23",
+        "imageId": 100003,
+        "rot": -146.126
+      },
+      "visibleArt": 4,
+      "artAllBeforeText": true,
+      "allVerticesInside": true,
+      "oldAllHidden": true,
+      "childListOk": true,
+      "text": {
+        "who": "FFFFFFFF",
+        "what": "FFFFFFFF",
+        "letter": "FFFFFFFF"
+      },
+      "checks": {
+        "strokeDarkRed": true,
+        "mainUnchanged": true,
+        "hiUnchanged": true,
+        "loIsCover": true,
+        "trapIsRect": true,
+        "midAreTriangles": true,
+        "cornerIsTriangle": true,
+        "backropGeom": true
+      }
+    }
+  ],
+  "visibleLayersPerTemplate": 8,
+  "previousVisibleLayersPerTemplate": 4,
+  "gates": {
+    "midCoverage": 1,
+    "trapAccuracy": 1,
+    "cornerCoverage": 1,
+    "cornerExtraRate": 0,
+    "allVerticesInside": true,
+    "samplesMid": 6487,
+    "samplesTrap": 18000
+  },
+  "dangling": 0,
+  "highlightUnchanged": true,
+  "verdict": true
+}
