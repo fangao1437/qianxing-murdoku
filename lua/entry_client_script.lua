@@ -621,6 +621,8 @@ local function build_adapter()
         --   把整格抬到 stage 内最上，会盖住邻格 x。故 X 标记统一移到 stage 末尾的
         --   art685.mark.overlay（见 engine_adapter_qianxing.lua 的 _mark_layer_raise）。
         --   该方案对任意 kind / span / 尺寸的多格家具通用，新增家具无需再改本表。
+        -- ★ 686 离场收起：父容器隐藏不级联 ⇒ stage/cell 被隐藏时必须逐层 SetVisible(false)
+        --   8×8 组标记；并用 _mark_screen_on 门控挡住切屏瞬间的 x_mark 抢先点亮。
         -- ★★★★★ 2026-10-20（v283）**新增 `portrait` 层：放置的头像画在这里** ✗✓
         --   用户原话：「现在家具图层会盖在放置的头像上，把这个问题解决」
         --   · 旧：头像走 `image` 落在 **face（最底）** ⇒ 家具 `obj` 压在上面 ✗

@@ -1,0 +1,12 @@
+{
+  "v685": {
+    "inLevel": 12,
+    "afterLeave": 12,
+    "afterRace": 15
+  },
+  "v686": {
+    "inLevel": 12,
+    "afterLeave": 0,
+    "afterRace": 0
+  }
+}

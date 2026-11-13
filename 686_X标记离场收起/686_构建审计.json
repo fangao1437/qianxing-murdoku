@@ -1,0 +1,55 @@
+{
+  "version": 686,
+  "name": "X marks hide on leaving level",
+  "date": "2026-11-13",
+  "base": {
+    "file": "685_多格家具通用层/685_多格家具通用层.gil",
+    "sha256": "b8fdbc9aa6a15c4ae6ee2e82c40393d8104c5a87bf51bf3fa52c97b0d0ca4cdd",
+    "records": 7826,
+    "scriptBytes": 641321
+  },
+  "output": {
+    "file": "686_X标记离场收起.gil",
+    "sha256": "b5efd319c72f0a12e0e66ebd29a08a66d77f163823f7405ed35a5257d25620f8",
+    "bytes": 6952296,
+    "records": 7826,
+    "scriptBytes": 644453
+  },
+  "counts": {
+    "recordsBefore": 7826,
+    "recordsAfter": 7826,
+    "added": 0,
+    "removed": 0,
+    "changedOldRecords": 0
+  },
+  "patches": [
+    "helpers",
+    "screen_gate",
+    "visible_stage",
+    "visible_cell",
+    "hide_unlisted"
+  ],
+  "sourceSync": [
+    {
+      "file": "lua/engine_adapter_qianxing.lua",
+      "status": "already-patched"
+    },
+    {
+      "file": "lua/entry_client_script.lua",
+      "status": "already-patched"
+    }
+  ],
+  "guarantees": [
+    "内嵌 Lua 五处补丁，反向替换后与 685 逐字节相同",
+    "记录表 7826 条 0 新增 / 0 删除 / 0 修改",
+    "stage 末尾标记层与 193 条标记记录逐字节保留",
+    "源码 lua/engine_adapter_qianxing.lua / lua/entry_client_script.lua 同步；dist 不重打包"
+  ],
+  "writeGilReport": {
+    "bytes": 6952296,
+    "diffs": 1,
+    "compared": 1586438,
+    "recs": 7826,
+    "marker": null
+  }
+}

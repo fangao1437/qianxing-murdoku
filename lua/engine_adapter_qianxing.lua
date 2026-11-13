@@ -2636,6 +2636,15 @@ local CURSOR_CONTAINERS = {
 local SELF_MANAGED_TOP = { teach = true }
 
 function Adapter:hide_unlisted(keep)
+  -- ★ 686：keep = layout_plan 的 seen 集合；没有任何 cell.* ⇒ 当前不在关卡内，
+  --   逐层收起 192 个标记控件，兜住首帧 / _shown 重建等没有 cell visible 下发的路径。
+  do
+    local in_level = false
+    for k in pairs(keep or {}) do
+      if type(k) == "string" and k:sub(1, 5) == "cell." then in_level = true; break end
+    end
+    if not in_level then self:_mark_hide_all() else self._mark_screen_on = true end
+  end
   local hidden = 0
   local skipped_self = 0
   for i = 1, #MANAGED do
@@ -3546,6 +3555,38 @@ function Adapter:_mark_layer_guard()
   self._mark_guard_done = true
 end
 -- cell.<r>.<c> → art685.mark.<r>.<c>；位置/尺寸直接复用建格时记下的同一组数值
+-- ═══════════════════════════════════════════════════════════════════════
+-- ★ 686「X 标记离场收起」：父容器隐藏不级联，必须逐层关灯
+--   685 误判：以为 stage 在 home/select 被整体隐藏时，挂在它下面的标记层会跟着消失。
+--   真机反证（v308 已记录）：父容器 SetVisible 不保证级联到子控件 ⇒ 关卡内点亮的
+--   X 标记会残留在新界面上。且标记层控件不在 layout_plan 的 nodes 表里，Controller 的
+--   _shown 差异下发 / hide_unlisted 都不会给它们下发 visible=false ⇒ 永远没人关灯。
+--   ⇒ 按项目既有范式（visible 分支里显式切 board.floors / board.rugs）逐层收起。
+-- ═══════════════════════════════════════════════════════════════════════
+function Adapter:_mark_all_ctrls()
+  if self._mark_ctl_cache ~= nil then return self._mark_ctl_cache end
+  local t = {}
+  for r = 1, 8 do
+    for c = 1, 8 do
+      local base = "art685.mark." .. r .. "." .. c
+      local names = { base, base .. ".stroke.0", base .. ".stroke.1" }
+      for i = 1, #names do
+        local q = self:find(names[i])
+        if q ~= nil then t[#t + 1] = q end
+      end
+    end
+  end
+  if #t >= 192 then self._mark_ctl_cache = t end   -- 控件树未就绪时不缓存，下次重建
+  return t
+end
+function Adapter:_mark_hide_all()
+  local t = self:_mark_all_ctrls()
+  for i = 1, #t do
+    local q = t[i]
+    if q.SetVisible ~= nil then pcall(function() q:SetVisible(false) end) end
+  end
+  self._mark_screen_on = false
+end
 function Adapter:_mark_ctrl(id)
   local rc = tostring(id):match("^cell%.(.+)$")
   if rc == nil then return nil, nil end
@@ -3573,6 +3614,8 @@ function Adapter:_mark_ctrl(id)
 end
 -- 真机父容器 SetVisible 不保证级联到子控件（v308 教训）⇒ 容器 + 两枚笔画逐层开关
 function Adapter:_mark_set_visible(rc, on)
+  -- ★ 686：关卡外一律不点亮（防止切屏瞬间 x_mark 抢先下发把 X 又打开）
+  if on == true and self._mark_screen_on == false then on = false end
   local base = "art685.mark." .. rc
   local names = { base, base .. ".stroke.0", base .. ".stroke.1" }
   for i = 1, #names do
@@ -5685,6 +5728,17 @@ function Adapter:set_property(id, key, value, nkey)
     --   枚举用 GetChildren()（项目里已验证可用）。
     local vis = value and true or false
     if ctrl.SetVisible then pcall(function() ctrl:SetVisible(vis) end) end
+    -- ★ 686：离开关卡时逐层收起 X 标记层（父容器隐藏不级联子控件）
+    do
+      local rc686 = tostring(id):match("^cell%.(.+)$")
+      if rc686 ~= nil then
+        if vis then self._mark_screen_on = true
+        else self._mark_screen_on = false; self:_mark_set_visible(rc686, false) end
+      end
+      if id == ((self.cfg.cells or {}).parent or "board") and not vis then
+        self:_mark_hide_all()
+      end
+    end
     -- ★ 记一份"当前被隐藏的 id"，交给每帧的 enforce_hidden_subtrees 兜底。
     --   为什么要兜底：渲染**只在属性变化时**才下发（same_value 缓存）
     --   ⇒ `cell.1.1` 的 visible=false 只在第一帧下发过一次，

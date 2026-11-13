@@ -1,0 +1,82 @@
+{
+  "version": 686,
+  "title": "X 标记离场收起 · 屏幕门控与逐层显隐规范",
+  "date": "2026-11-14",
+  "base": {
+    "file": "685_多格家具通用层/685_多格家具通用层.gil",
+    "sha256": "b8fdbc9aa6a15c4ae6ee2e82c40393d8104c5a87bf51bf3fa52c97b0d0ca4cdd",
+    "records": 7826,
+    "scriptBytes": 641321
+  },
+  "output": {
+    "file": "686_X标记离场收起.gil",
+    "dir": "686_X标记离场收起"
+  },
+
+  "symptom": "685 导入真机后，离开关卡（回到首页/选关/结算等 screen ~= nil）时，关卡内点亮过的 X 标记仍浮在新界面上，约 8 个，位置与上一关的标记格一致。",
+
+  "rootCause": {
+    "primary": "685 把 X 标记层挂在 stage 下，判断「home/select 时 stage 整体被隐藏，标记层随之隐藏」。但真机父容器 SetVisible 不保证级联到子控件（项目 v308 教训，注释明确写「真机上父容器隐藏不保证级联」），stage 被隐藏时 8×8 组标记的 192 个控件仍在绘制。",
+    "secondary": "标记层控件不在 layout_plan 的 nodes 表里 ⇒ Controller 的 `_shown` 差异下发 / `hide_unlisted(keep)` 都不会给它们下发 visible=false，所以永远没人关灯。",
+    "evidence": [
+      "layout_plan 7432：`push({ id = \"stage\", ... })` 无 visible 字段；7387 `if n.visible == nil then n.visible = true end` ⇒ stage 的 visible 恒为 true，切屏时不会下发 false。",
+      "layout_plan 8105/8139：cell 节点带 `visible = (self.screen == nil)` ⇒ 离开关卡时 Controller 对 `cell.r.c` 下发 visible=false。",
+      "内嵌 Lua 12878-12892：`for id in pairs(self._shown) do if not seen[id] ... self:_set_prop(adapter, id, \"visible\", false)` ⇒ 关卡外 cell 一定收到 visible=false。",
+      "内嵌 Lua 20009-20019：`set_property` 的 visible 分支已有「id == stage 时显式切 board.floors / board.rugs」的同类补丁 ⇒ 项目既有范式就是显式逐层切子控件。"
+    ],
+    "correction": "685_变更与验收.md 第七节「屏幕切换：stage 整体隐藏，标记层随之隐藏」是错误判断，本轮更正为必须逐层 SetVisible(false)。"
+  },
+
+  "architecture": {
+    "name": "685 三层不变式 + 686 离场收起门控",
+    "unchanged": "stage 末尾标记层 / 8×8 组 X / 每帧 _mark_layer_raise 全部保留，与家具 kind/span/scale 解耦的通用性不变。",
+    "additions": [
+      {
+        "id": "screen_gate",
+        "name": "_mark_screen_on",
+        "rule": "关卡外 = false 时，_mark_set_visible(rc, true) 一律降级为 false ⇒ 切屏瞬间即使 x_mark 抢先下发也不会点亮；cell 收到 visible=true 时恢复 true。"
+      },
+      {
+        "id": "hide_all",
+        "name": "_mark_hide_all / _mark_all_ctrls",
+        "rule": "遍历 8×8×3 = 192 个控件逐个 SetVisible(false)；控件列表缓存，树未就绪（<192）时不缓存，下次重建。"
+      },
+      {
+        "id": "cell_visible_hook",
+        "name": "set_property visible 分支",
+        "rule": "cell.r.c 收到 visible=false ⇒ 置 screen_on=false 并隐藏该组 3 个控件；visible=true ⇒ screen_on=true（不自动点亮，由 x_mark 决定）。stage 收到 visible=false 时额外 _mark_hide_all()。"
+      },
+      {
+        "id": "hide_unlisted_hook",
+        "name": "hide_unlisted(keep) 兜底",
+        "rule": "keep（layout_plan 的 seen 集合）里没有任何 `cell.*` ⇒ 当前不在关卡内 ⇒ _mark_hide_all()；否则 screen_on=true。首帧或 _shown 重建时兜底。"
+      }
+    ],
+    "whyGeneral": "不依赖具体关卡、棋盘阶数、X 数量或家具种类；只依赖「cell 节点是否可见」这一既有布局事实。将来新增任意家具/标记类型，只要沿用 art685.mark.* 命名并走 _mark_set_visible，离场收起自动生效。"
+  },
+
+  "luaPatches": {
+    "embedded": [
+      { "id": "helpers", "anchor": "function Adapter:_mark_ctrl(id)", "action": "insertBefore", "content": "_mark_all_ctrls / _mark_hide_all" },
+      { "id": "gate", "anchor": "function Adapter:_mark_set_visible(rc, on)", "action": "insertBody", "content": "on==true 且 _mark_screen_on==false ⇒ on=false" },
+      { "id": "visible_stage", "anchor": "elseif key == \"visible\" then", "action": "insertBody", "content": "stage 且 value~=true ⇒ _mark_hide_all()" },
+      { "id": "visible_cell", "anchor": "if id:match(\"^cell%.%d+%.%d+$\") then self:_sync_floor(...) end", "action": "appendBlock", "content": "cell visible 门控 + 逐组收起" },
+      { "id": "hide_unlisted", "anchor": "function Adapter:hide_unlisted(keep)", "action": "insertBody", "content": "keep 无 cell.* ⇒ _mark_hide_all()" }
+    ],
+    "source": [
+      "lua/engine_adapter_qianxing.lua（同五处逻辑，锚点按源码 CRLF 旧版 visible 分支适配）",
+      "lua/entry_client_script.lua（不变式注释补 686）"
+    ],
+    "notRepacked": "dist/client_script.lua 仍不重打包。"
+  },
+
+  "gates": [
+    "记录数 7826→7826（0 新增 / 0 删除），仅内嵌 Lua 一处文本块变化",
+    "旧记录逐字节全同（含 stage childList、193 条标记层记录）",
+    "内嵌 Lua 五处补丁，反向替换后与 685 逐字节相同",
+    "luac -p 内嵌 685/686 + 两份源码全过",
+    "官方 roundtrip / check_childlist_top 通过",
+    "通用性：97,280 组家具枚举仍 0 漏覆盖；新增「离场收起」四项 Lua 断言",
+    "离线对照：关卡内两版 X 都显示；离场后 685 残留 8 个 X、686 为 0"
+  ]
+}

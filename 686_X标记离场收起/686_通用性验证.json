@@ -1,0 +1,34 @@
+{
+  "version": 686,
+  "verdict": true,
+  "generality": {
+    "enumeratedCases": 97280,
+    "maxReachCells": 8,
+    "maxOverlappedCellsPerFurniture": 64,
+    "markGrid": "8x8",
+    "uncoveredCells": 0,
+    "allCovered": true
+  },
+  "structural": {
+    "markLayerExists": true,
+    "markLayerParentIsStage": true,
+    "markLayerIsLastInStage": true,
+    "overlayPosIsZero": true,
+    "overlaySizeEqualsStage": true,
+    "markContainers": 64,
+    "hiddenRecords": 192,
+    "strokePairs": 64,
+    "rotationPairs": 64,
+    "scriptBytes": 644453,
+    "hasHideAll": true,
+    "hasAllCtrls": true,
+    "hasScreenGate": true,
+    "hasStageHook": true,
+    "hasCellHook": true,
+    "hasHideUnlistedHook": true,
+    "stillRaisesEveryFrame": true,
+    "noKindSpecificLayerRule": true,
+    "ok": true,
+    "errors": []
+  }
+}

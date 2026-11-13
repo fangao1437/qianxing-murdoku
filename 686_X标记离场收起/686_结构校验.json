@@ -1,0 +1,178 @@
+{
+  "version": 686,
+  "verdict": true,
+  "base": {
+    "file": "685_多格家具通用层.gil",
+    "sha256": "b8fdbc9aa6a15c4ae6ee2e82c40393d8104c5a87bf51bf3fa52c97b0d0ca4cdd",
+    "records": 7826,
+    "scriptBytes": 641321
+  },
+  "output": {
+    "file": "686_X标记离场收起.gil",
+    "sha256": "b5efd319c72f0a12e0e66ebd29a08a66d77f163823f7405ed35a5257d25620f8",
+    "bytes": 6952296,
+    "records": 7826,
+    "scriptBytes": 644453
+  },
+  "checks": [
+    {
+      "name": "记录数 7826→7826",
+      "ok": true,
+      "detail": [
+        7826,
+        7826
+      ]
+    },
+    {
+      "name": "0 新增 / 0 删除",
+      "ok": true,
+      "detail": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "7826 条旧记录逐字节全同",
+      "ok": true,
+      "detail": 0
+    },
+    {
+      "name": "193 条标记记录完整保留",
+      "ok": true,
+      "detail": [
+        193,
+        193
+      ]
+    },
+    {
+      "name": "192 条标记仍默认隐藏",
+      "ok": true
+    },
+    {
+      "name": "stage 末尾仍是标记层",
+      "ok": true,
+      "detail": [
+        "board.bg",
+        "board.floors",
+        "board.rugs",
+        "art685.mark.overlay"
+      ]
+    },
+    {
+      "name": "所有父级 childList 与 recTop 同序",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "内嵌 Lua 641,321 → 644,453 B",
+      "ok": true,
+      "detail": [
+        641321,
+        644453
+      ]
+    },
+    {
+      "name": "Lua 补丁 allCtrls",
+      "ok": true
+    },
+    {
+      "name": "Lua 补丁 hideAll",
+      "ok": true
+    },
+    {
+      "name": "Lua 补丁 cacheGuard",
+      "ok": true
+    },
+    {
+      "name": "Lua 补丁 gate",
+      "ok": true
+    },
+    {
+      "name": "Lua 补丁 visibleStage",
+      "ok": true
+    },
+    {
+      "name": "Lua 补丁 visibleCell",
+      "ok": true
+    },
+    {
+      "name": "Lua 补丁 cellHide",
+      "ok": true
+    },
+    {
+      "name": "Lua 补丁 hideUnlisted",
+      "ok": true
+    },
+    {
+      "name": "Lua 补丁 keepScan",
+      "ok": true
+    },
+    {
+      "name": "685 的五个补丁未被 686 覆盖",
+      "ok": true
+    },
+    {
+      "name": "内嵌 Lua 反向还原 = 685 逐字节",
+      "ok": true,
+      "detail": "OK"
+    },
+    {
+      "name": "源码 adapter 含 686 四个补丁",
+      "ok": true
+    },
+    {
+      "name": "源码 entry 含 686 不变式注释",
+      "ok": true
+    },
+    {
+      "name": "685 模拟复现残留（关卡内 12 / 离场仍 12）",
+      "ok": true,
+      "detail": {
+        "inLevel": 12,
+        "afterLeave": 12,
+        "afterRace": 15
+      }
+    },
+    {
+      "name": "686 关卡内 X 正常显示（12 个控件）",
+      "ok": true,
+      "detail": 12
+    },
+    {
+      "name": "686 离场后 192 个控件全部关灯",
+      "ok": true,
+      "detail": 0
+    },
+    {
+      "name": "686 屏幕门控挡住切屏抢先点亮",
+      "ok": true,
+      "detail": 0
+    },
+    {
+      "name": "通用性验证 verdict=true",
+      "ok": true
+    }
+  ],
+  "behaviorSimulation": {
+    "v685": {
+      "inLevel": 12,
+      "afterLeave": 12,
+      "afterRace": 15
+    },
+    "v686": {
+      "inLevel": 12,
+      "afterLeave": 0,
+      "afterRace": 0
+    }
+  },
+  "generality": {
+    "cases": 97280,
+    "uncovered": 0
+  },
+  "failed": [],
+  "summary": {
+    "total": 26,
+    "passed": 26,
+    "failed": 0
+  }
+}
