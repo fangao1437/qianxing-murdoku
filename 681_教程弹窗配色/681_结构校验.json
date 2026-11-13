@@ -1,0 +1,214 @@
+{
+  "recordsBefore": 7431,
+  "recordsAfter": 7431,
+  "added": 0,
+  "removed": 0,
+  "changed": 2160,
+  "changedExtra": [],
+  "colorFieldsChanged": 2161,
+  "colorOnlyChanges": true,
+  "colorDiffErrors": [],
+  "geomTextChanged": 0,
+  "scriptSame": true,
+  "scriptBytes": [
+    636689,
+    636689
+  ],
+  "policeV19Descendants": 650,
+  "bgChanged": 0,
+  "recTopSame": true,
+  "childListOk": true,
+  "dangling": 0,
+  "targetsOk": true,
+  "targetResult": {
+    "td.home.bg": {
+      "got": "#FFFFF5D6",
+      "want": [
+        "#FFFFF5D6"
+      ]
+    },
+    "td.l1.bg": {
+      "got": "#FFFFF5D6",
+      "want": [
+        "#FFFFF5D6"
+      ]
+    },
+    "td.l2.bg": {
+      "got": "#FFFFF5D6",
+      "want": [
+        "#FFFFF5D6"
+      ]
+    },
+    "td.home.board.svg.1": {
+      "got": "#FF87533E",
+      "want": [
+        "#FF87533E"
+      ]
+    },
+    "td.l1.board.svg.1": {
+      "got": "#FF87533E",
+      "want": [
+        "#FF87533E"
+      ]
+    },
+    "td.l2.board.svg.1": {
+      "got": "#FF87533E",
+      "want": [
+        "#FF87533E"
+      ]
+    },
+    "td.home.closex": {
+      "got": "#FF47271A",
+      "want": [
+        "#FF47271A"
+      ]
+    },
+    "td.l1.closex": {
+      "got": "#FF47271A",
+      "want": [
+        "#FF47271A"
+      ]
+    },
+    "td.l2.closex": {
+      "got": "#FF47271A",
+      "want": [
+        "#FF47271A"
+      ]
+    },
+    "td.home.page.1.nextbg": {
+      "got": "#FFD84511",
+      "want": [
+        "#FFD84511"
+      ]
+    },
+    "td.l1.page.1.nextbg": {
+      "got": "#FFD84511",
+      "want": [
+        "#FFD84511"
+      ]
+    },
+    "td.l1.page.1.step.1": {
+      "got": "#FF87533E",
+      "want": [
+        "#FF87533E"
+      ]
+    },
+    "td.l1.page.1.step.2": {
+      "got": "#FFA0672F",
+      "want": [
+        "#FFA0672F"
+      ]
+    },
+    "td.l1.page.1.stepn.1.bg": {
+      "got": "#FFF7A530",
+      "want": [
+        "#FFF7A530"
+      ]
+    },
+    "td.l1.page.1.stepn.2.bg": {
+      "got": "#FFDDB551",
+      "want": [
+        "#FFDDB551"
+      ]
+    },
+    "td.l1.page.1.main": {
+      "got": "#FFC9AC6D",
+      "want": [
+        "#FFC9AC6D"
+      ]
+    },
+    "td.l1.page.1.clue": {
+      "got": null,
+      "want": null
+    },
+    "td.home.page.1.title": {
+      "got": "#FF47271A",
+      "want": null
+    }
+  },
+  "tagColors": {
+    "l1.page.1.tagbg": "#FF9D9657",
+    "l1.page.2.tagbg": "#FF9D9657",
+    "l1.page.3.tagbg": "#FF9D9657",
+    "l1.page.4.tagbg": "#FF9D9657",
+    "l1.page.5.tagbg": "#FF9D9657",
+    "l1.page.6.tagbg": "#FF9D9657",
+    "l1.page.7.tagbg": "#FF9D9657",
+    "l1.page.8.tagbg": "#FFF7A530",
+    "l2.page.1.tagbg": "#FF93381D",
+    "l2.page.2.tagbg": "#FF93381D",
+    "l2.page.3.tagbg": "#FF93381D",
+    "l2.page.4.tagbg": "#FFD84511"
+  },
+  "tagOk": true,
+  "unexpectedColors": [],
+  "pagesTouched": 13,
+  "perPage": {
+    "td.home(共享层)": {
+      "fill": 30,
+      "font": 0
+    },
+    "td.home.page.1": {
+      "fill": 49,
+      "font": 74
+    },
+    "td.l1(共享层)": {
+      "fill": 29,
+      "font": 0
+    },
+    "td.l1.page.1": {
+      "fill": 55,
+      "font": 68
+    },
+    "td.l1.page.2": {
+      "fill": 56,
+      "font": 72
+    },
+    "td.l1.page.3": {
+      "fill": 124,
+      "font": 83
+    },
+    "td.l1.page.4": {
+      "fill": 60,
+      "font": 72
+    },
+    "td.l1.page.5": {
+      "fill": 69,
+      "font": 81
+    },
+    "td.l1.page.6": {
+      "fill": 59,
+      "font": 76
+    },
+    "td.l1.page.7": {
+      "fill": 66,
+      "font": 82
+    },
+    "td.l1.page.8": {
+      "fill": 240,
+      "font": 82
+    },
+    "td.l2(共享层)": {
+      "fill": 40,
+      "font": 0
+    },
+    "td.l2.page.1": {
+      "fill": 77,
+      "font": 67
+    },
+    "td.l2.page.2": {
+      "fill": 84,
+      "font": 65
+    },
+    "td.l2.page.3": {
+      "fill": 76,
+      "font": 66
+    },
+    "td.l2.page.4": {
+      "fill": 88,
+      "font": 71
+    }
+  },
+  "changelogItems": 2161,
+  "verdict": true
+}

@@ -614,6 +614,13 @@ local function build_adapter()
         --   ⚠️ 老存档只有 3/6 层时，`_paint_obj` 拿到 nil 会当"还没就绪"逐帧重放（幂等，不报错）。
         "obj2", "obj3", "obj4", "obj5", "obj6",
         "obj7", "obj8", "obj9", "obj10", "obj11", "obj12",
+        -- ★ 680：跨格家具容器必须排在 x 之下（历史 v283 插 portrait 同类修法）
+        --   未列入 layer_order 的容器会留在最上层，盖住 x 标记（地毯/桌子都出现过）。
+        "rug_layer", "furn",
+        -- ★ 685 三层不变式：格内层序只管 cell/content 内部；跨格家具由 furn_anchor
+        --   把整格抬到 stage 内最上，会盖住邻格 x。故 X 标记统一移到 stage 末尾的
+        --   art685.mark.overlay（见 engine_adapter_qianxing.lua 的 _mark_layer_raise）。
+        --   该方案对任意 kind / span / 尺寸的多格家具通用，新增家具无需再改本表。
         -- ★★★★★ 2026-10-20（v283）**新增 `portrait` 层：放置的头像画在这里** ✗✓
         --   用户原话：「现在家具图层会盖在放置的头像上，把这个问题解决」
         --   · 旧：头像走 `image` 落在 **face（最底）** ⇒ 家具 `obj` 压在上面 ✗

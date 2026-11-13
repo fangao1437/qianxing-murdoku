@@ -1,0 +1,360 @@
+{
+  "version": 1,
+  "name": "674 build audit",
+  "date": "2026-11-12",
+  "base": {
+    "file": "672_梯形与异色区.gil",
+    "sha256": "2770c87f48fa33b11c9d55a63c97f7f283db0b2381e9704ac49b9a7981ccda18",
+    "records": 7052,
+    "scriptBytes": 636660
+  },
+  "output": {
+    "file": "674_票券与火漆重做.gil",
+    "sha256": "23a3bce9176200e99949c1e725115330b070f670a71aa49572086f73839fb5b5",
+    "bytes": 6304512,
+    "records": 7052
+  },
+  "spec": {
+    "userFeedback": "实机与预览一致；火漆形状/高光不对；注释按钮渐变应回到 672，宽度/长度/边缘形状仍不对",
+    "measurement": {
+      "whiteScale": "设计局部图 / 实机 1600×900 口径 = 1.389（以官方 40×40 白圆问号为标尺：设计 50px / 实机 36px）",
+      "designTicket": "178×68（1600×900 口径，旋转 −13° 校正后局部坐标 2%~98% 分位）",
+      "ticket672": "140×66",
+      "ticket673": "124×66 + 大圆齿撑厚短边",
+      "designWaxBBox": "105×106，radial 47.5~53.5（近正圆、浅起伏）",
+      "wax673BBox": "104×112（尖鼓包撑高 8px）",
+      "waxHorizontalProfile": "左缘 #B40806→#D70601→#B40806 亮带宽约 20px；中心大片 #AA0400；右缘同亮带",
+      "waxVerticalProfile": "底部 #B40806 宽亮边；顶部宽浅鼓包"
+    },
+    "ticket": {
+      "center": [
+        384,
+        211
+      ],
+      "size": [
+        160,
+        66
+      ],
+      "rot": -13,
+      "totalLength": 178,
+      "outline": [
+        160,
+        72
+      ],
+      "gradient": "23 枚 art664.tab.*.fitNN 拟合三角逐字节零改动（用户认可 672 渐变）",
+      "edge": [
+        {
+          "name": "art663.tab.edge.l0",
+          "role": "darkStrip",
+          "cx": 308.97,
+          "cy": 193.68,
+          "w": 6,
+          "h": 66,
+          "rot": -13,
+          "color": "#592520"
+        },
+        {
+          "name": "art663.tab.tooth.l0",
+          "role": "tooth",
+          "cx": 309.58,
+          "cy": 173.29,
+          "w": 16,
+          "h": 26,
+          "color": "#AF3200"
+        },
+        {
+          "name": "art663.tab.tooth.l1",
+          "role": "tooth",
+          "cx": 305.08,
+          "cy": 192.78,
+          "w": 16,
+          "h": 26,
+          "color": "#AF3200"
+        },
+        {
+          "name": "art663.tab.tooth.l2",
+          "role": "tooth",
+          "cx": 300.58,
+          "cy": 212.27,
+          "w": 16,
+          "h": 26,
+          "color": "#AF3200"
+        },
+        {
+          "name": "art663.tab.edge.r0",
+          "role": "darkStrip",
+          "cx": 459.03,
+          "cy": 228.32,
+          "w": 6,
+          "h": 66,
+          "rot": -13,
+          "color": "#592520"
+        },
+        {
+          "name": "art663.tab.tooth.r0",
+          "role": "tooth",
+          "cx": 467.42,
+          "cy": 209.73,
+          "w": 16,
+          "h": 26,
+          "color": "#8C2800"
+        },
+        {
+          "name": "art663.tab.tooth.r1",
+          "role": "tooth",
+          "cx": 462.92,
+          "cy": 229.22,
+          "w": 16,
+          "h": 26,
+          "color": "#8C2800"
+        },
+        {
+          "name": "art663.tab.tooth.r2",
+          "role": "tooth",
+          "cx": 458.42,
+          "cy": 248.71,
+          "w": 16,
+          "h": 26,
+          "color": "#8C2800"
+        }
+      ]
+    },
+    "wax": {
+      "center": [
+        1326,
+        342
+      ],
+      "colors": {
+        "main": "#AA0400",
+        "rim": "#B40806",
+        "ring": "#CC0602",
+        "hot": "#D70601",
+        "stamp": "#A60400"
+      },
+      "lobes": {
+        "count": 12,
+        "R": 28,
+        "d": 52,
+        "edgeRadius": 54,
+        "color": "#CC0602",
+        "note": "统一 R 保证圆润；#CC0602 取自设计稿水平剖面 x=194"
+      },
+      "core": {
+        "w": 68,
+        "h": 68,
+        "color": "#B40806"
+      },
+      "topLobe": {
+        "cx": 1326,
+        "cy": 292,
+        "w": 44,
+        "h": 26,
+        "color": "#C00703"
+      },
+      "hotArcs": [
+        {
+          "name": "art664.wax.ring.0",
+          "cx": 1363.24,
+          "cy": 320.5,
+          "w": 16,
+          "h": 28,
+          "color": "#B40806",
+          "deg": -30
+        },
+        {
+          "name": "art664.wax.ring.1",
+          "cx": 1369,
+          "cy": 342,
+          "w": 16,
+          "h": 28,
+          "color": "#D70601",
+          "deg": 0
+        },
+        {
+          "name": "art664.wax.ring.2",
+          "cx": 1363.24,
+          "cy": 363.5,
+          "w": 16,
+          "h": 28,
+          "color": "#B40806",
+          "deg": 30
+        },
+        {
+          "name": "art664.wax.ring.3",
+          "cx": 1288.76,
+          "cy": 320.5,
+          "w": 16,
+          "h": 28,
+          "color": "#B40806",
+          "deg": 210
+        },
+        {
+          "name": "art664.wax.ring.4",
+          "cx": 1283,
+          "cy": 342,
+          "w": 16,
+          "h": 28,
+          "color": "#D70601",
+          "deg": 180
+        },
+        {
+          "name": "art664.wax.ring.5",
+          "cx": 1288.76,
+          "cy": 363.5,
+          "w": 16,
+          "h": 28,
+          "color": "#B40806",
+          "deg": 150
+        }
+      ],
+      "stamp": {
+        "w": 56,
+        "h": 56,
+        "color": "#A60400"
+      },
+      "radii": {
+        "min": 53,
+        "max": 54,
+        "peakToValley": 1
+      },
+      "hotMaxRadius": 53.26
+    },
+    "gates": {
+      "totalLength": 178,
+      "designLength": 177.8,
+      "gradientUntouched": true,
+      "notchInsideTicket": true,
+      "waxRadii": [
+        53,
+        54
+      ],
+      "hotMaxRadius": 53.26
+    },
+    "minimalPrimitives": "不新增/删除记录；票券可见层 41→33、火漆 47→21；23 枚渐变三角全保留，仅替换 16 枚撕边层与火漆冗余层。",
+    "untouched": "23 枚渐变三角、clues.help617 / clues.help627.hit、内嵌 Lua、26 条文本、线索卡 671/672 成果、v19 背景子树、recTop 层序与 childList 均逐字节不变。"
+  },
+  "counts": {
+    "recordsBefore": 7052,
+    "recordsAfter": 7052,
+    "added": 0,
+    "removed": 0,
+    "hidden": 34,
+    "modified": 65
+  },
+  "visibleLayers": {
+    "tabBefore": 41,
+    "tabAfter": 33,
+    "waxBefore": 47,
+    "waxAfter": 21
+  },
+  "hidden": [
+    "art663.tab.edge.l1",
+    "art663.tab.edge.l2",
+    "art663.tab.edge.l3",
+    "art663.tab.tooth.l3",
+    "art663.tab.edge.r1",
+    "art663.tab.edge.r2",
+    "art663.tab.edge.r3",
+    "art663.tab.tooth.r3",
+    "art663.wax.lobe.0",
+    "art663.wax.lobe.1",
+    "art663.wax.lobe.2",
+    "art663.wax.lobe.3",
+    "art663.wax.lobe.4",
+    "art663.wax.lobe.5",
+    "art663.wax.lobe.6",
+    "art663.wax.lobe.7",
+    "art663.wax.lobe.8",
+    "art663.wax.lobe.9",
+    "art663.wax.lobe.10",
+    "art663.wax.lobe.11",
+    "art664.wax.ring.6",
+    "art664.wax.ring.7",
+    "art664.wax.ring.8",
+    "art664.wax.ring.9",
+    "art664.wax.ring.10",
+    "art664.wax.ring.11",
+    "art664.wax.ring.12",
+    "art664.wax.ring.13",
+    "art664.wax.ring.14",
+    "art664.wax.ring.15",
+    "art664.wax.hot.l",
+    "art664.wax.hot.r",
+    "art664.wax.center",
+    "art664.wax.stamp.rim"
+  ],
+  "modified": [
+    "art641.game.help.tab",
+    "art661.tab.outline",
+    "art663.tab.edge.l0",
+    "art663.tab.edge.l1",
+    "art663.tab.edge.l2",
+    "art663.tab.edge.l3",
+    "art663.tab.tooth.l0",
+    "art663.tab.tooth.l1",
+    "art663.tab.tooth.l2",
+    "art663.tab.tooth.l3",
+    "art663.tab.edge.r0",
+    "art663.tab.edge.r1",
+    "art663.tab.edge.r2",
+    "art663.tab.edge.r3",
+    "art663.tab.tooth.r0",
+    "art663.tab.tooth.r1",
+    "art663.tab.tooth.r2",
+    "art663.tab.tooth.r3",
+    "art663.wax.edge.0",
+    "art663.wax.edge.1",
+    "art663.wax.edge.2",
+    "art663.wax.edge.3",
+    "art663.wax.edge.4",
+    "art663.wax.edge.5",
+    "art663.wax.edge.6",
+    "art663.wax.edge.7",
+    "art663.wax.edge.8",
+    "art663.wax.edge.9",
+    "art663.wax.edge.10",
+    "art663.wax.edge.11",
+    "art663.wax.lobe.0",
+    "art663.wax.lobe.1",
+    "art663.wax.lobe.2",
+    "art663.wax.lobe.3",
+    "art663.wax.lobe.4",
+    "art663.wax.lobe.5",
+    "art663.wax.lobe.6",
+    "art663.wax.lobe.7",
+    "art663.wax.lobe.8",
+    "art663.wax.lobe.9",
+    "art663.wax.lobe.10",
+    "art663.wax.lobe.11",
+    "art663.wax.core",
+    "art664.wax.top.lobe",
+    "art664.wax.ring.0",
+    "art664.wax.ring.1",
+    "art664.wax.ring.2",
+    "art664.wax.ring.3",
+    "art664.wax.ring.4",
+    "art664.wax.ring.5",
+    "art664.wax.ring.6",
+    "art664.wax.ring.7",
+    "art664.wax.ring.8",
+    "art664.wax.ring.9",
+    "art664.wax.ring.10",
+    "art664.wax.ring.11",
+    "art664.wax.ring.12",
+    "art664.wax.ring.13",
+    "art664.wax.ring.14",
+    "art664.wax.ring.15",
+    "art664.wax.hot.l",
+    "art664.wax.hot.r",
+    "art664.wax.center",
+    "art664.wax.stamp.rim",
+    "art664.wax.stamp.core"
+  ],
+  "writeGilReport": {
+    "bytes": 6304512,
+    "diffs": 508,
+    "compared": 1425227,
+    "recs": 7052,
+    "marker": null
+  }
+}

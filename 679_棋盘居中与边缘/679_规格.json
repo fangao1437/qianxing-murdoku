@@ -1,0 +1,429 @@
+{
+ "version": 1,
+ "ticket": {
+  "geometry": {
+   "colorMainBase": "#8C2800",
+   "colorMainTooth": "#AF3200",
+   "colorOutline": "#6B2A12",
+   "mainW": 144,
+   "mainH": 66,
+   "outlineW": 150,
+   "outlineH": 72,
+   "teethY": [
+    -22,
+    0,
+    22
+   ],
+   "mainRect": {
+    "w": 6,
+    "h": 20,
+    "dx": 75,
+    "rot": -13,
+    "img": 100001
+   },
+   "mainRound": {
+    "w": 8,
+    "h": 20,
+    "dx": 76,
+    "rot": -13,
+    "img": 100002
+   },
+   "outRect": {
+    "w": 12,
+    "h": 24,
+    "dx": 75,
+    "rot": -13,
+    "img": 100001
+   },
+   "outRound": {
+    "w": 12,
+    "h": 24,
+    "dx": 77,
+    "rot": -13,
+    "img": 100002
+   }
+  },
+  "teeth": [
+   {
+    "name": "art678.tab.outline.l1.rect",
+    "layer": "outline",
+    "side": -1,
+    "tooth": 1,
+    "cx": 315.871,
+    "cy": 172.693,
+    "w": 12,
+    "h": 24,
+    "rot": -13,
+    "img": 100001,
+    "color": "#6B2A12"
+   },
+   {
+    "name": "art678.tab.outline.l1.tri",
+    "layer": "outline",
+    "side": -1,
+    "tooth": 1,
+    "cx": 313.922,
+    "cy": 172.243,
+    "w": 12,
+    "h": 24,
+    "rot": -13,
+    "img": 100002,
+    "color": "#6B2A12"
+   },
+   {
+    "name": "art678.tab.main.l1.rect",
+    "layer": "main",
+    "side": -1,
+    "tooth": 1,
+    "cx": 315.871,
+    "cy": 172.693,
+    "w": 6,
+    "h": 20,
+    "rot": -13,
+    "img": 100001,
+    "color": "#AF3200"
+   },
+   {
+    "name": "art678.tab.main.l1.tri",
+    "layer": "main",
+    "side": -1,
+    "tooth": 1,
+    "cx": 314.897,
+    "cy": 172.468,
+    "w": 8,
+    "h": 20,
+    "rot": -13,
+    "img": 100002,
+    "color": "#AF3200"
+   },
+   {
+    "name": "art678.tab.outline.l2.rect",
+    "layer": "outline",
+    "side": -1,
+    "tooth": 2,
+    "cx": 310.922,
+    "cy": 194.129,
+    "w": 12,
+    "h": 24,
+    "rot": -13,
+    "img": 100001,
+    "color": "#6B2A12"
+   },
+   {
+    "name": "art678.tab.outline.l2.tri",
+    "layer": "outline",
+    "side": -1,
+    "tooth": 2,
+    "cx": 308.974,
+    "cy": 193.679,
+    "w": 12,
+    "h": 24,
+    "rot": -13,
+    "img": 100002,
+    "color": "#6B2A12"
+   },
+   {
+    "name": "art678.tab.main.l2.rect",
+    "layer": "main",
+    "side": -1,
+    "tooth": 2,
+    "cx": 310.922,
+    "cy": 194.129,
+    "w": 6,
+    "h": 20,
+    "rot": -13,
+    "img": 100001,
+    "color": "#AF3200"
+   },
+   {
+    "name": "art678.tab.main.l2.tri",
+    "layer": "main",
+    "side": -1,
+    "tooth": 2,
+    "cx": 309.948,
+    "cy": 193.904,
+    "w": 8,
+    "h": 20,
+    "rot": -13,
+    "img": 100002,
+    "color": "#AF3200"
+   },
+   {
+    "name": "art678.tab.outline.l3.rect",
+    "layer": "outline",
+    "side": -1,
+    "tooth": 3,
+    "cx": 305.973,
+    "cy": 215.565,
+    "w": 12,
+    "h": 24,
+    "rot": -13,
+    "img": 100001,
+    "color": "#6B2A12"
+   },
+   {
+    "name": "art678.tab.outline.l3.tri",
+    "layer": "outline",
+    "side": -1,
+    "tooth": 3,
+    "cx": 304.025,
+    "cy": 215.115,
+    "w": 12,
+    "h": 24,
+    "rot": -13,
+    "img": 100002,
+    "color": "#6B2A12"
+   },
+   {
+    "name": "art678.tab.main.l3.rect",
+    "layer": "main",
+    "side": -1,
+    "tooth": 3,
+    "cx": 305.973,
+    "cy": 215.565,
+    "w": 6,
+    "h": 20,
+    "rot": -13,
+    "img": 100001,
+    "color": "#AF3200"
+   },
+   {
+    "name": "art678.tab.main.l3.tri",
+    "layer": "main",
+    "side": -1,
+    "tooth": 3,
+    "cx": 304.999,
+    "cy": 215.34,
+    "w": 8,
+    "h": 20,
+    "rot": -13,
+    "img": 100002,
+    "color": "#AF3200"
+   },
+   {
+    "name": "art678.tab.outline.r1.rect",
+    "layer": "outline",
+    "side": 1,
+    "tooth": 1,
+    "cx": 462.027,
+    "cy": 206.435,
+    "w": 12,
+    "h": 24,
+    "rot": -13,
+    "img": 100001,
+    "color": "#6B2A12"
+   },
+   {
+    "name": "art678.tab.outline.r1.tri",
+    "layer": "outline",
+    "side": 1,
+    "tooth": 1,
+    "cx": 463.975,
+    "cy": 206.885,
+    "w": 12,
+    "h": 24,
+    "rot": -13,
+    "img": 100002,
+    "color": "#6B2A12"
+   },
+   {
+    "name": "art678.tab.main.r1.rect",
+    "layer": "main",
+    "side": 1,
+    "tooth": 1,
+    "cx": 462.027,
+    "cy": 206.435,
+    "w": 6,
+    "h": 20,
+    "rot": -13,
+    "img": 100001,
+    "color": "#AF3200"
+   },
+   {
+    "name": "art678.tab.main.r1.tri",
+    "layer": "main",
+    "side": 1,
+    "tooth": 1,
+    "cx": 463.001,
+    "cy": 206.66,
+    "w": 8,
+    "h": 20,
+    "rot": -13,
+    "img": 100002,
+    "color": "#AF3200"
+   },
+   {
+    "name": "art678.tab.outline.r2.rect",
+    "layer": "outline",
+    "side": 1,
+    "tooth": 2,
+    "cx": 457.078,
+    "cy": 227.871,
+    "w": 12,
+    "h": 24,
+    "rot": -13,
+    "img": 100001,
+    "color": "#6B2A12"
+   },
+   {
+    "name": "art678.tab.outline.r2.tri",
+    "layer": "outline",
+    "side": 1,
+    "tooth": 2,
+    "cx": 459.026,
+    "cy": 228.321,
+    "w": 12,
+    "h": 24,
+    "rot": -13,
+    "img": 100002,
+    "color": "#6B2A12"
+   },
+   {
+    "name": "art678.tab.main.r2.rect",
+    "layer": "main",
+    "side": 1,
+    "tooth": 2,
+    "cx": 457.078,
+    "cy": 227.871,
+    "w": 6,
+    "h": 20,
+    "rot": -13,
+    "img": 100001,
+    "color": "#AF3200"
+   },
+   {
+    "name": "art678.tab.main.r2.tri",
+    "layer": "main",
+    "side": 1,
+    "tooth": 2,
+    "cx": 458.052,
+    "cy": 228.096,
+    "w": 8,
+    "h": 20,
+    "rot": -13,
+    "img": 100002,
+    "color": "#AF3200"
+   },
+   {
+    "name": "art678.tab.outline.r3.rect",
+    "layer": "outline",
+    "side": 1,
+    "tooth": 3,
+    "cx": 452.129,
+    "cy": 249.307,
+    "w": 12,
+    "h": 24,
+    "rot": -13,
+    "img": 100001,
+    "color": "#6B2A12"
+   },
+   {
+    "name": "art678.tab.outline.r3.tri",
+    "layer": "outline",
+    "side": 1,
+    "tooth": 3,
+    "cx": 454.078,
+    "cy": 249.757,
+    "w": 12,
+    "h": 24,
+    "rot": -13,
+    "img": 100002,
+    "color": "#6B2A12"
+   },
+   {
+    "name": "art678.tab.main.r3.rect",
+    "layer": "main",
+    "side": 1,
+    "tooth": 3,
+    "cx": 452.129,
+    "cy": 249.307,
+    "w": 6,
+    "h": 20,
+    "rot": -13,
+    "img": 100001,
+    "color": "#AF3200"
+   },
+   {
+    "name": "art678.tab.main.r3.tri",
+    "layer": "main",
+    "side": 1,
+    "tooth": 3,
+    "cx": 453.103,
+    "cy": 249.532,
+    "w": 8,
+    "h": 20,
+    "rot": -13,
+    "img": 100002,
+    "color": "#AF3200"
+   }
+  ],
+  "rectModify": [
+   {
+    "name": "art641.game.help.tab",
+    "color": null,
+    "w": 144,
+    "h": 66
+   },
+   {
+    "name": "art661.tab.outline",
+    "color": "#6B2A12",
+    "w": 150,
+    "h": 72
+   }
+  ],
+  "gates": {
+   "mainPx": 166092,
+   "mainOut": 0,
+   "gradPx": 93060,
+   "gradOut": 0,
+   "zeroSpur": true
+  },
+  "safety": "23 枚渐变三角本地 x∈[-70,51]，主体半宽 71 ⇒ 渐变仍全在主体内"
+ },
+ "board": {
+  "shiftY": 30,
+  "roots": [
+   {
+    "name": "stage",
+    "note": "带动 board.bg / board.floors / board.rugs 与 36 枚 floor.cell.*"
+   },
+   {
+    "name": "art657.grid.reuse",
+    "note": "带动 49 枚斜网格纸/网格线"
+   },
+   {
+    "name": "art641.game.boardframe.paper",
+    "note": "白色底板"
+   },
+   {
+    "name": "art641.game.boardframe.shadow",
+    "note": "底板阴影"
+   },
+   {
+    "name": "art641.game.boardbottom",
+    "note": "底板下沿"
+   }
+  ],
+  "measurement": {
+   "mobileScreenshot": [
+    1280,
+    576
+   ],
+   "k": 0.8,
+   "visibleY": [
+    90,
+    810
+   ],
+   "visibleCenterY": 450,
+   "boardCenterYBefore": 420,
+   "deltaY": 30,
+   "measured": {
+    "darkFrameCenterPx": 263.5,
+    "screenCenterPx": 288,
+    "offsetPx": 24.5,
+    "offset1600": 30.63
+   }
+  },
+  "note": "只改 5 个根层 y；stage 带动 36 枚 floor.cell.*，art657.grid.reuse 带动 49 枚网格层；x 全部不变"
+ }
+}

@@ -1,0 +1,10 @@
+import path from 'node:path'; import {fileURLToPath,pathToFileURL} from 'node:url';
+const DIR=path.dirname(fileURLToPath(import.meta.url)),ROOT=path.resolve(DIR,'../..'),url=p=>pathToFileURL(p).href;
+const {readGil,findChildListTop,asIdList}=await import(url(path.join(ROOT,'qianxing-murdoku/tools/gil/gilread.mjs')));
+const g=readGil(path.join(ROOT,'qianxing-murdoku/684_结算收紧与教程配色/684_结算收紧与教程配色.gil'));
+const byId=new Map(g.recs.map(r=>[r.id,r])); const rt=g.tree.find(f=>f.field===9); const ord=new Map(); rt.sub.forEach((f,i)=>ord.set(f,i));
+const stage=g.recs.find(r=>r.name==='stage'); const cl=findChildListTop(stage.field.sub||[]); const ids=asIdList(cl.payload,true)||[];
+console.log(ids.map((id,i)=>[i,byId.get(id)?.name,ord.get(byId.get(id)?.field)]));
+const root=g.recs.find(r=>r.name==='root'); const rcl=findChildListTop(root.field.sub||[]); const rids=asIdList(rcl.payload,true)||[];
+console.log('root children recTop 区间', ord.get(byId.get(rids[0])?.field), ord.get(byId.get(rids.at(-1))?.field));
+console.log('board.rugs recTop', ord.get(byId.get(ids.at(-1))?.field), 'labels recTop', ord.get(g.recs.find(r=>r.name==='labels')?.field));

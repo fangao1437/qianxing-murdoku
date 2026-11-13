@@ -1,0 +1,108 @@
+{
+  "version": 683,
+  "verdict": true,
+  "base": {
+    "sha256": "295932790c3f10402b499b182ef8c5c0a2fcbcfec91624576890b2f873605c99",
+    "records": 7582
+  },
+  "output": {
+    "sha256": "ce3fe3fc6252ce26c5674e085b76f9553345815353834f8bb3bdc8ccec208c28",
+    "bytes": 6779504,
+    "records": 7621
+  },
+  "checks": [
+    {
+      "name": "记录数 7582 → 7621",
+      "ok": true,
+      "detail": "7582 → 7621"
+    },
+    {
+      "name": "新增 40 / 删除 1",
+      "ok": true,
+      "detail": "+40 / -1"
+    },
+    {
+      "name": "无重复 ID",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "内嵌 Lua 逐字节相同",
+      "ok": true,
+      "detail": "636689 B"
+    },
+    {
+      "name": "输入 682 SHA 与规格一致",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "DECOR 含 art/frame/label",
+      "ok": true,
+      "detail": "label,bg,pic,icon,face,note,x,obj,text,portrait,backrop1,backrop2,badge,letter,what,who,frame,card,art,image,img"
+    },
+    {
+      "name": "退出菜单四键 y = 120/40/-40/-120",
+      "ok": true,
+      "detail": "modal.exit=120 modal.save=40 modal.settle=-40 modal.cancel=-120"
+    },
+    {
+      "name": "倒计时已移到四键下方留白 y=-200（不被胶囊遮挡）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "结算态四键保持 682 不变",
+      "ok": true,
+      "detail": "-22,-102,-182,-262"
+    },
+    {
+      "name": "8 组胶囊：DECOR 容器 / 3 层描边 / 首页同色填充 / label 豁免",
+      "ok": true,
+      "detail": "8/8 通过"
+    },
+    {
+      "name": "2 组边框：外圈深墨细线 / 内圈深色细线 / 100120 放大镜 / 层序",
+      "ok": true,
+      "detail": "2/2 通过"
+    },
+    {
+      "name": "杂质矩形已删除",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "被删 ID 全文 0 引用",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "grid.reuse childList 已去掉杂质 ID",
+      "ok": true,
+      "detail": "childList 48 项"
+    },
+    {
+      "name": "所有 childList 与 recTop 同序且子集完整",
+      "ok": true,
+      "detail": "全通过"
+    },
+    {
+      "name": "新增悬空父引用 0（682 基线模板记录不算）",
+      "ok": true,
+      "detail": "682 基线 36 条，683 新增 0 条"
+    },
+    {
+      "name": "旧记录改动全部落在白名单（rogue=0）",
+      "ok": true,
+      "detail": "改动 38 条，rogue 0"
+    }
+  ],
+  "summary": {
+    "passed": 17,
+    "total": 17,
+    "added": 40,
+    "removed": 1,
+    "changedOldRecords": 38,
+    "rogue": 0
+  }
+}

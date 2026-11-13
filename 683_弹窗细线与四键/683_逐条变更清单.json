@@ -1,0 +1,152 @@
+[
+  {
+    "name": "modal.exit",
+    "rule": "A 四键垂直居中",
+    "dy": -108,
+    "states": 4
+  },
+  {
+    "name": "modal.save",
+    "rule": "A 四键垂直居中",
+    "dy": -108,
+    "states": 4
+  },
+  {
+    "name": "modal.settle",
+    "rule": "A 四键垂直居中",
+    "dy": -108,
+    "states": 4
+  },
+  {
+    "name": "modal.cancel",
+    "rule": "A 四键垂直居中",
+    "dy": -108,
+    "states": 4
+  },
+  {
+    "name": "modal.settle.countdown",
+    "rule": "A 倒计时移到四键下方留白（避免被新显示的胶囊盖住）",
+    "dy": -213,
+    "states": 4
+  },
+  {
+    "name": "art682.modal.exit.capsule.body",
+    "rule": "B 填充层改挂 DECOR 容器",
+    "parent": 1073760329
+  },
+  {
+    "name": "art682.modal.exit.capsule.left",
+    "rule": "B 填充层改挂 DECOR 容器",
+    "parent": 1073760329
+  },
+  {
+    "name": "art682.modal.exit.capsule.right",
+    "rule": "B 填充层改挂 DECOR 容器",
+    "parent": 1073760329
+  },
+  {
+    "name": "art682.modal.save.capsule.body",
+    "rule": "B 填充层改挂 DECOR 容器",
+    "parent": 1073760333
+  },
+  {
+    "name": "art682.modal.save.capsule.left",
+    "rule": "B 填充层改挂 DECOR 容器",
+    "parent": 1073760333
+  },
+  {
+    "name": "art682.modal.save.capsule.right",
+    "rule": "B 填充层改挂 DECOR 容器",
+    "parent": 1073760333
+  },
+  {
+    "name": "art682.modal.settle.capsule.body",
+    "rule": "B 填充层改挂 DECOR 容器",
+    "parent": 1073760337
+  },
+  {
+    "name": "art682.modal.settle.capsule.left",
+    "rule": "B 填充层改挂 DECOR 容器",
+    "parent": 1073760337
+  },
+  {
+    "name": "art682.modal.settle.capsule.right",
+    "rule": "B 填充层改挂 DECOR 容器",
+    "parent": 1073760337
+  },
+  {
+    "name": "art682.modal.cancel.capsule.body",
+    "rule": "B 填充层改挂 DECOR 容器",
+    "parent": 1073760341
+  },
+  {
+    "name": "art682.modal.cancel.capsule.left",
+    "rule": "B 填充层改挂 DECOR 容器",
+    "parent": 1073760341
+  },
+  {
+    "name": "art682.modal.cancel.capsule.right",
+    "rule": "B 填充层改挂 DECOR 容器",
+    "parent": 1073760341
+  },
+  {
+    "name": "art682.result.next.capsule.body",
+    "rule": "B 填充层改挂 DECOR 容器",
+    "parent": 1073760345
+  },
+  {
+    "name": "art682.result.next.capsule.left",
+    "rule": "B 填充层改挂 DECOR 容器",
+    "parent": 1073760345
+  },
+  {
+    "name": "art682.result.next.capsule.right",
+    "rule": "B 填充层改挂 DECOR 容器",
+    "parent": 1073760345
+  },
+  {
+    "name": "art682.result.exit.capsule.body",
+    "rule": "B 填充层改挂 DECOR 容器",
+    "parent": 1073760349
+  },
+  {
+    "name": "art682.result.exit.capsule.left",
+    "rule": "B 填充层改挂 DECOR 容器",
+    "parent": 1073760349
+  },
+  {
+    "name": "art682.result.exit.capsule.right",
+    "rule": "B 填充层改挂 DECOR 容器",
+    "parent": 1073760349
+  },
+  {
+    "name": "art682.result.home.capsule.body",
+    "rule": "B 填充层改挂 DECOR 容器",
+    "parent": 1073760353
+  },
+  {
+    "name": "art682.result.home.capsule.left",
+    "rule": "B 填充层改挂 DECOR 容器",
+    "parent": 1073760353
+  },
+  {
+    "name": "art682.result.home.capsule.right",
+    "rule": "B 填充层改挂 DECOR 容器",
+    "parent": 1073760353
+  },
+  {
+    "name": "art682.result.settle.capsule.body",
+    "rule": "B 填充层改挂 DECOR 容器",
+    "parent": 1073760357
+  },
+  {
+    "name": "art682.result.settle.capsule.left",
+    "rule": "B 填充层改挂 DECOR 容器",
+    "parent": 1073760357
+  },
+  {
+    "name": "art682.result.settle.capsule.right",
+    "rule": "B 填充层改挂 DECOR 容器",
+    "parent": 1073760357
+  }
+]

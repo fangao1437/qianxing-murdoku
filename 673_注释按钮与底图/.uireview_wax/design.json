@@ -1,0 +1,54 @@
+{
+  "kind": "image",
+  "tier": "B",
+  "elements": [],
+  "images": [
+    "C:\\Users\\18182\\.workbuddy\\clipboard-images\\clipboard-2026-11-12T00-38-15-264Z-3270e1f0.png"
+  ],
+  "estimated": true,
+  "source": "C:/Users/18182/.workbuddy/clipboard-images/clipboard-2026-11-12T00-38-15-264Z-3270e1f0.png",
+  "generatedAt": "2026-11-12T01:16:18.792Z",
+  "palette": [
+    {
+      "hex": "#AA0400",
+      "pixels": 10357,
+      "pct": 13.831463675213676
+    },
+    {
+      "hex": "#B40806",
+      "pixels": 9754,
+      "pct": 13.026175213675215
+    },
+    {
+      "hex": "#D58A2E",
+      "pixels": 7659,
+      "pct": 10.228365384615385
+    },
+    {
+      "hex": "#DF9C35",
+      "pixels": 6038,
+      "pct": 8.063568376068377
+    },
+    {
+      "hex": "#D2852C",
+      "pixels": 5382,
+      "pct": 7.187499999999999
+    },
+    {
+      "hex": "#FBF9F4",
+      "pixels": 4912,
+      "pct": 6.5598290598290605
+    },
+    {
+      "hex": "#713122",
+      "pixels": 4760,
+      "pct": 6.3568376068376065
+    },
+    {
+      "hex": "#DB9232",
+      "pixels": 3572,
+      "pct": 4.770299145299145
+    }
+  ],
+  "vlmTask": "D:\\新建文件夹\\miHoYo Launcher\\qianxing-murdoku\\673_注释按钮与底图\\.uireview_wax\\design-vision-task.md"
+}

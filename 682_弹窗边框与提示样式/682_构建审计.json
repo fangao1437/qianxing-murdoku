@@ -1,0 +1,311 @@
+{
+  "version": 682,
+  "name": "682 popup style",
+  "date": "2026-11-13",
+  "base": {
+    "file": "681_教程弹窗配色/681_教程弹窗配色.gil",
+    "sha256": "0333fb72b005ed48f910f611b132ec1056490cec274988be2a6b73fd07361bfd",
+    "records": 7431,
+    "scriptBytes": 636689
+  },
+  "output": {
+    "file": "682_弹窗边框与提示样式.gil",
+    "sha256": "295932790c3f10402b499b182ef8c5c0a2fcbcfec91624576890b2f873605c99",
+    "bytes": 6748675,
+    "records": 7582,
+    "scriptBytes": 636689
+  },
+  "spec": {
+    "userDecisions": {
+      "frameScope": "只给非教程弹窗：help617（760×420）与 modal（四键退出菜单 + 结算共用 633×600 框）；13 页教程保持 681 现状，仅修对比度与红绿圈",
+      "frameElements": "边框本体：深棕外框 + 内侧虚线 + 四角金铆钉 + 米白内页；12.png 的红绶带、放大镜、按键、小叉均为内容占位，不复制",
+      "fourKeys": "删掉 8 个 107179 蓝云纹 bg，按 656 首页四键的「1 矩形 + 2 圆」纯色胶囊重建，文字改深棕 #6B3A22 且字号 24"
+    },
+    "palette": {
+      "frameBrown": "#6C402E",
+      "frameDark": "#47271A",
+      "frameDash": "#C0A467",
+      "frameLight": "#EEE1B7",
+      "paper": "#FFF5D6",
+      "rivetGold": "#DDB551",
+      "rivetEdge": "#987B31",
+      "evidenceCard": "#FDFAE5",
+      "evidenceShadow": "#291A16",
+      "evidenceInk": "#291A16",
+      "button": "#FCECD4",
+      "buttonText": "#6B3A22",
+      "ringGreen": "#4FAE5A",
+      "ringRed": "#E0483A",
+      "ink": "#47271A",
+      "inkMid": "#6C402E",
+      "inkSoft": "#87533E",
+      "titleAmber": "#8A5A16",
+      "titleGreen": "#4F6B3A",
+      "titleRed": "#B23828",
+      "gold": "#F7A530"
+    },
+    "frames": [
+      {
+        "key": "help617",
+        "parent": "help617",
+        "anchor": "help617.bg",
+        "w": 760,
+        "h": 420,
+        "t": 17,
+        "dashH": 14,
+        "dashV": 8,
+        "note": "注释说明弹窗；框心 = help617 局部 (0,0) = 屏幕 (800,450)"
+      },
+      {
+        "key": "modal",
+        "parent": "modal",
+        "anchor": "result.bg",
+        "w": 633,
+        "h": 600,
+        "t": 15,
+        "dashH": 13,
+        "dashV": 12,
+        "note": "两个四键弹窗（退出菜单 633×383@0,108 与结算 633×600@0,0）共用同一通用框；两张旧深藏青底板改全透明，框由新增层承担，避免两个框叠加"
+      }
+    ],
+    "evidence": [
+      {
+        "key": "hint635.menu",
+        "parent": "hint635.menu",
+        "anchor": "hint635.menu.bg",
+        "w": 440,
+        "h": 220,
+        "shadowOffset": [
+          6,
+          -6
+        ],
+        "linesDy": [
+          -18,
+          -82
+        ],
+        "headingUnderlineDy": 46
+      },
+      {
+        "key": "hint635.result",
+        "parent": "hint635.result",
+        "anchor": "hint635.result.bg",
+        "w": 440,
+        "h": 150,
+        "shadowOffset": [
+          6,
+          -6
+        ],
+        "linesDy": [
+          -46,
+          -66
+        ],
+        "headingUnderlineDy": 0
+      }
+    ],
+    "buttons": {
+      "names": [
+        "modal.exit",
+        "modal.save",
+        "modal.settle",
+        "modal.cancel",
+        "result.next",
+        "result.exit",
+        "result.home",
+        "result.settle"
+      ],
+      "w": 312,
+      "h": 60,
+      "body": {
+        "w": 252,
+        "h": 60,
+        "dx": 0,
+        "dy": 0,
+        "imageId": 100001
+      },
+      "left": {
+        "w": 60,
+        "h": 60,
+        "dx": -126,
+        "dy": 0,
+        "imageId": 100002
+      },
+      "right": {
+        "w": 60,
+        "h": 60,
+        "dx": 126,
+        "dy": 0,
+        "imageId": 100002
+      },
+      "color": "#FCECD4",
+      "labelColor": "#6B3A22",
+      "labelSize": 24,
+      "deleteBg": "按 delete_controls 三处同步：父 childList / recTop / recs；删后运行时 sub(bid,'bg') 取不到，Lua 里的 107179 覆盖逻辑自动变成 no-op，本轮不改内嵌 Lua"
+    },
+    "limitations": [
+      "纯图元构造：12.png 的红绶带、放大镜、按键、小叉按用户要求不复制；EVIDENCE 字样的字面文字未新增（提示弹窗的标题是运行时文本，避免重叠），只复刻卡片形状/投影/标题下划线/横线。",
+      "两个四键弹窗共用 633×600 通用框（退出菜单内容位于框的上半部），避免两套框在结算态叠加；旧 633×383 与 633×600 底板均改全透明。",
+      "未改内嵌 Lua；删除 8 个 bg 后，运行时 107179 胶囊覆盖逻辑找不到 bg 自动跳过（入口层会打印 'bg 取不到'，无副作用）。",
+      "未导入游戏；离线渲染为简化纯色模拟，只作色彩/形状前后对照，不作像素一致度验收。"
+    ]
+  },
+  "counts": {
+    "recordsBefore": 7431,
+    "recordsAfter": 7582,
+    "added": 159,
+    "removed": 8,
+    "colorChanges": 288,
+    "newLayers": 161,
+    "circlePairs": 97,
+    "ringCount": 180
+  },
+  "contrast": {
+    "lowBefore": 51,
+    "lowAfter": 0,
+    "samples": [
+      {
+        "name": "td.home.page.1.lg.5",
+        "bg": "#FF47271A",
+        "from": "#FF4B1B09",
+        "to": "#FFFFF5D6",
+        "crBefore": 1.08,
+        "crAfter": 12.26
+      },
+      {
+        "name": "td.home.page.1.lg.6",
+        "bg": "#FFA0672F",
+        "from": "#FF87533E",
+        "to": "#FFFFF5D6",
+        "crBefore": 1.34,
+        "crAfter": 4.31
+      },
+      {
+        "name": "td.home.page.1.lg.7",
+        "bg": "#FF93381D",
+        "from": "#FF93381D",
+        "to": "#FFFFF5D6",
+        "crBefore": 1,
+        "crAfter": 6.83
+      },
+      {
+        "name": "td.home.page.1.lg.8",
+        "bg": "#FFD5C39D",
+        "from": "#FF4B1B09",
+        "to": "#FF4B1B09",
+        "crBefore": 8.3,
+        "crAfter": 8.3
+      },
+      {
+        "name": "td.home.page.1.lg.9",
+        "bg": "#FFDDB551",
+        "from": "#FF4B1B09",
+        "to": "#FF4B1B09",
+        "crBefore": 7.4,
+        "crAfter": 7.4
+      },
+      {
+        "name": "td.home.page.1.lg.10",
+        "bg": "#FF9D9657",
+        "from": "#FF4B1B09",
+        "to": "#FF4B1B09",
+        "crBefore": 4.75,
+        "crAfter": 4.75
+      },
+      {
+        "name": "td.home.page.1.lg.11",
+        "bg": "#FF87533E",
+        "from": "#FF4B1B09",
+        "to": "#FFFFF5D6",
+        "crBefore": 2.29,
+        "crAfter": 5.78
+      },
+      {
+        "name": "td.home.page.1.rule.1.num",
+        "bg": "#FF47271A",
+        "from": "#FFD84511",
+        "to": "#FFF7A530",
+        "crBefore": 3.04,
+        "crAfter": 6.6
+      },
+      {
+        "name": "td.home.page.1.rule.2.num",
+        "bg": "#FF47271A",
+        "from": "#FFD84511",
+        "to": "#FFF7A530",
+        "crBefore": 3.04,
+        "crAfter": 6.6
+      },
+      {
+        "name": "td.home.page.1.rule.3.num",
+        "bg": "#FF47271A",
+        "from": "#FFD84511",
+        "to": "#FFF7A530",
+        "crBefore": 3.04,
+        "crAfter": 6.6
+      },
+      {
+        "name": "td.home.page.1.rule.4.num",
+        "bg": "#FF47271A",
+        "from": "#FFD84511",
+        "to": "#FFF7A530",
+        "crBefore": 3.04,
+        "crAfter": 6.6
+      },
+      {
+        "name": "td.home.page.1.rule.5.num",
+        "bg": "#FF47271A",
+        "from": "#FFD84511",
+        "to": "#FFF7A530",
+        "crBefore": 3.04,
+        "crAfter": 6.6
+      },
+      {
+        "name": "td.l1.page.1.lg.5",
+        "bg": "#FF47271A",
+        "from": "#FF4B1B09",
+        "to": "#FFFFF5D6",
+        "crBefore": 1.08,
+        "crAfter": 12.26
+      },
+      {
+        "name": "td.l1.page.1.lg.6",
+        "bg": "#FFA0672F",
+        "from": "#FF87533E",
+        "to": "#FFFFF5D6",
+        "crBefore": 1.34,
+        "crAfter": 4.31
+      }
+    ]
+  },
+  "deleted": [
+    "modal.exit/bg",
+    "modal.save/bg",
+    "modal.settle/bg",
+    "modal.cancel/bg",
+    "result.next/bg",
+    "result.exit/bg",
+    "result.home/bg",
+    "result.settle/bg"
+  ],
+  "colorChangesByRule": {
+    "A1 圆底对比度": 61,
+    "A2 还原运行时红绿圈": 180,
+    "B 四键 label 同首页": 8,
+    "B 弹窗文字翻深墨": 34,
+    "B 旧底板透明": 5
+  },
+  "guarantees": [
+    "内嵌 Lua 逐字节相同",
+    "教程页除对比度/红绿圈外零改动（逐条字节比对）",
+    "被删 8 个 bg ID 全文 0 引用",
+    "新增层几何/颜色/图元/显隐逐条断言",
+    "所有受影响父级 childList 按 recTop 顺序重算",
+    "recTop 层序与 clue childList 同序"
+  ],
+  "writeGilReport": {
+    "bytes": 6748675,
+    "diffs": 148941,
+    "compared": 1402763,
+    "recs": 7582,
+    "marker": null
+  }
+}

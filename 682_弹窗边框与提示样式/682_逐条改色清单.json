@@ -1,0 +1,2018 @@
+[
+  {
+    "name": "td.home.page.1.lg.5",
+    "kind": "font",
+    "from": "#FF4B1B09",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.home.page.1.lg.6",
+    "kind": "font",
+    "from": "#FF87533E",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.home.page.1.lg.7",
+    "kind": "font",
+    "from": "#FF93381D",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.home.page.1.lg.11",
+    "kind": "font",
+    "from": "#FF4B1B09",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.home.page.1.rule.1.num",
+    "kind": "font",
+    "from": "#FFD84511",
+    "to": "#FFF7A530",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.home.page.1.rule.2.num",
+    "kind": "font",
+    "from": "#FFD84511",
+    "to": "#FFF7A530",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.home.page.1.rule.3.num",
+    "kind": "font",
+    "from": "#FFD84511",
+    "to": "#FFF7A530",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.home.page.1.rule.4.num",
+    "kind": "font",
+    "from": "#FFD84511",
+    "to": "#FFF7A530",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.home.page.1.rule.5.num",
+    "kind": "font",
+    "from": "#FFD84511",
+    "to": "#FFF7A530",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.1.lg.5",
+    "kind": "font",
+    "from": "#FF4B1B09",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.1.lg.6",
+    "kind": "font",
+    "from": "#FF87533E",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.1.lg.7",
+    "kind": "font",
+    "from": "#FF93381D",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.1.lg.11",
+    "kind": "font",
+    "from": "#FF4B1B09",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.2.lg.5",
+    "kind": "font",
+    "from": "#FF4B1B09",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.2.lg.6",
+    "kind": "font",
+    "from": "#FF87533E",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.2.lg.7",
+    "kind": "font",
+    "from": "#FF93381D",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.2.lg.11",
+    "kind": "font",
+    "from": "#FF4B1B09",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.2.clueface",
+    "kind": "font",
+    "from": "#FF47271A",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.3.lg.5",
+    "kind": "font",
+    "from": "#FF4B1B09",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.3.lg.6",
+    "kind": "font",
+    "from": "#FF87533E",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.3.lg.7",
+    "kind": "font",
+    "from": "#FF6C402E",
+    "to": "#FF4B1B09",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.3.lg.11",
+    "kind": "font",
+    "from": "#FF4B1B09",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.4.lg.5",
+    "kind": "font",
+    "from": "#FF4B1B09",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.4.lg.6",
+    "kind": "font",
+    "from": "#FF87533E",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.4.lg.7",
+    "kind": "font",
+    "from": "#FF93381D",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.4.lg.11",
+    "kind": "font",
+    "from": "#FF4B1B09",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.4.clueface",
+    "kind": "font",
+    "from": "#FF47271A",
+    "to": "#FF4B1B09",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.5.lg.5",
+    "kind": "font",
+    "from": "#FF4B1B09",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.5.lg.6",
+    "kind": "font",
+    "from": "#FF87533E",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.5.lg.7",
+    "kind": "font",
+    "from": "#FF93381D",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.5.lg.11",
+    "kind": "font",
+    "from": "#FF4B1B09",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.5.clueface",
+    "kind": "font",
+    "from": "#FF47271A",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.6.lg.5",
+    "kind": "font",
+    "from": "#FF4B1B09",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.6.lg.6",
+    "kind": "font",
+    "from": "#FF87533E",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.6.lg.7",
+    "kind": "font",
+    "from": "#FF93381D",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.6.lg.11",
+    "kind": "font",
+    "from": "#FF4B1B09",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.6.clueface",
+    "kind": "font",
+    "from": "#FF47271A",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.7.lg.5",
+    "kind": "font",
+    "from": "#FF4B1B09",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.7.lg.6",
+    "kind": "font",
+    "from": "#FF87533E",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.7.lg.7",
+    "kind": "font",
+    "from": "#FF93381D",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.7.lg.11",
+    "kind": "font",
+    "from": "#FF4B1B09",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.7.clueface",
+    "kind": "font",
+    "from": "#FFD84511",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.8.lg.5",
+    "kind": "font",
+    "from": "#FF4B1B09",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.8.lg.6",
+    "kind": "font",
+    "from": "#FF87533E",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.8.lg.7",
+    "kind": "font",
+    "from": "#FF93381D",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.8.lg.11",
+    "kind": "font",
+    "from": "#FF4B1B09",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l2.page.1.lg.6",
+    "kind": "font",
+    "from": "#FF4B1B09",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l2.page.1.lg.7",
+    "kind": "font",
+    "from": "#FF87533E",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l2.page.1.lg.8",
+    "kind": "font",
+    "from": "#FF93381D",
+    "to": "#FF4B1B09",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l2.page.1.lg.12",
+    "kind": "font",
+    "from": "#FF4B1B09",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l2.page.2.lg.6",
+    "kind": "font",
+    "from": "#FF4B1B09",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l2.page.2.lg.7",
+    "kind": "font",
+    "from": "#FF87533E",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l2.page.2.lg.8",
+    "kind": "font",
+    "from": "#FF93381D",
+    "to": "#FF4B1B09",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l2.page.2.lg.12",
+    "kind": "font",
+    "from": "#FF4B1B09",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l2.page.2.clueface",
+    "kind": "font",
+    "from": "#FF47271A",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l2.page.3.clueface",
+    "kind": "font",
+    "from": "#FF47271A",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l2.page.4.lg.6",
+    "kind": "font",
+    "from": "#FF4B1B09",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l2.page.4.lg.7",
+    "kind": "font",
+    "from": "#FF87533E",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l2.page.4.lg.8",
+    "kind": "font",
+    "from": "#FF93381D",
+    "to": "#FF4B1B09",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l2.page.4.lg.12",
+    "kind": "font",
+    "from": "#FF4B1B09",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l2.page.4.clueface",
+    "kind": "font",
+    "from": "#FF47271A",
+    "to": "#FFFFF5D6",
+    "rule": "A1 圆底对比度"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.0",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.1",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.2",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.3",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.4",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.5",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.6",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.7",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.8",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.9",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.10",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.11",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.12",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.13",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.14",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.15",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.16",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.17",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.18",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.19",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.20",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.21",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.22",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.23",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.24",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.25",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.26",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.27",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.28",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.29",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.30",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.31",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.32",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.33",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.34",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.B.35",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.0",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.1",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.2",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.3",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.4",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.5",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.6",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.7",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.8",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.9",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.10",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.11",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.12",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.13",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.14",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.15",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.16",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.17",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.18",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.19",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.20",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.21",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.22",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.23",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.24",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.25",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.26",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.27",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.28",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.29",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.30",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.31",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.32",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.33",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.34",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.A.35",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.0",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.1",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.2",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.3",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.4",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.5",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.6",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.7",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.8",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.9",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.10",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.11",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.12",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.13",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.14",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.15",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.16",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.17",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.18",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.19",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.20",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.21",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.22",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.23",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.24",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.25",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.26",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.27",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.28",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.29",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.30",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.31",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.32",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.33",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.34",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.C.35",
+    "kind": "fill",
+    "from": "#FF9D9657",
+    "to": "#FF4FAE5A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.0",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.1",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.2",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.3",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.4",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.5",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.6",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.7",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.8",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.9",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.10",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.11",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.12",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.13",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.14",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.15",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.16",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.17",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.18",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.19",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.20",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.21",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.22",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.23",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.24",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.25",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.26",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.27",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.28",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.29",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.30",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.31",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.32",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.33",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.34",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.D.35",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.0",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.1",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.2",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.3",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.4",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.5",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.6",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.7",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.8",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.9",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.10",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.11",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.12",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.13",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.14",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.15",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.16",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.17",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.18",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.19",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.20",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.21",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.22",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.23",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.24",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.25",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.26",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.27",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.28",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.29",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.30",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.31",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.32",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.33",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.34",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "td.l1.page.8.ring.V.35",
+    "kind": "fill",
+    "from": "#FF93381D",
+    "to": "#FFE0483A",
+    "rule": "A2 还原运行时红绿圈"
+  },
+  {
+    "name": "modal.title",
+    "kind": "font",
+    "from": "#FFFFFFFF",
+    "to": "#FF47271A",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "modal.body",
+    "kind": "font",
+    "from": "#FFFFFFFF",
+    "to": "#FF47271A",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "modal.stats",
+    "kind": "font",
+    "from": "#FFFFFFFF",
+    "to": "#FF47271A",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "result.title.1",
+    "kind": "font",
+    "from": "#FFFFCB7A",
+    "to": "#FF8A5A16",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "result.title.2",
+    "kind": "font",
+    "from": "#FF8FC08A",
+    "to": "#FF4F6B3A",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "result.title.3",
+    "kind": "font",
+    "from": "#FFFF8A7A",
+    "to": "#FFB23828",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "result.msg.1",
+    "kind": "font",
+    "from": "#FFD3CCBD",
+    "to": "#FF6C402E",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "result.msg.2",
+    "kind": "font",
+    "from": "#FFD3CCBD",
+    "to": "#FF6C402E",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "result.msg.3",
+    "kind": "font",
+    "from": "#FFD3CCBD",
+    "to": "#FF6C402E",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "result.settle.countdown",
+    "kind": "font",
+    "from": "#FFF9F2E9",
+    "to": "#FF6C402E",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "modal.settle.countdown",
+    "kind": "font",
+    "from": "#FFF9F2E9",
+    "to": "#FF6C402E",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "help617.title",
+    "kind": "font",
+    "from": "#FFD3CCBD",
+    "to": "#FF6C402E",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "help617.body",
+    "kind": "font",
+    "from": "#FFD3CCBD",
+    "to": "#FF6C402E",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "help617.close",
+    "kind": "fill",
+    "from": "#FFBDB6A7",
+    "to": "#FF291A16",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "hint635.menu.title",
+    "kind": "font",
+    "from": "#FFFFE7BE",
+    "to": "#FF291A16",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "hint635.menu.position",
+    "kind": "font",
+    "from": "#FFFFE7BE",
+    "to": "#FF291A16",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "hint635.menu.clue",
+    "kind": "font",
+    "from": "#FFFFE7BE",
+    "to": "#FF291A16",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "hint635.menu.close",
+    "kind": "fill",
+    "from": "#FFBDB6A7",
+    "to": "#FF291A16",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "hint635.result.body",
+    "kind": "font",
+    "from": "#FFFFE7BE",
+    "to": "#FF291A16",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "hint635.result.close",
+    "kind": "fill",
+    "from": "#FFBDB6A7",
+    "to": "#FF291A16",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "modal.exit/label",
+    "kind": "font",
+    "from": "#FF000000",
+    "to": "#FFFF6B3A22",
+    "rule": "B 四键 label 同首页"
+  },
+  {
+    "name": "modal.save/label",
+    "kind": "font",
+    "from": "#FF000000",
+    "to": "#FFFF6B3A22",
+    "rule": "B 四键 label 同首页"
+  },
+  {
+    "name": "modal.settle/label",
+    "kind": "font",
+    "from": "#FF000000",
+    "to": "#FFFF6B3A22",
+    "rule": "B 四键 label 同首页"
+  },
+  {
+    "name": "modal.cancel/label",
+    "kind": "font",
+    "from": "#FF000000",
+    "to": "#FFFF6B3A22",
+    "rule": "B 四键 label 同首页"
+  },
+  {
+    "name": "label",
+    "kind": "font",
+    "from": "#FFFFFFFF",
+    "to": "#FF47271A",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "label",
+    "kind": "font",
+    "from": "#FFFFFFFF",
+    "to": "#FF47271A",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "label",
+    "kind": "font",
+    "from": "#FFFFFFFF",
+    "to": "#FF47271A",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "label",
+    "kind": "font",
+    "from": "#FFFFFFFF",
+    "to": "#FF47271A",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "label",
+    "kind": "font",
+    "from": "#FFFFFFFF",
+    "to": "#FF47271A",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "label",
+    "kind": "font",
+    "from": "#FFFFFFFF",
+    "to": "#FF47271A",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "label",
+    "kind": "font",
+    "from": "#FFFFFFFF",
+    "to": "#FF47271A",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "label",
+    "kind": "font",
+    "from": "#FFFFFFFF",
+    "to": "#FF47271A",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "label",
+    "kind": "font",
+    "from": "#FFFFFFFF",
+    "to": "#FF47271A",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "label",
+    "kind": "font",
+    "from": "#FFFFFFFF",
+    "to": "#FF47271A",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "label",
+    "kind": "font",
+    "from": "#FFFFFFFF",
+    "to": "#FF47271A",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "label",
+    "kind": "font",
+    "from": "#FFFFFFFF",
+    "to": "#FF47271A",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "label",
+    "kind": "font",
+    "from": "#FFFFFFFF",
+    "to": "#FF47271A",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "label",
+    "kind": "font",
+    "from": "#FFFFFFFF",
+    "to": "#FF47271A",
+    "rule": "B 弹窗文字翻深墨"
+  },
+  {
+    "name": "result.next/label",
+    "kind": "font",
+    "from": "#FF000000",
+    "to": "#FFFF6B3A22",
+    "rule": "B 四键 label 同首页"
+  },
+  {
+    "name": "result.exit/label",
+    "kind": "font",
+    "from": "#FF000000",
+    "to": "#FFFF6B3A22",
+    "rule": "B 四键 label 同首页"
+  },
+  {
+    "name": "result.home/label",
+    "kind": "font",
+    "from": "#FF000000",
+    "to": "#FFFF6B3A22",
+    "rule": "B 四键 label 同首页"
+  },
+  {
+    "name": "result.settle/label",
+    "kind": "font",
+    "from": "#FF000000",
+    "to": "#FFFF6B3A22",
+    "rule": "B 四键 label 同首页"
+  },
+  {
+    "name": "help617.bg",
+    "kind": "fill",
+    "from": "#FF111B29",
+    "to": "#00FFFFFF",
+    "rule": "B 旧底板透明"
+  },
+  {
+    "name": "hint635.menu.bg",
+    "kind": "fill",
+    "from": "#FF111B29",
+    "to": "#00FFFFFF",
+    "rule": "B 旧底板透明"
+  },
+  {
+    "name": "hint635.result.bg",
+    "kind": "fill",
+    "from": "#FF111B29",
+    "to": "#00FFFFFF",
+    "rule": "B 旧底板透明"
+  },
+  {
+    "name": "result.bg",
+    "kind": "fill",
+    "from": "#FF1A1A20",
+    "to": "#00FFFFFF",
+    "rule": "B 旧底板透明"
+  },
+  {
+    "name": "modal/bg",
+    "kind": "fill",
+    "from": "#FF1A1A20",
+    "to": "#00FFFFFF",
+    "rule": "B 旧底板透明"
+  }
+]

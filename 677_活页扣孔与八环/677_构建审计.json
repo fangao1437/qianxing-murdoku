@@ -1,0 +1,270 @@
+{
+  "version": 1,
+  "name": "677 build audit",
+  "date": "2026-11-12",
+  "base": {
+    "file": "676_活页扣修正.gil",
+    "sha256": "7ed4f5d6e29a2e37c2f2786783322ad01d36127065ce3a6b76a5a563c2927655",
+    "records": 7335,
+    "scriptBytes": 636660
+  },
+  "output": {
+    "file": "677_活页扣孔与八环.gil",
+    "sha256": "123e710d10dba3091c737357fe48b1c8886dbaecbd6cffbab2f9b3fa0974070f",
+    "bytes": 6603174,
+    "records": 7407
+  },
+  "spec": {
+    "userFeedback": "孔的图层不对/位置不精准，导致没有环伸进孔里的效果；设计图是 8 个环只做了 6 个；褐色边上下略有溢出白色底板高度",
+    "detection": {
+      "method": "白纸区 x∈[26,38] 深色像素逐行成段（避开棕边与上下横条）",
+      "segments": [
+        [
+          298,
+          312
+        ],
+        [
+          357,
+          371
+        ],
+        [
+          418,
+          431
+        ],
+        [
+          477,
+          491
+        ],
+        [
+          535,
+          549
+        ],
+        [
+          594,
+          607
+        ],
+        [
+          655,
+          668
+        ],
+        [
+          714,
+          728
+        ]
+      ],
+      "centers": [
+        305,
+        364,
+        424.5,
+        484,
+        542,
+        600.5,
+        661.5,
+        721
+      ],
+      "count": 8,
+      "step": 59.43,
+      "wrong676Count": 6,
+      "wrong676Centers": [
+        361,
+        422,
+        480.5,
+        539,
+        597.5,
+        659
+      ]
+    },
+    "hole": {
+      "layerOrder": "holeOuter/holeInner 先画（在环带之下）；环带与环头后画并压进孔内",
+      "heightGainOverRing": 6,
+      "centerX": 28,
+      "designRightEdge": 36
+    },
+    "binding": {
+      "before": [
+        12,
+        513.5,
+        24,
+        535
+      ],
+      "after": [
+        12,
+        517,
+        24,
+        515
+      ],
+      "top": 259.5,
+      "bottom": 774.5,
+      "frame": {
+        "cx": 222,
+        "cy": 517,
+        "w": 396,
+        "h": 515
+      },
+      "aligned": true
+    },
+    "rings": {
+      "before": "art676.ring.1..6 × 7 层 = 42（孔/圆头在环之上的独立球）",
+      "after": "art677.ring.1..8 × 9 层 = 72（孔 2 层在下 + 环带 5 层 + 环头 2 层压进孔内）",
+      "count": 8,
+      "layersPerRing": 9,
+      "maxRight": 36.5,
+      "holeBelow": true,
+      "colors": {
+        "holeOuter": "#1C1410",
+        "holeInner": "#393024",
+        "outer": "#1C1410",
+        "top": "#0A0503",
+        "mid": "#393024",
+        "lit": "#514535",
+        "low": "#5E503A",
+        "tip": "#2C2318",
+        "tipHi": "#544B3A",
+        "binding": "#3F1E15",
+        "midBand": "#4D2419",
+        "paper": "#FDFBEC"
+      }
+    },
+    "hidden": {
+      "rings676": 42
+    },
+    "keepUntouched": 268
+  },
+  "counts": {
+    "recordsBefore": 7335,
+    "recordsAfter": 7407,
+    "added": 72,
+    "removed": 0,
+    "hidden": 42,
+    "modified": 117
+  },
+  "visibleLayers": {
+    "ringBefore": 42,
+    "ringAfter": 72
+  },
+  "addedNames": [
+    "art677.ring.1.holeOuter",
+    "art677.ring.1.holeInner",
+    "art677.ring.1.outer",
+    "art677.ring.1.mid",
+    "art677.ring.1.lit",
+    "art677.ring.1.low",
+    "art677.ring.1.top",
+    "art677.ring.1.tip",
+    "art677.ring.1.tipHi",
+    "art677.ring.2.holeOuter",
+    "art677.ring.2.holeInner",
+    "art677.ring.2.outer",
+    "art677.ring.2.mid",
+    "art677.ring.2.lit",
+    "art677.ring.2.low",
+    "art677.ring.2.top",
+    "art677.ring.2.tip",
+    "art677.ring.2.tipHi",
+    "art677.ring.3.holeOuter",
+    "art677.ring.3.holeInner",
+    "art677.ring.3.outer",
+    "art677.ring.3.mid",
+    "art677.ring.3.lit",
+    "art677.ring.3.low",
+    "art677.ring.3.top",
+    "art677.ring.3.tip",
+    "art677.ring.3.tipHi",
+    "art677.ring.4.holeOuter",
+    "art677.ring.4.holeInner",
+    "art677.ring.4.outer",
+    "art677.ring.4.mid",
+    "art677.ring.4.lit",
+    "art677.ring.4.low",
+    "art677.ring.4.top",
+    "art677.ring.4.tip",
+    "art677.ring.4.tipHi",
+    "art677.ring.5.holeOuter",
+    "art677.ring.5.holeInner",
+    "art677.ring.5.outer",
+    "art677.ring.5.mid",
+    "art677.ring.5.lit",
+    "art677.ring.5.low",
+    "art677.ring.5.top",
+    "art677.ring.5.tip",
+    "art677.ring.5.tipHi",
+    "art677.ring.6.holeOuter",
+    "art677.ring.6.holeInner",
+    "art677.ring.6.outer",
+    "art677.ring.6.mid",
+    "art677.ring.6.lit",
+    "art677.ring.6.low",
+    "art677.ring.6.top",
+    "art677.ring.6.tip",
+    "art677.ring.6.tipHi",
+    "art677.ring.7.holeOuter",
+    "art677.ring.7.holeInner",
+    "art677.ring.7.outer",
+    "art677.ring.7.mid",
+    "art677.ring.7.lit",
+    "art677.ring.7.low",
+    "art677.ring.7.top",
+    "art677.ring.7.tip",
+    "art677.ring.7.tipHi",
+    "art677.ring.8.holeOuter",
+    "art677.ring.8.holeInner",
+    "art677.ring.8.outer",
+    "art677.ring.8.mid",
+    "art677.ring.8.lit",
+    "art677.ring.8.low",
+    "art677.ring.8.top",
+    "art677.ring.8.tip",
+    "art677.ring.8.tipHi"
+  ],
+  "hiddenNames": [
+    "art676.ring.1.outer",
+    "art676.ring.1.mid",
+    "art676.ring.1.lit",
+    "art676.ring.1.low",
+    "art676.ring.1.top",
+    "art676.ring.1.tip",
+    "art676.ring.1.tipHi",
+    "art676.ring.2.outer",
+    "art676.ring.2.mid",
+    "art676.ring.2.lit",
+    "art676.ring.2.low",
+    "art676.ring.2.top",
+    "art676.ring.2.tip",
+    "art676.ring.2.tipHi",
+    "art676.ring.3.outer",
+    "art676.ring.3.mid",
+    "art676.ring.3.lit",
+    "art676.ring.3.low",
+    "art676.ring.3.top",
+    "art676.ring.3.tip",
+    "art676.ring.3.tipHi",
+    "art676.ring.4.outer",
+    "art676.ring.4.mid",
+    "art676.ring.4.lit",
+    "art676.ring.4.low",
+    "art676.ring.4.top",
+    "art676.ring.4.tip",
+    "art676.ring.4.tipHi",
+    "art676.ring.5.outer",
+    "art676.ring.5.mid",
+    "art676.ring.5.lit",
+    "art676.ring.5.low",
+    "art676.ring.5.top",
+    "art676.ring.5.tip",
+    "art676.ring.5.tipHi",
+    "art676.ring.6.outer",
+    "art676.ring.6.mid",
+    "art676.ring.6.lit",
+    "art676.ring.6.low",
+    "art676.ring.6.top",
+    "art676.ring.6.tip",
+    "art676.ring.6.tipHi"
+  ],
+  "writeGilReport": {
+    "bytes": 6603174,
+    "diffs": 121164,
+    "compared": 1430388,
+    "recs": 7407,
+    "marker": null
+  }
+}

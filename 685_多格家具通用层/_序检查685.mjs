@@ -1,0 +1,24 @@
+import path from 'node:path'; import { fileURLToPath, pathToFileURL } from 'node:url';
+const DIR=path.dirname(fileURLToPath(import.meta.url)), ROOT=path.resolve(DIR,'../..'), url=p=>pathToFileURL(p).href;
+const {readGil,findChildListTop,asIdList,stateBlocks,pairOf,pairValue,encodeMsg}=await import(url(path.join(ROOT,'qianxing-murdoku/tools/gil/gilread.mjs')));
+const g=readGil(path.join(ROOT,'qianxing-murdoku/684_结算收紧与教程配色/684_结算收紧与教程配色.gil'));
+const byId=new Map(g.recs.map(r=>[r.id,r]));
+const recTop=g.tree.find(f=>f.field===9); const ord=new Map(); recTop.sub.forEach((f,i)=>ord.set(f,i));
+const kidsOf=r=>{const cl=findChildListTop(r.field.sub||[]);return cl?(asIdList(cl.payload,true)||[]):[];};
+const root=g.recs.find(r=>r.name==='root'), stage=g.recs.find(r=>r.name==='stage'), x=g.recs.find(r=>r.name==='x'&&byId.get(r.parentId)?.name==='content');
+const ids=kidsOf(root), pos=ids.map(id=>ord.get(byId.get(id)?.field)??-1);
+let bad=0; for(let i=1;i<pos.length;i++) if(pos[i]<pos[i-1]) bad++;
+console.log('root childList 条数',ids.length,'逆序对',bad);
+console.log('stage 在 childList 下标',ids.indexOf(stage.id),'其 recTop 序',ord.get(stage.field));
+console.log('前 15 (idx,name,recTop序):',ids.slice(0,15).map((id,i)=>[i,byId.get(id)?.name,pos[i]]));
+console.log('stage 邻域:',ids.slice(ids.indexOf(stage.id)-2,ids.indexOf(stage.id)+4).map((id,i)=>[byId.get(id)?.name,ord.get(byId.get(id)?.field)]));
+console.log('\n===== x 记录字段摘要 =====','id',x.id,'field字节',encodeMsg([x.field]).length);
+console.log('x 子控件:',kidsOf(x).map(id=>byId.get(id)?.name));
+for(const id of kidsOf(x)){const r=byId.get(id); const st=stateBlocks(r.field.sub,[])[0]; const p=pairOf(st,504),z=pairOf(st,505);
+ const rot=st?.sub?.find(q=>q.field===508)?.sub?.[0]?.f;
+ console.log(' ',r.name,'pos',p?[pairValue(p,0),pairValue(p,1)]:null,'size',z?[pairValue(z,0),pairValue(z,1)]:null,'rot(508)',rot,'bytes',encodeMsg([r.field]).length);}
+console.log('\n===== stage 字段摘要 =====','id',stage.id,'bytes',encodeMsg([stage.field]).length);
+const stS=stateBlocks(stage.field.sub,[])[0],pS=pairOf(stS,504),zS=pairOf(stS,505);
+console.log('pos',[pairValue(pS,0),pairValue(pS,1)],'size',[pairValue(zS,0),pairValue(zS,1)],'state数',stateBlocks(stage.field.sub,[]).length);
+console.log('stage 顶层字段号:',stage.field.sub.map(f=>f.field+':'+f.wt).join(' '));
+console.log('x 顶层字段号:',x.field.sub.map(f=>f.field+':'+f.wt).join(' '));

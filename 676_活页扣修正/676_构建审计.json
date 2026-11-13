@@ -1,0 +1,230 @@
+{
+  "version": 1,
+  "name": "676 build audit",
+  "date": "2026-11-12",
+  "base": {
+    "file": "675_直边票券与火漆精拟合.gil",
+    "sha256": "b04f60f5c9f42ed45c7b4e0ff0cb789b828175c0202ef37eca83f9ec21315cc7",
+    "records": 7292,
+    "scriptBytes": 636660
+  },
+  "output": {
+    "file": "676_活页扣修正.gil",
+    "sha256": "7ed4f5d6e29a2e37c2f2786783322ad01d36127065ce3a6b76a5a563c2927655",
+    "bytes": 6542440,
+    "records": 7335
+  },
+  "spec": {
+    "userFeedback": "活页扣表现、多余黄色虚线、白底向左延伸过短导致棕色边太宽",
+    "measurement": {
+      "ringCount": 6,
+      "centers": [
+        361,
+        422,
+        480.5,
+        539,
+        597.5,
+        659
+      ],
+      "step": 59.6,
+      "ringTopSegments": [
+        [
+          352,
+          365
+        ],
+        [
+          413,
+          426
+        ],
+        [
+          472,
+          484
+        ],
+        [
+          531,
+          542
+        ],
+        [
+          589,
+          601
+        ],
+        [
+          650,
+          663
+        ]
+      ],
+      "paperLeftX": 24,
+      "paperLeftSamples": [
+        24,
+        24,
+        24,
+        24,
+        24,
+        24,
+        33
+      ],
+      "liveRingCount": 5,
+      "liveCenters": [
+        352,
+        445,
+        541,
+        636,
+        729
+      ],
+      "liveStep": 94,
+      "liveBindingWidth": 40,
+      "livePaperLeftX": 40,
+      "liveBindingColor": "#2E1A12",
+      "designYellowDashInBinding": 0
+    },
+    "binding": {
+      "before": [
+        20,
+        513.5,
+        40,
+        535,
+        "#2E1A12"
+      ],
+      "after": [
+        12,
+        513.5,
+        24,
+        535,
+        "#3F1E15"
+      ],
+      "midBand": {
+        "centerX": 12,
+        "width": 12,
+        "height": 535,
+        "centerY": 513.5,
+        "color": "#4D2419"
+      },
+      "paperLeftAfter": 24
+    },
+    "rings": {
+      "before": "art663.ring.1..5 × 4 层 = 20（灰高光 #6C6962 + 孤立黑球，5 组 / 94px）",
+      "after": "art676.ring.1..6 × 7 层 = 42（上黑 / 中棕灰 / 右段渐亮 / 下浅棕 / 末端下垂圆头）",
+      "count": 6,
+      "layersPerRing": 7,
+      "maxRight": 35.5,
+      "colors": {
+        "outer": "#1C1410",
+        "top": "#0A0503",
+        "mid": "#393024",
+        "lit": "#514535",
+        "low": "#5E503A",
+        "tip": "#15100D",
+        "tipBlend": "#2C2318",
+        "tipHi": "#544B3A",
+        "binding": "#3F1E15",
+        "midBand": "#4D2419",
+        "paper": "#FDFBEC"
+      }
+    },
+    "hidden": {
+      "rings": 20,
+      "dashes": 12
+    },
+    "keepUntouched": 267
+  },
+  "counts": {
+    "recordsBefore": 7292,
+    "recordsAfter": 7335,
+    "added": 43,
+    "removed": 0,
+    "hidden": 32,
+    "modified": 77
+  },
+  "visibleLayers": {
+    "ringBefore": 20,
+    "ringAfter": 42,
+    "dashBefore": 12,
+    "dashAfter": 0
+  },
+  "addedNames": [
+    "art676.binding.mid",
+    "art676.ring.1.outer",
+    "art676.ring.1.mid",
+    "art676.ring.1.lit",
+    "art676.ring.1.low",
+    "art676.ring.1.top",
+    "art676.ring.1.tip",
+    "art676.ring.1.tipHi",
+    "art676.ring.2.outer",
+    "art676.ring.2.mid",
+    "art676.ring.2.lit",
+    "art676.ring.2.low",
+    "art676.ring.2.top",
+    "art676.ring.2.tip",
+    "art676.ring.2.tipHi",
+    "art676.ring.3.outer",
+    "art676.ring.3.mid",
+    "art676.ring.3.lit",
+    "art676.ring.3.low",
+    "art676.ring.3.top",
+    "art676.ring.3.tip",
+    "art676.ring.3.tipHi",
+    "art676.ring.4.outer",
+    "art676.ring.4.mid",
+    "art676.ring.4.lit",
+    "art676.ring.4.low",
+    "art676.ring.4.top",
+    "art676.ring.4.tip",
+    "art676.ring.4.tipHi",
+    "art676.ring.5.outer",
+    "art676.ring.5.mid",
+    "art676.ring.5.lit",
+    "art676.ring.5.low",
+    "art676.ring.5.top",
+    "art676.ring.5.tip",
+    "art676.ring.5.tipHi",
+    "art676.ring.6.outer",
+    "art676.ring.6.mid",
+    "art676.ring.6.lit",
+    "art676.ring.6.low",
+    "art676.ring.6.top",
+    "art676.ring.6.tip",
+    "art676.ring.6.tipHi"
+  ],
+  "hiddenNames": [
+    "art663.ring.1.outer",
+    "art663.ring.1.hi",
+    "art663.ring.1.shade",
+    "art663.ring.1.tip",
+    "art663.ring.2.outer",
+    "art663.ring.2.hi",
+    "art663.ring.2.shade",
+    "art663.ring.2.tip",
+    "art663.ring.3.outer",
+    "art663.ring.3.hi",
+    "art663.ring.3.shade",
+    "art663.ring.3.tip",
+    "art663.ring.4.outer",
+    "art663.ring.4.hi",
+    "art663.ring.4.shade",
+    "art663.ring.4.tip",
+    "art663.ring.5.outer",
+    "art663.ring.5.hi",
+    "art663.ring.5.shade",
+    "art663.ring.5.tip",
+    "art658.clues.binding.dash1",
+    "art658.clues.binding.dash2",
+    "art658.clues.binding.dash3",
+    "art658.clues.binding.dash4",
+    "art658.clues.binding.dash5",
+    "art658.clues.binding.dash6",
+    "art658.clues.binding.dash7",
+    "art658.clues.binding.dash8",
+    "art658.clues.binding.dash9",
+    "art658.clues.binding.dash10",
+    "art658.clues.binding.dash11",
+    "art658.clues.binding.dash12"
+  ],
+  "writeGilReport": {
+    "bytes": 6542440,
+    "diffs": 118255,
+    "compared": 1420312,
+    "recs": 7335,
+    "marker": null
+  }
+}

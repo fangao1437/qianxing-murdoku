@@ -1,0 +1,65 @@
+{
+  "recordsBefore": 7052,
+  "recordsAfter": 7292,
+  "added": 240,
+  "removed": 0,
+  "changed": 31,
+  "unexpectedChanges": [],
+  "scriptIdentical": true,
+  "scriptBytes": 636660,
+  "textRecordsChanged": 0,
+  "policeV19Descendants": 650,
+  "bgChanged": 0,
+  "oldRecordOrderSame": true,
+  "childListOk": true,
+  "dangling": 0,
+  "gradientUntouched": true,
+  "fitCount": 23,
+  "helpUntouched": true,
+  "ticket": {
+    "straightOk": true,
+    "hiddenEdgeLayers": 16,
+    "visibleLayers": 25,
+    "mainGeom": [
+      384,
+      211,
+      160,
+      66
+    ],
+    "outlineGeom": [
+      384,
+      211,
+      166,
+      72
+    ]
+  },
+  "wax": {
+    "oldWaxHidden": true,
+    "oldWaxCount": 50,
+    "newLayers": 240,
+    "visibleLayers": 240,
+    "waxSeqOk": true,
+    "maxOverflow": 0.005,
+    "designOutline": [
+      48.21,
+      54.5
+    ],
+    "colorLevels": [
+      "#AA0500",
+      "#AF0500",
+      "#B40601",
+      "#B90601",
+      "#CD0701",
+      "#D70701"
+    ]
+  },
+  "gates": {
+    "gradientUntouched": true,
+    "maxOverflow": 0.005,
+    "tabVisible": 25,
+    "waxVisible": 240,
+    "added": 240,
+    "hidden": 29
+  },
+  "verdict": true
+}

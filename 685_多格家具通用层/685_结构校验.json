@@ -1,0 +1,190 @@
+{
+  "version": 685,
+  "verdict": true,
+  "base": {
+    "file": "684_结算收紧与教程配色.gil",
+    "sha256": "4d504c59f3131074c76763e89247ff6fa6545d3a05d852fd2a2676e3ff7623d2",
+    "records": 7633,
+    "scriptBytes": 636689
+  },
+  "output": {
+    "file": "685_多格家具通用层.gil",
+    "sha256": "b8fdbc9aa6a15c4ae6ee2e82c40393d8104c5a87bf51bf3fa52c97b0d0ca4cdd",
+    "bytes": 6949164,
+    "records": 7826,
+    "scriptBytes": 641321
+  },
+  "checks": [
+    {
+      "name": "记录数 7633→7826",
+      "ok": true,
+      "detail": [
+        7633,
+        7826
+      ]
+    },
+    {
+      "name": "新增 193 / 删除 0",
+      "ok": true,
+      "detail": [
+        193,
+        0
+      ]
+    },
+    {
+      "name": "旧记录改动仅 stage 一条",
+      "ok": true,
+      "detail": [
+        "stage"
+      ]
+    },
+    {
+      "name": "除 stage 外旧记录逐字节相同",
+      "ok": true
+    },
+    {
+      "name": "旧记录文本 0 改动",
+      "ok": true
+    },
+    {
+      "name": "背景 police-v19 的 650 个后代 0 改动",
+      "ok": true,
+      "detail": 0
+    },
+    {
+      "name": "标记层存在",
+      "ok": true
+    },
+    {
+      "name": "标记层父 = stage",
+      "ok": true
+    },
+    {
+      "name": "stage 子层 3→4",
+      "ok": true,
+      "detail": [
+        3,
+        4
+      ]
+    },
+    {
+      "name": "标记层是 stage 最后一个子控件",
+      "ok": true,
+      "detail": [
+        "board.bg",
+        "board.floors",
+        "board.rugs",
+        "art685.mark.overlay"
+      ]
+    },
+    {
+      "name": "前 3 个子层顺序不变",
+      "ok": true
+    },
+    {
+      "name": "标记层 pos=(0,0)",
+      "ok": true,
+      "detail": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "标记层 size 与 stage 相同",
+      "ok": true,
+      "detail": [
+        [
+          584,
+          584
+        ],
+        [
+          584,
+          584
+        ]
+      ]
+    },
+    {
+      "name": "标记层容器可见",
+      "ok": true
+    },
+    {
+      "name": "root childList 97 条且顺序不变",
+      "ok": true
+    },
+    {
+      "name": "64 组标记容器",
+      "ok": true,
+      "detail": 64
+    },
+    {
+      "name": "标记父级全部 = 标记层",
+      "ok": true,
+      "detail": 64
+    },
+    {
+      "name": "64 组各有 2 枚笔画",
+      "ok": true,
+      "detail": 64
+    },
+    {
+      "name": "192 条标记记录全部默认隐藏",
+      "ok": true,
+      "detail": 192
+    },
+    {
+      "name": "128 枚笔画尺寸与原型一致",
+      "ok": true,
+      "detail": 128
+    },
+    {
+      "name": "新增记录全部无悬空父",
+      "ok": true
+    },
+    {
+      "name": "内嵌 Lua 636,689 → 641,321 B",
+      "ok": true,
+      "detail": [
+        636689,
+        641321
+      ]
+    },
+    {
+      "name": "Lua 每帧复位（on_tick）",
+      "ok": true
+    },
+    {
+      "name": "Lua 保留了 680 的 rug_layer/furn",
+      "ok": true
+    },
+    {
+      "name": "Lua 无针对具体家具 kind/span 的层序特判",
+      "ok": true
+    },
+    {
+      "name": "内嵌 Lua 反向还原 = 684 逐字节",
+      "ok": true,
+      "detail": "OK"
+    },
+    {
+      "name": "所有父级 childList 与 recTop 同序",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "通用性验证 verdict=true",
+      "ok": true
+    }
+  ],
+  "luaPatchChecks": 9,
+  "failed": [],
+  "generality": {
+    "cases": 97280,
+    "uncovered": 0,
+    "structuralOk": true
+  },
+  "summary": {
+    "total": 39,
+    "passed": 39,
+    "failed": 0
+  }
+}

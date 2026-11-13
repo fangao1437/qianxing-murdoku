@@ -1,0 +1,103 @@
+{
+  "version": 684,
+  "verdict": true,
+  "base": {
+    "sha256": "ce3fe3fc6252ce26c5674e085b76f9553345815353834f8bb3bdc8ccec208c28",
+    "records": 7621
+  },
+  "output": {
+    "sha256": "4d504c59f3131074c76763e89247ff6fa6545d3a05d852fd2a2676e3ff7623d2",
+    "bytes": 6789550,
+    "records": 7633
+  },
+  "checks": [
+    {
+      "name": "记录数 7621 → 7633",
+      "ok": true,
+      "detail": "7621 → 7633"
+    },
+    {
+      "name": "新增 14 / 删除 2",
+      "ok": true,
+      "detail": "+14 / -2"
+    },
+    {
+      "name": "无重复 ID",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "内嵌 Lua 逐字节相同",
+      "ok": true,
+      "detail": "636689 B"
+    },
+    {
+      "name": "输入 683 SHA 与规格一致",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "结算四键 y = 12/-60/-132/-204",
+      "ok": true,
+      "detail": "result.next=12 result.exit=-60 result.home=-132 result.settle=-204"
+    },
+    {
+      "name": "最后一个按钮描边底 -236 未越内页底 -285",
+      "ok": true,
+      "detail": "底 -236，留白 49px"
+    },
+    {
+      "name": "4 个 result label 宽 125→312（5 字文本完整）",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "结算倒计时移进内页 y=-258",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "退出菜单四键保持 683 y=120/40/-40/-120",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "2 组放大镜：100120 已删 / 粗环+挖空+5 段柄 / 12.png 色与位置 / 层序",
+      "ok": true,
+      "detail": "2/2 通过"
+    },
+    {
+      "name": "被删 2 个 100120 层 ID 全文 0 引用",
+      "ok": true,
+      "detail": "1073760368,1073760364"
+    },
+    {
+      "name": "五卡统一 #FFC9AC6D（= 4.png #c9ac6d）+ 边框 #6C402E + 编号 #47271A",
+      "ok": true,
+      "detail": "5/5 通过"
+    },
+    {
+      "name": "所有 childList 与 recTop 同序且子集完整",
+      "ok": true,
+      "detail": "全通过"
+    },
+    {
+      "name": "新增悬空父引用 0（683 基线模板记录不算）",
+      "ok": true,
+      "detail": "683 基线 36 条，684 新增 0 条"
+    },
+    {
+      "name": "旧记录改动全部落在白名单（rogue=0）",
+      "ok": true,
+      "detail": "改动 12 条，rogue 0"
+    }
+  ],
+  "summary": {
+    "passed": 16,
+    "total": 16,
+    "added": 14,
+    "removed": 2,
+    "changedOldRecords": 12,
+    "rogue": 0
+  }
+}

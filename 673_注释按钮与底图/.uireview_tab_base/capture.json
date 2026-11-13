@@ -1,0 +1,32 @@
+{
+  "meta": {
+    "target": "D:/新建文件夹/miHoYo Launcher/qianxing-murdoku/673_注释按钮与底图/673_基线_tab.png",
+    "localFile": "D:/新建文件夹/miHoYo Launcher/qianxing-murdoku/673_注释按钮与底图/673_基线_tab.png",
+    "resolved": "D:/新建文件夹/miHoYo Launcher/qianxing-murdoku/673_注释按钮与底图/673_基线_tab.png",
+    "generatedAt": "2026-11-12T01:17:25.737Z",
+    "label": "672 基线 注释票券",
+    "click": null,
+    "clickChain": [],
+    "viewports": [
+      240
+    ],
+    "primary": "240",
+    "scale": 1,
+    "kind": "image",
+    "note": "实现侧为 .gil 静态层离线渲染截图，无 DOM：元素级结论不可得，只有图像层对照结论有效"
+  },
+  "views": {
+    "240": {
+      "width": 240,
+      "height": 160,
+      "docWidth": 240,
+      "docHeight": 160,
+      "shot": "D:/新建文件夹/miHoYo Launcher/qianxing-murdoku/673_注释按钮与底图/.uireview_tab_base/shot-impl.png",
+      "full": "D:/新建文件夹/miHoYo Launcher/qianxing-murdoku/673_注释按钮与底图/.uireview_tab_base/shot-impl.png",
+      "elements": [],
+      "truncated": false,
+      "hasHScroll": false,
+      "kind": "image"
+    }
+  }
+}

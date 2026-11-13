@@ -1,0 +1,77 @@
+{
+  "recordsBefore": 7052,
+  "recordsAfter": 7052,
+  "added": 0,
+  "removed": 0,
+  "changed": 87,
+  "unexpectedChanges": [],
+  "scriptIdentical": true,
+  "scriptBytes": 636660,
+  "textRecordsChanged": 0,
+  "policeV19Descendants": 650,
+  "bgChanged": 0,
+  "orderSame": true,
+  "childListOk": true,
+  "dangling": 0,
+  "helpAndHitUnchanged": true,
+  "visibleLayers": {
+    "tabBefore": 41,
+    "tabAfter": 16,
+    "waxBefore": 47,
+    "waxAfter": 15
+  },
+  "ticket": {
+    "main": {
+      "geom": [
+        384,
+        211,
+        124,
+        66
+      ],
+      "color": "FF8C2800"
+    },
+    "outline": {
+      "geom": [
+        384,
+        211,
+        124,
+        72
+      ]
+    },
+    "mid": {
+      "rot": 32,
+      "color": "FFAF3200",
+      "imageId": 100003
+    },
+    "hi": {
+      "rot": 32,
+      "color": "FFCB4C19",
+      "imageId": 100003
+    },
+    "vertsInside": true,
+    "teethOk": true,
+    "bgRectHidden": true,
+    "fitHidden": true
+  },
+  "wax": {
+    "lobesVisible": 10,
+    "waxOk": true,
+    "stampOk": true,
+    "hotColors": true,
+    "lobesUniform": true,
+    "coreOk": true,
+    "radii": {
+      "min": 48.25,
+      "max": 52,
+      "peakToValley": 3.75
+    }
+  },
+  "gates": {
+    "triVertsInside": true,
+    "midRatio": 0.2661,
+    "hiRatio": 0.0978,
+    "waxPeakToValley": 3.75,
+    "waxMinRadius": 48.25
+  },
+  "verdict": true
+}

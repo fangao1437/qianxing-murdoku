@@ -1,0 +1,624 @@
+{
+ "version": 1,
+ "design": {
+  "file": "clipboard-2026-11-12T18-12-49-749Z-01c344c8.jpg",
+  "size": [
+   1920,
+   1080
+  ],
+  "mapping": "1920x1080 -> 1600x900 (x0.8333)"
+ },
+ "measurement": {
+  "ringCount": 6,
+  "centers": [
+   361,
+   422,
+   480.5,
+   539,
+   597.5,
+   659
+  ],
+  "step": 59.6,
+  "ringTopSegments": [
+   [
+    352,
+    365
+   ],
+   [
+    413,
+    426
+   ],
+   [
+    472,
+    484
+   ],
+   [
+    531,
+    542
+   ],
+   [
+    589,
+    601
+   ],
+   [
+    650,
+    663
+   ]
+  ],
+  "paperLeftX": 24,
+  "paperLeftSamples": [
+   24,
+   24,
+   24,
+   24,
+   24,
+   24,
+   33
+  ],
+  "liveRingCount": 5,
+  "liveCenters": [
+   352,
+   445,
+   541,
+   636,
+   729
+  ],
+  "liveStep": 94,
+  "liveBindingWidth": 40,
+  "livePaperLeftX": 40,
+  "liveBindingColor": "#2E1A12",
+  "designYellowDashInBinding": 0
+ },
+ "binding": {
+  "centerX": 12,
+  "width": 24,
+  "height": 535,
+  "centerY": 513.5,
+  "color": "#3F1E15",
+  "midBand": {
+   "centerX": 12,
+   "width": 12,
+   "height": 535,
+   "centerY": 513.5,
+   "color": "#4D2419"
+  }
+ },
+ "hidden": {
+  "rings": [
+   "art663.ring.1.outer",
+   "art663.ring.1.hi",
+   "art663.ring.1.shade",
+   "art663.ring.1.tip",
+   "art663.ring.2.outer",
+   "art663.ring.2.hi",
+   "art663.ring.2.shade",
+   "art663.ring.2.tip",
+   "art663.ring.3.outer",
+   "art663.ring.3.hi",
+   "art663.ring.3.shade",
+   "art663.ring.3.tip",
+   "art663.ring.4.outer",
+   "art663.ring.4.hi",
+   "art663.ring.4.shade",
+   "art663.ring.4.tip",
+   "art663.ring.5.outer",
+   "art663.ring.5.hi",
+   "art663.ring.5.shade",
+   "art663.ring.5.tip"
+  ],
+  "dashes": [
+   "art658.clues.binding.dash1",
+   "art658.clues.binding.dash2",
+   "art658.clues.binding.dash3",
+   "art658.clues.binding.dash4",
+   "art658.clues.binding.dash5",
+   "art658.clues.binding.dash6",
+   "art658.clues.binding.dash7",
+   "art658.clues.binding.dash8",
+   "art658.clues.binding.dash9",
+   "art658.clues.binding.dash10",
+   "art658.clues.binding.dash11",
+   "art658.clues.binding.dash12"
+  ]
+ },
+ "colors": {
+  "outer": "#1C1410",
+  "top": "#0A0503",
+  "mid": "#393024",
+  "lit": "#514535",
+  "low": "#5E503A",
+  "tip": "#15100D",
+  "tipBlend": "#2C2318",
+  "tipHi": "#544B3A",
+  "binding": "#3F1E15",
+  "midBand": "#4D2419",
+  "paper": "#FDFBEC"
+ },
+ "layers": [
+  {
+   "key": "outer",
+   "dx": 8,
+   "dy": 0,
+   "w": 44,
+   "h": 14,
+   "rot": -8,
+   "color": "#1C1410"
+  },
+  {
+   "key": "mid",
+   "dx": 9,
+   "dy": -0.5,
+   "w": 42,
+   "h": 9,
+   "rot": -8,
+   "color": "#393024"
+  },
+  {
+   "key": "lit",
+   "dx": 20,
+   "dy": 0,
+   "w": 24,
+   "h": 7,
+   "rot": -8,
+   "color": "#514535"
+  },
+  {
+   "key": "low",
+   "dx": 9,
+   "dy": 3,
+   "w": 40,
+   "h": 4,
+   "rot": -8,
+   "color": "#5E503A"
+  },
+  {
+   "key": "top",
+   "dx": 7,
+   "dy": -5,
+   "w": 42,
+   "h": 3.5,
+   "rot": -8,
+   "color": "#0A0503"
+  },
+  {
+   "key": "tip",
+   "dx": 28,
+   "dy": 1,
+   "w": 15,
+   "h": 12,
+   "rot": 0,
+   "color": "#2C2318"
+  },
+  {
+   "key": "tipHi",
+   "dx": 29,
+   "dy": 5,
+   "w": 9,
+   "h": 3,
+   "rot": 0,
+   "color": "#544B3A"
+  }
+ ],
+ "elements": [
+  {
+   "name": "art676.ring.1.outer",
+   "cx": 8,
+   "cy": 361,
+   "w": 44,
+   "h": 14,
+   "rot": -8,
+   "color": "#1C1410",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.1.mid",
+   "cx": 9,
+   "cy": 360.5,
+   "w": 42,
+   "h": 9,
+   "rot": -8,
+   "color": "#393024",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.1.lit",
+   "cx": 20,
+   "cy": 361,
+   "w": 24,
+   "h": 7,
+   "rot": -8,
+   "color": "#514535",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.1.low",
+   "cx": 9,
+   "cy": 364,
+   "w": 40,
+   "h": 4,
+   "rot": -8,
+   "color": "#5E503A",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.1.top",
+   "cx": 7,
+   "cy": 356,
+   "w": 42,
+   "h": 3.5,
+   "rot": -8,
+   "color": "#0A0503",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.1.tip",
+   "cx": 28,
+   "cy": 362,
+   "w": 15,
+   "h": 12,
+   "rot": 0,
+   "color": "#2C2318",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.1.tipHi",
+   "cx": 29,
+   "cy": 366,
+   "w": 9,
+   "h": 3,
+   "rot": 0,
+   "color": "#544B3A",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.2.outer",
+   "cx": 8,
+   "cy": 422,
+   "w": 44,
+   "h": 14,
+   "rot": -8,
+   "color": "#1C1410",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.2.mid",
+   "cx": 9,
+   "cy": 421.5,
+   "w": 42,
+   "h": 9,
+   "rot": -8,
+   "color": "#393024",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.2.lit",
+   "cx": 20,
+   "cy": 422,
+   "w": 24,
+   "h": 7,
+   "rot": -8,
+   "color": "#514535",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.2.low",
+   "cx": 9,
+   "cy": 425,
+   "w": 40,
+   "h": 4,
+   "rot": -8,
+   "color": "#5E503A",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.2.top",
+   "cx": 7,
+   "cy": 417,
+   "w": 42,
+   "h": 3.5,
+   "rot": -8,
+   "color": "#0A0503",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.2.tip",
+   "cx": 28,
+   "cy": 423,
+   "w": 15,
+   "h": 12,
+   "rot": 0,
+   "color": "#2C2318",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.2.tipHi",
+   "cx": 29,
+   "cy": 427,
+   "w": 9,
+   "h": 3,
+   "rot": 0,
+   "color": "#544B3A",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.3.outer",
+   "cx": 8,
+   "cy": 480.5,
+   "w": 44,
+   "h": 14,
+   "rot": -8,
+   "color": "#1C1410",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.3.mid",
+   "cx": 9,
+   "cy": 480,
+   "w": 42,
+   "h": 9,
+   "rot": -8,
+   "color": "#393024",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.3.lit",
+   "cx": 20,
+   "cy": 480.5,
+   "w": 24,
+   "h": 7,
+   "rot": -8,
+   "color": "#514535",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.3.low",
+   "cx": 9,
+   "cy": 483.5,
+   "w": 40,
+   "h": 4,
+   "rot": -8,
+   "color": "#5E503A",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.3.top",
+   "cx": 7,
+   "cy": 475.5,
+   "w": 42,
+   "h": 3.5,
+   "rot": -8,
+   "color": "#0A0503",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.3.tip",
+   "cx": 28,
+   "cy": 481.5,
+   "w": 15,
+   "h": 12,
+   "rot": 0,
+   "color": "#2C2318",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.3.tipHi",
+   "cx": 29,
+   "cy": 485.5,
+   "w": 9,
+   "h": 3,
+   "rot": 0,
+   "color": "#544B3A",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.4.outer",
+   "cx": 8,
+   "cy": 539,
+   "w": 44,
+   "h": 14,
+   "rot": -8,
+   "color": "#1C1410",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.4.mid",
+   "cx": 9,
+   "cy": 538.5,
+   "w": 42,
+   "h": 9,
+   "rot": -8,
+   "color": "#393024",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.4.lit",
+   "cx": 20,
+   "cy": 539,
+   "w": 24,
+   "h": 7,
+   "rot": -8,
+   "color": "#514535",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.4.low",
+   "cx": 9,
+   "cy": 542,
+   "w": 40,
+   "h": 4,
+   "rot": -8,
+   "color": "#5E503A",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.4.top",
+   "cx": 7,
+   "cy": 534,
+   "w": 42,
+   "h": 3.5,
+   "rot": -8,
+   "color": "#0A0503",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.4.tip",
+   "cx": 28,
+   "cy": 540,
+   "w": 15,
+   "h": 12,
+   "rot": 0,
+   "color": "#2C2318",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.4.tipHi",
+   "cx": 29,
+   "cy": 544,
+   "w": 9,
+   "h": 3,
+   "rot": 0,
+   "color": "#544B3A",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.5.outer",
+   "cx": 8,
+   "cy": 597.5,
+   "w": 44,
+   "h": 14,
+   "rot": -8,
+   "color": "#1C1410",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.5.mid",
+   "cx": 9,
+   "cy": 597,
+   "w": 42,
+   "h": 9,
+   "rot": -8,
+   "color": "#393024",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.5.lit",
+   "cx": 20,
+   "cy": 597.5,
+   "w": 24,
+   "h": 7,
+   "rot": -8,
+   "color": "#514535",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.5.low",
+   "cx": 9,
+   "cy": 600.5,
+   "w": 40,
+   "h": 4,
+   "rot": -8,
+   "color": "#5E503A",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.5.top",
+   "cx": 7,
+   "cy": 592.5,
+   "w": 42,
+   "h": 3.5,
+   "rot": -8,
+   "color": "#0A0503",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.5.tip",
+   "cx": 28,
+   "cy": 598.5,
+   "w": 15,
+   "h": 12,
+   "rot": 0,
+   "color": "#2C2318",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.5.tipHi",
+   "cx": 29,
+   "cy": 602.5,
+   "w": 9,
+   "h": 3,
+   "rot": 0,
+   "color": "#544B3A",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.6.outer",
+   "cx": 8,
+   "cy": 659,
+   "w": 44,
+   "h": 14,
+   "rot": -8,
+   "color": "#1C1410",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.6.mid",
+   "cx": 9,
+   "cy": 658.5,
+   "w": 42,
+   "h": 9,
+   "rot": -8,
+   "color": "#393024",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.6.lit",
+   "cx": 20,
+   "cy": 659,
+   "w": 24,
+   "h": 7,
+   "rot": -8,
+   "color": "#514535",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.6.low",
+   "cx": 9,
+   "cy": 662,
+   "w": 40,
+   "h": 4,
+   "rot": -8,
+   "color": "#5E503A",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.6.top",
+   "cx": 7,
+   "cy": 654,
+   "w": 42,
+   "h": 3.5,
+   "rot": -8,
+   "color": "#0A0503",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.6.tip",
+   "cx": 28,
+   "cy": 660,
+   "w": 15,
+   "h": 12,
+   "rot": 0,
+   "color": "#2C2318",
+   "img": 100002
+  },
+  {
+   "name": "art676.ring.6.tipHi",
+   "cx": 29,
+   "cy": 664,
+   "w": 9,
+   "h": 3,
+   "rot": 0,
+   "color": "#544B3A",
+   "img": 100002
+  }
+ ]
+}

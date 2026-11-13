@@ -1,0 +1,143 @@
+{
+  "version": 682,
+  "title": "教程对比度修复 + 非教程弹窗通用边框 + 提示弹窗 EVIDENCE 卡片 + 四键纯色胶囊",
+  "base": {
+    "file": "681_教程弹窗配色/681_教程弹窗配色.gil",
+    "sha256": "0333fb72b005ed48f910f611b132ec1056490cec274988be2a6b73fd07361bfd",
+    "records": 7431
+  },
+  "designRefs": [
+    "美术参考/12.png —— 除提示弹窗外其它弹窗的通用边框（只取边框本体：深棕外框 + 内侧虚线 + 四角金铆钉 + 米白内页）",
+    "美术参考/9.png —— EVIDENCE 卡片（透明底上的米白圆角卡 + 暗棕投影 + 标题下划线 + 横线）",
+    "美术参考/8.png —— EVIDENCE 卡片在真机里的样式/位置",
+    "用户实机截图 2 张 —— 681 导入后的第二关第4步、第一关第8步（用于定位低对比度圆底与红绿圈）",
+    "656_首页设计/首页复刻规格_656.json —— 首页四键纯色胶囊样式 P.button=#FCECD4 / P.buttonText=#6B3A22 / 1 矩形 + 2 圆"
+  ],
+  "userDecisions": {
+    "frameScope": "只给非教程弹窗：help617（760×420）与 modal（四键退出菜单 + 结算共用 633×600 框）；13 页教程保持 681 现状，仅修对比度与红绿圈",
+    "frameElements": "边框本体：深棕外框 + 内侧虚线 + 四角金铆钉 + 米白内页；12.png 的红绶带、放大镜、按键、小叉均为内容占位，不复制",
+    "fourKeys": "删掉 8 个 107179 蓝云纹 bg，按 656 首页四键的「1 矩形 + 2 圆」纯色胶囊重建，文字改深棕 #6B3A22 且字号 24"
+  },
+  "palette": {
+    "frameBrown": "#6C402E",
+    "frameDark": "#47271A",
+    "frameDash": "#C0A467",
+    "frameLight": "#EEE1B7",
+    "paper": "#FFF5D6",
+    "rivetGold": "#DDB551",
+    "rivetEdge": "#987B31",
+    "evidenceCard": "#FDFAE5",
+    "evidenceShadow": "#291A16",
+    "evidenceInk": "#291A16",
+    "button": "#FCECD4",
+    "buttonText": "#6B3A22",
+    "ringGreen": "#4FAE5A",
+    "ringRed": "#E0483A",
+    "ink": "#47271A",
+    "inkMid": "#6C402E",
+    "inkSoft": "#87533E",
+    "titleAmber": "#8A5A16",
+    "titleGreen": "#4F6B3A",
+    "titleRed": "#B23828",
+    "gold": "#F7A530"
+  },
+  "tutorial": {
+    "contrast": {
+      "policy": "按同一页里圆底(…bg)的实际亮度选字色：暗圆底 → 米白 #FFF5D6；亮圆底 → 深墨 #4B1B09。全部只改 75/504 字色，不动圆底填充。",
+      "pairs": ["clueface.bg → clueface", "lg.N.bg → lg.N", "rule.N.num.bg → rule.N.num", "notei.bg → notei"],
+      "explicit": {
+        "clueface": "米白 #FFF5D6（原 #47271A 深墨压在 #93381D 暗红圆底上，CR 1.80）",
+        "lg.N": "暗圆底(#47271A/#A0672F/#93381D/#87533E) → 米白；亮圆底(#D5C39D/#DDB551/#9D9657) → 深墨",
+        "rule.N.num": "金 #F7A530（原 #D84511 橙红压在 #47271A 上，CR 3.04 → 6.60）",
+        "stepn.N": "保持 681 深墨（橙/金/橄榄圆底 CR 4.4~6.9，已达标）",
+        "notei": "保持 681 米白（#6C402E 底 CR 8.00，已达标）"
+      }
+    },
+    "rings": {
+      "policy": "还原为运行时 M.RING_GREEN / M.RING_RED 常量，逐条取 680 同名记录的颜色，不额外修改（含 l1.page.8 的 C04 与 l2 的 D04 覆盖一律撤销）",
+      "source": "内嵌 Lua 18301/18302：M.RING_GREEN=0xFF4FAE5A, M.RING_RED=0xFFE0483A, M.RING_IMAGE_ID=100006",
+      "green": "#FF4FAE5A",
+      "red": "#FFE0483A"
+    }
+  },
+  "frames": [
+    {
+      "key": "help617", "parent": "help617", "anchor": "help617.bg",
+      "w": 760, "h": 420, "t": 17, "dashH": 14, "dashV": 8,
+      "note": "注释说明弹窗；框心 = help617 局部 (0,0) = 屏幕 (800,450)"
+    },
+    {
+      "key": "modal", "parent": "modal", "anchor": "result.bg",
+      "w": 633, "h": 600, "t": 15, "dashH": 13, "dashV": 12,
+      "note": "两个四键弹窗（退出菜单 633×383@0,108 与结算 633×600@0,0）共用同一通用框；两张旧深藏青底板改全透明，框由新增层承担，避免两个框叠加"
+    }
+  ],
+  "frameGeometry": {
+    "containerName": "frame",
+    "containerNote": "DECOR['frame']=true：作为 modal/help617 的直接子控件不会被 hide_unlisted 隐藏；所有边框图元挂在其下，不参与 MANAGED 直接子控件扫描",
+    "layers": [
+      "container 自身：w×h 深棕 #6C402E 矩形（外框本体）",
+      "lightBand：(w-2t+8)×(h-2t+8) #EEE1B7",
+      "darkLine：(w-2t+4)×(h-2t+4) #47271A",
+      "paper：(w-2t)×(h-2t) #FFF5D6，图元 107102（圆角）",
+      "dash.top/bottom × dashH、dash.left/right × dashV：#C0A467 短矩形，位于棕边中线",
+      "rivet ×4：外 22×22 #987B31 + 内 16×16 #DDB551 + 心 6×6 #47271A"
+    ]
+  },
+  "evidence": [
+    {
+      "key": "hint635.menu", "parent": "hint635.menu", "anchor": "hint635.menu.bg",
+      "w": 440, "h": 220, "shadowOffset": [6, -6],
+      "linesDy": [-18, -82],
+      "headingUnderlineDy": 46
+    },
+    {
+      "key": "hint635.result", "parent": "hint635.result", "anchor": "hint635.result.bg",
+      "w": 440, "h": 150, "shadowOffset": [6, -6],
+      "linesDy": [-46, -66],
+      "headingUnderlineDy": 0
+    }
+  ],
+  "evidenceGeometry": {
+    "containerName": "card",
+    "containerNote": "DECOR['card']=true；容器本身即暗棕投影（右下偏移 6px），避免透明父级影响子控件显隐",
+    "layers": [
+      "container：w×h #291A16 图元 107102，中心 (6,-6)",
+      "face：w×h #FDFAE5 图元 107102，中心相对容器 (-6,6) ⇒ 回到弹窗中心",
+      "heading underline：细矩形 #291A16",
+      "ruled lines ×2：细矩形 #291A16"
+    ]
+  },
+  "buttons": {
+    "names": ["modal.exit", "modal.save", "modal.settle", "modal.cancel", "result.next", "result.exit", "result.home", "result.settle"],
+    "w": 312, "h": 60,
+    "body": { "w": 252, "h": 60, "dx": 0, "dy": 0, "imageId": 100001 },
+    "left": { "w": 60, "h": 60, "dx": -126, "dy": 0, "imageId": 100002 },
+    "right": { "w": 60, "h": 60, "dx": 126, "dy": 0, "imageId": 100002 },
+    "color": "#FCECD4",
+    "labelColor": "#6B3A22",
+    "labelSize": 24,
+    "deleteBg": "按 delete_controls 三处同步：父 childList / recTop / recs；删后运行时 sub(bid,'bg') 取不到，Lua 里的 107179 覆盖逻辑自动变成 no-op，本轮不改内嵌 Lua"
+  },
+  "popupText": {
+    "policy": "深藏青底板换成米白后，所有弹窗文字从浅色翻成深墨；四键 label 单独用首页 buttonText",
+    "map": {
+      "#FFFFFFFF": "#FF47271A",
+      "#FFD3CCBD": "#FF6C402E",
+      "#FFFFE7BE": "#FF291A16",
+      "#FFBDB6A7": "#FF291A16",
+      "#FFF9F2E9": "#FF6C402E",
+      "#FFFFCB7A": "#FF8A5A16",
+      "#FF8FC08A": "#FF4F6B3A",
+      "#FFFF8A7A": "#FFB23828"
+    },
+    "fourKeyLabel": { "from": "#FF000000", "to": "#FF6B3A22", "size": 24 },
+    "scope": "help617.* / hint635.* / modal.* / result.* 的文字与 close 图标；clue 模板、select.*、td.*（除本轮对比度与圈修复）不动"
+  },
+  "limitations": [
+    "纯图元构造：12.png 的红绶带、放大镜、按键、小叉按用户要求不复制；EVIDENCE 字样的字面文字未新增（提示弹窗的标题是运行时文本，避免重叠），只复刻卡片形状/投影/标题下划线/横线。",
+    "两个四键弹窗共用 633×600 通用框（退出菜单内容位于框的上半部），避免两套框在结算态叠加；旧 633×383 与 633×600 底板均改全透明。",
+    "未改内嵌 Lua；删除 8 个 bg 后，运行时 107179 胶囊覆盖逻辑找不到 bg 自动跳过（入口层会打印 'bg 取不到'，无副作用）。",
+    "未导入游戏；离线渲染为简化纯色模拟，只作色彩/形状前后对照，不作像素一致度验收。"
+  ]
+}

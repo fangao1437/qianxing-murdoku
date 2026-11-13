@@ -1,0 +1,477 @@
+{
+  "version": 1,
+  "name": "673 build audit",
+  "date": "2026-11-12",
+  "base": {
+    "file": "672_梯形与异色区.gil",
+    "sha256": "2770c87f48fa33b11c9d55a63c97f7f283db0b2381e9704ac49b9a7981ccda18",
+    "records": 7052,
+    "scriptBytes": 636660
+  },
+  "output": {
+    "file": "673_注释按钮与底图.gil",
+    "sha256": "00550a287b2e11b6a1e9cc3ae5e04a74b38ced9755ab3f62f3029b330592da7f",
+    "bytes": 6304481,
+    "records": 7052
+  },
+  "spec": {
+    "reference": "用户 6 图：实机全局 + 票券/火漆局部；设计稿全局 + 票券/火漆局部。设计局部 304×218 / 260×288，实机局部 180×128 / 152×138。",
+    "measured": {
+      "tabPaletteImpl": "#AF3200 / #8C2800 / #CB4C19（与设计图一致，颜色本轮不动）",
+      "tabPaletteDesign": "#AF3200(1556) / #8C2800(1382) / #CB4C19(354)",
+      "tabBackground": "实测左端 #DC642A(30,70)/#DA6228(30,100)→#F5EBC7(30,130)、右端 #E6B33B(280,70/130)、上方 #E8B93C(150,20)、下方 #8A3B25(150,180)：跨多色渐变，纯色矩形必然形成竖带（664 根因）",
+      "tabShape": "设计图两端各 3~4 枚圆润凸齿 + 露出真实背景的凹口；整圈深棕描边；两条平行 45° 斜分界",
+      "implTabShape": "两端 20px 浅色竖带 + 21px 圆齿形成白/黄闪电状撕裂带；23 枚拟合三角",
+      "waxPalette": "#AA0400(2334) / #B40806(2354) / #D70601(216)，实机同色",
+      "waxShape": "设计图 8 瓣浅起伏（radial 82~91.5，峰谷 9.5px / 直径 177px）、左右弧形亮光、顶部鼓包、柔和暗压印",
+      "implWaxShape": "完美正圆（radial 52.5~55 恒定）+ 左右突兀椭圆高光块 + 完整亮环 + 双硬同心压印"
+    },
+    "ticket": {
+      "center": [
+        384,
+        211
+      ],
+      "size": [
+        124,
+        66
+      ],
+      "rot": -13,
+      "colors": {
+        "base": "#8C2800",
+        "mid": "#AF3200",
+        "hi": "#CB4C19",
+        "stroke": "#592520"
+      },
+      "midTriangle": {
+        "cx": 343.3778544489456,
+        "cy": 184.68762095839776,
+        "w": 93.33809511662432,
+        "h": 46.66904755831214,
+        "rot": 32,
+        "verts": [
+          [
+            395.3208650524885,
+            179.74559207946268
+          ],
+          [
+            316.16567118996784,
+            229.20724676859314
+          ],
+          [
+            331.01244077666297,
+            164.8988224927676
+          ]
+        ]
+      },
+      "hiTriangle": {
+        "cx": 338.50663088107666,
+        "cy": 176.89203368405862,
+        "w": 56.56854249492383,
+        "h": 28.284271247461877,
+        "rot": 31.999999999999943,
+        "verts": [
+          [
+            369.98724336807237,
+            173.8968646665222
+          ],
+          [
+            322.01439860290833,
+            203.873625084177
+          ],
+          [
+            331.01244077666297,
+            164.8988224927676
+          ]
+        ]
+      },
+      "midRatio": 26.61,
+      "hiRatio": 9.78,
+      "edge": [
+        {
+          "name": "art663.tab.tooth.l0",
+          "rim": "art663.tab.edge.l1",
+          "cx": 332.44,
+          "cy": 176.52,
+          "rimSize": [
+            24,
+            30
+          ],
+          "toothSize": [
+            21,
+            27
+          ],
+          "color": "#8C2800"
+        },
+        {
+          "name": "art663.tab.tooth.l1",
+          "rim": "art663.tab.edge.l2",
+          "cx": 327.49,
+          "cy": 197.95,
+          "rimSize": [
+            24,
+            30
+          ],
+          "toothSize": [
+            21,
+            27
+          ],
+          "color": "#8C2800"
+        },
+        {
+          "name": "art663.tab.tooth.l2",
+          "rim": "art663.tab.edge.l3",
+          "cx": 322.54,
+          "cy": 219.39,
+          "rimSize": [
+            24,
+            30
+          ],
+          "toothSize": [
+            21,
+            27
+          ],
+          "color": "#8C2800"
+        },
+        {
+          "name": "art663.tab.tooth.r0",
+          "rim": "art663.tab.edge.r1",
+          "cx": 445.46,
+          "cy": 202.61,
+          "rimSize": [
+            24,
+            30
+          ],
+          "toothSize": [
+            21,
+            27
+          ],
+          "color": "#8C2800"
+        },
+        {
+          "name": "art663.tab.tooth.r1",
+          "rim": "art663.tab.edge.r2",
+          "cx": 440.51,
+          "cy": 224.05,
+          "rimSize": [
+            24,
+            30
+          ],
+          "toothSize": [
+            21,
+            27
+          ],
+          "color": "#8C2800"
+        },
+        {
+          "name": "art663.tab.tooth.r2",
+          "rim": "art663.tab.edge.r3",
+          "cx": 435.56,
+          "cy": 245.48,
+          "rimSize": [
+            24,
+            30
+          ],
+          "toothSize": [
+            21,
+            27
+          ],
+          "color": "#8C2800"
+        }
+      ]
+    },
+    "wax": {
+      "center": [
+        1326,
+        342
+      ],
+      "colors": {
+        "main": "#AA0400",
+        "rim": "#B40806",
+        "hot": "#D70601",
+        "stamp": "#9C0400"
+      },
+      "lobes": [
+        {
+          "name": "art663.wax.edge.0",
+          "deg": 36,
+          "cx": 1350.27,
+          "cy": 359.63,
+          "w": 44,
+          "h": 44,
+          "color": "#B40806"
+        },
+        {
+          "name": "art663.wax.edge.1",
+          "deg": 72,
+          "cx": 1335.27,
+          "cy": 370.53,
+          "w": 44,
+          "h": 44,
+          "color": "#B40806"
+        },
+        {
+          "name": "art663.wax.edge.2",
+          "deg": 108,
+          "cx": 1316.73,
+          "cy": 370.53,
+          "w": 44,
+          "h": 44,
+          "color": "#B40806"
+        },
+        {
+          "name": "art663.wax.edge.3",
+          "deg": 144,
+          "cx": 1301.73,
+          "cy": 359.63,
+          "w": 44,
+          "h": 44,
+          "color": "#B40806"
+        },
+        {
+          "name": "art663.wax.edge.4",
+          "deg": 216,
+          "cx": 1301.73,
+          "cy": 324.37,
+          "w": 44,
+          "h": 44,
+          "color": "#B40806"
+        },
+        {
+          "name": "art663.wax.edge.5",
+          "deg": 252,
+          "cx": 1316.73,
+          "cy": 313.47,
+          "w": 44,
+          "h": 44,
+          "color": "#B40806"
+        },
+        {
+          "name": "art663.wax.edge.6",
+          "deg": 288,
+          "cx": 1335.27,
+          "cy": 313.47,
+          "w": 44,
+          "h": 44,
+          "color": "#B40806"
+        },
+        {
+          "name": "art663.wax.edge.7",
+          "deg": 324,
+          "cx": 1350.27,
+          "cy": 324.37,
+          "w": 44,
+          "h": 44,
+          "color": "#B40806"
+        },
+        {
+          "name": "art663.wax.edge.8",
+          "deg": 0,
+          "cx": 1356,
+          "cy": 342,
+          "w": 44,
+          "h": 44,
+          "color": "#B40806"
+        },
+        {
+          "name": "art663.wax.edge.9",
+          "deg": 180,
+          "cx": 1296,
+          "cy": 342,
+          "w": 44,
+          "h": 44,
+          "color": "#B40806"
+        }
+      ],
+      "radii": {
+        "min": 48.25,
+        "max": 52,
+        "peakToValley": 3.75
+      },
+      "stampCore": {
+        "w": 64,
+        "h": 58,
+        "color": "#9C0400"
+      }
+    },
+    "gates": {
+      "triVertsInside": true,
+      "midRatio": 0.2661,
+      "hiRatio": 0.0978,
+      "waxPeakToValley": 3.75,
+      "waxMinRadius": 48.25
+    },
+    "minimalPrimitives": "不新增任何记录（7052 条不变）；票券可见视觉层 41→16、火漆 50→15；23 枚拟合三角减为 2 枚解析等腰直角三角（rot 归一化到 [0,360)）。",
+    "untouched": "clues.help617 官方问号、clues.help627.hit 热区、内嵌 Lua、26 条文本、线索卡 671/672 全部成果、v19 背景子树、recTop 层序与 childList 均逐字节不变。"
+  },
+  "counts": {
+    "recordsBefore": 7052,
+    "recordsAfter": 7052,
+    "added": 0,
+    "removed": 0,
+    "hidden": 57,
+    "shown": 0,
+    "modified": 87
+  },
+  "visibleLayers": {
+    "tabBefore": 41,
+    "tabAfter": 16,
+    "waxBefore": 47,
+    "waxAfter": 15
+  },
+  "hidden": [
+    "art664.tab.mid.fit02",
+    "art664.tab.mid.fit03",
+    "art664.tab.mid.fit04",
+    "art664.tab.mid.fit05",
+    "art664.tab.mid.fit06",
+    "art664.tab.mid.fit07",
+    "art664.tab.mid.fit08",
+    "art664.tab.mid.fit09",
+    "art664.tab.mid.fit10",
+    "art664.tab.mid.fit11",
+    "art664.tab.mid.fit12",
+    "art664.tab.mid.fit13",
+    "art664.tab.mid.fit14",
+    "art664.tab.hi.fit16",
+    "art664.tab.hi.fit17",
+    "art664.tab.hi.fit18",
+    "art664.tab.hi.fit19",
+    "art664.tab.hi.fit20",
+    "art664.tab.hi.fit21",
+    "art664.tab.hi.fit22",
+    "art664.tab.hi.fit23",
+    "art663.tab.edge.l0",
+    "art663.tab.tooth.l3",
+    "art663.tab.edge.r0",
+    "art663.tab.tooth.r3",
+    "art663.wax.edge.10",
+    "art663.wax.edge.11",
+    "art663.wax.lobe.0",
+    "art663.wax.lobe.1",
+    "art663.wax.lobe.2",
+    "art663.wax.lobe.3",
+    "art663.wax.lobe.4",
+    "art663.wax.lobe.5",
+    "art663.wax.lobe.6",
+    "art663.wax.lobe.7",
+    "art663.wax.lobe.8",
+    "art663.wax.lobe.9",
+    "art663.wax.lobe.10",
+    "art663.wax.lobe.11",
+    "art664.wax.ring.0",
+    "art664.wax.ring.1",
+    "art664.wax.ring.2",
+    "art664.wax.ring.3",
+    "art664.wax.ring.4",
+    "art664.wax.ring.5",
+    "art664.wax.ring.6",
+    "art664.wax.ring.7",
+    "art664.wax.ring.8",
+    "art664.wax.ring.9",
+    "art664.wax.ring.10",
+    "art664.wax.ring.11",
+    "art664.wax.ring.12",
+    "art664.wax.ring.13",
+    "art664.wax.ring.14",
+    "art664.wax.ring.15",
+    "art664.wax.center",
+    "art664.wax.stamp.rim"
+  ],
+  "shown": [],
+  "modified": [
+    "art664.tab.mid.fit02",
+    "art664.tab.mid.fit03",
+    "art664.tab.mid.fit04",
+    "art664.tab.mid.fit05",
+    "art664.tab.mid.fit06",
+    "art664.tab.mid.fit07",
+    "art664.tab.mid.fit08",
+    "art664.tab.mid.fit09",
+    "art664.tab.mid.fit10",
+    "art664.tab.mid.fit11",
+    "art664.tab.mid.fit12",
+    "art664.tab.mid.fit13",
+    "art664.tab.mid.fit14",
+    "art664.tab.hi.fit16",
+    "art664.tab.hi.fit17",
+    "art664.tab.hi.fit18",
+    "art664.tab.hi.fit19",
+    "art664.tab.hi.fit20",
+    "art664.tab.hi.fit21",
+    "art664.tab.hi.fit22",
+    "art664.tab.hi.fit23",
+    "art664.tab.mid.fit01",
+    "art664.tab.hi.fit15",
+    "art641.game.help.tab",
+    "art661.tab.outline",
+    "art663.tab.edge.l0",
+    "art663.tab.edge.l1",
+    "art663.tab.tooth.l0",
+    "art663.tab.edge.l2",
+    "art663.tab.tooth.l1",
+    "art663.tab.edge.l3",
+    "art663.tab.tooth.l2",
+    "art663.tab.tooth.l3",
+    "art663.tab.edge.r0",
+    "art663.tab.edge.r1",
+    "art663.tab.tooth.r0",
+    "art663.tab.edge.r2",
+    "art663.tab.tooth.r1",
+    "art663.tab.edge.r3",
+    "art663.tab.tooth.r2",
+    "art663.tab.tooth.r3",
+    "art663.wax.edge.0",
+    "art663.wax.edge.1",
+    "art663.wax.edge.2",
+    "art663.wax.edge.3",
+    "art663.wax.edge.4",
+    "art663.wax.edge.5",
+    "art663.wax.edge.6",
+    "art663.wax.edge.7",
+    "art663.wax.edge.8",
+    "art663.wax.edge.9",
+    "art663.wax.edge.10",
+    "art663.wax.edge.11",
+    "art663.wax.lobe.0",
+    "art663.wax.lobe.1",
+    "art663.wax.lobe.2",
+    "art663.wax.lobe.3",
+    "art663.wax.lobe.4",
+    "art663.wax.lobe.5",
+    "art663.wax.lobe.6",
+    "art663.wax.lobe.7",
+    "art663.wax.lobe.8",
+    "art663.wax.lobe.9",
+    "art663.wax.lobe.10",
+    "art663.wax.lobe.11",
+    "art664.wax.ring.0",
+    "art664.wax.ring.1",
+    "art664.wax.ring.2",
+    "art664.wax.ring.3",
+    "art664.wax.ring.4",
+    "art664.wax.ring.5",
+    "art664.wax.ring.6",
+    "art664.wax.ring.7",
+    "art664.wax.ring.8",
+    "art664.wax.ring.9",
+    "art664.wax.ring.10",
+    "art664.wax.ring.11",
+    "art664.wax.ring.12",
+    "art664.wax.ring.13",
+    "art664.wax.ring.14",
+    "art664.wax.ring.15",
+    "art664.wax.hot.l",
+    "art664.wax.hot.r",
+    "art663.wax.core",
+    "art664.wax.center",
+    "art664.wax.stamp.rim",
+    "art664.wax.stamp.core"
+  ],
+  "writeGilReport": {
+    "bytes": 6304481,
+    "diffs": 531,
+    "compared": 1425227,
+    "recs": 7052,
+    "marker": null
+  }
+}

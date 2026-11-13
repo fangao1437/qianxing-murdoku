@@ -1,0 +1,81 @@
+{
+  "recordsBefore": 7431,
+  "recordsAfter": 7431,
+  "added": 0,
+  "removed": 0,
+  "changed": 50,
+  "changedExtra": [],
+  "textRecordsChanged": 0,
+  "policeV19Descendants": 650,
+  "bgChanged": 0,
+  "recTopSame": true,
+  "childListOk": true,
+  "dangling": 0,
+  "previous": {
+    "untouched": true,
+    "checked": 370,
+    "waxVisible": 240
+  },
+  "gridPaper": {
+    "parentOk": true,
+    "parentY": 0,
+    "gridOk": true,
+    "kids": 49,
+    "shiftY": -30,
+    "xUnchanged": true,
+    "sample": [
+      {
+        "name": "art656.home.grid.paper",
+        "before": [
+          -1,
+          -15.5
+        ],
+        "after": [
+          -1,
+          -45.5
+        ]
+      },
+      {
+        "name": "art656.home.grid.v0",
+        "before": [
+          -310.2,
+          12.6
+        ],
+        "after": [
+          -310.2,
+          -17.4
+        ]
+      },
+      {
+        "name": "art663.grid.h22",
+        "before": [
+          -25.4,
+          -283.7
+        ],
+        "after": [
+          -25.4,
+          -313.7
+        ]
+      }
+    ],
+    "rootCause": "sync_art641() 的 SetAnchoredPosition(105,46) 覆盖父坐标"
+  },
+  "xMark": {
+    "scriptClean": true,
+    "orderOk": true,
+    "orderPos": {
+      "obj12": 231,
+      "rug": 248,
+      "furn": 261,
+      "portrait": 347,
+      "x": 485
+    },
+    "srcSynced": true,
+    "scriptBytes": [
+      636660,
+      636689
+    ],
+    "inserted": "\"rug_layer\", \"furn\""
+  },
+  "verdict": true
+}

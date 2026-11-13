@@ -1,0 +1,84 @@
+{
+  "version": 685,
+  "verdict": true,
+  "generality": {
+    "enumeratedCases": 97280,
+    "boardSizes": [
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "spans": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "scaleFactors": [
+      1,
+      1.25,
+      1.5,
+      2
+    ],
+    "kinds": 8,
+    "maxReachCells": 8,
+    "maxOverlappedCellsPerFurniture": 64,
+    "markGrid": "8x8",
+    "uncoveredCells": 0,
+    "allCovered": true,
+    "note": "家具可达单元格按四向 ceil(span×scale) 保守外扩；所有枚举结果都落在 8×8 标记网格内 ⇒ 任意种类/尺寸多格家具的越界部分都不会出现「没有对应 X 标记」的格子。"
+  },
+  "structural": {
+    "available": true,
+    "checks": {
+      "markLayerExists": true,
+      "markLayerParentIsStage": true,
+      "markLayerIsLastInStage": true,
+      "stageChildCount": 4,
+      "stageChildren": [
+        "board.bg",
+        "board.floors",
+        "board.rugs",
+        "art685.mark.overlay"
+      ],
+      "overlayPos": [
+        0,
+        0
+      ],
+      "overlaySize": [
+        584,
+        584
+      ],
+      "overlayPosIsZero": true,
+      "overlaySizeEqualsStage": true,
+      "markContainers": 64,
+      "markPairsWithTwoStrokes": 64,
+      "hiddenRecords": 192,
+      "hiddenExpected": 192,
+      "strokeRotations": [
+        -45,
+        45
+      ],
+      "strokeColors": [
+        "#ff45494d"
+      ],
+      "scriptBytes": 641321,
+      "lua.markLayerRaise": true,
+      "lua.markLayerGuard": true,
+      "lua.markCtrl": true,
+      "lua.markSetVisible": true,
+      "lua.markScope": true,
+      "lua.cellPos": true,
+      "lua.xMarkMirror": true,
+      "lua.furnAnchorRaise": true,
+      "lua.tickRaise": true,
+      "noKindSpecificLayerRule": true,
+      "baseScriptBytes": 636689,
+      "scriptBytesDelta": 4632
+    },
+    "errors": [],
+    "ok": true
+  }
+}

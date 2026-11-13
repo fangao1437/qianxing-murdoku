@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "name": "680 build audit",
+  "date": "2026-11-12",
+  "base": {
+    "file": "679_棋盘居中与边缘.gil",
+    "sha256": "ab05d4253a6fd56c3668ab4debcdaca8b9f1bdfb730c41be95ff693847efe03a",
+    "records": 7431,
+    "scriptBytes": 636660
+  },
+  "output": {
+    "file": "680_网格纸与家具层序.gil",
+    "sha256": "782888e2ca4f0f609a7a39dcdd2bde8b7b141f979665dd6650f712e20eca0e43",
+    "bytes": 6623555,
+    "records": 7431,
+    "scriptBytes": 636689
+  },
+  "spec": {
+    "userFeedback": "棋盘背景的网格纸没有跟随下移；桌子的其中一格会挡住 x 标记，历史上地毯也出现过，查询历史一并解决",
+    "gridPaper": {
+      "rootCause": "内嵌 Lua sync_art641() 切屏时 gp:SetAnchoredPosition(105,46) 覆盖 art657.grid.reuse 父坐标，679 改父层无效",
+      "fix": "父层 504 y 恢复 0；49 个子层 504 y 各 -30（y 向上为正 ⇒ 下移 30），子层相对父偏移不会被 Lua 覆盖",
+      "kids": 49,
+      "shift": 30,
+      "xUnchanged": true
+    },
+    "xMark": {
+      "rootCause": "layer_order 未列出 rug_layer / furn 容器 ⇒ enforce_layers 倒序 SetAsFirstSibling 后它们留在最上层，盖住 x",
+      "history": "v283「家具盖住头像」正是靠在 layer_order 插入 portrait 层解决；v327 地毯按轴缩放；v315/v316 家具实例 SetSiblingIndex(地毯=1/家具=2)",
+      "fix": "在 obj12 之后、portrait 之前插入 \"rug_layer\", \"furn\" ⇒ 两个容器都排在 x 之下",
+      "patchOnly": true,
+      "srcSynced": true
+    },
+    "keepUntouched": 370
+  },
+  "counts": {
+    "recordsBefore": 7431,
+    "recordsAfter": 7431,
+    "added": 0,
+    "removed": 0,
+    "changed": 50
+  },
+  "changedNames": [
+    "art657.grid.reuse",
+    "art656.home.grid.paper",
+    "art656.home.grid.v0",
+    "art656.home.grid.v1",
+    "art656.home.grid.v2",
+    "art656.home.grid.v3",
+    "art656.home.grid.v4",
+    "art656.home.grid.v5",
+    "art656.home.grid.v6",
+    "art656.home.grid.v7",
+    "art656.home.grid.v8",
+    "art656.home.grid.v9",
+    "art656.home.grid.v10",
+    "art656.home.grid.v11",
+    "art656.home.grid.v12",
+    "art656.home.grid.v13",
+    "art656.home.grid.v14",
+    "art656.home.grid.v15",
+    "art656.home.grid.v16",
+    "art656.home.grid.v17",
+    "art656.home.grid.v18",
+    "art656.home.grid.v19",
+    "art656.home.grid.v20",
+    "art656.home.grid.v21",
+    "art656.home.grid.v22",
+    "art656.home.grid.v23",
+    "art656.home.grid.h0",
+    "art656.home.grid.h1",
+    "art656.home.grid.h2",
+    "art656.home.grid.h3",
+    "art663.grid.h04",
+    "art663.grid.h05",
+    "art663.grid.h06",
+    "art663.grid.h07",
+    "art663.grid.h08",
+    "art663.grid.h09",
+    "art663.grid.h10",
+    "art663.grid.h11",
+    "art663.grid.h12",
+    "art663.grid.h13",
+    "art663.grid.h14",
+    "art663.grid.h15",
+    "art663.grid.h16",
+    "art663.grid.h17",
+    "art663.grid.h18",
+    "art663.grid.h19",
+    "art663.grid.h20",
+    "art663.grid.h21",
+    "art663.grid.h22",
+    "art656.home.paper.edge"
+  ],
+  "writeGilReport": {
+    "bytes": 6623555,
+    "diffs": 201,
+    "compared": 1505377,
+    "recs": 7431,
+    "marker": null
+  }
+}

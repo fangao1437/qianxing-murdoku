@@ -1,0 +1,35 @@
+{
+  "name": "656 离线引擎账本（沿用 655 的 perf_faithful 口径）",
+  "date": "2026-11-10",
+  "tool": "murdoku-pro/tools/perf_faithful/{bench.lua,compare.lua,fake_engine.lua} + 导出控件树656.mjs",
+  "note": "本机 murdoku-pro/tools/gil/gilread.mjs 缺失（历史记录不齐），故用 qianxing-murdoku/tools/gil/gilread.mjs 补了 states/index 的适配导出脚本；临时测试目录在 OS temp，未改仓库原有工具。",
+  "tree": {
+    "from": "656_首页设计.gil",
+    "rootNodes": 3928,
+    "topLevelTemplates": 42,
+    "records": 6421
+  },
+  "comparison": {
+    "old": "655_遍历负载优化.lua（655 内嵌脚本）",
+    "new": "656_首页设计.lua（656 内嵌脚本）",
+    "sameTree": true,
+    "phases": 29
+  },
+  "result": {
+    "engineCallsOld": 1077152,
+    "engineCallsNew": 1077000,
+    "delta": -152,
+    "instantiatedNodesOld": 4655,
+    "instantiatedNodesNew": 4655,
+    "finalStateLines": 6930,
+    "finalStateRawDiffLines": 20,
+    "finalStateNormalizedDiffLines": 0,
+    "sameVersionSelfRun": {
+      "old655_vs_old655b_stateDiff": 0,
+      "old655_vs_old655b_callDelta": -136,
+      "conclusion": "同版自跑也有 -136 次调用波动，且跨进程 pairs 顺序会改变地毯实例兄弟序号；655 报告已记录同类噪声。因此不能把 -152 全部归因于本轮改动，可确定的是没有引入回退。"
+    },
+    "normalizedMethod": "把 state 文件里的 #<兄弟序号> 归一为 # 后排序比较；20 行原始差异全部是 rug.cell.3.3 / rug.cell.4.2 的兄弟序号，属性/几何/显隐/缩放完全一致。"
+  },
+  "verdict": "界面状态等价、实例化节点数相同、未引入性能回退；离线次数不是实机帧率。"
+}

@@ -1,0 +1,70 @@
+{
+  "recordsBefore": 7052,
+  "recordsAfter": 7052,
+  "added": 0,
+  "removed": 0,
+  "changed": 65,
+  "unexpectedChanges": [],
+  "scriptIdentical": true,
+  "scriptBytes": 636660,
+  "textRecordsChanged": 0,
+  "policeV19Descendants": 650,
+  "bgChanged": 0,
+  "orderSame": true,
+  "childListOk": true,
+  "dangling": 0,
+  "gradientUntouched": true,
+  "fitCount": 23,
+  "helpAndHitUntouched": true,
+  "visibleLayers": {
+    "tabBefore": 41,
+    "tabAfter": 33,
+    "waxBefore": 47,
+    "waxAfter": 21
+  },
+  "ticket": {
+    "mainGeom": [
+      384,
+      211,
+      160,
+      66
+    ],
+    "outlineGeom": [
+      384,
+      211,
+      160,
+      72
+    ],
+    "totalLength": 178,
+    "designLength": 177.8,
+    "ticketOk": true,
+    "stripOk": true,
+    "toothOk": true
+  },
+  "wax": {
+    "lobesOk": true,
+    "coreOk": true,
+    "topOk": true,
+    "arcsOk": true,
+    "stampOk": true,
+    "waxHiddenOk": true,
+    "radii": {
+      "min": 53,
+      "max": 54,
+      "peakToValley": 1
+    },
+    "hotMaxRadius": 53.26
+  },
+  "gates": {
+    "totalLength": 178,
+    "designLength": 177.8,
+    "gradientUntouched": true,
+    "notchInsideTicket": true,
+    "waxRadii": [
+      53,
+      54
+    ],
+    "hotMaxRadius": 53.26
+  },
+  "verdict": true
+}

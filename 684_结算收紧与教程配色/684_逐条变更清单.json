@@ -1,0 +1,62 @@
+[
+  {
+    "name": "result.next",
+    "rule": "A 收紧间距+上移",
+    "fromY": -22,
+    "toY": 12
+  },
+  {
+    "name": "result.exit",
+    "rule": "A 收紧间距+上移",
+    "fromY": -102,
+    "toY": -60
+  },
+  {
+    "name": "result.home",
+    "rule": "A 收紧间距+上移",
+    "fromY": -182,
+    "toY": -132
+  },
+  {
+    "name": "result.settle",
+    "rule": "A 收紧间距+上移",
+    "fromY": -262,
+    "toY": -204
+  },
+  {
+    "name": "result.next/label",
+    "rule": "A 加宽让 5 字文本完整",
+    "fromW": 125,
+    "toW": 312
+  },
+  {
+    "name": "result.exit/label",
+    "rule": "A 加宽让 5 字文本完整",
+    "fromW": 125,
+    "toW": 312
+  },
+  {
+    "name": "result.home/label",
+    "rule": "A 加宽让 5 字文本完整",
+    "fromW": 125,
+    "toW": 312
+  },
+  {
+    "name": "result.settle/label",
+    "rule": "A 加宽让 5 字文本完整",
+    "fromW": 125,
+    "toW": 312
+  },
+  {
+    "name": "result.settle.countdown",
+    "rule": "A 倒计时移进内页",
+    "fromY": -317,
+    "toY": -258
+  },
+  {
+    "name": "td.home.page.1.rule.5",
+    "rule": "C 五卡染色统一（严格取 4.png #C9AC6D）",
+    "from": "#FFD5C39D",
+    "to": "#FFC9AC6D"
+  }
+]

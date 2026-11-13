@@ -1,0 +1,117 @@
+{
+  "recordsBefore": 7431,
+  "recordsAfter": 7582,
+  "added": 159,
+  "removed": 8,
+  "removedNames": [
+    "bg@1073742469",
+    "bg@1073742470",
+    "bg@1073742471",
+    "bg@1073742442",
+    "bg@1073742714",
+    "bg@1073742717",
+    "bg@1073742720",
+    "bg@1073742723"
+  ],
+  "removedOk": true,
+  "addedOk": true,
+  "dupIds": 0,
+  "changed": 300,
+  "changedExtra": [],
+  "colorOnlyOk": true,
+  "colorDiffCount": 304,
+  "rogue": [],
+  "layersOk": true,
+  "layerErrors": [],
+  "layerChecked": 155,
+  "decor": {
+    "frameContainers": 2,
+    "cardContainers": 2,
+    "decorOk": true
+  },
+  "tutorial": {
+    "circlePairs": 97,
+    "lowContrastPairs": 0,
+    "pairSamples": [
+      {
+        "name": "td.home.page.1.lg.5",
+        "bg": "#FF47271A",
+        "fg": "#FFFFF5D6",
+        "cr": 12.26
+      },
+      {
+        "name": "td.home.page.1.lg.6",
+        "bg": "#FFA0672F",
+        "fg": "#FFFFF5D6",
+        "cr": 4.31
+      },
+      {
+        "name": "td.home.page.1.lg.7",
+        "bg": "#FF93381D",
+        "fg": "#FFFFF5D6",
+        "cr": 6.83
+      },
+      {
+        "name": "td.home.page.1.lg.8",
+        "bg": "#FFD5C39D",
+        "fg": "#FF4B1B09",
+        "cr": 8.3
+      },
+      {
+        "name": "td.home.page.1.lg.9",
+        "bg": "#FFDDB551",
+        "fg": "#FF4B1B09",
+        "cr": 7.4
+      },
+      {
+        "name": "td.home.page.1.lg.10",
+        "bg": "#FF9D9657",
+        "fg": "#FF4B1B09",
+        "cr": 4.75
+      },
+      {
+        "name": "td.home.page.1.lg.11",
+        "bg": "#FF87533E",
+        "fg": "#FFFFF5D6",
+        "cr": 5.78
+      },
+      {
+        "name": "td.home.page.1.rule.1.num",
+        "bg": "#FF47271A",
+        "fg": "#FFF7A530",
+        "cr": 6.6
+      }
+    ],
+    "rings": 180,
+    "ringColors": [
+      "#FF4FAE5A",
+      "#FFE0483A"
+    ],
+    "ringOk": true
+  },
+  "buttons": {
+    "errors": [],
+    "capsuleCounts": [
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3
+    ]
+  },
+  "scriptSame": true,
+  "scriptBytes": [
+    636689,
+    636689
+  ],
+  "policeV19Descendants": 650,
+  "bgChanged": 0,
+  "recTopSame": true,
+  "childListOk": true,
+  "dangling": 0,
+  "deletedRefs": 0,
+  "verdict": true
+}

@@ -2402,6 +2402,10 @@ function Adapter:ensure_cells(rows, cols)
         if ctrl.SetAnchoredPosition and x ~= nil then
           pcall(function() ctrl:SetAnchoredPosition(x, y) end)
         end
+        -- ★ 685：记下本格中心，标记层复用同一组数值（与 n / 家具尺寸无关）
+        self._cell_pos = self._cell_pos or {}
+        self._cell_pos[id] = { x, y, cell_size }
+        self._board_n = n
         -- 格子里的 face/note/x 跟着格子一起缩放
         local kids = { "face", "x" }
         for i = 1, #kids do
@@ -2560,6 +2564,8 @@ function Adapter:ensure_cells(rows, cols)
       self:_furn_try_all()
     end
   end)
+  -- ★ 685：建格完成后立刻把标记层复位到 stage 末尾
+  self:_mark_layer_raise()
   return made
 end
 
@@ -3509,6 +3515,82 @@ function Adapter:enforce_screen_layers(screen)
     -- 关卡内：两个都压到最下面（棋盘/顶栏/线索才该在最上）
     put("home", 0)
     put("select", 1)
+  end
+end
+-- ═══════════════════════════════════════════════════════════════════════
+-- ★ 685「多格家具通用构造法」：三层不变式
+--   stage 内 = 格子层（cell.*）；跨格家具实例挂在各格 content/furn，尺寸 = span × 格，
+--   允许越出格线；furn_anchor 把锚点格 SetAsLastSibling 抬到 stage 内最上。
+--   症状：被抬高的整格连同越界家具压到邻格之上，把邻格 content/x 一起盖掉（地毯/桌子都出现过）。
+--   不变式：art685.mark.overlay 恒为 stage 的最后一个子控件，X 标记全部画在它里面，
+--           抬格只能发生在 stage 内部 ⇒ 结构上不存在「家具盖住 X」的绘制顺序。
+--   通用性：与 kind / span_r×span_c / 缩放 / 层数 / 将来新增多少种家具完全无关；
+--           新增家具照常下发 furn_tpl / furn_span / furn_offset 即可，不必再改层序表。
+-- ═══════════════════════════════════════════════════════════════════════
+function Adapter:_mark_layer_raise()
+  local m = self._mark_layer
+  if m == nil then
+    m = self:find("art685.mark.overlay")
+    if m == nil then return end
+    self._mark_layer = m
+  end
+  if m.SetAsLastSibling ~= nil then pcall(function() m:SetAsLastSibling() end) end
+end
+function Adapter:_mark_layer_guard()
+  if self._mark_guard_done then return end
+  if self:find("art685.mark.overlay") == nil then
+    if self.warn_once then self:warn_once("mark:missing",
+      "685 通用标记层缺失：多格家具会再次盖住 X。请把 art685.mark.overlay 挂在 stage 末尾。") end
+    return
+  end
+  self._mark_guard_done = true
+end
+-- cell.<r>.<c> → art685.mark.<r>.<c>；位置/尺寸直接复用建格时记下的同一组数值
+function Adapter:_mark_ctrl(id)
+  local rc = tostring(id):match("^cell%.(.+)$")
+  if rc == nil then return nil, nil end
+  local m = self:find("art685.mark." .. rc)
+  if m == nil then return nil, nil end
+  local p = self._cell_pos and self._cell_pos[id]
+  local x, y, sz = nil, nil, nil
+  if p ~= nil then
+    x, y, sz = p[1], p[2], p[3]
+  else
+    local r, c = rc:match("^(%d+)%.(%d+)$")
+    if r ~= nil then
+      local n = self._board_n or math.max(tonumber(r) or 1, tonumber(c) or 1)
+      x, y = self:cell_offset(tonumber(r), tonumber(c), n)
+      sz = select(1, self:cell_geometry(n))
+    end
+  end
+  if x ~= nil and m.SetAnchoredPosition ~= nil then
+    pcall(function() m:SetAnchoredPosition(x, y) end)
+  end
+  if sz ~= nil and m.SetSizeDelta ~= nil then
+    pcall(function() m:SetSizeDelta(sz, sz) end)
+  end
+  return m, rc
+end
+-- 真机父容器 SetVisible 不保证级联到子控件（v308 教训）⇒ 容器 + 两枚笔画逐层开关
+function Adapter:_mark_set_visible(rc, on)
+  local base = "art685.mark." .. rc
+  local names = { base, base .. ".stroke.0", base .. ".stroke.1" }
+  for i = 1, #names do
+    local c = self:find(names[i])
+    if c ~= nil and c.SetVisible then pcall(function() c:SetVisible(on) end) end
+  end
+end
+-- 关卡切换：收起超出当前棋盘 n 的标记，避免上一关的 X 残留
+function Adapter:_mark_scope()
+  local n = self._board_n or 0
+  if n <= 0 or n == self._mark_scope_n then return end
+  self._mark_scope_n = n
+  for r = 1, 8 do
+    for c = 1, 8 do
+      if r > n or c > n then
+        self:_mark_set_visible(string.format("%d.%d", r, c), false)
+      end
+    end
   end
 end
 function Adapter:enforce_layers(cell_id)
@@ -5247,12 +5329,16 @@ function Adapter:set_property(id, key, value, nkey)
   --   否则邻格的 `face`（不透明房间色）会盖掉越过格线的那半件家具。
   --   只在"跨格"时下发（见 `lua/furn_art.lua` 的 `anchor` 字段）。
   elseif key == "furn_anchor" then
+    -- ★ 685 通用构造法：抬格只发生在 stage 内部；之后立刻把标记层复位，
+    --   无论将来新增什么 kind / span 的多格家具，X 都不会被盖住。
+    self:_mark_layer_guard()
     if value == true and ctrl ~= nil and ctrl.SetAsLastSibling ~= nil then
       local ok = pcall(function() ctrl:SetAsLastSibling() end)
       if not ok then return false end
       self._furn_anchors = self._furn_anchors or {}
       self._furn_anchors[id] = true
     end
+    self:_mark_layer_raise()
     return true
 
   elseif key == "object" then
@@ -6022,6 +6108,11 @@ function Adapter:set_property(id, key, value, nkey)
   elseif key == "x_mark" then
     local c = self:sub(id, "x")
     if c and c.SetVisible then c:SetVisible(value and true or false) end
+    -- ★ 685：镜像到 stage 末尾的标记层（格内 x 保留作兜底，同位同色叠加不可见）
+    local m, rc = self:_mark_ctrl(id)
+    if rc ~= nil then self:_mark_set_visible(rc, value and true or false) end
+    self:_mark_scope()
+    self:_mark_layer_raise()
   end
 
   -- ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
@@ -6903,6 +6994,8 @@ end
 
 function Adapter:on_tick(dt)
   self.clock = self.clock + (dt or 0)
+  -- ★ 685：每帧复位标记层 ⇒ 未来任何新的抬格代码都自动被覆盖，无需再改层序
+  self:_mark_layer_raise()
   -- ★ v323：家具实例重对齐（属性后到 / 格子后改尺寸都能收敛；0.5s 节流，稳态只比较）
   if self._furn_want ~= nil and next(self._furn_want) ~= nil then
     if (self._furn_resync_at or -1) <= self.clock then

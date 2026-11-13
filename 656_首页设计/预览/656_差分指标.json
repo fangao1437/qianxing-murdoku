@@ -1,0 +1,29 @@
+{
+  "note": "MAE 为 656 UI 不透明像素与设计图同位置 RGB 的平均绝对误差（0-255，越小越接近）；设计图自带渐变/高光/纹理，纯色复刻有固有误差。",
+  "regions": {
+    "中央纸": {
+      "coveredPx": 117397,
+      "maeRGB": 4.41
+    },
+    "面板与按钮": {
+      "coveredPx": 71550,
+      "maeRGB": 1.21
+    },
+    "相机与教程圆": {
+      "coveredPx": 33843,
+      "maeRGB": 5.95
+    },
+    "便利贴与胶带": {
+      "coveredPx": 19027,
+      "maeRGB": 5.09
+    }
+  },
+  "layers": 111,
+  "hidden": [
+    "art641.home.document.shadow",
+    "art641.home.pin",
+    "art641.home.camera.photo.shadow",
+    "art641.home.camera.photo.paper",
+    "art641.home.camera.photo.inner"
+  ]
+}

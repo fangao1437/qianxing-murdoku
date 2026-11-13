@@ -1,0 +1,80 @@
+{
+  "version": 684,
+  "title": "683 真机反馈整改：提交后弹窗文本收紧 / 放大镜按 12.png 复刻 / 首页教程五卡染色统一",
+  "base": {
+    "file": "683_弹窗细线与四键/683_弹窗细线与四键.gil",
+    "sha256": "ce3fe3fc6252ce26c5674e085b76f9553345815353834f8bb3bdc8ccec208c28",
+    "records": 7621
+  },
+  "designRefs": [
+    "用户 683 真机截图 1（结算/提交后弹窗）—— 四个按钮中最后一个压到内页下沿与深棕边框上，且 5 字按钮文字被裁成 4 字",
+    "用户截图 2（第一关 3/8 教程）/ 3（玩法总览首页教程）—— 首页教程五张编号规则卡染色参考",
+    "美术参考/12.png —— 背景放大镜：淡黄 #F9EFC7 粗实心圆环 + 45° 平切粗短柄，居中偏上的极弱水印",
+    "美术参考/4.png —— 教程通用模板：左大卡 #C9AC6D、外框 #6C402E、标签条 #A0672F、棋盘外框 #87533E"
+  ],
+  "measurements": {
+    "resultOverflow": "683 结算态四键 y=-22/-102/-182/-262（间距 80），最后一个描边底 -294，内页底 -285 ⇒ 溢出 9px；真机截图可见按钮压在深棕框与虚线上",
+    "labelClipping": "result.next/exit/home/settle 的 label 几何均为 125x40，字号 24 ⇒ 5 字文本（存档并结算 / 退出至菜单）被裁成 4 字；modal.exit/save/settle 的 label 为 559x40 故退出菜单态完整",
+    "glass683": "683 用官方图元 100120（提示按钮小图标）染 #F9EFC7，144x144 @(8,200)，真机显示为 123x122 且压在标题文字上，与 12.png 的大号粗实心环+平切柄/居中偏上不符",
+    "fiveCards": "td.home.page.1.rule.1..4 = #FFC9AC6D，rule.5（通栏第 5 卡）= #FFD5C39D，真机实测 #c8a967 vs #d4bf94，明显浅一档（681 有意做的『首页通栏第 5 卡浅一档』）",
+    "darkest": "五卡中颜色最深的是 1–4 卡的 #C9AC6D；4.png 左大卡实测 #c9ac6d，二者严格一致。卡片边框 #6C402E 与编号圆底 #47271A 也分别与 4.png 外框 #6c402e / 设计稿深墨一致，无需改动"
+  },
+  "resultPopup": {
+    "buttons": {
+      "names": ["result.next", "result.exit", "result.home", "result.settle"],
+      "beforeY": [-22, -102, -182, -262],
+      "afterY": [12, -60, -132, -204],
+      "rule": "间距 80→72（收紧文本/按钮行距）+ 整体上移 34；最后一个描边底 -236，内页底 -285 ⇒ 留 49px，不再溢出；第一个描边顶 44 与 win.result 底 44.5 恰好不重叠"
+    },
+    "labels": {
+      "names": ["result.next", "result.exit", "result.home", "result.settle"],
+      "widthBefore": 125, "widthAfter": 312, "height": 40,
+      "rule": "label 加宽到与按钮同宽，5 字文本（存档并结算 / 退出至菜单）完整显示；字号仍 24，与首页四键一致"
+    },
+    "countdown": { "name": "result.settle.countdown", "beforeY": -317, "afterY": -258,
+      "rule": "原位置在内页之外，一并移进内页下沿留白（不与最后一个按钮重叠）" },
+    "unchanged": ["result.title.1/2/3(y=229)", "result.msg.1/2/3(y=138)", "win.result(y=63)", "退出菜单四键(y=120/40/-40/-120)", "modal.settle.countdown(y=-200)"]
+  },
+  "glass": {
+    "policy": "删除 683 的 2 层 100120 官方小图标，按 12.png 用纯图元精确复刻：粗实心圆环 + 45° 粗短柄，颜色取 12.png 实测 #F9EFC7，位置按 12.png 相对内页中心居中偏上",
+    "refGeometry": {
+      "ringOuterPx": 750, "ringInnerPx": 460, "ringThicknessPx": 145,
+      "handleLengthPx": 390, "handleWidthPx": 140, "handleAngleDeg": 45,
+      "centerOffsetPx": [-123, 169], "innerPagePx": [4717, 2009],
+      "color": "#F9EFC7", "paperColor": "#FFF5D6",
+      "note": "12.png y=1400 横扫：环 2627-2779 / 洞 2782-3222 / 环 3226-3364；x=3000 竖扫：环 1112-1255 / 洞 1258-1741 / 环 1745-1875"
+    },
+    "frames": [
+      {
+        "key": "modal", "ring": 98, "hole": 58, "handleDot": 20, "handleCount": 5,
+        "center": [-16, 48], "handleStart": [20, 12], "handleStep": [8, -8],
+        "note": "内页 603x570；按宽度比例 603/4717=0.1278，圆外径 750→98、内径 460→58、环厚 20(20%)"
+      },
+      {
+        "key": "help617", "ring": 84, "hole": 50, "handleDot": 17, "handleCount": 5,
+        "center": [-14, 40], "handleStart": [17, 10], "handleStep": [7, -7],
+        "note": "内页 726x386，按 modal 规格 0.85 倍等比缩小"
+      }
+    ],
+    "layers": [
+      "glass.ring：100002 圆 #FFF9EFC7（外环）",
+      "glass.hole：100002 圆 #FFFFF5D6（挖空，等于内页纸色）",
+      "glass.handle.0..4：100002 圆 #FFF9EFC7，沿 45° 右下阶梯排列形成粗短柄（阶梯圆避免依赖旋转角，45° 负角历史有真机不出图记录）"
+    ],
+    "layerOrder": "插在各自 frame 容器的 inner.face 之后；frame 是 DECOR 容器，子树不受 hide_unlisted / enforce_hidden_subtrees 影响"
+  },
+  "homeTutorial": {
+    "scope": "td.home.page.1（玩法总览首页教程）的 5 张编号规则卡",
+    "unify": { "name": "td.home.page.1.rule.5", "from": "#FFD5C39D", "to": "#FFC9AC6D" },
+    "strictDesignColor": {
+      "value": "#FFC9AC6D",
+      "source": "美术参考/4.png 左大卡实测 #c9ac6d；同时核对 rule.1..5.border=#FF6C402E（4.png 外框 #6c402e）、rule.N.num.bg=#FF47271A（设计稿深墨），均已严格一致",
+      "rule": "五卡统一到颜色最深分区（1–4 卡）的色，且该色严格取设计图值，不用近似/偏灰值"
+    }
+  },
+  "limitations": [
+    "内嵌 Lua 逐字节不改；放大镜改用纯图元拼（100002 圆）而非 100120 官方图标，因后者是提示按钮小图标，环/柄比例与 12.png 的大号粗实心环不符；柄用 5 枚阶梯圆近似平切粗柄，末端略圆。",
+    "五个分区按『玩法总览页 5 张编号规则卡』解读；若用户指的是教程弹窗的 5 个大区域（步骤条/主卡/chips/底部条/棋盘），下一轮按同一工具链处理。",
+    "未导入游戏；离线渲染为简化纯色模拟，不作像素一致度验收。"
+  ]
+}

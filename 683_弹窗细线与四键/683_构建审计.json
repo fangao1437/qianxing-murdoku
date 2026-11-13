@@ -1,0 +1,388 @@
+{
+  "version": 683,
+  "name": "683 popup hairlines and four-key",
+  "date": "2026-11-13",
+  "base": {
+    "file": "682_弹窗边框与提示样式/682_弹窗边框与提示样式.gil",
+    "sha256": "295932790c3f10402b499b182ef8c5c0a2fcbcfec91624576890b2f873605c99",
+    "records": 7582,
+    "scriptBytes": 636689
+  },
+  "output": {
+    "file": "683_弹窗细线与四键.gil",
+    "sha256": "ce3fe3fc6252ce26c5674e085b76f9553345815353834f8bb3bdc8ccec208c28",
+    "bytes": 6779504,
+    "records": 7621,
+    "scriptBytes": 636689
+  },
+  "spec": {
+    "rootCause": {
+      "capsuleInvisible": "682 的 24 层 art682.*.capsule.* 是 modal.exit / result.next 等按钮的直接子控件，名字是完整长名，不在内嵌 Lua 的 DECOR 豁免表（label/bg/icon/face/art/frame/card/...）。enforce_hidden_subtrees 对 _hidden_ids 里的按钮逐层 SetVisible(false)，只有 DECOR 短名的 label 幸存 ⇒ 真机只剩文字、没有按钮底。683 把 6 层胶囊收进名为 art 的 DECOR 容器（容器跳过整个 if 块，其子树不再被逐个隐藏）。",
+      "fourKeysOffCenter": "退出菜单四键 y=228/148/68/-12，中心 108，等于 682 之前的旧 633×383 面板中心；682 通用框 633×600 的中心是 0 ⇒ 四键整体偏上 108。",
+      "impurity": "art656.home.paper.edge 是 656 构建的 5x705 浅色细长矩形（#E4D2A8），在真机为 x=1123..1125 一条笔直竖线，从纸顶贯穿到纸底，设计图与 12.png 均无此元素。"
+    },
+    "palette": {
+      "button": "#FCECD4",
+      "buttonText": "#6B3A22",
+      "outline": "#6C402E",
+      "frameDark": "#47271A",
+      "paper": "#FFF5D6",
+      "innerLine": "#6C402E",
+      "glass": "#F9EFC7"
+    },
+    "fourKeysCenter": {
+      "scope": [
+        "modal.exit",
+        "modal.save",
+        "modal.settle",
+        "modal.cancel"
+      ],
+      "dy": -108,
+      "beforeY": [
+        228,
+        148,
+        68,
+        -12
+      ],
+      "afterY": [
+        120,
+        40,
+        -40,
+        -120
+      ],
+      "also": [
+        {
+          "name": "modal.settle.countdown",
+          "beforeY": 13,
+          "afterY": -200,
+          "dy": -213
+        }
+      ],
+      "note": "只动返回/退出菜单这一组四键；结算态 result.* 四键与标题/成绩是另一套布局，保持 682 不动。倒计时小字单独下移到四键下方留白 y=-200：683 胶囊真正显示后，若只随按钮下移到 -95 会被「取消」胶囊盖住（682 因胶囊被隐藏才没有这个遮挡）。"
+    },
+    "capsule": {
+      "containerName": "art",
+      "containerColor": "#00FFFFFF",
+      "containerGeom": [
+        312,
+        64
+      ],
+      "buttons": [
+        "modal.exit",
+        "modal.save",
+        "modal.settle",
+        "modal.cancel",
+        "result.next",
+        "result.exit",
+        "result.home",
+        "result.settle"
+      ],
+      "fill": {
+        "color": "#FCECD4",
+        "body": [
+          252,
+          60,
+          0
+        ],
+        "circle": [
+          60,
+          60,
+          126
+        ],
+        "imageRect": 100001,
+        "imageCircle": 100002
+      },
+      "outline": {
+        "color": "#6C402E",
+        "body": [
+          256,
+          64,
+          0
+        ],
+        "circle": [
+          64,
+          64,
+          128
+        ],
+        "imageRect": 100001,
+        "imageCircle": 100002,
+        "thickness": 2
+      },
+      "label": {
+        "color": "#6B3A22",
+        "size": 24
+      },
+      "note": "填充仍是 682/656 首页精确同色 #FCECD4；只在其下垫一圈 2px 深棕 #6C402E 同形状描边，让米白纸面上轮廓可见（682 验收文档预留方案）。"
+    },
+    "frames": [
+      {
+        "key": "help617",
+        "w": 760,
+        "h": 420,
+        "t": 17,
+        "rim": [
+          764,
+          424
+        ],
+        "innerBorder": [
+          706,
+          366
+        ],
+        "innerFace": [
+          702,
+          362
+        ],
+        "glass": {
+          "w": 110,
+          "h": 110,
+          "dx": 8,
+          "dy": 20
+        }
+      },
+      {
+        "key": "modal",
+        "w": 633,
+        "h": 600,
+        "t": 15,
+        "rim": [
+          637,
+          604
+        ],
+        "innerBorder": [
+          583,
+          550
+        ],
+        "innerFace": [
+          579,
+          546
+        ],
+        "glass": {
+          "w": 144,
+          "h": 144,
+          "dx": 8,
+          "dy": 200
+        }
+      }
+    ],
+    "frameAdd": {
+      "rim": {
+        "color": "#47271A",
+        "imageId": 100001,
+        "rule": "12.png 外框最外侧那圈深墨细线（682 缺）"
+      },
+      "innerBorder": {
+        "color": "#6C402E",
+        "imageId": 107102,
+        "inset": 10,
+        "rule": "12.png 米白内页里距边约 10px 的内圈细线（682 缺）；颜色按用户要求取深棕而非参考图的浅米黄"
+      },
+      "innerFace": {
+        "color": "#FFF5D6",
+        "imageId": 107102,
+        "rule": "盖住内圈线内部，只留 2px 线"
+      },
+      "glass": {
+        "imageId": 100120,
+        "color": "#F9EFC7",
+        "rule": "直接复用提示按钮 hex.hint 的官方放大镜图元 100120（不拼圆+柄），染成 12.png 水印色 #F9EFC7，作为按钮背后的水印"
+      }
+    },
+    "homeImpurity": {
+      "name": "art656.home.paper.edge",
+      "id": 1073757882,
+      "parent": "art657.grid.reuse",
+      "geom": "5x705 @(322,-62)",
+      "color": "#FFE4D2A8",
+      "screen": "真机 x=1123..1125，y≈221..881 一条笔直浅色竖矩形",
+      "action": "按 delete_controls 三处同步删除：recTop / recs / 父 childList；被删 ID 全文 0 引用"
+    },
+    "limitations": [
+      "内嵌 Lua 逐字节不改；DECOR 豁免靠存档控件名实现，无需改脚本。",
+      "未导入游戏；离线渲染为简化纯色模拟，不作像素一致度验收。",
+      "结算态 result.* 四键位置、EVIDENCE 卡、教程 13 页、首页其它层均保持 682 不变。"
+    ]
+  },
+  "counts": {
+    "recordsBefore": 7582,
+    "recordsAfter": 7621,
+    "added": 40,
+    "removed": 1,
+    "newLayers": 40,
+    "changedOldRecords": 38,
+    "rogue": 0
+  },
+  "changes": [
+    {
+      "name": "modal.exit",
+      "rule": "A 四键垂直居中",
+      "dy": -108,
+      "states": 4
+    },
+    {
+      "name": "modal.save",
+      "rule": "A 四键垂直居中",
+      "dy": -108,
+      "states": 4
+    },
+    {
+      "name": "modal.settle",
+      "rule": "A 四键垂直居中",
+      "dy": -108,
+      "states": 4
+    },
+    {
+      "name": "modal.cancel",
+      "rule": "A 四键垂直居中",
+      "dy": -108,
+      "states": 4
+    },
+    {
+      "name": "modal.settle.countdown",
+      "rule": "A 倒计时移到四键下方留白（避免被新显示的胶囊盖住）",
+      "dy": -213,
+      "states": 4
+    },
+    {
+      "name": "art682.modal.exit.capsule.body",
+      "rule": "B 填充层改挂 DECOR 容器",
+      "parent": 1073760329
+    },
+    {
+      "name": "art682.modal.exit.capsule.left",
+      "rule": "B 填充层改挂 DECOR 容器",
+      "parent": 1073760329
+    },
+    {
+      "name": "art682.modal.exit.capsule.right",
+      "rule": "B 填充层改挂 DECOR 容器",
+      "parent": 1073760329
+    },
+    {
+      "name": "art682.modal.save.capsule.body",
+      "rule": "B 填充层改挂 DECOR 容器",
+      "parent": 1073760333
+    },
+    {
+      "name": "art682.modal.save.capsule.left",
+      "rule": "B 填充层改挂 DECOR 容器",
+      "parent": 1073760333
+    },
+    {
+      "name": "art682.modal.save.capsule.right",
+      "rule": "B 填充层改挂 DECOR 容器",
+      "parent": 1073760333
+    },
+    {
+      "name": "art682.modal.settle.capsule.body",
+      "rule": "B 填充层改挂 DECOR 容器",
+      "parent": 1073760337
+    },
+    {
+      "name": "art682.modal.settle.capsule.left",
+      "rule": "B 填充层改挂 DECOR 容器",
+      "parent": 1073760337
+    },
+    {
+      "name": "art682.modal.settle.capsule.right",
+      "rule": "B 填充层改挂 DECOR 容器",
+      "parent": 1073760337
+    },
+    {
+      "name": "art682.modal.cancel.capsule.body",
+      "rule": "B 填充层改挂 DECOR 容器",
+      "parent": 1073760341
+    },
+    {
+      "name": "art682.modal.cancel.capsule.left",
+      "rule": "B 填充层改挂 DECOR 容器",
+      "parent": 1073760341
+    },
+    {
+      "name": "art682.modal.cancel.capsule.right",
+      "rule": "B 填充层改挂 DECOR 容器",
+      "parent": 1073760341
+    },
+    {
+      "name": "art682.result.next.capsule.body",
+      "rule": "B 填充层改挂 DECOR 容器",
+      "parent": 1073760345
+    },
+    {
+      "name": "art682.result.next.capsule.left",
+      "rule": "B 填充层改挂 DECOR 容器",
+      "parent": 1073760345
+    },
+    {
+      "name": "art682.result.next.capsule.right",
+      "rule": "B 填充层改挂 DECOR 容器",
+      "parent": 1073760345
+    },
+    {
+      "name": "art682.result.exit.capsule.body",
+      "rule": "B 填充层改挂 DECOR 容器",
+      "parent": 1073760349
+    },
+    {
+      "name": "art682.result.exit.capsule.left",
+      "rule": "B 填充层改挂 DECOR 容器",
+      "parent": 1073760349
+    },
+    {
+      "name": "art682.result.exit.capsule.right",
+      "rule": "B 填充层改挂 DECOR 容器",
+      "parent": 1073760349
+    },
+    {
+      "name": "art682.result.home.capsule.body",
+      "rule": "B 填充层改挂 DECOR 容器",
+      "parent": 1073760353
+    },
+    {
+      "name": "art682.result.home.capsule.left",
+      "rule": "B 填充层改挂 DECOR 容器",
+      "parent": 1073760353
+    },
+    {
+      "name": "art682.result.home.capsule.right",
+      "rule": "B 填充层改挂 DECOR 容器",
+      "parent": 1073760353
+    },
+    {
+      "name": "art682.result.settle.capsule.body",
+      "rule": "B 填充层改挂 DECOR 容器",
+      "parent": 1073760357
+    },
+    {
+      "name": "art682.result.settle.capsule.left",
+      "rule": "B 填充层改挂 DECOR 容器",
+      "parent": 1073760357
+    },
+    {
+      "name": "art682.result.settle.capsule.right",
+      "rule": "B 填充层改挂 DECOR 容器",
+      "parent": 1073760357
+    }
+  ],
+  "deleted": [
+    {
+      "id": 1073757882,
+      "name": "art656.home.paper.edge",
+      "parent": "art657.grid.reuse"
+    }
+  ],
+  "guarantees": [
+    "内嵌 Lua 逐字节相同",
+    "旧记录改动全部落在白名单（rogue=0）",
+    "被删杂质矩形 ID 全文 0 引用",
+    "新增层几何/颜色/图元/显隐/父级逐条断言",
+    "所有受影响父级 childList 按 recTop 顺序重算",
+    "胶囊层与外圈细线用 DECOR 短名豁免"
+  ],
+  "writeGilReport": {
+    "bytes": 6779504,
+    "diffs": 138788,
+    "compared": 1483844,
+    "recs": 7621,
+    "marker": null
+  }
+}

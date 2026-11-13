@@ -1,0 +1,80 @@
+{
+  "base": "655_遍历负载优化.gil",
+  "output": "656_首页设计.gil",
+  "recordsBefore": 6340,
+  "recordsAfter": 6421,
+  "added": 85,
+  "removed": 4,
+  "changedExisting": 27,
+  "changedExistingNames": [
+    "home",
+    "art641.home.document.shadow",
+    "art641.home.document.paper",
+    "art641.home.panel",
+    "art641.home.pin",
+    "art641.home.camera.photo.shadow",
+    "art641.home.camera.photo.paper",
+    "art641.home.camera.photo.inner",
+    "art641.home.camera.body",
+    "art641.home.camera.top",
+    "art641.home.camera.window",
+    "art641.home.camera.dot0",
+    "art641.home.camera.dot1",
+    "home.title",
+    "home.select",
+    "home.continue",
+    "home.shop",
+    "home.bag",
+    "home.tutorial627.bg",
+    "home.tutorial627.ring",
+    "home.tutorial627.label",
+    "home.tutorial627.hit",
+    "label",
+    "label",
+    "label",
+    "label",
+    "grp653.static.1.art641.home"
+  ],
+  "policeV12": {
+    "descendantsBefore": 762,
+    "descendantsAfter": 762,
+    "changed": 0,
+    "added": 0,
+    "removed": 0,
+    "untouched": true
+  },
+  "script": {
+    "patchesOnly": true,
+    "staticPathTable655Unchanged": true,
+    "bytesBefore": 636341,
+    "bytesAfter": 636306,
+    "note": "仅两处补丁：入口层胶囊守卫名单去掉首页四键；btn_list 收集排除 home.*。反向应用后与 655 逐字节相同。"
+  },
+  "deletedBg": {
+    "expected": 4,
+    "names": [
+      "home.select/bg",
+      "home.continue/bg",
+      "home.shop/bg",
+      "home.bag/bg"
+    ],
+    "danglingReferences": 0,
+    "clean": true
+  },
+  "hiddenRecords": {
+    "art641.home.document.shadow": true,
+    "art641.home.pin": true,
+    "art641.home.camera.photo.shadow": true,
+    "art641.home.camera.photo.paper": true,
+    "art641.home.camera.photo.inner": true
+  },
+  "newLayers": {
+    "count": 85,
+    "wrongParent": [],
+    "hiddenButShouldBeVisible": [],
+    "childListFollowsRecordOrder": true,
+    "homeGroupChildren": 96
+  },
+  "keyControlsMissing": [],
+  "verdict": true
+}

@@ -1,0 +1,75 @@
+{
+  "recordsBefore": 7292,
+  "recordsAfter": 7335,
+  "added": 43,
+  "removed": 0,
+  "changed": 34,
+  "unexpectedChanges": [],
+  "scriptIdentical": true,
+  "scriptBytes": 636660,
+  "textRecordsChanged": 0,
+  "policeV19Descendants": 650,
+  "bgChanged": 0,
+  "oldRecordOrderSame": true,
+  "childListOk": true,
+  "dangling": 0,
+  "previous675": {
+    "untouched": true,
+    "checked": 297,
+    "gradientUntouched": true,
+    "fitCount": 23,
+    "helpUntouched": true,
+    "tabVisible": 25,
+    "waxVisible": 240
+  },
+  "binding": {
+    "ok": true,
+    "geom": [
+      12,
+      513.5,
+      24,
+      535
+    ],
+    "color": "FF3F1E15",
+    "before": [
+      20,
+      513.5,
+      40,
+      535,
+      "FF2E1A12"
+    ],
+    "paperLeft": 24,
+    "paperLeftOk": true,
+    "midBandOk": true
+  },
+  "rings": {
+    "oldRingsHidden": true,
+    "oldCount": 20,
+    "dashesHidden": true,
+    "dashCount": 12,
+    "newLayers": 42,
+    "visibleLayers": 42,
+    "ringSeqOk": true,
+    "centers": [
+      361,
+      422,
+      480.5,
+      539,
+      597.5,
+      659
+    ],
+    "step": 59.6,
+    "stepOk": true,
+    "maxRight": 35.5,
+    "colors": [
+      "#0A0503",
+      "#1C1410",
+      "#2C2318",
+      "#393024",
+      "#514535",
+      "#544B3A",
+      "#5E503A"
+    ]
+  },
+  "verdict": true
+}

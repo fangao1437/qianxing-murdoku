@@ -1,0 +1,247 @@
+{
+  "version": 1,
+  "name": "679 build audit",
+  "date": "2026-11-12",
+  "base": {
+    "file": "678_注释卡真缺口.gil",
+    "sha256": "1cfb67aac5df5635261a55631564db0057374ebfbe6bca74ef311f703ae4029e",
+    "records": 7431,
+    "scriptBytes": 636660
+  },
+  "output": {
+    "file": "679_棋盘居中与边缘.gil",
+    "sha256": "ab05d4253a6fd56c3668ab4debcdaca8b9f1bdfb730c41be95ff693847efe03a",
+    "bytes": 6623550,
+    "records": 7431
+  },
+  "spec": {
+    "userFeedback": "注释卡边缘颜色连贯性与形状仍与设计图有明显差异；移动端棋盘总体偏上（该图非最新美术，只用于位置判断，预览可信）",
+    "ticket": {
+      "geometry": {
+        "colorMainBase": "#8C2800",
+        "colorMainTooth": "#AF3200",
+        "colorOutline": "#6B2A12",
+        "mainW": 144,
+        "mainH": 66,
+        "outlineW": 150,
+        "outlineH": 72,
+        "teethY": [
+          -22,
+          0,
+          22
+        ],
+        "mainRect": {
+          "w": 6,
+          "h": 20,
+          "dx": 75,
+          "rot": -13,
+          "img": 100001
+        },
+        "mainRound": {
+          "w": 8,
+          "h": 20,
+          "dx": 76,
+          "rot": -13,
+          "img": 100002
+        },
+        "outRect": {
+          "w": 12,
+          "h": 24,
+          "dx": 75,
+          "rot": -13,
+          "img": 100001
+        },
+        "outRound": {
+          "w": 12,
+          "h": 24,
+          "dx": 77,
+          "rot": -13,
+          "img": 100002
+        }
+      },
+      "gates": {
+        "mainPx": 166092,
+        "mainOut": 0,
+        "gradPx": 93060,
+        "gradOut": 0,
+        "zeroSpur": true
+      },
+      "teeth": 24,
+      "rectModify": [
+        {
+          "name": "art641.game.help.tab",
+          "color": null,
+          "w": 144,
+          "h": 66
+        },
+        {
+          "name": "art661.tab.outline",
+          "color": "#6B2A12",
+          "w": 150,
+          "h": 72
+        }
+      ],
+      "safety": "23 枚渐变三角本地 x∈[-70,51]，主体半宽 71 ⇒ 渐变仍全在主体内"
+    },
+    "board": {
+      "shiftY": 30,
+      "roots": [
+        {
+          "name": "stage",
+          "note": "带动 board.bg / board.floors / board.rugs 与 36 枚 floor.cell.*"
+        },
+        {
+          "name": "art657.grid.reuse",
+          "note": "带动 49 枚斜网格纸/网格线"
+        },
+        {
+          "name": "art641.game.boardframe.paper",
+          "note": "白色底板"
+        },
+        {
+          "name": "art641.game.boardframe.shadow",
+          "note": "底板阴影"
+        },
+        {
+          "name": "art641.game.boardbottom",
+          "note": "底板下沿"
+        }
+      ],
+      "measurement": {
+        "mobileScreenshot": [
+          1280,
+          576
+        ],
+        "k": 0.8,
+        "visibleY": [
+          90,
+          810
+        ],
+        "visibleCenterY": 450,
+        "boardCenterYBefore": 420,
+        "deltaY": 30,
+        "measured": {
+          "darkFrameCenterPx": 263.5,
+          "screenCenterPx": 288,
+          "offsetPx": 24.5,
+          "offset1600": 30.63
+        }
+      },
+      "note": "只改 5 个根层 y；stage 带动 36 枚 floor.cell.*，art657.grid.reuse 带动 49 枚网格层；x 全部不变",
+      "before": {
+        "stage": [
+          900,
+          430,
+          584,
+          584
+        ],
+        "art657.grid.reuse": [
+          800,
+          450,
+          1600,
+          900
+        ],
+        "art641.game.boardframe.paper": [
+          904,
+          419.5,
+          646,
+          732
+        ],
+        "art641.game.boardframe.shadow": [
+          913,
+          445.5,
+          648,
+          706
+        ],
+        "art641.game.boardbottom": [
+          904,
+          754,
+          646,
+          42
+        ]
+      },
+      "after": {
+        "stage": [
+          900,
+          460,
+          584,
+          584
+        ],
+        "art657.grid.reuse": [
+          800,
+          480,
+          1600,
+          900
+        ],
+        "art641.game.boardframe.paper": [
+          904,
+          449.5,
+          646,
+          732
+        ],
+        "art641.game.boardframe.shadow": [
+          913,
+          475.5,
+          648,
+          706
+        ],
+        "art641.game.boardbottom": [
+          904,
+          784,
+          646,
+          42
+        ]
+      },
+      "xUnchanged": true
+    },
+    "keepUntouched": 340
+  },
+  "counts": {
+    "recordsBefore": 7431,
+    "recordsAfter": 7431,
+    "added": 0,
+    "removed": 0,
+    "changed": 31,
+    "unexpected": 0
+  },
+  "changedNames": [
+    "art657.grid.reuse",
+    "stage",
+    "art641.game.boardframe.shadow",
+    "art641.game.boardframe.paper",
+    "art641.game.boardbottom",
+    "art661.tab.outline",
+    "art678.tab.outline.l1.rect",
+    "art678.tab.outline.l1.tri",
+    "art678.tab.outline.l2.rect",
+    "art678.tab.outline.l2.tri",
+    "art678.tab.outline.l3.rect",
+    "art678.tab.outline.l3.tri",
+    "art678.tab.outline.r1.rect",
+    "art678.tab.outline.r1.tri",
+    "art678.tab.outline.r2.rect",
+    "art678.tab.outline.r2.tri",
+    "art678.tab.outline.r3.rect",
+    "art678.tab.outline.r3.tri",
+    "art641.game.help.tab",
+    "art678.tab.main.l1.rect",
+    "art678.tab.main.l1.tri",
+    "art678.tab.main.l2.rect",
+    "art678.tab.main.l2.tri",
+    "art678.tab.main.l3.rect",
+    "art678.tab.main.l3.tri",
+    "art678.tab.main.r1.rect",
+    "art678.tab.main.r1.tri",
+    "art678.tab.main.r2.rect",
+    "art678.tab.main.r2.tri",
+    "art678.tab.main.r3.rect",
+    "art678.tab.main.r3.tri"
+  ],
+  "writeGilReport": {
+    "bytes": 6623550,
+    "diffs": 497,
+    "compared": 1505377,
+    "recs": 7431,
+    "marker": null
+  }
+}

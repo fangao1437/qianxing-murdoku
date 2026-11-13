@@ -1,0 +1,439 @@
+{
+ "version": 1,
+ "userFeedback": "只做两侧边缘重做，缺口不要靠背景色补，从几何层面构造真缺口；不要溢出毛刺；缩进两侧矩形 + 增补三角形 + 底下垫稍大一圈同形状描边；部分区域还需矩形塑造平边缘，图形不必局限",
+ "geometry": {
+  "indent": 9,
+  "mainW": 142,
+  "mainH": 66,
+  "outlineW": 148,
+  "outlineH": 72,
+  "teethY": [
+   -22,
+   0,
+   22
+  ],
+  "mainRect": {
+   "w": 5,
+   "h": 16,
+   "dx": 73.5
+  },
+  "mainTri": {
+   "w": 16,
+   "h": 4,
+   "dx": 78
+  },
+  "outRect": {
+   "w": 11,
+   "h": 22,
+   "dx": 73.5
+  },
+  "outTri": {
+   "w": 22,
+   "h": 4,
+   "dx": 81
+  },
+  "colorMain": "#8C2800",
+  "colorOutline": "#592520"
+ },
+ "safety": {
+  "gradientLocalX": [
+   -70,
+   51
+  ],
+  "gradientLocalY": [
+   -33,
+   33
+  ],
+  "mainHalfBefore": 80,
+  "mainHalfAfter": 71,
+  "marginPx": 1,
+  "note": "23 枚渐变三角逐枚按屏幕三角顶点反算到票券本地坐标，最左 -70；主体缩进到 ±71 留 1px 余量"
+ },
+ "gates": {
+  "mainPixels": 160896,
+  "gradPixels": 93060,
+  "mainOutsideOutline": 0,
+  "gradOutsideMain": 0,
+  "zeroSpur": true
+ },
+ "hidden": {
+  "tipHi": [
+   "art677.ring.1.tipHi",
+   "art677.ring.2.tipHi",
+   "art677.ring.3.tipHi",
+   "art677.ring.4.tipHi",
+   "art677.ring.5.tipHi",
+   "art677.ring.6.tipHi",
+   "art677.ring.7.tipHi",
+   "art677.ring.8.tipHi"
+  ]
+ },
+ "modifyExisting": {
+  "art641.game.help.tab": {
+   "from": [
+    384,
+    211,
+    160,
+    66
+   ],
+   "to": [
+    384,
+    211,
+    142,
+    66
+   ]
+  },
+  "art661.tab.outline": {
+   "from": [
+    384,
+    211,
+    166,
+    72
+   ],
+   "to": [
+    384,
+    211,
+    148,
+    72
+   ]
+  }
+ },
+ "elements": [
+  {
+   "name": "art678.tab.outline.l1.rect",
+   "layer": "outline",
+   "side": -1,
+   "tooth": 1,
+   "cx": 317.333,
+   "cy": 173.03,
+   "w": 11,
+   "h": 22,
+   "rot": -13,
+   "img": 100001,
+   "color": "#592520",
+   "anchor": "art641.game.help.tab"
+  },
+  {
+   "name": "art678.tab.outline.l1.tri",
+   "layer": "outline",
+   "side": -1,
+   "tooth": 1,
+   "cx": 310.025,
+   "cy": 171.343,
+   "w": 22,
+   "h": 4,
+   "rot": 77,
+   "img": 100003,
+   "color": "#592520",
+   "anchor": "art641.game.help.tab"
+  },
+  {
+   "name": "art678.tab.main.l1.rect",
+   "layer": "main",
+   "side": -1,
+   "tooth": 1,
+   "cx": 317.333,
+   "cy": 173.03,
+   "w": 5,
+   "h": 16,
+   "rot": -13,
+   "img": 100001,
+   "color": "#8C2800",
+   "anchor": "art664.tab.mid.fit01"
+  },
+  {
+   "name": "art678.tab.main.l1.tri",
+   "layer": "main",
+   "side": -1,
+   "tooth": 1,
+   "cx": 312.948,
+   "cy": 172.018,
+   "w": 16,
+   "h": 4,
+   "rot": 77,
+   "img": 100003,
+   "color": "#8C2800",
+   "anchor": "art664.tab.mid.fit01"
+  },
+  {
+   "name": "art678.tab.outline.l2.rect",
+   "layer": "outline",
+   "side": -1,
+   "tooth": 2,
+   "cx": 312.384,
+   "cy": 194.466,
+   "w": 11,
+   "h": 22,
+   "rot": -13,
+   "img": 100001,
+   "color": "#592520",
+   "anchor": "art641.game.help.tab"
+  },
+  {
+   "name": "art678.tab.outline.l2.tri",
+   "layer": "outline",
+   "side": -1,
+   "tooth": 2,
+   "cx": 305.076,
+   "cy": 192.779,
+   "w": 22,
+   "h": 4,
+   "rot": 77,
+   "img": 100003,
+   "color": "#592520",
+   "anchor": "art641.game.help.tab"
+  },
+  {
+   "name": "art678.tab.main.l2.rect",
+   "layer": "main",
+   "side": -1,
+   "tooth": 2,
+   "cx": 312.384,
+   "cy": 194.466,
+   "w": 5,
+   "h": 16,
+   "rot": -13,
+   "img": 100001,
+   "color": "#8C2800",
+   "anchor": "art664.tab.mid.fit01"
+  },
+  {
+   "name": "art678.tab.main.l2.tri",
+   "layer": "main",
+   "side": -1,
+   "tooth": 2,
+   "cx": 307.999,
+   "cy": 193.454,
+   "w": 16,
+   "h": 4,
+   "rot": 77,
+   "img": 100003,
+   "color": "#8C2800",
+   "anchor": "art664.tab.mid.fit01"
+  },
+  {
+   "name": "art678.tab.outline.l3.rect",
+   "layer": "outline",
+   "side": -1,
+   "tooth": 3,
+   "cx": 307.435,
+   "cy": 215.902,
+   "w": 11,
+   "h": 22,
+   "rot": -13,
+   "img": 100001,
+   "color": "#592520",
+   "anchor": "art641.game.help.tab"
+  },
+  {
+   "name": "art678.tab.outline.l3.tri",
+   "layer": "outline",
+   "side": -1,
+   "tooth": 3,
+   "cx": 300.127,
+   "cy": 214.215,
+   "w": 22,
+   "h": 4,
+   "rot": 77,
+   "img": 100003,
+   "color": "#592520",
+   "anchor": "art641.game.help.tab"
+  },
+  {
+   "name": "art678.tab.main.l3.rect",
+   "layer": "main",
+   "side": -1,
+   "tooth": 3,
+   "cx": 307.435,
+   "cy": 215.902,
+   "w": 5,
+   "h": 16,
+   "rot": -13,
+   "img": 100001,
+   "color": "#8C2800",
+   "anchor": "art664.tab.mid.fit01"
+  },
+  {
+   "name": "art678.tab.main.l3.tri",
+   "layer": "main",
+   "side": -1,
+   "tooth": 3,
+   "cx": 303.05,
+   "cy": 214.89,
+   "w": 16,
+   "h": 4,
+   "rot": 77,
+   "img": 100003,
+   "color": "#8C2800",
+   "anchor": "art664.tab.mid.fit01"
+  },
+  {
+   "name": "art678.tab.outline.r1.rect",
+   "layer": "outline",
+   "side": 1,
+   "tooth": 1,
+   "cx": 460.565,
+   "cy": 206.098,
+   "w": 11,
+   "h": 22,
+   "rot": -13,
+   "img": 100001,
+   "color": "#592520",
+   "anchor": "art641.game.help.tab"
+  },
+  {
+   "name": "art678.tab.outline.r1.tri",
+   "layer": "outline",
+   "side": 1,
+   "tooth": 1,
+   "cx": 467.873,
+   "cy": 207.785,
+   "w": 22,
+   "h": 4,
+   "rot": 257,
+   "img": 100003,
+   "color": "#592520",
+   "anchor": "art641.game.help.tab"
+  },
+  {
+   "name": "art678.tab.main.r1.rect",
+   "layer": "main",
+   "side": 1,
+   "tooth": 1,
+   "cx": 460.565,
+   "cy": 206.098,
+   "w": 5,
+   "h": 16,
+   "rot": -13,
+   "img": 100001,
+   "color": "#8C2800",
+   "anchor": "art664.tab.mid.fit01"
+  },
+  {
+   "name": "art678.tab.main.r1.tri",
+   "layer": "main",
+   "side": 1,
+   "tooth": 1,
+   "cx": 464.95,
+   "cy": 207.11,
+   "w": 16,
+   "h": 4,
+   "rot": 257,
+   "img": 100003,
+   "color": "#8C2800",
+   "anchor": "art664.tab.mid.fit01"
+  },
+  {
+   "name": "art678.tab.outline.r2.rect",
+   "layer": "outline",
+   "side": 1,
+   "tooth": 2,
+   "cx": 455.616,
+   "cy": 227.534,
+   "w": 11,
+   "h": 22,
+   "rot": -13,
+   "img": 100001,
+   "color": "#592520",
+   "anchor": "art641.game.help.tab"
+  },
+  {
+   "name": "art678.tab.outline.r2.tri",
+   "layer": "outline",
+   "side": 1,
+   "tooth": 2,
+   "cx": 462.924,
+   "cy": 229.221,
+   "w": 22,
+   "h": 4,
+   "rot": 257,
+   "img": 100003,
+   "color": "#592520",
+   "anchor": "art641.game.help.tab"
+  },
+  {
+   "name": "art678.tab.main.r2.rect",
+   "layer": "main",
+   "side": 1,
+   "tooth": 2,
+   "cx": 455.616,
+   "cy": 227.534,
+   "w": 5,
+   "h": 16,
+   "rot": -13,
+   "img": 100001,
+   "color": "#8C2800",
+   "anchor": "art664.tab.mid.fit01"
+  },
+  {
+   "name": "art678.tab.main.r2.tri",
+   "layer": "main",
+   "side": 1,
+   "tooth": 2,
+   "cx": 460.001,
+   "cy": 228.546,
+   "w": 16,
+   "h": 4,
+   "rot": 257,
+   "img": 100003,
+   "color": "#8C2800",
+   "anchor": "art664.tab.mid.fit01"
+  },
+  {
+   "name": "art678.tab.outline.r3.rect",
+   "layer": "outline",
+   "side": 1,
+   "tooth": 3,
+   "cx": 450.667,
+   "cy": 248.97,
+   "w": 11,
+   "h": 22,
+   "rot": -13,
+   "img": 100001,
+   "color": "#592520",
+   "anchor": "art641.game.help.tab"
+  },
+  {
+   "name": "art678.tab.outline.r3.tri",
+   "layer": "outline",
+   "side": 1,
+   "tooth": 3,
+   "cx": 457.975,
+   "cy": 250.657,
+   "w": 22,
+   "h": 4,
+   "rot": 257,
+   "img": 100003,
+   "color": "#592520",
+   "anchor": "art641.game.help.tab"
+  },
+  {
+   "name": "art678.tab.main.r3.rect",
+   "layer": "main",
+   "side": 1,
+   "tooth": 3,
+   "cx": 450.667,
+   "cy": 248.97,
+   "w": 5,
+   "h": 16,
+   "rot": -13,
+   "img": 100001,
+   "color": "#8C2800",
+   "anchor": "art664.tab.mid.fit01"
+  },
+  {
+   "name": "art678.tab.main.r3.tri",
+   "layer": "main",
+   "side": 1,
+   "tooth": 3,
+   "cx": 455.052,
+   "cy": 249.982,
+   "w": 16,
+   "h": 4,
+   "rot": 257,
+   "img": 100003,
+   "color": "#8C2800",
+   "anchor": "art664.tab.mid.fit01"
+  }
+ ]
+}

@@ -1,0 +1,149 @@
+{
+  "recordsBefore": 7431,
+  "recordsAfter": 7431,
+  "added": 0,
+  "removed": 0,
+  "changed": 31,
+  "changedNames": [
+    "art657.grid.reuse",
+    "stage",
+    "art641.game.boardframe.shadow",
+    "art641.game.boardframe.paper",
+    "art641.game.boardbottom",
+    "art661.tab.outline",
+    "art678.tab.outline.l1.rect",
+    "art678.tab.outline.l1.tri",
+    "art678.tab.outline.l2.rect",
+    "art678.tab.outline.l2.tri",
+    "art678.tab.outline.l3.rect",
+    "art678.tab.outline.l3.tri",
+    "art678.tab.outline.r1.rect",
+    "art678.tab.outline.r1.tri",
+    "art678.tab.outline.r2.rect",
+    "art678.tab.outline.r2.tri",
+    "art678.tab.outline.r3.rect",
+    "art678.tab.outline.r3.tri",
+    "art641.game.help.tab",
+    "art678.tab.main.l1.rect",
+    "art678.tab.main.l1.tri",
+    "art678.tab.main.l2.rect",
+    "art678.tab.main.l2.tri",
+    "art678.tab.main.l3.rect",
+    "art678.tab.main.l3.tri",
+    "art678.tab.main.r1.rect",
+    "art678.tab.main.r1.tri",
+    "art678.tab.main.r2.rect",
+    "art678.tab.main.r2.tri",
+    "art678.tab.main.r3.rect",
+    "art678.tab.main.r3.tri"
+  ],
+  "unexpectedChanges": [],
+  "scriptIdentical": true,
+  "scriptBytes": 636660,
+  "textRecordsChanged": 0,
+  "policeV19Descendants": 650,
+  "bgChanged": 0,
+  "recTopSame": true,
+  "childListOk": true,
+  "dangling": 0,
+  "previous": {
+    "untouched": true,
+    "checked": 340,
+    "waxVisible": 240
+  },
+  "board": {
+    "ok": true,
+    "shiftY": 30,
+    "xUnchanged": true,
+    "measurement": {
+      "mobileScreenshot": [
+        1280,
+        576
+      ],
+      "k": 0.8,
+      "visibleY": [
+        90,
+        810
+      ],
+      "visibleCenterY": 450,
+      "boardCenterYBefore": 420,
+      "deltaY": 30,
+      "measured": {
+        "darkFrameCenterPx": 263.5,
+        "screenCenterPx": 288,
+        "offsetPx": 24.5,
+        "offset1600": 30.63
+      }
+    },
+    "roots": 5,
+    "detail": {
+      "stage": {
+        "before": [
+          900,
+          430
+        ],
+        "after": [
+          900,
+          460
+        ]
+      },
+      "art657.grid.reuse": {
+        "before": [
+          800,
+          450
+        ],
+        "after": [
+          800,
+          480
+        ]
+      },
+      "art641.game.boardframe.paper": {
+        "before": [
+          904,
+          419.5
+        ],
+        "after": [
+          904,
+          449.5
+        ]
+      },
+      "art641.game.boardframe.shadow": {
+        "before": [
+          913,
+          445.5
+        ],
+        "after": [
+          913,
+          475.5
+        ]
+      },
+      "art641.game.boardbottom": {
+        "before": [
+          904,
+          754
+        ],
+        "after": [
+          904,
+          784
+        ]
+      }
+    }
+  },
+  "ticket": {
+    "teethOk": true,
+    "rectOk": true,
+    "teethVisible": 24,
+    "zeroSpur": true,
+    "mainPx": 166092,
+    "mainOut": 0,
+    "gradPx": 93060,
+    "gradOut": 0,
+    "mainW": 144,
+    "outlineW": 150,
+    "colors": [
+      "#AF3200",
+      "#6B2A12"
+    ]
+  },
+  "verdict": true
+}

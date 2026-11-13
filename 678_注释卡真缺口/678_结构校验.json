@@ -1,0 +1,75 @@
+{
+  "recordsBefore": 7407,
+  "recordsAfter": 7431,
+  "added": 24,
+  "removed": 0,
+  "changed": 11,
+  "unexpectedChanges": [],
+  "scriptIdentical": true,
+  "scriptBytes": 636660,
+  "textRecordsChanged": 0,
+  "policeV19Descendants": 650,
+  "bgChanged": 0,
+  "oldRecordOrderSame": true,
+  "childListOk": true,
+  "dangling": 0,
+  "previous": {
+    "untouched": true,
+    "checked": 332,
+    "gradientUntouched": true,
+    "fitCount": 23,
+    "helpUntouched": true,
+    "waxVisible": 240
+  },
+  "rings": {
+    "tipHiHidden": true,
+    "hiddenCount": 8,
+    "otherRingsVisible": 64
+  },
+  "ticket": {
+    "shrinkOk": true,
+    "tabGeom": [
+      384,
+      211,
+      142,
+      66
+    ],
+    "outlineGeom": [
+      384,
+      211,
+      148,
+      72
+    ],
+    "safety": {
+      "gradientLocalX": [
+        -70,
+        51
+      ],
+      "gradientLocalY": [
+        -33,
+        33
+      ],
+      "mainHalfBefore": 80,
+      "mainHalfAfter": 71,
+      "marginPx": 1,
+      "note": "23 枚渐变三角逐枚按屏幕三角顶点反算到票券本地坐标，最左 -70；主体缩进到 ±71 留 1px 余量"
+    },
+    "zeroSpur": true,
+    "mainOutsideOutline": 0,
+    "gradOutsideMain": 0,
+    "teeth": 24,
+    "teethVisible": 24,
+    "teethSeqOk": true,
+    "layerOk": true,
+    "colors": [
+      "#592520",
+      "#8C2800"
+    ],
+    "rots": [
+      -13,
+      77,
+      257
+    ]
+  },
+  "verdict": true
+}
