@@ -1,0 +1,2394 @@
+{
+  "PASS": true,
+  "level3": {
+    "level": 3,
+    "version": "v16",
+    "basis": "all-clue-v16/2026-11-16",
+    "mode": "teaching_all_true",
+    "PASS": true,
+    "checks": [
+      {
+        "item": "全真教学/仅盗窃者假",
+        "ok": true,
+        "value": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "item": "预设身份人数规则后唯一摆位",
+        "ok": true,
+        "value": 1
+      },
+      {
+        "item": "全线索可选格至少2且人数规则确实消解",
+        "ok": true,
+        "value": {
+          "boards": 3,
+          "positions": [
+            1,
+            5
+          ]
+        }
+      },
+      {
+        "item": "教学分支禁止启用假话反事实",
+        "ok": true,
+        "value": null
+      },
+      {
+        "item": "单卡不直接定位",
+        "ok": true,
+        "value": 2
+      },
+      {
+        "item": "单卡至多两句且复合卡至多2",
+        "ok": true,
+        "value": null
+      },
+      {
+        "item": "受害者单句",
+        "ok": true,
+        "value": null
+      },
+      {
+        "item": "否定至多2只有至多1",
+        "ok": true,
+        "value": null
+      },
+      {
+        "item": "无内部标签及全局人数句",
+        "ok": true,
+        "value": null
+      },
+      {
+        "item": "方位距离条数至多2",
+        "ok": true,
+        "value": null
+      },
+      {
+        "item": "独立实现全线索盘面完全一致",
+        "ok": true,
+        "value": null
+      },
+      {
+        "item": "独立实现逐卡语义一致",
+        "ok": true,
+        "value": null
+      },
+      {
+        "item": "独立实现每个身份最终盘面一致",
+        "ok": true,
+        "value": null
+      },
+      {
+        "item": "独立实现候选位置一致",
+        "ok": true,
+        "value": null
+      }
+    ],
+    "truth_vector": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "all_true_boards": 3,
+    "final_solutions": 1,
+    "thief_own_positions": 2,
+    "thief_option_positions": [
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        6
+      ]
+    ],
+    "identity_uniqueness_claimed": false,
+    "corrected_audit": [
+      {
+        "person": "A",
+        "mode": "truth",
+        "optional_positions": [
+          1,
+          5
+        ],
+        "boards": 1,
+        "is_target": true
+      },
+      {
+        "person": "B",
+        "mode": "truth",
+        "optional_positions": [
+          6
+        ],
+        "boards": 1,
+        "is_target": true
+      },
+      {
+        "person": "C",
+        "mode": "truth",
+        "optional_positions": [
+          14
+        ],
+        "boards": 1,
+        "is_target": true
+      },
+      {
+        "person": "D",
+        "mode": "truth",
+        "optional_positions": [
+          27
+        ],
+        "boards": 0,
+        "is_target": false
+      },
+      {
+        "person": "E",
+        "mode": "truth",
+        "optional_positions": [
+          31,
+          34,
+          35
+        ],
+        "boards": 0,
+        "is_target": false
+      }
+    ],
+    "deletion_test": [
+      {
+        "card": 1,
+        "boards": 8,
+        "unique_target": false
+      },
+      {
+        "card": 2,
+        "boards": 74,
+        "unique_target": false
+      },
+      {
+        "card": 3,
+        "boards": 14,
+        "unique_target": false
+      },
+      {
+        "card": 4,
+        "boards": 17,
+        "unique_target": false
+      },
+      {
+        "card": 5,
+        "boards": 7,
+        "unique_target": false
+      },
+      {
+        "card": 6,
+        "boards": 9,
+        "unique_target": false
+      }
+    ],
+    "deletion_is_hard_gate": false,
+    "legacy_audit_status": "作废：不调用、不参与PASS",
+    "cards": [
+      [
+        "A在B上方"
+      ],
+      [
+        "B在植物旁边"
+      ],
+      [
+        "只有C在地毯上"
+      ],
+      [
+        "D在桌子旁边"
+      ],
+      [
+        "D在E上方"
+      ],
+      [
+        "C在桌子旁边"
+      ]
+    ],
+    "display_cards": [
+      [
+        "我在B展签誊录上方"
+      ],
+      [
+        "我在植物旁边"
+      ],
+      [
+        "只有我在地毯上"
+      ],
+      [
+        "我在桌子旁边"
+      ],
+      [
+        "D门厅接待在我上方"
+      ],
+      [
+        "C拓片修复在桌子旁边"
+      ]
+    ],
+    "target": [
+      1,
+      6,
+      14,
+      27,
+      34,
+      23
+    ],
+    "objects": {
+      "桌子": [
+        33,
+        21,
+        8
+      ],
+      "椅子": [
+        6,
+        9
+      ],
+      "书架": [
+        4
+      ],
+      "植物": [
+        0
+      ],
+      "地毯": [
+        13,
+        14,
+        19
+      ],
+      "雕塑": [
+        11
+      ]
+    }
+  },
+  "level6": {
+    "level": 6,
+    "version": "v16",
+    "basis": "all-clue-v16/2026-11-16",
+    "mode": "teaching_all_true",
+    "PASS": true,
+    "checks": [
+      {
+        "item": "全真教学/仅盗窃者假",
+        "ok": true,
+        "value": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "item": "预设身份人数规则后唯一摆位",
+        "ok": true,
+        "value": 1
+      },
+      {
+        "item": "全线索可选格至少2且人数规则确实消解",
+        "ok": true,
+        "value": {
+          "boards": 4,
+          "positions": [
+            4,
+            41
+          ]
+        }
+      },
+      {
+        "item": "教学分支禁止启用假话反事实",
+        "ok": true,
+        "value": null
+      },
+      {
+        "item": "单卡不直接定位",
+        "ok": true,
+        "value": 2
+      },
+      {
+        "item": "单卡至多两句且复合卡至多2",
+        "ok": true,
+        "value": null
+      },
+      {
+        "item": "受害者单句",
+        "ok": true,
+        "value": null
+      },
+      {
+        "item": "否定至多2只有至多1",
+        "ok": true,
+        "value": null
+      },
+      {
+        "item": "无内部标签及全局人数句",
+        "ok": true,
+        "value": null
+      },
+      {
+        "item": "方位距离条数至多2",
+        "ok": true,
+        "value": null
+      },
+      {
+        "item": "独立实现全线索盘面完全一致",
+        "ok": true,
+        "value": null
+      },
+      {
+        "item": "独立实现逐卡语义一致",
+        "ok": true,
+        "value": null
+      },
+      {
+        "item": "独立实现每个身份最终盘面一致",
+        "ok": true,
+        "value": null
+      },
+      {
+        "item": "独立实现候选位置一致",
+        "ok": true,
+        "value": null
+      }
+    ],
+    "truth_vector": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "all_true_boards": 4,
+    "final_solutions": 1,
+    "thief_own_positions": 2,
+    "thief_option_positions": [
+      [
+        1,
+        5
+      ],
+      [
+        6,
+        7
+      ]
+    ],
+    "identity_uniqueness_claimed": false,
+    "corrected_audit": [
+      {
+        "person": "A",
+        "mode": "truth",
+        "optional_positions": [
+          15
+        ],
+        "boards": 0,
+        "is_target": false
+      },
+      {
+        "person": "B",
+        "mode": "truth",
+        "optional_positions": [
+          4,
+          41
+        ],
+        "boards": 1,
+        "is_target": true
+      },
+      {
+        "person": "C",
+        "mode": "truth",
+        "optional_positions": [
+          12
+        ],
+        "boards": 0,
+        "is_target": false
+      },
+      {
+        "person": "D",
+        "mode": "truth",
+        "optional_positions": [
+          21,
+          25,
+          35
+        ],
+        "boards": 1,
+        "is_target": true
+      },
+      {
+        "person": "E",
+        "mode": "truth",
+        "optional_positions": [
+          45
+        ],
+        "boards": 1,
+        "is_target": true
+      },
+      {
+        "person": "F",
+        "mode": "truth",
+        "optional_positions": [
+          30
+        ],
+        "boards": 1,
+        "is_target": true
+      }
+    ],
+    "deletion_test": [
+      {
+        "card": 1,
+        "boards": 1,
+        "unique_target": true
+      },
+      {
+        "card": 2,
+        "boards": 50,
+        "unique_target": false
+      },
+      {
+        "card": 3,
+        "boards": 1,
+        "unique_target": true
+      },
+      {
+        "card": 4,
+        "boards": 2,
+        "unique_target": false
+      },
+      {
+        "card": 5,
+        "boards": 2,
+        "unique_target": false
+      },
+      {
+        "card": 6,
+        "boards": 1,
+        "unique_target": true
+      },
+      {
+        "card": 7,
+        "boards": 9,
+        "unique_target": false
+      }
+    ],
+    "deletion_is_hard_gate": false,
+    "legacy_audit_status": "作废：不调用、不参与PASS",
+    "cards": [
+      [
+        "B不在地毯旁边"
+      ],
+      [
+        "E在雕塑旁边",
+        "F在椅子旁边"
+      ],
+      [
+        "D在桌子旁边"
+      ],
+      [
+        "C在书架旁边"
+      ],
+      [
+        "B在书架旁边"
+      ],
+      [
+        "A不在植物旁边",
+        "C在桌子旁边"
+      ],
+      [
+        "只有A在椅子上"
+      ]
+    ],
+    "display_cards": [
+      [
+        "B靛青描图不在地毯旁边"
+      ],
+      [
+        "E蓝图管理在雕塑旁边",
+        "F工地放样在椅子旁边"
+      ],
+      [
+        "D朱批校样在桌子旁边"
+      ],
+      [
+        "C野外测绘在书架旁边"
+      ],
+      [
+        "B靛青描图在书架旁边"
+      ],
+      [
+        "A晒图学徒不在植物旁边",
+        "C野外测绘在桌子旁边"
+      ],
+      [
+        "只有A晒图学徒在椅子上"
+      ]
+    ],
+    "target": [
+      15,
+      41,
+      12,
+      25,
+      45,
+      30,
+      0
+    ],
+    "objects": {
+      "桌子": [
+        2,
+        6,
+        8,
+        13,
+        14,
+        32,
+        39,
+        42,
+        47
+      ],
+      "椅子": [
+        15,
+        31
+      ],
+      "书架": [
+        5,
+        48
+      ],
+      "植物": [
+        9,
+        40
+      ],
+      "地毯": [
+        12,
+        33
+      ],
+      "雕塑": [
+        44
+      ]
+    }
+  },
+  "all_levels": [
+    {
+      "level": 3,
+      "version": "v16",
+      "basis": "all-clue-v16/2026-11-16",
+      "mode": "teaching_all_true",
+      "PASS": true,
+      "checks": [
+        {
+          "item": "全真教学/仅盗窃者假",
+          "ok": true,
+          "value": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "item": "预设身份人数规则后唯一摆位",
+          "ok": true,
+          "value": 1
+        },
+        {
+          "item": "全线索可选格至少2且人数规则确实消解",
+          "ok": true,
+          "value": {
+            "boards": 3,
+            "positions": [
+              1,
+              5
+            ]
+          }
+        },
+        {
+          "item": "教学分支禁止启用假话反事实",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "单卡不直接定位",
+          "ok": true,
+          "value": 2
+        },
+        {
+          "item": "单卡至多两句且复合卡至多2",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "受害者单句",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "否定至多2只有至多1",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "无内部标签及全局人数句",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "方位距离条数至多2",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "独立实现全线索盘面完全一致",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "独立实现逐卡语义一致",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "独立实现每个身份最终盘面一致",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "独立实现候选位置一致",
+          "ok": true,
+          "value": null
+        }
+      ],
+      "truth_vector": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "all_true_boards": 3,
+      "final_solutions": 1,
+      "thief_own_positions": 2,
+      "thief_option_positions": [
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          6
+        ]
+      ],
+      "identity_uniqueness_claimed": false,
+      "corrected_audit": [
+        {
+          "person": "A",
+          "mode": "truth",
+          "optional_positions": [
+            1,
+            5
+          ],
+          "boards": 1,
+          "is_target": true
+        },
+        {
+          "person": "B",
+          "mode": "truth",
+          "optional_positions": [
+            6
+          ],
+          "boards": 1,
+          "is_target": true
+        },
+        {
+          "person": "C",
+          "mode": "truth",
+          "optional_positions": [
+            14
+          ],
+          "boards": 1,
+          "is_target": true
+        },
+        {
+          "person": "D",
+          "mode": "truth",
+          "optional_positions": [
+            27
+          ],
+          "boards": 0,
+          "is_target": false
+        },
+        {
+          "person": "E",
+          "mode": "truth",
+          "optional_positions": [
+            31,
+            34,
+            35
+          ],
+          "boards": 0,
+          "is_target": false
+        }
+      ],
+      "deletion_test": [
+        {
+          "card": 1,
+          "boards": 8,
+          "unique_target": false
+        },
+        {
+          "card": 2,
+          "boards": 74,
+          "unique_target": false
+        },
+        {
+          "card": 3,
+          "boards": 14,
+          "unique_target": false
+        },
+        {
+          "card": 4,
+          "boards": 17,
+          "unique_target": false
+        },
+        {
+          "card": 5,
+          "boards": 7,
+          "unique_target": false
+        },
+        {
+          "card": 6,
+          "boards": 9,
+          "unique_target": false
+        }
+      ],
+      "deletion_is_hard_gate": false,
+      "legacy_audit_status": "作废：不调用、不参与PASS",
+      "cards": [
+        [
+          "A在B上方"
+        ],
+        [
+          "B在植物旁边"
+        ],
+        [
+          "只有C在地毯上"
+        ],
+        [
+          "D在桌子旁边"
+        ],
+        [
+          "D在E上方"
+        ],
+        [
+          "C在桌子旁边"
+        ]
+      ],
+      "display_cards": [
+        [
+          "我在B展签誊录上方"
+        ],
+        [
+          "我在植物旁边"
+        ],
+        [
+          "只有我在地毯上"
+        ],
+        [
+          "我在桌子旁边"
+        ],
+        [
+          "D门厅接待在我上方"
+        ],
+        [
+          "C拓片修复在桌子旁边"
+        ]
+      ],
+      "target": [
+        1,
+        6,
+        14,
+        27,
+        34,
+        23
+      ],
+      "objects": {
+        "桌子": [
+          33,
+          21,
+          8
+        ],
+        "椅子": [
+          6,
+          9
+        ],
+        "书架": [
+          4
+        ],
+        "植物": [
+          0
+        ],
+        "地毯": [
+          13,
+          14,
+          19
+        ],
+        "雕塑": [
+          11
+        ]
+      }
+    },
+    {
+      "level": 5,
+      "version": "v16",
+      "basis": "all-clue-v16/2026-11-16",
+      "mode": "conditional_lie",
+      "PASS": true,
+      "checks": [
+        {
+          "item": "全真教学/仅盗窃者假",
+          "ok": true,
+          "value": [
+            true,
+            false,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "item": "预设身份人数规则后唯一摆位",
+          "ok": true,
+          "value": 1
+        },
+        {
+          "item": "其他身份不得给出其他盘面",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "盗窃者全线索候选格不超过1",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "单卡不直接定位",
+          "ok": true,
+          "value": 2
+        },
+        {
+          "item": "单卡至多两句且复合卡至多2",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "受害者单句",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "否定至多2只有至多1",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "无内部标签及全局人数句",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "方位距离条数至多2",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "真卡删卡非冗余",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "独立实现全线索盘面完全一致",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "独立实现逐卡语义一致",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "独立实现每个身份最终盘面一致",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "独立实现候选位置一致",
+          "ok": true,
+          "value": null
+        }
+      ],
+      "truth_vector": [
+        true,
+        false,
+        true,
+        true,
+        true,
+        true
+      ],
+      "all_true_boards": 0,
+      "final_solutions": 1,
+      "thief_own_positions": 0,
+      "thief_option_positions": [],
+      "identity_uniqueness_claimed": false,
+      "corrected_audit": [
+        {
+          "person": "A",
+          "mode": "lie",
+          "optional_positions": [],
+          "boards": 0,
+          "is_target": false
+        },
+        {
+          "person": "B",
+          "mode": "lie",
+          "optional_positions": [],
+          "boards": 1,
+          "is_target": true
+        },
+        {
+          "person": "C",
+          "mode": "lie",
+          "optional_positions": [],
+          "boards": 0,
+          "is_target": false
+        },
+        {
+          "person": "D",
+          "mode": "lie",
+          "optional_positions": [],
+          "boards": 0,
+          "is_target": false
+        },
+        {
+          "person": "E",
+          "mode": "lie",
+          "optional_positions": [],
+          "boards": 0,
+          "is_target": false
+        }
+      ],
+      "deletion_test": [
+        {
+          "card": 1,
+          "boards": 2,
+          "unique_target": false
+        },
+        {
+          "card": 3,
+          "boards": 4,
+          "unique_target": false
+        },
+        {
+          "card": 4,
+          "boards": 4,
+          "unique_target": false
+        },
+        {
+          "card": 5,
+          "boards": 24,
+          "unique_target": false
+        },
+        {
+          "card": 6,
+          "boards": 2,
+          "unique_target": false
+        }
+      ],
+      "deletion_is_hard_gate": true,
+      "legacy_audit_status": "作废：不调用、不参与PASS",
+      "cards": [
+        [
+          "A与C在同一房间"
+        ],
+        [
+          "E在椅子上"
+        ],
+        [
+          "E在地毯上"
+        ],
+        [
+          "B不在桌子旁边",
+          "D在椅子上"
+        ],
+        [
+          "A在椅子上",
+          "C在桌子旁边"
+        ],
+        [
+          "B与C不在同一房间"
+        ]
+      ],
+      "display_cards": [
+        [
+          "我与C火漆验印在同一房间"
+        ],
+        [
+          "E证物登记在椅子上"
+        ],
+        [
+          "E证物登记在地毯上"
+        ],
+        [
+          "B夜勘记录不在桌子旁边",
+          "我在椅子上"
+        ],
+        [
+          "A封条保管在椅子上",
+          "C火漆验印在桌子旁边"
+        ],
+        [
+          "B夜勘记录与C火漆验印不在同一房间"
+        ]
+      ],
+      "target": [
+        34,
+        12,
+        27,
+        1,
+        8,
+        23
+      ],
+      "objects": {
+        "桌子": [
+          21
+        ],
+        "椅子": [
+          1,
+          34
+        ],
+        "书架": [
+          10
+        ],
+        "植物": [
+          0
+        ],
+        "地毯": [
+          7,
+          8,
+          31
+        ],
+        "雕塑": [
+          15
+        ]
+      }
+    },
+    {
+      "level": 6,
+      "version": "v16",
+      "basis": "all-clue-v16/2026-11-16",
+      "mode": "teaching_all_true",
+      "PASS": true,
+      "checks": [
+        {
+          "item": "全真教学/仅盗窃者假",
+          "ok": true,
+          "value": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "item": "预设身份人数规则后唯一摆位",
+          "ok": true,
+          "value": 1
+        },
+        {
+          "item": "全线索可选格至少2且人数规则确实消解",
+          "ok": true,
+          "value": {
+            "boards": 4,
+            "positions": [
+              4,
+              41
+            ]
+          }
+        },
+        {
+          "item": "教学分支禁止启用假话反事实",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "单卡不直接定位",
+          "ok": true,
+          "value": 2
+        },
+        {
+          "item": "单卡至多两句且复合卡至多2",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "受害者单句",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "否定至多2只有至多1",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "无内部标签及全局人数句",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "方位距离条数至多2",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "独立实现全线索盘面完全一致",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "独立实现逐卡语义一致",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "独立实现每个身份最终盘面一致",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "独立实现候选位置一致",
+          "ok": true,
+          "value": null
+        }
+      ],
+      "truth_vector": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "all_true_boards": 4,
+      "final_solutions": 1,
+      "thief_own_positions": 2,
+      "thief_option_positions": [
+        [
+          1,
+          5
+        ],
+        [
+          6,
+          7
+        ]
+      ],
+      "identity_uniqueness_claimed": false,
+      "corrected_audit": [
+        {
+          "person": "A",
+          "mode": "truth",
+          "optional_positions": [
+            15
+          ],
+          "boards": 0,
+          "is_target": false
+        },
+        {
+          "person": "B",
+          "mode": "truth",
+          "optional_positions": [
+            4,
+            41
+          ],
+          "boards": 1,
+          "is_target": true
+        },
+        {
+          "person": "C",
+          "mode": "truth",
+          "optional_positions": [
+            12
+          ],
+          "boards": 0,
+          "is_target": false
+        },
+        {
+          "person": "D",
+          "mode": "truth",
+          "optional_positions": [
+            21,
+            25,
+            35
+          ],
+          "boards": 1,
+          "is_target": true
+        },
+        {
+          "person": "E",
+          "mode": "truth",
+          "optional_positions": [
+            45
+          ],
+          "boards": 1,
+          "is_target": true
+        },
+        {
+          "person": "F",
+          "mode": "truth",
+          "optional_positions": [
+            30
+          ],
+          "boards": 1,
+          "is_target": true
+        }
+      ],
+      "deletion_test": [
+        {
+          "card": 1,
+          "boards": 1,
+          "unique_target": true
+        },
+        {
+          "card": 2,
+          "boards": 50,
+          "unique_target": false
+        },
+        {
+          "card": 3,
+          "boards": 1,
+          "unique_target": true
+        },
+        {
+          "card": 4,
+          "boards": 2,
+          "unique_target": false
+        },
+        {
+          "card": 5,
+          "boards": 2,
+          "unique_target": false
+        },
+        {
+          "card": 6,
+          "boards": 1,
+          "unique_target": true
+        },
+        {
+          "card": 7,
+          "boards": 9,
+          "unique_target": false
+        }
+      ],
+      "deletion_is_hard_gate": false,
+      "legacy_audit_status": "作废：不调用、不参与PASS",
+      "cards": [
+        [
+          "B不在地毯旁边"
+        ],
+        [
+          "E在雕塑旁边",
+          "F在椅子旁边"
+        ],
+        [
+          "D在桌子旁边"
+        ],
+        [
+          "C在书架旁边"
+        ],
+        [
+          "B在书架旁边"
+        ],
+        [
+          "A不在植物旁边",
+          "C在桌子旁边"
+        ],
+        [
+          "只有A在椅子上"
+        ]
+      ],
+      "display_cards": [
+        [
+          "B靛青描图不在地毯旁边"
+        ],
+        [
+          "E蓝图管理在雕塑旁边",
+          "F工地放样在椅子旁边"
+        ],
+        [
+          "D朱批校样在桌子旁边"
+        ],
+        [
+          "C野外测绘在书架旁边"
+        ],
+        [
+          "B靛青描图在书架旁边"
+        ],
+        [
+          "A晒图学徒不在植物旁边",
+          "C野外测绘在桌子旁边"
+        ],
+        [
+          "只有A晒图学徒在椅子上"
+        ]
+      ],
+      "target": [
+        15,
+        41,
+        12,
+        25,
+        45,
+        30,
+        0
+      ],
+      "objects": {
+        "桌子": [
+          2,
+          6,
+          8,
+          13,
+          14,
+          32,
+          39,
+          42,
+          47
+        ],
+        "椅子": [
+          15,
+          31
+        ],
+        "书架": [
+          5,
+          48
+        ],
+        "植物": [
+          9,
+          40
+        ],
+        "地毯": [
+          12,
+          33
+        ],
+        "雕塑": [
+          44
+        ]
+      }
+    },
+    {
+      "level": 7,
+      "version": "v16",
+      "basis": "all-clue-v16/2026-11-16",
+      "mode": "conditional_lie",
+      "PASS": true,
+      "checks": [
+        {
+          "item": "全真教学/仅盗窃者假",
+          "ok": true,
+          "value": [
+            true,
+            false,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "item": "预设身份人数规则后唯一摆位",
+          "ok": true,
+          "value": 1
+        },
+        {
+          "item": "其他身份不得给出其他盘面",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "盗窃者全线索候选格不超过1",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "单卡不直接定位",
+          "ok": true,
+          "value": 2
+        },
+        {
+          "item": "单卡至多两句且复合卡至多2",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "受害者单句",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "否定至多2只有至多1",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "无内部标签及全局人数句",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "方位距离条数至多2",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "真卡删卡非冗余",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "独立实现全线索盘面完全一致",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "独立实现逐卡语义一致",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "独立实现每个身份最终盘面一致",
+          "ok": true,
+          "value": null
+        },
+        {
+          "item": "独立实现候选位置一致",
+          "ok": true,
+          "value": null
+        }
+      ],
+      "truth_vector": [
+        true,
+        false,
+        true,
+        true,
+        true,
+        true
+      ],
+      "all_true_boards": 0,
+      "final_solutions": 1,
+      "thief_own_positions": 0,
+      "thief_option_positions": [],
+      "identity_uniqueness_claimed": false,
+      "corrected_audit": [
+        {
+          "person": "A",
+          "mode": "lie",
+          "optional_positions": [],
+          "boards": 0,
+          "is_target": false
+        },
+        {
+          "person": "B",
+          "mode": "lie",
+          "optional_positions": [],
+          "boards": 1,
+          "is_target": true
+        },
+        {
+          "person": "C",
+          "mode": "lie",
+          "optional_positions": [],
+          "boards": 0,
+          "is_target": false
+        },
+        {
+          "person": "D",
+          "mode": "lie",
+          "optional_positions": [],
+          "boards": 0,
+          "is_target": false
+        },
+        {
+          "person": "E",
+          "mode": "lie",
+          "optional_positions": [],
+          "boards": 0,
+          "is_target": false
+        }
+      ],
+      "deletion_test": [
+        {
+          "card": 1,
+          "boards": 8,
+          "unique_target": false
+        },
+        {
+          "card": 3,
+          "boards": 6,
+          "unique_target": false
+        },
+        {
+          "card": 4,
+          "boards": 4,
+          "unique_target": false
+        },
+        {
+          "card": 5,
+          "boards": 2,
+          "unique_target": false
+        },
+        {
+          "card": 6,
+          "boards": 34,
+          "unique_target": false
+        }
+      ],
+      "deletion_is_hard_gate": true,
+      "legacy_audit_status": "作废：不调用、不参与PASS",
+      "cards": [
+        [
+          "C在地毯上"
+        ],
+        [
+          "V在地毯上"
+        ],
+        [
+          "B在椅子上",
+          "E在椅子上"
+        ],
+        [
+          "B在植物旁边",
+          "E独自在房间"
+        ],
+        [
+          "V不在桌子旁边"
+        ],
+        [
+          "A在植物旁边"
+        ]
+      ],
+      "display_cards": [
+        [
+          "C誊写员在地毯上"
+        ],
+        [
+          "V藏卷人在地毯上"
+        ],
+        [
+          "B转架管理在椅子上",
+          "E线装匠人在椅子上"
+        ],
+        [
+          "B转架管理在植物旁边",
+          "E线装匠人独自在房间"
+        ],
+        [
+          "V藏卷人不在桌子旁边"
+        ],
+        [
+          "A铜钥保管在植物旁边"
+        ]
+      ],
+      "target": [
+        11,
+        4,
+        15,
+        19,
+        24,
+        32
+      ],
+      "objects": {
+        "桌子": [
+          18,
+          20,
+          16
+        ],
+        "椅子": [
+          35,
+          22,
+          24,
+          4
+        ],
+        "植物": [
+          5
+        ],
+        "地毯": [
+          9,
+          15,
+          8
+        ]
+      }
+    }
+  ],
+  "runtime": {
+    "PASS": true,
+    "checks": [
+      {
+        "level": 3,
+        "geometry_and_clues_match": true,
+        "hints": [
+          {
+            "card": 1,
+            "count": 0,
+            "cells": []
+          },
+          {
+            "card": 2,
+            "count": 2,
+            "cells": [
+              "1:2",
+              "2:1"
+            ]
+          },
+          {
+            "card": 3,
+            "count": 3,
+            "cells": [
+              "3:2",
+              "3:3",
+              "4:2"
+            ]
+          },
+          {
+            "card": 4,
+            "count": 9,
+            "cells": [
+              "1:3",
+              "2:2",
+              "2:4",
+              "3:3",
+              "3:4",
+              "4:3",
+              "5:4",
+              "6:3",
+              "6:5"
+            ]
+          },
+          {
+            "card": 5,
+            "count": 0,
+            "cells": []
+          },
+          {
+            "card": 6,
+            "count": 9,
+            "cells": [
+              "1:3",
+              "2:2",
+              "2:4",
+              "3:3",
+              "3:4",
+              "4:3",
+              "5:4",
+              "6:3",
+              "6:5"
+            ]
+          }
+        ],
+        "thumbnail_matches": true
+      },
+      {
+        "level": 5,
+        "geometry_and_clues_match": true,
+        "hints": [
+          {
+            "card": 1,
+            "count": 0,
+            "cells": []
+          },
+          {
+            "card": 2,
+            "count": 2,
+            "cells": [
+              "1:2",
+              "6:5"
+            ]
+          },
+          {
+            "card": 3,
+            "count": 3,
+            "cells": [
+              "2:2",
+              "2:3",
+              "6:2"
+            ]
+          },
+          {
+            "card": 4,
+            "count": 0,
+            "cells": []
+          },
+          {
+            "card": 5,
+            "count": 0,
+            "cells": []
+          },
+          {
+            "card": 6,
+            "count": 0,
+            "cells": []
+          }
+        ],
+        "thumbnail_matches": true
+      },
+      {
+        "level": 6,
+        "geometry_and_clues_match": true,
+        "hints": [
+          {
+            "card": 1,
+            "count": 4,
+            "cells": [
+              "2:5",
+              "3:6",
+              "4:6",
+              "5:7"
+            ]
+          },
+          {
+            "card": 2,
+            "count": 0,
+            "cells": []
+          },
+          {
+            "card": 3,
+            "count": 14,
+            "cells": [
+              "1:2",
+              "1:4",
+              "2:1",
+              "2:6",
+              "3:2",
+              "3:7",
+              "4:1",
+              "4:5",
+              "5:4",
+              "5:6",
+              "6:1",
+              "6:4",
+              "7:2",
+              "7:5"
+            ]
+          },
+          {
+            "card": 4,
+            "count": 3,
+            "cells": [
+              "1:5",
+              "2:6",
+              "6:7"
+            ]
+          },
+          {
+            "card": 5,
+            "count": 3,
+            "cells": [
+              "1:5",
+              "2:6",
+              "6:7"
+            ]
+          },
+          {
+            "card": 6,
+            "count": 0,
+            "cells": []
+          },
+          {
+            "card": 7,
+            "count": 2,
+            "cells": [
+              "3:2",
+              "5:4"
+            ]
+          }
+        ],
+        "thumbnail_matches": true
+      },
+      {
+        "level": 7,
+        "geometry_and_clues_match": true,
+        "hints": [
+          {
+            "card": 1,
+            "count": 3,
+            "cells": [
+              "2:3",
+              "2:4",
+              "3:4"
+            ]
+          },
+          {
+            "card": 2,
+            "count": 3,
+            "cells": [
+              "2:3",
+              "2:4",
+              "3:4"
+            ]
+          },
+          {
+            "card": 3,
+            "count": 0,
+            "cells": []
+          },
+          {
+            "card": 4,
+            "count": 0,
+            "cells": []
+          },
+          {
+            "card": 5,
+            "count": 8,
+            "cells": [
+              "2:5",
+              "3:1",
+              "3:3",
+              "3:4",
+              "3:6",
+              "4:2",
+              "4:5",
+              "5:1"
+            ]
+          },
+          {
+            "card": 6,
+            "count": 2,
+            "cells": [
+              "1:5",
+              "2:6"
+            ]
+          }
+        ],
+        "thumbnail_matches": true
+      }
+    ],
+    "self_reference_cards": 5,
+    "self_reference_max": 5,
+    "card_order_1based": [
+      1,
+      6,
+      3,
+      4,
+      5,
+      2
+    ]
+  },
+  "reordered": {
+    "room": [
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0,
+      0,
+      2,
+      1,
+      1,
+      0,
+      0,
+      2,
+      2,
+      1,
+      1,
+      3,
+      3,
+      2,
+      2,
+      2,
+      2,
+      3,
+      3,
+      3,
+      3,
+      3,
+      2
+    ],
+    "doors": [
+      [
+        9,
+        10
+      ],
+      [
+        14,
+        20
+      ],
+      [
+        19,
+        25
+      ],
+      [
+        22,
+        28
+      ],
+      [
+        27,
+        33
+      ]
+    ],
+    "objects": {
+      "桌子": [
+        33,
+        21,
+        8
+      ],
+      "椅子": [
+        6,
+        9
+      ],
+      "书架": [
+        4
+      ],
+      "植物": [
+        0
+      ],
+      "地毯": [
+        13,
+        14,
+        19
+      ],
+      "雕塑": [
+        11
+      ]
+    },
+    "target": [
+      1,
+      6,
+      14,
+      27,
+      34,
+      23
+    ],
+    "thief": "A",
+    "cards": [
+      [
+        "A在B上方"
+      ],
+      [
+        "B在植物旁边"
+      ],
+      [
+        "只有C在地毯上"
+      ],
+      [
+        "D在桌子旁边"
+      ],
+      [
+        "D在E上方"
+      ],
+      [
+        "C在桌子旁边"
+      ]
+    ],
+    "level": 3,
+    "grid": 6,
+    "version": "v16",
+    "verification_mode": "teaching_all_true",
+    "announce": "unknown",
+    "display_cards": [
+      [
+        "我在B展签誊录上方"
+      ],
+      [
+        "我在植物旁边"
+      ],
+      [
+        "只有我在地毯上"
+      ],
+      [
+        "我在桌子旁边"
+      ],
+      [
+        "D门厅接待在我上方"
+      ],
+      [
+        "C拓片修复在桌子旁边"
+      ]
+    ],
+    "card_speakers": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "V"
+    ],
+    "clause_roles": [
+      [
+        {
+          "text": "A在B上方",
+          "speaker": "A",
+          "self_ref": true
+        }
+      ],
+      [
+        {
+          "text": "B在植物旁边",
+          "speaker": "B",
+          "self_ref": true
+        }
+      ],
+      [
+        {
+          "text": "只有C在地毯上",
+          "speaker": "C",
+          "self_ref": true
+        }
+      ],
+      [
+        {
+          "text": "D在桌子旁边",
+          "speaker": "D",
+          "self_ref": true
+        }
+      ],
+      [
+        {
+          "text": "D在E上方",
+          "speaker": "E",
+          "self_ref": true
+        }
+      ],
+      [
+        {
+          "text": "C在桌子旁边",
+          "speaker": "V",
+          "self_ref": false
+        }
+      ]
+    ],
+    "furniture_count": 11,
+    "visual_theme": {
+      "key": "reference",
+      "name": "原作明亮俯视（沿用 v12/v13）",
+      "palette": {
+        "INK": "#010101",
+        "INK_SOFT": "#2E2E2E",
+        "GRAY": "#BABABA",
+        "GRAY_DARK": "#5E5E5E",
+        "WHITE": "#FFFFFF",
+        "SHADOW": "#000000",
+        "CHAIR_BASE": "#FEF7E4",
+        "CHAIR_LIGHT": "#FFFDF4",
+        "CHAIR_OVL": "#FBD592",
+        "TABLE_BASE": "#E0CE7B",
+        "TABLE_EDGE": "#A3965A",
+        "SHELF_BASE": "#D0B0D9",
+        "SHELF_OVL": "#B2DBEB",
+        "TV_BASE": "#A2ABC8",
+        "TV_DARK": "#2C3145",
+        "TREE_BASE": "#C7B2A2",
+        "TREE_OVL": "#79A26C",
+        "TREE_LIGHT": "#A8CC92",
+        "TREE_DARK": "#3D5A3A",
+        "PLANT_BASE": "#FCA161",
+        "PLANT_OVL": "#79CFA1",
+        "PLANT_LEAF_DARK": "#4E9B78",
+        "BED_BASE": "#FFFBE7",
+        "BED_OVL": "#FFD98E",
+        "CARPET": "#FEE08E",
+        "CARPET_EDGE": "#39484D",
+        "ROOM_TINT": "#DBB98F"
+      },
+      "room_colors": [
+        "#e3eef7",
+        "#f9ead0",
+        "#e3f0e4",
+        "#eee4f5"
+      ],
+      "wall": "#27333c",
+      "door": "#e38636",
+      "accent": "#bb513c",
+      "note": "与 v12 一致的浅色卡通底，作为后续关的对照基准"
+    },
+    "asset_mapping": [
+      {
+        "local_name": "书架",
+        "cells": [
+          4
+        ],
+        "occupiable": false,
+        "kind": "shelf"
+      },
+      {
+        "local_name": "地毯",
+        "cells": [
+          13,
+          14,
+          19
+        ],
+        "occupiable": true,
+        "kind": "carpet"
+      },
+      {
+        "local_name": "桌子",
+        "cells": [
+          33,
+          21,
+          8
+        ],
+        "occupiable": false,
+        "kind": "table"
+      },
+      {
+        "local_name": "椅子",
+        "cells": [
+          6,
+          9
+        ],
+        "occupiable": true,
+        "kind": "chair"
+      },
+      {
+        "local_name": "植物",
+        "cells": [
+          0
+        ],
+        "occupiable": false,
+        "kind": "plant"
+      },
+      {
+        "local_name": "雕塑",
+        "cells": [
+          11
+        ],
+        "occupiable": false,
+        "kind": "statue"
+      }
+    ],
+    "source": "v16 · 全真教学关；707仅交换原卡2/6提高自述，线索多重集不变；家具11格与答案保持",
+    "card_order_1based": [
+      1,
+      6,
+      3,
+      4,
+      5,
+      2
+    ],
+    "rule_note": "全线索候选格，不含人数规则；第3/6关全真教学，不启用假话分支；第5/7关按候选格数量决定真假；旧摘卡候选闸门作废",
+    "difficulty_band": "Easy 与 Medium 之间",
+    "truth_pattern": "六卡全真（推导结果）",
+    "design_note": "第三关v16：11格家具；全真教学口径、全线索3盘，人数规则后1盘；自述5/6（最大值）；旧摘卡身份审计作废",
+    "walls": [
+      [
+        "v",
+        1,
+        4
+      ],
+      [
+        "v",
+        2,
+        4
+      ],
+      [
+        "h",
+        2,
+        4
+      ],
+      [
+        "v",
+        3,
+        3
+      ],
+      [
+        "h",
+        3,
+        3
+      ],
+      [
+        "v",
+        3,
+        4
+      ],
+      [
+        "h",
+        4,
+        1
+      ],
+      [
+        "v",
+        4,
+        2
+      ],
+      [
+        "h",
+        4,
+        2
+      ],
+      [
+        "v",
+        4,
+        4
+      ],
+      [
+        "h",
+        4,
+        5
+      ],
+      [
+        "h",
+        4,
+        6
+      ],
+      [
+        "v",
+        5,
+        2
+      ],
+      [
+        "h",
+        5,
+        3
+      ],
+      [
+        "h",
+        5,
+        4
+      ],
+      [
+        "h",
+        5,
+        5
+      ],
+      [
+        "v",
+        6,
+        5
+      ]
+    ],
+    "doors_raw": [
+      [
+        "v",
+        2,
+        4
+      ],
+      [
+        "h",
+        3,
+        3
+      ],
+      [
+        "h",
+        4,
+        2
+      ],
+      [
+        "h",
+        4,
+        5
+      ],
+      [
+        "h",
+        5,
+        4
+      ]
+    ],
+    "hint_preview": [
+      {
+        "cells": {},
+        "count": 0,
+        "rule": "不做位置提示"
+      },
+      {
+        "cells": [
+          "1:2",
+          "2:1"
+        ],
+        "count": 2,
+        "rule": "该家具四邻、同区域、可站人的格"
+      },
+      {
+        "cells": [
+          "3:2",
+          "3:3",
+          "4:2"
+        ],
+        "count": 3,
+        "rule": "该家具自己的格子"
+      },
+      {
+        "cells": [
+          "1:3",
+          "2:2",
+          "2:4",
+          "3:3",
+          "3:4",
+          "4:3",
+          "5:4",
+          "6:3",
+          "6:5"
+        ],
+        "count": 9,
+        "rule": "该家具四邻、同区域、可站人的格"
+      },
+      {
+        "cells": {},
+        "count": 0,
+        "rule": "不做位置提示"
+      },
+      {
+        "cells": [
+          "1:3",
+          "2:2",
+          "2:4",
+          "3:3",
+          "3:4",
+          "4:3",
+          "5:4",
+          "6:3",
+          "6:5"
+        ],
+        "count": 9,
+        "rule": "该家具四邻、同区域、可站人的格"
+      }
+    ],
+    "names": {
+      "A": "巡夜保安",
+      "B": "展签誊录",
+      "C": "拓片修复",
+      "D": "门厅接待",
+      "E": "证物清点",
+      "V": "展厅主人"
+    }
+  },
+  "card_order_1based": [
+    1,
+    6,
+    3,
+    4,
+    5,
+    2
+  ],
+  "self_reference_cards": 5,
+  "sourceSha256": "0478c3387e4b2860ff4a09d409a94fcecd0f94cb2627e6df6d5157897e6a414d"
+}

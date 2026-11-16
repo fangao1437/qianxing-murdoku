@@ -97,9 +97,9 @@ local modules = {
   -- ★ 2026-10-21（v284）：玩法说明浮层（教程）。控件在存档里（`tut.*`），模块只管显示与翻页。
   { name = "tutorial_ui",              path = "lua/tutorial_ui.lua" },
   -- ★ 2026-10-21（v286）：教程控件的**运行期自检**（只读：缺失 / 重名 / 父错 / 尺寸 0 / 该显示却没显示）
-  { name = "tut_verify",               path = "lua/tut_verify.lua" },
+  -- 698：沿用650起的正式模块集合，不再打包已停用的教程自检模块。
   -- ★ 2026-10-22（v311）：**模板探针**（只读实验：模板嵌套 / 运行时改引用；结果只在日志）
-  { name = "tpl_probe",                path = "lua/tpl_probe.lua" },
+  -- 698：模板探针不属于正式运行包。
   { name = "levels.init",              path = "lua/levels/init.lua" },
 }
 
@@ -214,7 +214,7 @@ if #missing > 0 then
   os.exit(1)
 end
 print("")
-print("下一步：脚本映射要指向【编辑器实际读取的 external_lua_file 目录】（本脚本已自动同步过去）")
+print("已生成 dist/client_script.lua；本脚本不修改编辑器目录或脚本映射。")
 
 -- ★ 同步到编辑器目录【不在这里做】✗
 --   ★ 原因：脚本沙箱没有 os.getenv ✗ 而 io.open 打不开含中文的绝对路径（已实测 ✗）

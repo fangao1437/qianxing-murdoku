@@ -1,33 +1,9 @@
--- lua/room_map.lua —— **房间（连通区域）计算，只有这一处实现**
---
--- ★★★ 2026-09-30：为什么要单独抽一个模块。
---
---   起因：选关卡片要画**棋盘缩略图**（参考《派蒙的执律庭实习》的卡片：
---   缩略图里是"房间色块"）。而缩略图要算的是**别的关卡**的房间 ——
---   不能借用"当前正在跑的那一关"的核心对象。
---
---   那两个函数（`build_walls` / `compute_rooms`）本来长在 `murdoku_core.lua` 里，
---   只服务于"当前关卡"。如果我在界面层再写一遍连通区域算法，
---   就又变成本工程反复踩的**"同一件事两处实现 ⇒ 必然漂移"**
---   （前面吃过：`erases` 动效、运行时上色 vs 存档静态图、自动 ✗ 的三处还原、
---     缩放表、关卡清单……）。
---   ⇒ 抽到这里，**核心和界面层共用同一份**：
---       · `murdoku_core.build_walls` / `compute_rooms` 直接转调本模块（API 不变）
---       · `levels.init.ui_list` 用 `boxes` 给每关算好缩略图要的房间框
---
---   本模块**不依赖任何其它模块**（纯函数，只吃关卡数据），所以两边都能安全 require。
-
 local M = {}
-
 local function wall_key(kind, r, c)
   return kind .. ":" .. tostring(r) .. ":" .. tostring(c)
 end
 M.wall_key = wall_key
-
--- 墙集合。三种写法都认（与核心原来的实现完全一致）：
---   A: { {"v", r, c}, ... }
---   B: { v = { {"r","c"} | "r:c" }, h = {...} }
-function M.build_walls(level, rows, cols)   -- luacheck: ignore rows cols
+function M.build_walls(level, rows, cols)    
   local set = {}
   local walls = level and level.walls
   if type(walls) ~= "table" then return set end
@@ -53,8 +29,6 @@ function M.build_walls(level, rows, cols)   -- luacheck: ignore rows cols
   end
   return set
 end
-
--- 洪水填充：返回 room[r][c] = 房间号，以及房间总数
 function M.compute_rooms(rows, cols, wall_set)
   local room = {}
   for r = 1, rows do
@@ -89,16 +63,6 @@ function M.compute_rooms(rows, cols, wall_set)
   end
   return room, index
 end
-
--- 给界面层用：每一关的**房间外框**（缩略图画色块用）。
---
---   返回 { { r1, c1, r2, c2, cells }, ... }（按房间号排序，1 起）。
---   只给"外框"而不是逐格，是因为缩略图按**房间色块**画：
---   参考图的缩略图就是几块彩色区域，不是逐个格子。
---   ★ 好处：每张卡片只要 **每关房间数** 个控件（本项目 3~6 个），
---     而不是 rows×cols 个（最多 49 个）—— 8 张卡片也只要几十个控件。
---
---   读不到 size / walls 就返回空表（**不编数据** —— 缩略图宁可不画）。
 function M.boxes(level)
   local sz = level and level.size
   local rows = type(sz) == "table" and tonumber(sz.rows) or nil
@@ -123,10 +87,8 @@ function M.boxes(level)
       end
     end
   end
-  -- 压实成数组（房间号从 1 连续）
   local list = {}
   for id = 1, n do if out[id] then list[#list + 1] = out[id] end end
   return list
 end
-
 return M

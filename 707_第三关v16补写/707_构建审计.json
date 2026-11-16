@@ -1,0 +1,67 @@
+{
+  "version": 707,
+  "input": "706_3567优化与第七关墙布局.gil",
+  "output": "707_第三关v16补写.gil",
+  "sha256": "4740c79ed18cf61b8ac1b6ab8e627adc6e80e7710c22128e9fc89ab089b61637",
+  "bytes": 7296662,
+  "records": 8300,
+  "fieldDiffs": 4,
+  "changedStaticRecords": [
+    1073742662,
+    1073742600,
+    1073742620
+  ],
+  "changedStaticCount": 3,
+  "embeddedLuaMarker": "v707",
+  "cardTexts": [
+    "我在B展签誊录上方",
+    "我在植物旁边",
+    "只有我在地毯上",
+    "我在桌子旁边",
+    "D门厅接待在我上方",
+    "C拓片修复在桌子旁边"
+  ],
+  "cardOrder": [
+    1,
+    6,
+    3,
+    4,
+    5,
+    2
+  ],
+  "selfReferenceCards": 5,
+  "basis": "all-clue-v16/2026-11-16",
+  "teachingLevels": [
+    3,
+    6
+  ],
+  "hintCounts": [
+    0,
+    2,
+    3,
+    9,
+    0,
+    9
+  ],
+  "unchangedModules": [
+    "room_map",
+    "murdoku_core",
+    "furn_art",
+    "furn_art_records",
+    "ui_controller",
+    "engine_adapter",
+    "engine_adapter_qianxing",
+    "main",
+    "tutorial_ui",
+    "levels.init",
+    "levels.case_001",
+    "levels.case_002",
+    "levels.case_004",
+    "levels.case_005",
+    "levels.case_006",
+    "levels.case_007"
+  ],
+  "preserved": "706第5/6/7关及第7关墙位与缩略图数据",
+  "verification": "707_验证结果.json",
+  "roundtrip": true
+}
