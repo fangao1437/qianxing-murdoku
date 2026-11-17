@@ -1,0 +1,164 @@
+{
+  "version": 713,
+  "baseVersion": 712,
+  "output": "713_第六关人数规则与卡面同步.gil",
+  "baseSha256": "755f9c86b180d47bdc32dbd41b0b63a680d6129c4b9ed95f7a2875361b6620bf",
+  "sha256": "a27319f8ab187a10d32b1b06743d611ef0dd95258b7ffadf4649aa054b45d62d",
+  "records": 8300,
+  "bytes": 7301395,
+  "fieldDiffs": 94,
+  "changes": [
+    {
+      "name": "what.4.1",
+      "before": "B米纸誊录在我上方",
+      "after": "B编辑在我上方"
+    },
+    {
+      "name": "what.4.5",
+      "before": "D卷宗管理在书架旁边",
+      "after": "D快递员在书架旁边"
+    },
+    {
+      "name": "what.6.1",
+      "before": "E管理员在雕塑旁边",
+      "after": "我在椅子上"
+    },
+    {
+      "name": "what.6.2",
+      "before": "F施工员在椅子旁边",
+      "after": "我在书架旁边"
+    },
+    {
+      "name": "what.6.3",
+      "before": "D工程师在桌子旁边",
+      "after": "我在地毯上"
+    },
+    {
+      "name": "what.6.4",
+      "before": "B设计师在书架旁边",
+      "after": "我在桌子旁边"
+    },
+    {
+      "name": "what.6.5",
+      "before": "A绘图员在椅子上",
+      "after": "我在雕塑旁边"
+    },
+    {
+      "name": "what.6.6",
+      "before": "C测绘员在地毯上",
+      "after": "我在椅子旁边"
+    },
+    {
+      "name": "what.6.7",
+      "before": "E管理员不在书架旁边",
+      "after": "我不在书架旁边"
+    }
+  ],
+  "layout": [
+    {
+      "record": "what.4.1",
+      "widthDelta": -32,
+      "before": "B米纸誊录在我上方",
+      "after": "B编辑在我上方"
+    },
+    {
+      "record": "what.4.5",
+      "widthDelta": -16,
+      "before": "D卷宗管理在书架旁边",
+      "after": "D快递员在书架旁边"
+    },
+    {
+      "record": "what.6.1",
+      "widthDelta": -64,
+      "before": "E管理员在雕塑旁边",
+      "after": "我在椅子上"
+    },
+    {
+      "record": "what.6.2",
+      "widthDelta": -48,
+      "before": "F施工员在椅子旁边",
+      "after": "我在书架旁边"
+    },
+    {
+      "record": "what.6.3",
+      "widthDelta": -64,
+      "before": "D工程师在桌子旁边",
+      "after": "我在地毯上"
+    },
+    {
+      "record": "what.6.4",
+      "widthDelta": -48,
+      "before": "B设计师在书架旁边",
+      "after": "我在桌子旁边"
+    },
+    {
+      "record": "what.6.5",
+      "widthDelta": -32,
+      "before": "A绘图员在椅子上",
+      "after": "我在雕塑旁边"
+    },
+    {
+      "record": "what.6.6",
+      "widthDelta": -32,
+      "before": "C测绘员在地毯上",
+      "after": "我在椅子旁边"
+    },
+    {
+      "record": "what.6.7",
+      "widthDelta": -48,
+      "before": "E管理员不在书架旁边",
+      "after": "我不在书架旁边"
+    }
+  ],
+  "checkedWhoCount": 42,
+  "checkedWhatCount": 42,
+  "oldJobResidualsRemoved": [
+    "米纸誊录",
+    "卷宗管理"
+  ],
+  "case006": {
+    "order": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "V"
+    ],
+    "names": {
+      "A": "绘图员",
+      "B": "设计师",
+      "C": "测绘员",
+      "D": "工程师",
+      "E": "管理员",
+      "F": "施工员",
+      "V": "老师"
+    },
+    "display": [
+      "我在椅子上",
+      "我在书架旁边",
+      "我在地毯上",
+      "我在桌子旁边",
+      "我在雕塑旁边",
+      "我在椅子旁边",
+      "我不在书架旁边"
+    ],
+    "allTrueBoards": 2,
+    "designerPositions": 2,
+    "afterPeopleRule": 1,
+    "identityUniquenessClaimed": false
+  },
+  "checks": {
+    "roundtrip": true,
+    "scriptMarker": "v713",
+    "whoSlotsUnchanged": true,
+    "case006Written": true,
+    "oldJobResidualsAbsent": true,
+    "base712Unchanged": true
+  },
+  "realGameTest": false,
+  "limits": [
+    "离线GIL往返与静态文本核验；未导入千星沙箱"
+  ]
+}

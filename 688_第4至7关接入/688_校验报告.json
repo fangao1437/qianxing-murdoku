@@ -1,0 +1,184 @@
+{
+  "timestamp": "2026-11-14T20:25:08.616Z",
+  "base": {
+    "sha256": "8d33d9af7592ff2a8d9b9af37838c606fff3d816762fdaed984a4e4143a169fe",
+    "records": 7826
+  },
+  "output": {
+    "sha256": "337510627ba91121e2df3a9713b4e1d260e3ce681fd3f91e4042d1c6137dff6d",
+    "records": 7921
+  },
+  "checks": 39,
+  "pass": 39,
+  "fail": 0,
+  "verdict": true,
+  "details": [
+    {
+      "name": "旧记录白名单外零改动 (rogue=0)",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "白名单内改动均为第4关文本/父容器",
+      "ok": true,
+      "detail": 13
+    },
+    {
+      "name": "新增记录数 = 95",
+      "ok": true,
+      "detail": 95
+    },
+    {
+      "name": "新增记录名唯一（基线固有重复名不计）",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "新增记录名不与旧名冲突",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "新增记录无悬空父",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "row.4.1 三文本父子链接",
+      "ok": true
+    },
+    {
+      "name": "row.4.2 三文本父子链接",
+      "ok": true
+    },
+    {
+      "name": "row.4.3 三文本父子链接",
+      "ok": true
+    },
+    {
+      "name": "row.4.4 三文本父子链接",
+      "ok": true
+    },
+    {
+      "name": "row.4.5 三文本父子链接",
+      "ok": true
+    },
+    {
+      "name": "row.4.6 三文本父子链接",
+      "ok": true
+    },
+    {
+      "name": "row.5.1 三文本父子链接",
+      "ok": true
+    },
+    {
+      "name": "row.5.2 三文本父子链接",
+      "ok": true
+    },
+    {
+      "name": "row.5.3 三文本父子链接",
+      "ok": true
+    },
+    {
+      "name": "row.5.4 三文本父子链接",
+      "ok": true
+    },
+    {
+      "name": "row.5.5 三文本父子链接",
+      "ok": true
+    },
+    {
+      "name": "row.5.6 三文本父子链接",
+      "ok": true
+    },
+    {
+      "name": "row.6.1 三文本父子链接",
+      "ok": true
+    },
+    {
+      "name": "row.6.2 三文本父子链接",
+      "ok": true
+    },
+    {
+      "name": "row.6.3 三文本父子链接",
+      "ok": true
+    },
+    {
+      "name": "row.6.4 三文本父子链接",
+      "ok": true
+    },
+    {
+      "name": "row.6.5 三文本父子链接",
+      "ok": true
+    },
+    {
+      "name": "row.6.6 三文本父子链接",
+      "ok": true
+    },
+    {
+      "name": "row.6.7 三文本父子链接",
+      "ok": true
+    },
+    {
+      "name": "row.7.1 三文本父子链接",
+      "ok": true
+    },
+    {
+      "name": "row.7.2 三文本父子链接",
+      "ok": true
+    },
+    {
+      "name": "row.7.3 三文本父子链接",
+      "ok": true
+    },
+    {
+      "name": "row.7.4 三文本父子链接",
+      "ok": true
+    },
+    {
+      "name": "row.7.5 三文本父子链接",
+      "ok": true
+    },
+    {
+      "name": "row.7.6 三文本父子链接",
+      "ok": true
+    },
+    {
+      "name": "第6关第7行存在",
+      "ok": true
+    },
+    {
+      "name": "静态文本 75 处逐条一致",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "前3关静态文本零改动",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "内嵌 Lua 反向补丁逐字节还原 687",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "688 注册 7 关",
+      "ok": true
+    },
+    {
+      "name": "688 无未注册线索类型",
+      "ok": true
+    },
+    {
+      "name": "hint_preview 与逐卡提示格清单一致",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "四关家具类型均在本地已支持6类内",
+      "ok": true,
+      "detail": "{\"4\":[\"桌子\",\"椅子\",\"书架\",\"植物\",\"地毯\"],\"5\":[\"桌子\",\"椅子\",\"书架\",\"植物\",\"地毯\"],\"6\":[\"桌子\",\"椅子\",\"书架\",\"植物\",\"地毯\"],\"7\":[\"桌子\",\"椅子\",\"植物\",\"地毯\"]}"
+    }
+  ]
+}

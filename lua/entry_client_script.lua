@@ -1,5 +1,5 @@
 local FORCE_LEVEL = nil
-if print then print("[murdoku] ===== 构建标记 v712 / 2026-11-17 / 七关常见身份称呼：who、what与教程全文同步 =====") end
+if print then print("[murdoku] ===== 构建标记 v714 / 2026-11-17 / 第六关全真身份唯一、方位同室与人数收尾 =====") end
 local Murdoku, Qianxing
 local LOAD_ERR = nil
 local ok1 = pcall(function() Murdoku = require("main") end)
@@ -94,7 +94,7 @@ local function check_canvas()
     local same = (math.abs(w - CANVAS_EXPECT.w) < 0.6) and (math.abs(h - CANVAS_EXPECT.h) < 0.6)
     if same then
       if print then
-        print("[murdoku] ===== 构建标记 v712 / 2026-11-17 / 七关常见身份称呼：who、what与教程全文同步 =====")
+        print("[murdoku] ===== 构建标记 v714 / 2026-11-17 / 第六关全真身份唯一、方位同室与人数收尾 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -618,6 +618,9 @@ local function bind_help617()
       table.sort(yes); table.sort(no)
       help_write(c["help617.title"], (cur.level and cur.level.name or "本关") .. " · 注释")
       help_write(c["help617.body"], "可站人的家具：" .. (#yes > 0 and table.concat(yes, "、") or "本关未配置") .. "。\n\n不可站人的家具：" .. (#no > 0 and table.concat(no, "、") or "本关未配置") .. "。\n\n普通可站空格也可放人；墙体、禁用格及水域不能站人。\n具体家具以本关配置为准。")
+      if id == "case_006" then
+        help_write(c["help617.body"], "本关七条线索均为真。每行、每列各一人。\n\n先用全部线索求候选格，不预设身份或套人数规则。\n盗窃者说真话时，必须仍有多个可选位置。\n\n盗窃者在老师房间的门相邻房间中；排除盗窃者后，\n该房间的无辜人数必须唯一最多。\n\n椅子、地毯和空格可站；桌子、书架、植物、雕塑不可站。\n旁边指同房间四邻格；上方不要求同列。")
+      end
       help617.level = id
       help617.open = true
       help_visible(c["help617"], true)

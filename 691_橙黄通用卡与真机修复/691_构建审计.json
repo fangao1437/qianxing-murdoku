@@ -1,0 +1,118 @@
+{
+  "version": 691,
+  "base": {
+    "file": "qianxing-murdoku\\689_性能负载优化\\689_性能负载优化.gil",
+    "sha256": "f8798b9c89b1e025b187f5932497742b2f163080fdb64aa214ea86295619623c",
+    "records": 7921,
+    "luaBytes": 606688
+  },
+  "output": {
+    "expectRecords": 7961,
+    "luaBytes": 607695,
+    "sha256": "0fb6be5d437ffd767168265ee0d8cf7e8fed3cca92cacd63d694bd3e07e065d7",
+    "bytes": 7014646,
+    "recordsOnDisk": 7961,
+    "unexpectedChangedRecords": 0,
+    "luaRoundtrip": true
+  },
+  "counts": {
+    "cardLayersPerTemplate": 7,
+    "cardLayersTotal": 14,
+    "floorFamilies": 13,
+    "floorRecords": 26,
+    "addedTotal": 40,
+    "modifiedRecords": 49
+  },
+  "lua": {
+    "patches": [
+      {
+        "name": "gen_list",
+        "count": 2
+      },
+      {
+        "name": "gen_highlight",
+        "count": 1
+      },
+      {
+        "name": "select_page_new",
+        "count": 1
+      },
+      {
+        "name": "select_page_action",
+        "count": 1
+      },
+      {
+        "name": "select_page_levelselect",
+        "count": 1
+      },
+      {
+        "name": "door_skip",
+        "count": 1
+      },
+      {
+        "name": "door_trim_case006",
+        "count": 1
+      },
+      {
+        "name": "carpet_tpl_off",
+        "count": 1
+      },
+      {
+        "name": "floor_path_map",
+        "count": 1
+      },
+      {
+        "name": "ensure_cells_loop",
+        "count": 1
+      },
+      {
+        "name": "cfg_rows",
+        "count": 1
+      },
+      {
+        "name": "cfg_cols",
+        "count": 1
+      }
+    ],
+    "reversible": true
+  },
+  "doors": {
+    "level": "case_006",
+    "before": 9,
+    "after": 5,
+    "dropped": [
+      "h:3:4",
+      "h:3:6",
+      "h:4:2",
+      "v:4:2"
+    ]
+  },
+  "cardSummary": [
+    {
+      "rootId": 1073742421,
+      "genBackropId": 1073742807,
+      "layers": [
+        "gen691.base",
+        "gen691.hi",
+        "gen691.trap",
+        "gen691.lo",
+        "gen691.mid1",
+        "gen691.mid2",
+        "gen691.corner"
+      ]
+    },
+    {
+      "rootId": 1073742428,
+      "genBackropId": 1073742804,
+      "layers": [
+        "gen691.base",
+        "gen691.hi",
+        "gen691.trap",
+        "gen691.lo",
+        "gen691.mid1",
+        "gen691.mid2",
+        "gen691.corner"
+      ]
+    }
+  ]
+}

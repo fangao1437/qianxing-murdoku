@@ -1,0 +1,604 @@
+{
+  "level": 6,
+  "grid": 7,
+  "version": "v17",
+  "room": [
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    0,
+    0,
+    2,
+    2,
+    2,
+    2,
+    2,
+    3,
+    3,
+    2,
+    2,
+    2,
+    2,
+    2,
+    3,
+    3,
+    2,
+    2,
+    2,
+    2,
+    2,
+    3,
+    3,
+    2,
+    2,
+    2,
+    2,
+    2
+  ],
+  "doors": [
+    [
+      16,
+      23
+    ],
+    [
+      17,
+      18
+    ],
+    [
+      18,
+      25
+    ],
+    [
+      21,
+      28
+    ],
+    [
+      43,
+      44
+    ]
+  ],
+  "walls": [
+    [
+      "v",
+      1,
+      4
+    ],
+    [
+      "v",
+      2,
+      4
+    ],
+    [
+      "h",
+      3,
+      3
+    ],
+    [
+      "v",
+      3,
+      4
+    ],
+    [
+      "h",
+      3,
+      4
+    ],
+    [
+      "h",
+      3,
+      5
+    ],
+    [
+      "h",
+      3,
+      6
+    ],
+    [
+      "h",
+      3,
+      7
+    ],
+    [
+      "h",
+      4,
+      1
+    ],
+    [
+      "v",
+      4,
+      2
+    ],
+    [
+      "h",
+      4,
+      2
+    ],
+    [
+      "v",
+      5,
+      2
+    ],
+    [
+      "v",
+      6,
+      2
+    ],
+    [
+      "v",
+      7,
+      2
+    ]
+  ],
+  "doors_raw": [
+    [
+      "h",
+      3,
+      3
+    ],
+    [
+      "v",
+      3,
+      4
+    ],
+    [
+      "h",
+      3,
+      5
+    ],
+    [
+      "h",
+      4,
+      1
+    ],
+    [
+      "v",
+      7,
+      2
+    ]
+  ],
+  "objects": {
+    "桌子": [
+      2,
+      6,
+      8,
+      13,
+      14,
+      32,
+      39,
+      42,
+      47
+    ],
+    "椅子": [
+      15,
+      31
+    ],
+    "书架": [
+      5,
+      48
+    ],
+    "植物": [
+      9,
+      40
+    ],
+    "地毯": [
+      12,
+      33
+    ],
+    "雕塑": [
+      44
+    ]
+  },
+  "furniture_count": 18,
+  "target": [
+    15,
+    41,
+    12,
+    25,
+    45,
+    30,
+    0
+  ],
+  "thief": "B",
+  "names": {
+    "A": "绘图员",
+    "B": "设计师",
+    "C": "测绘员",
+    "D": "工程师",
+    "E": "管理员",
+    "F": "施工员",
+    "V": "老师"
+  },
+  "cards": [
+    [
+      "A在椅子上"
+    ],
+    [
+      "D在E上方"
+    ],
+    [
+      "C在地毯上"
+    ],
+    [
+      "D在桌子旁边"
+    ],
+    [
+      "E在雕塑旁边"
+    ],
+    [
+      "F在椅子旁边"
+    ],
+    [
+      "D与E在同一房间"
+    ]
+  ],
+  "display_cards": [
+    [
+      "我在椅子上"
+    ],
+    [
+      "D工程师在E管理员上方"
+    ],
+    [
+      "我在地毯上"
+    ],
+    [
+      "我在桌子旁边"
+    ],
+    [
+      "我在雕塑旁边"
+    ],
+    [
+      "我在椅子旁边"
+    ],
+    [
+      "D工程师与E管理员在同一房间"
+    ]
+  ],
+  "clause_roles": [
+    [
+      {
+        "text": "A在椅子上",
+        "speaker": "A",
+        "self_ref": true,
+        "display": "我在椅子上"
+      }
+    ],
+    [
+      {
+        "text": "D在E上方",
+        "speaker": "B",
+        "self_ref": false,
+        "display": "D工程师在E管理员上方"
+      }
+    ],
+    [
+      {
+        "text": "C在地毯上",
+        "speaker": "C",
+        "self_ref": true,
+        "display": "我在地毯上"
+      }
+    ],
+    [
+      {
+        "text": "D在桌子旁边",
+        "speaker": "D",
+        "self_ref": true,
+        "display": "我在桌子旁边"
+      }
+    ],
+    [
+      {
+        "text": "E在雕塑旁边",
+        "speaker": "E",
+        "self_ref": true,
+        "display": "我在雕塑旁边"
+      }
+    ],
+    [
+      {
+        "text": "F在椅子旁边",
+        "speaker": "F",
+        "self_ref": true,
+        "display": "我在椅子旁边"
+      }
+    ],
+    [
+      {
+        "text": "D与E在同一房间",
+        "speaker": "V",
+        "self_ref": false,
+        "display": "D工程师与E管理员在同一房间"
+      }
+    ]
+  ],
+  "card_speakers": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "V"
+  ],
+  "texts": [
+    {
+      "slot": 1,
+      "letter": "A",
+      "who": "绘图员",
+      "what": "我在椅子上"
+    },
+    {
+      "slot": 2,
+      "letter": "B",
+      "who": "设计师",
+      "what": "D工程师在E管理员上方"
+    },
+    {
+      "slot": 3,
+      "letter": "C",
+      "who": "测绘员",
+      "what": "我在地毯上"
+    },
+    {
+      "slot": 4,
+      "letter": "D",
+      "who": "工程师",
+      "what": "我在桌子旁边"
+    },
+    {
+      "slot": 5,
+      "letter": "E",
+      "who": "管理员",
+      "what": "我在雕塑旁边"
+    },
+    {
+      "slot": 6,
+      "letter": "F",
+      "who": "施工员",
+      "what": "我在椅子旁边"
+    },
+    {
+      "slot": 7,
+      "letter": "V",
+      "who": "老师",
+      "what": "D工程师与E管理员在同一房间"
+    }
+  ],
+  "announce": "none",
+  "truth_vector": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+  ],
+  "truth_pattern": "七卡全真 · 人数规则收尾",
+  "difficulty_band": "7×7 全真教学 · 全线索2盘，身份规则与人数规则后唯一",
+  "visual_theme": {
+    "key": "blueprint",
+    "name": "蓝晒图 · 靛青网格 / 朱红批注（7×7 专属）",
+    "palette": {
+      "INK": "#3F2A1E",
+      "INK_SOFT": "#6B4A34",
+      "GRAY": "#B9AC97",
+      "GRAY_DARK": "#8A7A66",
+      "WHITE": "#F8F1E2",
+      "SHADOW": "#241812",
+      "CHAIR_BASE": "#E3D5B8",
+      "CHAIR_LIGHT": "#F0E6D0",
+      "CHAIR_OVL": "#B08A55",
+      "TABLE_BASE": "#D9C7A3",
+      "TABLE_EDGE": "#8A6B45",
+      "SHELF_BASE": "#C8BBA0",
+      "SHELF_OVL": "#8FA3AE",
+      "TV_BASE": "#9AA4A6",
+      "TV_DARK": "#3A3B3C",
+      "TREE_BASE": "#B6A88E",
+      "TREE_OVL": "#7C8A6A",
+      "TREE_LIGHT": "#9BA98A",
+      "TREE_DARK": "#4F5C45",
+      "PLANT_BASE": "#C08A5E",
+      "PLANT_OVL": "#84977A",
+      "PLANT_LEAF_DARK": "#5E6E58",
+      "BED_BASE": "#EDE2C9",
+      "BED_OVL": "#C7A46A",
+      "CARPET": "#D9C08A",
+      "CARPET_EDGE": "#5A4634",
+      "ROOM_TINT": "#E6DAC0",
+      "SEAL": "#A8391B",
+      "TAG": "#7A8FA0",
+      "GOLD": "#C9A961",
+      "PAPER": "#EFE4CE"
+    },
+    "room_colors": [
+      "#DCE7EF",
+      "#CBDDEA",
+      "#BFD2E4",
+      "#E1E7EC"
+    ],
+    "wall": "#1B3A56",
+    "door": "#C3563B",
+    "accent": "#B4412C",
+    "note": "7×7 新关专属：冷蓝晒图底 + 朱红批注门，与 6×6 四关的暖棕/浅色系明确区分"
+  },
+  "asset_mapping": [
+    {
+      "local_name": "书架",
+      "cells": [
+        5,
+        48
+      ],
+      "occupiable": false,
+      "kind": "shelf"
+    },
+    {
+      "local_name": "地毯",
+      "cells": [
+        12,
+        33
+      ],
+      "occupiable": true,
+      "kind": "carpet"
+    },
+    {
+      "local_name": "桌子",
+      "cells": [
+        2,
+        6,
+        8,
+        13,
+        14,
+        32,
+        39,
+        42,
+        47
+      ],
+      "occupiable": false,
+      "kind": "table"
+    },
+    {
+      "local_name": "椅子",
+      "cells": [
+        15,
+        31
+      ],
+      "occupiable": true,
+      "kind": "chair"
+    },
+    {
+      "local_name": "植物",
+      "cells": [
+        9,
+        40
+      ],
+      "occupiable": false,
+      "kind": "plant"
+    },
+    {
+      "local_name": "雕塑",
+      "cells": [
+        44
+      ],
+      "occupiable": false,
+      "kind": "statue"
+    }
+  ],
+  "direction_hints": [
+    {
+      "card": 2,
+      "rule": "上方只比较行号，不要求同列，不做静态位置提示"
+    }
+  ],
+  "source": "695_实际关卡数据.json（695 内嵌 Lua + 695 静态卡面）",
+  "rule_note": "本关明确全部线索为真。S仅含线索和基础摆位；全真身份需|P(h)|>=2，再纳入无辜人数规则；不预设身份，不启用假话反事实。",
+  "base_meta": {
+    "announce": "none"
+  },
+  "hint_preview": [
+    {
+      "rule": "该家具自己的格子",
+      "cells": [
+        "3:2",
+        "5:4"
+      ],
+      "count": 2
+    },
+    {
+      "rule": "不做位置提示",
+      "cells": [],
+      "count": 0
+    },
+    {
+      "rule": "该家具自己的格子",
+      "cells": [
+        "2:6",
+        "5:6"
+      ],
+      "count": 2
+    },
+    {
+      "rule": "该家具四邻、同区域、可站人的格",
+      "cells": [
+        "1:2",
+        "1:4",
+        "2:1",
+        "2:6",
+        "3:2",
+        "3:7",
+        "4:1",
+        "4:5",
+        "5:4",
+        "5:6",
+        "6:1",
+        "6:4",
+        "7:2",
+        "7:5"
+      ],
+      "count": 14
+    },
+    {
+      "rule": "该家具四邻、同区域、可站人的格",
+      "cells": [
+        "6:3",
+        "7:4"
+      ],
+      "count": 2
+    },
+    {
+      "rule": "该家具四邻、同区域、可站人的格",
+      "cells": [
+        "3:3",
+        "4:2",
+        "4:4",
+        "5:3",
+        "6:4"
+      ],
+      "count": 5
+    },
+    {
+      "rule": "不做位置提示",
+      "cells": [],
+      "count": 0
+    }
+  ],
+  "name": "蓝图迷局",
+  "level_name": "蓝图迷局",
+  "save_revision": 714,
+  "design_note": "714：方位和同室各一条，七张单句、五张自述（5040种卡序最大值5）。B与V交换形成2盘，身份资格仅B，人数规则后唯一。未宣称未知真假情形唯一。",
+  "general_clues": [],
+  "general_hint_preview": [],
+  "card_order_1based": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "explicit_all_true": true,
+  "identity_uniqueness_claimed": true,
+  "validation_scope": "无谎言教学；全线索候选格决定真话身份资格，再用人数规则；不启用假话反事实",
+  "unknown_truth_unique": false
+}

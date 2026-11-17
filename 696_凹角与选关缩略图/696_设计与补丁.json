@@ -1,0 +1,332 @@
+{
+  "version": 696,
+  "base": {
+    "file": "../695_地毯原型注册与改名/695_地毯原型注册与改名.gil",
+    "luaBytes": 611656,
+    "sha256Lua": "d5fc881a2aa47faf3c7e34452b461c1c808a7c3bac0abdb64d6cdcc9c10d7218"
+  },
+  "rootCause": {
+    "summary": "695 真机三格地毯已渲染；本轮补 L 形凹角顶点的外框缺口 + 选关卡片棋盘缩略图",
+    "evidence": [
+      "真机截图：L 形外框在凹角顶点仅以一点相接，中间露出深色底/墙色",
+      "两套素材 3 格位 × 3 圈，凹角顶点 (0,0) 没有任何层覆盖缺角象限的角点"
+    ],
+    "fix": "R1 两套素材源/母本 content 各补 1 层深棕角片；B1~B5 选关缩略图 Lua 补丁"
+  },
+  "luaPatches": [
+    {
+      "name": "P1 ui_list 补 walls/doors/room_grid",
+      "old": "function M.ui_list()\n  local out = {}\n  local list = M.all()\n  for i = 1, #list do\n    local lv = list[i]\n    out[i] = {\n      id = lv.id, name = lv.name, difficulty = lv.difficulty,\n      size = lv.size, suspects = lv.suspects, victim = lv.victim,\n      rooms = lv.rooms, objects = lv.objects,\n      room_boxes = RoomMap.boxes(lv),\n      room_names = lv.room_names,\n    }\n  end\n  return out\nend\n",
+      "new": "function M.ui_list()\n  local out = {}\n  local list = M.all()\n  for i = 1, #list do\n    local lv = list[i]\n    local sz = lv.size\n    local rows = type(sz) == \"table\" and tonumber(sz.rows) or nil\n    local cols = type(sz) == \"table\" and tonumber(sz.cols) or nil\n    local room_grid = nil\n    if rows and cols then\n      local ok, grid = pcall(function()\n        return RoomMap.compute_rooms(rows, cols, RoomMap.build_walls(lv, rows, cols))\n      end)\n      if ok then room_grid = grid end\n    end\n    out[i] = {\n      id = lv.id, name = lv.name, difficulty = lv.difficulty,\n      size = lv.size, suspects = lv.suspects, victim = lv.victim,\n      rooms = lv.rooms, objects = lv.objects,\n      room_boxes = RoomMap.boxes(lv),\n      room_names = lv.room_names,\n      -- 696：选关卡片棋盘缩略图用（底色 + 门墙，家具省略）\n      walls = lv.walls, doors = lv.doors, room_grid = room_grid,\n    }\n  end\n  return out\nend\n"
+    },
+    {
+      "name": "P2 push_room_thumb 重写为棋盘缩略图",
+      "old": "function Controller:push_room_thumb(push, cardId, it, cardRect, parent)\n  local area = { x = cardRect.x + 24, y = cardRect.y + 50,\n                 w = cardRect.w - 48, h = cardRect.h - 50 - 48 }\n  local boxes = it and it.room_boxes or nil\n  local sz = it and it.size or nil\n  local rows = type(sz) == \"table\" and tonumber(sz.rows) or nil\n  local cols = type(sz) == \"table\" and tonumber(sz.cols) or nil\n  for j = 1, ROOM_MAX do\n    local id = cardId .. \".room.\" .. j\n    local b = (type(boxes) == \"table\") and boxes[j] or nil\n    if b ~= nil and rows and cols then\n      local cw = area.w / cols\n      local ch = area.h / rows\n      local x = area.x + math.floor((b.c1 - 1) * cw)\n      local y = area.y + math.floor((b.r1 - 1) * ch)\n      local w = math.max(2, math.floor((b.c2 - b.c1 + 1) * cw))\n      local h = math.max(2, math.floor((b.r2 - b.r1 + 1) * ch))\n      local colors = Controller.ROOM_COLORS\n      local tint = (type(colors) == \"table\" and #colors > 0)\n        and colors[((j - 1) % #colors) + 1] or nil\n      push({ id = id, kind = \"button\", parent = parent, visible = true,\n             rect = { x = x, y = y, w = w, h = h },\n             image = WHITE_MAT, tint = tint, pos_runtime = true })\n    else\n      push({ id = id, kind = \"button\", parent = parent, visible = false,\n             rect = { x = area.x, y = area.y, w = math.max(2, math.floor(area.w / 4)),\n                      h = math.max(2, math.floor(area.h / 4)) }, pos_runtime = true })\n    end\n  end\nend\n",
+      "new": "function Controller:push_room_thumb(push, cardId, it, cardRect, parent)\n  -- 696：选关卡片棕色区域 = 棋盘缩略图（每格房间底色 + 墙 + 门），家具省略。\n  -- 关卡名由 build_layout 的 .info 节点放在下方白色边缘。\n  local area = { x = cardRect.x + cardRect.w * 0.069,\n                 y = cardRect.y + cardRect.h * 0.164,\n                 w = cardRect.w * 0.861, h = cardRect.h * 0.783 }\n  local sz = it and it.size or nil\n  local rows = type(sz) == \"table\" and tonumber(sz.rows) or nil\n  local cols = type(sz) == \"table\" and tonumber(sz.cols) or nil\n  local grid = it and it.room_grid or nil\n  local walls = it and it.walls or nil\n  local doors = it and it.doors or nil\n  -- 旧版 6 个房间大色块全部收起，避免与缩略图叠色\n  for j = 1, ROOM_MAX do\n    push({ id = cardId .. \".room.\" .. j, kind = \"button\", parent = parent,\n           visible = false, rect = { x = area.x, y = area.y, w = 1, h = 1 },\n           pos_runtime = true })\n  end\n  if not rows or not cols or rows < 1 or cols < 1 then return end\n  local pad = 8\n  local gx, gy = area.x + pad, area.y + pad\n  local gw, gh = area.w - pad * 2, area.h - pad * 2\n  local cw, ch = gw / cols, gh / rows\n  -- ① 每格底色（按房间编号取 ROOM_COLORS），不画任何家具\n  for r = 1, rows do\n    for c = 1, cols do\n      local rn = (type(grid) == \"table\" and type(grid[r]) == \"table\")\n                 and tonumber(grid[r][c]) or nil\n      local tint = Controller.room_color(rn) or Controller.ROOM_COLORS[((r + c) % #Controller.ROOM_COLORS) + 1]\n      push({ id = cardId .. \".cell.\" .. r .. \".\" .. c, kind = \"button\", parent = parent,\n             visible = true,\n             rect = { x = gx + (c - 1) * cw + 0.5, y = gy + (r - 1) * ch + 0.5,\n                      w = math.max(1, cw - 1), h = math.max(1, ch - 1) },\n             image = WHITE_MAT, tint = tint, pos_runtime = true })\n    end\n  end\n  -- ② 墙（深墨细条）与门（铜金短条，只占格线中段 44%）\n  local INK  = { r = 32, g = 38, b = 44 }\n  local GOLD = { r = 220, g = 91, b = 41 }\n  local function seg(kind, r, c)\n    if kind == \"v\" then\n      return gx + c * cw - 1, gy + (r - 1) * ch, 2, ch\n    end\n    return gx + (c - 1) * cw, gy + r * ch - 1, cw, 2\n  end\n  local function line(suffix, x, y, w, h, tint)\n    push({ id = cardId .. suffix, kind = \"button\", parent = parent, visible = true,\n           rect = { x = x, y = y, w = math.max(1, w), h = math.max(1, h) },\n           image = WHITE_MAT, tint = tint, pos_runtime = true })\n  end\n  local k = 0\n  for n = 1, (type(walls) == \"table\" and #walls or 0) do\n    local w = walls[n]\n    if type(w) == \"table\" and (w[1] == \"v\" or w[1] == \"h\") then\n      k = k + 1\n      local x, y, ww, hh = seg(w[1], tonumber(w[2]) or 0, tonumber(w[3]) or 0)\n      line(\".wall.\" .. k, x, y, ww, hh, INK)\n    end\n  end\n  local d = 0\n  for n = 1, (type(doors) == \"table\" and #doors or 0) do\n    local o = doors[n]\n    if type(o) == \"table\" and (o[1] == \"v\" or o[1] == \"h\") then\n      d = d + 1\n      local x, y, ww, hh = seg(o[1], tonumber(o[2]) or 0, tonumber(o[3]) or 0)\n      if o[1] == \"v\" then\n        line(\".door.\" .. d, x - 1, y + hh * 0.28, 4, hh * 0.44, GOLD)\n      else\n        line(\".door.\" .. d, x + ww * 0.28, y - 1, ww * 0.44, 4, GOLD)\n      end\n    end\n  end\nend\n"
+    },
+    {
+      "name": "P3 卡片底部白边放关卡名、顶部放规格",
+      "old": "          local t = self:level_card_parts(it)\n          push({ id = \"select.card.\" .. i .. \".title\", kind = \"text\", parent = \"root\",\n                 visible = true, text = t.title, style = \"card.title\",\n                 rect = { x = r.x + 16, y = r.y + 10, w = r.w - 32, h = 34 },\n                 pos_runtime = true })\n          push({ id = \"select.card.\" .. i .. \".info\", kind = \"text\", parent = \"root\",\n                 visible = true, text = t.info, style = \"muted\",\n                 rect = { x = r.x + 16, y = r.y + r.h - 42, w = r.w - 32, h = 32 },\n                 pos_runtime = true })\n          push({ id = \"select.card.\" .. i .. \".result\", kind = \"text\", parent = \"root\",\n                 visible = t.result ~= \"\", text = t.result,\n                 rect = { x = r.x, y = r.y + r.h + 10, w = math.max(r.w, 220), h = 72 } })\n",
+      "new": "          local t = self:level_card_parts(it)\n          push({ id = \"select.card.\" .. i .. \".title\", kind = \"text\", parent = \"root\",\n                 visible = true, text = t.info, style = \"card.title\",\n                 rect = { x = r.x + 16, y = r.y + 10, w = r.w - 32, h = 34 },\n                 pos_runtime = true })\n          push({ id = \"select.card.\" .. i .. \".info\", kind = \"text\", parent = \"root\",\n                 visible = true, text = t.short, style = \"card.name\",\n                 rect = { x = r.x + 16, y = r.y + r.h - 42, w = r.w - 32, h = 32 },\n                 pos_runtime = true })\n          push({ id = \"select.card.\" .. i .. \".result\", kind = \"text\", parent = \"root\",\n                 visible = t.result ~= \"\", text = t.result,\n                 rect = { x = r.x, y = r.y + r.h + 10, w = math.max(r.w, 220), h = 72 } })\n"
+    },
+    {
+      "name": "P4 level_card_parts 增 short",
+      "old": "  return { title = title, info = table.concat(bits, \"　\"), result = result }",
+      "new": "  local short = string.match(title, \"^案件%s*%d+%s*·%s*([^·]+)\")\n             or string.match(title, \"·%s*(.+)$\") or title\n  short = string.gsub(short, \"%s+$\", \"\")\n  return { title = title, short = short, info = table.concat(bits, \"　\"), result = result }"
+    },
+    {
+      "name": "P5 color_of_style 增 card.name 深棕",
+      "old": "  if value == \"clue.who\" then return RED end",
+      "new": "  if value == \"card.name\" then return 0xFF4A2E1C end   -- 696：白纸边缘的关卡名用深棕\n  if value == \"clue.who\" then return RED end"
+    }
+  ],
+  "moduleReplacements": [
+    {
+      "name": "case_003 删右上角装饰植物",
+      "marker": "__M[\"levels.case_003\"] = function()",
+      "newModule": "__M[\"levels.case_003\"] = function()\n return {[\"hint_preview\"] = {[\"1\"] = {[\"rule\"] = \"不做位置提示\", [\"cells\"] = {}, [\"count\"] = 0}, [\"2\"] = {[\"rule\"] = \"该家具四邻、同区域、可站人的格\", [\"cells\"] = {\"1:2\", \"2:1\"}, [\"count\"] = 2}, [\"3\"] = {[\"rule\"] = \"该家具自己的格子\", [\"cells\"] = {\"3:2\", \"3:3\", \"4:2\"}, [\"count\"] = 3}, [\"4\"] = {[\"rule\"] = \"该家具四邻、同区域、可站人的格\", [\"cells\"] = {\"1:3\", \"2:2\", \"2:4\", \"3:3\", \"3:4\", \"4:3\", \"5:4\", \"6:3\", \"6:5\"}, [\"count\"] = 9}, [\"5\"] = {[\"rule\"] = \"不做位置提示\", [\"cells\"] = {}, [\"count\"] = 0}, [\"6\"] = {[\"rule\"] = \"该家具四邻、同区域、可站人的格\", [\"cells\"] = {\"1:2\", \"2:1\"}, [\"count\"] = 2}}, [\"id\"] = \"case_003\", [\"name\"] = \"案件 003 · 原作明亮俯视\", [\"difficulty\"] = \"easy\", [\"size\"] = {[\"rows\"] = 6, [\"cols\"] = 6}, [\"room_names\"] = {\"R1\", \"R2\", \"R3\", \"R4\"}, [\"rules\"] = {[\"one_per_row\"] = true, [\"one_per_col\"] = true, [\"one_per_room\"] = false, [\"place_all\"] = true, [\"tie_policy\"] = \"forbid\"}, [\"walls\"] = {{\"v\", 1, 4}, {\"v\", 2, 4}, {\"h\", 2, 4}, {\"v\", 3, 3}, {\"h\", 3, 3}, {\"v\", 3, 4}, {\"h\", 4, 1}, {\"v\", 4, 2}, {\"h\", 4, 2}, {\"v\", 4, 4}, {\"h\", 4, 5}, {\"h\", 4, 6}, {\"v\", 5, 2}, {\"h\", 5, 3}, {\"h\", 5, 4}, {\"h\", 5, 5}, {\"v\", 6, 5}}, [\"doors\"] = {{\"v\", 2, 4}, {\"h\", 3, 3}, {\"h\", 4, 2}, {\"h\", 4, 5}, {\"h\", 5, 4}}, [\"objects\"] = {[\"桌子\"] = {[\"cells\"] = {{[\"r\"] = 6, [\"c\"] = 4}, {[\"r\"] = 4, [\"c\"] = 4}, {[\"r\"] = 2, [\"c\"] = 3}}, [\"occupiable\"] = false, [\"kind\"] = \"table\"}, [\"椅子\"] = {[\"cells\"] = {{[\"r\"] = 2, [\"c\"] = 1}, {[\"r\"] = 2, [\"c\"] = 4}}, [\"occupiable\"] = true, [\"kind\"] = \"chair\"}, [\"书架\"] = {[\"cells\"] = {{[\"r\"] = 1, [\"c\"] = 5}}, [\"occupiable\"] = false, [\"kind\"] = \"shelf\"}, [\"植物\"] = {[\"cells\"] = {{[\"r\"] = 1, [\"c\"] = 1}}, [\"occupiable\"] = false, [\"kind\"] = \"plant\"}, [\"地毯\"] = {[\"cells\"] = {{[\"r\"] = 3, [\"c\"] = 2}, {[\"r\"] = 3, [\"c\"] = 3}, {[\"r\"] = 4, [\"c\"] = 2}}, [\"occupiable\"] = true, [\"kind\"] = \"carpet\"}, [\"雕塑\"] = {[\"cells\"] = {{[\"r\"] = 2, [\"c\"] = 6}}, [\"occupiable\"] = false, [\"kind\"] = \"statue\"}}, [\"blocked\"] = {}, [\"water\"] = {}, [\"suspects\"] = {{[\"id\"] = \"A\", [\"name\"] = \"巡夜保安\", [\"portrait\"] = \"portrait.A\"}, {[\"id\"] = \"B\", [\"name\"] = \"展签誊录\", [\"portrait\"] = \"portrait.B\"}, {[\"id\"] = \"C\", [\"name\"] = \"拓片修复\", [\"portrait\"] = \"portrait.C\"}, {[\"id\"] = \"D\", [\"name\"] = \"门厅接待\", [\"portrait\"] = \"portrait.D\"}, {[\"id\"] = \"E\", [\"name\"] = \"证物清点\", [\"portrait\"] = \"portrait.E\"}, {[\"id\"] = \"V\", [\"name\"] = \"展厅主人\", [\"portrait\"] = \"portrait.V\", [\"is_victim\"] = true}}, [\"victim\"] = {[\"id\"] = \"V\", [\"name\"] = \"展厅主人\"}, [\"roles\"] = {[\"thief\"] = \"A\"}, [\"clues\"] = {{[\"type\"] = \"all_of\", [\"clauses\"] = {{[\"type\"] = \"above\", [\"a\"] = \"A\", [\"b\"] = \"B\", [\"same_column\"] = false}, {[\"type\"] = \"left_of\", [\"a\"] = \"A\", [\"b\"] = \"C\", [\"same_row\"] = false}}}, {[\"type\"] = \"beside_object\", [\"who\"] = \"A\", [\"object\"] = \"植物\"}, {[\"type\"] = \"only_on_object\", [\"who\"] = \"C\", [\"object\"] = \"地毯\"}, {[\"type\"] = \"beside_object\", [\"who\"] = \"D\", [\"object\"] = \"桌子\"}, {[\"type\"] = \"above\", [\"a\"] = \"D\", [\"b\"] = \"E\", [\"same_column\"] = false}, {[\"type\"] = \"beside_object\", [\"who\"] = \"B\", [\"object\"] = \"植物\"}}, [\"general_clues\"] = {}, [\"meta\"] = {[\"announce\"] = \"unknown\"}, [\"solution\"] = {[\"A\"] = {[\"r\"] = 1, [\"c\"] = 2}, [\"B\"] = {[\"r\"] = 2, [\"c\"] = 1}, [\"C\"] = {[\"r\"] = 3, [\"c\"] = 3}, [\"D\"] = {[\"r\"] = 5, [\"c\"] = 4}, [\"E\"] = {[\"r\"] = 6, [\"c\"] = 5}, [\"V\"] = {[\"r\"] = 4, [\"c\"] = 6}}, [\"visual_theme\"] = {[\"key\"] = \"reference\", [\"name\"] = \"原作明亮俯视（沿用 v12/v13）\", [\"palette\"] = {[\"INK\"] = \"#010101\", [\"INK_SOFT\"] = \"#2E2E2E\", [\"GRAY\"] = \"#BABABA\", [\"GRAY_DARK\"] = \"#5E5E5E\", [\"WHITE\"] = \"#FFFFFF\", [\"SHADOW\"] = \"#000000\", [\"CHAIR_BASE\"] = \"#FEF7E4\", [\"CHAIR_LIGHT\"] = \"#FFFDF4\", [\"CHAIR_OVL\"] = \"#FBD592\", [\"TABLE_BASE\"] = \"#E0CE7B\", [\"TABLE_EDGE\"] = \"#A3965A\", [\"SHELF_BASE\"] = \"#D0B0D9\", [\"SHELF_OVL\"] = \"#B2DBEB\", [\"TV_BASE\"] = \"#A2ABC8\", [\"TV_DARK\"] = \"#2C3145\", [\"TREE_BASE\"] = \"#C7B2A2\", [\"TREE_OVL\"] = \"#79A26C\", [\"TREE_LIGHT\"] = \"#A8CC92\", [\"TREE_DARK\"] = \"#3D5A3A\", [\"PLANT_BASE\"] = \"#FCA161\", [\"PLANT_OVL\"] = \"#79CFA1\", [\"PLANT_LEAF_DARK\"] = \"#4E9B78\", [\"BED_BASE\"] = \"#FFFBE7\", [\"BED_OVL\"] = \"#FFD98E\", [\"CARPET\"] = \"#FEE08E\", [\"CARPET_EDGE\"] = \"#39484D\", [\"ROOM_TINT\"] = \"#DBB98F\"}, [\"room_colors\"] = {\"#e3eef7\", \"#f9ead0\", \"#e3f0e4\", \"#eee4f5\"}, [\"wall\"] = \"#27333c\", [\"door\"] = \"#e38636\", [\"accent\"] = \"#bb513c\", [\"note\"] = \"与 v12 一致的浅色卡通底，作为后续关的对照基准\"}}\nend\n"
+    }
+  ],
+  "names": {
+    "1": {
+      "A": "值班保安",
+      "B": "前台姑娘",
+      "C": "清洁工",
+      "D": "古董商",
+      "V": "收藏家"
+    },
+    "2": {
+      "A": "夜班门卫",
+      "B": "画廊助理",
+      "C": "搬运工",
+      "D": "鉴定师",
+      "E": "随行记者",
+      "V": "馆长"
+    },
+    "3": {
+      "A": "巡夜保安",
+      "B": "展签誊录",
+      "C": "拓片修复",
+      "D": "门厅接待",
+      "E": "证物清点",
+      "V": "展厅主人"
+    },
+    "4": {
+      "A": "夜巡值守",
+      "B": "米纸誊录",
+      "C": "页角修复",
+      "D": "卷宗管理",
+      "E": "借阅登记",
+      "V": "老馆长"
+    },
+    "5": {
+      "A": "封条保管",
+      "B": "夜勘记录",
+      "C": "火漆验印",
+      "D": "暗房洗印",
+      "E": "证物登记",
+      "V": "守夜馆人"
+    },
+    "6": {
+      "A": "晒图学徒",
+      "B": "靛青描图",
+      "C": "野外测绘",
+      "D": "朱批校样",
+      "E": "蓝图管理",
+      "F": "工地放样",
+      "V": "总测绘师"
+    },
+    "7": {
+      "A": "铜钥保管",
+      "B": "转架管理",
+      "C": "誊写员",
+      "D": "铜牌登记",
+      "E": "线装匠人",
+      "V": "藏卷人"
+    }
+  },
+  "nameRules": {
+    "who": "纯人名，≤4 字，不加字母",
+    "what": "姓名前加对应字母，「我」等代词不加",
+    "luaName": "纯人名，与 who 一致"
+  },
+  "level3": {
+    "order": [
+      4,
+      2,
+      3,
+      6,
+      5,
+      1
+    ],
+    "gates": "六卡全真教学关",
+    "legalOrders": 10,
+    "selfNarration": "5/7",
+    "furniture": {
+      "书架": [
+        4
+      ],
+      "植物": [
+        0
+      ],
+      "雕塑": [
+        11
+      ]
+    },
+    "note": "V 房间：1 书架 (1,5) + 1 雕塑 (2,6)；装饰植物 (1,6) 已删；功能植物 (1,1) 保留（线索「在植物旁边」依赖它）"
+  },
+  "level4": {
+    "swapType": "卡面内容顺序互换（槽1↔槽4）+ A/D 姓名对调",
+    "order": [
+      4,
+      2,
+      3,
+      1,
+      5,
+      6
+    ],
+    "A": {
+      "before": "卷宗管理员",
+      "after": "夜巡值守"
+    },
+    "D": {
+      "before": "夜巡值守",
+      "after": "卷宗管理"
+    },
+    "note": "解/真假向量/盗窃者/唯一性不变；离线「删卡非冗余」1 项会变"
+  },
+  "carpet": {
+    "furn.rug.4": {
+      "variant": "L3a",
+      "level": 3,
+      "missing": "右下",
+      "cells": [
+        [
+          3,
+          2
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          4,
+          2
+        ]
+      ],
+      "quads": [
+        "左上",
+        "右上",
+        "左下"
+      ]
+    },
+    "furn.rug.5": {
+      "variant": "L3b",
+      "level": 7,
+      "missing": "左下",
+      "cells": [
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          3,
+          4
+        ]
+      ],
+      "quads": [
+        "左上",
+        "右上",
+        "右下"
+      ]
+    }
+  },
+  "carpetRender": {
+    "path": "F.layout → TPL_KEY.carpet → build_layout.furn_tpl/span/offset → _spawn_furn_tpl → _spawn_whole_rug → board.rugs → InstantiateClientUIControl",
+    "templates": {
+      "single": "furn.rug (108×108)",
+      "h2": "furn.rug.2 (216×108)",
+      "v2": "furn.rug.3 (108×216)",
+      "L3a": "furn.rug.4 (216×216, 缺右下)",
+      "L3b": "furn.rug.5 (216×216, 缺左下)"
+    },
+    "perCellEls": "disabled（694 P2）",
+    "doubleDraw": "none（逐格关闭；模板唯一路径）",
+    "registry": "R1 /9/501 45 项 + R2 原型根 #503 35 项（695 补齐）"
+  },
+  "registryFix": {
+    "rootList": {
+      "path": "/9/501",
+      "before": 43,
+      "after": 45,
+      "append": [
+        1073760711,
+        1073760734
+      ],
+      "note": "顶层根/原型 ID 列表；既有能显示的家具模板源 ID 全部在此"
+    },
+    "protoRootChildList": {
+      "path": "/9/502(#501=1073741844)/503",
+      "before": 33,
+      "after": 35,
+      "append": [
+        1073760712,
+        1073760735
+      ],
+      "note": "ClientUIPrototypeHierarchyRoot 的母本列表；既有家具母本全部在此"
+    },
+    "thingsChildList": {
+      "path": "things/#503",
+      "count": 13,
+      "append": [],
+      "note": "692 已追加两个引用控件 1073760713 / 1073760736，本轮不动"
+    },
+    "fieldOrderFix": {
+      "idRange": [
+        1073760711,
+        1073760756
+      ],
+      "count": 46,
+      "rule": "把每条记录的顶层 #504（父控件 ID）移到第一个 #505 状态块之前，与所有既有可显示模板同构（既有 rug/plant.2 的 #504 都在记录开头）",
+      "evidence": "692 构建器用 f.sub.push(#504) ⇒ 46 条新记录的父字段全落在记录末尾；既有 1073748254 / 1073748253 / 1073748248 / 1073749162 / 1073753948 都在开头",
+      "note": "附加保险：protobuf 字段顺序理论上无关，但存档编辑器历史上出现过顺序依赖；本项零谜题改动、完全可逆"
+    },
+    "prefabChain": [
+      "furn.rug.4 源 #1073760711 → /9/501 注册",
+      "furn.rug.4 母本 #1073760712 → 原型根 #503 注册",
+      "furn.rug.4 引用 #1073760713 → things.childList",
+      "furn.rug.5 源 #1073760734 → /9/501 注册",
+      "furn.rug.5 母本 #1073760735 → 原型根 #503 注册",
+      "furn.rug.5 引用 #1073760736 → things.childList",
+      "cfg.furn_tpl_prefab.rug_4/rug_5 = 新源 ID（694 已有）",
+      "F.layout → TPL_KEY.carpet.L3a/L3b → _spawn_furn_tpl → _spawn_whole_rug"
+    ]
+  },
+  "staticTextPatches": [
+    {
+      "name": "第7关卡1正文",
+      "old": "C墨绿誊写比我靠左2列",
+      "new": "C誊写员比我靠左2列",
+      "count": 1
+    },
+    {
+      "name": "第7关 C 说话人标题",
+      "old": "墨绿誊写",
+      "new": "誊写员",
+      "count": 1
+    }
+  ],
+  "cornerPatch": {
+    "color": "0xFFB89A62",
+    "imageId": 100001,
+    "size": 12.96,
+    "note": "深棕外框色，与每格「深色底」层同色；放在 L 形缺角象限的左上角，把右上格下边 / 左下格右边的两条外框带连成连续 L 形直角",
+    "patches": [
+      {
+        "content": 1073760714,
+        "cloneFrom": 1073760716,
+        "x": 6.48,
+        "y": -6.48,
+        "template": "furn.rug.4",
+        "copy": "src"
+      },
+      {
+        "content": 1073760715,
+        "cloneFrom": 1073760719,
+        "x": 6.48,
+        "y": -6.48,
+        "template": "furn.rug.4",
+        "copy": "mama"
+      },
+      {
+        "content": 1073760737,
+        "cloneFrom": 1073760739,
+        "x": -6.48,
+        "y": -6.48,
+        "template": "furn.rug.5",
+        "copy": "src"
+      },
+      {
+        "content": 1073760738,
+        "cloneFrom": 1073760742,
+        "x": -6.48,
+        "y": -6.48,
+        "template": "furn.rug.5",
+        "copy": "mama"
+      }
+    ]
+  },
+  "selectThumb": {
+    "area": "棕色 inner 比例 x+6.9% / y+16.4% / w86.1% / h78.3%，内缩 8px",
+    "cells": "rows×cols 格，每格按 room_grid 房间号取 ROOM_COLORS 底色",
+    "walls": "深墨 #20262C 细条；v=列间竖线，h=行间横线",
+    "doors": "橙红 #DC5B29 短条，占格线中段 44%",
+    "furniture": "不画（用户要求省略）",
+    "name": "底部白色边缘 .info 文本 = 关卡短名，style=card.name 深棕 #4A2E1C",
+    "info": "顶部 .title = 6x6 / 嫌疑人数等规格信息"
+  }
+}

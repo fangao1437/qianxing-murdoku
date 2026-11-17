@@ -1,0 +1,346 @@
+{
+  "localResearchPackage": "官网美术素材调研-2026-11-13/",
+  "researchGap": "调研包缺 Carpet 独立逐件层表；688 的规格是拉伸版，692 的三格是三个单格方框拼接。693 按用户要求改为整块 L 形 + 外围边框。",
+  "furnitureUsed": {
+    "3": [
+      "桌子",
+      "植物",
+      "椅子",
+      "地毯",
+      "书架",
+      "雕塑"
+    ],
+    "4": [
+      "桌子",
+      "植物",
+      "书架",
+      "椅子",
+      "地毯"
+    ],
+    "5": [
+      "桌子",
+      "植物",
+      "书架",
+      "椅子",
+      "地毯"
+    ],
+    "6": [
+      "桌子",
+      "植物",
+      "书架",
+      "椅子",
+      "地毯"
+    ],
+    "7": [
+      "桌子",
+      "植物",
+      "椅子",
+      "地毯"
+    ]
+  },
+  "level3VRedesign": {
+    "room": "R1（V 在 (4,6)）",
+    "before": "书架 3 格 (1,5)(1,6)(2,6)",
+    "after": "书架 1 格 (1,5) + 植物 (1,6) + 雕塑 (2,6)",
+    "note": "雕塑为纯装饰、不参与任何线索；三格仍是 BLOCK（不可站），谜题解不变"
+  },
+  "levelsWithTriCarpet": [
+    3,
+    7
+  ],
+  "newAssets": {
+    "furn.rug.4": {
+      "template": "furn.rug.4",
+      "kind": "carpet",
+      "variant": "L3a",
+      "level": 3,
+      "missing": "右下",
+      "cells": [
+        [
+          3,
+          2
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          4,
+          2
+        ]
+      ],
+      "canvas": {
+        "W": 216.0,
+        "H": 216.0,
+        "cell": 108.0,
+        "grid": "2×2"
+      },
+      "layerCount": 9,
+      "layers": [
+        {
+          "part": "深色底",
+          "quad": "左上",
+          "x": -54.0,
+          "y": 54.0,
+          "w": 108.0,
+          "h": 108.0,
+          "imageId": 100001,
+          "color": "0xFFB89A62",
+          "order": 1
+        },
+        {
+          "part": "内面",
+          "quad": "左上",
+          "x": -47.52,
+          "y": 47.52,
+          "w": 95.04,
+          "h": 95.04,
+          "imageId": 100001,
+          "color": "0xFFDCC684",
+          "order": 2
+        },
+        {
+          "part": "内框",
+          "quad": "左上",
+          "x": -43.2,
+          "y": 43.2,
+          "w": 86.4,
+          "h": 86.4,
+          "imageId": 100001,
+          "color": "0xFFC9B072",
+          "order": 3
+        },
+        {
+          "part": "深色底",
+          "quad": "右上",
+          "x": 54.0,
+          "y": 54.0,
+          "w": 108.0,
+          "h": 108.0,
+          "imageId": 100001,
+          "color": "0xFFB89A62",
+          "order": 4
+        },
+        {
+          "part": "内面",
+          "quad": "右上",
+          "x": 47.52,
+          "y": 54.0,
+          "w": 95.04,
+          "h": 82.08,
+          "imageId": 100001,
+          "color": "0xFFDCC684",
+          "order": 5
+        },
+        {
+          "part": "内框",
+          "quad": "右上",
+          "x": 43.2,
+          "y": 54.0,
+          "w": 86.4,
+          "h": 64.8,
+          "imageId": 100001,
+          "color": "0xFFC9B072",
+          "order": 6
+        },
+        {
+          "part": "深色底",
+          "quad": "左下",
+          "x": -54.0,
+          "y": -54.0,
+          "w": 108.0,
+          "h": 108.0,
+          "imageId": 100001,
+          "color": "0xFFB89A62",
+          "order": 7
+        },
+        {
+          "part": "内面",
+          "quad": "左下",
+          "x": -54.0,
+          "y": -47.52,
+          "w": 82.08,
+          "h": 95.04,
+          "imageId": 100001,
+          "color": "0xFFDCC684",
+          "order": 8
+        },
+        {
+          "part": "内框",
+          "quad": "左下",
+          "x": -54.0,
+          "y": -43.2,
+          "w": 64.8,
+          "h": 86.4,
+          "imageId": 100001,
+          "color": "0xFFC9B072",
+          "order": 9
+        }
+      ],
+      "style": "整块 L 形：深色底铺满 3 格，内面/内框按「共享边开放」切片 ⇒ 内部无格线，边框只沿外围",
+      "gate": {
+        "zeroSpur": true,
+        "noStretch": true,
+        "legalPrimitives": [
+          100001
+        ],
+        "layerBudget": true,
+        "distinctAsset": true,
+        "borderOuterOnly": true
+      },
+      "referenceRoute": [
+        "源/母本/引用三件套 → things.childList → path_map",
+        "cfg.furn_tpl_prefab / furn_tpl_canvas / furn_scale_axis_by_kind",
+        "TPL_KEY.carpet.L3a|L3b → furn_tpl → _spawn_furn_tpl",
+        "真机渲染由 F.rug_cell_els 逐格「按边开放」完成（691 已验证路径）"
+      ]
+    },
+    "furn.rug.5": {
+      "template": "furn.rug.5",
+      "kind": "carpet",
+      "variant": "L3b",
+      "level": 7,
+      "missing": "左下",
+      "cells": [
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          3,
+          4
+        ]
+      ],
+      "canvas": {
+        "W": 216.0,
+        "H": 216.0,
+        "cell": 108.0,
+        "grid": "2×2"
+      },
+      "layerCount": 9,
+      "layers": [
+        {
+          "part": "深色底",
+          "quad": "左上",
+          "x": -54.0,
+          "y": 54.0,
+          "w": 108.0,
+          "h": 108.0,
+          "imageId": 100001,
+          "color": "0xFFB89A62",
+          "order": 1
+        },
+        {
+          "part": "内面",
+          "quad": "左上",
+          "x": -47.52,
+          "y": 54.0,
+          "w": 95.04,
+          "h": 82.08,
+          "imageId": 100001,
+          "color": "0xFFDCC684",
+          "order": 2
+        },
+        {
+          "part": "内框",
+          "quad": "左上",
+          "x": -43.2,
+          "y": 54.0,
+          "w": 86.4,
+          "h": 64.8,
+          "imageId": 100001,
+          "color": "0xFFC9B072",
+          "order": 3
+        },
+        {
+          "part": "深色底",
+          "quad": "右上",
+          "x": 54.0,
+          "y": 54.0,
+          "w": 108.0,
+          "h": 108.0,
+          "imageId": 100001,
+          "color": "0xFFB89A62",
+          "order": 4
+        },
+        {
+          "part": "内面",
+          "quad": "右上",
+          "x": 47.52,
+          "y": 47.52,
+          "w": 95.04,
+          "h": 95.04,
+          "imageId": 100001,
+          "color": "0xFFDCC684",
+          "order": 5
+        },
+        {
+          "part": "内框",
+          "quad": "右上",
+          "x": 43.2,
+          "y": 43.2,
+          "w": 86.4,
+          "h": 86.4,
+          "imageId": 100001,
+          "color": "0xFFC9B072",
+          "order": 6
+        },
+        {
+          "part": "深色底",
+          "quad": "右下",
+          "x": 54.0,
+          "y": -54.0,
+          "w": 108.0,
+          "h": 108.0,
+          "imageId": 100001,
+          "color": "0xFFB89A62",
+          "order": 7
+        },
+        {
+          "part": "内面",
+          "quad": "右下",
+          "x": 54.0,
+          "y": -47.52,
+          "w": 82.08,
+          "h": 95.04,
+          "imageId": 100001,
+          "color": "0xFFDCC684",
+          "order": 8
+        },
+        {
+          "part": "内框",
+          "quad": "右下",
+          "x": 54.0,
+          "y": -43.2,
+          "w": 64.8,
+          "h": 86.4,
+          "imageId": 100001,
+          "color": "0xFFC9B072",
+          "order": 9
+        }
+      ],
+      "style": "整块 L 形：深色底铺满 3 格，内面/内框按「共享边开放」切片 ⇒ 内部无格线，边框只沿外围",
+      "gate": {
+        "zeroSpur": true,
+        "noStretch": true,
+        "legalPrimitives": [
+          100001
+        ],
+        "layerBudget": true,
+        "distinctAsset": true,
+        "borderOuterOnly": true
+      },
+      "referenceRoute": [
+        "源/母本/引用三件套 → things.childList → path_map",
+        "cfg.furn_tpl_prefab / furn_tpl_canvas / furn_scale_axis_by_kind",
+        "TPL_KEY.carpet.L3a|L3b → furn_tpl → _spawn_furn_tpl",
+        "真机渲染由 F.rug_cell_els 逐格「按边开放」完成（691 已验证路径）"
+      ]
+    }
+  },
+  "renderPath": "F.rug_cell_els 逐格按边开放（与两格地毯同一路径，真机已验证）"
+}

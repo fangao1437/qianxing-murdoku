@@ -1,0 +1,471 @@
+{
+  "version": 694,
+  "pass": 92,
+  "fail": 0,
+  "total": 92,
+  "spawn694": "furn.rug=true:true;furn.rug.2=true:true;furn.rug.3=true:true;furn.rug.4=true:true;furn.rug.5=true:true",
+  "spy694": "cell.1.1,rug,101,100,100,1,1,0,0;cell.1.1,rug_2,102,100,100,1,1,0,0;cell.1.1,rug_3,103,100,100,1,1,0,0;cell.1.1,rug_4,104,100,100,1,1,0,0;cell.1.1,rug_5,105,100,100,1,1,0,0",
+  "spawn693": "furn.rug=true:false;furn.rug.2=true:false;furn.rug.3=true:false;furn.rug.4=true:false;furn.rug.5=true:false",
+  "checks": [
+    {
+      "name": "case_001 两版都有输出",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "case_001 validate 与 693 相同",
+      "pass": true,
+      "detail": "true / true"
+    },
+    {
+      "name": "case_001 size 与 693 相同",
+      "pass": true,
+      "detail": "5x5 / 5x5"
+    },
+    {
+      "name": "case_001 clues 与 693 相同",
+      "pass": true,
+      "detail": "5 / 5"
+    },
+    {
+      "name": "case_001 tv 与 693 相同",
+      "pass": true,
+      "detail": "11111 / 11111"
+    },
+    {
+      "name": "case_001 room 与 693 相同",
+      "pass": true,
+      "detail": "1112211122111223333233332 / 1112211122111223333233332"
+    },
+    {
+      "name": "case_001 doors 与 693 相同",
+      "pass": true,
+      "detail": "3 / 3"
+    },
+    {
+      "name": "case_001 adj 与 693 相同",
+      "pass": true,
+      "detail": "1-2,1-3,2-3 / 1-2,1-3,2-3"
+    },
+    {
+      "name": "case_001 who 为纯人名 ≤4 字",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "case_002 两版都有输出",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "case_002 validate 与 693 相同",
+      "pass": true,
+      "detail": "true / true"
+    },
+    {
+      "name": "case_002 size 与 693 相同",
+      "pass": true,
+      "detail": "6x6 / 6x6"
+    },
+    {
+      "name": "case_002 clues 与 693 相同",
+      "pass": true,
+      "detail": "6 / 6"
+    },
+    {
+      "name": "case_002 tv 与 693 相同",
+      "pass": true,
+      "detail": "111011 / 111011"
+    },
+    {
+      "name": "case_002 room 与 693 相同",
+      "pass": true,
+      "detail": "111122111122111122333442333444333344 / 111122111122111122333442333444333344"
+    },
+    {
+      "name": "case_002 doors 与 693 相同",
+      "pass": true,
+      "detail": "3 / 3"
+    },
+    {
+      "name": "case_002 adj 与 693 相同",
+      "pass": true,
+      "detail": "1-2,1-3,3-4 / 1-2,1-3,3-4"
+    },
+    {
+      "name": "case_002 who 为纯人名 ≤4 字",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "case_003 两版都有输出",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "case_003 validate 与 693 相同",
+      "pass": true,
+      "detail": "true / true"
+    },
+    {
+      "name": "case_003 size 与 693 相同",
+      "pass": true,
+      "detail": "6x6 / 6x6"
+    },
+    {
+      "name": "case_003 clues 与 693 相同",
+      "pass": true,
+      "detail": "6 / 6"
+    },
+    {
+      "name": "case_003 tv 与 693 相同",
+      "pass": true,
+      "detail": "111111 / 111111"
+    },
+    {
+      "name": "case_003 room 与 693 相同",
+      "pass": true,
+      "detail": "111122111122111322113322443333444443 / 111122111122111322113322443333444443"
+    },
+    {
+      "name": "case_003 doors 与 693 相同",
+      "pass": true,
+      "detail": "5 / 5"
+    },
+    {
+      "name": "case_003 adj 与 693 相同",
+      "pass": true,
+      "detail": "1-2,1-3,1-4,2-3,3-4 / 1-2,1-3,1-4,2-3,3-4"
+    },
+    {
+      "name": "case_003 who 为纯人名 ≤4 字",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "case_004 两版都有输出",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "case_004 validate 与 693 相同",
+      "pass": true,
+      "detail": "true / true"
+    },
+    {
+      "name": "case_004 size 与 693 相同",
+      "pass": true,
+      "detail": "6x6 / 6x6"
+    },
+    {
+      "name": "case_004 clues 与 693 相同",
+      "pass": true,
+      "detail": "6 / 6"
+    },
+    {
+      "name": "case_004 tv 与 693 相同",
+      "pass": true,
+      "detail": "111101 / 111101"
+    },
+    {
+      "name": "case_004 room 与 693 相同",
+      "pass": true,
+      "detail": "111222111222111222113333443333443333 / 111222111222111222113333443333443333"
+    },
+    {
+      "name": "case_004 doors 与 693 相同",
+      "pass": true,
+      "detail": "5 / 5"
+    },
+    {
+      "name": "case_004 adj 与 693 相同",
+      "pass": true,
+      "detail": "1-2,1-3,1-4,2-3,3-4 / 1-2,1-3,1-4,2-3,3-4"
+    },
+    {
+      "name": "case_004 who 为纯人名 ≤4 字",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "case_005 两版都有输出",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "case_005 validate 与 693 相同",
+      "pass": true,
+      "detail": "true / true"
+    },
+    {
+      "name": "case_005 size 与 693 相同",
+      "pass": true,
+      "detail": "6x6 / 6x6"
+    },
+    {
+      "name": "case_005 clues 与 693 相同",
+      "pass": true,
+      "detail": "6 / 6"
+    },
+    {
+      "name": "case_005 tv 与 693 相同",
+      "pass": true,
+      "detail": "101111 / 101111"
+    },
+    {
+      "name": "case_005 room 与 693 相同",
+      "pass": true,
+      "detail": "111222111222111322113333443333443333 / 111222111222111322113333443333443333"
+    },
+    {
+      "name": "case_005 doors 与 693 相同",
+      "pass": true,
+      "detail": "5 / 5"
+    },
+    {
+      "name": "case_005 adj 与 693 相同",
+      "pass": true,
+      "detail": "1-2,1-3,1-4,2-3,3-4 / 1-2,1-3,1-4,2-3,3-4"
+    },
+    {
+      "name": "case_005 who 为纯人名 ≤4 字",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "case_006 两版都有输出",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "case_006 validate 与 693 相同",
+      "pass": true,
+      "detail": "true / true"
+    },
+    {
+      "name": "case_006 size 与 693 相同",
+      "pass": true,
+      "detail": "7x7 / 7x7"
+    },
+    {
+      "name": "case_006 clues 与 693 相同",
+      "pass": true,
+      "detail": "7 / 7"
+    },
+    {
+      "name": "case_006 tv 与 693 相同",
+      "pass": true,
+      "detail": "1011111 / 1011111"
+    },
+    {
+      "name": "case_006 room 与 693 相同",
+      "pass": true,
+      "detail": "1111222111122211112221133333443333344333334433333 / 1111222111122211112221133333443333344333334433333"
+    },
+    {
+      "name": "case_006 doors 与 693 相同",
+      "pass": true,
+      "detail": "5 / 5"
+    },
+    {
+      "name": "case_006 adj 与 693 相同",
+      "pass": true,
+      "detail": "1-2,1-3,1-4,2-3,3-4 / 1-2,1-3,1-4,2-3,3-4"
+    },
+    {
+      "name": "case_006 who 为纯人名 ≤4 字",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "case_007 两版都有输出",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "case_007 validate 与 693 相同",
+      "pass": true,
+      "detail": "true / true"
+    },
+    {
+      "name": "case_007 size 与 693 相同",
+      "pass": true,
+      "detail": "6x6 / 6x6"
+    },
+    {
+      "name": "case_007 clues 与 693 相同",
+      "pass": true,
+      "detail": "6 / 6"
+    },
+    {
+      "name": "case_007 tv 与 693 相同",
+      "pass": true,
+      "detail": "101111 / 101111"
+    },
+    {
+      "name": "case_007 room 与 693 相同",
+      "pass": true,
+      "detail": "112222112222133222133322134444334444 / 112222112222133222133322134444334444"
+    },
+    {
+      "name": "case_007 doors 与 693 相同",
+      "pass": true,
+      "detail": "5 / 5"
+    },
+    {
+      "name": "case_007 adj 与 693 相同",
+      "pass": true,
+      "detail": "1-2,1-3,2-3,2-4,3-4 / 1-2,1-3,2-3,2-4,3-4"
+    },
+    {
+      "name": "case_007 who 为纯人名 ≤4 字",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "case_003 validate_level = true",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "case_003 六卡全真 111111",
+      "pass": true,
+      "detail": "111111"
+    },
+    {
+      "name": "case_003 门数 5 不变",
+      "pass": true,
+      "detail": "5"
+    },
+    {
+      "name": "case_003 浅蓝提示格逐卡一致（删植物未改提示）",
+      "pass": true,
+      "detail": "ok=6/6 got=nil | 2:1:2,2:1 | 3:3:2,3:3,4:2 | 9:1:3,2:2,2:4,3:3,3:4,4:3,5:4,6:3,6:5 | nil | 2:1:2,2:1"
+    },
+    {
+      "name": "case_003 植物 1 / 书架 1 / 雕塑 1 / 地毯 3",
+      "pass": true,
+      "detail": "1,1,1,3"
+    },
+    {
+      "name": "第3关 L 形地毯命中 L3a",
+      "pass": true,
+      "detail": "L3a@4,3"
+    },
+    {
+      "name": "第7关 L 形地毯命中 L3b",
+      "pass": true,
+      "detail": "L3b@3,4"
+    },
+    {
+      "name": "case_003 逐格 rug_cell_els 已关闭",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "case_003 693 仍有逐格 els（对照）",
+      "pass": true,
+      "detail": "3"
+    },
+    {
+      "name": "case_004 逐格 rug_cell_els 已关闭",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "case_004 693 仍有逐格 els（对照）",
+      "pass": true,
+      "detail": "4"
+    },
+    {
+      "name": "case_005 逐格 rug_cell_els 已关闭",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "case_005 693 仍有逐格 els（对照）",
+      "pass": true,
+      "detail": "3"
+    },
+    {
+      "name": "case_006 逐格 rug_cell_els 已关闭",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "case_006 693 仍有逐格 els（对照）",
+      "pass": true,
+      "detail": "2"
+    },
+    {
+      "name": "case_007 逐格 rug_cell_els 已关闭",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "case_007 693 仍有逐格 els（对照）",
+      "pass": true,
+      "detail": "3"
+    },
+    {
+      "name": "furn.rug 走 _spawn_whole_rug 且返回 true",
+      "pass": true,
+      "detail": "true:true"
+    },
+    {
+      "name": "furn.rug.2 走 _spawn_whole_rug 且返回 true",
+      "pass": true,
+      "detail": "true:true"
+    },
+    {
+      "name": "furn.rug.3 走 _spawn_whole_rug 且返回 true",
+      "pass": true,
+      "detail": "true:true"
+    },
+    {
+      "name": "furn.rug.4 走 _spawn_whole_rug 且返回 true",
+      "pass": true,
+      "detail": "true:true"
+    },
+    {
+      "name": "furn.rug.5 走 _spawn_whole_rug 且返回 true",
+      "pass": true,
+      "detail": "true:true"
+    },
+    {
+      "name": "五个地毯变体均命中整块模板 spy（5 次）",
+      "pass": true,
+      "detail": "cell.1.1,rug,101,100,100,1,1,0,0;cell.1.1,rug_2,102,100,100,1,1,0,0;cell.1.1,rug_3,103,100,100,1,1,0,0;cell.1.1,rug_4,104,100,100,1,1,0,0;cell.1.1,rug_5,105,100,100,1,1,0,0"
+    },
+    {
+      "name": "spy 包含 ckey=rug",
+      "pass": true,
+      "detail": "rug"
+    },
+    {
+      "name": "spy 包含 ckey=rug_2",
+      "pass": true,
+      "detail": "rug_2"
+    },
+    {
+      "name": "spy 包含 ckey=rug_3",
+      "pass": true,
+      "detail": "rug_3"
+    },
+    {
+      "name": "spy 包含 ckey=rug_4",
+      "pass": true,
+      "detail": "rug_4"
+    },
+    {
+      "name": "spy 包含 ckey=rug_5",
+      "pass": true,
+      "detail": "rug_5"
+    },
+    {
+      "name": "693 对照：地毯模板路径为断开状态（spy=0）",
+      "pass": true,
+      "detail": "spy=(空) spawn=furn.rug=true:false;furn.rug.2=true:false;furn.rug.3=true:false;furn.rug.4=true:false;furn.rug.5=true:false"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "version": 703,
+  "input": "702_选关渲染修复_v2.gil",
+  "inputSha256": "84709d203df7f8d0e8feae364647f2a132a4a58dd9387a00fab774fe1547d316",
+  "output": "703_选关卡片样式调整.gil",
+  "sha256": "2b76e304f4d11959fb1ba5c20834d9da569cf30cb3054de5aec0d7d9aa7e0af0",
+  "records": 8300,
+  "added": [
+    {
+      "id": 1073761046,
+      "name": "select.card.1.boardbg"
+    },
+    {
+      "id": 1073761047,
+      "name": "select.card.2.boardbg"
+    },
+    {
+      "id": 1073761048,
+      "name": "select.card.3.boardbg"
+    },
+    {
+      "id": 1073761049,
+      "name": "select.card.4.boardbg"
+    }
+  ],
+  "changedExisting": 285,
+  "unchangedExisting": 8011,
+  "gridImage": 100001,
+  "backgroundColor": 4281871675,
+  "notes": [
+    "格子使用cell模板的完整矩形资源100001",
+    "四块底板在缩略图池最前，沿用board.bg颜色",
+    "棋盘几何中心与卡片中心重合，底板每边比棋盘大卡宽2.2%",
+    "下方白边显示完整案件编号与名称，顶部规格隐藏",
+    "保留702_v2有限变换、700教程绑定与701迟到补发修复"
+  ]
+}

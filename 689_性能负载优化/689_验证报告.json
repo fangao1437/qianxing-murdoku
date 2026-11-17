@@ -1,0 +1,242 @@
+{
+  "timestamp": "2026-11-14T21:33:57.978Z",
+  "baseSha688": "337510627ba91121e2df3a9713b4e1d260e3ce681fd3f91e4042d1c6137dff6d",
+  "outSha689": "f8798b9c89b1e025b187f5932497742b2f163080fdb64aa214ea86295619623c",
+  "behavioral": {
+    "688": {
+      "checks": 28,
+      "pass": 28,
+      "fail": 0
+    },
+    "689": {
+      "checks": 28,
+      "pass": 28,
+      "fail": 0
+    }
+  },
+  "behavioralIdentical": true,
+  "behavioralChecks": [
+    {
+      "ok": true,
+      "name": "levels.case_004 模块可加载",
+      "detail": "table: 000002093D470EB0\r"
+    },
+    {
+      "ok": true,
+      "name": "levels.case_004 validate_level",
+      "detail": "\r"
+    },
+    {
+      "ok": true,
+      "name": "levels.case_004 Core.new",
+      "detail": "table: 000002093D46F970\r"
+    },
+    {
+      "ok": true,
+      "name": "levels.case_004 线索条数=人数",
+      "detail": "6/6\r"
+    },
+    {
+      "ok": true,
+      "name": "levels.case_004 预设答案摆满",
+      "detail": "6/6\r"
+    },
+    {
+      "ok": true,
+      "name": "levels.case_004 预设答案真假向量",
+      "detail": "got=111101 exp=111101\r"
+    },
+    {
+      "ok": true,
+      "name": "levels.case_004 浅蓝提示格逐卡一致",
+      "detail": "6卡\r"
+    },
+    {
+      "ok": true,
+      "name": "levels.case_005 模块可加载",
+      "detail": "table: 000002093D5373E0\r"
+    },
+    {
+      "ok": true,
+      "name": "levels.case_005 validate_level",
+      "detail": "\r"
+    },
+    {
+      "ok": true,
+      "name": "levels.case_005 Core.new",
+      "detail": "table: 000002093D53A220\r"
+    },
+    {
+      "ok": true,
+      "name": "levels.case_005 线索条数=人数",
+      "detail": "6/6\r"
+    },
+    {
+      "ok": true,
+      "name": "levels.case_005 预设答案摆满",
+      "detail": "6/6\r"
+    },
+    {
+      "ok": true,
+      "name": "levels.case_005 预设答案真假向量",
+      "detail": "got=101111 exp=101111\r"
+    },
+    {
+      "ok": true,
+      "name": "levels.case_005 浅蓝提示格逐卡一致",
+      "detail": "6卡\r"
+    },
+    {
+      "ok": true,
+      "name": "levels.case_006 模块可加载",
+      "detail": "table: 000002093D5480D0\r"
+    },
+    {
+      "ok": true,
+      "name": "levels.case_006 validate_level",
+      "detail": "\r"
+    },
+    {
+      "ok": true,
+      "name": "levels.case_006 Core.new",
+      "detail": "table: 000002093D5538C0\r"
+    },
+    {
+      "ok": true,
+      "name": "levels.case_006 线索条数=人数",
+      "detail": "7/7\r"
+    },
+    {
+      "ok": true,
+      "name": "levels.case_006 预设答案摆满",
+      "detail": "7/7\r"
+    },
+    {
+      "ok": true,
+      "name": "levels.case_006 预设答案真假向量",
+      "detail": "got=1011111 exp=1011111\r"
+    },
+    {
+      "ok": true,
+      "name": "levels.case_006 浅蓝提示格逐卡一致",
+      "detail": "7卡\r"
+    },
+    {
+      "ok": true,
+      "name": "levels.case_007 模块可加载",
+      "detail": "table: 000002093D5523C0\r"
+    },
+    {
+      "ok": true,
+      "name": "levels.case_007 validate_level",
+      "detail": "\r"
+    },
+    {
+      "ok": true,
+      "name": "levels.case_007 Core.new",
+      "detail": "table: 000002093D55FCA0\r"
+    },
+    {
+      "ok": true,
+      "name": "levels.case_007 线索条数=人数",
+      "detail": "6/6\r"
+    },
+    {
+      "ok": true,
+      "name": "levels.case_007 预设答案摆满",
+      "detail": "6/6\r"
+    },
+    {
+      "ok": true,
+      "name": "levels.case_007 预设答案真假向量",
+      "detail": "got=101111 exp=101111\r"
+    },
+    {
+      "ok": true,
+      "name": "levels.case_007 浅蓝提示格逐卡一致",
+      "detail": "6卡\r"
+    }
+  ],
+  "perFrame": {
+    "688": {
+      "find": 19846,
+      "color": 13800,
+      "bind": 3000,
+      "visible": 3008,
+      "setsibling": 82,
+      "pcall": 3285,
+      "colorwrites": 0,
+      "frames": 600
+    },
+    "689": {
+      "find": 123,
+      "color": 67,
+      "bind": 0,
+      "visible": 3008,
+      "setsibling": 82,
+      "pcall": 3285,
+      "colorwrites": 0,
+      "frames": 600
+    }
+  },
+  "perFrameReduction": {
+    "find": {
+      "from": 19846,
+      "to": 123,
+      "delta": 19723,
+      "pct": 99.4
+    },
+    "color": {
+      "from": 13800,
+      "to": 67,
+      "delta": 13733,
+      "pct": 99.5
+    },
+    "bind": {
+      "from": 3000,
+      "to": 0,
+      "delta": 3000,
+      "pct": 100
+    },
+    "setsibling": {
+      "from": 82,
+      "to": 82,
+      "delta": 0,
+      "pct": 0
+    },
+    "pcall": {
+      "from": 3285,
+      "to": 3285,
+      "delta": 0,
+      "pct": 0
+    }
+  },
+  "finalStateIdentical": true,
+  "scenarioStates": [
+    {
+      "label": "稳态600帧",
+      "identical": true
+    },
+    {
+      "label": "切屏 game->select",
+      "identical": true
+    },
+    {
+      "label": "结算解锁 ready=true",
+      "identical": true
+    },
+    {
+      "label": "控件树重建 gen=2",
+      "identical": true
+    },
+    {
+      "label": "翻到选关第2页",
+      "identical": true
+    },
+    {
+      "label": "教程 l1 打开",
+      "identical": true
+    }
+  ],
+  "verdict": true
+}

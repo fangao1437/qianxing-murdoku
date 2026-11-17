@@ -1,0 +1,332 @@
+{
+  "version": 702,
+  "total": 60,
+  "pass": 59,
+  "fail": 1,
+  "baseline701": {
+    "checks": 30,
+    "failed": 7,
+    "page1DrawableCells": 0,
+    "page2DrawableCells": 0
+  },
+  "fixed702": {
+    "layoutChecks": 30,
+    "entryChecks": 4,
+    "page1DrawableCells": 133,
+    "page2DrawableCells": 121,
+    "entryNames": 8
+  },
+  "counts": {
+    "controls": 292,
+    "states": 1168,
+    "nonfinite": 3696
+  },
+  "checks": [
+    {
+      "name": "page1/drawableNames",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "page1/drawableCells",
+      "pass": true,
+      "detail": "good=133 bad=0"
+    },
+    {
+      "name": "page1/poolAboveArt",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "page1/nameAboveArt1",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "page1/nameAboveArt2",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "page1/nameAboveArt3",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "page1/nameAboveArt4",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "page2/drawableNames",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "page2/drawableCells",
+      "pass": true,
+      "detail": "good=121 bad=0"
+    },
+    {
+      "name": "page2/poolAboveArt",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "page2/nameAboveArt1",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "page2/nameAboveArt2",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "page2/nameAboveArt3",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "page2/nameAboveArt4",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "page1/drawableNames",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "page1/drawableCells",
+      "pass": true,
+      "detail": "good=133 bad=0"
+    },
+    {
+      "name": "page1/poolAboveArt",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "page1/nameAboveArt1",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "page1/nameAboveArt2",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "page1/nameAboveArt3",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "page1/nameAboveArt4",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "home/poolHidden",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "tutorial/home/bound",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "tutorial/home/closed",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "tutorial/l1/bound",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "tutorial/l1/closed",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "tutorial/l2/bound",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "tutorial/l2/closed",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "setterFailure/returnsFalse",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "setterFailure/recovers",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "entry/started",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "entry/select",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "entry/drawableNames",
+      "pass": true,
+      "detail": "8"
+    },
+    {
+      "name": "entry/drawableCells",
+      "pass": true,
+      "detail": "133"
+    },
+    {
+      "name": "控件数8296且未增删",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "其余8004条记录逐字节保持",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "完整往返编码保持",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "284图元加8个文字全部四态无非有限浮点",
+      "pass": false,
+      "detail": ""
+    },
+    {
+      "name": "内嵌脚本与dist及副本一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "room_map/sourceSync",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "murdoku_core/sourceSync",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "furn_art/sourceSync",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "furn_art_records/sourceSync",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "ui_controller/sourceSync",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "engine_adapter/sourceSync",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "engine_adapter_qianxing/sourceSync",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "main/sourceSync",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "tutorial_ui/sourceSync",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.init/sourceSync",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_001/sourceSync",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_002/sourceSync",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_003/sourceSync",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_004/sourceSync",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_005/sourceSync",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_006/sourceSync",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_007/sourceSync",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "入口源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "教程与控制器及main保持701",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "全部模块与完整脚本语法",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "七关谜题线索提示房间家具地毯行为与701一致",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "limits": [
+    "真实存档变换与组件类别、层序进入模型；控件API仍由mock模拟",
+    "完整入口包含OnInit/OnStart/OnUpdate及教程关闭后选关，但没有引擎像素渲染",
+    "695已有旧选关非有限值，无法据此认定全部损坏始于696",
+    "未操作游戏、未导入存档、未修改游戏配置"
+  ]
+}

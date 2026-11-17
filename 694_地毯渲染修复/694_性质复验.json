@@ -1,0 +1,475 @@
+{
+  "version": 694,
+  "level3": {
+    "gates": "六卡全真教学关（verify_v14 level==3 口径）",
+    "order": [
+      4,
+      2,
+      3,
+      6,
+      5,
+      1
+    ],
+    "PASS": true,
+    "pass_count": 33,
+    "total": 33,
+    "truth_vector": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "all_true_boards": 2,
+    "thief_own_positions": 2,
+    "gac_depth": 0,
+    "propagation_events": 26,
+    "min_single_card_domain": 2,
+    "vocabulary_cost": 8,
+    "self_narration": "5/7",
+    "legal_orders": 10,
+    "checks": [
+      {
+        "group": "几何合法性",
+        "item": "家具不重叠/答案格可站/四房连通/门跨区",
+        "ok": true,
+        "value": "PASS"
+      },
+      {
+        "group": "几何合法性",
+        "item": "家具格总数 11（删除 1 株装饰植物）",
+        "ok": true,
+        "value": "11 vs 11"
+      },
+      {
+        "group": "几何合法性",
+        "item": "家具类型均在本地已支持 6 类内",
+        "ok": true,
+        "value": [
+          "桌子",
+          "植物",
+          "椅子",
+          "地毯",
+          "书架",
+          "雕塑"
+        ]
+      },
+      {
+        "group": "几何合法性",
+        "item": "家具差异化命名来自本地调研包",
+        "ok": true,
+        "value": 6
+      },
+      {
+        "group": "几何合法性",
+        "item": "卡数=人数",
+        "ok": true,
+        "value": 6
+      },
+      {
+        "group": "几何合法性",
+        "item": "不预告真假",
+        "ok": true,
+        "value": "unknown"
+      },
+      {
+        "group": "唯一性",
+        "item": "严格审计唯一摆位且唯一身份",
+        "ok": true,
+        "value": true
+      },
+      {
+        "group": "唯一性",
+        "item": "六卡全真",
+        "ok": true,
+        "value": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "group": "唯一性",
+        "item": "全真可正向验证（本人候选格≥2 且全真摆法>0）",
+        "ok": true,
+        "value": "本人候选格2 全真摆法2"
+      },
+      {
+        "group": "唯一性",
+        "item": "第二套独立实现唯一摆位/唯一身份/真假一致",
+        "ok": true,
+        "value": {
+          "unique_boards": 1,
+          "unique_thieves": 1,
+          "truth_equal": true
+        }
+      },
+      {
+        "group": "删卡非冗余",
+        "item": "摘掉任一卡后完整严格题不再唯一",
+        "ok": true,
+        "value": "6 张全部非冗余"
+      },
+      {
+        "group": "单卡不定位",
+        "item": "单卡最小候选域>1",
+        "ok": true,
+        "value": 2
+      },
+      {
+        "group": "语言闸门",
+        "item": "V卡单句",
+        "ok": true,
+        "value": 1
+      },
+      {
+        "group": "语言闸门",
+        "item": "单卡不超过2句",
+        "ok": true,
+        "value": 2
+      },
+      {
+        "group": "语言闸门",
+        "item": "复合卡≤2",
+        "ok": true,
+        "value": 1
+      },
+      {
+        "group": "语言闸门",
+        "item": "无内部标签",
+        "ok": true,
+        "value": 0
+      },
+      {
+        "group": "语言闸门",
+        "item": "无全局计数",
+        "ok": true,
+        "value": 0
+      },
+      {
+        "group": "语言闸门",
+        "item": "否定≤2 / only≤1",
+        "ok": true,
+        "value": "neg0 only1"
+      },
+      {
+        "group": "语言闸门",
+        "item": "数字距离句≤2（6×6 分档）",
+        "ok": true,
+        "value": 0
+      },
+      {
+        "group": "语言闸门",
+        "item": "词汇成本",
+        "ok": true,
+        "value": 8
+      },
+      {
+        "group": "推理可达性",
+        "item": "GAC 深度 = 0（教学关纯演绎）",
+        "ok": true,
+        "value": 0
+      },
+      {
+        "group": "推理可达性",
+        "item": "全真关不存在矛盾子集",
+        "ok": true,
+        "value": null
+      },
+      {
+        "group": "视觉区分",
+        "item": "五关主题互不重复",
+        "ok": true,
+        "value": [
+          "reference",
+          "archive-light",
+          "archive-dark",
+          "blueprint",
+          "sepia-rotated"
+        ]
+      },
+      {
+        "group": "视觉区分",
+        "item": "本关主题色板完整",
+        "ok": true,
+        "value": "reference"
+      },
+      {
+        "group": "卡序",
+        "item": "说话人顺序=人物字母序",
+        "ok": true,
+        "value": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "E",
+          "V"
+        ]
+      },
+      {
+        "group": "卡序",
+        "item": "clause_roles.speaker 逐卡一致",
+        "ok": true,
+        "value": true
+      },
+      {
+        "group": "本人自述",
+        "item": "本人相关线索由本人自述",
+        "ok": true,
+        "value": "5/7（v14 2/7）"
+      },
+      {
+        "group": "写档一致性",
+        "item": "存档卡序与定稿一致",
+        "ok": true,
+        "value": "ok"
+      },
+      {
+        "group": "写档一致性",
+        "item": "存档姓名为纯人名 ≤4 字",
+        "ok": true,
+        "value": "ok"
+      },
+      {
+        "group": "写档一致性",
+        "item": "三格 L 形地毯格数=3",
+        "ok": true,
+        "value": 3
+      },
+      {
+        "group": "写档一致性",
+        "item": "V 房间只留 1 书架 + 1 雕塑，右上角装饰植物已删",
+        "ok": true,
+        "value": "[{\"r\": 1, \"c\": 1}]"
+      },
+      {
+        "group": "写档一致性",
+        "item": "(1,6) 格不再有植物",
+        "ok": true,
+        "value": "ok"
+      },
+      {
+        "group": "写档一致性",
+        "item": "地毯整块模板路径（694）",
+        "ok": true,
+        "value": "F.layout → TPL_KEY.carpet → build_layout.furn_tpl/span/offset → _spawn_furn_tpl → _spawn_whole_rug → board.rugs → InstantiateClientUIControl"
+      }
+    ]
+  },
+  "level4": {
+    "level": 4,
+    "PASS": false,
+    "checks": [
+      {
+        "group": "几何合法性",
+        "item": "家具不重叠/答案格可站/四房连通/门跨区",
+        "ok": true,
+        "value": "PASS"
+      },
+      {
+        "group": "几何合法性",
+        "item": "家具格总数",
+        "ok": true,
+        "value": "10 vs 10"
+      },
+      {
+        "group": "几何合法性",
+        "item": "家具类型均在本地已支持6类内",
+        "ok": true,
+        "value": [
+          "桌子",
+          "植物",
+          "书架",
+          "椅子",
+          "地毯"
+        ]
+      },
+      {
+        "group": "几何合法性",
+        "item": "家具差异化命名来自本地调研包",
+        "ok": true,
+        "value": 5
+      },
+      {
+        "group": "几何合法性",
+        "item": "卡数=人数",
+        "ok": true,
+        "value": "6/6"
+      },
+      {
+        "group": "几何合法性",
+        "item": "不预告真假",
+        "ok": true,
+        "value": "unknown"
+      },
+      {
+        "group": "唯一性",
+        "item": "严格审计唯一摆位且唯一身份",
+        "ok": true,
+        "value": true
+      },
+      {
+        "group": "唯一性",
+        "item": "仅盗窃者卡为假",
+        "ok": true,
+        "value": "假卡数1 盗窃者E"
+      },
+      {
+        "group": "唯一性",
+        "item": "谎言被其余真卡联合否证",
+        "ok": true,
+        "value": "本人候选格1 全真摆法0"
+      },
+      {
+        "group": "唯一性",
+        "item": "第二套独立实现唯一摆位/唯一身份/真假一致",
+        "ok": true,
+        "value": {
+          "unique_boards": 1,
+          "unique_thieves": 1,
+          "truth_equal": true
+        }
+      },
+      {
+        "group": "删卡非冗余",
+        "item": "摘掉任一真卡后完整严格题不再唯一",
+        "ok": false,
+        "value": "冗余卡 [1]（A/D 卡面内容顺序互换所致）"
+      },
+      {
+        "group": "单卡不定位",
+        "item": "单卡最小候选域>1",
+        "ok": true,
+        "value": 2
+      },
+      {
+        "group": "语言闸门",
+        "item": "V卡单句",
+        "ok": true,
+        "value": 1
+      },
+      {
+        "group": "语言闸门",
+        "item": "单卡不超过2句",
+        "ok": true,
+        "value": 1
+      },
+      {
+        "group": "语言闸门",
+        "item": "复合卡≤2",
+        "ok": true,
+        "value": 0
+      },
+      {
+        "group": "语言闸门",
+        "item": "无内部标签",
+        "ok": true,
+        "value": 0
+      },
+      {
+        "group": "语言闸门",
+        "item": "无全局计数",
+        "ok": true,
+        "value": 0
+      },
+      {
+        "group": "语言闸门",
+        "item": "否定≤2 / only≤1",
+        "ok": true,
+        "value": "neg0 only0"
+      },
+      {
+        "group": "语言闸门",
+        "item": "数字距离句≤2（按盘面分档）",
+        "ok": true,
+        "value": 0
+      },
+      {
+        "group": "语言闸门",
+        "item": "词汇成本",
+        "ok": true,
+        "value": 6
+      },
+      {
+        "group": "推理可达性",
+        "item": "GAC深度=0（难度带 Medium-Hard 保留一次试位）",
+        "ok": true,
+        "value": 0
+      },
+      {
+        "group": "谎言可察",
+        "item": "存在最小矛盾子集",
+        "ok": true,
+        "value": 2
+      },
+      {
+        "group": "视觉区分",
+        "item": "五关主题互不重复",
+        "ok": true,
+        "value": [
+          "reference",
+          "archive-light",
+          "archive-dark",
+          "blueprint",
+          "sepia-rotated"
+        ]
+      },
+      {
+        "group": "视觉区分",
+        "item": "本关主题色板完整",
+        "ok": true,
+        "value": "archive-light"
+      },
+      {
+        "group": "卡序",
+        "item": "说话人顺序=人物字母序（不洗牌、不交叉分配）",
+        "ok": true,
+        "value": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "E",
+          "V"
+        ]
+      },
+      {
+        "group": "卡序",
+        "item": "clause_roles.speaker 与 card_speakers 逐卡一致",
+        "ok": true,
+        "value": true
+      },
+      {
+        "group": "卡序",
+        "item": "display_cards 由 cards 按自指规则生成（语义等价）",
+        "ok": true,
+        "value": true
+      },
+      {
+        "group": "本人自述",
+        "item": "本人相关线索由本人自述（覆盖率，越高越好）",
+        "ok": true,
+        "value": "5/6"
+      }
+    ],
+    "failing": [
+      "摘掉任一真卡后完整严格题不再唯一"
+    ],
+    "truth_vector": [
+      1,
+      1,
+      1,
+      1,
+      0,
+      1
+    ],
+    "gac_depth": 0,
+    "self_narration": 5,
+    "note": "A/D 两张卡内容顺序互换（用户要求）+ 姓名对调；解/真假向量/盗窃者/唯一性/语言闸门均不变，仅「删卡非冗余」1 项因卡序与人物口供绑定而改变（已如实记录）"
+  }
+}

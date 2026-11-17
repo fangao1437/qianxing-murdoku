@@ -1,0 +1,296 @@
+{
+  "version": 696,
+  "pass": 46,
+  "fail": 0,
+  "total": 46,
+  "newRecordIds": [
+    1073760757,
+    1073760758,
+    1073760759,
+    1073760760
+  ],
+  "changedRecordIds": [
+    1073760714,
+    1073760715,
+    1073760737,
+    1073760738
+  ],
+  "checks": [
+    {
+      "group": "规模",
+      "name": "记录数 8007 → 8011（+4）",
+      "pass": true,
+      "detail": "8007 → 8011"
+    },
+    {
+      "group": "规模",
+      "name": "输出字节 ≠ 695",
+      "pass": true,
+      "detail": "7055095 → 7061044"
+    },
+    {
+      "group": "凹角补片",
+      "name": "furn.rug.4 src 角片 #1073760757 存在且父正确",
+      "pass": true,
+      "detail": "null parent=1073760714"
+    },
+    {
+      "group": "凹角补片",
+      "name": "#1073760757 几何中心 (6.48,-6.48) / 12.96²",
+      "pass": true,
+      "detail": "{\"x\":6.480000019073486,\"y\":-6.480000019073486,\"w\":12.960000038146973,\"h\":12.960000038146973}"
+    },
+    {
+      "group": "凹角补片",
+      "name": "#1073760757 深棕外框色 + 图元 100001",
+      "pass": true,
+      "detail": "{\"color\":4290288226,\"imageId\":100001}"
+    },
+    {
+      "group": "凹角补片",
+      "name": "#1073760757 #504 与既有模板同构（在第一个 #505 之前）",
+      "pass": true,
+      "detail": "3/4"
+    },
+    {
+      "group": "凹角补片",
+      "name": "furn.rug.4 mama 角片 #1073760758 存在且父正确",
+      "pass": true,
+      "detail": "null parent=1073760715"
+    },
+    {
+      "group": "凹角补片",
+      "name": "#1073760758 几何中心 (6.48,-6.48) / 12.96²",
+      "pass": true,
+      "detail": "{\"x\":6.480000019073486,\"y\":-6.480000019073486,\"w\":12.960000038146973,\"h\":12.960000038146973}"
+    },
+    {
+      "group": "凹角补片",
+      "name": "#1073760758 深棕外框色 + 图元 100001",
+      "pass": true,
+      "detail": "{\"color\":4290288226,\"imageId\":100001}"
+    },
+    {
+      "group": "凹角补片",
+      "name": "#1073760758 #504 与既有模板同构（在第一个 #505 之前）",
+      "pass": true,
+      "detail": "3/4"
+    },
+    {
+      "group": "凹角补片",
+      "name": "furn.rug.5 src 角片 #1073760759 存在且父正确",
+      "pass": true,
+      "detail": "null parent=1073760737"
+    },
+    {
+      "group": "凹角补片",
+      "name": "#1073760759 几何中心 (-6.48,-6.48) / 12.96²",
+      "pass": true,
+      "detail": "{\"x\":-6.480000019073486,\"y\":-6.480000019073486,\"w\":12.960000038146973,\"h\":12.960000038146973}"
+    },
+    {
+      "group": "凹角补片",
+      "name": "#1073760759 深棕外框色 + 图元 100001",
+      "pass": true,
+      "detail": "{\"color\":4290288226,\"imageId\":100001}"
+    },
+    {
+      "group": "凹角补片",
+      "name": "#1073760759 #504 与既有模板同构（在第一个 #505 之前）",
+      "pass": true,
+      "detail": "3/4"
+    },
+    {
+      "group": "凹角补片",
+      "name": "furn.rug.5 mama 角片 #1073760760 存在且父正确",
+      "pass": true,
+      "detail": "null parent=1073760738"
+    },
+    {
+      "group": "凹角补片",
+      "name": "#1073760760 几何中心 (-6.48,-6.48) / 12.96²",
+      "pass": true,
+      "detail": "{\"x\":-6.480000019073486,\"y\":-6.480000019073486,\"w\":12.960000038146973,\"h\":12.960000038146973}"
+    },
+    {
+      "group": "凹角补片",
+      "name": "#1073760760 深棕外框色 + 图元 100001",
+      "pass": true,
+      "detail": "{\"color\":4290288226,\"imageId\":100001}"
+    },
+    {
+      "group": "凹角补片",
+      "name": "#1073760760 #504 与既有模板同构（在第一个 #505 之前）",
+      "pass": true,
+      "detail": "3/4"
+    },
+    {
+      "group": "凹角补片",
+      "name": "content #1073760714 childList 9 → 10 且含角片",
+      "pass": true,
+      "detail": "1073760726,1073760727,1073760757"
+    },
+    {
+      "group": "凹角补片",
+      "name": "content #1073760715 childList 9 → 10 且含角片",
+      "pass": true,
+      "detail": "1073760732,1073760733,1073760758"
+    },
+    {
+      "group": "凹角补片",
+      "name": "content #1073760737 childList 9 → 10 且含角片",
+      "pass": true,
+      "detail": "1073760749,1073760750,1073760759"
+    },
+    {
+      "group": "凹角补片",
+      "name": "content #1073760738 childList 9 → 10 且含角片",
+      "pass": true,
+      "detail": "1073760755,1073760756,1073760760"
+    },
+    {
+      "group": "凹角补片",
+      "name": "家具规格 layerCount 同步为 10",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "group": "凹角补片",
+      "name": "两套角片分别位于缺右下 / 缺左下象限",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "group": "695 保留",
+      "name": "/9/501 仍为 45 项且含两个新源",
+      "pass": true,
+      "detail": "45"
+    },
+    {
+      "group": "695 保留",
+      "name": "原型根 #503 仍为 35 项且含两个新母本",
+      "pass": true,
+      "detail": "35"
+    },
+    {
+      "group": "695 保留",
+      "name": "things.childList 13 项",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "group": "695 保留",
+      "name": "誊写员仍在、墨绿誊写已无",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "group": "695 保留",
+      "name": "整块模板路径与诊断日志仍在",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "group": "Lua 补丁",
+      "name": "P1 ui_list 补 room_grid 存在",
+      "pass": true,
+      "detail": "room_grid = room_grid"
+    },
+    {
+      "group": "Lua 补丁",
+      "name": "P2 每格底色 存在",
+      "pass": true,
+      "detail": "cardId .. \".cell.\" .. r .. \".\" .. c"
+    },
+    {
+      "group": "Lua 补丁",
+      "name": "P2 墙线 存在",
+      "pass": true,
+      "detail": "line(\".wall.\" .. k, x, y, ww, hh, INK)"
+    },
+    {
+      "group": "Lua 补丁",
+      "name": "P2 门线 存在",
+      "pass": true,
+      "detail": "line(\".door.\" .. d"
+    },
+    {
+      "group": "Lua 补丁",
+      "name": "P2 旧房间块收起 存在",
+      "pass": true,
+      "detail": "visible = false, rect = { x = area.x, y = area.y, "
+    },
+    {
+      "group": "Lua 补丁",
+      "name": "P3 底部关卡名 存在",
+      "pass": true,
+      "detail": "text = t.short, style = \"card.name\""
+    },
+    {
+      "group": "Lua 补丁",
+      "name": "P3 顶部规格信息 存在",
+      "pass": true,
+      "detail": "text = t.info, style = \"card.title\""
+    },
+    {
+      "group": "Lua 补丁",
+      "name": "P4 短名提取 存在",
+      "pass": true,
+      "detail": "^案件%s*%d+%s*·%s*([^·]+)"
+    },
+    {
+      "group": "Lua 补丁",
+      "name": "P5 深棕字色 存在",
+      "pass": true,
+      "detail": "if value == \"card.name\" then return 0xFF4A2E1C end"
+    },
+    {
+      "group": "Lua 补丁",
+      "name": "5 项补丁反向还原 695 逐字节一致",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "group": "零改动",
+      "name": "旧记录变动恰为 4 个 content",
+      "pass": true,
+      "detail": "1073760714,1073760715,1073760737,1073760738"
+    },
+    {
+      "group": "零改动",
+      "name": "白名单外零改动（rogue=0）",
+      "pass": true,
+      "detail": "1073760714,1073760715,1073760737,1073760738"
+    },
+    {
+      "group": "零改动",
+      "name": "其余 8003 条旧记录逐字节相同",
+      "pass": true,
+      "detail": "8003"
+    },
+    {
+      "group": "反向还原",
+      "name": "全部改动回退后重编码 == 695 body（逐字节）",
+      "pass": true,
+      "detail": "7055071/7055071"
+    },
+    {
+      "group": "反向还原",
+      "name": "696 body 重编码与落盘字节一致",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "group": "外部闸门",
+      "name": "roundtrip 逐字节往返 PASS",
+      "pass": true,
+      "detail": "段\n   尾部剩余 4 字节：00000679\n重新编码：7061020 字节（原体 7061020 字节）\n\n★★★ 往返成功：重新编码与原始体**逐字节完全一致**\n    → 模型是完整的：可以安全地改字段 / 加记录 / 重算长度。"
+    },
+    {
+      "group": "外部闸门",
+      "name": "luac -p 内嵌 Lua 语法 PASS",
+      "pass": true,
+      "detail": "ok"
+    }
+  ]
+}

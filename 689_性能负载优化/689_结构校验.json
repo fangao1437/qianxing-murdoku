@@ -1,0 +1,97 @@
+{
+  "timestamp": "2026-11-14T21:34:36.125Z",
+  "checks": 18,
+  "pass": 18,
+  "fail": 0,
+  "verdict": true,
+  "baseSha688": "337510627ba91121e2df3a9713b4e1d260e3ce681fd3f91e4042d1c6137dff6d",
+  "outSha689": "f8798b9c89b1e025b187f5932497742b2f163080fdb64aa214ea86295619623c",
+  "details": [
+    {
+      "name": "687 基准 SHA 未改",
+      "ok": true,
+      "detail": "8d33d9af7592"
+    },
+    {
+      "name": "688 基准 SHA 未改",
+      "ok": true,
+      "detail": "337510627ba9"
+    },
+    {
+      "name": "689 与 688 不是同一文件",
+      "ok": true,
+      "detail": "f8798b9c89b1"
+    },
+    {
+      "name": "记录数 = 7921",
+      "ok": true,
+      "detail": "7921/7921"
+    },
+    {
+      "name": "旧记录丢失 = 0",
+      "ok": true,
+      "detail": 0
+    },
+    {
+      "name": "记录表逐字节零改动 (rogue=0)",
+      "ok": true,
+      "detail": 0
+    },
+    {
+      "name": "隐藏层计数不变 (945)",
+      "ok": true,
+      "detail": "945/945"
+    },
+    {
+      "name": "内嵌 Lua 反向补丁逐字节还原 688",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "空白行剥离数 = 12801",
+      "ok": true,
+      "detail": 12801
+    },
+    {
+      "name": "脚本体积下降",
+      "ok": true,
+      "detail": "662152 -> 606688"
+    },
+    {
+      "name": "静态文本 75 处逐条一致",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "前 3 关静态文本零改动",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "689 注册 7 关",
+      "ok": true
+    },
+    {
+      "name": "689 无未注册线索类型",
+      "ok": true
+    },
+    {
+      "name": "685 每帧抬层不变式保留",
+      "ok": true
+    },
+    {
+      "name": "687 SETTLE_ART_TINT 20 层未改",
+      "ok": true
+    },
+    {
+      "name": "luac -p 688",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "luac -p 689",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

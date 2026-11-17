@@ -1,0 +1,49 @@
+{
+  "file": "D:\\新建文件夹\\miHoYo Launcher\\qianxing-murdoku\\688_第4至7关接入\\688_第4至7关接入.gil",
+  "sha256": "337510627ba91121e2df3a9713b4e1d260e3ce681fd3f91e4042d1c6137dff6d",
+  "bytes": 7039865,
+  "records": 7921,
+  "hiddenRecords": 945,
+  "visibleRecords": 6976,
+  "hiddenTopPrefixes": {
+    "art685.mark": 192,
+    "art659.clues": 87,
+    "art658.clues": 78,
+    "art660.clues": 76,
+    "art676.ring": 42,
+    "art641.select": 41,
+    "art641.game": 37,
+    "art670.clue1": 32,
+    "art670.clue2": 32,
+    "art661.clue1": 28,
+    "art661.clue2": 28,
+    "art657.game": 28,
+    "art663.wax": 28,
+    "art664.wax": 22,
+    "art663.ring": 20,
+    "art663.tab": 16,
+    "art661.clues": 15,
+    "art661.tab": 14
+  },
+  "embeddedLua": {
+    "bytes": 662152,
+    "lines": 27395,
+    "blankLines": 12801,
+    "commentLines": 50,
+    "blankPlusCommentBytes": 63336
+  },
+  "perFrameChain": {
+    "settleArtTintEntries": 20,
+    "block640Entries": 5,
+    "registeredLevels": 7,
+    "markOverlayCtrls": 192,
+    "syncFunctions": [
+      "Murdoku.on_update",
+      "sync_art641",
+      "sync_art647",
+      "sync_art649_page",
+      "sync_block640",
+      "Adapter:on_tick"
+    ]
+  }
+}

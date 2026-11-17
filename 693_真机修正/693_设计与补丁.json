@@ -1,0 +1,342 @@
+{
+  "version": 693,
+  "base": "../691_橙黄通用卡与真机修复/691_橙黄通用卡与真机修复.gil",
+  "moduleReplacements": [
+    {
+      "name": "case_003 第3关定稿（家具调整）",
+      "marker": "__M[\"levels.case_003\"] = function()",
+      "newModule": "__M[\"levels.case_003\"] = function()\n return {[\"hint_preview\"] = {[\"1\"] = {[\"rule\"] = \"不做位置提示\", [\"cells\"] = {}, [\"count\"] = 0}, [\"2\"] = {[\"rule\"] = \"该家具四邻、同区域、可站人的格\", [\"cells\"] = {\"1:2\", \"2:1\"}, [\"count\"] = 2}, [\"3\"] = {[\"rule\"] = \"该家具自己的格子\", [\"cells\"] = {\"3:2\", \"3:3\", \"4:2\"}, [\"count\"] = 3}, [\"4\"] = {[\"rule\"] = \"该家具四邻、同区域、可站人的格\", [\"cells\"] = {\"1:3\", \"2:2\", \"2:4\", \"3:3\", \"3:4\", \"4:3\", \"5:4\", \"6:3\", \"6:5\"}, [\"count\"] = 9}, [\"5\"] = {[\"rule\"] = \"不做位置提示\", [\"cells\"] = {}, [\"count\"] = 0}, [\"6\"] = {[\"rule\"] = \"该家具四邻、同区域、可站人的格\", [\"cells\"] = {\"1:2\", \"2:1\"}, [\"count\"] = 2}}, [\"id\"] = \"case_003\", [\"name\"] = \"案件 003 · 原作明亮俯视\", [\"difficulty\"] = \"easy\", [\"size\"] = {[\"rows\"] = 6, [\"cols\"] = 6}, [\"room_names\"] = {\"R1\", \"R2\", \"R3\", \"R4\"}, [\"rules\"] = {[\"one_per_row\"] = true, [\"one_per_col\"] = true, [\"one_per_room\"] = false, [\"place_all\"] = true, [\"tie_policy\"] = \"forbid\"}, [\"walls\"] = {{\"v\", 1, 4}, {\"v\", 2, 4}, {\"h\", 2, 4}, {\"v\", 3, 3}, {\"h\", 3, 3}, {\"v\", 3, 4}, {\"h\", 4, 1}, {\"v\", 4, 2}, {\"h\", 4, 2}, {\"v\", 4, 4}, {\"h\", 4, 5}, {\"h\", 4, 6}, {\"v\", 5, 2}, {\"h\", 5, 3}, {\"h\", 5, 4}, {\"h\", 5, 5}, {\"v\", 6, 5}}, [\"doors\"] = {{\"v\", 2, 4}, {\"h\", 3, 3}, {\"h\", 4, 2}, {\"h\", 4, 5}, {\"h\", 5, 4}}, [\"objects\"] = {[\"桌子\"] = {[\"cells\"] = {{[\"r\"] = 6, [\"c\"] = 4}, {[\"r\"] = 4, [\"c\"] = 4}, {[\"r\"] = 2, [\"c\"] = 3}}, [\"occupiable\"] = false, [\"kind\"] = \"table\"}, [\"椅子\"] = {[\"cells\"] = {{[\"r\"] = 2, [\"c\"] = 1}, {[\"r\"] = 2, [\"c\"] = 4}}, [\"occupiable\"] = true, [\"kind\"] = \"chair\"}, [\"书架\"] = {[\"cells\"] = {{[\"r\"] = 1, [\"c\"] = 5}}, [\"occupiable\"] = false, [\"kind\"] = \"shelf\"}, [\"植物\"] = {[\"cells\"] = {{[\"r\"] = 1, [\"c\"] = 1}, {[\"r\"] = 1, [\"c\"] = 6}}, [\"occupiable\"] = false, [\"kind\"] = \"plant\"}, [\"地毯\"] = {[\"cells\"] = {{[\"r\"] = 3, [\"c\"] = 2}, {[\"r\"] = 3, [\"c\"] = 3}, {[\"r\"] = 4, [\"c\"] = 2}}, [\"occupiable\"] = true, [\"kind\"] = \"carpet\"}, [\"雕塑\"] = {[\"cells\"] = {{[\"r\"] = 2, [\"c\"] = 6}}, [\"occupiable\"] = false, [\"kind\"] = \"statue\"}}, [\"blocked\"] = {}, [\"water\"] = {}, [\"suspects\"] = {{[\"id\"] = \"A\", [\"name\"] = \"巡夜保安\", [\"portrait\"] = \"portrait.A\"}, {[\"id\"] = \"B\", [\"name\"] = \"展签誊录\", [\"portrait\"] = \"portrait.B\"}, {[\"id\"] = \"C\", [\"name\"] = \"拓片修复\", [\"portrait\"] = \"portrait.C\"}, {[\"id\"] = \"D\", [\"name\"] = \"门厅接待\", [\"portrait\"] = \"portrait.D\"}, {[\"id\"] = \"E\", [\"name\"] = \"证物清点\", [\"portrait\"] = \"portrait.E\"}, {[\"id\"] = \"V\", [\"name\"] = \"展厅主人\", [\"portrait\"] = \"portrait.V\", [\"is_victim\"] = true}}, [\"victim\"] = {[\"id\"] = \"V\", [\"name\"] = \"展厅主人\"}, [\"roles\"] = {[\"thief\"] = \"A\"}, [\"clues\"] = {{[\"type\"] = \"all_of\", [\"clauses\"] = {{[\"type\"] = \"above\", [\"a\"] = \"A\", [\"b\"] = \"B\", [\"same_column\"] = false}, {[\"type\"] = \"left_of\", [\"a\"] = \"A\", [\"b\"] = \"C\", [\"same_row\"] = false}}}, {[\"type\"] = \"beside_object\", [\"who\"] = \"A\", [\"object\"] = \"植物\"}, {[\"type\"] = \"only_on_object\", [\"who\"] = \"C\", [\"object\"] = \"地毯\"}, {[\"type\"] = \"beside_object\", [\"who\"] = \"D\", [\"object\"] = \"桌子\"}, {[\"type\"] = \"above\", [\"a\"] = \"D\", [\"b\"] = \"E\", [\"same_column\"] = false}, {[\"type\"] = \"beside_object\", [\"who\"] = \"B\", [\"object\"] = \"植物\"}}, [\"general_clues\"] = {}, [\"meta\"] = {[\"announce\"] = \"unknown\"}, [\"solution\"] = {[\"A\"] = {[\"r\"] = 1, [\"c\"] = 2}, [\"B\"] = {[\"r\"] = 2, [\"c\"] = 1}, [\"C\"] = {[\"r\"] = 3, [\"c\"] = 3}, [\"D\"] = {[\"r\"] = 5, [\"c\"] = 4}, [\"E\"] = {[\"r\"] = 6, [\"c\"] = 5}, [\"V\"] = {[\"r\"] = 4, [\"c\"] = 6}}, [\"visual_theme\"] = {[\"key\"] = \"reference\", [\"name\"] = \"原作明亮俯视（沿用 v12/v13）\", [\"palette\"] = {[\"INK\"] = \"#010101\", [\"INK_SOFT\"] = \"#2E2E2E\", [\"GRAY\"] = \"#BABABA\", [\"GRAY_DARK\"] = \"#5E5E5E\", [\"WHITE\"] = \"#FFFFFF\", [\"SHADOW\"] = \"#000000\", [\"CHAIR_BASE\"] = \"#FEF7E4\", [\"CHAIR_LIGHT\"] = \"#FFFDF4\", [\"CHAIR_OVL\"] = \"#FBD592\", [\"TABLE_BASE\"] = \"#E0CE7B\", [\"TABLE_EDGE\"] = \"#A3965A\", [\"SHELF_BASE\"] = \"#D0B0D9\", [\"SHELF_OVL\"] = \"#B2DBEB\", [\"TV_BASE\"] = \"#A2ABC8\", [\"TV_DARK\"] = \"#2C3145\", [\"TREE_BASE\"] = \"#C7B2A2\", [\"TREE_OVL\"] = \"#79A26C\", [\"TREE_LIGHT\"] = \"#A8CC92\", [\"TREE_DARK\"] = \"#3D5A3A\", [\"PLANT_BASE\"] = \"#FCA161\", [\"PLANT_OVL\"] = \"#79CFA1\", [\"PLANT_LEAF_DARK\"] = \"#4E9B78\", [\"BED_BASE\"] = \"#FFFBE7\", [\"BED_OVL\"] = \"#FFD98E\", [\"CARPET\"] = \"#FEE08E\", [\"CARPET_EDGE\"] = \"#39484D\", [\"ROOM_TINT\"] = \"#DBB98F\"}, [\"room_colors\"] = {\"#e3eef7\", \"#f9ead0\", \"#e3f0e4\", \"#eee4f5\"}, [\"wall\"] = \"#27333c\", [\"door\"] = \"#e38636\", [\"accent\"] = \"#bb513c\", [\"note\"] = \"与 v12 一致的浅色卡通底，作为后续关的对照基准\"}}\nend\n"
+    },
+    {
+      "name": "case_004 A/D 内容互换 + 姓名对调",
+      "marker": "__M[\"levels.case_004\"] = function()",
+      "newModule": "__M[\"levels.case_004\"] = function()\n return {[\"hint_preview\"] = {[\"1\"] = {[\"rule\"] = \"不做位置提示\", [\"cells\"] = {}, [\"count\"] = 0}, [\"2\"] = {[\"rule\"] = \"该家具四邻、同区域、可站人的格\", [\"cells\"] = {\"1:2\", \"2:1\"}, [\"count\"] = 2}, [\"3\"] = {[\"rule\"] = \"该家具自己的格子\", [\"cells\"] = {\"2:2\", \"2:3\", \"6:1\", \"6:2\"}, [\"count\"] = 4}, [\"4\"] = {[\"rule\"] = \"该家具自己的格子\", [\"cells\"] = {\"1:2\", \"6:5\"}, [\"count\"] = 2}, [\"5\"] = {[\"rule\"] = \"该家具四邻、同区域、可站人的格\", [\"cells\"] = {\"1:5\", \"2:4\", \"3:5\"}, [\"count\"] = 3}, [\"6\"] = {[\"rule\"] = \"该家具四邻、同区域、可站人的格\", [\"cells\"] = {\"1:6\", \"3:6\", \"4:6\", \"5:5\", \"6:6\"}, [\"count\"] = 5}}, [\"id\"] = \"case_004\", [\"name\"] = \"案件 004 · 档案卷宗 · 米纸浅色\", [\"difficulty\"] = \"normal\", [\"size\"] = {[\"rows\"] = 6, [\"cols\"] = 6}, [\"room_names\"] = {\"R1\", \"R2\", \"R3\", \"R4\"}, [\"rules\"] = {[\"one_per_row\"] = true, [\"one_per_col\"] = true, [\"one_per_room\"] = false, [\"place_all\"] = true, [\"tie_policy\"] = \"forbid\"}, [\"walls\"] = {{\"v\", 1, 3}, {\"v\", 2, 3}, {\"v\", 3, 3}, {\"h\", 3, 3}, {\"h\", 3, 4}, {\"h\", 3, 5}, {\"h\", 3, 6}, {\"h\", 4, 1}, {\"v\", 4, 2}, {\"h\", 4, 2}, {\"v\", 5, 2}, {\"v\", 6, 2}}, [\"doors\"] = {{\"v\", 2, 3}, {\"v\", 4, 2}, {\"h\", 4, 2}, {\"h\", 3, 5}, {\"v\", 6, 2}}, [\"objects\"] = {[\"桌子\"] = {[\"cells\"] = {{[\"r\"] = 1, [\"c\"] = 1}}, [\"occupiable\"] = false, [\"kind\"] = \"table\"}, [\"椅子\"] = {[\"cells\"] = {{[\"r\"] = 1, [\"c\"] = 2}, {[\"r\"] = 6, [\"c\"] = 5}}, [\"occupiable\"] = true, [\"kind\"] = \"chair\"}, [\"书架\"] = {[\"cells\"] = {{[\"r\"] = 2, [\"c\"] = 5}}, [\"occupiable\"] = false, [\"kind\"] = \"shelf\"}, [\"植物\"] = {[\"cells\"] = {{[\"r\"] = 5, [\"c\"] = 6}, {[\"r\"] = 2, [\"c\"] = 6}}, [\"occupiable\"] = false, [\"kind\"] = \"plant\"}, [\"地毯\"] = {[\"cells\"] = {{[\"r\"] = 2, [\"c\"] = 2}, {[\"r\"] = 2, [\"c\"] = 3}, {[\"r\"] = 6, [\"c\"] = 1}, {[\"r\"] = 6, [\"c\"] = 2}}, [\"occupiable\"] = true, [\"kind\"] = \"carpet\"}}, [\"blocked\"] = {}, [\"water\"] = {}, [\"suspects\"] = {{[\"id\"] = \"A\", [\"name\"] = \"夜巡值守\", [\"portrait\"] = \"portrait.A\"}, {[\"id\"] = \"B\", [\"name\"] = \"米纸誊录\", [\"portrait\"] = \"portrait.B\"}, {[\"id\"] = \"C\", [\"name\"] = \"页角修复\", [\"portrait\"] = \"portrait.C\"}, {[\"id\"] = \"D\", [\"name\"] = \"卷宗管理\", [\"portrait\"] = \"portrait.D\"}, {[\"id\"] = \"E\", [\"name\"] = \"借阅登记\", [\"portrait\"] = \"portrait.E\"}, {[\"id\"] = \"V\", [\"name\"] = \"老馆长\", [\"portrait\"] = \"portrait.V\", [\"is_victim\"] = true}}, [\"victim\"] = {[\"id\"] = \"V\", [\"name\"] = \"老馆长\"}, [\"roles\"] = {[\"thief\"] = \"E\"}, [\"clues\"] = {{[\"type\"] = \"above\", [\"a\"] = \"A\", [\"b\"] = \"D\", [\"same_column\"] = false}, {[\"type\"] = \"beside_object\", [\"who\"] = \"B\", [\"object\"] = \"桌子\"}, {[\"type\"] = \"on_object\", [\"who\"] = \"C\", [\"object\"] = \"地毯\"}, {[\"type\"] = \"on_object\", [\"who\"] = \"D\", [\"object\"] = \"椅子\"}, {[\"type\"] = \"beside_object\", [\"who\"] = \"D\", [\"object\"] = \"书架\"}, {[\"type\"] = \"beside_object\", [\"who\"] = \"V\", [\"object\"] = \"植物\"}}, [\"general_clues\"] = {}, [\"meta\"] = {[\"announce\"] = \"unknown\", [\"false_clue\"] = 5}, [\"solution\"] = {[\"A\"] = {[\"r\"] = 5, [\"c\"] = 4}, [\"B\"] = {[\"r\"] = 1, [\"c\"] = 2}, [\"C\"] = {[\"r\"] = 2, [\"c\"] = 3}, [\"D\"] = {[\"r\"] = 6, [\"c\"] = 5}, [\"E\"] = {[\"r\"] = 3, [\"c\"] = 1}, [\"V\"] = {[\"r\"] = 4, [\"c\"] = 6}}, [\"visual_theme\"] = {[\"key\"] = \"archive-light\", [\"name\"] = \"档案卷宗 · 米纸浅色（美术调研 variant）\", [\"palette\"] = {[\"INK\"] = \"#3F2A1E\", [\"INK_SOFT\"] = \"#6B4A34\", [\"GRAY\"] = \"#B9AC97\", [\"GRAY_DARK\"] = \"#8A7A66\", [\"WHITE\"] = \"#F8F1E2\", [\"SHADOW\"] = \"#241812\", [\"CHAIR_BASE\"] = \"#E3D5B8\", [\"CHAIR_LIGHT\"] = \"#F0E6D0\", [\"CHAIR_OVL\"] = \"#B08A55\", [\"TABLE_BASE\"] = \"#D9C7A3\", [\"TABLE_EDGE\"] = \"#8A6B45\", [\"SHELF_BASE\"] = \"#C8BBA0\", [\"SHELF_OVL\"] = \"#8FA3AE\", [\"TV_BASE\"] = \"#9AA4A6\", [\"TV_DARK\"] = \"#3A3B3C\", [\"TREE_BASE\"] = \"#B6A88E\", [\"TREE_OVL\"] = \"#7C8A6A\", [\"TREE_LIGHT\"] = \"#9BA98A\", [\"TREE_DARK\"] = \"#4F5C45\", [\"PLANT_BASE\"] = \"#C08A5E\", [\"PLANT_OVL\"] = \"#84977A\", [\"PLANT_LEAF_DARK\"] = \"#5E6E58\", [\"BED_BASE\"] = \"#EDE2C9\", [\"BED_OVL\"] = \"#C7A46A\", [\"CARPET\"] = \"#D9C08A\", [\"CARPET_EDGE\"] = \"#5A4634\", [\"ROOM_TINT\"] = \"#E6DAC0\", [\"SEAL\"] = \"#A8391B\", [\"TAG\"] = \"#7A8FA0\", [\"GOLD\"] = \"#C9A961\", [\"PAPER\"] = \"#EFE4CE\"}, [\"room_colors\"] = {\"#E6DAC0\", \"#D9CEC0\", \"#C9D6CE\", \"#D6D9E2\"}, [\"wall\"] = \"#3F2A1E\", [\"door\"] = \"#C9A961\", [\"accent\"] = \"#A8391B\", [\"note\"] = \"6 色低饱和档案纸；粗墙深棕墨、门改铜色；家具走差异化命名\"}}\nend\n"
+    }
+  ],
+  "luaPatches": [
+    {
+      "name": "case_001 C 姓名缩短",
+      "old": "{ id = \"C\", name = \"夜班清洁工\"",
+      "new": "{ id = \"C\", name = \"清洁工\"",
+      "count": 1
+    },
+    {
+      "name": "case_001 D 姓名缩短",
+      "old": "{ id = \"D\", name = \"旧识古董商\"",
+      "new": "{ id = \"D\", name = \"古董商\"",
+      "count": 1
+    },
+    {
+      "name": "case_002 C 姓名缩短",
+      "old": "{ id = \"C\", name = \"临时搬运工\"",
+      "new": "{ id = \"C\", name = \"搬运工\"",
+      "count": 1
+    },
+    {
+      "name": "case_005 A 姓名缩短",
+      "old": "[\"id\"] = \"A\", [\"name\"] = \"封条保管员\"",
+      "new": "[\"id\"] = \"A\", [\"name\"] = \"封条保管\"",
+      "count": 1
+    },
+    {
+      "name": "case_005 B 姓名缩短",
+      "old": "[\"id\"] = \"B\", [\"name\"] = \"夜勘记录员\"",
+      "new": "[\"id\"] = \"B\", [\"name\"] = \"夜勘记录\"",
+      "count": 1
+    },
+    {
+      "name": "case_005 C 姓名缩短",
+      "old": "[\"id\"] = \"C\", [\"name\"] = \"火漆验印师\"",
+      "new": "[\"id\"] = \"C\", [\"name\"] = \"火漆验印\"",
+      "count": 1
+    },
+    {
+      "name": "case_005 D 姓名缩短",
+      "old": "[\"id\"] = \"D\", [\"name\"] = \"暗房洗印员\"",
+      "new": "[\"id\"] = \"D\", [\"name\"] = \"暗房洗印\"",
+      "count": 1
+    },
+    {
+      "name": "case_005 E 姓名缩短",
+      "old": "[\"id\"] = \"E\", [\"name\"] = \"证物登记员\"",
+      "new": "[\"id\"] = \"E\", [\"name\"] = \"证物登记\"",
+      "count": 1
+    },
+    {
+      "name": "case_006 B 姓名缩短",
+      "old": "[\"id\"] = \"B\", [\"name\"] = \"靛青描图员\"",
+      "new": "[\"id\"] = \"B\", [\"name\"] = \"靛青描图\"",
+      "count": 1
+    },
+    {
+      "name": "case_006 C 姓名缩短",
+      "old": "[\"id\"] = \"C\", [\"name\"] = \"野外测绘员\"",
+      "new": "[\"id\"] = \"C\", [\"name\"] = \"野外测绘\"",
+      "count": 1
+    },
+    {
+      "name": "case_006 D 姓名缩短",
+      "old": "[\"id\"] = \"D\", [\"name\"] = \"朱批校样员\"",
+      "new": "[\"id\"] = \"D\", [\"name\"] = \"朱批校样\"",
+      "count": 1
+    },
+    {
+      "name": "case_006 E 姓名缩短",
+      "old": "[\"id\"] = \"E\", [\"name\"] = \"蓝图管理员\"",
+      "new": "[\"id\"] = \"E\", [\"name\"] = \"蓝图管理\"",
+      "count": 1
+    },
+    {
+      "name": "case_006 F 姓名缩短",
+      "old": "[\"id\"] = \"F\", [\"name\"] = \"工地放样员\"",
+      "new": "[\"id\"] = \"F\", [\"name\"] = \"工地放样\"",
+      "count": 1
+    },
+    {
+      "name": "case_007 A 姓名缩短",
+      "old": "[\"id\"] = \"A\", [\"name\"] = \"铜钥保管员\"",
+      "new": "[\"id\"] = \"A\", [\"name\"] = \"铜钥保管\"",
+      "count": 1
+    },
+    {
+      "name": "case_007 B 姓名缩短",
+      "old": "[\"id\"] = \"B\", [\"name\"] = \"转架管理员\"",
+      "new": "[\"id\"] = \"B\", [\"name\"] = \"转架管理\"",
+      "count": 1
+    },
+    {
+      "name": "case_007 C 姓名缩短",
+      "old": "[\"id\"] = \"C\", [\"name\"] = \"墨绿誊写员\"",
+      "new": "[\"id\"] = \"C\", [\"name\"] = \"墨绿誊写\"",
+      "count": 1
+    },
+    {
+      "name": "case_007 D 姓名缩短",
+      "old": "[\"id\"] = \"D\", [\"name\"] = \"铜牌登记员\"",
+      "new": "[\"id\"] = \"D\", [\"name\"] = \"铜牌登记\"",
+      "count": 1
+    },
+    {
+      "name": "rug_cell_els 按边开放（整块外围边框）",
+      "old": "function F.rug_cell_els(bbox, r, c)\n  local els = {}\n  local function slice_rect(inset, color)\n    local xa, xb = bbox.c1 - 0.5 + inset, bbox.c2 + 0.5 - inset\n    local ya, yb = bbox.r1 - 0.5 + inset, bbox.r2 + 0.5 - inset\n    local w, dx = slice_axis(xa, xb, c)\n    local h, dy = slice_axis(ya, yb, r)\n    if w == nil or h == nil then return nil end\n    return { id = IMG.rect, color = color, w = w + 0.04, h = h + 0.04, dx = dx, dy = dy }\n  end\n  els[#els + 1] = { id = IMG.rect, color = C.rug_rim, w = 1.0, h = 1.0 }\n  local inner = slice_rect(F.RUG_INSET, C.rug_in)\n  if inner ~= nil then els[#els + 1] = inner end\n  local line = slice_rect(F.RUG_LINE, C.rug_mid)\n  if line ~= nil then els[#els + 1] = line end\n  return els\nend",
+      "new": "function F.rug_cell_els(bbox, r, c, cellset)\n  local els = {}\n  local function has(rr, cc) return cellset and cellset[rr] and cellset[rr][cc] end\n  -- 与相邻地毯格共享的边「开放」，不内缩 ⇒ 内部不留格线；\n  -- 其余边（含 L 形内凹的外围边）内缩 ⇒ 深色边框沿整块外围一圈。\n  local openL, openR = has(r, c - 1), has(r, c + 1)\n  local openU, openD = has(r - 1, c), has(r + 1, c)\n  local function band(inset, color)\n    local l  = c - 0.5 + (openL and 0 or inset)\n    local rr = c + 0.5 - (openR and 0 or inset)\n    local t  = r - 0.5 + (openU and 0 or inset)\n    local b  = r + 0.5 - (openD and 0 or inset)\n    return { id = IMG.rect, color = color,\n             w = (rr - l) + 0.04, h = (b - t) + 0.04,\n             dx = (l + rr) * 0.5 - c, dy = (t + b) * 0.5 - r }\n  end\n  els[#els + 1] = { id = IMG.rect, color = C.rug_rim, w = 1.0, h = 1.0 }\n  els[#els + 1] = band(F.RUG_INSET, C.rug_in)\n  els[#els + 1] = band(F.RUG_LINE, C.rug_mid)\n  return els\nend",
+      "count": 1
+    },
+    {
+      "name": "F.layout 地毯恢复逐格绘制 + 传 cellset",
+      "old": "    if kind == \"carpet\" then\n      for _, cell in ipairs(p.cells) do\n        res.cell[cell[1]][cell[2]].els = F.rug_cell_els(b, cell[1], cell[2])\n      end\n      res.pieces = res.pieces or {}\n      res.pieces[#res.pieces + 1] = {\n        kind = kind, box = b, anchor = anchor_of(b), variant = \"1\",\n        cells = p.cells, span_r = span_r, span_c = span_c,\n      }\n    else",
+      "new": "    if kind == \"carpet\" then\n      local tri = nil\n      if #p.cells == 3 and span_r == 2 and span_c == 2 then\n        local has = {}\n        for _, cell in ipairs(p.cells) do\n          has[(cell[1] - b.r1) .. \":\" .. (cell[2] - b.c1)] = true\n        end\n        if not has[\"1:1\"] then tri = \"L3a\"           -- 缺右下：第3关\n        elseif not has[\"1:0\"] then tri = \"L3b\" end   -- 缺左下：第7关\n      end\n      local cellset = {}\n      for _, cell in ipairs(p.cells) do\n        cellset[cell[1]] = cellset[cell[1]] or {}\n        cellset[cell[1]][cell[2]] = true\n      end\n      for _, cell in ipairs(p.cells) do\n        res.cell[cell[1]][cell[2]].els = F.rug_cell_els(b, cell[1], cell[2], cellset)\n      end\n      res.pieces = res.pieces or {}\n      res.pieces[#res.pieces + 1] = {\n        kind = kind, box = b, anchor = anchor_of(b), variant = tri or \"1\",\n        cells = p.cells, span_r = span_r, span_c = span_c,\n      }\n    else",
+      "count": 1
+    },
+    {
+      "name": "build_layout 采用 L3 variant",
+      "old": "        local variant = \"1\"\n        if (p.span_c or 1) > 1 then variant = \"h2\"\n        elseif (p.span_r or 1) > 1 then variant = \"v2\" end",
+      "new": "        local variant = \"1\"\n        if kind == \"carpet\" and (p.variant == \"L3a\" or p.variant == \"L3b\") then\n          variant = p.variant\n        elseif (p.span_c or 1) > 1 then variant = \"h2\"\n        elseif (p.span_r or 1) > 1 then variant = \"v2\" end",
+      "count": 1
+    },
+    {
+      "name": "TPL_KEY 注册三格地毯",
+      "old": "      carpet = { [\"1\"] = \"furn.rug\", h2 = \"furn.rug.2\", v2 = \"furn.rug.3\" },",
+      "new": "      carpet = { [\"1\"] = \"furn.rug\", h2 = \"furn.rug.2\", v2 = \"furn.rug.3\",\n                 L3a = \"furn.rug.4\", L3b = \"furn.rug.5\" },",
+      "count": 1
+    },
+    {
+      "name": "path_map 注册新素材",
+      "old": "  [\"furn.rug.3\"] = \"root/things/furn.rug.3\",",
+      "new": "  [\"furn.rug.3\"] = \"root/things/furn.rug.3\",\n  [\"furn.rug.4\"] = \"root/things/furn.rug.4\",\n  [\"furn.rug.5\"] = \"root/things/furn.rug.5\",",
+      "count": 1
+    },
+    {
+      "name": "cfg.furn_tpl_prefab 新增两项",
+      "old": "      rug_3    = 1073749968,\n    },",
+      "new": "      rug_3    = 1073749968,\n      rug_4    = __RUG4_PREFAB__,\n      rug_5    = __RUG5_PREFAB__,\n    },",
+      "count": 1
+    },
+    {
+      "name": "cfg.furn_tpl_canvas 新增 216×216",
+      "old": "    furn_tpl_canvas = { rug_2 = { 216, 108 }, rug_3 = { 108, 216 }, table_h2 = { 216, 108 }, table_v2 = { 108, 216 } },",
+      "new": "    furn_tpl_canvas = { rug_2 = { 216, 108 }, rug_3 = { 108, 216 },\n                       rug_4 = { 216, 216 }, rug_5 = { 216, 216 },\n                       table_h2 = { 216, 108 }, table_v2 = { 108, 216 } },",
+      "count": 1
+    },
+    {
+      "name": "cfg 新素材等比不缩放",
+      "old": "      rug_3 = { x = 0.762, y = 0.93 },\n    },",
+      "new": "      rug_3 = { x = 0.762, y = 0.93 },\n      rug_4 = { x = 1, y = 1 },\n      rug_5 = { x = 1, y = 1 },\n    },",
+      "count": 1
+    },
+    {
+      "name": "_spawn_furn_tpl 隐藏所有整块地毯（避免与逐格双绘）",
+      "old": "  if ckey==\"rug\" or ckey==\"rug_2\" or ckey==\"rug_3\" then\n    for k,o in pairs(self._furn_inst or {}) do\n      if string.find(k,\"|rug\",1,true) and o and o.SetVisible then pcall(function() o:SetVisible(false) end) end\n    end\n    return false\n  end",
+      "new": "  if ckey==\"rug\" or ckey==\"rug_2\" or ckey==\"rug_3\"\n     or ckey==\"rug_4\" or ckey==\"rug_5\" then\n    for k,o in pairs(self._furn_inst or {}) do\n      if string.find(k,\"|rug\",1,true) and o and o.SetVisible then pcall(function() o:SetVisible(false) end) end\n    end\n    return false\n  end",
+      "count": 1
+    },
+    {
+      "name": "_spawn_furn_tpl is_rug 纳入新素材",
+      "old": "  local is_rug = ckey == \"rug\" or ckey == \"rug_2\" or ckey == \"rug_3\"",
+      "new": "  local is_rug = ckey == \"rug\" or ckey == \"rug_2\" or ckey == \"rug_3\"\n                 or ckey == \"rug_4\" or ckey == \"rug_5\"",
+      "count": 1
+    }
+  ],
+  "prefabPlaceholders": [
+    "__RUG4_PREFAB__",
+    "__RUG5_PREFAB__"
+  ],
+  "names": {
+    "1": {
+      "A": "值班保安",
+      "B": "前台姑娘",
+      "C": "清洁工",
+      "D": "古董商",
+      "V": "收藏家"
+    },
+    "2": {
+      "A": "夜班门卫",
+      "B": "画廊助理",
+      "C": "搬运工",
+      "D": "鉴定师",
+      "E": "随行记者",
+      "V": "馆长"
+    },
+    "3": {
+      "A": "巡夜保安",
+      "B": "展签誊录",
+      "C": "拓片修复",
+      "D": "门厅接待",
+      "E": "证物清点",
+      "V": "展厅主人"
+    },
+    "4": {
+      "A": "夜巡值守",
+      "B": "米纸誊录",
+      "C": "页角修复",
+      "D": "卷宗管理",
+      "E": "借阅登记",
+      "V": "老馆长"
+    },
+    "5": {
+      "A": "封条保管",
+      "B": "夜勘记录",
+      "C": "火漆验印",
+      "D": "暗房洗印",
+      "E": "证物登记",
+      "V": "守夜馆人"
+    },
+    "6": {
+      "A": "晒图学徒",
+      "B": "靛青描图",
+      "C": "野外测绘",
+      "D": "朱批校样",
+      "E": "蓝图管理",
+      "F": "工地放样",
+      "V": "总测绘师"
+    },
+    "7": {
+      "A": "铜钥保管",
+      "B": "转架管理",
+      "C": "墨绿誊写",
+      "D": "铜牌登记",
+      "E": "线装匠人",
+      "V": "藏卷人"
+    }
+  },
+  "nameRules": {
+    "who": "纯人名，≤4 字，不加字母",
+    "what": "姓名前加对应字母，「我」等代词不加",
+    "luaName": "纯人名，与 who 一致"
+  },
+  "level4": {
+    "swapType": "卡面内容顺序互换（槽1↔槽4）+ A/D 姓名对调",
+    "order": [
+      4,
+      2,
+      3,
+      1,
+      5,
+      6
+    ],
+    "A": {
+      "before": "卷宗管理员",
+      "after": "夜巡值守"
+    },
+    "D": {
+      "before": "夜巡值守",
+      "after": "卷宗管理"
+    },
+    "note": "解/真假向量/盗窃者/唯一性不变；离线「删卡非冗余」1 项会变"
+  },
+  "level3": {
+    "gates": "六卡全真教学关",
+    "legalOrders": 10,
+    "selfNarration": "5/7",
+    "order": [
+      4,
+      2,
+      3,
+      6,
+      5,
+      1
+    ],
+    "furniture": {
+      "书架": [
+        4
+      ],
+      "植物": [
+        0,
+        5
+      ],
+      "雕塑": [
+        11
+      ]
+    }
+  },
+  "carpet": {
+    "furn.rug.4": {
+      "variant": "L3a",
+      "level": 3,
+      "missing": "右下",
+      "cells": [
+        [
+          3,
+          2
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          4,
+          2
+        ]
+      ],
+      "quads": [
+        "左上",
+        "右上",
+        "左下"
+      ]
+    },
+    "furn.rug.5": {
+      "variant": "L3b",
+      "level": 7,
+      "missing": "左下",
+      "cells": [
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          3,
+          4
+        ]
+      ],
+      "quads": [
+        "左上",
+        "右上",
+        "右下"
+      ]
+    }
+  }
+}

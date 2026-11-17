@@ -1,3 +1,4 @@
+# 2026-11-17：历史生成器；身份结论已过时，不可直接导出覆盖已标记旧图。现行规则见仓库docs/规则规格-偷窃版.md，复核见docs/711规则修正复核.md。
 import json,pathlib,html
 T=pathlib.Path(r'C:\Users\18182\AppData\Local\Temp\feibo\a035bdc9-928f-4beb-bc72-8bf516738000')
 OUT=pathlib.Path(__file__).parent

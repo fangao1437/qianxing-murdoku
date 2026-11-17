@@ -1,0 +1,398 @@
+{
+  "verdict": true,
+  "pass": 78,
+  "fail": 0,
+  "checks": [
+    {
+      "name": "691 基准 SHA 前缀",
+      "pass": true,
+      "detail": "0fb6be5d437ffd76"
+    },
+    {
+      "name": "691 记录数 7961",
+      "pass": true,
+      "detail": "7961"
+    },
+    {
+      "name": "692 记录数 8007",
+      "pass": true,
+      "detail": "8007"
+    },
+    {
+      "name": "691 原件未被覆盖",
+      "pass": true,
+      "detail": "7014646"
+    },
+    {
+      "name": "产物 SHA 与构建审计一致",
+      "pass": true,
+      "detail": "42a1fc72830125f3"
+    },
+    {
+      "name": "692 内嵌 Lua 与落盘脚本一致",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "新增记录 46 条",
+      "pass": true,
+      "detail": "46"
+    },
+    {
+      "name": "新增 ID 无冲突且唯一",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "旧记录 7961 条全部仍在",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "改动记录均为白名单（文本/things/内嵌Lua）",
+      "pass": true,
+      "detail": "改动77 ⊆ 允许集127"
+    },
+    {
+      "name": "白名单外改动 rogue = 0",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "things.childList 11 → 13",
+      "pass": true,
+      "detail": "11→13"
+    },
+    {
+      "name": "furn.rug.4 三件套齐全",
+      "pass": true,
+      "detail": "3 条 src=1073760711 mama=1073760712 ref=1073760713"
+    },
+    {
+      "name": "furn.rug.4 引用进入 things.childList",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "furn.rug.4 cfg.furn_tpl_prefab 指向新源",
+      "pass": true,
+      "detail": "1073760711"
+    },
+    {
+      "name": "furn.rug.4 引用控件 referencedPrefabIndex 正确",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "furn.rug.4 源 content 恰好 1 个",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "name": "furn.rug.4 源 content 画布 216×216",
+      "pass": true,
+      "detail": "216x216"
+    },
+    {
+      "name": "furn.rug.4 源 9 层",
+      "pass": true,
+      "detail": "9"
+    },
+    {
+      "name": "furn.rug.4 源 层几何/颜色/图元逐层匹配",
+      "pass": true,
+      "detail": "9/9"
+    },
+    {
+      "name": "furn.rug.4 源 零溢出",
+      "pass": true,
+      "detail": "9/9"
+    },
+    {
+      "name": "furn.rug.4 源 层未静态隐藏",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "furn.rug.4 母本 content 恰好 1 个",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "name": "furn.rug.4 母本 content 画布 216×216",
+      "pass": true,
+      "detail": "216x216"
+    },
+    {
+      "name": "furn.rug.4 母本 9 层",
+      "pass": true,
+      "detail": "9"
+    },
+    {
+      "name": "furn.rug.4 母本 层几何/颜色/图元逐层匹配",
+      "pass": true,
+      "detail": "9/9"
+    },
+    {
+      "name": "furn.rug.4 母本 零溢出",
+      "pass": true,
+      "detail": "9/9"
+    },
+    {
+      "name": "furn.rug.4 母本 层未静态隐藏",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "furn.rug.4 规格标注禁止拉伸",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "furn.rug.5 三件套齐全",
+      "pass": true,
+      "detail": "3 条 src=1073760734 mama=1073760735 ref=1073760736"
+    },
+    {
+      "name": "furn.rug.5 引用进入 things.childList",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "furn.rug.5 cfg.furn_tpl_prefab 指向新源",
+      "pass": true,
+      "detail": "1073760734"
+    },
+    {
+      "name": "furn.rug.5 引用控件 referencedPrefabIndex 正确",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "furn.rug.5 源 content 恰好 1 个",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "name": "furn.rug.5 源 content 画布 216×216",
+      "pass": true,
+      "detail": "216x216"
+    },
+    {
+      "name": "furn.rug.5 源 9 层",
+      "pass": true,
+      "detail": "9"
+    },
+    {
+      "name": "furn.rug.5 源 层几何/颜色/图元逐层匹配",
+      "pass": true,
+      "detail": "9/9"
+    },
+    {
+      "name": "furn.rug.5 源 零溢出",
+      "pass": true,
+      "detail": "9/9"
+    },
+    {
+      "name": "furn.rug.5 源 层未静态隐藏",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "furn.rug.5 母本 content 恰好 1 个",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "name": "furn.rug.5 母本 content 画布 216×216",
+      "pass": true,
+      "detail": "216x216"
+    },
+    {
+      "name": "furn.rug.5 母本 9 层",
+      "pass": true,
+      "detail": "9"
+    },
+    {
+      "name": "furn.rug.5 母本 层几何/颜色/图元逐层匹配",
+      "pass": true,
+      "detail": "9/9"
+    },
+    {
+      "name": "furn.rug.5 母本 零溢出",
+      "pass": true,
+      "detail": "9/9"
+    },
+    {
+      "name": "furn.rug.5 母本 层未静态隐藏",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "furn.rug.5 规格标注禁止拉伸",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "45 项补丁 new 文本全部落盘",
+      "pass": true,
+      "detail": "missing=0"
+    },
+    {
+      "name": "case_003 模块等于定稿新模块",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "Lua 补丁反向逐字节还原 691",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "无 prefab 占位符残留",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "TPL_KEY L3a/L3b",
+      "pass": true,
+      "detail": "L3a = \"furn.rug.4\", L3b = \"furn.rug.5\""
+    },
+    {
+      "name": "path_map 新素材",
+      "pass": true,
+      "detail": "[\"furn.rug.4\"] = \"root/things/furn.rug.4"
+    },
+    {
+      "name": "cfg canvas 216×216",
+      "pass": true,
+      "detail": "rug_4 = { 216, 216 }, rug_5 = { 216, 216"
+    },
+    {
+      "name": "cfg 等比不缩放",
+      "pass": true,
+      "detail": "rug_4 = { x = 1, y = 1 }"
+    },
+    {
+      "name": "F.layout 识别 L 形",
+      "pass": true,
+      "detail": "if not has[\"1:1\"] then tri = \"L3a\""
+    },
+    {
+      "name": "build_layout 采用 variant",
+      "pass": true,
+      "detail": "p.variant == \"L3a\" or p.variant == \"L3b\""
+    },
+    {
+      "name": "_spawn 放行新 ckey",
+      "pass": true,
+      "detail": "not string.find(k,\"|rug_4\",1,true)"
+    },
+    {
+      "name": "is_rug 纳入新 ckey",
+      "pass": true,
+      "detail": "or ckey == \"rug_4\" or ckey == \"rug_5\""
+    },
+    {
+      "name": "luac -p 语法通过",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "126 个静态文本字段逐条符合",
+      "pass": true,
+      "detail": "ok=126 bad="
+    },
+    {
+      "name": "所有 who 以对应字母开头",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "「我」前不加字母",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "卡面人名前加字母（抽查第4关）",
+      "pass": true,
+      "detail": "A夜巡值守在我上方"
+    },
+    {
+      "name": "第4关 A/D 姓名已对调",
+      "pass": true,
+      "detail": "A=夜巡值守 D=卷宗管理员"
+    },
+    {
+      "name": "姓名对调标注谜题零改动",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "case_001 除 name 外逐字节未变",
+      "pass": true,
+      "detail": "2370→2376"
+    },
+    {
+      "name": "case_002 除 name 外逐字节未变",
+      "pass": true,
+      "detail": "3092→3099"
+    },
+    {
+      "name": "case_004 除 name 外逐字节未变",
+      "pass": true,
+      "detail": "4039→4046"
+    },
+    {
+      "name": "case_005 除 name 外逐字节未变",
+      "pass": true,
+      "detail": "4045→4052"
+    },
+    {
+      "name": "case_006 除 name 外逐字节未变",
+      "pass": true,
+      "detail": "4440→4448"
+    },
+    {
+      "name": "case_007 除 name 外逐字节未变",
+      "pass": true,
+      "detail": "4107→4114"
+    },
+    {
+      "name": "第3关 walls 与 691 相同",
+      "pass": true,
+      "detail": "17 段"
+    },
+    {
+      "name": "第3关 doors 与 691 相同",
+      "pass": true,
+      "detail": "5 段"
+    },
+    {
+      "name": "第3关 6 条线索 / 6 人答案",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "第3关 meta 不预告假卡",
+      "pass": true,
+      "detail": "{\"announce\":\"unknown\"}"
+    },
+    {
+      "name": "第3关姓名全部带字母前缀",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "第3关地毯为三格 L 形",
+      "pass": true,
+      "detail": "[{\"r\":3,\"c\":2},{\"r\":3,\"c\":3},{\"r\":4,\"c\":2}]"
+    },
+    {
+      "name": "第3关 hint_preview 部分线索有提示格",
+      "pass": true,
+      "detail": "4/6"
+    }
+  ],
+  "note": "692 独立结构校验；基准 691（7961）→ 692（8007）"
+}

@@ -1,0 +1,661 @@
+{
+  "localResearchPackage": "官网美术素材调研-2026-11-13/",
+  "furnitureUsed": {
+    "4": [
+      "桌子",
+      "椅子",
+      "书架",
+      "植物",
+      "地毯"
+    ],
+    "5": [
+      "桌子",
+      "椅子",
+      "书架",
+      "植物",
+      "地毯"
+    ],
+    "6": [
+      "桌子",
+      "椅子",
+      "书架",
+      "植物",
+      "地毯"
+    ],
+    "7": [
+      "桌子",
+      "椅子",
+      "植物",
+      "地毯"
+    ]
+  },
+  "assetMapping": {
+    "4": [
+      {
+        "local_name": "桌子",
+        "official_id": 4,
+        "official_name": "Table",
+        "occupiable": false,
+        "freq_levels": 65,
+        "differentiated_name": "勘验台 · 卷宗封边",
+        "local_art_supported": true,
+        "cells": [
+          0
+        ]
+      },
+      {
+        "local_name": "植物",
+        "official_id": 1,
+        "official_name": "Plant",
+        "occupiable": false,
+        "freq_levels": 28,
+        "differentiated_name": "证物盆栽 · 五叶规整化",
+        "local_art_supported": true,
+        "cells": [
+          29,
+          11
+        ]
+      },
+      {
+        "local_name": "书架",
+        "official_id": 13,
+        "official_name": "Shelf",
+        "occupiable": false,
+        "freq_levels": 49,
+        "differentiated_name": "卷宗柜 · 档案盒脊",
+        "local_art_supported": true,
+        "cells": [
+          10
+        ]
+      },
+      {
+        "local_name": "椅子",
+        "official_id": 2,
+        "official_name": "Chair",
+        "occupiable": true,
+        "freq_levels": 65,
+        "differentiated_name": "讯问椅 · 证物编号牌",
+        "local_art_supported": true,
+        "cells": [
+          1,
+          34
+        ]
+      },
+      {
+        "local_name": "地毯",
+        "official_id": 5,
+        "official_name": "Carpet",
+        "occupiable": true,
+        "freq_levels": null,
+        "differentiated_name": "档案纸地毯 · 骑缝章",
+        "local_art_supported": true,
+        "cells": [
+          7,
+          8,
+          30,
+          31
+        ]
+      }
+    ],
+    "5": [
+      {
+        "local_name": "桌子",
+        "official_id": 4,
+        "official_name": "Table",
+        "occupiable": false,
+        "freq_levels": 65,
+        "differentiated_name": "勘验台 · 卷宗封边",
+        "local_art_supported": true,
+        "cells": [
+          21
+        ]
+      },
+      {
+        "local_name": "植物",
+        "official_id": 1,
+        "official_name": "Plant",
+        "occupiable": false,
+        "freq_levels": 28,
+        "differentiated_name": "证物盆栽 · 五叶规整化",
+        "local_art_supported": true,
+        "cells": [
+          0
+        ]
+      },
+      {
+        "local_name": "书架",
+        "official_id": 13,
+        "official_name": "Shelf",
+        "occupiable": false,
+        "freq_levels": 49,
+        "differentiated_name": "卷宗柜 · 档案盒脊",
+        "local_art_supported": true,
+        "cells": [
+          10
+        ]
+      },
+      {
+        "local_name": "椅子",
+        "official_id": 2,
+        "official_name": "Chair",
+        "occupiable": true,
+        "freq_levels": 65,
+        "differentiated_name": "讯问椅 · 证物编号牌",
+        "local_art_supported": true,
+        "cells": [
+          1,
+          34
+        ]
+      },
+      {
+        "local_name": "地毯",
+        "official_id": 5,
+        "official_name": "Carpet",
+        "occupiable": true,
+        "freq_levels": null,
+        "differentiated_name": "档案纸地毯 · 骑缝章",
+        "local_art_supported": true,
+        "cells": [
+          7,
+          8,
+          31
+        ]
+      }
+    ],
+    "6": [
+      {
+        "local_name": "桌子",
+        "official_id": 4,
+        "official_name": "Table",
+        "occupiable": false,
+        "freq_levels": 65,
+        "differentiated_name": "勘验台 · 卷宗封边",
+        "local_art_supported": true,
+        "cells": [
+          2,
+          6,
+          8,
+          13,
+          14,
+          32,
+          39,
+          42,
+          47
+        ]
+      },
+      {
+        "local_name": "植物",
+        "official_id": 1,
+        "official_name": "Plant",
+        "occupiable": false,
+        "freq_levels": 28,
+        "differentiated_name": "证物盆栽 · 五叶规整化",
+        "local_art_supported": true,
+        "cells": [
+          9,
+          40
+        ]
+      },
+      {
+        "local_name": "书架",
+        "official_id": 13,
+        "official_name": "Shelf",
+        "occupiable": false,
+        "freq_levels": 49,
+        "differentiated_name": "卷宗柜 · 档案盒脊",
+        "local_art_supported": true,
+        "cells": [
+          5,
+          48
+        ]
+      },
+      {
+        "local_name": "椅子",
+        "official_id": 2,
+        "official_name": "Chair",
+        "occupiable": true,
+        "freq_levels": 65,
+        "differentiated_name": "讯问椅 · 证物编号牌",
+        "local_art_supported": true,
+        "cells": [
+          15,
+          31
+        ]
+      },
+      {
+        "local_name": "地毯",
+        "official_id": 5,
+        "official_name": "Carpet",
+        "occupiable": true,
+        "freq_levels": null,
+        "differentiated_name": "档案纸地毯 · 骑缝章",
+        "local_art_supported": true,
+        "cells": [
+          12,
+          33
+        ]
+      }
+    ],
+    "7": [
+      {
+        "local_name": "桌子",
+        "official_id": 4,
+        "official_name": "Table",
+        "occupiable": false,
+        "freq_levels": 65,
+        "differentiated_name": "勘验台 · 卷宗封边",
+        "local_art_supported": true,
+        "cells": [
+          18,
+          20,
+          16
+        ]
+      },
+      {
+        "local_name": "植物",
+        "official_id": 1,
+        "official_name": "Plant",
+        "occupiable": false,
+        "freq_levels": 28,
+        "differentiated_name": "证物盆栽 · 五叶规整化",
+        "local_art_supported": true,
+        "cells": [
+          5
+        ]
+      },
+      {
+        "local_name": "椅子",
+        "official_id": 2,
+        "official_name": "Chair",
+        "occupiable": true,
+        "freq_levels": 65,
+        "differentiated_name": "讯问椅 · 证物编号牌",
+        "local_art_supported": true,
+        "cells": [
+          35,
+          22
+        ]
+      },
+      {
+        "local_name": "地毯",
+        "official_id": 5,
+        "official_name": "Carpet",
+        "occupiable": true,
+        "freq_levels": null,
+        "differentiated_name": "档案纸地毯 · 骑缝章",
+        "local_art_supported": true,
+        "cells": [
+          9,
+          15,
+          8
+        ]
+      }
+    ]
+  },
+  "carpetSelfBuilt": {
+    "title": "自建 · 地毯 Carpet 图元拆解规格（补齐本地调研包缺失）",
+    "reason": "官网美术素材调研-2026-11-13/assets 仅有 7 套高频 TemplateSpec，不含 Carpet；globalLayers 只给 49 tile 组合规则，无逐件层表。",
+    "source": [
+      "官网美术素材调研-2026-11-13/高频素材-图元拆解规格.json",
+      "官网美术素材调研-2026-11-13/高频素材-TemplateSpec.json",
+      "_work/art-ref/家具几何分解.md §6",
+      "qianxing-murdoku/lua/furn_art.lua（furn.rug/.2/.3 现有模板）"
+    ],
+    "localTemplatesAlreadyInGil": [
+      "furn.rug",
+      "furn.rug.2",
+      "furn.rug.3"
+    ],
+    "occupiable": true,
+    "officialId": 5,
+    "officialName": "Carpet",
+    "differentiatedName": "档案纸地毯 · 骑缝章",
+    "spec": {
+      "rug": {
+        "template": "furn.rug",
+        "kind": "carpet",
+        "variant": "单格",
+        "sizePx": {
+          "W": 108.0,
+          "H": 108.0
+        },
+        "layerCount": 6,
+        "canvas": {
+          "cell": 108.0,
+          "W": 108.0,
+          "H": 108.0
+        },
+        "layers": [
+          {
+            "order": 1,
+            "part": "外框",
+            "imageId": 100001,
+            "shape": "rect",
+            "w": 108.0,
+            "h": 108.0,
+            "dx": 0.0,
+            "dy_down": 0.0,
+            "y_up": 0.0,
+            "rotDeg": 0,
+            "color": "#FF5A4634",
+            "decor": false,
+            "note": "地毯四圈结构，四圈同心 ⊆ 画布"
+          },
+          {
+            "order": 2,
+            "part": "第二圈",
+            "imageId": 100001,
+            "shape": "rect",
+            "w": 100.76,
+            "h": 100.76,
+            "dx": 0.0,
+            "dy_down": 0.0,
+            "y_up": 0.0,
+            "rotDeg": 0,
+            "color": "#FFD9C08A",
+            "decor": false,
+            "note": "地毯四圈结构，四圈同心 ⊆ 画布"
+          },
+          {
+            "order": 3,
+            "part": "第三圈",
+            "imageId": 100001,
+            "shape": "rect",
+            "w": 84.46,
+            "h": 84.46,
+            "dx": 0.0,
+            "dy_down": 0.0,
+            "y_up": 0.0,
+            "rotDeg": 0,
+            "color": "#FFC9A961",
+            "decor": false,
+            "note": "地毯四圈结构，四圈同心 ⊆ 画布"
+          },
+          {
+            "order": 4,
+            "part": "内芯",
+            "imageId": 100001,
+            "shape": "rect",
+            "w": 76.36,
+            "h": 76.36,
+            "dx": 0.0,
+            "dy_down": 0.0,
+            "y_up": 0.0,
+            "rotDeg": 0,
+            "color": "#FFEFE4CE",
+            "decor": false,
+            "note": "地毯四圈结构，四圈同心 ⊆ 画布"
+          },
+          {
+            "order": 5,
+            "part": "seal",
+            "imageId": 100001,
+            "shape": "rect",
+            "w": 12.0,
+            "h": 12.0,
+            "dx": -19.44,
+            "dy_down": -19.44,
+            "y_up": 19.44,
+            "rotDeg": 0,
+            "color": "#FFA8391B",
+            "decor": true,
+            "note": "差异化装饰层 ⊆ 内芯"
+          },
+          {
+            "order": 6,
+            "part": "tag",
+            "imageId": 100001,
+            "shape": "rect",
+            "w": 20.0,
+            "h": 8.0,
+            "dx": 19.44,
+            "dy_down": -19.44,
+            "y_up": 19.44,
+            "rotDeg": 0,
+            "color": "#FF7A8FA0",
+            "decor": true,
+            "note": "差异化装饰层 ⊆ 内芯"
+          }
+        ],
+        "gate": {
+          "zeroSpur": true,
+          "decorWithinCore": true,
+          "legalPrimitives": [
+            100001
+          ],
+          "layerBudget": true
+        }
+      },
+      "rug.2": {
+        "template": "furn.rug.2",
+        "kind": "carpet",
+        "variant": "横向双格",
+        "sizePx": {
+          "W": 216.0,
+          "H": 108.0
+        },
+        "layerCount": 6,
+        "canvas": {
+          "cell": 108.0,
+          "W": 216.0,
+          "H": 108.0
+        },
+        "layers": [
+          {
+            "order": 1,
+            "part": "外框",
+            "imageId": 100001,
+            "shape": "rect",
+            "w": 216.0,
+            "h": 108.0,
+            "dx": 0.0,
+            "dy_down": 0.0,
+            "y_up": 0.0,
+            "rotDeg": 0,
+            "color": "#FF5A4634",
+            "decor": false,
+            "note": "地毯四圈结构，四圈同心 ⊆ 画布"
+          },
+          {
+            "order": 2,
+            "part": "第二圈",
+            "imageId": 100001,
+            "shape": "rect",
+            "w": 201.53,
+            "h": 100.76,
+            "dx": 0.0,
+            "dy_down": 0.0,
+            "y_up": 0.0,
+            "rotDeg": 0,
+            "color": "#FFD9C08A",
+            "decor": false,
+            "note": "地毯四圈结构，四圈同心 ⊆ 画布"
+          },
+          {
+            "order": 3,
+            "part": "第三圈",
+            "imageId": 100001,
+            "shape": "rect",
+            "w": 168.91,
+            "h": 84.46,
+            "dx": 0.0,
+            "dy_down": 0.0,
+            "y_up": 0.0,
+            "rotDeg": 0,
+            "color": "#FFC9A961",
+            "decor": false,
+            "note": "地毯四圈结构，四圈同心 ⊆ 画布"
+          },
+          {
+            "order": 4,
+            "part": "内芯",
+            "imageId": 100001,
+            "shape": "rect",
+            "w": 152.71,
+            "h": 76.36,
+            "dx": 0.0,
+            "dy_down": 0.0,
+            "y_up": 0.0,
+            "rotDeg": 0,
+            "color": "#FFEFE4CE",
+            "decor": false,
+            "note": "地毯四圈结构，四圈同心 ⊆ 画布"
+          },
+          {
+            "order": 5,
+            "part": "seal",
+            "imageId": 100001,
+            "shape": "rect",
+            "w": 12.0,
+            "h": 12.0,
+            "dx": -38.88,
+            "dy_down": -19.44,
+            "y_up": 19.44,
+            "rotDeg": 0,
+            "color": "#FFA8391B",
+            "decor": true,
+            "note": "差异化装饰层 ⊆ 内芯"
+          },
+          {
+            "order": 6,
+            "part": "tag",
+            "imageId": 100001,
+            "shape": "rect",
+            "w": 20.0,
+            "h": 8.0,
+            "dx": 38.88,
+            "dy_down": -19.44,
+            "y_up": 19.44,
+            "rotDeg": 0,
+            "color": "#FF7A8FA0",
+            "decor": true,
+            "note": "差异化装饰层 ⊆ 内芯"
+          }
+        ],
+        "gate": {
+          "zeroSpur": true,
+          "decorWithinCore": true,
+          "legalPrimitives": [
+            100001
+          ],
+          "layerBudget": true
+        }
+      },
+      "rug.3": {
+        "template": "furn.rug.3",
+        "kind": "carpet",
+        "variant": "纵向双格",
+        "sizePx": {
+          "W": 108.0,
+          "H": 216.0
+        },
+        "layerCount": 6,
+        "canvas": {
+          "cell": 108.0,
+          "W": 108.0,
+          "H": 216.0
+        },
+        "layers": [
+          {
+            "order": 1,
+            "part": "外框",
+            "imageId": 100001,
+            "shape": "rect",
+            "w": 108.0,
+            "h": 216.0,
+            "dx": 0.0,
+            "dy_down": 0.0,
+            "y_up": 0.0,
+            "rotDeg": 0,
+            "color": "#FF5A4634",
+            "decor": false,
+            "note": "地毯四圈结构，四圈同心 ⊆ 画布"
+          },
+          {
+            "order": 2,
+            "part": "第二圈",
+            "imageId": 100001,
+            "shape": "rect",
+            "w": 100.76,
+            "h": 201.53,
+            "dx": 0.0,
+            "dy_down": 0.0,
+            "y_up": 0.0,
+            "rotDeg": 0,
+            "color": "#FFD9C08A",
+            "decor": false,
+            "note": "地毯四圈结构，四圈同心 ⊆ 画布"
+          },
+          {
+            "order": 3,
+            "part": "第三圈",
+            "imageId": 100001,
+            "shape": "rect",
+            "w": 84.46,
+            "h": 168.91,
+            "dx": 0.0,
+            "dy_down": 0.0,
+            "y_up": 0.0,
+            "rotDeg": 0,
+            "color": "#FFC9A961",
+            "decor": false,
+            "note": "地毯四圈结构，四圈同心 ⊆ 画布"
+          },
+          {
+            "order": 4,
+            "part": "内芯",
+            "imageId": 100001,
+            "shape": "rect",
+            "w": 76.36,
+            "h": 152.71,
+            "dx": 0.0,
+            "dy_down": 0.0,
+            "y_up": 0.0,
+            "rotDeg": 0,
+            "color": "#FFEFE4CE",
+            "decor": false,
+            "note": "地毯四圈结构，四圈同心 ⊆ 画布"
+          },
+          {
+            "order": 5,
+            "part": "seal",
+            "imageId": 100001,
+            "shape": "rect",
+            "w": 12.0,
+            "h": 12.0,
+            "dx": -19.44,
+            "dy_down": -38.88,
+            "y_up": 38.88,
+            "rotDeg": 0,
+            "color": "#FFA8391B",
+            "decor": true,
+            "note": "差异化装饰层 ⊆ 内芯"
+          },
+          {
+            "order": 6,
+            "part": "tag",
+            "imageId": 100001,
+            "shape": "rect",
+            "w": 20.0,
+            "h": 8.0,
+            "dx": 19.44,
+            "dy_down": -38.88,
+            "y_up": 38.88,
+            "rotDeg": 0,
+            "color": "#FF7A8FA0",
+            "decor": true,
+            "note": "差异化装饰层 ⊆ 内芯"
+          }
+        ],
+        "gate": {
+          "zeroSpur": true,
+          "decorWithinCore": true,
+          "legalPrimitives": [
+            100001
+          ],
+          "layerBudget": true
+        }
+      }
+    }
+  }
+}

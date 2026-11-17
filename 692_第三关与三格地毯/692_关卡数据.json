@@ -1,0 +1,663 @@
+{
+  "version": 692,
+  "level3": {
+    "level": 3,
+    "lua": {
+      "hint_preview": {
+        "1": {
+          "rule": "不做位置提示",
+          "cells": [],
+          "count": 0
+        },
+        "2": {
+          "rule": "该家具四邻、同区域、可站人的格",
+          "cells": [
+            "1:2",
+            "2:1"
+          ],
+          "count": 2
+        },
+        "3": {
+          "rule": "该家具自己的格子",
+          "cells": [
+            "3:2",
+            "3:3",
+            "4:2"
+          ],
+          "count": 3
+        },
+        "4": {
+          "rule": "该家具四邻、同区域、可站人的格",
+          "cells": [
+            "1:3",
+            "2:2",
+            "2:4",
+            "3:3",
+            "3:4",
+            "4:3",
+            "5:4",
+            "6:3",
+            "6:5"
+          ],
+          "count": 9
+        },
+        "5": {
+          "rule": "不做位置提示",
+          "cells": [],
+          "count": 0
+        },
+        "6": {
+          "rule": "该家具四邻、同区域、可站人的格",
+          "cells": [
+            "1:2",
+            "2:1"
+          ],
+          "count": 2
+        }
+      },
+      "id": "case_003",
+      "name": "案件 003 · 原作明亮俯视",
+      "difficulty": "easy",
+      "size": {
+        "rows": 6,
+        "cols": 6
+      },
+      "room_names": [
+        "R1",
+        "R2",
+        "R3",
+        "R4"
+      ],
+      "rules": {
+        "one_per_row": true,
+        "one_per_col": true,
+        "one_per_room": false,
+        "place_all": true,
+        "tie_policy": "forbid"
+      },
+      "walls": [
+        [
+          "v",
+          1,
+          4
+        ],
+        [
+          "v",
+          2,
+          4
+        ],
+        [
+          "h",
+          2,
+          4
+        ],
+        [
+          "v",
+          3,
+          3
+        ],
+        [
+          "h",
+          3,
+          3
+        ],
+        [
+          "v",
+          3,
+          4
+        ],
+        [
+          "h",
+          4,
+          1
+        ],
+        [
+          "v",
+          4,
+          2
+        ],
+        [
+          "h",
+          4,
+          2
+        ],
+        [
+          "v",
+          4,
+          4
+        ],
+        [
+          "h",
+          4,
+          5
+        ],
+        [
+          "h",
+          4,
+          6
+        ],
+        [
+          "v",
+          5,
+          2
+        ],
+        [
+          "h",
+          5,
+          3
+        ],
+        [
+          "h",
+          5,
+          4
+        ],
+        [
+          "h",
+          5,
+          5
+        ],
+        [
+          "v",
+          6,
+          5
+        ]
+      ],
+      "doors": [
+        [
+          "v",
+          2,
+          4
+        ],
+        [
+          "h",
+          3,
+          3
+        ],
+        [
+          "h",
+          4,
+          2
+        ],
+        [
+          "h",
+          4,
+          5
+        ],
+        [
+          "h",
+          5,
+          4
+        ]
+      ],
+      "objects": {
+        "桌子": {
+          "cells": [
+            {
+              "r": 6,
+              "c": 4
+            },
+            {
+              "r": 4,
+              "c": 4
+            },
+            {
+              "r": 2,
+              "c": 3
+            }
+          ],
+          "occupiable": false,
+          "kind": "table"
+        },
+        "椅子": {
+          "cells": [
+            {
+              "r": 2,
+              "c": 1
+            },
+            {
+              "r": 2,
+              "c": 4
+            }
+          ],
+          "occupiable": true,
+          "kind": "chair"
+        },
+        "书架": {
+          "cells": [
+            {
+              "r": 1,
+              "c": 5
+            },
+            {
+              "r": 1,
+              "c": 6
+            },
+            {
+              "r": 2,
+              "c": 6
+            }
+          ],
+          "occupiable": false,
+          "kind": "shelf"
+        },
+        "植物": {
+          "cells": [
+            {
+              "r": 1,
+              "c": 1
+            }
+          ],
+          "occupiable": false,
+          "kind": "plant"
+        },
+        "地毯": {
+          "cells": [
+            {
+              "r": 3,
+              "c": 2
+            },
+            {
+              "r": 3,
+              "c": 3
+            },
+            {
+              "r": 4,
+              "c": 2
+            }
+          ],
+          "occupiable": true,
+          "kind": "carpet"
+        }
+      },
+      "blocked": [],
+      "water": [],
+      "suspects": [
+        {
+          "id": "A",
+          "name": "A巡夜保安",
+          "portrait": "portrait.A"
+        },
+        {
+          "id": "B",
+          "name": "B展签誊录员",
+          "portrait": "portrait.B"
+        },
+        {
+          "id": "C",
+          "name": "C拓片修复师",
+          "portrait": "portrait.C"
+        },
+        {
+          "id": "D",
+          "name": "D门厅接待员",
+          "portrait": "portrait.D"
+        },
+        {
+          "id": "E",
+          "name": "E证物清点员",
+          "portrait": "portrait.E"
+        },
+        {
+          "id": "V",
+          "name": "V展厅主人",
+          "portrait": "portrait.V",
+          "is_victim": true
+        }
+      ],
+      "victim": {
+        "id": "V",
+        "name": "V展厅主人"
+      },
+      "roles": {
+        "thief": "A"
+      },
+      "clues": [
+        {
+          "type": "all_of",
+          "clauses": [
+            {
+              "type": "above",
+              "a": "A",
+              "b": "B",
+              "same_column": false
+            },
+            {
+              "type": "left_of",
+              "a": "A",
+              "b": "C",
+              "same_row": false
+            }
+          ]
+        },
+        {
+          "type": "beside_object",
+          "who": "A",
+          "object": "植物"
+        },
+        {
+          "type": "only_on_object",
+          "who": "C",
+          "object": "地毯"
+        },
+        {
+          "type": "beside_object",
+          "who": "D",
+          "object": "桌子"
+        },
+        {
+          "type": "above",
+          "a": "D",
+          "b": "E",
+          "same_column": false
+        },
+        {
+          "type": "beside_object",
+          "who": "B",
+          "object": "植物"
+        }
+      ],
+      "general_clues": {},
+      "meta": {
+        "announce": "unknown"
+      },
+      "solution": {
+        "A": {
+          "r": 1,
+          "c": 2
+        },
+        "B": {
+          "r": 2,
+          "c": 1
+        },
+        "C": {
+          "r": 3,
+          "c": 3
+        },
+        "D": {
+          "r": 5,
+          "c": 4
+        },
+        "E": {
+          "r": 6,
+          "c": 5
+        },
+        "V": {
+          "r": 4,
+          "c": 6
+        }
+      },
+      "visual_theme": {
+        "key": "reference",
+        "name": "原作明亮俯视（沿用 v12/v13）",
+        "palette": {
+          "INK": "#010101",
+          "INK_SOFT": "#2E2E2E",
+          "GRAY": "#BABABA",
+          "GRAY_DARK": "#5E5E5E",
+          "WHITE": "#FFFFFF",
+          "SHADOW": "#000000",
+          "CHAIR_BASE": "#FEF7E4",
+          "CHAIR_LIGHT": "#FFFDF4",
+          "CHAIR_OVL": "#FBD592",
+          "TABLE_BASE": "#E0CE7B",
+          "TABLE_EDGE": "#A3965A",
+          "SHELF_BASE": "#D0B0D9",
+          "SHELF_OVL": "#B2DBEB",
+          "TV_BASE": "#A2ABC8",
+          "TV_DARK": "#2C3145",
+          "TREE_BASE": "#C7B2A2",
+          "TREE_OVL": "#79A26C",
+          "TREE_LIGHT": "#A8CC92",
+          "TREE_DARK": "#3D5A3A",
+          "PLANT_BASE": "#FCA161",
+          "PLANT_OVL": "#79CFA1",
+          "PLANT_LEAF_DARK": "#4E9B78",
+          "BED_BASE": "#FFFBE7",
+          "BED_OVL": "#FFD98E",
+          "CARPET": "#FEE08E",
+          "CARPET_EDGE": "#39484D",
+          "ROOM_TINT": "#DBB98F"
+        },
+        "room_colors": [
+          "#e3eef7",
+          "#f9ead0",
+          "#e3f0e4",
+          "#eee4f5"
+        ],
+        "wall": "#27333c",
+        "door": "#e38636",
+        "accent": "#bb513c",
+        "note": "与 v12 一致的浅色卡通底，作为后续关的对照基准"
+      }
+    },
+    "texts": [
+      {
+        "slot": 1,
+        "letter": "A",
+        "who": "A巡夜保安",
+        "what": "我在B展签誊录员上方、我在C拓片修复师左方"
+      },
+      {
+        "slot": 2,
+        "letter": "B",
+        "who": "B展签誊录员",
+        "what": "A巡夜保安在植物旁边"
+      },
+      {
+        "slot": 3,
+        "letter": "C",
+        "who": "C拓片修复师",
+        "what": "只有我在地毯上"
+      },
+      {
+        "slot": 4,
+        "letter": "D",
+        "who": "D门厅接待员",
+        "what": "我在桌子旁边"
+      },
+      {
+        "slot": 5,
+        "letter": "E",
+        "who": "E证物清点员",
+        "what": "D门厅接待员在我上方"
+      },
+      {
+        "slot": 6,
+        "letter": "V",
+        "who": "V展厅主人",
+        "what": "B展签誊录员在植物旁边"
+      }
+    ],
+    "hints": [
+      {
+        "slot": 1,
+        "type": "all_of",
+        "rule": "不做位置提示",
+        "count": 0,
+        "cells": [],
+        "reference_665": {
+          "rule": "静态位置子句交集",
+          "count": 0,
+          "cells": []
+        },
+        "note": "665 为废案；666 与当前主线 687 不给复合卡静态高亮"
+      },
+      {
+        "slot": 2,
+        "type": "beside_object",
+        "rule": "该家具四邻、同区域、可站人的格",
+        "count": 2,
+        "cells": [
+          "1:2",
+          "2:1"
+        ]
+      },
+      {
+        "slot": 3,
+        "type": "only_on_object",
+        "rule": "该家具自己的格子",
+        "count": 3,
+        "cells": [
+          "3:2",
+          "3:3",
+          "4:2"
+        ]
+      },
+      {
+        "slot": 4,
+        "type": "beside_object",
+        "rule": "该家具四邻、同区域、可站人的格",
+        "count": 9,
+        "cells": [
+          "1:3",
+          "2:2",
+          "2:4",
+          "3:3",
+          "3:4",
+          "4:3",
+          "5:4",
+          "6:3",
+          "6:5"
+        ]
+      },
+      {
+        "slot": 5,
+        "type": "above",
+        "rule": "不做位置提示",
+        "count": 0,
+        "cells": []
+      },
+      {
+        "slot": 6,
+        "type": "beside_object",
+        "rule": "该家具四邻、同区域、可站人的格",
+        "count": 2,
+        "cells": [
+          "1:2",
+          "2:1"
+        ]
+      }
+    ],
+    "order_table": [
+      {
+        "slot": 1,
+        "speaker": "A",
+        "name": "巡夜保安",
+        "from_slot": 4,
+        "predicate": [
+          "A在B上方",
+          "A在C左方"
+        ],
+        "self_narrated": true
+      },
+      {
+        "slot": 2,
+        "speaker": "B",
+        "name": "展签誊录员",
+        "from_slot": 2,
+        "predicate": [
+          "A在植物旁边"
+        ],
+        "self_narrated": false
+      },
+      {
+        "slot": 3,
+        "speaker": "C",
+        "name": "拓片修复师",
+        "from_slot": 3,
+        "predicate": [
+          "只有C在地毯上"
+        ],
+        "self_narrated": true
+      },
+      {
+        "slot": 4,
+        "speaker": "D",
+        "name": "门厅接待员",
+        "from_slot": 6,
+        "predicate": [
+          "D在桌子旁边"
+        ],
+        "self_narrated": true
+      },
+      {
+        "slot": 5,
+        "speaker": "E",
+        "name": "证物清点员",
+        "from_slot": 5,
+        "predicate": [
+          "D在E上方"
+        ],
+        "self_narrated": true
+      },
+      {
+        "slot": 6,
+        "speaker": "V",
+        "name": "展厅主人",
+        "from_slot": 1,
+        "predicate": [
+          "B在植物旁边"
+        ],
+        "self_narrated": false
+      }
+    ]
+  },
+  "names": {
+    "1": {
+      "A": "值班保安",
+      "B": "前台姑娘",
+      "C": "夜班清洁工",
+      "D": "旧识古董商",
+      "V": "收藏家"
+    },
+    "2": {
+      "A": "夜班门卫",
+      "B": "画廊助理",
+      "C": "临时搬运工",
+      "D": "鉴定师",
+      "E": "随行记者",
+      "V": "馆长"
+    },
+    "3": {
+      "A": "巡夜保安",
+      "B": "展签誊录员",
+      "C": "拓片修复师",
+      "D": "门厅接待员",
+      "E": "证物清点员",
+      "V": "展厅主人"
+    },
+    "4": {
+      "A": "夜巡值守",
+      "B": "米纸誊录员",
+      "C": "页角修复师",
+      "D": "卷宗管理员",
+      "E": "借阅登记员",
+      "V": "老馆长"
+    },
+    "5": {
+      "A": "封条保管员",
+      "B": "夜勘记录员",
+      "C": "火漆验印师",
+      "D": "暗房洗印员",
+      "E": "证物登记员",
+      "V": "守夜馆人"
+    },
+    "6": {
+      "A": "晒图学徒",
+      "B": "靛青描图员",
+      "C": "野外测绘员",
+      "D": "朱批校样员",
+      "E": "蓝图管理员",
+      "F": "工地放样员",
+      "V": "总测绘师"
+    },
+    "7": {
+      "A": "铜钥保管员",
+      "B": "转架管理员",
+      "C": "墨绿誊写员",
+      "D": "铜牌登记员",
+      "E": "线装匠人",
+      "V": "藏卷人"
+    }
+  }
+}

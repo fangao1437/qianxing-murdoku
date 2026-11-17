@@ -1,0 +1,202 @@
+{
+  "base": {
+    "file": "qianxing-murdoku\\687_综合整改\\687_综合整改.gil",
+    "sha256": "8d33d9af7592ff2a8d9b9af37838c606fff3d816762fdaed984a4e4143a169fe",
+    "records": 7826,
+    "scriptBytes": 645926
+  },
+  "output": {
+    "scriptBytes": 662152,
+    "added": 95,
+    "changedExisting": 76,
+    "expectRecords": 7921,
+    "sha256": "337510627ba91121e2df3a9713b4e1d260e3ce681fd3f91e4042d1c6137dff6d",
+    "recordsOnDisk": 7921,
+    "rogue": 0,
+    "luaRoundtrip": true,
+    "textVerified": true
+  },
+  "patches": [
+    "LIST 注册 5/6/7",
+    "case_004 覆盖",
+    "case_005/006/007 新增",
+    "below/left_of/right_of 只比轴对称扩展"
+  ],
+  "texts": [
+    {
+      "kind": "text",
+      "level": 4,
+      "slot": 1,
+      "who": "卷宗管理员",
+      "what": "夜巡值守在椅子上"
+    },
+    {
+      "kind": "text",
+      "level": 4,
+      "slot": 2,
+      "who": "米纸誊录员",
+      "what": "我在桌子旁边"
+    },
+    {
+      "kind": "text",
+      "level": 4,
+      "slot": 3,
+      "who": "页角修复师",
+      "what": "我在地毯上"
+    },
+    {
+      "kind": "text",
+      "level": 4,
+      "slot": 4,
+      "who": "夜巡值守",
+      "what": "卷宗管理员在我上方"
+    },
+    {
+      "kind": "text",
+      "level": 4,
+      "slot": 5,
+      "who": "借阅登记员",
+      "what": "夜巡值守在书架旁边"
+    },
+    {
+      "kind": "text",
+      "level": 4,
+      "slot": 6,
+      "who": "老馆长",
+      "what": "我在植物旁边"
+    },
+    {
+      "kind": "text+clone",
+      "level": 5,
+      "slot": 1,
+      "who": "封条保管员",
+      "what": "我在椅子上、火漆验印师与我在同一房间"
+    },
+    {
+      "kind": "text+clone",
+      "level": 5,
+      "slot": 2,
+      "who": "夜勘记录员",
+      "what": "暗房洗印员比封条保管员靠下1行"
+    },
+    {
+      "kind": "text+clone",
+      "level": 5,
+      "slot": 3,
+      "who": "火漆验印师",
+      "what": "守夜馆人比我靠上1行"
+    },
+    {
+      "kind": "text+clone",
+      "level": 5,
+      "slot": 4,
+      "who": "暗房洗印员",
+      "what": "我在夜勘记录员右方"
+    },
+    {
+      "kind": "text+clone",
+      "level": 5,
+      "slot": 5,
+      "who": "证物登记员",
+      "what": "只有我在地毯上"
+    },
+    {
+      "kind": "text+clone",
+      "level": 5,
+      "slot": 6,
+      "who": "守夜馆人",
+      "what": "证物登记员不在椅子旁边"
+    },
+    {
+      "kind": "text+clone",
+      "level": 6,
+      "slot": 1,
+      "who": "晒图学徒",
+      "what": "我在椅子上"
+    },
+    {
+      "kind": "text+clone",
+      "level": 6,
+      "slot": 2,
+      "who": "靛青描图员",
+      "what": "晒图学徒在椅子旁边"
+    },
+    {
+      "kind": "text+clone",
+      "level": 6,
+      "slot": 3,
+      "who": "野外测绘员",
+      "what": "我比朱批校样员靠上2行"
+    },
+    {
+      "kind": "text+clone",
+      "level": 6,
+      "slot": 4,
+      "who": "朱批校样员",
+      "what": "我比野外测绘员靠左1列"
+    },
+    {
+      "kind": "text+clone",
+      "level": 6,
+      "slot": 5,
+      "who": "蓝图管理员",
+      "what": "晒图学徒比我靠左2列"
+    },
+    {
+      "kind": "text+clone",
+      "level": 6,
+      "slot": 6,
+      "who": "工地放样员",
+      "what": "我在椅子旁边"
+    },
+    {
+      "kind": "text+clone",
+      "level": 6,
+      "slot": 7,
+      "who": "总测绘师",
+      "what": "晒图学徒与我在同一房间"
+    },
+    {
+      "kind": "text+clone",
+      "level": 7,
+      "slot": 1,
+      "who": "铜钥保管员",
+      "what": "墨绿誊写员比我靠左2列"
+    },
+    {
+      "kind": "text+clone",
+      "level": 7,
+      "slot": 2,
+      "who": "转架管理员",
+      "what": "铜牌登记员在地毯旁边"
+    },
+    {
+      "kind": "text+clone",
+      "level": 7,
+      "slot": 3,
+      "who": "墨绿誊写员",
+      "what": "转架管理员比我靠上2行"
+    },
+    {
+      "kind": "text+clone",
+      "level": 7,
+      "slot": 4,
+      "who": "铜牌登记员",
+      "what": "我在桌子旁边、我不在植物旁边"
+    },
+    {
+      "kind": "text+clone",
+      "level": 7,
+      "slot": 5,
+      "who": "线装匠人",
+      "what": "铜牌登记员在我右方"
+    },
+    {
+      "kind": "text+clone",
+      "level": 7,
+      "slot": 6,
+      "who": "藏卷人",
+      "what": "转架管理员在植物旁边"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "version": 704,
+  "input": "703_选关卡片样式调整.gil",
+  "output": "704_缩略图间距与定位修复.gil",
+  "sha256": "257f1f848b566d63b6ebb6b6750858e4de85caf6e000d70abb3d0f70a62192bc",
+  "records": 8300,
+  "unchangedControlRecords": 8300,
+  "gapCanvasPx": 2,
+  "wallCanvasPx": 3,
+  "doorCanvasPx": 5,
+  "notes": [
+    "同一关格宽、步长为整数画布单位",
+    "所有格子、底板共用卡框精确中心，不逐控件取整",
+    "门墙共用格缝中心线",
+    "纯色矩形、底部案件名、教程与迟到补发修复保留",
+    "未验证游戏实机像素及真实输入"
+  ]
+}

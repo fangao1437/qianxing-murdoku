@@ -1,0 +1,242 @@
+{
+  "version": 690,
+  "verdict": true,
+  "pass": 44,
+  "fail": 0,
+  "checks": [
+    {
+      "name": "689 基准 SHA 前缀",
+      "pass": true,
+      "detail": "f8798b9c89b1e025"
+    },
+    {
+      "name": "689 记录数 7921",
+      "pass": true,
+      "detail": "7921"
+    },
+    {
+      "name": "690 记录数 7945",
+      "pass": true,
+      "detail": "7945"
+    },
+    {
+      "name": "产物 SHA 与构建审计一致",
+      "pass": true,
+      "detail": "59770afb2a607f98"
+    },
+    {
+      "name": "689 原件未被覆盖",
+      "pass": true,
+      "detail": "6984401"
+    },
+    {
+      "name": "新增记录恰好 24 条",
+      "pass": true,
+      "detail": "24"
+    },
+    {
+      "name": "删除记录 0 条",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "被修改的原记录恰好 8 条且全在预期名单",
+      "pass": true,
+      "detail": "1073742421,1073742807,1073742808,1073742809,1073742428,1073742804,1073742805,1073742806"
+    },
+    {
+      "name": "rogue 改动 = 0",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "未列入名单的 7913 条原记录逐字节全同",
+      "pass": true,
+      "detail": "checked"
+    },
+    {
+      "name": "新层名字集合与规格一致",
+      "pass": true,
+      "detail": "gen690.base,gen690.hi,gen690.trap,gen690.lo,gen690.mid1,gen690.mid2,gen690.corner,gen690.rule,gen690.seal.outer,gen690.seal.inner,gen690.mark,gen690.badge,gen690.base,gen690.hi,gen690.trap,gen690.lo,gen690.mid1,gen690.mid2,gen690.corner,gen690.rule,gen690.seal.outer,gen690.seal.inner,gen690.mark,gen690.badge"
+    },
+    {
+      "name": "新层全部静态隐藏",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "两套 clue 模板",
+      "pass": true,
+      "detail": "1073742421,1073742428"
+    },
+    {
+      "name": "新层全部挂在两套 clue 根下",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "层序 #1073742421：gen.backrop < gen690×12 < gen.title < gen.body",
+      "pass": true,
+      "detail": "backrop=93 gen690=94..105 title=106 body=107"
+    },
+    {
+      "name": "childList 与 recTop 同序 #1073742421",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "层序 #1073742428：gen.backrop < gen690×12 < gen.title < gen.body",
+      "pass": true,
+      "detail": "backrop=93 gen690=94..105 title=106 body=107"
+    },
+    {
+      "name": "childList 与 recTop 同序 #1073742428",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "隐藏层 945 → 969（+24，全部为新增层）",
+      "pass": true,
+      "detail": "945 → 969"
+    },
+    {
+      "name": "普通卡 8 个可见视觉层逐字段相同",
+      "pass": true,
+      "detail": "8"
+    },
+    {
+      "name": "普通卡 backrop1 高亮基色仍 #FF491B1E",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "gen.backrop #1073742421：100001 / 330×85.4 / #FF20304F / 隐藏",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "gen.title #1073742421：文案「通用线索」不变 / 字色金",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "gen.body #1073742421：236×56 @ (14,-2) / 白字 / 可见",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "gen.backrop #1073742428：100001 / 330×85.4 / #FF20304F / 隐藏",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "gen.title #1073742428：文案「通用线索」不变 / 字色金",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "gen.body #1073742428：236×56 @ (14,-2) / 白字 / 可见",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "原记录静态文本零改动",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "新增文本控件只有「公」「真」",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "690 Lua：显隐名单 2 处、每项 15 层",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "690 Lua：高亮目标改为 gen.backrop",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "690 Lua：反向补丁逐字节还原 689",
+      "pass": true,
+      "detail": "585023 → 585408"
+    },
+    {
+      "name": "689 性能补丁全部保留",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "685 每帧抬层不变式 / 686 离场收起仍在",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "通用线索交互链路未改",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "Lua 两处显隐名单完全一致",
+      "pass": true,
+      "detail": "15/15"
+    },
+    {
+      "name": "名单 = 规格 15 层（gen.* 3 + gen690.* 12）",
+      "pass": true,
+      "detail": "15"
+    },
+    {
+      "name": "名单里每个名字在两套 clue 模板下都找得到",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "新增 12 层全部进入显隐名单",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "「真」字号与 letter 一致（30/20）",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "「公」字号略收（24/18）",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "luac -p 689",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "luac -p 690",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "690_内嵌Lua_690.lua 与存档内嵌脚本一致",
+      "pass": true,
+      "detail": "585408"
+    }
+  ],
+  "base": {
+    "file": "689_性能负载优化.gil",
+    "sha256": "f8798b9c89b1e025b187f5932497742b2f163080fdb64aa214ea86295619623c",
+    "records": 7921,
+    "hidden": 945
+  },
+  "output": {
+    "file": "690_通用线索卡.gil",
+    "sha256": "59770afb2a607f98ac5a708a5c4fed21ced7d1e440d440bf3acfab7d1911a99d",
+    "bytes": 7004554,
+    "records": 7945,
+    "hidden": 969
+  },
+  "timestamp": "2026-11-14T23:00:21.990Z"
+}

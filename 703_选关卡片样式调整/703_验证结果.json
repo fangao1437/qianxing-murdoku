@@ -1,0 +1,726 @@
+{
+  "version": 703,
+  "total": 142,
+  "pass": 142,
+  "fail": 0,
+  "metrics": {
+    "indexBuilds": "4"
+  },
+  "checks": [
+    {
+      "name": "记录数8300且仅新增四底板",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "8011条旧控件逐字节保留",
+      "pass": true,
+      "detail": 8011
+    },
+    {
+      "name": "288图元全部使用cell模板矩形100001",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "288图元无非有限浮点参数",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "卡1底板同父级且在格子之前",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "卡2底板同父级且在格子之前",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "卡3底板同父级且在格子之前",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "卡4底板同父级且在格子之前",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "内嵌Lua与通用客户端和交付副本一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "首页弹窗父级关闭",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1完整案件标题",
+      "pass": true,
+      "detail": "案件 001 · 夜盗独行"
+    },
+    {
+      "name": "页1卡1取消顶部规格",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1标题底部白边且居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1底板正方形居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1全部正方形纯色格子",
+      "pass": true,
+      "detail": "25"
+    },
+    {
+      "name": "页1卡1棋盘中心与卡中心重合",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1底板四边外扩对称",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1点击映射正确",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2完整案件标题",
+      "pass": true,
+      "detail": "案件 002 · 双影"
+    },
+    {
+      "name": "页1卡2取消顶部规格",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2标题底部白边且居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2底板正方形居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2全部正方形纯色格子",
+      "pass": true,
+      "detail": "36"
+    },
+    {
+      "name": "页1卡2棋盘中心与卡中心重合",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2底板四边外扩对称",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2点击映射正确",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3完整案件标题",
+      "pass": true,
+      "detail": "案件 003 · 原作明亮俯视"
+    },
+    {
+      "name": "页1卡3取消顶部规格",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3标题底部白边且居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3底板正方形居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3全部正方形纯色格子",
+      "pass": true,
+      "detail": "36"
+    },
+    {
+      "name": "页1卡3棋盘中心与卡中心重合",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3底板四边外扩对称",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3点击映射正确",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4完整案件标题",
+      "pass": true,
+      "detail": "案件 004 · 档案卷宗 · 米纸浅色"
+    },
+    {
+      "name": "页1卡4取消顶部规格",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4标题底部白边且居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4底板正方形居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4全部正方形纯色格子",
+      "pass": true,
+      "detail": "36"
+    },
+    {
+      "name": "页1卡4棋盘中心与卡中心重合",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4底板四边外扩对称",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4点击映射正确",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡1完整案件标题",
+      "pass": true,
+      "detail": "案件 005 · 夜勘卷宗 · 深棕墨/火漆红"
+    },
+    {
+      "name": "页2卡1取消顶部规格",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡1标题底部白边且居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡1底板正方形居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡1全部正方形纯色格子",
+      "pass": true,
+      "detail": "36"
+    },
+    {
+      "name": "页2卡1棋盘中心与卡中心重合",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡1底板四边外扩对称",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡1点击映射正确",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡2完整案件标题",
+      "pass": true,
+      "detail": "案件 006 · 蓝晒图 · 靛青网格/朱红批注"
+    },
+    {
+      "name": "页2卡2取消顶部规格",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡2标题底部白边且居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡2底板正方形居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡2全部正方形纯色格子",
+      "pass": true,
+      "detail": "49"
+    },
+    {
+      "name": "页2卡2棋盘中心与卡中心重合",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡2底板四边外扩对称",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡2点击映射正确",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡3完整案件标题",
+      "pass": true,
+      "detail": "案件 007 · 旋转档案 · 深墨绿/铜金"
+    },
+    {
+      "name": "页2卡3取消顶部规格",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡3标题底部白边且居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡3底板正方形居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡3全部正方形纯色格子",
+      "pass": true,
+      "detail": "36"
+    },
+    {
+      "name": "页2卡3棋盘中心与卡中心重合",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡3底板四边外扩对称",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡3点击映射正确",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "末页空卡无内容残留",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1完整案件标题",
+      "pass": true,
+      "detail": "案件 001 · 夜盗独行"
+    },
+    {
+      "name": "页1卡1取消顶部规格",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1标题底部白边且居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1底板正方形居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1全部正方形纯色格子",
+      "pass": true,
+      "detail": "25"
+    },
+    {
+      "name": "页1卡1棋盘中心与卡中心重合",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1底板四边外扩对称",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1点击映射正确",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2完整案件标题",
+      "pass": true,
+      "detail": "案件 002 · 双影"
+    },
+    {
+      "name": "页1卡2取消顶部规格",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2标题底部白边且居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2底板正方形居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2全部正方形纯色格子",
+      "pass": true,
+      "detail": "36"
+    },
+    {
+      "name": "页1卡2棋盘中心与卡中心重合",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2底板四边外扩对称",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2点击映射正确",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3完整案件标题",
+      "pass": true,
+      "detail": "案件 003 · 原作明亮俯视"
+    },
+    {
+      "name": "页1卡3取消顶部规格",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3标题底部白边且居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3底板正方形居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3全部正方形纯色格子",
+      "pass": true,
+      "detail": "36"
+    },
+    {
+      "name": "页1卡3棋盘中心与卡中心重合",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3底板四边外扩对称",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3点击映射正确",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4完整案件标题",
+      "pass": true,
+      "detail": "案件 004 · 档案卷宗 · 米纸浅色"
+    },
+    {
+      "name": "页1卡4取消顶部规格",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4标题底部白边且居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4底板正方形居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4全部正方形纯色格子",
+      "pass": true,
+      "detail": "36"
+    },
+    {
+      "name": "页1卡4棋盘中心与卡中心重合",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4底板四边外扩对称",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4点击映射正确",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "返回首页关闭缩略图父级和标题",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "教程按钮绑定/home",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "教程关闭/home",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "教程按钮绑定/l1",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "教程关闭/l1",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "教程按钮绑定/l2",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "教程关闭/l2",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "零自动创建控件",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "实际运行产生足量检查",
+      "pass": true,
+      "detail": 107
+    },
+    {
+      "name": "room_map源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "room_map与702保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "murdoku_core源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "murdoku_core与702保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "furn_art源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "furn_art与702保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "furn_art_records源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "furn_art_records与702保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "ui_controller源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "engine_adapter源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "engine_adapter与702保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "engine_adapter_qianxing源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "main源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "main与702保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "tutorial_ui源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "tutorial_ui与702保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.init源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.init与702保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_001源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_001与702保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_002源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_002与702保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_003源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_003与702保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_004源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_004与702保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_005源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_005与702保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_006源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_006与702保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_007源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_007与702保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "模块及完整脚本语法",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "七关谜题家具地毯行为保持",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "limits": [
+    "真实存档父链与实际Lua控制器/适配器回放，控件API为模拟",
+    "未操作游戏，未验证实机像素或真实鼠标输入",
+    "没有与截图逐像素比较；本轮交付为gil而非网页"
+  ]
+}

@@ -1,0 +1,205 @@
+{
+  "version": 694,
+  "pass": 39,
+  "fail": 0,
+  "total": 39,
+  "checks": [
+    {
+      "name": "694 记录数 = 693（8007）",
+      "pass": true,
+      "detail": "8007 → 8007"
+    },
+    {
+      "name": "无新增/丢失记录",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "所有 g.recs 记录逐字节未变（rogue=0）",
+      "pass": true,
+      "detail": "0 条："
+    },
+    {
+      "name": "内嵌 Lua 确实已改（693 ≠ 694）",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "693 内嵌 Lua SHA 与规格一致",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "补丁落盘：P1 恢复地毯整块模板实例化（含 L3a/L3b 新素材）",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "补丁落盘：P2 关闭逐格 rug_cell_els（防双绘 / 防拼接）",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "Lua 补丁 + 模块替换可反向逐字节还原 693",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "rug 分支恢复整块模板 _spawn_whole_rug",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "逐格 rug_cell_els 已关闭",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "691 的「隐藏所有 rug 实例」已移除",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "地毯分支不再 return false",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "path_map 注册 furn.rug.4",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "cfg.furn_tpl_prefab 含 rug.4",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "cfg.furn_tpl_canvas 含 rug.4 216×216",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "path_map 注册 furn.rug.5",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "cfg.furn_tpl_prefab 含 rug.5",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "cfg.furn_tpl_canvas 含 rug.5 216×216",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "TPL_KEY 注册 L3a/L3b",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "F.layout 仍给三格地毯打 L3a/L3b variant",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "furn.rug.4 三件套仍完整（3 条）",
+      "pass": true,
+      "detail": "3"
+    },
+    {
+      "name": "furn.rug.4 源 content = 1",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "name": "furn.rug.4 content 仍为 9 层",
+      "pass": true,
+      "detail": "9"
+    },
+    {
+      "name": "furn.rug.5 三件套仍完整（3 条）",
+      "pass": true,
+      "detail": "3"
+    },
+    {
+      "name": "furn.rug.5 源 content = 1",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "name": "furn.rug.5 content 仍为 9 层",
+      "pass": true,
+      "detail": "9"
+    },
+    {
+      "name": "things.childList 仍为 13 项（含两套新素材）",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "case_003 模块等于定稿新模块",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "第3关植物只剩 (1,1)",
+      "pass": true,
+      "detail": "[{\"r\":1,\"c\":1}]"
+    },
+    {
+      "name": "case_003 Lua 里已无 (1,6) 植物",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "第3关 V 房间：1 书架 (1,5)",
+      "pass": true,
+      "detail": "[{\"r\":1,\"c\":5}]"
+    },
+    {
+      "name": "第3关 V 房间：1 雕塑 (2,6)",
+      "pass": true,
+      "detail": "[{\"r\":2,\"c\":6}]"
+    },
+    {
+      "name": "第3关三格 L 形地毯格数 = 3",
+      "pass": true,
+      "detail": "[{\"r\":3,\"c\":2},{\"r\":3,\"c\":3},{\"r\":4,\"c\":2}]"
+    },
+    {
+      "name": "第3关家具格总数 = 11",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "第3关答案/墙/门与 693 相同",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "第3关 hint_preview 与 693 相同（(1,6) 邻格均不可站）",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "1~7 关静态文本逐字与 693 相同",
+      "pass": true,
+      "detail": "126 条，差异 "
+    },
+    {
+      "name": "who 区无字母前缀、人名 ≤4 字",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "第4关 A/D 姓名对调仍生效",
+      "pass": true,
+      "detail": "ok"
+    }
+  ],
+  "baseSha": "20e2a0fa2bd46f4d8117eea7649166cdb88b23eb8b84e2af88a995cc9ef8387d",
+  "outputSha": "a122e699c4193e95e1308b06373f6c7c88f453730031d1eba8f4503cbb9bcaa1"
+}

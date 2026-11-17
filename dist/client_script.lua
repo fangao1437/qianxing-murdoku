@@ -14124,12 +14124,12 @@ return {
   walls = {{"v",1,4},{"v",2,4},{"h",3,3},{"v",3,4},{"h",3,4},{"h",3,5},{"h",3,6},{"h",3,7},{"h",4,1},{"v",4,2},{"h",4,2},{"v",5,2},{"v",6,2},{"v",7,2}},
   doors = {{"h",3,3},{"v",3,4},{"h",3,5},{"h",4,1},{"v",7,2}},
   objects = {
-    ["桌子"] = { cells = {{["r"]=1,["c"]=3},{["r"]=1,["c"]=7},{["r"]=2,["c"]=2},{["r"]=2,["c"]=7},{["r"]=3,["c"]=1},{["r"]=5,["c"]=5},{["r"]=6,["c"]=5},{["r"]=7,["c"]=1},{["r"]=7,["c"]=6}}, occupiable = false, kind = "table" },
-    ["椅子"] = { cells = {{["r"]=3,["c"]=2},{["r"]=5,["c"]=4}}, occupiable = true, kind = "chair" },
-    ["书架"] = { cells = {{["r"]=1,["c"]=6},{["r"]=7,["c"]=7}}, occupiable = false, kind = "shelf" },
-    ["植物"] = { cells = {{["r"]=2,["c"]=3},{["r"]=6,["c"]=6}}, occupiable = false, kind = "plant" },
-    ["地毯"] = { cells = {{["r"]=2,["c"]=6},{["r"]=5,["c"]=6}}, occupiable = true, kind = "carpet" },
-    ["雕塑"] = { cells = {{["r"]=7,["c"]=3}}, occupiable = false, kind = "statue" },
+    ["桌子"] = { cells = {{r=1,c=3},{r=1,c=7},{r=2,c=2},{r=2,c=7},{r=3,c=1},{r=5,c=5},{r=6,c=5},{r=7,c=1},{r=7,c=6}}, occupiable = false, kind = "table" },
+    ["椅子"] = { cells = {{r=3,c=2},{r=5,c=4}}, occupiable = true, kind = "chair" },
+    ["书架"] = { cells = {{r=1,c=6},{r=7,c=7}}, occupiable = false, kind = "shelf" },
+    ["植物"] = { cells = {{r=2,c=3},{r=6,c=6}}, occupiable = false, kind = "plant" },
+    ["地毯"] = { cells = {{r=2,c=6},{r=5,c=6}}, occupiable = true, kind = "carpet" },
+    ["雕塑"] = { cells = {{r=7,c=3}}, occupiable = false, kind = "statue" },
   },
   blocked = {}, water = {},
   suspects = {
@@ -14144,25 +14144,29 @@ return {
   victim = { id = "V", name = "老师" },
   roles = { thief = "B" },
   clues = {
+    { type = "on_object", who = "A", object = "椅子" },
+    { type = "above", a = "D", b = "E", same_column = false },
+    { type = "on_object", who = "C", object = "地毯" },
+    { type = "beside_object", who = "D", object = "桌子" },
     { type = "beside_object", who = "E", object = "雕塑" },
     { type = "beside_object", who = "F", object = "椅子" },
-    { type = "beside_object", who = "D", object = "桌子" },
-    { type = "beside_object", who = "B", object = "书架" },
-    { type = "on_object", who = "A", object = "椅子" },
-    { type = "on_object", who = "C", object = "地毯" },
-    { type = "not_beside_object", who = "E", object = "书架" },
-  }, general_clues = {}, meta = { announce = "unknown" },
-  solution = {
-    A = {r=3,c=2},
-    B = {r=6,c=7},
-    C = {r=2,c=6},
-    D = {r=4,c=5},
-    E = {r=7,c=4},
-    F = {r=5,c=3},
-    V = {r=1,c=1},
+    { type = "same_room", a = "D", b = "E" },
   },
-  visual_theme = {["key"]="blueprint",["name"]="蓝晒图 · 靛青网格 / 朱红批注（7×7 专属）",["palette"]={["INK"]="#3F2A1E",["INK_SOFT"]="#6B4A34",["GRAY"]="#B9AC97",["GRAY_DARK"]="#8A7A66",["WHITE"]="#F8F1E2",["SHADOW"]="#241812",["CHAIR_BASE"]="#E3D5B8",["CHAIR_LIGHT"]="#F0E6D0",["CHAIR_OVL"]="#B08A55",["TABLE_BASE"]="#D9C7A3",["TABLE_EDGE"]="#8A6B45",["SHELF_BASE"]="#C8BBA0",["SHELF_OVL"]="#8FA3AE",["TV_BASE"]="#9AA4A6",["TV_DARK"]="#3A3B3C",["TREE_BASE"]="#B6A88E",["TREE_OVL"]="#7C8A6A",["TREE_LIGHT"]="#9BA98A",["TREE_DARK"]="#4F5C45",["PLANT_BASE"]="#C08A5E",["PLANT_OVL"]="#84977A",["PLANT_LEAF_DARK"]="#5E6E58",["BED_BASE"]="#EDE2C9",["BED_OVL"]="#C7A46A",["CARPET"]="#D9C08A",["CARPET_EDGE"]="#5A4634",["ROOM_TINT"]="#E6DAC0",["SEAL"]="#A8391B",["TAG"]="#7A8FA0",["GOLD"]="#C9A961",["PAPER"]="#EFE4CE"},["room_colors"]={"#DCE7EF","#CBDDEA","#BFD2E4","#E1E7EC"},["wall"]="#1B3A56",["door"]="#C3563B",["accent"]="#B4412C",["note"]="7×7 新关专属：冷蓝晒图底 + 朱红批注门，与 6×6 四关的暖棕/浅色系明确区分"},
-  hint_preview = {{["rule"]="该家具四邻、同区域、可站人的格",["cells"]={"6:3","7:4"},["count"]=2},{["rule"]="该家具四邻、同区域、可站人的格",["cells"]={"3:3","4:2","4:4","5:3","6:4"},["count"]=5},{["rule"]="该家具四邻、同区域、可站人的格",["cells"]={"1:2","1:4","2:1","2:6","3:2","3:7","4:1","4:5","5:4","5:6","6:1","6:4","7:2","7:5"},["count"]=14},{["rule"]="该家具四邻、同区域、可站人的格",["cells"]={"1:5","2:6","6:7"},["count"]=3},{["rule"]="该家具自己的格子",["cells"]={"3:2","5:4"},["count"]=2},{["rule"]="该家具自己的格子",["cells"]={"2:6","5:6"},["count"]=2},{["rule"]="该家具四邻、同区域、可站人的格",["cells"]={"2:4","3:3","5:6","6:7"},["count"]=4}},
+  general_clues = {}, meta = { announce = "none" },
+  solution = {
+    A = {r=3,c=2}, B = {r=6,c=7}, C = {r=2,c=6}, D = {r=4,c=5},
+    E = {r=7,c=4}, F = {r=5,c=3}, V = {r=1,c=1},
+  },
+  hint_preview = {
+    {rule="该家具自己的格子",cells={"3:2","5:4"},count=2},
+    {rule="不做位置提示",cells={},count=0},
+    {rule="该家具自己的格子",cells={"2:6","5:6"},count=2},
+    {rule="该家具四邻、同区域、可站人的格",cells={"1:2","1:4","2:1","2:6","3:2","3:7","4:1","4:5","5:4","5:6","6:1","6:4","7:2","7:5"},count=14},
+    {rule="该家具四邻、同区域、可站人的格",cells={"6:3","7:4"},count=2},
+    {rule="该家具四邻、同区域、可站人的格",cells={"3:3","4:2","4:4","5:3","6:4"},count=5},
+    {rule="不做位置提示",cells={},count=0},
+  },
+  visual_theme = {key="blueprint",name="蓝晒图 · 靛青网格 / 朱红批注（7×7 专属）",room_colors={"#DCE7EF","#CBDDEA","#BFD2E4","#E1E7EC"},wall="#1B3A56",door="#C3563B",accent="#B4412C"},
 }
 
 end
@@ -14174,7 +14178,7 @@ end
 
 -- ==== 入口：官方生命周期回调（OnInit / OnStart / OnUpdate / ...）==== --
 local FORCE_LEVEL = nil
-if print then print("[murdoku] ===== 构建标记 v712 / 2026-11-17 / 七关常见身份称呼：who、what与教程全文同步 =====") end
+if print then print("[murdoku] ===== 构建标记 v714 / 2026-11-17 / 第六关全真身份唯一、方位同室与人数收尾 =====") end
 local Murdoku, Qianxing
 local LOAD_ERR = nil
 local ok1 = pcall(function() Murdoku = __require("main") end)
@@ -14269,7 +14273,7 @@ local function check_canvas()
     local same = (math.abs(w - CANVAS_EXPECT.w) < 0.6) and (math.abs(h - CANVAS_EXPECT.h) < 0.6)
     if same then
       if print then
-        print("[murdoku] ===== 构建标记 v712 / 2026-11-17 / 七关常见身份称呼：who、what与教程全文同步 =====")
+        print("[murdoku] ===== 构建标记 v714 / 2026-11-17 / 第六关全真身份唯一、方位同室与人数收尾 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -14793,6 +14797,9 @@ local function bind_help617()
       table.sort(yes); table.sort(no)
       help_write(c["help617.title"], (cur.level and cur.level.name or "本关") .. " · 注释")
       help_write(c["help617.body"], "可站人的家具：" .. (#yes > 0 and table.concat(yes, "、") or "本关未配置") .. "。\n\n不可站人的家具：" .. (#no > 0 and table.concat(no, "、") or "本关未配置") .. "。\n\n普通可站空格也可放人；墙体、禁用格及水域不能站人。\n具体家具以本关配置为准。")
+      if id == "case_006" then
+        help_write(c["help617.body"], "本关七条线索均为真。每行、每列各一人。\n\n先用全部线索求候选格，不预设身份或套人数规则。\n盗窃者说真话时，必须仍有多个可选位置。\n\n盗窃者在老师房间的门相邻房间中；排除盗窃者后，\n该房间的无辜人数必须唯一最多。\n\n椅子、地毯和空格可站；桌子、书架、植物、雕塑不可站。\n旁边指同房间四邻格；上方不要求同列。")
+      end
       help617.level = id
       help617.open = true
       help_visible(c["help617"], true)

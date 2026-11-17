@@ -1,0 +1,93 @@
+{
+  "version": 696,
+  "base": {
+    "file": "qianxing-murdoku\\695_地毯原型注册与改名\\695_地毯原型注册与改名.gil",
+    "sha256": "c4819ae9753d14924b8a25eba53caa1be8bcd62df1c3873123e12ba453b640a0",
+    "records": 8007,
+    "luaBytes": 611656
+  },
+  "output": {
+    "expectRecords": 8011,
+    "added": 4,
+    "luaBytes": 614313,
+    "sha256": "44878bf89a482d7daa36f23d604c22992a3ba6051ad36706612dac25277d07fb",
+    "bytes": 7061044,
+    "recordsOnDisk": 8011,
+    "changedExisting": 4,
+    "changedRecordIds": [
+      1073760714,
+      1073760715,
+      1073760737,
+      1073760738
+    ],
+    "luaRoundtrip": true
+  },
+  "corner": {
+    "patches": [
+      {
+        "id": 1073760757,
+        "content": 1073760714,
+        "template": "furn.rug.4",
+        "copy": "src",
+        "x": 6.48,
+        "y": -6.48,
+        "size": 12.96,
+        "color": "0xFFB89A62"
+      },
+      {
+        "id": 1073760758,
+        "content": 1073760715,
+        "template": "furn.rug.4",
+        "copy": "mama",
+        "x": 6.48,
+        "y": -6.48,
+        "size": 12.96,
+        "color": "0xFFB89A62"
+      },
+      {
+        "id": 1073760759,
+        "content": 1073760737,
+        "template": "furn.rug.5",
+        "copy": "src",
+        "x": -6.48,
+        "y": -6.48,
+        "size": 12.96,
+        "color": "0xFFB89A62"
+      },
+      {
+        "id": 1073760760,
+        "content": 1073760738,
+        "template": "furn.rug.5",
+        "copy": "mama",
+        "x": -6.48,
+        "y": -6.48,
+        "size": 12.96,
+        "color": "0xFFB89A62"
+      }
+    ],
+    "color": "0xFFB89A62",
+    "size": 12.96,
+    "note": "深棕外框色，与每格「深色底」层同色；放在 L 形缺角象限的左上角，把右上格下边 / 左下格右边的两条外框带连成连续 L 形直角"
+  },
+  "lua": {
+    "patches": 5,
+    "reversible": true,
+    "revertToBase": "逐字节一致"
+  },
+  "selectThumb": {
+    "area": "棕色 inner 比例 x+6.9% / y+16.4% / w86.1% / h78.3%，内缩 8px",
+    "cells": "rows×cols 格，每格按 room_grid 房间号取 ROOM_COLORS 底色",
+    "walls": "深墨 #20262C 细条；v=列间竖线，h=行间横线",
+    "doors": "橙红 #DC5B29 短条，占格线中段 44%",
+    "furniture": "不画（用户要求省略）",
+    "name": "底部白色边缘 .info 文本 = 关卡短名，style=card.name 深棕 #4A2E1C",
+    "info": "顶部 .title = 6x6 / 嫌疑人数等规格信息"
+  },
+  "texts": {
+    "changed": 0,
+    "note": "关卡名走 Lua 动态文本；静态文本零改动"
+  },
+  "puzzle": {
+    "note": "谜题数据零改动；695 的三格地毯原型注册与人名改写全部保留"
+  }
+}

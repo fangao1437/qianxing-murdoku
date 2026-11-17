@@ -1,0 +1,2571 @@
+{
+  "version": "688",
+  "levels": [
+    {
+      "level": 4,
+      "lua": {
+        "hint_preview": {
+          "1": {
+            "rule": "该家具自己的格子",
+            "cells": [
+              "1:2",
+              "6:5"
+            ],
+            "count": 2
+          },
+          "2": {
+            "rule": "该家具四邻、同区域、可站人的格",
+            "cells": [
+              "1:2",
+              "2:1"
+            ],
+            "count": 2
+          },
+          "3": {
+            "rule": "该家具自己的格子",
+            "cells": [
+              "2:2",
+              "2:3",
+              "6:1",
+              "6:2"
+            ],
+            "count": 4
+          },
+          "4": {
+            "rule": "不做位置提示",
+            "cells": [],
+            "count": 0
+          },
+          "5": {
+            "rule": "该家具四邻、同区域、可站人的格",
+            "cells": [
+              "1:5",
+              "2:4",
+              "3:5"
+            ],
+            "count": 3
+          },
+          "6": {
+            "rule": "该家具四邻、同区域、可站人的格",
+            "cells": [
+              "1:6",
+              "3:6",
+              "4:6",
+              "5:5",
+              "6:6"
+            ],
+            "count": 5
+          }
+        },
+        "id": "case_004",
+        "name": "案件 004 · 档案卷宗 · 米纸浅色",
+        "difficulty": "normal",
+        "size": {
+          "rows": 6,
+          "cols": 6
+        },
+        "room_names": [
+          "R1",
+          "R2",
+          "R3",
+          "R4"
+        ],
+        "rules": {
+          "one_per_row": true,
+          "one_per_col": true,
+          "one_per_room": false,
+          "place_all": true,
+          "tie_policy": "forbid"
+        },
+        "walls": [
+          [
+            "v",
+            1,
+            3
+          ],
+          [
+            "v",
+            2,
+            3
+          ],
+          [
+            "v",
+            3,
+            3
+          ],
+          [
+            "h",
+            3,
+            3
+          ],
+          [
+            "h",
+            3,
+            4
+          ],
+          [
+            "h",
+            3,
+            5
+          ],
+          [
+            "h",
+            3,
+            6
+          ],
+          [
+            "h",
+            4,
+            1
+          ],
+          [
+            "v",
+            4,
+            2
+          ],
+          [
+            "h",
+            4,
+            2
+          ],
+          [
+            "v",
+            5,
+            2
+          ],
+          [
+            "v",
+            6,
+            2
+          ]
+        ],
+        "doors": [
+          [
+            "v",
+            2,
+            3
+          ],
+          [
+            "v",
+            4,
+            2
+          ],
+          [
+            "h",
+            4,
+            2
+          ],
+          [
+            "h",
+            3,
+            5
+          ],
+          [
+            "v",
+            6,
+            2
+          ]
+        ],
+        "objects": {
+          "桌子": {
+            "cells": [
+              {
+                "r": 1,
+                "c": 1
+              }
+            ],
+            "occupiable": false,
+            "kind": "table"
+          },
+          "椅子": {
+            "cells": [
+              {
+                "r": 1,
+                "c": 2
+              },
+              {
+                "r": 6,
+                "c": 5
+              }
+            ],
+            "occupiable": true,
+            "kind": "chair"
+          },
+          "书架": {
+            "cells": [
+              {
+                "r": 2,
+                "c": 5
+              }
+            ],
+            "occupiable": false,
+            "kind": "shelf"
+          },
+          "植物": {
+            "cells": [
+              {
+                "r": 5,
+                "c": 6
+              },
+              {
+                "r": 2,
+                "c": 6
+              }
+            ],
+            "occupiable": false,
+            "kind": "plant"
+          },
+          "地毯": {
+            "cells": [
+              {
+                "r": 2,
+                "c": 2
+              },
+              {
+                "r": 2,
+                "c": 3
+              },
+              {
+                "r": 6,
+                "c": 1
+              },
+              {
+                "r": 6,
+                "c": 2
+              }
+            ],
+            "occupiable": true,
+            "kind": "carpet"
+          }
+        },
+        "blocked": [],
+        "water": [],
+        "suspects": [
+          {
+            "id": "A",
+            "name": "卷宗管理员",
+            "portrait": "portrait.A"
+          },
+          {
+            "id": "B",
+            "name": "米纸誊录员",
+            "portrait": "portrait.B"
+          },
+          {
+            "id": "C",
+            "name": "页角修复师",
+            "portrait": "portrait.C"
+          },
+          {
+            "id": "D",
+            "name": "夜巡值守",
+            "portrait": "portrait.D"
+          },
+          {
+            "id": "E",
+            "name": "借阅登记员",
+            "portrait": "portrait.E"
+          },
+          {
+            "id": "V",
+            "name": "老馆长",
+            "portrait": "portrait.V",
+            "is_victim": true
+          }
+        ],
+        "victim": {
+          "id": "V",
+          "name": "老馆长"
+        },
+        "roles": {
+          "thief": "E"
+        },
+        "clues": [
+          {
+            "type": "on_object",
+            "who": "D",
+            "object": "椅子"
+          },
+          {
+            "type": "beside_object",
+            "who": "B",
+            "object": "桌子"
+          },
+          {
+            "type": "on_object",
+            "who": "C",
+            "object": "地毯"
+          },
+          {
+            "type": "above",
+            "a": "A",
+            "b": "D",
+            "same_column": false
+          },
+          {
+            "type": "beside_object",
+            "who": "D",
+            "object": "书架"
+          },
+          {
+            "type": "beside_object",
+            "who": "V",
+            "object": "植物"
+          }
+        ],
+        "general_clues": {},
+        "meta": {
+          "announce": "unknown",
+          "false_clue": 5
+        },
+        "solution": {
+          "A": {
+            "r": 5,
+            "c": 4
+          },
+          "B": {
+            "r": 1,
+            "c": 2
+          },
+          "C": {
+            "r": 2,
+            "c": 3
+          },
+          "D": {
+            "r": 6,
+            "c": 5
+          },
+          "E": {
+            "r": 3,
+            "c": 1
+          },
+          "V": {
+            "r": 4,
+            "c": 6
+          }
+        },
+        "visual_theme": {
+          "key": "archive-light",
+          "name": "档案卷宗 · 米纸浅色（美术调研 variant）",
+          "palette": {
+            "INK": "#3F2A1E",
+            "INK_SOFT": "#6B4A34",
+            "GRAY": "#B9AC97",
+            "GRAY_DARK": "#8A7A66",
+            "WHITE": "#F8F1E2",
+            "SHADOW": "#241812",
+            "CHAIR_BASE": "#E3D5B8",
+            "CHAIR_LIGHT": "#F0E6D0",
+            "CHAIR_OVL": "#B08A55",
+            "TABLE_BASE": "#D9C7A3",
+            "TABLE_EDGE": "#8A6B45",
+            "SHELF_BASE": "#C8BBA0",
+            "SHELF_OVL": "#8FA3AE",
+            "TV_BASE": "#9AA4A6",
+            "TV_DARK": "#3A3B3C",
+            "TREE_BASE": "#B6A88E",
+            "TREE_OVL": "#7C8A6A",
+            "TREE_LIGHT": "#9BA98A",
+            "TREE_DARK": "#4F5C45",
+            "PLANT_BASE": "#C08A5E",
+            "PLANT_OVL": "#84977A",
+            "PLANT_LEAF_DARK": "#5E6E58",
+            "BED_BASE": "#EDE2C9",
+            "BED_OVL": "#C7A46A",
+            "CARPET": "#D9C08A",
+            "CARPET_EDGE": "#5A4634",
+            "ROOM_TINT": "#E6DAC0",
+            "SEAL": "#A8391B",
+            "TAG": "#7A8FA0",
+            "GOLD": "#C9A961",
+            "PAPER": "#EFE4CE"
+          },
+          "room_colors": [
+            "#E6DAC0",
+            "#D9CEC0",
+            "#C9D6CE",
+            "#D6D9E2"
+          ],
+          "wall": "#3F2A1E",
+          "door": "#C9A961",
+          "accent": "#A8391B",
+          "note": "6 色低饱和档案纸；粗墙深棕墨、门改铜色；家具走差异化命名"
+        }
+      },
+      "texts": [
+        {
+          "slot": 1,
+          "letter": "A",
+          "who": "卷宗管理员",
+          "what": "夜巡值守在椅子上"
+        },
+        {
+          "slot": 2,
+          "letter": "B",
+          "who": "米纸誊录员",
+          "what": "我在桌子旁边"
+        },
+        {
+          "slot": 3,
+          "letter": "C",
+          "who": "页角修复师",
+          "what": "我在地毯上"
+        },
+        {
+          "slot": 4,
+          "letter": "D",
+          "who": "夜巡值守",
+          "what": "卷宗管理员在我上方"
+        },
+        {
+          "slot": 5,
+          "letter": "E",
+          "who": "借阅登记员",
+          "what": "夜巡值守在书架旁边"
+        },
+        {
+          "slot": 6,
+          "letter": "V",
+          "who": "老馆长",
+          "what": "我在植物旁边"
+        }
+      ],
+      "hints": [
+        {
+          "slot": 1,
+          "type": "on_object",
+          "rule": "该家具自己的格子",
+          "count": 2,
+          "cells": [
+            "1:2",
+            "6:5"
+          ]
+        },
+        {
+          "slot": 2,
+          "type": "beside_object",
+          "rule": "该家具四邻、同区域、可站人的格",
+          "count": 2,
+          "cells": [
+            "1:2",
+            "2:1"
+          ]
+        },
+        {
+          "slot": 3,
+          "type": "on_object",
+          "rule": "该家具自己的格子",
+          "count": 4,
+          "cells": [
+            "2:2",
+            "2:3",
+            "6:1",
+            "6:2"
+          ]
+        },
+        {
+          "slot": 4,
+          "type": "above",
+          "rule": "不做位置提示",
+          "count": 0,
+          "cells": []
+        },
+        {
+          "slot": 5,
+          "type": "beside_object",
+          "rule": "该家具四邻、同区域、可站人的格",
+          "count": 3,
+          "cells": [
+            "1:5",
+            "2:4",
+            "3:5"
+          ]
+        },
+        {
+          "slot": 6,
+          "type": "beside_object",
+          "rule": "该家具四邻、同区域、可站人的格",
+          "count": 5,
+          "cells": [
+            "1:6",
+            "3:6",
+            "4:6",
+            "5:5",
+            "6:6"
+          ]
+        }
+      ],
+      "clue_predicates": [
+        [
+          "D在椅子上"
+        ],
+        [
+          "B在桌子旁边"
+        ],
+        [
+          "C在地毯上"
+        ],
+        [
+          "A在D上方"
+        ],
+        [
+          "D在书架旁边"
+        ],
+        [
+          "V在植物旁边"
+        ]
+      ],
+      "order_table": [
+        {
+          "slot": 1,
+          "speaker": "A",
+          "name": "卷宗管理员",
+          "from_slot": 1,
+          "predicate": [
+            "D在椅子上"
+          ],
+          "design_text": [
+            "D在椅子上"
+          ],
+          "archive_text": [
+            "夜巡值守在椅子上"
+          ],
+          "self_narrated": false
+        },
+        {
+          "slot": 2,
+          "speaker": "B",
+          "name": "米纸誊录员",
+          "from_slot": 6,
+          "predicate": [
+            "B在桌子旁边"
+          ],
+          "design_text": [
+            "我在桌子旁边"
+          ],
+          "archive_text": [
+            "我在桌子旁边"
+          ],
+          "self_narrated": true
+        },
+        {
+          "slot": 3,
+          "speaker": "C",
+          "name": "页角修复师",
+          "from_slot": 3,
+          "predicate": [
+            "C在地毯上"
+          ],
+          "design_text": [
+            "我在地毯上"
+          ],
+          "archive_text": [
+            "我在地毯上"
+          ],
+          "self_narrated": true
+        },
+        {
+          "slot": 4,
+          "speaker": "D",
+          "name": "夜巡值守",
+          "from_slot": 4,
+          "predicate": [
+            "A在D上方"
+          ],
+          "design_text": [
+            "A在我上方"
+          ],
+          "archive_text": [
+            "卷宗管理员在我上方"
+          ],
+          "self_narrated": true
+        },
+        {
+          "slot": 5,
+          "speaker": "E",
+          "name": "借阅登记员",
+          "from_slot": 5,
+          "predicate": [
+            "D在书架旁边"
+          ],
+          "design_text": [
+            "D在书架旁边"
+          ],
+          "archive_text": [
+            "夜巡值守在书架旁边"
+          ],
+          "self_narrated": false
+        },
+        {
+          "slot": 6,
+          "speaker": "V",
+          "name": "老馆长",
+          "from_slot": 2,
+          "predicate": [
+            "V在植物旁边"
+          ],
+          "design_text": [
+            "我在植物旁边"
+          ],
+          "archive_text": [
+            "我在植物旁边"
+          ],
+          "self_narrated": true
+        }
+      ]
+    },
+    {
+      "level": 5,
+      "lua": {
+        "hint_preview": {
+          "1": {
+            "rule": "不做位置提示",
+            "cells": [],
+            "count": 0
+          },
+          "2": {
+            "rule": "不做位置提示",
+            "cells": [],
+            "count": 0
+          },
+          "3": {
+            "rule": "不做位置提示",
+            "cells": [],
+            "count": 0
+          },
+          "4": {
+            "rule": "不做位置提示",
+            "cells": [],
+            "count": 0
+          },
+          "5": {
+            "rule": "该家具自己的格子",
+            "cells": [
+              "2:2",
+              "2:3",
+              "6:2"
+            ],
+            "count": 3
+          },
+          "6": {
+            "rule": "该家具四邻、同区域、可站人的格",
+            "cells": [
+              "1:3",
+              "2:2",
+              "5:5",
+              "6:4",
+              "6:6"
+            ],
+            "count": 5
+          }
+        },
+        "id": "case_005",
+        "name": "案件 005 · 夜勘卷宗 · 深棕墨/火漆红",
+        "difficulty": "hard",
+        "size": {
+          "rows": 6,
+          "cols": 6
+        },
+        "room_names": [
+          "R1",
+          "R2",
+          "R3",
+          "R4"
+        ],
+        "rules": {
+          "one_per_row": true,
+          "one_per_col": true,
+          "one_per_room": false,
+          "place_all": true,
+          "tie_policy": "forbid"
+        },
+        "walls": [
+          [
+            "v",
+            1,
+            3
+          ],
+          [
+            "v",
+            2,
+            3
+          ],
+          [
+            "h",
+            2,
+            4
+          ],
+          [
+            "v",
+            3,
+            3
+          ],
+          [
+            "h",
+            3,
+            3
+          ],
+          [
+            "v",
+            3,
+            4
+          ],
+          [
+            "h",
+            3,
+            5
+          ],
+          [
+            "h",
+            3,
+            6
+          ],
+          [
+            "h",
+            4,
+            1
+          ],
+          [
+            "v",
+            4,
+            2
+          ],
+          [
+            "h",
+            4,
+            2
+          ],
+          [
+            "v",
+            5,
+            2
+          ],
+          [
+            "v",
+            6,
+            2
+          ]
+        ],
+        "doors": [
+          [
+            "v",
+            1,
+            3
+          ],
+          [
+            "v",
+            4,
+            2
+          ],
+          [
+            "h",
+            4,
+            2
+          ],
+          [
+            "h",
+            3,
+            5
+          ],
+          [
+            "v",
+            6,
+            2
+          ]
+        ],
+        "objects": {
+          "桌子": {
+            "cells": [
+              {
+                "r": 4,
+                "c": 4
+              }
+            ],
+            "occupiable": false,
+            "kind": "table"
+          },
+          "椅子": {
+            "cells": [
+              {
+                "r": 1,
+                "c": 2
+              },
+              {
+                "r": 6,
+                "c": 5
+              }
+            ],
+            "occupiable": true,
+            "kind": "chair"
+          },
+          "书架": {
+            "cells": [
+              {
+                "r": 2,
+                "c": 5
+              }
+            ],
+            "occupiable": false,
+            "kind": "shelf"
+          },
+          "植物": {
+            "cells": [
+              {
+                "r": 1,
+                "c": 1
+              }
+            ],
+            "occupiable": false,
+            "kind": "plant"
+          },
+          "地毯": {
+            "cells": [
+              {
+                "r": 2,
+                "c": 2
+              },
+              {
+                "r": 2,
+                "c": 3
+              },
+              {
+                "r": 6,
+                "c": 2
+              }
+            ],
+            "occupiable": true,
+            "kind": "carpet"
+          }
+        },
+        "blocked": [],
+        "water": [],
+        "suspects": [
+          {
+            "id": "A",
+            "name": "封条保管员",
+            "portrait": "portrait.A"
+          },
+          {
+            "id": "B",
+            "name": "夜勘记录员",
+            "portrait": "portrait.B"
+          },
+          {
+            "id": "C",
+            "name": "火漆验印师",
+            "portrait": "portrait.C"
+          },
+          {
+            "id": "D",
+            "name": "暗房洗印员",
+            "portrait": "portrait.D"
+          },
+          {
+            "id": "E",
+            "name": "证物登记员",
+            "portrait": "portrait.E"
+          },
+          {
+            "id": "V",
+            "name": "守夜馆人",
+            "portrait": "portrait.V",
+            "is_victim": true
+          }
+        ],
+        "victim": {
+          "id": "V",
+          "name": "守夜馆人"
+        },
+        "roles": {
+          "thief": "B"
+        },
+        "clues": [
+          {
+            "type": "all_of",
+            "clauses": [
+              {
+                "type": "on_object",
+                "who": "A",
+                "object": "椅子"
+              },
+              {
+                "type": "same_room",
+                "a": "C",
+                "b": "A"
+              }
+            ]
+          },
+          {
+            "type": "row_offset",
+            "who": "D",
+            "other": "A",
+            "d": 1
+          },
+          {
+            "type": "row_offset",
+            "who": "V",
+            "other": "C",
+            "d": -1
+          },
+          {
+            "type": "right_of",
+            "a": "D",
+            "b": "B",
+            "same_row": false
+          },
+          {
+            "type": "only_on_object",
+            "who": "E",
+            "object": "地毯"
+          },
+          {
+            "type": "not_beside_object",
+            "who": "E",
+            "object": "椅子"
+          }
+        ],
+        "general_clues": {},
+        "meta": {
+          "announce": "unknown",
+          "false_clue": 2
+        },
+        "solution": {
+          "A": {
+            "r": 6,
+            "c": 5
+          },
+          "B": {
+            "r": 3,
+            "c": 1
+          },
+          "C": {
+            "r": 5,
+            "c": 4
+          },
+          "D": {
+            "r": 1,
+            "c": 2
+          },
+          "E": {
+            "r": 2,
+            "c": 3
+          },
+          "V": {
+            "r": 4,
+            "c": 6
+          }
+        },
+        "visual_theme": {
+          "key": "archive-dark",
+          "name": "夜勘卷宗 · 深棕墨 / 火漆红",
+          "palette": {
+            "INK": "#3F2A1E",
+            "INK_SOFT": "#6B4A34",
+            "GRAY": "#B9AC97",
+            "GRAY_DARK": "#8A7A66",
+            "WHITE": "#F8F1E2",
+            "SHADOW": "#241812",
+            "CHAIR_BASE": "#E3D5B8",
+            "CHAIR_LIGHT": "#F0E6D0",
+            "CHAIR_OVL": "#B08A55",
+            "TABLE_BASE": "#D9C7A3",
+            "TABLE_EDGE": "#8A6B45",
+            "SHELF_BASE": "#C8BBA0",
+            "SHELF_OVL": "#8FA3AE",
+            "TV_BASE": "#9AA4A6",
+            "TV_DARK": "#3A3B3C",
+            "TREE_BASE": "#B6A88E",
+            "TREE_OVL": "#7C8A6A",
+            "TREE_LIGHT": "#9BA98A",
+            "TREE_DARK": "#4F5C45",
+            "PLANT_BASE": "#C08A5E",
+            "PLANT_OVL": "#84977A",
+            "PLANT_LEAF_DARK": "#5E6E58",
+            "BED_BASE": "#EDE2C9",
+            "BED_OVL": "#C7A46A",
+            "CARPET": "#D9C08A",
+            "CARPET_EDGE": "#5A4634",
+            "ROOM_TINT": "#E6DAC0",
+            "SEAL": "#A8391B",
+            "TAG": "#7A8FA0",
+            "GOLD": "#C9A961",
+            "PAPER": "#EFE4CE"
+          },
+          "room_colors": [
+            "#D8CBB0",
+            "#C9BCA6",
+            "#B8C6BE",
+            "#C4C8D2"
+          ],
+          "wall": "#241812",
+          "door": "#A8391B",
+          "accent": "#7A2A16",
+          "note": "与第4关同色系但更暗，火漆红门；门墙结构、家具、人物 id 均改动"
+        }
+      },
+      "texts": [
+        {
+          "slot": 1,
+          "letter": "A",
+          "who": "封条保管员",
+          "what": "我在椅子上、火漆验印师与我在同一房间"
+        },
+        {
+          "slot": 2,
+          "letter": "B",
+          "who": "夜勘记录员",
+          "what": "暗房洗印员比封条保管员靠下1行"
+        },
+        {
+          "slot": 3,
+          "letter": "C",
+          "who": "火漆验印师",
+          "what": "守夜馆人比我靠上1行"
+        },
+        {
+          "slot": 4,
+          "letter": "D",
+          "who": "暗房洗印员",
+          "what": "我在夜勘记录员右方"
+        },
+        {
+          "slot": 5,
+          "letter": "E",
+          "who": "证物登记员",
+          "what": "只有我在地毯上"
+        },
+        {
+          "slot": 6,
+          "letter": "V",
+          "who": "守夜馆人",
+          "what": "证物登记员不在椅子旁边"
+        }
+      ],
+      "hints": [
+        {
+          "slot": 1,
+          "type": "all_of",
+          "rule": "不做位置提示",
+          "count": 0,
+          "cells": [],
+          "reference_665": {
+            "rule": "静态位置子句交集",
+            "count": 2,
+            "cells": [
+              "1:2",
+              "6:5"
+            ]
+          },
+          "note": "665 为废案；666 与当前主线 687 不给复合卡静态高亮"
+        },
+        {
+          "slot": 2,
+          "type": "row_offset",
+          "rule": "不做位置提示",
+          "count": 0,
+          "cells": []
+        },
+        {
+          "slot": 3,
+          "type": "row_offset",
+          "rule": "不做位置提示",
+          "count": 0,
+          "cells": []
+        },
+        {
+          "slot": 4,
+          "type": "right_of",
+          "rule": "不做位置提示",
+          "count": 0,
+          "cells": []
+        },
+        {
+          "slot": 5,
+          "type": "only_on_object",
+          "rule": "该家具自己的格子",
+          "count": 3,
+          "cells": [
+            "2:2",
+            "2:3",
+            "6:2"
+          ]
+        },
+        {
+          "slot": 6,
+          "type": "not_beside_object",
+          "rule": "该家具四邻、同区域、可站人的格",
+          "count": 5,
+          "cells": [
+            "1:3",
+            "2:2",
+            "5:5",
+            "6:4",
+            "6:6"
+          ]
+        }
+      ],
+      "clue_predicates": [
+        [
+          "A在椅子上",
+          "C与A在同一房间"
+        ],
+        [
+          "D比A靠下1行"
+        ],
+        [
+          "V比C靠上1行"
+        ],
+        [
+          "D在B右方"
+        ],
+        [
+          "只有E在地毯上"
+        ],
+        [
+          "E不在椅子旁边"
+        ]
+      ],
+      "order_table": [
+        {
+          "slot": 1,
+          "speaker": "A",
+          "name": "封条保管员",
+          "from_slot": 3,
+          "predicate": [
+            "A在椅子上",
+            "C与A在同一房间"
+          ],
+          "design_text": [
+            "我在椅子上",
+            "C与我在同一房间"
+          ],
+          "archive_text": [
+            "我在椅子上",
+            "火漆验印师与我在同一房间"
+          ],
+          "self_narrated": true
+        },
+        {
+          "slot": 2,
+          "speaker": "B",
+          "name": "夜勘记录员",
+          "from_slot": 2,
+          "predicate": [
+            "D比A靠下1行"
+          ],
+          "design_text": [
+            "D比A靠下1行"
+          ],
+          "archive_text": [
+            "暗房洗印员比封条保管员靠下1行"
+          ],
+          "self_narrated": false
+        },
+        {
+          "slot": 3,
+          "speaker": "C",
+          "name": "火漆验印师",
+          "from_slot": 1,
+          "predicate": [
+            "V比C靠上1行"
+          ],
+          "design_text": [
+            "V比我靠上1行"
+          ],
+          "archive_text": [
+            "守夜馆人比我靠上1行"
+          ],
+          "self_narrated": true
+        },
+        {
+          "slot": 4,
+          "speaker": "D",
+          "name": "暗房洗印员",
+          "from_slot": 4,
+          "predicate": [
+            "D在B右方"
+          ],
+          "design_text": [
+            "我在B右方"
+          ],
+          "archive_text": [
+            "我在夜勘记录员右方"
+          ],
+          "self_narrated": true
+        },
+        {
+          "slot": 5,
+          "speaker": "E",
+          "name": "证物登记员",
+          "from_slot": 5,
+          "predicate": [
+            "只有E在地毯上"
+          ],
+          "design_text": [
+            "只有我在地毯上"
+          ],
+          "archive_text": [
+            "只有我在地毯上"
+          ],
+          "self_narrated": true
+        },
+        {
+          "slot": 6,
+          "speaker": "V",
+          "name": "守夜馆人",
+          "from_slot": 6,
+          "predicate": [
+            "E不在椅子旁边"
+          ],
+          "design_text": [
+            "E不在椅子旁边"
+          ],
+          "archive_text": [
+            "证物登记员不在椅子旁边"
+          ],
+          "self_narrated": false
+        }
+      ]
+    },
+    {
+      "level": 6,
+      "lua": {
+        "hint_preview": {
+          "1": {
+            "rule": "该家具自己的格子",
+            "cells": [
+              "3:2",
+              "5:4"
+            ],
+            "count": 2
+          },
+          "2": {
+            "rule": "该家具四邻、同区域、可站人的格",
+            "cells": [
+              "3:3",
+              "4:2",
+              "4:4",
+              "5:3",
+              "6:4"
+            ],
+            "count": 5
+          },
+          "3": {
+            "rule": "不做位置提示",
+            "cells": [],
+            "count": 0
+          },
+          "4": {
+            "rule": "不做位置提示",
+            "cells": [],
+            "count": 0
+          },
+          "5": {
+            "rule": "不做位置提示",
+            "cells": [],
+            "count": 0
+          },
+          "6": {
+            "rule": "该家具四邻、同区域、可站人的格",
+            "cells": [
+              "3:3",
+              "4:2",
+              "4:4",
+              "5:3",
+              "6:4"
+            ],
+            "count": 5
+          },
+          "7": {
+            "rule": "不做位置提示",
+            "cells": [],
+            "count": 0
+          }
+        },
+        "id": "case_006",
+        "name": "案件 006 · 蓝晒图 · 靛青网格/朱红批注",
+        "difficulty": "normal",
+        "size": {
+          "rows": 7,
+          "cols": 7
+        },
+        "room_names": [
+          "R1",
+          "R2",
+          "R3",
+          "R4"
+        ],
+        "rules": {
+          "one_per_row": true,
+          "one_per_col": true,
+          "one_per_room": false,
+          "place_all": true,
+          "tie_policy": "forbid"
+        },
+        "walls": [
+          [
+            "v",
+            1,
+            4
+          ],
+          [
+            "v",
+            2,
+            4
+          ],
+          [
+            "h",
+            3,
+            3
+          ],
+          [
+            "v",
+            3,
+            4
+          ],
+          [
+            "h",
+            3,
+            4
+          ],
+          [
+            "h",
+            3,
+            5
+          ],
+          [
+            "h",
+            3,
+            6
+          ],
+          [
+            "h",
+            3,
+            7
+          ],
+          [
+            "h",
+            4,
+            1
+          ],
+          [
+            "v",
+            4,
+            2
+          ],
+          [
+            "h",
+            4,
+            2
+          ],
+          [
+            "v",
+            5,
+            2
+          ],
+          [
+            "v",
+            6,
+            2
+          ],
+          [
+            "v",
+            7,
+            2
+          ]
+        ],
+        "doors": [
+          [
+            "h",
+            3,
+            3
+          ],
+          [
+            "v",
+            3,
+            4
+          ],
+          [
+            "h",
+            3,
+            4
+          ],
+          [
+            "h",
+            3,
+            5
+          ],
+          [
+            "h",
+            3,
+            6
+          ],
+          [
+            "h",
+            4,
+            1
+          ],
+          [
+            "v",
+            4,
+            2
+          ],
+          [
+            "h",
+            4,
+            2
+          ],
+          [
+            "v",
+            7,
+            2
+          ]
+        ],
+        "objects": {
+          "桌子": {
+            "cells": [
+              {
+                "r": 1,
+                "c": 3
+              },
+              {
+                "r": 1,
+                "c": 7
+              },
+              {
+                "r": 2,
+                "c": 2
+              },
+              {
+                "r": 2,
+                "c": 7
+              },
+              {
+                "r": 3,
+                "c": 1
+              },
+              {
+                "r": 5,
+                "c": 5
+              },
+              {
+                "r": 6,
+                "c": 5
+              },
+              {
+                "r": 7,
+                "c": 1
+              },
+              {
+                "r": 7,
+                "c": 6
+              }
+            ],
+            "occupiable": false,
+            "kind": "table"
+          },
+          "椅子": {
+            "cells": [
+              {
+                "r": 3,
+                "c": 2
+              },
+              {
+                "r": 5,
+                "c": 4
+              }
+            ],
+            "occupiable": true,
+            "kind": "chair"
+          },
+          "书架": {
+            "cells": [
+              {
+                "r": 1,
+                "c": 6
+              },
+              {
+                "r": 7,
+                "c": 7
+              }
+            ],
+            "occupiable": false,
+            "kind": "shelf"
+          },
+          "植物": {
+            "cells": [
+              {
+                "r": 2,
+                "c": 3
+              },
+              {
+                "r": 6,
+                "c": 6
+              }
+            ],
+            "occupiable": false,
+            "kind": "plant"
+          },
+          "地毯": {
+            "cells": [
+              {
+                "r": 2,
+                "c": 6
+              },
+              {
+                "r": 5,
+                "c": 6
+              }
+            ],
+            "occupiable": true,
+            "kind": "carpet"
+          }
+        },
+        "blocked": [],
+        "water": [],
+        "suspects": [
+          {
+            "id": "A",
+            "name": "晒图学徒",
+            "portrait": "portrait.A"
+          },
+          {
+            "id": "B",
+            "name": "靛青描图员",
+            "portrait": "portrait.B"
+          },
+          {
+            "id": "C",
+            "name": "野外测绘员",
+            "portrait": "portrait.C"
+          },
+          {
+            "id": "D",
+            "name": "朱批校样员",
+            "portrait": "portrait.D"
+          },
+          {
+            "id": "E",
+            "name": "蓝图管理员",
+            "portrait": "portrait.E"
+          },
+          {
+            "id": "F",
+            "name": "工地放样员",
+            "portrait": "portrait.F"
+          },
+          {
+            "id": "V",
+            "name": "总测绘师",
+            "portrait": "portrait.V",
+            "is_victim": true
+          }
+        ],
+        "victim": {
+          "id": "V",
+          "name": "总测绘师"
+        },
+        "roles": {
+          "thief": "B"
+        },
+        "clues": [
+          {
+            "type": "on_object",
+            "who": "A",
+            "object": "椅子"
+          },
+          {
+            "type": "beside_object",
+            "who": "A",
+            "object": "椅子"
+          },
+          {
+            "type": "row_offset",
+            "who": "C",
+            "other": "D",
+            "d": -2
+          },
+          {
+            "type": "col_offset",
+            "who": "D",
+            "other": "C",
+            "d": -1
+          },
+          {
+            "type": "col_offset",
+            "who": "A",
+            "other": "E",
+            "d": -2
+          },
+          {
+            "type": "beside_object",
+            "who": "F",
+            "object": "椅子"
+          },
+          {
+            "type": "same_room",
+            "a": "A",
+            "b": "V"
+          }
+        ],
+        "general_clues": {},
+        "meta": {
+          "announce": "unknown",
+          "false_clue": 2
+        },
+        "solution": {
+          "A": {
+            "r": 3,
+            "c": 2
+          },
+          "B": {
+            "r": 6,
+            "c": 7
+          },
+          "C": {
+            "r": 2,
+            "c": 6
+          },
+          "D": {
+            "r": 4,
+            "c": 5
+          },
+          "E": {
+            "r": 7,
+            "c": 4
+          },
+          "F": {
+            "r": 5,
+            "c": 3
+          },
+          "V": {
+            "r": 1,
+            "c": 1
+          }
+        },
+        "visual_theme": {
+          "key": "blueprint",
+          "name": "蓝晒图 · 靛青网格 / 朱红批注（7×7 专属）",
+          "palette": {
+            "INK": "#3F2A1E",
+            "INK_SOFT": "#6B4A34",
+            "GRAY": "#B9AC97",
+            "GRAY_DARK": "#8A7A66",
+            "WHITE": "#F8F1E2",
+            "SHADOW": "#241812",
+            "CHAIR_BASE": "#E3D5B8",
+            "CHAIR_LIGHT": "#F0E6D0",
+            "CHAIR_OVL": "#B08A55",
+            "TABLE_BASE": "#D9C7A3",
+            "TABLE_EDGE": "#8A6B45",
+            "SHELF_BASE": "#C8BBA0",
+            "SHELF_OVL": "#8FA3AE",
+            "TV_BASE": "#9AA4A6",
+            "TV_DARK": "#3A3B3C",
+            "TREE_BASE": "#B6A88E",
+            "TREE_OVL": "#7C8A6A",
+            "TREE_LIGHT": "#9BA98A",
+            "TREE_DARK": "#4F5C45",
+            "PLANT_BASE": "#C08A5E",
+            "PLANT_OVL": "#84977A",
+            "PLANT_LEAF_DARK": "#5E6E58",
+            "BED_BASE": "#EDE2C9",
+            "BED_OVL": "#C7A46A",
+            "CARPET": "#D9C08A",
+            "CARPET_EDGE": "#5A4634",
+            "ROOM_TINT": "#E6DAC0",
+            "SEAL": "#A8391B",
+            "TAG": "#7A8FA0",
+            "GOLD": "#C9A961",
+            "PAPER": "#EFE4CE"
+          },
+          "room_colors": [
+            "#DCE7EF",
+            "#CBDDEA",
+            "#BFD2E4",
+            "#E1E7EC"
+          ],
+          "wall": "#1B3A56",
+          "door": "#C3563B",
+          "accent": "#B4412C",
+          "note": "7×7 新关专属：冷蓝晒图底 + 朱红批注门，与 6×6 四关的暖棕/浅色系明确区分"
+        }
+      },
+      "texts": [
+        {
+          "slot": 1,
+          "letter": "A",
+          "who": "晒图学徒",
+          "what": "我在椅子上"
+        },
+        {
+          "slot": 2,
+          "letter": "B",
+          "who": "靛青描图员",
+          "what": "晒图学徒在椅子旁边"
+        },
+        {
+          "slot": 3,
+          "letter": "C",
+          "who": "野外测绘员",
+          "what": "我比朱批校样员靠上2行"
+        },
+        {
+          "slot": 4,
+          "letter": "D",
+          "who": "朱批校样员",
+          "what": "我比野外测绘员靠左1列"
+        },
+        {
+          "slot": 5,
+          "letter": "E",
+          "who": "蓝图管理员",
+          "what": "晒图学徒比我靠左2列"
+        },
+        {
+          "slot": 6,
+          "letter": "F",
+          "who": "工地放样员",
+          "what": "我在椅子旁边"
+        },
+        {
+          "slot": 7,
+          "letter": "V",
+          "who": "总测绘师",
+          "what": "晒图学徒与我在同一房间"
+        }
+      ],
+      "hints": [
+        {
+          "slot": 1,
+          "type": "on_object",
+          "rule": "该家具自己的格子",
+          "count": 2,
+          "cells": [
+            "3:2",
+            "5:4"
+          ]
+        },
+        {
+          "slot": 2,
+          "type": "beside_object",
+          "rule": "该家具四邻、同区域、可站人的格",
+          "count": 5,
+          "cells": [
+            "3:3",
+            "4:2",
+            "4:4",
+            "5:3",
+            "6:4"
+          ]
+        },
+        {
+          "slot": 3,
+          "type": "row_offset",
+          "rule": "不做位置提示",
+          "count": 0,
+          "cells": []
+        },
+        {
+          "slot": 4,
+          "type": "col_offset",
+          "rule": "不做位置提示",
+          "count": 0,
+          "cells": []
+        },
+        {
+          "slot": 5,
+          "type": "col_offset",
+          "rule": "不做位置提示",
+          "count": 0,
+          "cells": []
+        },
+        {
+          "slot": 6,
+          "type": "beside_object",
+          "rule": "该家具四邻、同区域、可站人的格",
+          "count": 5,
+          "cells": [
+            "3:3",
+            "4:2",
+            "4:4",
+            "5:3",
+            "6:4"
+          ]
+        },
+        {
+          "slot": 7,
+          "type": "same_room",
+          "rule": "不做位置提示",
+          "count": 0,
+          "cells": []
+        }
+      ],
+      "clue_predicates": [
+        [
+          "A在椅子上"
+        ],
+        [
+          "A在椅子旁边"
+        ],
+        [
+          "C比D靠上2行"
+        ],
+        [
+          "D比C靠左1列"
+        ],
+        [
+          "A比E靠左2列"
+        ],
+        [
+          "F在椅子旁边"
+        ],
+        [
+          "A与V在同一房间"
+        ]
+      ],
+      "order_table": [
+        {
+          "slot": 1,
+          "speaker": "A",
+          "name": "晒图学徒",
+          "from_slot": 1,
+          "predicate": [
+            "A在椅子上"
+          ],
+          "design_text": [
+            "我在椅子上"
+          ],
+          "archive_text": [
+            "我在椅子上"
+          ],
+          "self_narrated": true
+        },
+        {
+          "slot": 2,
+          "speaker": "B",
+          "name": "靛青描图员",
+          "from_slot": 2,
+          "predicate": [
+            "A在椅子旁边"
+          ],
+          "design_text": [
+            "A在椅子旁边"
+          ],
+          "archive_text": [
+            "晒图学徒在椅子旁边"
+          ],
+          "self_narrated": false
+        },
+        {
+          "slot": 3,
+          "speaker": "C",
+          "name": "野外测绘员",
+          "from_slot": 4,
+          "predicate": [
+            "C比D靠上2行"
+          ],
+          "design_text": [
+            "我比D靠上2行"
+          ],
+          "archive_text": [
+            "我比朱批校样员靠上2行"
+          ],
+          "self_narrated": true
+        },
+        {
+          "slot": 4,
+          "speaker": "D",
+          "name": "朱批校样员",
+          "from_slot": 5,
+          "predicate": [
+            "D比C靠左1列"
+          ],
+          "design_text": [
+            "我比C靠左1列"
+          ],
+          "archive_text": [
+            "我比野外测绘员靠左1列"
+          ],
+          "self_narrated": true
+        },
+        {
+          "slot": 5,
+          "speaker": "E",
+          "name": "蓝图管理员",
+          "from_slot": 6,
+          "predicate": [
+            "A比E靠左2列"
+          ],
+          "design_text": [
+            "A比我靠左2列"
+          ],
+          "archive_text": [
+            "晒图学徒比我靠左2列"
+          ],
+          "self_narrated": true
+        },
+        {
+          "slot": 6,
+          "speaker": "F",
+          "name": "工地放样员",
+          "from_slot": 3,
+          "predicate": [
+            "F在椅子旁边"
+          ],
+          "design_text": [
+            "我在椅子旁边"
+          ],
+          "archive_text": [
+            "我在椅子旁边"
+          ],
+          "self_narrated": true
+        },
+        {
+          "slot": 7,
+          "speaker": "V",
+          "name": "总测绘师",
+          "from_slot": 7,
+          "predicate": [
+            "A与V在同一房间"
+          ],
+          "design_text": [
+            "A与我在同一房间"
+          ],
+          "archive_text": [
+            "晒图学徒与我在同一房间"
+          ],
+          "self_narrated": true
+        }
+      ]
+    },
+    {
+      "level": 7,
+      "lua": {
+        "hint_preview": {
+          "1": {
+            "rule": "不做位置提示",
+            "cells": [],
+            "count": 0
+          },
+          "2": {
+            "rule": "该家具四邻、同区域、可站人的格",
+            "cells": [
+              "1:3",
+              "1:4",
+              "2:3",
+              "2:4",
+              "2:5",
+              "3:4"
+            ],
+            "count": 6
+          },
+          "3": {
+            "rule": "不做位置提示",
+            "cells": [],
+            "count": 0
+          },
+          "4": {
+            "rule": "不做位置提示",
+            "cells": [],
+            "count": 0
+          },
+          "5": {
+            "rule": "不做位置提示",
+            "cells": [],
+            "count": 0
+          },
+          "6": {
+            "rule": "该家具四邻、同区域、可站人的格",
+            "cells": [
+              "1:5",
+              "2:6"
+            ],
+            "count": 2
+          }
+        },
+        "id": "case_007",
+        "name": "案件 007 · 旋转档案 · 深墨绿/铜金",
+        "difficulty": "hard",
+        "size": {
+          "rows": 6,
+          "cols": 6
+        },
+        "room_names": [
+          "R1",
+          "R2",
+          "R3",
+          "R4"
+        ],
+        "rules": {
+          "one_per_row": true,
+          "one_per_col": true,
+          "one_per_room": false,
+          "place_all": true,
+          "tie_policy": "forbid"
+        },
+        "walls": [
+          [
+            "v",
+            1,
+            2
+          ],
+          [
+            "v",
+            2,
+            2
+          ],
+          [
+            "h",
+            2,
+            2
+          ],
+          [
+            "h",
+            2,
+            3
+          ],
+          [
+            "v",
+            3,
+            1
+          ],
+          [
+            "v",
+            3,
+            3
+          ],
+          [
+            "h",
+            3,
+            4
+          ],
+          [
+            "v",
+            4,
+            1
+          ],
+          [
+            "h",
+            4,
+            3
+          ],
+          [
+            "v",
+            4,
+            4
+          ],
+          [
+            "h",
+            4,
+            4
+          ],
+          [
+            "h",
+            4,
+            5
+          ],
+          [
+            "h",
+            4,
+            6
+          ],
+          [
+            "v",
+            5,
+            1
+          ],
+          [
+            "h",
+            5,
+            1
+          ],
+          [
+            "v",
+            5,
+            2
+          ],
+          [
+            "v",
+            6,
+            2
+          ]
+        ],
+        "doors": [
+          [
+            "h",
+            4,
+            5
+          ],
+          [
+            "v",
+            3,
+            3
+          ],
+          [
+            "v",
+            2,
+            2
+          ],
+          [
+            "v",
+            5,
+            2
+          ],
+          [
+            "v",
+            4,
+            1
+          ]
+        ],
+        "objects": {
+          "桌子": {
+            "cells": [
+              {
+                "r": 4,
+                "c": 1
+              },
+              {
+                "r": 4,
+                "c": 3
+              },
+              {
+                "r": 3,
+                "c": 5
+              }
+            ],
+            "occupiable": false,
+            "kind": "table"
+          },
+          "椅子": {
+            "cells": [
+              {
+                "r": 6,
+                "c": 6
+              },
+              {
+                "r": 4,
+                "c": 5
+              }
+            ],
+            "occupiable": true,
+            "kind": "chair"
+          },
+          "植物": {
+            "cells": [
+              {
+                "r": 1,
+                "c": 6
+              }
+            ],
+            "occupiable": false,
+            "kind": "plant"
+          },
+          "地毯": {
+            "cells": [
+              {
+                "r": 2,
+                "c": 4
+              },
+              {
+                "r": 3,
+                "c": 4
+              },
+              {
+                "r": 2,
+                "c": 3
+              }
+            ],
+            "occupiable": true,
+            "kind": "carpet"
+          }
+        },
+        "blocked": [],
+        "water": [],
+        "suspects": [
+          {
+            "id": "A",
+            "name": "铜钥保管员",
+            "portrait": "portrait.A"
+          },
+          {
+            "id": "B",
+            "name": "转架管理员",
+            "portrait": "portrait.B"
+          },
+          {
+            "id": "C",
+            "name": "墨绿誊写员",
+            "portrait": "portrait.C"
+          },
+          {
+            "id": "D",
+            "name": "铜牌登记员",
+            "portrait": "portrait.D"
+          },
+          {
+            "id": "E",
+            "name": "线装匠人",
+            "portrait": "portrait.E"
+          },
+          {
+            "id": "V",
+            "name": "藏卷人",
+            "portrait": "portrait.V",
+            "is_victim": true
+          }
+        ],
+        "victim": {
+          "id": "V",
+          "name": "藏卷人"
+        },
+        "roles": {
+          "thief": "B"
+        },
+        "clues": [
+          {
+            "type": "col_offset",
+            "who": "C",
+            "other": "A",
+            "d": -2
+          },
+          {
+            "type": "beside_object",
+            "who": "D",
+            "object": "地毯"
+          },
+          {
+            "type": "row_offset",
+            "who": "B",
+            "other": "C",
+            "d": -2
+          },
+          {
+            "type": "all_of",
+            "clauses": [
+              {
+                "type": "beside_object",
+                "who": "D",
+                "object": "桌子"
+              },
+              {
+                "type": "not_beside_object",
+                "who": "D",
+                "object": "植物"
+              }
+            ]
+          },
+          {
+            "type": "right_of",
+            "a": "D",
+            "b": "E",
+            "same_row": false
+          },
+          {
+            "type": "beside_object",
+            "who": "B",
+            "object": "植物"
+          }
+        ],
+        "general_clues": {},
+        "meta": {
+          "announce": "unknown",
+          "false_clue": 2
+        },
+        "solution": {
+          "A": {
+            "r": 2,
+            "c": 6
+          },
+          "B": {
+            "r": 1,
+            "c": 5
+          },
+          "C": {
+            "r": 3,
+            "c": 4
+          },
+          "D": {
+            "r": 4,
+            "c": 2
+          },
+          "E": {
+            "r": 5,
+            "c": 1
+          },
+          "V": {
+            "r": 6,
+            "c": 3
+          }
+        },
+        "visual_theme": {
+          "key": "sepia-rotated",
+          "name": "旋转档案 · 深墨绿 / 铜金（90° 旋转关专属）",
+          "palette": {
+            "INK": "#3F2A1E",
+            "INK_SOFT": "#6B4A34",
+            "GRAY": "#B9AC97",
+            "GRAY_DARK": "#8A7A66",
+            "WHITE": "#F8F1E2",
+            "SHADOW": "#241812",
+            "CHAIR_BASE": "#E3D5B8",
+            "CHAIR_LIGHT": "#F0E6D0",
+            "CHAIR_OVL": "#B08A55",
+            "TABLE_BASE": "#D9C7A3",
+            "TABLE_EDGE": "#8A6B45",
+            "SHELF_BASE": "#C8BBA0",
+            "SHELF_OVL": "#8FA3AE",
+            "TV_BASE": "#9AA4A6",
+            "TV_DARK": "#3A3B3C",
+            "TREE_BASE": "#B6A88E",
+            "TREE_OVL": "#7C8A6A",
+            "TREE_LIGHT": "#9BA98A",
+            "TREE_DARK": "#4F5C45",
+            "PLANT_BASE": "#C08A5E",
+            "PLANT_OVL": "#84977A",
+            "PLANT_LEAF_DARK": "#5E6E58",
+            "BED_BASE": "#EDE2C9",
+            "BED_OVL": "#C7A46A",
+            "CARPET": "#D9C08A",
+            "CARPET_EDGE": "#5A4634",
+            "ROOM_TINT": "#E6DAC0",
+            "SEAL": "#A8391B",
+            "TAG": "#7A8FA0",
+            "GOLD": "#C9A961",
+            "PAPER": "#EFE4CE"
+          },
+          "room_colors": [
+            "#DDE4D5",
+            "#CFD9C8",
+            "#D8D3BE",
+            "#C6D2D2"
+          ],
+          "wall": "#20342C",
+          "door": "#B9913F",
+          "accent": "#7C5A22",
+          "note": "第7关专属：整体顺时针旋转 90° 后换深墨绿墙 + 铜金门，与第4/6关米纸浅、第5关深棕墨、第6关蓝晒图四向区分"
+        }
+      },
+      "texts": [
+        {
+          "slot": 1,
+          "letter": "A",
+          "who": "铜钥保管员",
+          "what": "墨绿誊写员比我靠左2列"
+        },
+        {
+          "slot": 2,
+          "letter": "B",
+          "who": "转架管理员",
+          "what": "铜牌登记员在地毯旁边"
+        },
+        {
+          "slot": 3,
+          "letter": "C",
+          "who": "墨绿誊写员",
+          "what": "转架管理员比我靠上2行"
+        },
+        {
+          "slot": 4,
+          "letter": "D",
+          "who": "铜牌登记员",
+          "what": "我在桌子旁边、我不在植物旁边"
+        },
+        {
+          "slot": 5,
+          "letter": "E",
+          "who": "线装匠人",
+          "what": "铜牌登记员在我右方"
+        },
+        {
+          "slot": 6,
+          "letter": "V",
+          "who": "藏卷人",
+          "what": "转架管理员在植物旁边"
+        }
+      ],
+      "hints": [
+        {
+          "slot": 1,
+          "type": "col_offset",
+          "rule": "不做位置提示",
+          "count": 0,
+          "cells": []
+        },
+        {
+          "slot": 2,
+          "type": "beside_object",
+          "rule": "该家具四邻、同区域、可站人的格",
+          "count": 6,
+          "cells": [
+            "1:3",
+            "1:4",
+            "2:3",
+            "2:4",
+            "2:5",
+            "3:4"
+          ]
+        },
+        {
+          "slot": 3,
+          "type": "row_offset",
+          "rule": "不做位置提示",
+          "count": 0,
+          "cells": []
+        },
+        {
+          "slot": 4,
+          "type": "all_of",
+          "rule": "不做位置提示",
+          "count": 0,
+          "cells": [],
+          "reference_665": {
+            "rule": "静态位置子句交集",
+            "count": 0,
+            "cells": []
+          },
+          "note": "665 为废案；666 与当前主线 687 不给复合卡静态高亮"
+        },
+        {
+          "slot": 5,
+          "type": "right_of",
+          "rule": "不做位置提示",
+          "count": 0,
+          "cells": []
+        },
+        {
+          "slot": 6,
+          "type": "beside_object",
+          "rule": "该家具四邻、同区域、可站人的格",
+          "count": 2,
+          "cells": [
+            "1:5",
+            "2:6"
+          ]
+        }
+      ],
+      "clue_predicates": [
+        [
+          "C比A靠左2列"
+        ],
+        [
+          "D在地毯旁边"
+        ],
+        [
+          "B比C靠上2行"
+        ],
+        [
+          "D在桌子旁边",
+          "D不在植物旁边"
+        ],
+        [
+          "D在E右方"
+        ],
+        [
+          "B在植物旁边"
+        ]
+      ],
+      "order_table": [
+        {
+          "slot": 1,
+          "speaker": "A",
+          "name": "铜钥保管员",
+          "from_slot": 1,
+          "predicate": [
+            "C比A靠左2列"
+          ],
+          "design_text": [
+            "C比我靠左2列"
+          ],
+          "archive_text": [
+            "墨绿誊写员比我靠左2列"
+          ],
+          "self_narrated": true
+        },
+        {
+          "slot": 2,
+          "speaker": "B",
+          "name": "转架管理员",
+          "from_slot": 2,
+          "predicate": [
+            "D在地毯旁边"
+          ],
+          "design_text": [
+            "D在地毯旁边"
+          ],
+          "archive_text": [
+            "铜牌登记员在地毯旁边"
+          ],
+          "self_narrated": false
+        },
+        {
+          "slot": 3,
+          "speaker": "C",
+          "name": "墨绿誊写员",
+          "from_slot": 3,
+          "predicate": [
+            "B比C靠上2行"
+          ],
+          "design_text": [
+            "B比我靠上2行"
+          ],
+          "archive_text": [
+            "转架管理员比我靠上2行"
+          ],
+          "self_narrated": true
+        },
+        {
+          "slot": 4,
+          "speaker": "D",
+          "name": "铜牌登记员",
+          "from_slot": 5,
+          "predicate": [
+            "D在桌子旁边",
+            "D不在植物旁边"
+          ],
+          "design_text": [
+            "我在桌子旁边",
+            "我不在植物旁边"
+          ],
+          "archive_text": [
+            "我在桌子旁边",
+            "我不在植物旁边"
+          ],
+          "self_narrated": true
+        },
+        {
+          "slot": 5,
+          "speaker": "E",
+          "name": "线装匠人",
+          "from_slot": 6,
+          "predicate": [
+            "D在E右方"
+          ],
+          "design_text": [
+            "D在我右方"
+          ],
+          "archive_text": [
+            "铜牌登记员在我右方"
+          ],
+          "self_narrated": true
+        },
+        {
+          "slot": 6,
+          "speaker": "V",
+          "name": "藏卷人",
+          "from_slot": 4,
+          "predicate": [
+            "B在植物旁边"
+          ],
+          "design_text": [
+            "B在植物旁边"
+          ],
+          "archive_text": [
+            "转架管理员在植物旁边"
+          ],
+          "self_narrated": false
+        }
+      ]
+    }
+  ]
+}

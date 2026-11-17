@@ -1,0 +1,55 @@
+{
+  "version": 687,
+  "title": "结算倒计时跟随换位 + 恢复未启用结算变灰 + 首页网格纸回设计位（双屏分开） + 弹窗小叉统一",
+  "base": {
+    "file": "686_X标记离场收起/686_X标记离场收起.gil",
+    "sha256": "b5efd319c72f0a12e0e66ebd29a08a66d77f163823f7405ed35a5257d25620f8",
+    "records": 7826,
+    "scriptBytes": 644453
+  },
+  "A_countdown": {
+    "name": "modal.settle.countdown",
+    "fromY": -200,
+    "toY": -95,
+    "why": "683 把退出菜单四键整体下移 108（228/148/68/-12 → 120/40/-40/-120），倒计时却被单独甩到 -200。按 682 的相对布局跟随换位应为 -95（存档 settle 按钮 -40 下方 55px）。686 真机已有 cancel.settle_shift=30 让「取消」下移腾位（真机截图第三、四键间距 107 vs 80 可证），-95 ± 20 与下移后的取消胶囊顶 -120 留 5px、与存档并结算胶囊底 -70 留 5px，不重叠。",
+    "unchanged": ["result.settle.countdown(y=-258，684 已随结算四键换位)", "settle.btn.countdown(y=-339，首页/选关结算按钮从未换位)"],
+    "otherChangedRecords": 0
+  },
+  "B_settle_tint": {
+    "rootCause": "内嵌 Lua set_property 的 enabled 分支只找 self:sub(id,\"bg\") 给按钮底图染灰；682 删 107179 胶囊、683 把填充/描边收进名为 art 的 DECOR 容器后，modal.settle / result.settle 的子层只剩 art + label，bg 不存在 ⇒ 未启用结算时不再变灰。",
+    "patch": "enabled 分支保留原 bg 逻辑，并沿 art 容器遍历 6 个图片子层：value=true 恢复 outline=#FF6C402E / capsule=#FFFCECD4；value=false 一律 #FF686B70（沿用原 Lua 灰值）。",
+    "artChildren": 6,
+    "tintDisabled": "#FF686B70",
+    "tintEnabledOutline": "#FF6C402E",
+    "tintEnabledCapsule": "#FFFCECD4",
+    "note": "SETTLE_ART_TINT（art647.home/select 结算票券 20 层）由 sync_art647() 每帧处理，本来仍生效，本轮不动。"
+  },
+  "C_grid_paper": {
+    "shared": "art657.grid.reuse 一套 48 个子层（680 时 49，683 删杂质 art656.home.paper.edge）被 home 与 game 两屏共享；sync_art641() 切屏时用 SetAnchoredPosition 给父容器分屏设坐标。",
+    "design": "656 首页设计 art656.home.grid.paper 504 y = -5（设计图拟合 cy=455 / 顶边 (530,57)→(1105,109)）；679 = -15.5；680 为修 game 屏跟随下移，把 48/49 子层各 -30 ⇒ 686 = -45.5。",
+    "measurement": "用户图2 实机 vs 图3 设计图：卡片本身另有下移（用户要求「其余差异一律忽略」）；按同口径换算，网格纸相对设计图额外下移 40~40.5px，与 -5 → -45.5 的 40.5 一致。",
+    "fix": "不改任何静态层（game 屏保持 686 现状），只在 sync_art641() 把 home/select 分支父坐标 dy 由 0 改为 40.5（存档 y 向上为正 ⇒ 首页网格纸上移 40.5 回到 656 设计位）；game 分支 (105,46) 逐字不动。",
+    "homeDy": 40.5,
+    "gameDxDy": [105, 46],
+    "staticRecordsChanged": 0,
+    "otherElements": "只调网格纸；图2 与图3 的教程圆按钮、便签、回形针、咖啡杯、按钮文字、卡片位置等差异一律忽略。"
+  },
+  "D_close": {
+    "reference": "hint635.menu / hint635.result 为「提示弹窗」（682 文档定名），其右上角关闭叉 20×20、点击热区 36×36；help617 同为 20×20 / 36×36，已是基准无需改。",
+    "targetX": 20,
+    "xFrom": 15.661375999450684,
+    "hitFrom": 41.763668060302734,
+    "hitDelta": 4.338624000549316,
+    "hitTo": 46.10229206085205,
+    "hitRule": "X 放大 4.338624，热区同步放大同一 Δ（保持原有点击余量），不是缩小到 36。",
+    "scope": ["td.home.closex", "td.l1.closex", "td.l2.closex", "td.home.btn.close", "td.l1.btn.close", "td.l2.btn.close"],
+    "ignored": "modal / result / win 等弹窗本身没有右上角小叉，按用户「没有的忽略」不新增。"
+  },
+  "guarantees": [
+    "686 保留未改；687 记录数不变（0 新增 / 0 删除），旧记录改动严格限定 7 条白名单",
+    "内嵌 Lua 两处补丁可反向替换逐字节还原 686",
+    "48 个网格纸静态子层、SETTLE_ART_TINT 20 层、684/685/686 成果逐字节不变",
+    "源码 lua/engine_adapter_qianxing.lua 与 lua/entry_client_script.lua 同步；dist 不重打包",
+    "roundtrip / check_childlist_top / luac -p 全过"
+  ]
+}

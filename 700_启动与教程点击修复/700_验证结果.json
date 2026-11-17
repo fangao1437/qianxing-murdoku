@@ -1,0 +1,927 @@
+{
+  "version": 700,
+  "total": 130,
+  "pass": 130,
+  "fail": 0,
+  "metrics": {
+    "rawScans": "1",
+    "rawChildReads": "5703",
+    "homeChildReads": "5711",
+    "page1Visible": "133,52,16",
+    "page2Visible": "121,44,15",
+    "propertyWrites": "3158"
+  },
+  "differential": {
+    "695": [
+      {
+        "name": "home/sameframe/bound",
+        "pass": true
+      },
+      {
+        "name": "home/sameframe/close",
+        "pass": true
+      },
+      {
+        "name": "home/sameframe/last-next-closes",
+        "pass": true
+      },
+      {
+        "name": "home/sameframe/no-duplicate",
+        "pass": true
+      },
+      {
+        "name": "original-repro",
+        "pass": true
+      }
+    ],
+    "699": [
+      {
+        "name": "home/sameframe/bound",
+        "pass": false
+      },
+      {
+        "name": "original-repro",
+        "pass": false
+      }
+    ],
+    "700": [
+      {
+        "name": "home/sameframe/bound",
+        "pass": true
+      },
+      {
+        "name": "home/sameframe/close",
+        "pass": true
+      },
+      {
+        "name": "home/sameframe/last-next-closes",
+        "pass": true
+      },
+      {
+        "name": "home/sameframe/no-duplicate",
+        "pass": true
+      },
+      {
+        "name": "original-repro",
+        "pass": true
+      },
+      {
+        "name": "home/missing-not-inited",
+        "pass": true
+      },
+      {
+        "name": "home/before/bound",
+        "pass": true
+      },
+      {
+        "name": "home/before/close",
+        "pass": true
+      },
+      {
+        "name": "home/before/last-next-closes",
+        "pass": true
+      },
+      {
+        "name": "home/before/no-duplicate",
+        "pass": true
+      },
+      {
+        "name": "home/failed-bind-not-inited",
+        "pass": true
+      },
+      {
+        "name": "home/failure/bound",
+        "pass": true
+      },
+      {
+        "name": "home/failure/close",
+        "pass": true
+      },
+      {
+        "name": "home/failure/last-next-closes",
+        "pass": true
+      },
+      {
+        "name": "home/failure/no-duplicate",
+        "pass": true
+      },
+      {
+        "name": "l1/sameframe/bound",
+        "pass": true
+      },
+      {
+        "name": "l1/sameframe/close",
+        "pass": true
+      },
+      {
+        "name": "l1/sameframe/next-page",
+        "pass": true
+      },
+      {
+        "name": "l1/sameframe/prev-page",
+        "pass": true
+      },
+      {
+        "name": "l1/sameframe/last-next-closes",
+        "pass": true
+      },
+      {
+        "name": "l1/sameframe/no-duplicate",
+        "pass": true
+      },
+      {
+        "name": "l1/missing-not-inited",
+        "pass": true
+      },
+      {
+        "name": "l1/before/bound",
+        "pass": true
+      },
+      {
+        "name": "l1/before/close",
+        "pass": true
+      },
+      {
+        "name": "l1/before/next-page",
+        "pass": true
+      },
+      {
+        "name": "l1/before/prev-page",
+        "pass": true
+      },
+      {
+        "name": "l1/before/last-next-closes",
+        "pass": true
+      },
+      {
+        "name": "l1/before/no-duplicate",
+        "pass": true
+      },
+      {
+        "name": "l1/failed-bind-not-inited",
+        "pass": true
+      },
+      {
+        "name": "l1/failure/bound",
+        "pass": true
+      },
+      {
+        "name": "l1/failure/close",
+        "pass": true
+      },
+      {
+        "name": "l1/failure/next-page",
+        "pass": true
+      },
+      {
+        "name": "l1/failure/prev-page",
+        "pass": true
+      },
+      {
+        "name": "l1/failure/last-next-closes",
+        "pass": true
+      },
+      {
+        "name": "l1/failure/no-duplicate",
+        "pass": true
+      },
+      {
+        "name": "l2/sameframe/bound",
+        "pass": true
+      },
+      {
+        "name": "l2/sameframe/close",
+        "pass": true
+      },
+      {
+        "name": "l2/sameframe/next-page",
+        "pass": true
+      },
+      {
+        "name": "l2/sameframe/prev-page",
+        "pass": true
+      },
+      {
+        "name": "l2/sameframe/last-next-closes",
+        "pass": true
+      },
+      {
+        "name": "l2/sameframe/no-duplicate",
+        "pass": true
+      },
+      {
+        "name": "l2/missing-not-inited",
+        "pass": true
+      },
+      {
+        "name": "l2/before/bound",
+        "pass": true
+      },
+      {
+        "name": "l2/before/close",
+        "pass": true
+      },
+      {
+        "name": "l2/before/next-page",
+        "pass": true
+      },
+      {
+        "name": "l2/before/prev-page",
+        "pass": true
+      },
+      {
+        "name": "l2/before/last-next-closes",
+        "pass": true
+      },
+      {
+        "name": "l2/before/no-duplicate",
+        "pass": true
+      },
+      {
+        "name": "l2/failed-bind-not-inited",
+        "pass": true
+      },
+      {
+        "name": "l2/failure/bound",
+        "pass": true
+      },
+      {
+        "name": "l2/failure/close",
+        "pass": true
+      },
+      {
+        "name": "l2/failure/next-page",
+        "pass": true
+      },
+      {
+        "name": "l2/failure/prev-page",
+        "pass": true
+      },
+      {
+        "name": "l2/failure/last-next-closes",
+        "pass": true
+      },
+      {
+        "name": "l2/failure/no-duplicate",
+        "pass": true
+      }
+    ]
+  },
+  "checks": [
+    {
+      "name": "全部8296控件记录与699逐字节一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "存档编码往返一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "home.btn.close位于真实教程根容器",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "home.btn.next位于真实教程根容器",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "l1.btn.close位于真实教程根容器",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "l1.btn.next位于真实教程根容器",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "l1.btn.prev位于真实教程根容器",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "l2.btn.close位于真实教程根容器",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "l2.btn.next位于真实教程根容器",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "l2.btn.prev位于真实教程根容器",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "首帧索引重建不超过1次",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "name": "首页真实控制器首帧可执行",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "首页弹窗父级隐藏",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "选关第1页render成功",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第1页真实控件更新与多余项隐藏",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第1页格子数正确",
+      "pass": true,
+      "detail": "133/133"
+    },
+    {
+      "name": "选关第2页render成功",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第2页真实控件更新与多余项隐藏",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第2页格子数正确",
+      "pass": true,
+      "detail": "121/121"
+    },
+    {
+      "name": "选关第1页render成功",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第1页真实控件更新与多余项隐藏",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第1页格子数正确",
+      "pass": true,
+      "detail": "133/133"
+    },
+    {
+      "name": "冷启动直接进入第2页",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "选关返回首页没有缩略图残留",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "全流程不自动创建控件",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "属性下发无异常",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "300个不同缺失名只建一次索引",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "name": "二次缺失后迟到控件仍可恢复",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "结构代数变化后恢复",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "case_001短名为有效UTF8",
+      "pass": true,
+      "detail": "夜盗独行"
+    },
+    {
+      "name": "case_001缩略图每个节点真实存在",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "case_001格墙门数量匹配",
+      "pass": true,
+      "detail": "25,9,3"
+    },
+    {
+      "name": "case_002短名为有效UTF8",
+      "pass": true,
+      "detail": "双影"
+    },
+    {
+      "name": "case_002缩略图每个节点真实存在",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "case_002格墙门数量匹配",
+      "pass": true,
+      "detail": "36,14,3"
+    },
+    {
+      "name": "case_003短名为有效UTF8",
+      "pass": true,
+      "detail": "原作明亮俯视"
+    },
+    {
+      "name": "case_003缩略图每个节点真实存在",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "case_003格墙门数量匹配",
+      "pass": true,
+      "detail": "36,17,5"
+    },
+    {
+      "name": "case_004短名为有效UTF8",
+      "pass": true,
+      "detail": "档案卷宗"
+    },
+    {
+      "name": "case_004缩略图每个节点真实存在",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "case_004格墙门数量匹配",
+      "pass": true,
+      "detail": "36,12,5"
+    },
+    {
+      "name": "case_005短名为有效UTF8",
+      "pass": true,
+      "detail": "夜勘卷宗"
+    },
+    {
+      "name": "case_005缩略图每个节点真实存在",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "case_005格墙门数量匹配",
+      "pass": true,
+      "detail": "36,13,5"
+    },
+    {
+      "name": "case_006短名为有效UTF8",
+      "pass": true,
+      "detail": "蓝晒图"
+    },
+    {
+      "name": "case_006缩略图每个节点真实存在",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "case_006格墙门数量匹配",
+      "pass": true,
+      "detail": "49,14,5"
+    },
+    {
+      "name": "case_007短名为有效UTF8",
+      "pass": true,
+      "detail": "旋转档案"
+    },
+    {
+      "name": "case_007缩略图每个节点真实存在",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "case_007格墙门数量匹配",
+      "pass": true,
+      "detail": "36,17,5"
+    },
+    {
+      "name": "教程模块包含700延迟绑定修复",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "入口除版本标记外与695一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "不含698递归显隐账本",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "存档内嵌Lua等于dist及交付副本",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "room_map源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "murdoku_core源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "furn_art源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "furn_art_records源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "ui_controller源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "engine_adapter源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "engine_adapter_qianxing源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "main源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "tutorial_ui源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.init源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_001源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_002源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_003源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_004源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_005源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_006源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_007源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "入口源码一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "七关谜题家具地毯行为与698保持",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "18个运行源码和dist语法通过",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/home/sameframe/bound",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/home/sameframe/close",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/home/sameframe/last-next-closes",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/home/sameframe/no-duplicate",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/original-repro",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/home/missing-not-inited",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/home/before/bound",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/home/before/close",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/home/before/last-next-closes",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/home/before/no-duplicate",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/home/failed-bind-not-inited",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/home/failure/bound",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/home/failure/close",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/home/failure/last-next-closes",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/home/failure/no-duplicate",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l1/sameframe/bound",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l1/sameframe/close",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l1/sameframe/next-page",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l1/sameframe/prev-page",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l1/sameframe/last-next-closes",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l1/sameframe/no-duplicate",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l1/missing-not-inited",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l1/before/bound",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l1/before/close",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l1/before/next-page",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l1/before/prev-page",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l1/before/last-next-closes",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l1/before/no-duplicate",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l1/failed-bind-not-inited",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l1/failure/bound",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l1/failure/close",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l1/failure/next-page",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l1/failure/prev-page",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l1/failure/last-next-closes",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l1/failure/no-duplicate",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l2/sameframe/bound",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l2/sameframe/close",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l2/sameframe/next-page",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l2/sameframe/prev-page",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l2/sameframe/last-next-closes",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l2/sameframe/no-duplicate",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l2/missing-not-inited",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l2/before/bound",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l2/before/close",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l2/before/next-page",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l2/before/prev-page",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l2/before/last-next-closes",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l2/before/no-duplicate",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l2/failed-bind-not-inited",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l2/failure/bound",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l2/failure/close",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l2/failure/next-page",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l2/failure/prev-page",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l2/failure/last-next-closes",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "延迟绑定/l2/failure/no-duplicate",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "原始故障695通过699失败700通过",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "limits": [
+    "延迟挂载场景可复现695与699差异；并非真机射线点击证明",
+    "真实控件树回放API仍为mock，不用于证明帧率或像素视觉",
+    "未重跑上一轮已丢失临时脚本的54项完整入口回放"
+  ]
+}

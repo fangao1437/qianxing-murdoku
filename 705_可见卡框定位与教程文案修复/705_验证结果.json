@@ -1,0 +1,644 @@
+{
+  "version": "705",
+  "checks": [
+    {
+      "name": "首页弹窗父级关闭",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1最终底板中心对齐可见白框",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1完整标题及下方白边",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1格子有效且最终中心对齐白框",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1横纵格缝均为2",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1门墙同为5",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1关卡点击映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2最终底板中心对齐可见白框",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2完整标题及下方白边",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2格子有效且最终中心对齐白框",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2横纵格缝均为2",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2门墙同为5",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2关卡点击映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3最终底板中心对齐可见白框",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3完整标题及下方白边",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3格子有效且最终中心对齐白框",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3横纵格缝均为2",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3门墙同为5",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3关卡点击映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4最终底板中心对齐可见白框",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4完整标题及下方白边",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4格子有效且最终中心对齐白框",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4横纵格缝均为2",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4门墙同为5",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4关卡点击映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡1最终底板中心对齐可见白框",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡1完整标题及下方白边",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡1格子有效且最终中心对齐白框",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡1横纵格缝均为2",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡1门墙同为5",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡1关卡点击映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡2最终底板中心对齐可见白框",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡2完整标题及下方白边",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡2格子有效且最终中心对齐白框",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡2横纵格缝均为2",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡2门墙同为5",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡2关卡点击映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡3最终底板中心对齐可见白框",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡3完整标题及下方白边",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡3格子有效且最终中心对齐白框",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡3横纵格缝均为2",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡3门墙同为5",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡3关卡点击映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "空卡无底板和标题",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1最终底板中心对齐可见白框",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1完整标题及下方白边",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1格子有效且最终中心对齐白框",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1横纵格缝均为2",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1门墙同为5",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1关卡点击映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2最终底板中心对齐可见白框",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2完整标题及下方白边",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2格子有效且最终中心对齐白框",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2横纵格缝均为2",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2门墙同为5",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2关卡点击映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3最终底板中心对齐可见白框",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3完整标题及下方白边",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3格子有效且最终中心对齐白框",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3横纵格缝均为2",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3门墙同为5",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3关卡点击映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4最终底板中心对齐可见白框",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4完整标题及下方白边",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4格子有效且最终中心对齐白框",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4横纵格缝均为2",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4门墙同为5",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4关卡点击映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "返回首页隐藏缩略图池",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "教程末页文案/home",
+      "pass": true,
+      "detail": "开始办案"
+    },
+    {
+      "name": "教程末页绑定/home",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "教程末页开始办案关闭/home",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "教程小叉关闭/home",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "教程末页文案/l1",
+      "pass": true,
+      "detail": "开始办案"
+    },
+    {
+      "name": "教程末页绑定/l1",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "教程末页开始办案关闭/l1",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "教程小叉关闭/l1",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "教程末页文案/l2",
+      "pass": true,
+      "detail": "开始办案"
+    },
+    {
+      "name": "教程末页绑定/l2",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "教程末页开始办案关闭/l2",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "教程小叉关闭/l2",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "白框迟到后不切页恢复定位",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "白框父链位移与缩放合成",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "零自动创建",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "最终画布定位及教程回放执行成功",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "8300条记录中仅两关末页文本变化",
+      "pass": true,
+      "detail": [
+        "td.l1.page.8.nexttext",
+        "td.l2.page.4.nexttext"
+      ]
+    },
+    {
+      "name": "内嵌Lua与dist和交付副本一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "room_map源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "room_map与704保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "murdoku_core源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "murdoku_core与704保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "furn_art源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "furn_art与704保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "furn_art_records源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "furn_art_records与704保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "ui_controller源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "engine_adapter源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "engine_adapter与704保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "engine_adapter_qianxing源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "main源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "main与704保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "tutorial_ui源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.init源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.init与704保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_001源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_001与704保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_002源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_002与704保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_003源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_003与704保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_004源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_004与704保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_005源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_005与704保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_006源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_006与704保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_007源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_007与704保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "入口源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "模块及完整脚本Lua语法",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "七关谜题家具地毯行为与704保持",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "metrics": {
+    "page1slot1Delta": "-5.6843418860808e-14,5.6843418860808e-14",
+    "page1slot2Delta": "1.1368683772162e-13,0.0",
+    "page1slot3Delta": "1.1368683772162e-13,-5.6843418860808e-14",
+    "page1slot4Delta": "0.0,-5.6843418860808e-14",
+    "page2slot1Delta": "0.0,5.6843418860808e-14",
+    "page2slot2Delta": "1.1368683772162e-13,0.0",
+    "page2slot3Delta": "1.1368683772162e-13,-5.6843418860808e-14"
+  },
+  "total": 121,
+  "pass": 121,
+  "fail": 0,
+  "baseline704": {
+    "total": 82,
+    "pass": 36,
+    "fail": 46,
+    "metrics": {
+      "page1slot1Delta": "0.72109985351562,-1.0609083175659",
+      "page1slot2Delta": "1.5854110717775,-1.894241809845",
+      "page1slot3Delta": "-4.216911315918,-2.7275750637054",
+      "page1slot4Delta": "-10.019256591797,-2.7275750637054",
+      "page2slot1Delta": "0.72109985351562,-1.0609083175659",
+      "page2slot2Delta": "1.5854110717775,-1.894241809845",
+      "page2slot3Delta": "-4.216911315918,-2.7275750637054"
+    }
+  },
+  "limits": [
+    "根据真实gil记录和实际Lua控制器、适配器执行，控件API为离线模拟",
+    "定位断言使用可见白框及真实父链，未操作游戏验证像素和真实鼠标输入",
+    "画布尺寸1600x900；窗口缩放可能影响最终屏幕像素"
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "version": 699,
+  "base": "698_首页与缩略图修复.gil",
+  "baseSha256": "4692ca5441ef4251382a9d40693baf9dfe837ea6497d13c87cbc8d30bb578135",
+  "output": "699_教程与交互修复.gil",
+  "sha256": "bb1df78a777eb6a0dace80d62954342cdfe08c5c1a0e44facf94ff2029734edc",
+  "records": 8296,
+  "rootChildren": {
+    "before": 381,
+    "after": 98
+  },
+  "pool": {
+    "count": 284,
+    "parent": "select.thumb.pool",
+    "groupId": 1073761045
+  },
+  "oldControls": {
+    "unchangedExceptRootAndPoolParents": true,
+    "expandedOrderIdentical": true
+  },
+  "changes": [
+    "恢复695教程模块、入口父级显隐与遮罩绑定链路",
+    "移除698递归显隐及子层保存/恢复拦截",
+    "284个缩略图元归入1个原生容器，保留全部图元与展开顺序",
+    "修复射线扫描前200项截断，保留显式raycast=false意图",
+    "保留698负索引TTL、UTF8短名与缩略图布局"
+  ],
+  "limits": [
+    "离线测试不证明真机输入命中或帧率",
+    "695正确由用户实机反馈；父级显隐依据652/655历史优化记录"
+  ]
+}

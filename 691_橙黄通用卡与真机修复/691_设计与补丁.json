@@ -1,0 +1,146 @@
+{
+  "version": 691,
+  "name": "橙黄通用线索卡 + 真机问题修复（地毯对齐 / 6关裁门 / 7×7 补齐 / 选关页记忆）",
+  "base": "689_性能负载优化.gil（干净基准；690 靛蓝金方案整体弃用，保留为历史版本）",
+
+  "card": {
+    "design": "通用线索卡染成橙黄色，只保留标题与正文；头像位（左）与 letter 位（右）留白；卡面构造仍照搬 672 普通卡的 7 枚同构图元，只换色相，选中仍只染最外框 3px 一圈黄。",
+    "colors": {
+      "normal": { "stroke": "#FF491B1E", "main": "#FF68262A", "hi": "#FF9D3033", "mid": "#FF702830", "dark": "#FF611F23", "text": "#FFFFFFFF" },
+      "general": {
+        "frame": "#FF9A4A18",
+        "base": "#FFE8B44B",
+        "hi": "#FFF6CE7E",
+        "trap": "#FFD98C2E",
+        "mid": "#FFEFC069",
+        "text": "#FF4A2A12",
+        "highlight": "#FFFFD44B"
+      }
+    },
+    "layers": [
+      { "name": "gen691.base",   "proto": "image", "x": 0,        "y": 0,        "w": 324,      "h": 79.4,    "rot": 0,         "imageId": 100001, "color": "#FFE8B44B", "role": "橙黄主色：整卡覆盖普通红卡面" },
+      { "name": "gen691.hi",     "proto": "image", "x": -142.15,  "y": 19.85,    "w": 112.289,  "h": 56.144,  "rot": 45,        "imageId": 100003, "color": "#FFF6CE7E", "role": "左上 45° 亮黄斜分界（同 art671.clueN.hi）" },
+      { "name": "gen691.trap",   "proto": "image", "x": 110.947,  "y": 0,        "w": 102.106,  "h": 79.4,    "rot": 0,         "imageId": 100001, "color": "#FFD98C2E", "role": "右侧梯形底（同 art672.clueN.trap）" },
+      { "name": "gen691.lo",     "proto": "image", "x": 73.22,    "y": 19.85,    "w": 142.457,  "h": 47.816,  "rot": 33.874,    "imageId": 100003, "color": "#FFE8B44B", "role": "主色遮盖三角，切出梯形斜边（同 art671.clueN.lo）" },
+      { "name": "gen691.mid1",   "proto": "image", "x": -22.79,   "y": 4.047,    "w": 69.583,   "h": 17.996,  "rot": -111.695,  "imageId": 100003, "color": "#FFEFC069", "role": "中间异色区 ①（同 art672.clueN.mid1）" },
+      { "name": "gen691.mid2",   "proto": "image", "x": -7.813,   "y": 27.628,   "w": 73.672,   "h": 31.969,  "rot": 40.954,    "imageId": 100003, "color": "#FFEFC069", "role": "中间异色区 ②（同 art672.clueN.mid2）" },
+      { "name": "gen691.corner", "proto": "image", "x": 63.195,   "y": -29.827,  "w": 70.433,   "h": 23.5,    "rot": -146.126,  "imageId": 100003, "color": "#FFD98C2E", "role": "梯形斜边补到底边（同 art672.clueN.corner）" }
+    ],
+    "modify": [
+      { "name": "gen.backrop", "x": 0, "y": 0, "w": 330, "h": 85.4, "imageId": 100001, "color": "#FF9A4A18", "imageType": 1, "hidden": true, "role": "官方素材 107133 → 橙棕外框；运行时高亮目标在此，选中露 3px 一圈黄" },
+      { "name": "gen.title",   "textColor": "#FF4A2A12", "hidden": true,  "role": "标题「通用线索」文案不变，字色改深棕（橙黄底可读）" },
+      { "name": "gen.body",    "x": 0, "y": -0.4, "w": 260, "h": 60, "textColor": "#FF4A2A12", "hidden": false, "role": "正文回到居中 260×60，字色深棕；运行时仍写 row.<关>.clue" }
+    ],
+    "genLayers": ["gen.backrop", "gen.title", "gen.body", "gen691.base", "gen691.hi", "gen691.trap", "gen691.lo", "gen691.mid1", "gen691.mid2", "gen691.corner"]
+  },
+
+  "floorCells": {
+    "reason": "689 静态地板只有 36 条 floor.cell.1..6 × 1..6；第6关 7×7 的第 7 行/列共 13 格找不到 slot，露出 board.bg 深紫底。",
+    "prototype": "floor.cell.6.6（连同其 face 子控件一起克隆）",
+    "names": [
+      "floor.cell.1.7", "floor.cell.2.7", "floor.cell.3.7", "floor.cell.4.7", "floor.cell.5.7", "floor.cell.6.7",
+      "floor.cell.7.1", "floor.cell.7.2", "floor.cell.7.3", "floor.cell.7.4", "floor.cell.7.5", "floor.cell.7.6", "floor.cell.7.7"
+    ],
+    "childListAfter": 49
+  },
+
+  "doors": {
+    "reason": "第6关设计为 9 门，但同一对相邻区域往往开了 2~3 个门，视觉上橙条成排。按「每对区域只保留一个通道」裁到 5 门，与第4/5/7关一致。room_of 用 room 掩码、第6关线索不含 adjacency 谓词 ⇒ 谜题答案不变。",
+    "level": "case_006",
+    "old": "[\"doors\"] = {{\"h\", 3, 3}, {\"v\", 3, 4}, {\"h\", 3, 4}, {\"h\", 3, 5}, {\"h\", 3, 6}, {\"h\", 4, 1}, {\"v\", 4, 2}, {\"h\", 4, 2}, {\"v\", 7, 2}},",
+    "new": "[\"doors\"] = {{\"h\", 3, 3}, {\"v\", 3, 4}, {\"h\", 3, 5}, {\"h\", 4, 1}, {\"v\", 7, 2}},",
+    "kept": [
+      { "key": "h:3:3", "regions": "0<->2" },
+      { "key": "v:3:4", "regions": "0<->1" },
+      { "key": "h:3:5", "regions": "1<->2" },
+      { "key": "h:4:1", "regions": "0<->3" },
+      { "key": "v:7:2", "regions": "2<->3" }
+    ],
+    "dropped": ["h:3:4", "h:3:6", "h:4:2", "v:4:2"]
+  },
+
+  "carpet": {
+    "reason": "整块地毯模板 _spawn_whole_rug 用 h2(2×1) 模板去画第7关 L 形 2×2 包围盒，叠加 0.82/0.762 专属缩放与 SetLocalScale+SetSizeDelta 双重缩放，再与逐格 rug_cell_els 双绘 ⇒ 跨格、压在墙线上、双层边框。",
+    "fix": "停用整块地毯模板：_spawn_furn_tpl 的地毯分支改为隐藏所有已实例化的 rug.* 整块实例并 return false。地毯由 M.FURN_BAKED=false 的逐格 rug_cell_els 绘制，每格一个对齐格线的方块，与设计图 v14 的逐格虚线框一致。"
+  },
+
+  "selectPage": {
+    "reason": "页态只存在 Controller 实例字段 self.select_page；进入不同关会经 start_other → Murdoku.start → UIC.new 重建 Controller，页态丢失，build_layout 的 `or 1` 固化成第 1 页。",
+    "fix": "提升到 ui_controller 模块级 M.SELECT_PAGE（__require 缓存 ⇒ 跨实例存活）：M.new 恢复、翻页回写、首页选关按钮重置时同步。689 的 sync_art649_page 每帧门控完全不动。"
+  },
+
+  "luaPatches": [
+    {
+      "name": "gen_list",
+      "count": 2,
+      "old": "ipairs({ \"gen.backrop\", \"gen.title\", \"gen.body\" })",
+      "new": "ipairs({ \"gen.backrop\", \"gen.title\", \"gen.body\", \"gen691.base\", \"gen691.hi\", \"gen691.trap\", \"gen691.lo\", \"gen691.mid1\", \"gen691.mid2\", \"gen691.corner\" })"
+    },
+    {
+      "name": "gen_highlight",
+      "count": 1,
+      "old": "    pcall(function() _cp = item:FindChild(\"backrop1\") end)",
+      "new": "    pcall(function() _cp = item:FindChild(\"gen.backrop\") end)"
+    },
+    {
+      "name": "select_page_new",
+      "count": 1,
+      "old": "  self.screen = opts.screen\n  self.share_code = nil",
+      "new": "  self.screen = opts.screen\n  self.select_page = M.SELECT_PAGE or 1\n  self.share_code = nil"
+    },
+    {
+      "name": "select_page_action",
+      "count": 1,
+      "old": "      self.select_page = (tonumber(self.select_page) or 1) + (tonumber(event.delta) or 0)\n      if self.select_page < 1 then self.select_page = 1 end\n      self.dirty = true",
+      "new": "      self.select_page = (tonumber(self.select_page) or 1) + (tonumber(event.delta) or 0)\n      if self.select_page < 1 then self.select_page = 1 end\n      M.SELECT_PAGE = self.select_page\n      self.dirty = true"
+    },
+    {
+      "name": "select_page_levelselect",
+      "count": 1,
+      "old": "    self.screen = \"select\"; self.modal = nil; self.dirty = true; self.select_page = 1",
+      "new": "    self.screen = \"select\"; self.modal = nil; self.dirty = true; self.select_page = 1; M.SELECT_PAGE = 1"
+    },
+    {
+      "name": "door_skip",
+      "count": 1,
+      "old": "  local skip = {}\n  if r ~= nil and rows ~= nil and r < rows then skip[\"down\"] = true end\n  if c ~= nil and cols ~= nil and c < cols then skip[\"right\"] = true end",
+      "new": "  local skip = { down = true, right = true }"
+    },
+    {
+      "name": "door_trim_case006",
+      "count": 1,
+      "old": "[\"doors\"] = {{\"h\", 3, 3}, {\"v\", 3, 4}, {\"h\", 3, 4}, {\"h\", 3, 5}, {\"h\", 3, 6}, {\"h\", 4, 1}, {\"v\", 4, 2}, {\"h\", 4, 2}, {\"v\", 7, 2}},",
+      "new": "[\"doors\"] = {{\"h\", 3, 3}, {\"v\", 3, 4}, {\"h\", 3, 5}, {\"h\", 4, 1}, {\"v\", 7, 2}},"
+    },
+    {
+      "name": "carpet_tpl_off",
+      "count": 1,
+      "old": "  if ckey==\"rug\" or ckey==\"rug_2\" or ckey==\"rug_3\" then\n    return self:_spawn_whole_rug(cell_id,ctrl,ckey,prefab,cw,ch,\n      (self._furn_span and self._furn_span[cell_id]) or {r=1,c=1},\n      (self._furn_off and self._furn_off[cell_id]) or {dx=0,dy=0})\n  end",
+      "new": "  if ckey==\"rug\" or ckey==\"rug_2\" or ckey==\"rug_3\" then\n    for k,o in pairs(self._furn_inst or {}) do\n      if string.find(k,\"|rug\",1,true) and o and o.SetVisible then pcall(function() o:SetVisible(false) end) end\n    end\n    return false\n  end"
+    },
+    {
+      "name": "floor_path_map",
+      "count": 1,
+      "old": "  [\"floor.cell.6.6\"] = \"root/stage/board.floors/floor.cell.6.6\",\n  [\"board.rugs\"] = \"root/stage/board.rugs\",",
+      "new": "  [\"floor.cell.6.6\"] = \"root/stage/board.floors/floor.cell.6.6\",\n  [\"floor.cell.1.7\"] = \"root/stage/board.floors/floor.cell.1.7\",\n  [\"floor.cell.2.7\"] = \"root/stage/board.floors/floor.cell.2.7\",\n  [\"floor.cell.3.7\"] = \"root/stage/board.floors/floor.cell.3.7\",\n  [\"floor.cell.4.7\"] = \"root/stage/board.floors/floor.cell.4.7\",\n  [\"floor.cell.5.7\"] = \"root/stage/board.floors/floor.cell.5.7\",\n  [\"floor.cell.6.7\"] = \"root/stage/board.floors/floor.cell.6.7\",\n  [\"floor.cell.7.1\"] = \"root/stage/board.floors/floor.cell.7.1\",\n  [\"floor.cell.7.2\"] = \"root/stage/board.floors/floor.cell.7.2\",\n  [\"floor.cell.7.3\"] = \"root/stage/board.floors/floor.cell.7.3\",\n  [\"floor.cell.7.4\"] = \"root/stage/board.floors/floor.cell.7.4\",\n  [\"floor.cell.7.5\"] = \"root/stage/board.floors/floor.cell.7.5\",\n  [\"floor.cell.7.6\"] = \"root/stage/board.floors/floor.cell.7.6\",\n  [\"floor.cell.7.7\"] = \"root/stage/board.floors/floor.cell.7.7\",\n  [\"board.rugs\"] = \"root/stage/board.rugs\","
+    },
+    {
+      "name": "ensure_cells_loop",
+      "count": 1,
+      "old": "  for rr=1,6 do for cc=1,6 do",
+      "new": "  for rr=1,math.max(8,rows,cols) do for cc=1,math.max(8,rows,cols) do"
+    },
+    {
+      "name": "cfg_rows",
+      "count": 1,
+      "old": "      rows     = 5,",
+      "new": "      rows     = 7,"
+    },
+    {
+      "name": "cfg_cols",
+      "count": 1,
+      "old": "      cols     = 5,",
+      "new": "      cols     = 7,"
+    }
+  ]
+}

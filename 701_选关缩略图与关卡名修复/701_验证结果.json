@@ -1,0 +1,409 @@
+{
+  "version": 701,
+  "total": 78,
+  "pass": 78,
+  "fail": 0,
+  "metrics": {
+    "page1Cells": "133",
+    "page2Cells": "121",
+    "indexBuilds": "4"
+  },
+  "checks": [
+    {
+      "name": "8296条控件记录与700逐字节一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "内嵌脚本等于dist和交付副本",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第1页卡1参数文本",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第1页卡1真实父链及全部格子",
+      "pass": true,
+      "detail": "25"
+    },
+    {
+      "name": "第1页卡1点击关卡映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第1页卡2参数文本",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第1页卡2真实父链及全部格子",
+      "pass": true,
+      "detail": "36"
+    },
+    {
+      "name": "第1页卡2点击关卡映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第1页卡3参数文本",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第1页卡3真实父链及全部格子",
+      "pass": true,
+      "detail": "36"
+    },
+    {
+      "name": "第1页卡3点击关卡映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第1页卡4参数文本",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第1页卡4真实父链及全部格子",
+      "pass": true,
+      "detail": "36"
+    },
+    {
+      "name": "第1页卡4点击关卡映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第1页全部关卡名实际可见",
+      "pass": true,
+      "detail": "4"
+    },
+    {
+      "name": "第1页无空卡残留",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "第2页卡1参数文本",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第2页卡1真实父链及全部格子",
+      "pass": true,
+      "detail": "36"
+    },
+    {
+      "name": "第2页卡1点击关卡映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第2页卡2参数文本",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第2页卡2真实父链及全部格子",
+      "pass": true,
+      "detail": "49"
+    },
+    {
+      "name": "第2页卡2点击关卡映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第2页卡3参数文本",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第2页卡3真实父链及全部格子",
+      "pass": true,
+      "detail": "36"
+    },
+    {
+      "name": "第2页卡3点击关卡映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第2页全部关卡名实际可见",
+      "pass": true,
+      "detail": "3"
+    },
+    {
+      "name": "第2页无空卡残留",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "第1页卡1参数文本",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第1页卡1真实父链及全部格子",
+      "pass": true,
+      "detail": "25"
+    },
+    {
+      "name": "第1页卡1点击关卡映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第1页卡2参数文本",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第1页卡2真实父链及全部格子",
+      "pass": true,
+      "detail": "36"
+    },
+    {
+      "name": "第1页卡2点击关卡映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第1页卡3参数文本",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第1页卡3真实父链及全部格子",
+      "pass": true,
+      "detail": "36"
+    },
+    {
+      "name": "第1页卡3点击关卡映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第1页卡4参数文本",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第1页卡4真实父链及全部格子",
+      "pass": true,
+      "detail": "36"
+    },
+    {
+      "name": "第1页卡4点击关卡映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第1页全部关卡名实际可见",
+      "pass": true,
+      "detail": "4"
+    },
+    {
+      "name": "第1页无空卡残留",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "返回首页缩略图父级关闭",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "返回首页关卡名关闭",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "迟到恢复/select.thumb.pool",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "迟到恢复/select.card.1.info",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "迟到恢复/select.card.1.cell.1.1",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "迟到恢复/select.card.4.info",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "迟到恢复/select.card.4.cell.1.1",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "迟到恢复没有重复全树扫描",
+      "pass": true,
+      "detail": "4"
+    },
+    {
+      "name": "原生文本空初值仍写入",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "文本四次失败后仍补发",
+      "pass": true,
+      "detail": "5"
+    },
+    {
+      "name": "教程必需按钮绑定/home",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "教程关闭/home",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "教程必需按钮绑定/l1",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "教程关闭/l1",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "教程必需按钮绑定/l2",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "教程关闭/l2",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "回放产生完整检查",
+      "pass": true,
+      "detail": 57
+    },
+    {
+      "name": "教程模块与700逐字节保持",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "room_map源码与存档同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "murdoku_core源码与存档同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "furn_art源码与存档同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "furn_art_records源码与存档同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "ui_controller源码与存档同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "engine_adapter源码与存档同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "engine_adapter_qianxing源码与存档同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "main源码与存档同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "tutorial_ui源码与存档同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.init源码与存档同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_001源码与存档同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_002源码与存档同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_003源码与存档同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_004源码与存档同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_005源码与存档同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_006源码与存档同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_007源码与存档同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "全部模块与完整脚本语法",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "七关谜题家具地毯行为与700一致",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "limits": [
+    "控件API由mock模拟；使用真实存档父链并运行真实适配器tick",
+    "700普通加载离线路径能写入，故不能断言截图全部由迟到加载造成",
+    "未导入游戏，未验证实际像素或真实鼠标命中",
+    "未覆盖旧版验证报告"
+  ]
+}

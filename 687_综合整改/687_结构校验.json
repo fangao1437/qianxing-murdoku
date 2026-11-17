@@ -1,0 +1,434 @@
+{
+  "version": 687,
+  "verdict": true,
+  "base": {
+    "file": "686_X标记离场收起.gil",
+    "sha256": "b5efd319c72f0a12e0e66ebd29a08a66d77f163823f7405ed35a5257d25620f8",
+    "records": 7826,
+    "scriptBytes": 644453
+  },
+  "output": {
+    "file": "687_综合整改.gil",
+    "sha256": "8d33d9af7592ff2a8d9b9af37838c606fff3d816762fdaed984a4e4143a169fe",
+    "bytes": 6953769,
+    "records": 7826,
+    "scriptBytes": 645926
+  },
+  "checks": [
+    {
+      "name": "记录数 7826→7826",
+      "ok": true,
+      "detail": [
+        7826,
+        7826
+      ]
+    },
+    {
+      "name": "0 新增 / 0 删除",
+      "ok": true,
+      "detail": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "旧记录改动恰好 7 条且全部在白名单（rogue=0）",
+      "ok": true,
+      "detail": {
+        "changed": 7,
+        "rogue": []
+      }
+    },
+    {
+      "name": "686 SHA 与规格一致",
+      "ok": true
+    },
+    {
+      "name": "所有父级 childList 与 recTop 同序",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "新增悬空父引用 0（686 基线悬空原样保留）",
+      "ok": true,
+      "detail": {
+        "baseline": 36,
+        "added": 0
+      }
+    },
+    {
+      "name": "退出菜单倒计时 -200 → -95（跟随 683 四键换位）",
+      "ok": true,
+      "detail": [
+        0,
+        -95,
+        312,
+        40
+      ]
+    },
+    {
+      "name": "倒计时 4 个状态全部 -95",
+      "ok": true
+    },
+    {
+      "name": "result.settle.countdown 仍 -258（684 已换位）",
+      "ok": true
+    },
+    {
+      "name": "settle.btn.countdown 仍 -339（结算按钮从未换位）",
+      "ok": true
+    },
+    {
+      "name": "退出菜单四键 y=120/40/-40/-120 未动",
+      "ok": true
+    },
+    {
+      "name": "cancel.settle_shift=30 的让位逻辑仍在",
+      "ok": true
+    },
+    {
+      "name": "网格纸共享子层 48 个",
+      "ok": true,
+      "detail": 48
+    },
+    {
+      "name": "网格纸父层 + 48 子层逐字节不变",
+      "ok": true
+    },
+    {
+      "name": "656 设计位 -5 / 680 后 -45.5 口径：静态层保持 686（-45.5）",
+      "ok": true
+    },
+    {
+      "name": "首页其它元素（卡片/教程圆按钮/便签）零改动",
+      "ok": true
+    },
+    {
+      "name": "SETTLE_ART_TINT 20 层静态颜色未改",
+      "ok": true
+    },
+    {
+      "name": "684/685/686 成果层未改（放大镜/X 标记/教程五卡）",
+      "ok": true
+    },
+    {
+      "name": "所有弹窗小叉 20×20：hint635.menu.close",
+      "ok": true,
+      "detail": [
+        20,
+        20
+      ]
+    },
+    {
+      "name": "所有弹窗小叉 20×20：hint635.result.close",
+      "ok": true,
+      "detail": [
+        20,
+        20
+      ]
+    },
+    {
+      "name": "所有弹窗小叉 20×20：help617.close",
+      "ok": true,
+      "detail": [
+        20,
+        20
+      ]
+    },
+    {
+      "name": "所有弹窗小叉 20×20：td.home.closex",
+      "ok": true,
+      "detail": [
+        20,
+        20
+      ]
+    },
+    {
+      "name": "所有弹窗小叉 20×20：td.l1.closex",
+      "ok": true,
+      "detail": [
+        20,
+        20
+      ]
+    },
+    {
+      "name": "所有弹窗小叉 20×20：td.l2.closex",
+      "ok": true,
+      "detail": [
+        20,
+        20
+      ]
+    },
+    {
+      "name": "提示/帮助弹窗热区仍 36×36：hint635.menu.close.hit",
+      "ok": true
+    },
+    {
+      "name": "提示/帮助弹窗热区仍 36×36：hint635.result.close.hit",
+      "ok": true
+    },
+    {
+      "name": "提示/帮助弹窗热区仍 36×36：help617.close.hit",
+      "ok": true
+    },
+    {
+      "name": "教程热区同步放大到 ≈46.10229：td.home.btn.close",
+      "ok": true,
+      "detail": [
+        46.102291107177734,
+        46.102291107177734
+      ]
+    },
+    {
+      "name": "教程热区同步放大到 ≈46.10229：td.l1.btn.close",
+      "ok": true,
+      "detail": [
+        46.102291107177734,
+        46.102291107177734
+      ]
+    },
+    {
+      "name": "教程热区同步放大到 ≈46.10229：td.l2.btn.close",
+      "ok": true,
+      "detail": [
+        46.102291107177734,
+        46.102291107177734
+      ]
+    },
+    {
+      "name": "小叉中心位置未漂移",
+      "ok": true,
+      "detail": [
+        {
+          "n": "td.home.closex",
+          "ok": true,
+          "from": [
+            672.134033203125,
+            276.79541015625
+          ],
+          "to": [
+            672.134033203125,
+            276.79541015625
+          ]
+        },
+        {
+          "n": "td.l1.closex",
+          "ok": true,
+          "from": [
+            672.134033203125,
+            276.79541015625
+          ],
+          "to": [
+            672.134033203125,
+            276.79541015625
+          ]
+        },
+        {
+          "n": "td.l2.closex",
+          "ok": true,
+          "from": [
+            672.134033203125,
+            276.79541015625
+          ],
+          "to": [
+            672.134033203125,
+            276.79541015625
+          ]
+        }
+      ]
+    },
+    {
+      "name": "无小叉弹窗未新增关闭控件",
+      "ok": true
+    },
+    {
+      "name": "小叉颜色 #FF47271A / 图元 100151 / 染色开关保持 686",
+      "ok": true
+    },
+    {
+      "name": "内嵌 Lua 644,453 → 645,926 B",
+      "ok": true,
+      "detail": [
+        644453,
+        645926
+      ]
+    },
+    {
+      "name": "Lua 补丁/保留 tintArt",
+      "ok": true
+    },
+    {
+      "name": "Lua 补丁/保留 tintGray",
+      "ok": true
+    },
+    {
+      "name": "Lua 补丁/保留 tintOriginBg",
+      "ok": true
+    },
+    {
+      "name": "Lua 补丁/保留 gridHomeDy",
+      "ok": true
+    },
+    {
+      "name": "Lua 补丁/保留 gridGameUnchanged",
+      "ok": true
+    },
+    {
+      "name": "Lua 补丁/保留 legacyMark",
+      "ok": true
+    },
+    {
+      "name": "Lua 补丁/保留 legacyTint",
+      "ok": true
+    },
+    {
+      "name": "Lua 补丁/保留 legacyShift",
+      "ok": true
+    },
+    {
+      "name": "反向锚点各出现一次",
+      "ok": true
+    },
+    {
+      "name": "内嵌 Lua 反向替换逐字节还原 686",
+      "ok": true,
+      "detail": "OK"
+    },
+    {
+      "name": "源码 adapter 含 687 染色分支",
+      "ok": true
+    },
+    {
+      "name": "源码 entry 含 687 网格纸双屏注释",
+      "ok": true
+    },
+    {
+      "name": "luac -p 四份 Lua 全过",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "686 模拟复现：未启用结算时 0 层被染灰",
+      "ok": true,
+      "detail": {
+        "gray": 0,
+        "outline": 0,
+        "capsule": 0
+      }
+    },
+    {
+      "name": "687 未启用结算时 6 层全部染灰 #686B70",
+      "ok": true,
+      "detail": {
+        "gray": 6,
+        "outline": 3,
+        "capsule": 3
+      }
+    },
+    {
+      "name": "687 启用结算时 3 层描边 #6C402E + 3 层胶囊 #FCECD4 复原",
+      "ok": true,
+      "detail": {
+        "gray": 6,
+        "outline": 3,
+        "capsule": 3
+      }
+    },
+    {
+      "name": "686 网格纸父坐标 home=(0,0) / game=(105,46)",
+      "ok": true,
+      "detail": [
+        [
+          0,
+          0
+        ],
+        [
+          105,
+          46
+        ],
+        [
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "name": "687 首页回设计位 home=(0,40.5)，game 仍 (105,46)",
+      "ok": true,
+      "detail": [
+        [
+          0,
+          40.5
+        ],
+        [
+          105,
+          46
+        ],
+        [
+          0,
+          40.5
+        ]
+      ]
+    },
+    {
+      "name": "roundtrip 逐字节往返",
+      "ok": true,
+      "detail": "失败（738 ms）\n  试 [20, 6953765)：✅ 解析出 45 个字段（584 ms）\n✅ 采用区间 [20, 6953765)：顶层 45 个字段\n   尾部剩余 4 字节：00000679\n重新编码：6953745 字节（原体 6953745 字节）\n\n★★★ 往返成功：重新编码与原始体**逐字节完全一致**\n    → 模型是完整的：可以安全地改字段 / 加记录 / 重算长度。\n"
+    },
+    {
+      "name": "check_childlist_top 通过",
+      "ok": true,
+      "detail": "findChildList —— 确认只用于读/诊断\n   ⚠️  gen_home.mjs：import 了**递归版** findChildList —— 确认只用于读/诊断\n   ⚠️  move_side_buttons.mjs：import 了**递归版** findChildList —— 确认只用于读/诊断\n\n★ 顶层子列表自检通过（库 + gen_bulk 副本同构，无致病写法）\n"
+    }
+  ],
+  "behaviorSimulation": {
+    "tint": {
+      "v686": {
+        "gray": 0,
+        "outline": 0,
+        "capsule": 0
+      },
+      "v687": {
+        "gray": 6,
+        "outline": 3,
+        "capsule": 3
+      }
+    },
+    "grid": {
+      "v686": [
+        [
+          0,
+          0
+        ],
+        [
+          105,
+          46
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "v687": [
+        [
+          0,
+          40.5
+        ],
+        [
+          105,
+          46
+        ],
+        [
+          0,
+          40.5
+        ]
+      ]
+    }
+  },
+  "failed": [],
+  "summary": {
+    "total": 54,
+    "passed": 54,
+    "failed": 0
+  }
+}

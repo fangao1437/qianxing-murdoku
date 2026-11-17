@@ -1,0 +1,31 @@
+{
+  "base": {
+    "file": "qianxing-murdoku\\688_第4至7关接入\\688_第4至7关接入.gil",
+    "sha256": "337510627ba91121e2df3a9713b4e1d260e3ce681fd3f91e4042d1c6137dff6d",
+    "records": 7921,
+    "scriptBytes": 662152
+  },
+  "output": {
+    "scriptBytes": 606688,
+    "expectRecords": 7921,
+    "sha256": "f8798b9c89b1e025b187f5932497742b2f163080fdb64aa214ea86295619623c",
+    "bytes": 6984401,
+    "recordsOnDisk": 7921,
+    "changedRecords": 0,
+    "luaRoundtrip": true
+  },
+  "strip": {
+    "blankLinesRemoved": 12801,
+    "blankBytesRemoved": 57793
+  },
+  "patches": [
+    "685 每帧抬层：缓存 pcall 闭包，保持每帧复位不变式",
+    "on_tick：无定时器时不再分配空表（原循环本就是 no-op）",
+    "sync_block640：句柄按控件树代数缓存，热区绑定仅未绑定时调用；每帧显隐/抬层逻辑不变",
+    "sync_art647：结算票券染色状态门控（can_settle 副作用逐帧保留；控件全就绪才固化）",
+    "sync_art649_page：选关分页箭头染色门控（levels 取值逐帧保留）"
+  ],
+  "reversibility": {
+    "restoredTo688Bytes": true
+  }
+}

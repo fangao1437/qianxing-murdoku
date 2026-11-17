@@ -1,0 +1,22 @@
+{
+  "version": 705,
+  "input": "704_缩略图间距与定位修复.gil",
+  "output": "705_可见卡框定位与教程文案修复.gil",
+  "sha256": "18265028159ea03bb65c587abe17f24f0dd40d6a4fed3910e1c679d732096202",
+  "records": 8300,
+  "changedControlRecords": [
+    1073753351,
+    1073753909
+  ],
+  "unchangedControlRecords": 8298,
+  "visualReference": "art647.select.card.N.paper",
+  "gapCanvasPx": 2,
+  "wallCanvasPx": 5,
+  "doorCanvasPx": 5,
+  "notes": [
+    "基于实际白色卡框及其父链计算视觉位置",
+    "保留原有点击事件、教程绑定和迟到属性补发",
+    "仅更改两关末页nexttext文本；控件层级与几何数据未改",
+    "未操作游戏，未验证真实像素和鼠标命中"
+  ]
+}

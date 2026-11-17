@@ -1,0 +1,341 @@
+{
+  "version": 699,
+  "total": 64,
+  "pass": 64,
+  "fail": 0,
+  "metrics": {
+    "rawScans": "1",
+    "rawChildReads": "5703",
+    "homeChildReads": "5711",
+    "page1Visible": "133,52,16",
+    "page2Visible": "121,44,15",
+    "propertyWrites": "3158"
+  },
+  "checks": [
+    {
+      "name": "首帧索引重建不超过1次",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "name": "首页真实控制器首帧可执行",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "首页弹窗父级隐藏",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "选关第1页render成功",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第1页真实控件更新与多余项隐藏",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第1页格子数正确",
+      "pass": true,
+      "detail": "133/133"
+    },
+    {
+      "name": "选关第2页render成功",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第2页真实控件更新与多余项隐藏",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第2页格子数正确",
+      "pass": true,
+      "detail": "121/121"
+    },
+    {
+      "name": "选关第1页render成功",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第1页真实控件更新与多余项隐藏",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "第1页格子数正确",
+      "pass": true,
+      "detail": "133/133"
+    },
+    {
+      "name": "冷启动直接进入第2页",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "选关返回首页没有缩略图残留",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "全流程不自动创建控件",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "属性下发无异常",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "300个不同缺失名只建一次索引",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "name": "二次缺失后迟到控件仍可恢复",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "结构代数变化后恢复",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "case_001短名为有效UTF8",
+      "pass": true,
+      "detail": "夜盗独行"
+    },
+    {
+      "name": "case_001缩略图每个节点真实存在",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "case_001格墙门数量匹配",
+      "pass": true,
+      "detail": "25,9,3"
+    },
+    {
+      "name": "case_002短名为有效UTF8",
+      "pass": true,
+      "detail": "双影"
+    },
+    {
+      "name": "case_002缩略图每个节点真实存在",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "case_002格墙门数量匹配",
+      "pass": true,
+      "detail": "36,14,3"
+    },
+    {
+      "name": "case_003短名为有效UTF8",
+      "pass": true,
+      "detail": "原作明亮俯视"
+    },
+    {
+      "name": "case_003缩略图每个节点真实存在",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "case_003格墙门数量匹配",
+      "pass": true,
+      "detail": "36,17,5"
+    },
+    {
+      "name": "case_004短名为有效UTF8",
+      "pass": true,
+      "detail": "档案卷宗"
+    },
+    {
+      "name": "case_004缩略图每个节点真实存在",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "case_004格墙门数量匹配",
+      "pass": true,
+      "detail": "36,12,5"
+    },
+    {
+      "name": "case_005短名为有效UTF8",
+      "pass": true,
+      "detail": "夜勘卷宗"
+    },
+    {
+      "name": "case_005缩略图每个节点真实存在",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "case_005格墙门数量匹配",
+      "pass": true,
+      "detail": "36,13,5"
+    },
+    {
+      "name": "case_006短名为有效UTF8",
+      "pass": true,
+      "detail": "蓝晒图"
+    },
+    {
+      "name": "case_006缩略图每个节点真实存在",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "case_006格墙门数量匹配",
+      "pass": true,
+      "detail": "49,14,5"
+    },
+    {
+      "name": "case_007短名为有效UTF8",
+      "pass": true,
+      "detail": "旋转档案"
+    },
+    {
+      "name": "case_007缩略图每个节点真实存在",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "case_007格墙门数量匹配",
+      "pass": true,
+      "detail": "36,17,5"
+    },
+    {
+      "name": "教程模块与695逐字一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "入口除版本标记外与695一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "不含698递归显隐账本",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "存档内嵌Lua等于dist及交付副本",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "room_map源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "murdoku_core源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "furn_art源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "furn_art_records源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "ui_controller源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "engine_adapter源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "engine_adapter_qianxing源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "main源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "tutorial_ui源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.init源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_001源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_002源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_003源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_004源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_005源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_006源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_007源码与存档一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "入口源码一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "七关谜题家具地毯行为与698保持",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "18个运行源码和dist语法通过",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "limits": [
+    "控件API由mock模拟；采用祖先显隐计算有效状态",
+    "本脚本不证明真机鼠标命中、像素视觉或帧率",
+    "完整入口对照回放结果另见699_入口对照结果.json"
+  ]
+}

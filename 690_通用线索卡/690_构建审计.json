@@ -1,0 +1,122 @@
+{
+  "version": 690,
+  "base": {
+    "file": "qianxing-murdoku\\689_性能负载优化\\689_性能负载优化.gil",
+    "sha256": "f8798b9c89b1e025b187f5932497742b2f163080fdb64aa214ea86295619623c",
+    "records": 7921,
+    "luaBytes": 606688
+  },
+  "output": {
+    "expectRecords": 7945,
+    "luaBytes": 607073,
+    "sha256": "59770afb2a607f98ac5a708a5c4fed21ced7d1e440d440bf3acfab7d1911a99d",
+    "bytes": 7004554,
+    "recordsOnDisk": 7945,
+    "unexpectedChangedRecords": 0,
+    "luaRoundtrip": true
+  },
+  "counts": {
+    "addedPerTemplate": 12,
+    "templates": 2,
+    "addedTotal": 24,
+    "modifiedRecords": 32
+  },
+  "lua": {
+    "listOccurrences": 2,
+    "highlightOccurrences": 1,
+    "genLayers": 15,
+    "reversible": true
+  },
+  "layers": [
+    {
+      "name": "gen690.base",
+      "role": "靛蓝主色：整卡覆盖普通红卡面（含全部 672 渐变层）"
+    },
+    {
+      "name": "gen690.hi",
+      "role": "左上 45° 亮钢蓝斜分界（同 art671.clueN.hi 几何）"
+    },
+    {
+      "name": "gen690.trap",
+      "role": "右侧梯形底（同 art672.clueN.trap 几何）"
+    },
+    {
+      "name": "gen690.lo",
+      "role": "主色遮盖三角，切出梯形斜边（同 art671.clueN.lo 几何）"
+    },
+    {
+      "name": "gen690.mid1",
+      "role": "中间异色区 ①（同 art672.clueN.mid1 几何）"
+    },
+    {
+      "name": "gen690.mid2",
+      "role": "中间异色区 ②（同 art672.clueN.mid2 几何）"
+    },
+    {
+      "name": "gen690.corner",
+      "role": "梯形斜边补到底边（同 art672.clueN.corner 几何）"
+    },
+    {
+      "name": "gen690.rule",
+      "role": "金色规则分隔线（普通卡没有）：从 x=-100 起、避开左环章（右缘 -106），标题区 / 正文区"
+    },
+    {
+      "name": "gen690.seal.outer",
+      "role": "左侧金色双环章外环（替代头像）"
+    },
+    {
+      "name": "gen690.seal.inner",
+      "role": "双环章内芯"
+    },
+    {
+      "name": "gen690.mark",
+      "role": "环章内「公」＝公共/公理，不属于任何人；字号按 letter 口径略收"
+    },
+    {
+      "name": "gen690.badge",
+      "role": "右侧「真」＝通用线索始终为真，替代 A–V 字母徽；字号与 letter 完全一致"
+    }
+  ],
+  "summary": [
+    {
+      "rootId": 1073742421,
+      "genBackropId": 1073742807,
+      "genTitleId": 1073742808,
+      "genBodyId": 1073742809,
+      "added": [
+        "gen690.base",
+        "gen690.hi",
+        "gen690.trap",
+        "gen690.lo",
+        "gen690.mid1",
+        "gen690.mid2",
+        "gen690.corner",
+        "gen690.rule",
+        "gen690.seal.outer",
+        "gen690.seal.inner",
+        "gen690.mark",
+        "gen690.badge"
+      ]
+    },
+    {
+      "rootId": 1073742428,
+      "genBackropId": 1073742804,
+      "genTitleId": 1073742805,
+      "genBodyId": 1073742806,
+      "added": [
+        "gen690.base",
+        "gen690.hi",
+        "gen690.trap",
+        "gen690.lo",
+        "gen690.mid1",
+        "gen690.mid2",
+        "gen690.corner",
+        "gen690.rule",
+        "gen690.seal.outer",
+        "gen690.seal.inner",
+        "gen690.mark",
+        "gen690.badge"
+      ]
+    }
+  ]
+}

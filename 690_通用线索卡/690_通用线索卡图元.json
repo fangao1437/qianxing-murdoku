@@ -1,0 +1,52 @@
+{
+  "version": 690,
+  "name": "通用线索卡 · 同构异色设计",
+  "reference": "672_梯形与异色区 定案的普通线索卡（334×85.4 模板 / 330×85.4 描边 / 324×79.4 卡面 / 45° 斜分界 + 右侧梯形 + 中间双三角异色区 + 左头像 / 中正文 / 右字母徽）",
+  "design_intent": [
+    "风格相同：几何构造、图元语法（100001 矩形 / 100002 椭圆 / 100003 等腰三角）、尺寸、层序、四槽排版、白字正文、选中时 3px 黄框，全部照搬 672 普通卡；7 枚渐变/梯形图元直接复用 672 的解析参数，只换颜色。",
+    "可辨差别：① 色相由「枣红（人的口供）」换为「靛蓝＋金（客观规则，不属任何人）」；② 左侧头像位换成金色双环章「公」；③ 右侧字母徽换成金字「真」（通用线索恒真）；④ 标题下加一条金色规则分隔线；⑤ 标题字色由黑改金。",
+    "不变：普通线索卡所有可见层逐字节不动；两套 clue 模板同步；通用项仍占网格 pos=1、只接提示高亮；未导入真机。"
+  ],
+  "colors": {
+    "normal": { "stroke": "#FF491B1E", "main": "#FF68262A", "hi": "#FF9D3033", "mid": "#FF702830", "dark": "#FF611F23", "text": "#FFFFFFFF", "highlight": "#FFFFD44B" },
+    "general": {
+      "frame": "#FF20304F",
+      "base": "#FF2A3E66",
+      "hi": "#FF4C72A8",
+      "trap": "#FF22345A",
+      "mid": "#FF334A78",
+      "sealInner": "#FF1B2A46",
+      "gold": "#FFD9A441",
+      "goldText": "#FFE8C877",
+      "body": "#FFFFFFFF",
+      "highlight": "#FFFFD44B"
+    }
+  },
+  "coordinate": "相对 clue 模板中心（x 右为正，y 上为正）；与 689 盘点值同一口径",
+  "layers": [
+    { "name": "gen690.base",        "proto": "image", "x": 0,        "y": 0,        "w": 324,       "h": 79.4,     "rot": 0,         "imageId": 100001, "color": "#FF2A3E66", "role": "靛蓝主色：整卡覆盖普通红卡面（含全部 672 渐变层）" },
+    { "name": "gen690.hi",          "proto": "image", "x": -142.15,  "y": 19.85,    "w": 112.289,  "h": 56.144,   "rot": 45,        "imageId": 100003, "color": "#FF4C72A8", "role": "左上 45° 亮钢蓝斜分界（同 art671.clueN.hi 几何）" },
+    { "name": "gen690.trap",        "proto": "image", "x": 110.947,  "y": 0,        "w": 102.106,  "h": 79.4,     "rot": 0,         "imageId": 100001, "color": "#FF22345A", "role": "右侧梯形底（同 art672.clueN.trap 几何）" },
+    { "name": "gen690.lo",          "proto": "image", "x": 73.22,    "y": 19.85,    "w": 142.457,  "h": 47.816,   "rot": 33.874,    "imageId": 100003, "color": "#FF2A3E66", "role": "主色遮盖三角，切出梯形斜边（同 art671.clueN.lo 几何）" },
+    { "name": "gen690.mid1",        "proto": "image", "x": -22.79,   "y": 4.047,    "w": 69.583,   "h": 17.996,   "rot": -111.695,  "imageId": 100003, "color": "#FF334A78", "role": "中间异色区 ①（同 art672.clueN.mid1 几何）" },
+    { "name": "gen690.mid2",        "proto": "image", "x": -7.813,   "y": 27.628,   "w": 73.672,   "h": 31.969,   "rot": 40.954,    "imageId": 100003, "color": "#FF334A78", "role": "中间异色区 ②（同 art672.clueN.mid2 几何）" },
+    { "name": "gen690.corner",      "proto": "image", "x": 63.195,   "y": -29.827,  "w": 70.433,   "h": 23.5,     "rot": -146.126,  "imageId": 100003, "color": "#FF22345A", "role": "梯形斜边补到底边（同 art672.clueN.corner 几何）" },
+    { "name": "gen690.rule",        "proto": "image", "x": 22,       "y": 14,       "w": 244,      "h": 2,        "rot": 0,         "imageId": 100001, "color": "#FFD9A441", "role": "金色规则分隔线（普通卡没有）：从 x=-100 起、避开左环章（右缘 -106），标题区 / 正文区" },
+    { "name": "gen690.seal.outer",  "proto": "image", "x": -132.214, "y": -9.5,     "w": 52,       "h": 52,       "rot": 0,         "imageId": 100002, "color": "#FFD9A441", "role": "左侧金色双环章外环（替代头像）" },
+    { "name": "gen690.seal.inner",  "proto": "image", "x": -132.214, "y": -9.5,     "w": 42,       "h": 42,       "rot": 0,         "imageId": 100002, "color": "#FF1B2A46", "role": "双环章内芯" },
+    { "name": "gen690.mark",        "proto": "text",  "x": -132.214, "y": -9.5,     "w": 40,       "h": 40,       "rot": 0,         "text": "公",       "textColor": "#FFE8C877", "font": { "512": 24, "513": 18 }, "role": "环章内「公」＝公共/公理，不属于任何人；字号按 letter 口径略收" },
+    { "name": "gen690.badge",       "proto": "text",  "x": 140,      "y": -20,      "w": 40,       "h": 50,       "rot": 0,         "text": "真",       "textColor": "#FFE8C877", "font": { "512": 30, "513": 20 }, "role": "右侧「真」＝通用线索始终为真，替代 A–V 字母徽；字号与 letter 完全一致" }
+  ],
+  "modify": [
+    { "name": "gen.backrop", "x": 0, "y": 0, "w": 330, "h": 85.4, "imageId": 100001, "color": "#FF20304F", "imageType": 1, "hidden": true,  "role": "由官方素材 107133 改为 330×85.4 靛蓝外框；运行时高亮目标改到它 ⇒ 选中仍只有 3px 一圈黄" },
+    { "name": "gen.title",   "textColor": "#FFE8C877", "hidden": true,  "role": "静态文案「通用线索」不变，字色 黑 → 金" },
+    { "name": "gen.body",    "x": 14, "y": -2, "w": 236, "h": 56, "textColor": "#FFFFFFFF", "hidden": false, "role": "正文略右移，避开左侧环章；白字不变，运行时仍写 row.<关>.clue 的内容" }
+  ],
+  "lua": {
+    "reason": "通用项与普通项共用同一个 clue 模板实例 ⇒ 新增层必须静态隐藏、由运行时按名单点亮/熄灭；只改名单与高亮目标两处，不动每帧同步链（689 性能补丁保留）。",
+    "genLayers": ["gen.backrop", "gen.title", "gen.body", "gen690.base", "gen690.hi", "gen690.trap", "gen690.lo", "gen690.mid1", "gen690.mid2", "gen690.corner", "gen690.rule", "gen690.seal.outer", "gen690.seal.inner", "gen690.mark", "gen690.badge"],
+    "oldList": "ipairs({ \"gen.backrop\", \"gen.title\", \"gen.body\" })",
+    "highlightOld": "item:FindChild(\"backrop1\")",
+    "highlightNew": "item:FindChild(\"gen.backrop\")"
+  }
+}

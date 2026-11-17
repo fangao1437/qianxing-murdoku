@@ -1,0 +1,275 @@
+{
+  "version": 691,
+  "verdict": true,
+  "pass": 51,
+  "fail": 0,
+  "checks": [
+    {
+      "name": "689 基准 SHA 前缀",
+      "pass": true,
+      "detail": "f8798b9c89b1e025"
+    },
+    {
+      "name": "689 记录数 7921",
+      "pass": true,
+      "detail": "7921"
+    },
+    {
+      "name": "691 记录数 7961",
+      "pass": true,
+      "detail": "7961"
+    },
+    {
+      "name": "产物 SHA 与构建审计一致",
+      "pass": true,
+      "detail": "0fb6be5d437ffd76"
+    },
+    {
+      "name": "689 原件未被覆盖",
+      "pass": true,
+      "detail": "6984401"
+    },
+    {
+      "name": "690 历史版本仍在",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "新增记录恰好 40 条",
+      "pass": true,
+      "detail": "40"
+    },
+    {
+      "name": "删除记录 0 条",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "被修改的原记录恰好 9 条且全在预期名单",
+      "pass": true,
+      "detail": "1073742421,1073742807,1073742808,1073742809,1073742428,1073742804,1073742805,1073742806,1073754315"
+    },
+    {
+      "name": "rogue 改动 = 0",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "未列入名单的 7912 条原记录逐字节全同",
+      "pass": true,
+      "detail": "checked"
+    },
+    {
+      "name": "7 层通用卡图元 × 2 套",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "通用卡新层全部静态隐藏",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "两套 clue 模板",
+      "pass": true,
+      "detail": "1073742421,1073742428"
+    },
+    {
+      "name": "层序 #1073742421：gen.backrop < gen691×7 < gen.title < gen.body",
+      "pass": true,
+      "detail": "backrop=93 gen691=94..100 title=101 body=102"
+    },
+    {
+      "name": "gen.backrop #1073742421：100001 / 330×85.4 / 橙棕 #FF9A4A18 / 隐藏",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "gen.title #1073742421 深棕字 #FF4A2A12",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "gen.body #1073742421 深棕字 #FF4A2A12",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "gen.body #1073742421 居中 260×60",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "层序 #1073742428：gen.backrop < gen691×7 < gen.title < gen.body",
+      "pass": true,
+      "detail": "backrop=93 gen691=94..100 title=101 body=102"
+    },
+    {
+      "name": "gen.backrop #1073742428：100001 / 330×85.4 / 橙棕 #FF9A4A18 / 隐藏",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "gen.title #1073742428 深棕字 #FF4A2A12",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "gen.body #1073742428 深棕字 #FF4A2A12",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "gen.body #1073742428 居中 260×60",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "头像位 / letter 位留白（无 gen690 徽章类记录）",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "689 隐藏层 945",
+      "pass": true,
+      "detail": "945"
+    },
+    {
+      "name": "691 新增 40 条全部静态隐藏",
+      "pass": true,
+      "detail": "0 条未隐藏"
+    },
+    {
+      "name": "普通卡 8 个可见视觉层逐字段相同",
+      "pass": true,
+      "detail": "8"
+    },
+    {
+      "name": "普通卡 backrop1 高亮基色仍 #FF491B1E",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "floor.cell 容器 49 条",
+      "pass": true,
+      "detail": "49"
+    },
+    {
+      "name": "floor.cell 的 face 49 条",
+      "pass": true,
+      "detail": "49"
+    },
+    {
+      "name": "board.floors childList 49",
+      "pass": true,
+      "detail": "49"
+    },
+    {
+      "name": "13 个新增地板格都在 childList 且带 face",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "path_map 追加 13 行",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "ensure_cells 循环改为动态（含 8 上界，6×6 关也能隐藏第7/8行列）",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "cfg.cells rows/cols = 7",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "case_006 doors 9 → 5",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "其余 3 关 doors 数组未改",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "门显隐恒去重（down/right 恒 skip）",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "整块地毯模板已停用",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "逐格 els 仍启用（FURN_BAKED=false）",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "M.new 恢复页态",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "翻页回写模块变量",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "首页选关同步模块变量",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "689 每帧同步链未改",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "12 项 Lua 补丁反向逐字节还原 689",
+      "pass": true,
+      "detail": "585023 → 586030"
+    },
+    {
+      "name": "luac -p 689",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "luac -p 691",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "691_内嵌Lua_691.lua 与存档一致",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "Lua 行为级 57/57（裁门不改谜题）",
+      "pass": true,
+      "detail": "57/57"
+    },
+    {
+      "name": "原记录静态文本零改动",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "base": {
+    "sha256": "f8798b9c89b1e025b187f5932497742b2f163080fdb64aa214ea86295619623c",
+    "records": 7921,
+    "hidden": 945
+  },
+  "output": {
+    "sha256": "0fb6be5d437ffd767168265ee0d8cf7e8fed3cca92cacd63d694bd3e07e065d7",
+    "bytes": 7014646,
+    "records": 7961,
+    "hidden": 985
+  },
+  "timestamp": "2026-11-15T09:50:54.719Z"
+}

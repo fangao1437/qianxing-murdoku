@@ -1,0 +1,69 @@
+{
+  "version": 693,
+  "base": {
+    "file": "qianxing-murdoku\\691_橙黄通用卡与真机修复\\691_橙黄通用卡与真机修复.gil",
+    "sha256": "0fb6be5d437ffd767168265ee0d8cf7e8fed3cca92cacd63d694bd3e07e065d7",
+    "records": 7961,
+    "luaBytes": 607695
+  },
+  "output": {
+    "expectRecords": 8007,
+    "luaBytes": 611160,
+    "added": 46,
+    "changedExisting": 127,
+    "prefabIds": {
+      "furn.rug.4": 1073760711,
+      "furn.rug.5": 1073760734
+    },
+    "sha256": "20e2a0fa2bd46f4d8117eea7649166cdb88b23eb8b84e2af88a995cc9ef8387d",
+    "bytes": 7054585,
+    "recordsOnDisk": 8007,
+    "rogue": 0,
+    "luaRoundtrip": true,
+    "textVerified": true
+  },
+  "lua": {
+    "patches": 27,
+    "modulesReplaced": [
+      "case_003 第3关定稿（家具调整）",
+      "case_004 A/D 内容互换 + 姓名对调"
+    ],
+    "reversible": true
+  },
+  "texts": {
+    "records": 126,
+    "levels": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
+  },
+  "carpet": [
+    {
+      "template": "furn.rug.4",
+      "sourceId": 1073760711,
+      "layers": 9,
+      "canvas": {
+        "W": 216,
+        "H": 216,
+        "cell": 108,
+        "grid": "2×2"
+      }
+    },
+    {
+      "template": "furn.rug.5",
+      "sourceId": 1073760734,
+      "layers": 9,
+      "canvas": {
+        "W": 216,
+        "H": 216,
+        "cell": 108,
+        "grid": "2×2"
+      }
+    }
+  ]
+}

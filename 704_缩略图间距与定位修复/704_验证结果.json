@@ -1,0 +1,912 @@
+{
+  "version": 704,
+  "total": 177,
+  "pass": 177,
+  "fail": 0,
+  "checks": [
+    {
+      "name": "首页弹窗父级关闭",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1格缝均为2画布像素",
+      "pass": true,
+      "detail": "1.9999999999999..2.0000000000001"
+    },
+    {
+      "name": "页1卡1格子正方形且可见",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1棋盘精确居中",
+      "pass": true,
+      "detail": "-5.6843418860808e-14,0.0"
+    },
+    {
+      "name": "页1卡1底板精确居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1底板四边等宽",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1墙宽至少3画布像素",
+      "pass": true,
+      "detail": "3.0"
+    },
+    {
+      "name": "页1卡1门宽至少5画布像素",
+      "pass": true,
+      "detail": "5.0"
+    },
+    {
+      "name": "页1卡1门墙与格缝中心线对齐",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1完整案件标题",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1标题仍在底部白边",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1点击映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2格缝均为2画布像素",
+      "pass": true,
+      "detail": "1.9999999999999..2.0000000000001"
+    },
+    {
+      "name": "页1卡2格子正方形且可见",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2棋盘精确居中",
+      "pass": true,
+      "detail": "1.1368683772162e-13,0.0"
+    },
+    {
+      "name": "页1卡2底板精确居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2底板四边等宽",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2墙宽至少3画布像素",
+      "pass": true,
+      "detail": "3.0"
+    },
+    {
+      "name": "页1卡2门宽至少5画布像素",
+      "pass": true,
+      "detail": "5.0"
+    },
+    {
+      "name": "页1卡2门墙与格缝中心线对齐",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2完整案件标题",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2标题仍在底部白边",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2点击映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3格缝均为2画布像素",
+      "pass": true,
+      "detail": "1.9999999999999..2.0000000000001"
+    },
+    {
+      "name": "页1卡3格子正方形且可见",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3棋盘精确居中",
+      "pass": true,
+      "detail": "1.1368683772162e-13,0.0"
+    },
+    {
+      "name": "页1卡3底板精确居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3底板四边等宽",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3墙宽至少3画布像素",
+      "pass": true,
+      "detail": "3.0"
+    },
+    {
+      "name": "页1卡3门宽至少5画布像素",
+      "pass": true,
+      "detail": "5.0"
+    },
+    {
+      "name": "页1卡3门墙与格缝中心线对齐",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3完整案件标题",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3标题仍在底部白边",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3点击映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4格缝均为2画布像素",
+      "pass": true,
+      "detail": "1.9999999999999..2.0000000000001"
+    },
+    {
+      "name": "页1卡4格子正方形且可见",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4棋盘精确居中",
+      "pass": true,
+      "detail": "0.0,0.0"
+    },
+    {
+      "name": "页1卡4底板精确居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4底板四边等宽",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4墙宽至少3画布像素",
+      "pass": true,
+      "detail": "3.0"
+    },
+    {
+      "name": "页1卡4门宽至少5画布像素",
+      "pass": true,
+      "detail": "5.0"
+    },
+    {
+      "name": "页1卡4门墙与格缝中心线对齐",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4完整案件标题",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4标题仍在底部白边",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4点击映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡1格缝均为2画布像素",
+      "pass": true,
+      "detail": "1.9999999999999..2.0000000000001"
+    },
+    {
+      "name": "页2卡1格子正方形且可见",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡1棋盘精确居中",
+      "pass": true,
+      "detail": "0.0,0.0"
+    },
+    {
+      "name": "页2卡1底板精确居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡1底板四边等宽",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡1墙宽至少3画布像素",
+      "pass": true,
+      "detail": "3.0"
+    },
+    {
+      "name": "页2卡1门宽至少5画布像素",
+      "pass": true,
+      "detail": "5.0"
+    },
+    {
+      "name": "页2卡1门墙与格缝中心线对齐",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡1完整案件标题",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡1标题仍在底部白边",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡1点击映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡2格缝均为2画布像素",
+      "pass": true,
+      "detail": "1.9999999999999..2.0000000000001"
+    },
+    {
+      "name": "页2卡2格子正方形且可见",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡2棋盘精确居中",
+      "pass": true,
+      "detail": "1.1368683772162e-13,0.0"
+    },
+    {
+      "name": "页2卡2底板精确居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡2底板四边等宽",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡2墙宽至少3画布像素",
+      "pass": true,
+      "detail": "3.0"
+    },
+    {
+      "name": "页2卡2门宽至少5画布像素",
+      "pass": true,
+      "detail": "5.0"
+    },
+    {
+      "name": "页2卡2门墙与格缝中心线对齐",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡2完整案件标题",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡2标题仍在底部白边",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡2点击映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡3格缝均为2画布像素",
+      "pass": true,
+      "detail": "1.9999999999999..2.0000000000001"
+    },
+    {
+      "name": "页2卡3格子正方形且可见",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡3棋盘精确居中",
+      "pass": true,
+      "detail": "1.1368683772162e-13,0.0"
+    },
+    {
+      "name": "页2卡3底板精确居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡3底板四边等宽",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡3墙宽至少3画布像素",
+      "pass": true,
+      "detail": "3.0"
+    },
+    {
+      "name": "页2卡3门宽至少5画布像素",
+      "pass": true,
+      "detail": "5.0"
+    },
+    {
+      "name": "页2卡3门墙与格缝中心线对齐",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡3完整案件标题",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡3标题仍在底部白边",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页2卡3点击映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "末页空卡无残留",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1格缝均为2画布像素",
+      "pass": true,
+      "detail": "1.9999999999999..2.0000000000001"
+    },
+    {
+      "name": "页1卡1格子正方形且可见",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1棋盘精确居中",
+      "pass": true,
+      "detail": "-5.6843418860808e-14,0.0"
+    },
+    {
+      "name": "页1卡1底板精确居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1底板四边等宽",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1墙宽至少3画布像素",
+      "pass": true,
+      "detail": "3.0"
+    },
+    {
+      "name": "页1卡1门宽至少5画布像素",
+      "pass": true,
+      "detail": "5.0"
+    },
+    {
+      "name": "页1卡1门墙与格缝中心线对齐",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1完整案件标题",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1标题仍在底部白边",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡1点击映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "case_001翻页返回位置不漂移",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2格缝均为2画布像素",
+      "pass": true,
+      "detail": "1.9999999999999..2.0000000000001"
+    },
+    {
+      "name": "页1卡2格子正方形且可见",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2棋盘精确居中",
+      "pass": true,
+      "detail": "1.1368683772162e-13,0.0"
+    },
+    {
+      "name": "页1卡2底板精确居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2底板四边等宽",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2墙宽至少3画布像素",
+      "pass": true,
+      "detail": "3.0"
+    },
+    {
+      "name": "页1卡2门宽至少5画布像素",
+      "pass": true,
+      "detail": "5.0"
+    },
+    {
+      "name": "页1卡2门墙与格缝中心线对齐",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2完整案件标题",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2标题仍在底部白边",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡2点击映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "case_002翻页返回位置不漂移",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3格缝均为2画布像素",
+      "pass": true,
+      "detail": "1.9999999999999..2.0000000000001"
+    },
+    {
+      "name": "页1卡3格子正方形且可见",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3棋盘精确居中",
+      "pass": true,
+      "detail": "1.1368683772162e-13,0.0"
+    },
+    {
+      "name": "页1卡3底板精确居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3底板四边等宽",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3墙宽至少3画布像素",
+      "pass": true,
+      "detail": "3.0"
+    },
+    {
+      "name": "页1卡3门宽至少5画布像素",
+      "pass": true,
+      "detail": "5.0"
+    },
+    {
+      "name": "页1卡3门墙与格缝中心线对齐",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3完整案件标题",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3标题仍在底部白边",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡3点击映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "case_003翻页返回位置不漂移",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4格缝均为2画布像素",
+      "pass": true,
+      "detail": "1.9999999999999..2.0000000000001"
+    },
+    {
+      "name": "页1卡4格子正方形且可见",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4棋盘精确居中",
+      "pass": true,
+      "detail": "0.0,0.0"
+    },
+    {
+      "name": "页1卡4底板精确居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4底板四边等宽",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4墙宽至少3画布像素",
+      "pass": true,
+      "detail": "3.0"
+    },
+    {
+      "name": "页1卡4门宽至少5画布像素",
+      "pass": true,
+      "detail": "5.0"
+    },
+    {
+      "name": "页1卡4门墙与格缝中心线对齐",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4完整案件标题",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4标题仍在底部白边",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "页1卡4点击映射",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "case_004翻页返回位置不漂移",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "卡1小数移动及改宽后仍精确居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "卡2小数移动及改宽后仍精确居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "卡3小数移动及改宽后仍精确居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "卡4小数移动及改宽后仍精确居中",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "返回首页缩略图隐藏",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "教程绑定/home",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "教程关闭/home",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "教程绑定/l1",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "教程关闭/l1",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "教程绑定/l2",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "教程关闭/l2",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "零自动创建",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "最终坐标回放执行成功",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "8300条控件记录与703逐字节相同",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "内嵌脚本与dist和交付副本一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "room_map源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "room_map与703保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "murdoku_core源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "murdoku_core与703保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "furn_art源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "furn_art与703保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "furn_art_records源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "furn_art_records与703保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "ui_controller源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "engine_adapter源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "engine_adapter与703保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "engine_adapter_qianxing源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "main源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "main与703保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "tutorial_ui源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "tutorial_ui与703保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.init源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.init与703保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_001源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_001与703保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_002源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_002与703保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_003源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_003与703保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_004源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_004与703保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_005源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_005与703保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_006源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_006与703保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_007源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "levels.case_007与703保持一致",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "入口源码同步",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "17模块与完整脚本Lua语法",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "七关谜题家具地毯行为保持",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "geometry": [
+    "GEOMETRY\tcase_001\t1.9999999999999\t2.0000000000001\t-5.6843418860808e-14\t0.0\t3.0\t5.0",
+    "GEOMETRY\tcase_002\t1.9999999999999\t2.0000000000001\t1.1368683772162e-13\t0.0\t3.0\t5.0",
+    "GEOMETRY\tcase_003\t1.9999999999999\t2.0000000000001\t1.1368683772162e-13\t0.0\t3.0\t5.0",
+    "GEOMETRY\tcase_004\t1.9999999999999\t2.0000000000001\t0.0\t0.0\t3.0\t5.0",
+    "GEOMETRY\tcase_005\t1.9999999999999\t2.0000000000001\t0.0\t0.0\t3.0\t5.0",
+    "GEOMETRY\tcase_006\t1.9999999999999\t2.0000000000001\t1.1368683772162e-13\t0.0\t3.0\t5.0",
+    "GEOMETRY\tcase_007\t1.9999999999999\t2.0000000000001\t1.1368683772162e-13\t0.0\t3.0\t5.0",
+    "GEOMETRY\tcase_001\t1.9999999999999\t2.0000000000001\t-5.6843418860808e-14\t0.0\t3.0\t5.0",
+    "GEOMETRY\tcase_002\t1.9999999999999\t2.0000000000001\t1.1368683772162e-13\t0.0\t3.0\t5.0",
+    "GEOMETRY\tcase_003\t1.9999999999999\t2.0000000000001\t1.1368683772162e-13\t0.0\t3.0\t5.0",
+    "GEOMETRY\tcase_004\t1.9999999999999\t2.0000000000001\t0.0\t0.0\t3.0\t5.0"
+  ],
+  "limits": [
+    "实际存档父链与真实Lua控制器、适配器回放；控件API为离线模拟",
+    "测量单位为1600x900画布坐标；窗口缩放可能影响实际屏幕像素",
+    "未操作游戏，未确认真机像素与真实鼠标命中",
+    "已复现格缝0/1/2变化，精度误差小于0.3画布像素不足以说明全部视觉漂移"
+  ]
+}

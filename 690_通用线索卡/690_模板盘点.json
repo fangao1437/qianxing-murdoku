@@ -1,0 +1,4091 @@
+{
+  "input": "D:\\新建文件夹\\miHoYo Launcher\\qianxing-murdoku\\689_性能负载优化\\689_性能负载优化.gil",
+  "records": 7921,
+  "maxId": "1073760670",
+  "templates": [
+    {
+      "root": {
+        "name": "clue",
+        "id": 1073742421,
+        "hidden": false,
+        "recIndex": 22,
+        "pos": [
+          0,
+          0
+        ],
+        "size": [
+          334.0000915527344,
+          85.40000915527344
+        ],
+        "imageId": null,
+        "imageColor": null,
+        "imageType": null,
+        "rot": 0,
+        "textColor": null,
+        "text": null
+      },
+      "childList": [
+        "backrop1",
+        "backrop2",
+        "art658.clue1.bg",
+        "art658.clue1.grad1",
+        "art658.clue1.grad2",
+        "art658.clue1.grad3",
+        "art659.clue1.mid",
+        "art659.clue1.hi1",
+        "art659.clue1.hi2",
+        "art659.clue1.hi3",
+        "art659.clue1.hi4",
+        "art659.clue1.hi5",
+        "art659.clue1.hi6",
+        "art659.clue1.lo1",
+        "art659.clue1.lo2",
+        "art659.clue1.lo3",
+        "art660.clue1.light.rect",
+        "art660.clue1.light.tri",
+        "art660.clue1.light.patch1",
+        "art660.clue1.light.patch2",
+        "art660.clue1.dark.patch",
+        "art661.clue1.base",
+        "art661.clue1.s300.rect",
+        "art661.clue1.s300.tri",
+        "art661.clue1.s300.patch2",
+        "art661.clue1.s300.patch3",
+        "art661.clue1.s300.patch4",
+        "art661.clue1.s300.patch5",
+        "art661.clue1.s250.rect",
+        "art661.clue1.s250.tri",
+        "art661.clue1.s250.patch2",
+        "art661.clue1.s250.patch3",
+        "art661.clue1.s250.patch4",
+        "art661.clue1.s250.patch5",
+        "art661.clue1.s200.rect",
+        "art661.clue1.s200.tri",
+        "art661.clue1.s200.patch2",
+        "art661.clue1.s200.patch3",
+        "art661.clue1.s200.patch4",
+        "art661.clue1.s200.patch5",
+        "art661.clue1.s095.rect",
+        "art661.clue1.s095.tri",
+        "art661.clue1.s095.patch2",
+        "art661.clue1.s095.patch3",
+        "art661.clue1.s095.patch4",
+        "art661.clue1.s095.patch5",
+        "art661.clue1.s095.patch6",
+        "art661.clue1.s095.patch7",
+        "art661.clue1.s095.patch8",
+        "art658.clue1.rule",
+        "art671.clue1.hi",
+        "art672.clue1.trap",
+        "art671.clue1.lo",
+        "art672.clue1.mid1",
+        "art672.clue1.mid2",
+        "art672.clue1.corner",
+        "letter",
+        "what",
+        "face",
+        "art670.clue1.base",
+        "art670.clue1.s300.rect",
+        "art670.clue1.s300.tri",
+        "art670.clue1.s300.patch2",
+        "art670.clue1.s300.patch3",
+        "art670.clue1.s300.patch4",
+        "art670.clue1.s300.patch5",
+        "art670.clue1.s250.rect",
+        "art670.clue1.s250.tri",
+        "art670.clue1.s250.patch2",
+        "art670.clue1.s250.patch3",
+        "art670.clue1.s250.patch4",
+        "art670.clue1.s250.patch5",
+        "art670.clue1.s200.rect",
+        "art670.clue1.s200.tri",
+        "art670.clue1.s200.patch2",
+        "art670.clue1.s200.patch3",
+        "art670.clue1.s200.patch4",
+        "art670.clue1.s200.patch5",
+        "art670.clue1.s200.patch6",
+        "art670.clue1.s095.rect",
+        "art670.clue1.s095.tri",
+        "art670.clue1.s095.patch2",
+        "art670.clue1.s095.patch3",
+        "art670.clue1.s095.patch4",
+        "art670.clue1.s095.patch5",
+        "art670.clue1.s095.patch6",
+        "art670.clue1.s095.patch7",
+        "art670.clue1.s095.patch8",
+        "art670.clue1.s095.patch9",
+        "art670.clue1.s095.patch10",
+        "art670.clue1.s095.patch11",
+        "who",
+        "gray",
+        "gen.backrop",
+        "gen.title",
+        "gen.body"
+      ],
+      "children": [
+        {
+          "name": "backrop1",
+          "id": 1073742422,
+          "hidden": false,
+          "recIndex": 23,
+          "pos": [
+            0.0001430511474609375,
+            0.00008106230961857364
+          ],
+          "size": [
+            329.99993896484375,
+            85.39997100830078
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF491B1E",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "backrop2",
+          "id": 1073742423,
+          "hidden": false,
+          "recIndex": 24,
+          "pos": [
+            0.0001430511474609375,
+            0.00008106230961857364
+          ],
+          "size": [
+            323.99993896484375,
+            79.4000473022461
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art658.clue1.bg",
+          "id": 1073758142,
+          "hidden": true,
+          "recIndex": 25,
+          "pos": [
+            0,
+            0
+          ],
+          "size": [
+            324,
+            79.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68282A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art658.clue1.grad1",
+          "id": 1073758143,
+          "hidden": true,
+          "recIndex": 26,
+          "pos": [
+            -114,
+            -17.639999389648438
+          ],
+          "size": [
+            150,
+            62
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 28,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art658.clue1.grad2",
+          "id": 1073758144,
+          "hidden": true,
+          "recIndex": 27,
+          "pos": [
+            -72,
+            0
+          ],
+          "size": [
+            150,
+            62
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68282A",
+          "imageType": 1,
+          "rot": 28,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art658.clue1.grad3",
+          "id": 1073758145,
+          "hidden": true,
+          "recIndex": 28,
+          "pos": [
+            -30,
+            17.639999389648438
+          ],
+          "size": [
+            150,
+            62
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF611F23",
+          "imageType": 1,
+          "rot": 28,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art659.clue1.mid",
+          "id": 1073758243,
+          "hidden": true,
+          "recIndex": 29,
+          "pos": [
+            20,
+            0
+          ],
+          "size": [
+            150,
+            85.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68282A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art659.clue1.hi1",
+          "id": 1073758244,
+          "hidden": true,
+          "recIndex": 30,
+          "pos": [
+            -158.25,
+            0
+          ],
+          "size": [
+            13.5,
+            85.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art659.clue1.hi2",
+          "id": 1073758245,
+          "hidden": true,
+          "recIndex": 31,
+          "pos": [
+            -144.75,
+            7.099999904632568
+          ],
+          "size": [
+            13.5,
+            71.19999694824219
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art659.clue1.hi3",
+          "id": 1073758246,
+          "hidden": true,
+          "recIndex": 32,
+          "pos": [
+            -131.25,
+            14.199999809265137
+          ],
+          "size": [
+            13.5,
+            57
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art659.clue1.hi4",
+          "id": 1073758247,
+          "hidden": true,
+          "recIndex": 33,
+          "pos": [
+            -117.75,
+            21.299999237060547
+          ],
+          "size": [
+            13.5,
+            42.79999923706055
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art659.clue1.hi5",
+          "id": 1073758248,
+          "hidden": true,
+          "recIndex": 34,
+          "pos": [
+            -104.25,
+            28.399999618530273
+          ],
+          "size": [
+            13.5,
+            28.600000381469727
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art659.clue1.hi6",
+          "id": 1073758249,
+          "hidden": true,
+          "recIndex": 35,
+          "pos": [
+            -90.75,
+            35.5
+          ],
+          "size": [
+            13.5,
+            14.399999618530273
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art659.clue1.lo1",
+          "id": 1073758250,
+          "hidden": true,
+          "recIndex": 36,
+          "pos": [
+            60,
+            -33.70000076293945
+          ],
+          "size": [
+            42,
+            18
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF611F23",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art659.clue1.lo2",
+          "id": 1073758251,
+          "hidden": true,
+          "recIndex": 37,
+          "pos": [
+            102,
+            -25.700000762939453
+          ],
+          "size": [
+            42,
+            34
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF611F23",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art659.clue1.lo3",
+          "id": 1073758252,
+          "hidden": true,
+          "recIndex": 38,
+          "pos": [
+            144,
+            -17.700000762939453
+          ],
+          "size": [
+            42,
+            50
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF611F23",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art660.clue1.light.rect",
+          "id": 1073758363,
+          "hidden": true,
+          "recIndex": 39,
+          "pos": [
+            -148,
+            0
+          ],
+          "size": [
+            34,
+            85.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art660.clue1.light.tri",
+          "id": 1073758364,
+          "hidden": true,
+          "recIndex": 40,
+          "pos": [
+            -80.97492218017578,
+            3.197786331176758
+          ],
+          "size": [
+            84.43340301513672,
+            20
+          ],
+          "imageId": 100003,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 71.3504638671875,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art660.clue1.light.patch1",
+          "id": 1073758365,
+          "hidden": true,
+          "recIndex": 41,
+          "pos": [
+            -122,
+            20
+          ],
+          "size": [
+            30,
+            34
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art660.clue1.light.patch2",
+          "id": 1073758366,
+          "hidden": true,
+          "recIndex": 42,
+          "pos": [
+            -122,
+            -22
+          ],
+          "size": [
+            30,
+            30
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art660.clue1.dark.patch",
+          "id": 1073758367,
+          "hidden": true,
+          "recIndex": 43,
+          "pos": [
+            140,
+            -18
+          ],
+          "size": [
+            50,
+            46
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF611F23",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue1.base",
+          "id": 1073758496,
+          "hidden": true,
+          "recIndex": 44,
+          "pos": [
+            0,
+            0
+          ],
+          "size": [
+            324,
+            79.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF611F23",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue1.s300.rect",
+          "id": 1073758497,
+          "hidden": true,
+          "recIndex": 45,
+          "pos": [
+            -56.650909423828125,
+            0
+          ],
+          "size": [
+            210.69818115234375,
+            79.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue1.s300.tri",
+          "id": 1073758498,
+          "hidden": true,
+          "recIndex": 46,
+          "pos": [
+            69.97442626953125,
+            19.552249908447266
+          ],
+          "size": [
+            118.57795715332031,
+            55.3021125793457
+          ],
+          "imageId": 100003,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 45,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue1.s300.patch2",
+          "id": 1073758499,
+          "hidden": true,
+          "recIndex": 47,
+          "pos": [
+            86.2036361694336,
+            35.05128860473633
+          ],
+          "size": [
+            72.2618179321289,
+            9.29742431640625
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue1.s300.patch3",
+          "id": 1073758500,
+          "hidden": true,
+          "recIndex": 48,
+          "pos": [
+            124.49454498291016,
+            36.91077423095703
+          ],
+          "size": [
+            3.534545421600342,
+            5.578454494476318
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue1.s300.patch4",
+          "id": 1073758501,
+          "hidden": true,
+          "recIndex": 49,
+          "pos": [
+            127.44000244140625,
+            37.84051513671875
+          ],
+          "size": [
+            1.5709091424942017,
+            3.7189695835113525
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue1.s300.patch5",
+          "id": 1073758502,
+          "hidden": true,
+          "recIndex": 50,
+          "pos": [
+            129.4036407470703,
+            38.770259857177734
+          ],
+          "size": [
+            1.5709091424942017,
+            1.8594847917556763
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue1.s250.rect",
+          "id": 1073758503,
+          "hidden": true,
+          "recIndex": 51,
+          "pos": [
+            -81.19635772705078,
+            0
+          ],
+          "size": [
+            161.60728454589844,
+            79.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF70272E",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue1.s250.tri",
+          "id": 1073758504,
+          "hidden": true,
+          "recIndex": 52,
+          "pos": [
+            20.88351821899414,
+            19.552249908447266
+          ],
+          "size": [
+            118.57795715332031,
+            55.3021125793457
+          ],
+          "imageId": 100003,
+          "imageColor": "0xFF70272E",
+          "imageType": 1,
+          "rot": 45,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue1.s250.patch2",
+          "id": 1073758505,
+          "hidden": true,
+          "recIndex": 53,
+          "pos": [
+            37.112728118896484,
+            35.05128860473633
+          ],
+          "size": [
+            72.2618179321289,
+            9.29742431640625
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF70272E",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue1.s250.patch3",
+          "id": 1073758506,
+          "hidden": true,
+          "recIndex": 54,
+          "pos": [
+            75.40364074707031,
+            36.91077423095703
+          ],
+          "size": [
+            3.534545421600342,
+            5.578454494476318
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF70272E",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue1.s250.patch4",
+          "id": 1073758507,
+          "hidden": true,
+          "recIndex": 55,
+          "pos": [
+            78.34909057617188,
+            37.84051513671875
+          ],
+          "size": [
+            1.5709091424942017,
+            3.7189695835113525
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF70272E",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue1.s250.patch5",
+          "id": 1073758508,
+          "hidden": true,
+          "recIndex": 56,
+          "pos": [
+            80.31272888183594,
+            38.770259857177734
+          ],
+          "size": [
+            1.5709091424942017,
+            1.8594847917556763
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF70272E",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue1.s200.rect",
+          "id": 1073758509,
+          "hidden": true,
+          "recIndex": 57,
+          "pos": [
+            -105.74181365966797,
+            0
+          ],
+          "size": [
+            112.51636505126953,
+            79.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue1.s200.tri",
+          "id": 1073758510,
+          "hidden": true,
+          "recIndex": 58,
+          "pos": [
+            -28.20738983154297,
+            19.552249908447266
+          ],
+          "size": [
+            118.57795715332031,
+            55.3021125793457
+          ],
+          "imageId": 100003,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 45,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue1.s200.patch2",
+          "id": 1073758511,
+          "hidden": true,
+          "recIndex": 59,
+          "pos": [
+            -11.978181838989258,
+            35.05128860473633
+          ],
+          "size": [
+            72.2618179321289,
+            9.29742431640625
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue1.s200.patch3",
+          "id": 1073758512,
+          "hidden": true,
+          "recIndex": 60,
+          "pos": [
+            26.312726974487305,
+            36.91077423095703
+          ],
+          "size": [
+            3.534545421600342,
+            5.578454494476318
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue1.s200.patch4",
+          "id": 1073758513,
+          "hidden": true,
+          "recIndex": 61,
+          "pos": [
+            29.258180618286133,
+            37.84051513671875
+          ],
+          "size": [
+            1.5709091424942017,
+            3.7189695835113525
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue1.s200.patch5",
+          "id": 1073758514,
+          "hidden": true,
+          "recIndex": 62,
+          "pos": [
+            31.221817016601562,
+            38.770259857177734
+          ],
+          "size": [
+            1.5709091424942017,
+            1.8594847917556763
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue1.s095.rect",
+          "id": 1073758515,
+          "hidden": true,
+          "recIndex": 63,
+          "pos": [
+            -157.2872772216797,
+            0
+          ],
+          "size": [
+            9.425455093383789,
+            79.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue1.s095.tri",
+          "id": 1073758516,
+          "hidden": true,
+          "recIndex": 64,
+          "pos": [
+            -131.2982940673828,
+            19.552249908447266
+          ],
+          "size": [
+            118.57795715332031,
+            55.3021125793457
+          ],
+          "imageId": 100003,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 45,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue1.s095.patch2",
+          "id": 1073758517,
+          "hidden": true,
+          "recIndex": 65,
+          "pos": [
+            -115.55999755859375,
+            35.05128860473633
+          ],
+          "size": [
+            73.24363708496094,
+            9.29742431640625
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue1.s095.patch3",
+          "id": 1073758518,
+          "hidden": true,
+          "recIndex": 66,
+          "pos": [
+            -120.46908569335938,
+            25.753864288330078
+          ],
+          "size": [
+            63.425453186035156,
+            9.29742431640625
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue1.s095.patch4",
+          "id": 1073758519,
+          "hidden": true,
+          "recIndex": 67,
+          "pos": [
+            -125.37818145751953,
+            16.45644187927246
+          ],
+          "size": [
+            53.60727310180664,
+            9.29742431640625
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue1.s095.patch5",
+          "id": 1073758520,
+          "hidden": true,
+          "recIndex": 68,
+          "pos": [
+            -130.2872772216797,
+            7.159016132354736
+          ],
+          "size": [
+            43.78908920288086,
+            9.29742431640625
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue1.s095.patch6",
+          "id": 1073758521,
+          "hidden": true,
+          "recIndex": 69,
+          "pos": [
+            -76.28726959228516,
+            36.91077423095703
+          ],
+          "size": [
+            2.552727222442627,
+            5.578454494476318
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue1.s095.patch7",
+          "id": 1073758522,
+          "hidden": true,
+          "recIndex": 70,
+          "pos": [
+            -72.85090637207031,
+            38.30538558959961
+          ],
+          "size": [
+            1.5709091424942017,
+            2.789227247238159
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue1.s095.patch8",
+          "id": 1073758523,
+          "hidden": true,
+          "recIndex": 71,
+          "pos": [
+            -70.88726806640625,
+            39.235130310058594
+          ],
+          "size": [
+            1.5709091424942017,
+            0.9297423958778381
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art658.clue1.rule",
+          "id": 1073758146,
+          "hidden": true,
+          "recIndex": 72,
+          "pos": [
+            0,
+            37.189697265625
+          ],
+          "size": [
+            324,
+            4.648712158203125
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFFFDFAF5",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art671.clue1.hi",
+          "id": 1073759779,
+          "hidden": false,
+          "recIndex": 73,
+          "pos": [
+            -142.14999389648438,
+            19.850000381469727
+          ],
+          "size": [
+            112.28855895996094,
+            56.14427947998047
+          ],
+          "imageId": 100003,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 45,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art672.clue1.trap",
+          "id": 1073759783,
+          "hidden": false,
+          "recIndex": 74,
+          "pos": [
+            110.94721221923828,
+            0
+          ],
+          "size": [
+            102.10557556152344,
+            79.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF611F23",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art671.clue1.lo",
+          "id": 1073759780,
+          "hidden": false,
+          "recIndex": 75,
+          "pos": [
+            73.21979522705078,
+            19.850000381469727
+          ],
+          "size": [
+            142.45668029785156,
+            47.8158073425293
+          ],
+          "imageId": 100003,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 33.87358474731445,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art672.clue1.mid1",
+          "id": 1073759784,
+          "hidden": false,
+          "recIndex": 76,
+          "pos": [
+            -22.790782928466797,
+            4.0465168952941895
+          ],
+          "size": [
+            69.58324432373047,
+            17.996448516845703
+          ],
+          "imageId": 100003,
+          "imageColor": "0xFF702830",
+          "imageType": 1,
+          "rot": -111.69503784179688,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art672.clue1.mid2",
+          "id": 1073759785,
+          "hidden": false,
+          "recIndex": 77,
+          "pos": [
+            -7.813145160675049,
+            27.62785530090332
+          ],
+          "size": [
+            73.67198181152344,
+            31.9692325592041
+          ],
+          "imageId": 100003,
+          "imageColor": "0xFF702830",
+          "imageType": 1,
+          "rot": 40.954071044921875,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art672.clue1.corner",
+          "id": 1073759786,
+          "hidden": false,
+          "recIndex": 78,
+          "pos": [
+            63.194637298583984,
+            -29.827312469482422
+          ],
+          "size": [
+            70.43299865722656,
+            23.5
+          ],
+          "imageId": 100003,
+          "imageColor": "0xFF611F23",
+          "imageType": 1,
+          "rot": -146.1264190673828,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "letter",
+          "id": 1073742424,
+          "hidden": false,
+          "recIndex": 79,
+          "pos": [
+            140,
+            -20.000049591064453
+          ],
+          "size": [
+            40.0001220703125,
+            50.000003814697266
+          ],
+          "imageId": null,
+          "imageColor": null,
+          "imageType": null,
+          "rot": 0,
+          "textColor": "0xFFFFFFFF",
+          "text": null
+        },
+        {
+          "name": "what",
+          "id": 1073742425,
+          "hidden": false,
+          "recIndex": 80,
+          "pos": [
+            18.00006103515625,
+            -0.499908447265625
+          ],
+          "size": [
+            210,
+            60.00006103515625
+          ],
+          "imageId": null,
+          "imageColor": null,
+          "imageType": null,
+          "rot": 0,
+          "textColor": "0xFFFFFFFF",
+          "text": null
+        },
+        {
+          "name": "face",
+          "id": 1073742426,
+          "hidden": false,
+          "recIndex": 81,
+          "pos": [
+            -132.21351623535156,
+            -9.499887466430664
+          ],
+          "size": [
+            52.00007629394531,
+            51.999916076660156
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFFFFFFFF",
+          "imageType": null,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.base",
+          "id": 1073759715,
+          "hidden": true,
+          "recIndex": 82,
+          "pos": [
+            0,
+            0
+          ],
+          "size": [
+            324,
+            79.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF611F23",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s300.rect",
+          "id": 1073759716,
+          "hidden": true,
+          "recIndex": 83,
+          "pos": [
+            -54.42727279663086,
+            0
+          ],
+          "size": [
+            215.1454620361328,
+            79.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s300.tri",
+          "id": 1073759717,
+          "hidden": true,
+          "recIndex": 84,
+          "pos": [
+            73.29320526123047,
+            19.552249908447266
+          ],
+          "size": [
+            112.28855895996094,
+            55.3021125793457
+          ],
+          "imageId": 100003,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 45,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s300.patch2",
+          "id": 1073759718,
+          "hidden": true,
+          "recIndex": 85,
+          "pos": [
+            88.0727310180664,
+            34.70000076293945
+          ],
+          "size": [
+            68.14545440673828,
+            10
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s300.patch3",
+          "id": 1073759719,
+          "hidden": true,
+          "recIndex": 86,
+          "pos": [
+            125.0727310180664,
+            36.70000076293945
+          ],
+          "size": [
+            2.1454546451568604,
+            6
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s300.patch4",
+          "id": 1073759720,
+          "hidden": true,
+          "recIndex": 87,
+          "pos": [
+            128.57272338867188,
+            38.20000076293945
+          ],
+          "size": [
+            1.1454545259475708,
+            3
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s300.patch5",
+          "id": 1073759721,
+          "hidden": true,
+          "recIndex": 88,
+          "pos": [
+            130.57272338867188,
+            39.20000076293945
+          ],
+          "size": [
+            1.1454545259475708,
+            1
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s250.rect",
+          "id": 1073759722,
+          "hidden": true,
+          "recIndex": 89,
+          "pos": [
+            -78.97272491455078,
+            0
+          ],
+          "size": [
+            166.05455017089844,
+            79.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF70272E",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s250.tri",
+          "id": 1073759723,
+          "hidden": true,
+          "recIndex": 90,
+          "pos": [
+            24.202295303344727,
+            19.552249908447266
+          ],
+          "size": [
+            112.28855895996094,
+            55.3021125793457
+          ],
+          "imageId": 100003,
+          "imageColor": "0xFF70272E",
+          "imageType": 1,
+          "rot": 45,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s250.patch2",
+          "id": 1073759724,
+          "hidden": true,
+          "recIndex": 91,
+          "pos": [
+            39.52727127075195,
+            34.70000076293945
+          ],
+          "size": [
+            67.0545425415039,
+            10
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF70272E",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s250.patch3",
+          "id": 1073759725,
+          "hidden": true,
+          "recIndex": 92,
+          "pos": [
+            75.52727508544922,
+            36.70000076293945
+          ],
+          "size": [
+            3.0545454025268555,
+            6
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF70272E",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s250.patch4",
+          "id": 1073759726,
+          "hidden": true,
+          "recIndex": 93,
+          "pos": [
+            78.52727508544922,
+            37.70000076293945
+          ],
+          "size": [
+            1.0545454025268555,
+            4
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF70272E",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s250.patch5",
+          "id": 1073759727,
+          "hidden": true,
+          "recIndex": 94,
+          "pos": [
+            80.52727508544922,
+            38.70000076293945
+          ],
+          "size": [
+            1.0545454025268555,
+            2
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF70272E",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s200.rect",
+          "id": 1073759728,
+          "hidden": true,
+          "recIndex": 95,
+          "pos": [
+            -103.51818084716797,
+            0
+          ],
+          "size": [
+            116.96363830566406,
+            79.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s200.tri",
+          "id": 1073759729,
+          "hidden": true,
+          "recIndex": 96,
+          "pos": [
+            -24.888612747192383,
+            19.552249908447266
+          ],
+          "size": [
+            112.28855895996094,
+            55.3021125793457
+          ],
+          "imageId": 100003,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 45,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s200.patch2",
+          "id": 1073759730,
+          "hidden": true,
+          "recIndex": 97,
+          "pos": [
+            -10.018181800842285,
+            34.70000076293945
+          ],
+          "size": [
+            67.96363830566406,
+            10
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s200.patch3",
+          "id": 1073759731,
+          "hidden": true,
+          "recIndex": 98,
+          "pos": [
+            25.9818172454834,
+            36.70000076293945
+          ],
+          "size": [
+            3.9636363983154297,
+            6
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s200.patch4",
+          "id": 1073759732,
+          "hidden": true,
+          "recIndex": 99,
+          "pos": [
+            28.9818172454834,
+            37.70000076293945
+          ],
+          "size": [
+            1.9636363983154297,
+            4
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s200.patch5",
+          "id": 1073759733,
+          "hidden": true,
+          "recIndex": 100,
+          "pos": [
+            30.4818172454834,
+            38.20000076293945
+          ],
+          "size": [
+            0.9636363387107849,
+            3
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s200.patch6",
+          "id": 1073759734,
+          "hidden": true,
+          "recIndex": 101,
+          "pos": [
+            32.48181915283203,
+            39.20000076293945
+          ],
+          "size": [
+            0.9636363387107849,
+            1
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s095.rect",
+          "id": 1073759735,
+          "hidden": true,
+          "recIndex": 102,
+          "pos": [
+            -155.06362915039062,
+            0
+          ],
+          "size": [
+            13.872727394104004,
+            79.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s095.tri",
+          "id": 1073759736,
+          "hidden": true,
+          "recIndex": 103,
+          "pos": [
+            -127.97952270507812,
+            19.552249908447266
+          ],
+          "size": [
+            112.28855895996094,
+            55.3021125793457
+          ],
+          "imageId": 100003,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 45,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s095.patch2",
+          "id": 1073759737,
+          "hidden": true,
+          "recIndex": 104,
+          "pos": [
+            -113.56363677978516,
+            34.70000076293945
+          ],
+          "size": [
+            68.87272644042969,
+            10
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s095.patch3",
+          "id": 1073759738,
+          "hidden": true,
+          "recIndex": 105,
+          "pos": [
+            -118.56363677978516,
+            24.700000762939453
+          ],
+          "size": [
+            58.87272644042969,
+            10
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s095.patch4",
+          "id": 1073759739,
+          "hidden": true,
+          "recIndex": 106,
+          "pos": [
+            -123.56363677978516,
+            14.699999809265137
+          ],
+          "size": [
+            48.87272644042969,
+            10
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s095.patch5",
+          "id": 1073759740,
+          "hidden": true,
+          "recIndex": 107,
+          "pos": [
+            -128.56362915039062,
+            4.699999809265137
+          ],
+          "size": [
+            38.87272644042969,
+            10
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s095.patch6",
+          "id": 1073759741,
+          "hidden": true,
+          "recIndex": 108,
+          "pos": [
+            -133.56362915039062,
+            -5.300000190734863
+          ],
+          "size": [
+            28.872726440429688,
+            10
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s095.patch7",
+          "id": 1073759742,
+          "hidden": true,
+          "recIndex": 109,
+          "pos": [
+            -138.56362915039062,
+            -15.300000190734863
+          ],
+          "size": [
+            18.872726440429688,
+            10
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s095.patch8",
+          "id": 1073759743,
+          "hidden": true,
+          "recIndex": 110,
+          "pos": [
+            -143.56362915039062,
+            -25.299999237060547
+          ],
+          "size": [
+            8.872727394104004,
+            10
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s095.patch9",
+          "id": 1073759744,
+          "hidden": true,
+          "recIndex": 111,
+          "pos": [
+            -76.56363677978516,
+            36.70000076293945
+          ],
+          "size": [
+            2.872727155685425,
+            6
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s095.patch10",
+          "id": 1073759745,
+          "hidden": true,
+          "recIndex": 112,
+          "pos": [
+            -73.56363677978516,
+            37.70000076293945
+          ],
+          "size": [
+            0.8727272748947144,
+            4
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue1.s095.patch11",
+          "id": 1073759746,
+          "hidden": true,
+          "recIndex": 113,
+          "pos": [
+            -71.56363677978516,
+            38.70000076293945
+          ],
+          "size": [
+            0.8727272748947144,
+            2
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "who",
+          "id": 1073742427,
+          "hidden": false,
+          "recIndex": 114,
+          "pos": [
+            -132.21351623535156,
+            28.000009536743164
+          ],
+          "size": [
+            82.99978637695312,
+            35.99998474121094
+          ],
+          "imageId": null,
+          "imageColor": null,
+          "imageType": null,
+          "rot": 0,
+          "textColor": "0xFFFFFFFF",
+          "text": null
+        },
+        {
+          "name": "gray",
+          "id": 1073742487,
+          "hidden": true,
+          "recIndex": 115,
+          "pos": [
+            -0.00021457672119140625,
+            0
+          ],
+          "size": [
+            329.99993896484375,
+            85.40000915527344
+          ],
+          "imageId": 100001,
+          "imageColor": "0x33D9D9D9",
+          "imageType": null,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "gen.backrop",
+          "id": 1073742807,
+          "hidden": true,
+          "recIndex": 116,
+          "pos": [
+            0.00022888185048941523,
+            0.00012969970703125
+          ],
+          "size": [
+            329.9998779296875,
+            79.39993286132812
+          ],
+          "imageId": 107133,
+          "imageColor": "0xFFFFFFFF",
+          "imageType": null,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "gen.title",
+          "id": 1073742808,
+          "hidden": true,
+          "recIndex": 117,
+          "pos": [
+            -99.99984741210938,
+            28.000076293945312
+          ],
+          "size": [
+            82.99977111816406,
+            40.00022888183594
+          ],
+          "imageId": null,
+          "imageColor": null,
+          "imageType": null,
+          "rot": 0,
+          "textColor": "0xFF000000",
+          "text": "通用线索"
+        },
+        {
+          "name": "gen.body",
+          "id": 1073742809,
+          "hidden": false,
+          "recIndex": 118,
+          "pos": [
+            0,
+            -0.40001291036605835
+          ],
+          "size": [
+            260.0001220703125,
+            60.00001907348633
+          ],
+          "imageId": null,
+          "imageColor": null,
+          "imageType": null,
+          "rot": 0,
+          "textColor": "0xFFFFFFFF",
+          "text": null
+        }
+      ]
+    },
+    {
+      "root": {
+        "name": "clue",
+        "id": 1073742428,
+        "hidden": false,
+        "recIndex": 1628,
+        "pos": [
+          0,
+          0
+        ],
+        "size": [
+          334.0000915527344,
+          85.40000915527344
+        ],
+        "imageId": null,
+        "imageColor": null,
+        "imageType": null,
+        "rot": 0,
+        "textColor": null,
+        "text": null
+      },
+      "childList": [
+        "backrop1",
+        "backrop2",
+        "art658.clue2.bg",
+        "art658.clue2.grad1",
+        "art658.clue2.grad2",
+        "art658.clue2.grad3",
+        "art659.clue2.mid",
+        "art659.clue2.hi1",
+        "art659.clue2.hi2",
+        "art659.clue2.hi3",
+        "art659.clue2.hi4",
+        "art659.clue2.hi5",
+        "art659.clue2.hi6",
+        "art659.clue2.lo1",
+        "art659.clue2.lo2",
+        "art659.clue2.lo3",
+        "art660.clue2.light.rect",
+        "art660.clue2.light.tri",
+        "art660.clue2.light.patch1",
+        "art660.clue2.light.patch2",
+        "art660.clue2.dark.patch",
+        "art661.clue2.base",
+        "art661.clue2.s300.rect",
+        "art661.clue2.s300.tri",
+        "art661.clue2.s300.patch2",
+        "art661.clue2.s300.patch3",
+        "art661.clue2.s300.patch4",
+        "art661.clue2.s300.patch5",
+        "art661.clue2.s250.rect",
+        "art661.clue2.s250.tri",
+        "art661.clue2.s250.patch2",
+        "art661.clue2.s250.patch3",
+        "art661.clue2.s250.patch4",
+        "art661.clue2.s250.patch5",
+        "art661.clue2.s200.rect",
+        "art661.clue2.s200.tri",
+        "art661.clue2.s200.patch2",
+        "art661.clue2.s200.patch3",
+        "art661.clue2.s200.patch4",
+        "art661.clue2.s200.patch5",
+        "art661.clue2.s095.rect",
+        "art661.clue2.s095.tri",
+        "art661.clue2.s095.patch2",
+        "art661.clue2.s095.patch3",
+        "art661.clue2.s095.patch4",
+        "art661.clue2.s095.patch5",
+        "art661.clue2.s095.patch6",
+        "art661.clue2.s095.patch7",
+        "art661.clue2.s095.patch8",
+        "art658.clue2.rule",
+        "art671.clue2.hi",
+        "art672.clue2.trap",
+        "art671.clue2.lo",
+        "art672.clue2.mid1",
+        "art672.clue2.mid2",
+        "art672.clue2.corner",
+        "letter",
+        "what",
+        "face",
+        "art670.clue2.base",
+        "art670.clue2.s300.rect",
+        "art670.clue2.s300.tri",
+        "art670.clue2.s300.patch2",
+        "art670.clue2.s300.patch3",
+        "art670.clue2.s300.patch4",
+        "art670.clue2.s300.patch5",
+        "art670.clue2.s250.rect",
+        "art670.clue2.s250.tri",
+        "art670.clue2.s250.patch2",
+        "art670.clue2.s250.patch3",
+        "art670.clue2.s250.patch4",
+        "art670.clue2.s250.patch5",
+        "art670.clue2.s200.rect",
+        "art670.clue2.s200.tri",
+        "art670.clue2.s200.patch2",
+        "art670.clue2.s200.patch3",
+        "art670.clue2.s200.patch4",
+        "art670.clue2.s200.patch5",
+        "art670.clue2.s200.patch6",
+        "art670.clue2.s095.rect",
+        "art670.clue2.s095.tri",
+        "art670.clue2.s095.patch2",
+        "art670.clue2.s095.patch3",
+        "art670.clue2.s095.patch4",
+        "art670.clue2.s095.patch5",
+        "art670.clue2.s095.patch6",
+        "art670.clue2.s095.patch7",
+        "art670.clue2.s095.patch8",
+        "art670.clue2.s095.patch9",
+        "art670.clue2.s095.patch10",
+        "art670.clue2.s095.patch11",
+        "who",
+        "gray",
+        "gen.backrop",
+        "gen.title",
+        "gen.body"
+      ],
+      "children": [
+        {
+          "name": "backrop1",
+          "id": 1073742429,
+          "hidden": false,
+          "recIndex": 1659,
+          "pos": [
+            0.0001430511474609375,
+            0.00008106230961857364
+          ],
+          "size": [
+            329.99993896484375,
+            85.39997100830078
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF491B1E",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "backrop2",
+          "id": 1073742430,
+          "hidden": false,
+          "recIndex": 1660,
+          "pos": [
+            0.0001430511474609375,
+            0.00008106230961857364
+          ],
+          "size": [
+            323.99993896484375,
+            79.4000473022461
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art658.clue2.bg",
+          "id": 1073758147,
+          "hidden": true,
+          "recIndex": 1661,
+          "pos": [
+            0,
+            0
+          ],
+          "size": [
+            324,
+            79.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68282A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art658.clue2.grad1",
+          "id": 1073758148,
+          "hidden": true,
+          "recIndex": 1662,
+          "pos": [
+            -114,
+            -17.639999389648438
+          ],
+          "size": [
+            150,
+            62
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 28,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art658.clue2.grad2",
+          "id": 1073758149,
+          "hidden": true,
+          "recIndex": 1663,
+          "pos": [
+            -72,
+            0
+          ],
+          "size": [
+            150,
+            62
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68282A",
+          "imageType": 1,
+          "rot": 28,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art658.clue2.grad3",
+          "id": 1073758150,
+          "hidden": true,
+          "recIndex": 1664,
+          "pos": [
+            -30,
+            17.639999389648438
+          ],
+          "size": [
+            150,
+            62
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF611F23",
+          "imageType": 1,
+          "rot": 28,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art659.clue2.mid",
+          "id": 1073758253,
+          "hidden": true,
+          "recIndex": 1665,
+          "pos": [
+            20,
+            0
+          ],
+          "size": [
+            150,
+            85.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68282A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art659.clue2.hi1",
+          "id": 1073758254,
+          "hidden": true,
+          "recIndex": 1666,
+          "pos": [
+            -158.25,
+            0
+          ],
+          "size": [
+            13.5,
+            85.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art659.clue2.hi2",
+          "id": 1073758255,
+          "hidden": true,
+          "recIndex": 1667,
+          "pos": [
+            -144.75,
+            7.099999904632568
+          ],
+          "size": [
+            13.5,
+            71.19999694824219
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art659.clue2.hi3",
+          "id": 1073758256,
+          "hidden": true,
+          "recIndex": 1668,
+          "pos": [
+            -131.25,
+            14.199999809265137
+          ],
+          "size": [
+            13.5,
+            57
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art659.clue2.hi4",
+          "id": 1073758257,
+          "hidden": true,
+          "recIndex": 1669,
+          "pos": [
+            -117.75,
+            21.299999237060547
+          ],
+          "size": [
+            13.5,
+            42.79999923706055
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art659.clue2.hi5",
+          "id": 1073758258,
+          "hidden": true,
+          "recIndex": 1670,
+          "pos": [
+            -104.25,
+            28.399999618530273
+          ],
+          "size": [
+            13.5,
+            28.600000381469727
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art659.clue2.hi6",
+          "id": 1073758259,
+          "hidden": true,
+          "recIndex": 1671,
+          "pos": [
+            -90.75,
+            35.5
+          ],
+          "size": [
+            13.5,
+            14.399999618530273
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art659.clue2.lo1",
+          "id": 1073758260,
+          "hidden": true,
+          "recIndex": 1672,
+          "pos": [
+            60,
+            -33.70000076293945
+          ],
+          "size": [
+            42,
+            18
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF611F23",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art659.clue2.lo2",
+          "id": 1073758261,
+          "hidden": true,
+          "recIndex": 1673,
+          "pos": [
+            102,
+            -25.700000762939453
+          ],
+          "size": [
+            42,
+            34
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF611F23",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art659.clue2.lo3",
+          "id": 1073758262,
+          "hidden": true,
+          "recIndex": 1674,
+          "pos": [
+            144,
+            -17.700000762939453
+          ],
+          "size": [
+            42,
+            50
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF611F23",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art660.clue2.light.rect",
+          "id": 1073758368,
+          "hidden": true,
+          "recIndex": 1675,
+          "pos": [
+            -148,
+            0
+          ],
+          "size": [
+            34,
+            85.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art660.clue2.light.tri",
+          "id": 1073758369,
+          "hidden": true,
+          "recIndex": 1676,
+          "pos": [
+            -80.97492218017578,
+            3.197786331176758
+          ],
+          "size": [
+            84.43340301513672,
+            20
+          ],
+          "imageId": 100003,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 71.3504638671875,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art660.clue2.light.patch1",
+          "id": 1073758370,
+          "hidden": true,
+          "recIndex": 1677,
+          "pos": [
+            -122,
+            20
+          ],
+          "size": [
+            30,
+            34
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art660.clue2.light.patch2",
+          "id": 1073758371,
+          "hidden": true,
+          "recIndex": 1678,
+          "pos": [
+            -122,
+            -22
+          ],
+          "size": [
+            30,
+            30
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art660.clue2.dark.patch",
+          "id": 1073758372,
+          "hidden": true,
+          "recIndex": 1679,
+          "pos": [
+            140,
+            -18
+          ],
+          "size": [
+            50,
+            46
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF611F23",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue2.base",
+          "id": 1073758524,
+          "hidden": true,
+          "recIndex": 1680,
+          "pos": [
+            0,
+            0
+          ],
+          "size": [
+            324,
+            79.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF611F23",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue2.s300.rect",
+          "id": 1073758525,
+          "hidden": true,
+          "recIndex": 1681,
+          "pos": [
+            -56.650909423828125,
+            0
+          ],
+          "size": [
+            210.69818115234375,
+            79.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue2.s300.tri",
+          "id": 1073758526,
+          "hidden": true,
+          "recIndex": 1682,
+          "pos": [
+            69.97442626953125,
+            19.552249908447266
+          ],
+          "size": [
+            118.57795715332031,
+            55.3021125793457
+          ],
+          "imageId": 100003,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 45,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue2.s300.patch2",
+          "id": 1073758527,
+          "hidden": true,
+          "recIndex": 1683,
+          "pos": [
+            86.2036361694336,
+            35.05128860473633
+          ],
+          "size": [
+            72.2618179321289,
+            9.29742431640625
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue2.s300.patch3",
+          "id": 1073758528,
+          "hidden": true,
+          "recIndex": 1684,
+          "pos": [
+            124.49454498291016,
+            36.91077423095703
+          ],
+          "size": [
+            3.534545421600342,
+            5.578454494476318
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue2.s300.patch4",
+          "id": 1073758529,
+          "hidden": true,
+          "recIndex": 1685,
+          "pos": [
+            127.44000244140625,
+            37.84051513671875
+          ],
+          "size": [
+            1.5709091424942017,
+            3.7189695835113525
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue2.s300.patch5",
+          "id": 1073758530,
+          "hidden": true,
+          "recIndex": 1686,
+          "pos": [
+            129.4036407470703,
+            38.770259857177734
+          ],
+          "size": [
+            1.5709091424942017,
+            1.8594847917556763
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue2.s250.rect",
+          "id": 1073758531,
+          "hidden": true,
+          "recIndex": 1687,
+          "pos": [
+            -81.19635772705078,
+            0
+          ],
+          "size": [
+            161.60728454589844,
+            79.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF70272E",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue2.s250.tri",
+          "id": 1073758532,
+          "hidden": true,
+          "recIndex": 1688,
+          "pos": [
+            20.88351821899414,
+            19.552249908447266
+          ],
+          "size": [
+            118.57795715332031,
+            55.3021125793457
+          ],
+          "imageId": 100003,
+          "imageColor": "0xFF70272E",
+          "imageType": 1,
+          "rot": 45,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue2.s250.patch2",
+          "id": 1073758533,
+          "hidden": true,
+          "recIndex": 1689,
+          "pos": [
+            37.112728118896484,
+            35.05128860473633
+          ],
+          "size": [
+            72.2618179321289,
+            9.29742431640625
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF70272E",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue2.s250.patch3",
+          "id": 1073758534,
+          "hidden": true,
+          "recIndex": 1690,
+          "pos": [
+            75.40364074707031,
+            36.91077423095703
+          ],
+          "size": [
+            3.534545421600342,
+            5.578454494476318
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF70272E",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue2.s250.patch4",
+          "id": 1073758535,
+          "hidden": true,
+          "recIndex": 1691,
+          "pos": [
+            78.34909057617188,
+            37.84051513671875
+          ],
+          "size": [
+            1.5709091424942017,
+            3.7189695835113525
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF70272E",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue2.s250.patch5",
+          "id": 1073758536,
+          "hidden": true,
+          "recIndex": 1692,
+          "pos": [
+            80.31272888183594,
+            38.770259857177734
+          ],
+          "size": [
+            1.5709091424942017,
+            1.8594847917556763
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF70272E",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue2.s200.rect",
+          "id": 1073758537,
+          "hidden": true,
+          "recIndex": 1693,
+          "pos": [
+            -105.74181365966797,
+            0
+          ],
+          "size": [
+            112.51636505126953,
+            79.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue2.s200.tri",
+          "id": 1073758538,
+          "hidden": true,
+          "recIndex": 1694,
+          "pos": [
+            -28.20738983154297,
+            19.552249908447266
+          ],
+          "size": [
+            118.57795715332031,
+            55.3021125793457
+          ],
+          "imageId": 100003,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 45,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue2.s200.patch2",
+          "id": 1073758539,
+          "hidden": true,
+          "recIndex": 1695,
+          "pos": [
+            -11.978181838989258,
+            35.05128860473633
+          ],
+          "size": [
+            72.2618179321289,
+            9.29742431640625
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue2.s200.patch3",
+          "id": 1073758540,
+          "hidden": true,
+          "recIndex": 1696,
+          "pos": [
+            26.312726974487305,
+            36.91077423095703
+          ],
+          "size": [
+            3.534545421600342,
+            5.578454494476318
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue2.s200.patch4",
+          "id": 1073758541,
+          "hidden": true,
+          "recIndex": 1697,
+          "pos": [
+            29.258180618286133,
+            37.84051513671875
+          ],
+          "size": [
+            1.5709091424942017,
+            3.7189695835113525
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue2.s200.patch5",
+          "id": 1073758542,
+          "hidden": true,
+          "recIndex": 1698,
+          "pos": [
+            31.221817016601562,
+            38.770259857177734
+          ],
+          "size": [
+            1.5709091424942017,
+            1.8594847917556763
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue2.s095.rect",
+          "id": 1073758543,
+          "hidden": true,
+          "recIndex": 1699,
+          "pos": [
+            -157.2872772216797,
+            0
+          ],
+          "size": [
+            9.425455093383789,
+            79.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue2.s095.tri",
+          "id": 1073758544,
+          "hidden": true,
+          "recIndex": 1700,
+          "pos": [
+            -131.2982940673828,
+            19.552249908447266
+          ],
+          "size": [
+            118.57795715332031,
+            55.3021125793457
+          ],
+          "imageId": 100003,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 45,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue2.s095.patch2",
+          "id": 1073758545,
+          "hidden": true,
+          "recIndex": 1701,
+          "pos": [
+            -115.55999755859375,
+            35.05128860473633
+          ],
+          "size": [
+            73.24363708496094,
+            9.29742431640625
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue2.s095.patch3",
+          "id": 1073758546,
+          "hidden": true,
+          "recIndex": 1702,
+          "pos": [
+            -120.46908569335938,
+            25.753864288330078
+          ],
+          "size": [
+            63.425453186035156,
+            9.29742431640625
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue2.s095.patch4",
+          "id": 1073758547,
+          "hidden": true,
+          "recIndex": 1703,
+          "pos": [
+            -125.37818145751953,
+            16.45644187927246
+          ],
+          "size": [
+            53.60727310180664,
+            9.29742431640625
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue2.s095.patch5",
+          "id": 1073758548,
+          "hidden": true,
+          "recIndex": 1704,
+          "pos": [
+            -130.2872772216797,
+            7.159016132354736
+          ],
+          "size": [
+            43.78908920288086,
+            9.29742431640625
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue2.s095.patch6",
+          "id": 1073758549,
+          "hidden": true,
+          "recIndex": 1705,
+          "pos": [
+            -76.28726959228516,
+            36.91077423095703
+          ],
+          "size": [
+            2.552727222442627,
+            5.578454494476318
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue2.s095.patch7",
+          "id": 1073758550,
+          "hidden": true,
+          "recIndex": 1706,
+          "pos": [
+            -72.85090637207031,
+            38.30538558959961
+          ],
+          "size": [
+            1.5709091424942017,
+            2.789227247238159
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art661.clue2.s095.patch8",
+          "id": 1073758551,
+          "hidden": true,
+          "recIndex": 1707,
+          "pos": [
+            -70.88726806640625,
+            39.235130310058594
+          ],
+          "size": [
+            1.5709091424942017,
+            0.9297423958778381
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art658.clue2.rule",
+          "id": 1073758151,
+          "hidden": true,
+          "recIndex": 1708,
+          "pos": [
+            0,
+            37.189697265625
+          ],
+          "size": [
+            324,
+            4.648712158203125
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFFFDFAF5",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art671.clue2.hi",
+          "id": 1073759781,
+          "hidden": false,
+          "recIndex": 1709,
+          "pos": [
+            -142.14999389648438,
+            19.850000381469727
+          ],
+          "size": [
+            112.28855895996094,
+            56.14427947998047
+          ],
+          "imageId": 100003,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 45,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art672.clue2.trap",
+          "id": 1073759787,
+          "hidden": false,
+          "recIndex": 1710,
+          "pos": [
+            110.94721221923828,
+            0
+          ],
+          "size": [
+            102.10557556152344,
+            79.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF611F23",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art671.clue2.lo",
+          "id": 1073759782,
+          "hidden": false,
+          "recIndex": 1711,
+          "pos": [
+            73.21979522705078,
+            19.850000381469727
+          ],
+          "size": [
+            142.45668029785156,
+            47.8158073425293
+          ],
+          "imageId": 100003,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 33.87358474731445,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art672.clue2.mid1",
+          "id": 1073759788,
+          "hidden": false,
+          "recIndex": 1712,
+          "pos": [
+            -22.790782928466797,
+            4.0465168952941895
+          ],
+          "size": [
+            69.58324432373047,
+            17.996448516845703
+          ],
+          "imageId": 100003,
+          "imageColor": "0xFF702830",
+          "imageType": 1,
+          "rot": -111.69503784179688,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art672.clue2.mid2",
+          "id": 1073759789,
+          "hidden": false,
+          "recIndex": 1713,
+          "pos": [
+            -7.813145160675049,
+            27.62785530090332
+          ],
+          "size": [
+            73.67198181152344,
+            31.9692325592041
+          ],
+          "imageId": 100003,
+          "imageColor": "0xFF702830",
+          "imageType": 1,
+          "rot": 40.954071044921875,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art672.clue2.corner",
+          "id": 1073759790,
+          "hidden": false,
+          "recIndex": 1714,
+          "pos": [
+            63.194637298583984,
+            -29.827312469482422
+          ],
+          "size": [
+            70.43299865722656,
+            23.5
+          ],
+          "imageId": 100003,
+          "imageColor": "0xFF611F23",
+          "imageType": 1,
+          "rot": -146.1264190673828,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "letter",
+          "id": 1073742431,
+          "hidden": false,
+          "recIndex": 1715,
+          "pos": [
+            140,
+            -20.000049591064453
+          ],
+          "size": [
+            40.0001220703125,
+            50.000003814697266
+          ],
+          "imageId": null,
+          "imageColor": null,
+          "imageType": null,
+          "rot": 0,
+          "textColor": "0xFFFFFFFF",
+          "text": null
+        },
+        {
+          "name": "what",
+          "id": 1073742432,
+          "hidden": false,
+          "recIndex": 1716,
+          "pos": [
+            18.00006103515625,
+            -0.499908447265625
+          ],
+          "size": [
+            210,
+            60.00006103515625
+          ],
+          "imageId": null,
+          "imageColor": null,
+          "imageType": null,
+          "rot": 0,
+          "textColor": "0xFFFFFFFF",
+          "text": null
+        },
+        {
+          "name": "face",
+          "id": 1073742433,
+          "hidden": false,
+          "recIndex": 1717,
+          "pos": [
+            -132.21351623535156,
+            -9.499887466430664
+          ],
+          "size": [
+            52.00007629394531,
+            51.999916076660156
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFFFFFFFF",
+          "imageType": null,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.base",
+          "id": 1073759747,
+          "hidden": true,
+          "recIndex": 1718,
+          "pos": [
+            0,
+            0
+          ],
+          "size": [
+            324,
+            79.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF611F23",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s300.rect",
+          "id": 1073759748,
+          "hidden": true,
+          "recIndex": 1719,
+          "pos": [
+            -54.42727279663086,
+            0
+          ],
+          "size": [
+            215.1454620361328,
+            79.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s300.tri",
+          "id": 1073759749,
+          "hidden": true,
+          "recIndex": 1720,
+          "pos": [
+            73.29320526123047,
+            19.552249908447266
+          ],
+          "size": [
+            112.28855895996094,
+            55.3021125793457
+          ],
+          "imageId": 100003,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 45,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s300.patch2",
+          "id": 1073759750,
+          "hidden": true,
+          "recIndex": 1721,
+          "pos": [
+            88.0727310180664,
+            34.70000076293945
+          ],
+          "size": [
+            68.14545440673828,
+            10
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s300.patch3",
+          "id": 1073759751,
+          "hidden": true,
+          "recIndex": 1722,
+          "pos": [
+            125.0727310180664,
+            36.70000076293945
+          ],
+          "size": [
+            2.1454546451568604,
+            6
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s300.patch4",
+          "id": 1073759752,
+          "hidden": true,
+          "recIndex": 1723,
+          "pos": [
+            128.57272338867188,
+            38.20000076293945
+          ],
+          "size": [
+            1.1454545259475708,
+            3
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s300.patch5",
+          "id": 1073759753,
+          "hidden": true,
+          "recIndex": 1724,
+          "pos": [
+            130.57272338867188,
+            39.20000076293945
+          ],
+          "size": [
+            1.1454545259475708,
+            1
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s250.rect",
+          "id": 1073759754,
+          "hidden": true,
+          "recIndex": 1725,
+          "pos": [
+            -78.97272491455078,
+            0
+          ],
+          "size": [
+            166.05455017089844,
+            79.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF70272E",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s250.tri",
+          "id": 1073759755,
+          "hidden": true,
+          "recIndex": 1726,
+          "pos": [
+            24.202295303344727,
+            19.552249908447266
+          ],
+          "size": [
+            112.28855895996094,
+            55.3021125793457
+          ],
+          "imageId": 100003,
+          "imageColor": "0xFF70272E",
+          "imageType": 1,
+          "rot": 45,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s250.patch2",
+          "id": 1073759756,
+          "hidden": true,
+          "recIndex": 1727,
+          "pos": [
+            39.52727127075195,
+            34.70000076293945
+          ],
+          "size": [
+            67.0545425415039,
+            10
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF70272E",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s250.patch3",
+          "id": 1073759757,
+          "hidden": true,
+          "recIndex": 1728,
+          "pos": [
+            75.52727508544922,
+            36.70000076293945
+          ],
+          "size": [
+            3.0545454025268555,
+            6
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF70272E",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s250.patch4",
+          "id": 1073759758,
+          "hidden": true,
+          "recIndex": 1729,
+          "pos": [
+            78.52727508544922,
+            37.70000076293945
+          ],
+          "size": [
+            1.0545454025268555,
+            4
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF70272E",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s250.patch5",
+          "id": 1073759759,
+          "hidden": true,
+          "recIndex": 1730,
+          "pos": [
+            80.52727508544922,
+            38.70000076293945
+          ],
+          "size": [
+            1.0545454025268555,
+            2
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF70272E",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s200.rect",
+          "id": 1073759760,
+          "hidden": true,
+          "recIndex": 1731,
+          "pos": [
+            -103.51818084716797,
+            0
+          ],
+          "size": [
+            116.96363830566406,
+            79.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s200.tri",
+          "id": 1073759761,
+          "hidden": true,
+          "recIndex": 1732,
+          "pos": [
+            -24.888612747192383,
+            19.552249908447266
+          ],
+          "size": [
+            112.28855895996094,
+            55.3021125793457
+          ],
+          "imageId": 100003,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 45,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s200.patch2",
+          "id": 1073759762,
+          "hidden": true,
+          "recIndex": 1733,
+          "pos": [
+            -10.018181800842285,
+            34.70000076293945
+          ],
+          "size": [
+            67.96363830566406,
+            10
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s200.patch3",
+          "id": 1073759763,
+          "hidden": true,
+          "recIndex": 1734,
+          "pos": [
+            25.9818172454834,
+            36.70000076293945
+          ],
+          "size": [
+            3.9636363983154297,
+            6
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s200.patch4",
+          "id": 1073759764,
+          "hidden": true,
+          "recIndex": 1735,
+          "pos": [
+            28.9818172454834,
+            37.70000076293945
+          ],
+          "size": [
+            1.9636363983154297,
+            4
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s200.patch5",
+          "id": 1073759765,
+          "hidden": true,
+          "recIndex": 1736,
+          "pos": [
+            30.4818172454834,
+            38.20000076293945
+          ],
+          "size": [
+            0.9636363387107849,
+            3
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s200.patch6",
+          "id": 1073759766,
+          "hidden": true,
+          "recIndex": 1737,
+          "pos": [
+            32.48181915283203,
+            39.20000076293945
+          ],
+          "size": [
+            0.9636363387107849,
+            1
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF68262A",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s095.rect",
+          "id": 1073759767,
+          "hidden": true,
+          "recIndex": 1738,
+          "pos": [
+            -155.06362915039062,
+            0
+          ],
+          "size": [
+            13.872727394104004,
+            79.4000015258789
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s095.tri",
+          "id": 1073759768,
+          "hidden": true,
+          "recIndex": 1739,
+          "pos": [
+            -127.97952270507812,
+            19.552249908447266
+          ],
+          "size": [
+            112.28855895996094,
+            55.3021125793457
+          ],
+          "imageId": 100003,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 45,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s095.patch2",
+          "id": 1073759769,
+          "hidden": true,
+          "recIndex": 1740,
+          "pos": [
+            -113.56363677978516,
+            34.70000076293945
+          ],
+          "size": [
+            68.87272644042969,
+            10
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s095.patch3",
+          "id": 1073759770,
+          "hidden": true,
+          "recIndex": 1741,
+          "pos": [
+            -118.56363677978516,
+            24.700000762939453
+          ],
+          "size": [
+            58.87272644042969,
+            10
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s095.patch4",
+          "id": 1073759771,
+          "hidden": true,
+          "recIndex": 1742,
+          "pos": [
+            -123.56363677978516,
+            14.699999809265137
+          ],
+          "size": [
+            48.87272644042969,
+            10
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s095.patch5",
+          "id": 1073759772,
+          "hidden": true,
+          "recIndex": 1743,
+          "pos": [
+            -128.56362915039062,
+            4.699999809265137
+          ],
+          "size": [
+            38.87272644042969,
+            10
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s095.patch6",
+          "id": 1073759773,
+          "hidden": true,
+          "recIndex": 1744,
+          "pos": [
+            -133.56362915039062,
+            -5.300000190734863
+          ],
+          "size": [
+            28.872726440429688,
+            10
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s095.patch7",
+          "id": 1073759774,
+          "hidden": true,
+          "recIndex": 1745,
+          "pos": [
+            -138.56362915039062,
+            -15.300000190734863
+          ],
+          "size": [
+            18.872726440429688,
+            10
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s095.patch8",
+          "id": 1073759775,
+          "hidden": true,
+          "recIndex": 1746,
+          "pos": [
+            -143.56362915039062,
+            -25.299999237060547
+          ],
+          "size": [
+            8.872727394104004,
+            10
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s095.patch9",
+          "id": 1073759776,
+          "hidden": true,
+          "recIndex": 1747,
+          "pos": [
+            -76.56363677978516,
+            36.70000076293945
+          ],
+          "size": [
+            2.872727155685425,
+            6
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s095.patch10",
+          "id": 1073759777,
+          "hidden": true,
+          "recIndex": 1748,
+          "pos": [
+            -73.56363677978516,
+            37.70000076293945
+          ],
+          "size": [
+            0.8727272748947144,
+            4
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "art670.clue2.s095.patch11",
+          "id": 1073759778,
+          "hidden": true,
+          "recIndex": 1749,
+          "pos": [
+            -71.56363677978516,
+            38.70000076293945
+          ],
+          "size": [
+            0.8727272748947144,
+            2
+          ],
+          "imageId": 100001,
+          "imageColor": "0xFF9D3033",
+          "imageType": 1,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "who",
+          "id": 1073742434,
+          "hidden": false,
+          "recIndex": 1750,
+          "pos": [
+            -132.21351623535156,
+            28.000009536743164
+          ],
+          "size": [
+            82.99978637695312,
+            35.99998474121094
+          ],
+          "imageId": null,
+          "imageColor": null,
+          "imageType": null,
+          "rot": 0,
+          "textColor": "0xFFFFFFFF",
+          "text": null
+        },
+        {
+          "name": "gray",
+          "id": 1073742486,
+          "hidden": true,
+          "recIndex": 1751,
+          "pos": [
+            -0.00021457672119140625,
+            0
+          ],
+          "size": [
+            329.99993896484375,
+            85.40000915527344
+          ],
+          "imageId": 100001,
+          "imageColor": "0x33D9D9D9",
+          "imageType": null,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "gen.backrop",
+          "id": 1073742804,
+          "hidden": true,
+          "recIndex": 1752,
+          "pos": [
+            0.00022888185048941523,
+            0.00012969970703125
+          ],
+          "size": [
+            329.9998779296875,
+            79.39993286132812
+          ],
+          "imageId": 107133,
+          "imageColor": "0xFFFFFFFF",
+          "imageType": null,
+          "rot": 0,
+          "textColor": null,
+          "text": null
+        },
+        {
+          "name": "gen.title",
+          "id": 1073742805,
+          "hidden": true,
+          "recIndex": 1753,
+          "pos": [
+            -99.99984741210938,
+            28.000076293945312
+          ],
+          "size": [
+            82.99977111816406,
+            40.00022888183594
+          ],
+          "imageId": null,
+          "imageColor": null,
+          "imageType": null,
+          "rot": 0,
+          "textColor": "0xFF000000",
+          "text": "通用线索"
+        },
+        {
+          "name": "gen.body",
+          "id": 1073742806,
+          "hidden": false,
+          "recIndex": 1754,
+          "pos": [
+            0,
+            -0.40001291036605835
+          ],
+          "size": [
+            260.0001220703125,
+            60.00001907348633
+          ],
+          "imageId": null,
+          "imageColor": null,
+          "imageType": null,
+          "rot": 0,
+          "textColor": "0xFFFFFFFF",
+          "text": null
+        }
+      ]
+    }
+  ]
+}

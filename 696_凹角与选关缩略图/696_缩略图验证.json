@@ -1,0 +1,143 @@
+{
+  "version": 696,
+  "pass": 26,
+  "fail": 0,
+  "total": 26,
+  "list695": "case_001,0,25,0,0;case_002,0,36,0,0;case_003,0,36,0,0;case_004,0,36,0,0;case_005,0,36,0,0;case_006,0,49,0,0;case_007,0,36,0,0",
+  "list696": "case_001,25,25,9,3;case_002,36,36,14,3;case_003,36,36,17,5;case_004,36,36,12,5;case_005,36,36,13,5;case_006,49,49,14,5;case_007,36,36,17,5",
+  "thumb696": "36,17,5,6,36,0,64",
+  "style696": "4283051548",
+  "parts696": "旋转档案|案件 007 · 旋转档案 · 深墨绿/铜金|6x6　5名嫌疑人+1名受害人",
+  "checks": [
+    {
+      "name": "695 对照：ui_list 无 room_grid",
+      "pass": true,
+      "detail": "case_001,0,25,0,0;case_002,0,36,0,0;case_003,0,36,0,0;case_004,0,36,0,0;case_005,0,36,0,0;case_006,0,49,0,0;case_007,0,3"
+    },
+    {
+      "name": "696 ui_list 返回 7 关",
+      "pass": true,
+      "detail": "7"
+    },
+    {
+      "name": "case_001 room_grid 逐格数 == rows*cols",
+      "pass": true,
+      "detail": "25/25"
+    },
+    {
+      "name": "case_001 walls/doors 非空",
+      "pass": true,
+      "detail": "9/3"
+    },
+    {
+      "name": "case_002 room_grid 逐格数 == rows*cols",
+      "pass": true,
+      "detail": "36/36"
+    },
+    {
+      "name": "case_002 walls/doors 非空",
+      "pass": true,
+      "detail": "14/3"
+    },
+    {
+      "name": "case_003 room_grid 逐格数 == rows*cols",
+      "pass": true,
+      "detail": "36/36"
+    },
+    {
+      "name": "case_003 walls/doors 非空",
+      "pass": true,
+      "detail": "17/5"
+    },
+    {
+      "name": "case_004 room_grid 逐格数 == rows*cols",
+      "pass": true,
+      "detail": "36/36"
+    },
+    {
+      "name": "case_004 walls/doors 非空",
+      "pass": true,
+      "detail": "12/5"
+    },
+    {
+      "name": "case_005 room_grid 逐格数 == rows*cols",
+      "pass": true,
+      "detail": "36/36"
+    },
+    {
+      "name": "case_005 walls/doors 非空",
+      "pass": true,
+      "detail": "13/5"
+    },
+    {
+      "name": "case_006 room_grid 逐格数 == rows*cols",
+      "pass": true,
+      "detail": "49/49"
+    },
+    {
+      "name": "case_006 walls/doors 非空",
+      "pass": true,
+      "detail": "14/5"
+    },
+    {
+      "name": "case_007 room_grid 逐格数 == rows*cols",
+      "pass": true,
+      "detail": "36/36"
+    },
+    {
+      "name": "case_007 walls/doors 非空",
+      "pass": true,
+      "detail": "17/5"
+    },
+    {
+      "name": "第7关缩略图 36 个格子节点",
+      "pass": true,
+      "detail": "36"
+    },
+    {
+      "name": "36 格全部带房间底色 tint",
+      "pass": true,
+      "detail": "36"
+    },
+    {
+      "name": "17 段墙节点",
+      "pass": true,
+      "detail": "17"
+    },
+    {
+      "name": "5 段门节点",
+      "pass": true,
+      "detail": "5"
+    },
+    {
+      "name": "旧 6 个房间大色块全部隐藏",
+      "pass": true,
+      "detail": "6"
+    },
+    {
+      "name": "缩略图零家具节点（用户要求省略）",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "name": "节点总数 = 36+17+5+6",
+      "pass": true,
+      "detail": "64"
+    },
+    {
+      "name": "card.name 样式返回深棕 0xFF4A2E1C",
+      "pass": true,
+      "detail": "4283051548"
+    },
+    {
+      "name": "关卡短名去掉「案件 007 · 」前缀",
+      "pass": true,
+      "detail": "旋转档案 / 案件 007 · 旋转档案 · 深墨绿/铜金"
+    },
+    {
+      "name": "规格信息仍保留 6x6 与嫌疑人数",
+      "pass": true,
+      "detail": "6x6　5名嫌疑人+1名受害人"
+    }
+  ]
+}

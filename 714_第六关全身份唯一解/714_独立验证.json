@@ -1,0 +1,185 @@
+{
+  "version": 714,
+  "PASS": true,
+  "explicit_all_true_required": true,
+  "scope": "无谎言教学；全线索候选格决定真话身份资格，再用人数规则；不启用假话反事实",
+  "unknown_truth_unique": false,
+  "all_true_boards": [
+    [
+      15,
+      0,
+      12,
+      25,
+      45,
+      30,
+      41
+    ],
+    [
+      15,
+      41,
+      12,
+      25,
+      45,
+      30,
+      0
+    ]
+  ],
+  "candidate_positions": {
+    "A": [
+      15
+    ],
+    "B": [
+      0,
+      41
+    ],
+    "C": [
+      12
+    ],
+    "D": [
+      25
+    ],
+    "E": [
+      45
+    ],
+    "F": [
+      30
+    ],
+    "V": [
+      0,
+      41
+    ]
+  },
+  "identity_pair_counts": {
+    "A": 0,
+    "B": 1,
+    "C": 0,
+    "D": 0,
+    "E": 0,
+    "F": 0
+  },
+  "people_rule_only_pair_counts": {
+    "A": 0,
+    "B": 1,
+    "C": 0,
+    "D": 1,
+    "E": 1,
+    "F": 1
+  },
+  "people_rule_only_distinct_boards": 1,
+  "final_solutions": 1,
+  "self_cards": 5,
+  "max_self_cards": 5,
+  "orders_enumerated": 5040,
+  "single_card_min_positions": [
+    2,
+    31,
+    2,
+    14,
+    2,
+    5,
+    35
+  ],
+  "deletion": [
+    {
+      "card": 1,
+      "all_true": 54,
+      "identity_board_pairs": 86
+    },
+    {
+      "card": 2,
+      "all_true": 6,
+      "identity_board_pairs": 8
+    },
+    {
+      "card": 3,
+      "all_true": 6,
+      "identity_board_pairs": 4
+    },
+    {
+      "card": 4,
+      "all_true": 10,
+      "identity_board_pairs": 18
+    },
+    {
+      "card": 5,
+      "all_true": 14,
+      "identity_board_pairs": 27
+    },
+    {
+      "card": 6,
+      "all_true": 30,
+      "identity_board_pairs": 44
+    },
+    {
+      "card": 7,
+      "all_true": 8,
+      "identity_board_pairs": 7
+    }
+  ],
+  "independent_semantics_and_boards_match": true,
+  "cards": [
+    [
+      "A在椅子上"
+    ],
+    [
+      "D在E上方"
+    ],
+    [
+      "C在地毯上"
+    ],
+    [
+      "D在桌子旁边"
+    ],
+    [
+      "E在雕塑旁边"
+    ],
+    [
+      "F在椅子旁边"
+    ],
+    [
+      "D与E在同一房间"
+    ]
+  ],
+  "display_cards": [
+    [
+      "我在椅子上"
+    ],
+    [
+      "D工程师在E管理员上方"
+    ],
+    [
+      "我在地毯上"
+    ],
+    [
+      "我在桌子旁边"
+    ],
+    [
+      "我在雕塑旁边"
+    ],
+    [
+      "我在椅子旁边"
+    ],
+    [
+      "D工程师与E管理员在同一房间"
+    ]
+  ],
+  "target": [
+    15,
+    41,
+    12,
+    25,
+    45,
+    30,
+    0
+  ],
+  "names": {
+    "A": "绘图员",
+    "B": "设计师",
+    "C": "测绘员",
+    "D": "工程师",
+    "E": "管理员",
+    "F": "施工员",
+    "V": "老师"
+  },
+  "real_game_test": false
+}

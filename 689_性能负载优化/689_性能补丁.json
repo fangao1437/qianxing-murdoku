@@ -1,0 +1,42 @@
+{
+  "version": "689",
+  "base": "688",
+  "strategy": "只改内嵌 Lua：① 剥离纯空白行（语义不变，可用 688 原件重算索引逐字节还原）；② 5 处每帧同步链去冗余补丁。存档记录表、关卡数据、静态文本、美术层全部逐字节不动。",
+  "stripBlankLines": {
+    "pattern": "^[ \\t\\r]*$",
+    "note": "688 内嵌 Lua 无 [[ 长字符串、无行尾反斜杠续行，纯空白行删除不影响词法；注释行保留。"
+  },
+  "patches": [
+    {
+      "name": "685 每帧抬层：缓存 pcall 闭包，保持每帧复位不变式",
+      "start": "function Adapter:_mark_layer_raise()",
+      "endMarker": "function Adapter:_mark_layer_guard()",
+      "new": "function Adapter:_mark_layer_raise()\n  local m = self._mark_layer\n  if m == nil then\n    m = self:find(\"art685.mark.overlay\")\n    if m == nil then return end\n    self._mark_layer = m\n  end\n  if m.SetAsLastSibling ~= nil then\n    -- 689：缓存闭包，避免每帧新建函数对象；685「每帧复位」不变式完全保留\n    if self._mark_raise_target ~= m then\n      self._mark_raise_target = m\n      self._mark_raise_fn = function() m:SetAsLastSibling() end\n    end\n    pcall(self._mark_raise_fn)\n  end\nend\n"
+    },
+    {
+      "name": "on_tick：无定时器时不再分配空表（原循环本就是 no-op）",
+      "anchor": "function Adapter:on_tick(dt)",
+      "start": "  local due = {}\n  for i = #self.timers, 1, -1 do",
+      "endMarker": "  if self._subtree_dirty then",
+      "new": "  -- 689：定时器为空时不分配空表（688 在该分支本就什么都不做）\n  if #self.timers > 0 then\n    local due = {}\n    for i = #self.timers, 1, -1 do\n      if self.timers[i].at <= self.clock then\n        due[#due + 1] = self.timers[i]\n        table.remove(self.timers, i)\n      end\n    end\n    for i = #due, 1, -1 do due[i].fn() end\n  end\n"
+    },
+    {
+      "name": "sync_block640：句柄按控件树代数缓存，热区绑定仅未绑定时调用；每帧显隐/抬层逻辑不变",
+      "start": "local block640_silent655 = setmetatable({}, { __mode = \"k\" })",
+      "endMarker": "local art641_cache = nil",
+      "new": "local block640_silent655 = setmetatable({}, { __mode = \"k\" })\nlocal block640_silent_gen655 = -1\n-- 689：控件句柄随 _lookup_gen 缓存；只要有一项没找到就退回 688 的逐帧查找，\n--       保证首帧 / 控件树重建时绑定不丢失。每帧的显隐、静音、抬层逻辑逐行保持。\nlocal block640_cache = nil\nlocal block640_cache_gen = -1\nlocal function sync_block640()\n  if not adapter then return end\n  local util = tutorial_instance(TUT_SETS.l1)\n  if not util then return end\n  local cur = Murdoku.current()\n  local ctrl = cur and cur.controller\n  local gen = adapter._lookup_gen or 0\n  if block640_cache == nil or block640_cache_gen ~= gen then\n    local tmp, complete = {}, true\n    for _, spec in ipairs(BLOCK640) do\n      local name = \"block640.\" .. spec.tag\n      local panel, hit = adapter:find(name), adapter:find(name .. \".hit\")\n      tmp[#tmp + 1] = { spec = spec, name = name, panel = panel, hit = hit }\n      if panel == nil or hit == nil then complete = false end\n    end\n    if complete then block640_cache, block640_cache_gen = tmp, gen\n    else block640_cache, block640_cache_gen = nil, gen end\n  end\n  local cache = block640_cache\n  if cache == nil then\n    cache = {}\n    for _, spec in ipairs(BLOCK640) do\n      local name = \"block640.\" .. spec.tag\n      cache[#cache + 1] = { spec = spec, name = name,\n        panel = adapter:find(name), hit = adapter:find(name .. \".hit\") }\n    end\n  end\n  for _, e in ipairs(cache) do\n    local spec, name, panel, hit = e.spec, e.name, e.panel, e.hit\n    local want = false\n    if spec.tag == \"modal\" then\n      want = ctrl ~= nil and ctrl.modal ~= nil\n      -- 654: 兼容旧退出状态；独立选关页不启用旧式选关遮罩。\n      if want and ctrl.modal.kind == \"levelselect\" and (ctrl.screen == \"select\" or ctrl.screen == \"home\") then want = false end\n    elseif spec.tag == \"confirm\" then want = ctrl ~= nil and ctrl.pending ~= nil\n    else local inst = tutorial_inst[spec.tag]; want = inst ~= nil and inst.open == true end\n    -- 689：_bind 内部首行即「已绑定则立即返回」，收进未绑定分支后行为等价，\n    --       但稳态帧不再创建 5 个空闭包、也不再重复调用。\n    if hit ~= nil and not util.bound[hit] then\n      help_visible(hit, true)\n      util:_bind(name .. \".hit\", function() end, hit)\n    end\n    want = not not want\n    if hit ~= nil then\n      local _g655 = adapter._lookup_gen or 0\n      if block640_silent_gen655 ~= _g655 then\n        block640_silent655 = setmetatable({}, { __mode = \"k\" })\n        block640_silent_gen655 = _g655\n      end\n      if not block640_silent655[hit] then\n        pcall(function() if hit.clickAudioId ~= 0 then hit.clickAudioId = 0 end end)\n        block640_silent655[hit] = true\n      end\n    end\n    help_visible(panel, want)\n    if want then\n      pcall(function() panel.showCursor = true end)\n      pcall(function() panel.disableCursorEventPassthrough = true end)\n      pcall(function() panel:SetAsLastSibling() end)\n      for _, target in ipairs(spec.targets) do\n        local c = adapter:find(target)\n        if c then pcall(function() c:SetAsLastSibling() end) end\n      end\n    end\n  end\nend\n"
+    },
+    {
+      "name": "sync_art647：结算票券染色状态门控（can_settle 副作用逐帧保留；控件全就绪才固化）",
+      "start": "local art647_tint_key = nil",
+      "endMarker": "local function sync_art649_page()",
+      "new": "local art647_tint_key = nil\nlocal art647_last_key, art647_last_gen = nil, -1\nlocal function sync_art647()\n  local cur = Murdoku.current()\n  local ad = cur and cur.adapter\n  local ctrl = cur and cur.controller\n  if not ad or not ctrl then return end\n  -- 689：can_settle 有解锁副作用，必须逐帧调用；状态未变且控件树未重建时跳过染色。\n  --       仅当 21 个控件全部找到并完成染色后才固化，首帧 / 重建帧不会漏染。\n  local ready = ctrl:can_settle()\n  local gen = ad._lookup_gen or 0\n  local key = (ready and \"1\" or \"0\") .. \"|\" .. tostring(ctrl.screen or \"\")\n  art647_tint_key = key\n  if key == art647_last_key and gen == art647_last_gen then return end\n  local cd = ad:find(\"settle.btn.countdown\")\n  write_art_color650(cd, \"textColor\", 0x00FFFFFF)\n  local complete = cd ~= nil\n  for _, e in ipairs(SETTLE_ART_TINT) do\n    local c = ad:find(e[1])\n    if c == nil then complete = false end\n    write_art_color650(c, \"imageColor\", ready and e[2] or e[3])\n  end\n  if complete then art647_last_key, art647_last_gen = key, gen end\nend\n"
+    },
+    {
+      "name": "sync_art649_page：选关分页箭头染色门控（levels 取值逐帧保留）",
+      "start": "local function sync_art649_page()",
+      "endMarker": "function OnInit()",
+      "new": "local art649_last_key = nil\nlocal art649_ready = false\nlocal function sync_art649_page()\n  local cur = Murdoku.current()\n  local ad = cur and cur.adapter\n  local ctrl = cur and cur.controller\n  if not ad or not ctrl then return end\n  local lv = ctrl.opts and ctrl.opts.levels\n  local list = {}\n  if type(lv) == \"function\" then list = lv() or {}\n  elseif type(lv) == \"table\" then list = lv end\n  local pages = math.max(1, math.ceil(#list / 4))\n  local page = tonumber(ctrl.select_page) or 1\n  if page < 1 then page = 1 end\n  if page > pages then page = pages end\n  -- 689：页态 + 控件树代数未变且控件已就绪时跳过重复染色；翻页立即重算。\n  local key = pages .. \"|\" .. page .. \"|\" .. tostring(ad._lookup_gen or 0)\n  if key == art649_last_key and art649_ready then return end\n  local dl = ad:find(\"art647.select.diamond.left\")\n  local dr = ad:find(\"art647.select.diamond.right\")\n  local NORMAL, DIM = 0xFFFFFFFF, 0x7FFFFFFF\n  write_art_color650(dl, \"imageColor\", (page > 1) and NORMAL or DIM)\n  write_art_color650(dr, \"imageColor\", (page < pages) and NORMAL or DIM)\n  art649_last_key = key\n  art649_ready = dl ~= nil and dr ~= nil\nend\n"
+    }
+  ]
+}

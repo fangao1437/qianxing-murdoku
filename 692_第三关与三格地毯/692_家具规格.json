@@ -1,0 +1,341 @@
+{
+  "localResearchPackage": "官网美术素材调研-2026-11-13/",
+  "researchGap": "高频素材-TemplateSpec.json 的 14 组规格只有 7 类，缺 Carpet 独立逐件层表；globalLayers 只给 49 tile 组合规则。688 的自建规格是 216×108 / 108×216 拉伸版，本轮按用户要求改为「三格 L 形独立新建素材」。",
+  "furnitureUsed": {
+    "3": [
+      "桌子",
+      "植物",
+      "椅子",
+      "地毯",
+      "书架"
+    ],
+    "4": [
+      "桌子",
+      "植物",
+      "书架",
+      "椅子",
+      "地毯"
+    ],
+    "5": [
+      "桌子",
+      "植物",
+      "书架",
+      "椅子",
+      "地毯"
+    ],
+    "6": [
+      "桌子",
+      "植物",
+      "书架",
+      "椅子",
+      "地毯"
+    ],
+    "7": [
+      "桌子",
+      "植物",
+      "椅子",
+      "地毯"
+    ]
+  },
+  "levelsWithTriCarpet": [
+    3,
+    7
+  ],
+  "newAssets": {
+    "furn.rug.4": {
+      "template": "furn.rug.4",
+      "kind": "carpet",
+      "variant": "L3a",
+      "level": 3,
+      "missing": "右下",
+      "cells": [
+        [
+          3,
+          2
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          4,
+          2
+        ]
+      ],
+      "canvas": {
+        "W": 216.0,
+        "H": 216.0,
+        "cell": 108.0,
+        "grid": "2×2"
+      },
+      "layerCount": 9,
+      "layers": [
+        {
+          "part": "外框",
+          "quad": "左上",
+          "x": -54.0,
+          "y": 54.0,
+          "w": 108.0,
+          "h": 108.0,
+          "imageId": 100001,
+          "color": "0xFFB89A62",
+          "order": 1
+        },
+        {
+          "part": "内面",
+          "quad": "左上",
+          "x": -54.0,
+          "y": 54.0,
+          "w": 82.08,
+          "h": 82.08,
+          "imageId": 100001,
+          "color": "0xFFDCC684",
+          "order": 2
+        },
+        {
+          "part": "内框",
+          "quad": "左上",
+          "x": -54.0,
+          "y": 54.0,
+          "w": 64.8,
+          "h": 64.8,
+          "imageId": 100001,
+          "color": "0xFFC9B072",
+          "order": 3
+        },
+        {
+          "part": "外框",
+          "quad": "右上",
+          "x": 54.0,
+          "y": 54.0,
+          "w": 108.0,
+          "h": 108.0,
+          "imageId": 100001,
+          "color": "0xFFB89A62",
+          "order": 4
+        },
+        {
+          "part": "内面",
+          "quad": "右上",
+          "x": 54.0,
+          "y": 54.0,
+          "w": 82.08,
+          "h": 82.08,
+          "imageId": 100001,
+          "color": "0xFFDCC684",
+          "order": 5
+        },
+        {
+          "part": "内框",
+          "quad": "右上",
+          "x": 54.0,
+          "y": 54.0,
+          "w": 64.8,
+          "h": 64.8,
+          "imageId": 100001,
+          "color": "0xFFC9B072",
+          "order": 6
+        },
+        {
+          "part": "外框",
+          "quad": "左下",
+          "x": -54.0,
+          "y": -54.0,
+          "w": 108.0,
+          "h": 108.0,
+          "imageId": 100001,
+          "color": "0xFFB89A62",
+          "order": 7
+        },
+        {
+          "part": "内面",
+          "quad": "左下",
+          "x": -54.0,
+          "y": -54.0,
+          "w": 82.08,
+          "h": 82.08,
+          "imageId": 100001,
+          "color": "0xFFDCC684",
+          "order": 8
+        },
+        {
+          "part": "内框",
+          "quad": "左下",
+          "x": -54.0,
+          "y": -54.0,
+          "w": 64.8,
+          "h": 64.8,
+          "imageId": 100001,
+          "color": "0xFFC9B072",
+          "order": 9
+        }
+      ],
+      "gate": {
+        "zeroSpur": true,
+        "noStretch": true,
+        "legalPrimitives": [
+          100001
+        ],
+        "layerBudget": true,
+        "distinctAsset": true
+      },
+      "referenceRoute": [
+        "源记录 (parent=null, 150×150, childList=[content])",
+        "母本记录 (parent=ClientUIPrototypeHierarchyRoot, 150×150)",
+        "things 引用控件 (parent=things, 80×80, referencedPrefabIndex=源ID)",
+        "content (216×216, childList=9 层)",
+        "path_map → cfg.furn_tpl_prefab → cfg.furn_tpl_canvas",
+        "TPL_KEY.carpet.L3a/L3b → furn_tpl → _spawn_furn_tpl",
+        "InstantiateClientUIControl + SetSizeDelta(2格×2格)"
+      ]
+    },
+    "furn.rug.5": {
+      "template": "furn.rug.5",
+      "kind": "carpet",
+      "variant": "L3b",
+      "level": 7,
+      "missing": "左下",
+      "cells": [
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          3,
+          4
+        ]
+      ],
+      "canvas": {
+        "W": 216.0,
+        "H": 216.0,
+        "cell": 108.0,
+        "grid": "2×2"
+      },
+      "layerCount": 9,
+      "layers": [
+        {
+          "part": "外框",
+          "quad": "左上",
+          "x": -54.0,
+          "y": 54.0,
+          "w": 108.0,
+          "h": 108.0,
+          "imageId": 100001,
+          "color": "0xFFB89A62",
+          "order": 1
+        },
+        {
+          "part": "内面",
+          "quad": "左上",
+          "x": -54.0,
+          "y": 54.0,
+          "w": 82.08,
+          "h": 82.08,
+          "imageId": 100001,
+          "color": "0xFFDCC684",
+          "order": 2
+        },
+        {
+          "part": "内框",
+          "quad": "左上",
+          "x": -54.0,
+          "y": 54.0,
+          "w": 64.8,
+          "h": 64.8,
+          "imageId": 100001,
+          "color": "0xFFC9B072",
+          "order": 3
+        },
+        {
+          "part": "外框",
+          "quad": "右上",
+          "x": 54.0,
+          "y": 54.0,
+          "w": 108.0,
+          "h": 108.0,
+          "imageId": 100001,
+          "color": "0xFFB89A62",
+          "order": 4
+        },
+        {
+          "part": "内面",
+          "quad": "右上",
+          "x": 54.0,
+          "y": 54.0,
+          "w": 82.08,
+          "h": 82.08,
+          "imageId": 100001,
+          "color": "0xFFDCC684",
+          "order": 5
+        },
+        {
+          "part": "内框",
+          "quad": "右上",
+          "x": 54.0,
+          "y": 54.0,
+          "w": 64.8,
+          "h": 64.8,
+          "imageId": 100001,
+          "color": "0xFFC9B072",
+          "order": 6
+        },
+        {
+          "part": "外框",
+          "quad": "右下",
+          "x": 54.0,
+          "y": -54.0,
+          "w": 108.0,
+          "h": 108.0,
+          "imageId": 100001,
+          "color": "0xFFB89A62",
+          "order": 7
+        },
+        {
+          "part": "内面",
+          "quad": "右下",
+          "x": 54.0,
+          "y": -54.0,
+          "w": 82.08,
+          "h": 82.08,
+          "imageId": 100001,
+          "color": "0xFFDCC684",
+          "order": 8
+        },
+        {
+          "part": "内框",
+          "quad": "右下",
+          "x": 54.0,
+          "y": -54.0,
+          "w": 64.8,
+          "h": 64.8,
+          "imageId": 100001,
+          "color": "0xFFC9B072",
+          "order": 9
+        }
+      ],
+      "gate": {
+        "zeroSpur": true,
+        "noStretch": true,
+        "legalPrimitives": [
+          100001
+        ],
+        "layerBudget": true,
+        "distinctAsset": true
+      },
+      "referenceRoute": [
+        "源记录 (parent=null, 150×150, childList=[content])",
+        "母本记录 (parent=ClientUIPrototypeHierarchyRoot, 150×150)",
+        "things 引用控件 (parent=things, 80×80, referencedPrefabIndex=源ID)",
+        "content (216×216, childList=9 层)",
+        "path_map → cfg.furn_tpl_prefab → cfg.furn_tpl_canvas",
+        "TPL_KEY.carpet.L3a/L3b → furn_tpl → _spawn_furn_tpl",
+        "InstantiateClientUIControl + SetSizeDelta(2格×2格)"
+      ]
+    }
+  },
+  "unchanged": "其余单格/横双/竖双/非连片地毯仍走 691 的逐格 rug_cell_els（未被本轮改动）"
+}

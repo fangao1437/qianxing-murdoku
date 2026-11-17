@@ -1,0 +1,105 @@
+{
+  "version": 697,
+  "base": {
+    "file": "qianxing-murdoku\\696_凹角与选关缩略图\\696_凹角与选关缩略图.gil",
+    "sha256": "44878bf89a482d7daa36f23d604c22992a3ba6051ad36706612dac25277d07fb",
+    "records": 8011,
+    "luaBytes": 614313
+  },
+  "output": {
+    "expectRecords": 8011,
+    "added": 0,
+    "removed": 0,
+    "luaBytes": 614486,
+    "sha256": "5c866388f3cecede093072524b043d1ec31b608e08a40cf2379e9e2f8676b13e",
+    "bytes": 7061217,
+    "recordsOnDisk": 8011,
+    "changedExisting": 4,
+    "changedRecordIds": [
+      1073760757,
+      1073760758,
+      1073760759,
+      1073760760
+    ],
+    "luaRoundtrip": true
+  },
+  "corner": {
+    "moves": [
+      {
+        "id": 1073760757,
+        "template": "furn.rug.4",
+        "copy": "src",
+        "old": [
+          6.48,
+          -6.48
+        ],
+        "new": [
+          -6.48,
+          6.48
+        ]
+      },
+      {
+        "id": 1073760758,
+        "template": "furn.rug.4",
+        "copy": "mama",
+        "old": [
+          6.48,
+          -6.48
+        ],
+        "new": [
+          -6.48,
+          6.48
+        ]
+      },
+      {
+        "id": 1073760759,
+        "template": "furn.rug.5",
+        "copy": "src",
+        "old": [
+          -6.48,
+          -6.48
+        ],
+        "new": [
+          6.48,
+          6.48
+        ]
+      },
+      {
+        "id": 1073760760,
+        "template": "furn.rug.5",
+        "copy": "mama",
+        "old": [
+          -6.48,
+          -6.48
+        ],
+        "new": [
+          6.48,
+          6.48
+        ]
+      }
+    ],
+    "note": "697：角片从缺角象限移到 L 形内侧凹角顶点（L3a 左上格 / L3b 右上格），外框带仍连成连续直角，但轮廓不凸出、不侵占空白格"
+  },
+  "lua": {
+    "patches": 1,
+    "reversible": true,
+    "revertToBase": "逐字节一致"
+  },
+  "selectThumb": {
+    "area": "棕色 inner 比例区域不变；网格边长 = min(区域宽-16, 区域高-16)，在区域内水平/垂直居中，四周留白",
+    "cells": "rows×cols 格，每格按 room_grid 房间号取 ROOM_COLORS 底色",
+    "walls": "深墨 #20262C 细条；v=列间竖线，h=行间横线",
+    "doors": "橙红 #DC5B29 短条，占格线中段 44%",
+    "furniture": "不画（用户要求省略）",
+    "name": "底部白色边缘 .info 文本 = 关卡短名，style=card.name 深棕 #4A2E1C",
+    "info": "顶部 .title = 6x6 / 嫌疑人数等规格信息",
+    "square": "rows==cols ⇒ 每格正方形，整幅棋盘为正方形"
+  },
+  "texts": {
+    "changed": 0,
+    "note": "697 静态文本零改动"
+  },
+  "puzzle": {
+    "note": "谜题数据零改动；695 注册修复、696 缩略图框架全部保留"
+  }
+}

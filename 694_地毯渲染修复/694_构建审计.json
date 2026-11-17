@@ -1,0 +1,57 @@
+{
+  "version": 694,
+  "base": {
+    "file": "qianxing-murdoku\\693_真机修正\\693_第三关与三格地毯.gil",
+    "sha256": "20e2a0fa2bd46f4d8117eea7649166cdb88b23eb8b84e2af88a995cc9ef8387d",
+    "records": 8007,
+    "luaBytes": 611160
+  },
+  "output": {
+    "expectRecords": 8007,
+    "added": 0,
+    "changedExisting": 1,
+    "luaBytes": 611321,
+    "sha256": "a122e699c4193e95e1308b06373f6c7c88f453730031d1eba8f4503cbb9bcaa1",
+    "bytes": 7054746,
+    "recordsOnDisk": 8007,
+    "rogue": 0,
+    "changedRecords": 0,
+    "luaRoundtrip": true
+  },
+  "lua": {
+    "patches": 2,
+    "modulesReplaced": [
+      "case_003 删右上角装饰植物"
+    ],
+    "reversible": true
+  },
+  "carpet": {
+    "templates": {
+      "single": "furn.rug (108×108)",
+      "h2": "furn.rug.2 (216×108)",
+      "v2": "furn.rug.3 (108×216)",
+      "L3a": "furn.rug.4 (216×216, 缺右下)",
+      "L3b": "furn.rug.5 (216×216, 缺左下)"
+    },
+    "path": "F.layout → TPL_KEY.carpet → build_layout.furn_tpl/span/offset → _spawn_furn_tpl → _spawn_whole_rug → board.rugs → InstantiateClientUIControl",
+    "perCellEls": "disabled（694 P2）"
+  },
+  "level3": {
+    "plantRemoved": "1,6",
+    "furniture": {
+      "书架": [
+        4
+      ],
+      "植物": [
+        0
+      ],
+      "雕塑": [
+        11
+      ]
+    }
+  },
+  "texts": {
+    "changed": 0,
+    "note": "694 静态文本零改动（卡序与人名保持不变）"
+  }
+}

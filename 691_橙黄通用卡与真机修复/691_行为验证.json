@@ -1,0 +1,293 @@
+{
+  "verdict": true,
+  "pass": 57,
+  "fail": 0,
+  "checks": [
+    {
+      "name": "case_001 两版都有输出",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "case_001 validate_level 相同",
+      "pass": true,
+      "detail": "true / true"
+    },
+    {
+      "name": "case_001 盘面尺寸相同",
+      "pass": true,
+      "detail": "5x5 / 5x5"
+    },
+    {
+      "name": "case_001 线索条数相同",
+      "pass": true,
+      "detail": "5 / 5"
+    },
+    {
+      "name": "case_001 预设答案真假向量相同",
+      "pass": true,
+      "detail": "11111 / 11111"
+    },
+    {
+      "name": "case_001 room 掩码相同",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "case_001 区域邻接对集合相同",
+      "pass": true,
+      "detail": "1-2,1-3,2-3 / 1-2,1-3,2-3"
+    },
+    {
+      "name": "case_001 门数不变",
+      "pass": true,
+      "detail": "3 / 3"
+    },
+    {
+      "name": "case_002 两版都有输出",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "case_002 validate_level 相同",
+      "pass": true,
+      "detail": "true / true"
+    },
+    {
+      "name": "case_002 盘面尺寸相同",
+      "pass": true,
+      "detail": "6x6 / 6x6"
+    },
+    {
+      "name": "case_002 线索条数相同",
+      "pass": true,
+      "detail": "6 / 6"
+    },
+    {
+      "name": "case_002 预设答案真假向量相同",
+      "pass": true,
+      "detail": "111011 / 111011"
+    },
+    {
+      "name": "case_002 room 掩码相同",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "case_002 区域邻接对集合相同",
+      "pass": true,
+      "detail": "1-2,1-3,3-4 / 1-2,1-3,3-4"
+    },
+    {
+      "name": "case_002 门数不变",
+      "pass": true,
+      "detail": "3 / 3"
+    },
+    {
+      "name": "case_003 两版都有输出",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "case_003 validate_level 相同",
+      "pass": true,
+      "detail": "true / true"
+    },
+    {
+      "name": "case_003 盘面尺寸相同",
+      "pass": true,
+      "detail": "6x6 / 6x6"
+    },
+    {
+      "name": "case_003 线索条数相同",
+      "pass": true,
+      "detail": "6 / 6"
+    },
+    {
+      "name": "case_003 预设答案真假向量相同",
+      "pass": true,
+      "detail": "111111 / 111111"
+    },
+    {
+      "name": "case_003 room 掩码相同",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "case_003 区域邻接对集合相同",
+      "pass": true,
+      "detail": "1-2,1-3,1-4,2-3,3-4 / 1-2,1-3,1-4,2-3,3-4"
+    },
+    {
+      "name": "case_003 门数不变",
+      "pass": true,
+      "detail": "5 / 5"
+    },
+    {
+      "name": "case_004 两版都有输出",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "case_004 validate_level 相同",
+      "pass": true,
+      "detail": "true / true"
+    },
+    {
+      "name": "case_004 盘面尺寸相同",
+      "pass": true,
+      "detail": "6x6 / 6x6"
+    },
+    {
+      "name": "case_004 线索条数相同",
+      "pass": true,
+      "detail": "6 / 6"
+    },
+    {
+      "name": "case_004 预设答案真假向量相同",
+      "pass": true,
+      "detail": "111101 / 111101"
+    },
+    {
+      "name": "case_004 room 掩码相同",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "case_004 区域邻接对集合相同",
+      "pass": true,
+      "detail": "1-2,1-3,1-4,2-3,3-4 / 1-2,1-3,1-4,2-3,3-4"
+    },
+    {
+      "name": "case_004 门数不变",
+      "pass": true,
+      "detail": "5 / 5"
+    },
+    {
+      "name": "case_005 两版都有输出",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "case_005 validate_level 相同",
+      "pass": true,
+      "detail": "true / true"
+    },
+    {
+      "name": "case_005 盘面尺寸相同",
+      "pass": true,
+      "detail": "6x6 / 6x6"
+    },
+    {
+      "name": "case_005 线索条数相同",
+      "pass": true,
+      "detail": "6 / 6"
+    },
+    {
+      "name": "case_005 预设答案真假向量相同",
+      "pass": true,
+      "detail": "101111 / 101111"
+    },
+    {
+      "name": "case_005 room 掩码相同",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "case_005 区域邻接对集合相同",
+      "pass": true,
+      "detail": "1-2,1-3,1-4,2-3,3-4 / 1-2,1-3,1-4,2-3,3-4"
+    },
+    {
+      "name": "case_005 门数不变",
+      "pass": true,
+      "detail": "5 / 5"
+    },
+    {
+      "name": "case_006 两版都有输出",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "case_006 validate_level 相同",
+      "pass": true,
+      "detail": "true / true"
+    },
+    {
+      "name": "case_006 盘面尺寸相同",
+      "pass": true,
+      "detail": "7x7 / 7x7"
+    },
+    {
+      "name": "case_006 线索条数相同",
+      "pass": true,
+      "detail": "7 / 7"
+    },
+    {
+      "name": "case_006 预设答案真假向量相同",
+      "pass": true,
+      "detail": "1011111 / 1011111"
+    },
+    {
+      "name": "case_006 room 掩码相同",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "case_006 区域邻接对集合相同",
+      "pass": true,
+      "detail": "1-2,1-3,1-4,2-3,3-4 / 1-2,1-3,1-4,2-3,3-4"
+    },
+    {
+      "name": "case_006 门数 9 → 5",
+      "pass": true,
+      "detail": "9 / 5"
+    },
+    {
+      "name": "case_007 两版都有输出",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "case_007 validate_level 相同",
+      "pass": true,
+      "detail": "true / true"
+    },
+    {
+      "name": "case_007 盘面尺寸相同",
+      "pass": true,
+      "detail": "6x6 / 6x6"
+    },
+    {
+      "name": "case_007 线索条数相同",
+      "pass": true,
+      "detail": "6 / 6"
+    },
+    {
+      "name": "case_007 预设答案真假向量相同",
+      "pass": true,
+      "detail": "101111 / 101111"
+    },
+    {
+      "name": "case_007 room 掩码相同",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "case_007 区域邻接对集合相同",
+      "pass": true,
+      "detail": "1-2,1-3,2-3,2-4,3-4\r / 1-2,1-3,2-3,2-4,3-4\r"
+    },
+    {
+      "name": "case_007 门数不变",
+      "pass": true,
+      "detail": "5 / 5"
+    },
+    {
+      "name": "第6关 7×7",
+      "pass": true,
+      "detail": "7x7"
+    }
+  ],
+  "note": "裁门只改 case_006 的 doors；validate_level / 答案真假向量 / room / adjacency 全部不变 ⇒ 谜题不变"
+}
