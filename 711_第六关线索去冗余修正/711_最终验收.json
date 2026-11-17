@@ -1,0 +1,103 @@
+{
+  "PASS": true,
+  "checks": [
+    {
+      "name": "lua语法",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "case_006模块存在",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "case_006使用书架否定",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "case_006不再使用植物否定",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "设计版本711",
+      "pass": true,
+      "detail": "711"
+    },
+    {
+      "name": "七张单句",
+      "pass": true,
+      "detail": "[['E在雕塑旁边'], ['F在椅子旁边'], ['D在桌子旁边'], ['B在书架旁边'], ['A在椅子上'], ['C在地毯上'], ['E不在书架旁边']]"
+    },
+    {
+      "name": "设计新卡文本",
+      "pass": true,
+      "detail": "['E不在书架旁边']"
+    },
+    {
+      "name": "设计旧卡已清除",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "存档存在",
+      "pass": true,
+      "detail": "7301005"
+    },
+    {
+      "name": "存档记录8300",
+      "pass": true,
+      "detail": "8300"
+    },
+    {
+      "name": "内嵌v711",
+      "pass": true,
+      "detail": "v711"
+    },
+    {
+      "name": "静态改动仅what.6.7",
+      "pass": true,
+      "detail": "[{\"name\": \"what.6.7\", \"before\": \"E顾言不在植物旁边\", \"after\": \"E顾言不在书架旁边\"}]"
+    },
+    {
+      "name": "710姓名修复保留",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "710选关标题修复保留",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "全线索4盘",
+      "pass": true,
+      "detail": "4"
+    },
+    {
+      "name": "B候选2格",
+      "pass": true,
+      "detail": "[4, 41]"
+    },
+    {
+      "name": "人数规则后唯一",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "name": "逐卡均非冗余",
+      "pass": true,
+      "detail": "[100, 66, 18, 26, 136, 64, 6]"
+    },
+    {
+      "name": "711验证结果PASS",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "version": 711,
+  "gil_bytes": 7301005,
+  "script_bytes": 625570
+}

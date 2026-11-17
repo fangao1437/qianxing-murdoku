@@ -1,4 +1,5 @@
 local FORCE_LEVEL = nil
+if print then print("[murdoku] ===== 构建标记 v712 / 2026-11-17 / 七关常见身份称呼：who、what与教程全文同步 =====") end
 local Murdoku, Qianxing
 local LOAD_ERR = nil
 local ok1 = pcall(function() Murdoku = require("main") end)
@@ -93,7 +94,7 @@ local function check_canvas()
     local same = (math.abs(w - CANVAS_EXPECT.w) < 0.6) and (math.abs(h - CANVAS_EXPECT.h) < 0.6)
     if same then
       if print then
-        print("[murdoku] ===== 构建标记 v707 / 2026-11-16 / 第三关v16教学口径补写 =====")
+        print("[murdoku] ===== 构建标记 v712 / 2026-11-17 / 七关常见身份称呼：who、what与教程全文同步 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

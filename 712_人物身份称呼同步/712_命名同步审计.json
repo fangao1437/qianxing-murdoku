@@ -1,0 +1,1023 @@
+{
+  "version": 712,
+  "baseVersion": 711,
+  "output": "712_人物身份称呼同步.gil",
+  "records": 8300,
+  "bytes": 7302394,
+  "sha256": "755f9c86b180d47bdc32dbd41b0b63a680d6129c4b9ed95f7a2875361b6620bf",
+  "baseSha256": "d4f5b22e9c1b29e788f73c54bbe073978593e4adb8985aee8a2bc49f65aaa9d3",
+  "mapping": [
+    {
+      "level": 1,
+      "id": "A",
+      "old": "李晨",
+      "new": "保安"
+    },
+    {
+      "level": 1,
+      "id": "B",
+      "old": "林晓",
+      "new": "前台小姐"
+    },
+    {
+      "level": 1,
+      "id": "C",
+      "old": "周凯",
+      "new": "快递员"
+    },
+    {
+      "level": 1,
+      "id": "D",
+      "old": "陈宇",
+      "new": "顾客"
+    },
+    {
+      "level": 1,
+      "id": "V",
+      "old": "赵宁",
+      "new": "店长"
+    },
+    {
+      "level": 2,
+      "id": "A",
+      "old": "王磊",
+      "new": "服务员"
+    },
+    {
+      "level": 2,
+      "id": "B",
+      "old": "苏晴",
+      "new": "收银员"
+    },
+    {
+      "level": 2,
+      "id": "C",
+      "old": "高远",
+      "new": "厨师"
+    },
+    {
+      "level": 2,
+      "id": "D",
+      "old": "许航",
+      "new": "快递员"
+    },
+    {
+      "level": 2,
+      "id": "E",
+      "old": "唐悦",
+      "new": "顾客"
+    },
+    {
+      "level": 2,
+      "id": "V",
+      "old": "顾宁",
+      "new": "经理"
+    },
+    {
+      "level": 3,
+      "id": "A",
+      "old": "陆川",
+      "new": "摄影师"
+    },
+    {
+      "level": 3,
+      "id": "B",
+      "old": "沈妍",
+      "new": "导游"
+    },
+    {
+      "level": 3,
+      "id": "C",
+      "old": "程远",
+      "new": "游客"
+    },
+    {
+      "level": 3,
+      "id": "D",
+      "old": "叶宁",
+      "new": "雕刻家"
+    },
+    {
+      "level": 3,
+      "id": "E",
+      "old": "顾晨",
+      "new": "清洁工"
+    },
+    {
+      "level": 3,
+      "id": "V",
+      "old": "何川",
+      "new": "馆长"
+    },
+    {
+      "level": 4,
+      "id": "A",
+      "old": "韩松",
+      "new": "印刷工"
+    },
+    {
+      "level": 4,
+      "id": "B",
+      "old": "林悦",
+      "new": "编辑"
+    },
+    {
+      "level": 4,
+      "id": "C",
+      "old": "宋杰",
+      "new": "装订工"
+    },
+    {
+      "level": 4,
+      "id": "D",
+      "old": "陆宁",
+      "new": "快递员"
+    },
+    {
+      "level": 4,
+      "id": "E",
+      "old": "方晓",
+      "new": "校对员"
+    },
+    {
+      "level": 4,
+      "id": "V",
+      "old": "周老师",
+      "new": "老板"
+    },
+    {
+      "level": 5,
+      "id": "A",
+      "old": "梁晨",
+      "new": "保安"
+    },
+    {
+      "level": 5,
+      "id": "B",
+      "old": "许宁",
+      "new": "值班员"
+    },
+    {
+      "level": 5,
+      "id": "C",
+      "old": "赵越",
+      "new": "鉴定师"
+    },
+    {
+      "level": 5,
+      "id": "D",
+      "old": "周然",
+      "new": "摄影师"
+    },
+    {
+      "level": 5,
+      "id": "E",
+      "old": "沈琳",
+      "new": "管理员"
+    },
+    {
+      "level": 5,
+      "id": "V",
+      "old": "林叔",
+      "new": "馆长"
+    },
+    {
+      "level": 6,
+      "id": "A",
+      "old": "何明",
+      "new": "绘图员"
+    },
+    {
+      "level": 6,
+      "id": "B",
+      "old": "苏禾",
+      "new": "设计师"
+    },
+    {
+      "level": 6,
+      "id": "C",
+      "old": "陈放",
+      "new": "测绘员"
+    },
+    {
+      "level": 6,
+      "id": "D",
+      "old": "林涛",
+      "new": "工程师"
+    },
+    {
+      "level": 6,
+      "id": "E",
+      "old": "顾言",
+      "new": "管理员"
+    },
+    {
+      "level": 6,
+      "id": "F",
+      "old": "周宁",
+      "new": "施工员"
+    },
+    {
+      "level": 6,
+      "id": "V",
+      "old": "吴老师",
+      "new": "老师"
+    },
+    {
+      "level": 7,
+      "id": "A",
+      "old": "江宁",
+      "new": "管理员"
+    },
+    {
+      "level": 7,
+      "id": "B",
+      "old": "叶青",
+      "new": "读者"
+    },
+    {
+      "level": 7,
+      "id": "C",
+      "old": "陈墨",
+      "new": "作家"
+    },
+    {
+      "level": 7,
+      "id": "D",
+      "old": "林浩",
+      "new": "编辑"
+    },
+    {
+      "level": 7,
+      "id": "E",
+      "old": "苏然",
+      "new": "清洁工"
+    },
+    {
+      "level": 7,
+      "id": "V",
+      "old": "周叔",
+      "new": "馆长"
+    }
+  ],
+  "staticTextChanges": [
+    {
+      "record": "who.1.1",
+      "before": "李晨",
+      "after": "保安"
+    },
+    {
+      "record": "what.1.1",
+      "before": "只有A李晨站在地毯上",
+      "after": "只有A保安站在地毯上"
+    },
+    {
+      "record": "who.1.2",
+      "before": "林晓",
+      "after": "前台小姐"
+    },
+    {
+      "record": "what.1.2",
+      "before": "B林晓在桌子旁边",
+      "after": "B前台小姐在桌子旁边"
+    },
+    {
+      "record": "who.1.3",
+      "before": "周凯",
+      "after": "快递员"
+    },
+    {
+      "record": "what.1.3",
+      "before": "C周凯坐在椅子上",
+      "after": "C快递员坐在椅子上"
+    },
+    {
+      "record": "who.1.4",
+      "before": "陈宇",
+      "after": "顾客"
+    },
+    {
+      "record": "what.1.4",
+      "before": "D陈宇在植物旁边",
+      "after": "D顾客在植物旁边"
+    },
+    {
+      "record": "who.1.5",
+      "before": "赵宁",
+      "after": "店长"
+    },
+    {
+      "record": "what.1.5",
+      "before": "V赵宁在第五列",
+      "after": "V店长在第五列"
+    },
+    {
+      "record": "who.2.1",
+      "before": "王磊",
+      "after": "服务员"
+    },
+    {
+      "record": "who.7.1",
+      "before": "江宁",
+      "after": "管理员"
+    },
+    {
+      "record": "who.6.1",
+      "before": "何明",
+      "after": "绘图员"
+    },
+    {
+      "record": "who.5.1",
+      "before": "梁晨",
+      "after": "保安"
+    },
+    {
+      "record": "what.2.1",
+      "before": "A王磊在书架旁边",
+      "after": "A服务员在书架旁边"
+    },
+    {
+      "record": "what.6.1",
+      "before": "E顾言在雕塑旁边",
+      "after": "E管理员在雕塑旁边"
+    },
+    {
+      "record": "who.2.2",
+      "before": "苏晴",
+      "after": "收银员"
+    },
+    {
+      "record": "who.7.2",
+      "before": "叶青",
+      "after": "读者"
+    },
+    {
+      "record": "who.6.2",
+      "before": "苏禾",
+      "after": "设计师"
+    },
+    {
+      "record": "who.5.2",
+      "before": "许宁",
+      "after": "值班员"
+    },
+    {
+      "record": "what.2.2",
+      "before": "B苏晴在桌子旁边",
+      "after": "B收银员在桌子旁边"
+    },
+    {
+      "record": "what.6.2",
+      "before": "F周宁在椅子旁边",
+      "after": "F施工员在椅子旁边"
+    },
+    {
+      "record": "what.5.2",
+      "before": "E沈琳在椅子上",
+      "after": "E管理员在椅子上"
+    },
+    {
+      "record": "who.2.3",
+      "before": "高远",
+      "after": "厨师"
+    },
+    {
+      "record": "who.7.3",
+      "before": "陈墨",
+      "after": "作家"
+    },
+    {
+      "record": "who.6.3",
+      "before": "陈放",
+      "after": "测绘员"
+    },
+    {
+      "record": "who.5.3",
+      "before": "赵越",
+      "after": "鉴定师"
+    },
+    {
+      "record": "what.6.3",
+      "before": "D林涛在桌子旁边",
+      "after": "D工程师在桌子旁边"
+    },
+    {
+      "record": "who.2.4",
+      "before": "许航",
+      "after": "快递员"
+    },
+    {
+      "record": "who.7.4",
+      "before": "林浩",
+      "after": "编辑"
+    },
+    {
+      "record": "who.6.4",
+      "before": "林涛",
+      "after": "工程师"
+    },
+    {
+      "record": "who.5.4",
+      "before": "周然",
+      "after": "摄影师"
+    },
+    {
+      "record": "what.2.4",
+      "before": "E唐悦在A王磊的上方。",
+      "after": "E顾客在A服务员的上方。"
+    },
+    {
+      "record": "what.6.4",
+      "before": "B苏禾在书架旁边",
+      "after": "B设计师在书架旁边"
+    },
+    {
+      "record": "who.2.5",
+      "before": "唐悦",
+      "after": "顾客"
+    },
+    {
+      "record": "who.7.5",
+      "before": "苏然",
+      "after": "清洁工"
+    },
+    {
+      "record": "who.6.5",
+      "before": "顾言",
+      "after": "管理员"
+    },
+    {
+      "record": "who.5.5",
+      "before": "沈琳",
+      "after": "管理员"
+    },
+    {
+      "record": "what.2.5",
+      "before": "只有E唐悦在植物旁边",
+      "after": "只有E顾客在植物旁边"
+    },
+    {
+      "record": "what.6.5",
+      "before": "A何明在椅子上",
+      "after": "A绘图员在椅子上"
+    },
+    {
+      "record": "what.5.5",
+      "before": "我与V林叔不在同一房间",
+      "after": "我与V馆长不在同一房间"
+    },
+    {
+      "record": "who.2.6",
+      "before": "顾宁",
+      "after": "经理"
+    },
+    {
+      "record": "who.7.6",
+      "before": "周叔",
+      "after": "馆长"
+    },
+    {
+      "record": "who.6.7",
+      "before": "吴老师",
+      "after": "老师"
+    },
+    {
+      "record": "who.6.6",
+      "before": "周宁",
+      "after": "施工员"
+    },
+    {
+      "record": "who.5.6",
+      "before": "林叔",
+      "after": "馆长"
+    },
+    {
+      "record": "what.2.6",
+      "before": "我独自一人，且C高远在我下方的不同区域中",
+      "after": "我独自一人，且C厨师在我下方的不同区域中"
+    },
+    {
+      "record": "what.6.7",
+      "before": "E顾言不在书架旁边",
+      "after": "E管理员不在书架旁边"
+    },
+    {
+      "record": "what.6.6",
+      "before": "C陈放在地毯上",
+      "after": "C测绘员在地毯上"
+    },
+    {
+      "record": "what.5.6",
+      "before": "只有E沈琳在地毯上",
+      "after": "只有E管理员在地毯上"
+    },
+    {
+      "record": "who.3.1",
+      "before": "陆川",
+      "after": "摄影师"
+    },
+    {
+      "record": "what.3.1",
+      "before": "我在B沈妍上方",
+      "after": "我在B导游上方"
+    },
+    {
+      "record": "who.3.2",
+      "before": "沈妍",
+      "after": "导游"
+    },
+    {
+      "record": "who.3.3",
+      "before": "程远",
+      "after": "游客"
+    },
+    {
+      "record": "who.3.4",
+      "before": "叶宁",
+      "after": "雕刻家"
+    },
+    {
+      "record": "who.3.5",
+      "before": "顾晨",
+      "after": "清洁工"
+    },
+    {
+      "record": "what.3.5",
+      "before": "D叶宁在我上方",
+      "after": "D雕刻家在我上方"
+    },
+    {
+      "record": "who.3.6",
+      "before": "何川",
+      "after": "馆长"
+    },
+    {
+      "record": "what.3.6",
+      "before": "C程远在桌子旁边",
+      "after": "C游客在桌子旁边"
+    },
+    {
+      "record": "who.4.1",
+      "before": "韩松",
+      "after": "印刷工"
+    },
+    {
+      "record": "who.4.2",
+      "before": "林悦",
+      "after": "编辑"
+    },
+    {
+      "record": "who.4.3",
+      "before": "宋杰",
+      "after": "装订工"
+    },
+    {
+      "record": "who.4.4",
+      "before": "陆宁",
+      "after": "快递员"
+    },
+    {
+      "record": "who.4.5",
+      "before": "方晓",
+      "after": "校对员"
+    },
+    {
+      "record": "who.4.6",
+      "before": "周老师",
+      "after": "老板"
+    },
+    {
+      "record": "td.l1.page.2.cluename",
+      "before": "卡 5 · 赵宁（V）",
+      "after": "卡 5 · 店长（V）"
+    },
+    {
+      "record": "td.l1.page.2.cluesay.0",
+      "before": "「赵宁 ",
+      "after": "「店长 "
+    },
+    {
+      "record": "td.l1.page.4.cluename",
+      "before": "卡 1 · 李晨（A）",
+      "after": "卡 1 · 保安（A）"
+    },
+    {
+      "record": "td.l1.page.4.cluesay.0",
+      "before": "「只有 李晨 站在 ",
+      "after": "「只有 保安 站在 "
+    },
+    {
+      "record": "td.l1.page.5.body.0.0",
+      "before": "卡 2：「林晓在桌子旁边」→ (2,2) 和 (3,1)。",
+      "after": "卡 2：「前台小姐在桌子旁边」→ (2,2) 和 (3,1)。"
+    },
+    {
+      "record": "td.l1.page.5.cluename",
+      "before": "卡 2 · 林晓（B）；卡 1 · 李晨（A）",
+      "after": "卡 2 · 前台小姐（B）；卡 1 · 保安（A）"
+    },
+    {
+      "record": "td.l1.page.5.cluesay.0",
+      "before": "「林晓 ",
+      "after": "「前台小姐 "
+    },
+    {
+      "record": "td.l1.page.6.heading",
+      "before": "周凯只能站 (5,4)",
+      "after": "快递员只能站 (5,4)"
+    },
+    {
+      "record": "td.l1.page.6.body.2.0",
+      "before": "(4,2) 和林晓同列，站不了 ⇒",
+      "after": "(4,2) 和前台小姐同列，站不了 ⇒"
+    },
+    {
+      "record": "td.l1.page.6.body.2.1",
+      "before": "周凯 = (5,4)",
+      "after": "快递员 = (5,4)"
+    },
+    {
+      "record": "td.l1.page.6.cluename",
+      "before": "卡 3 · 夜班周凯（C）",
+      "after": "卡 3 · 快递员（C）"
+    },
+    {
+      "record": "td.l1.page.6.cluesay.0",
+      "before": "「夜班周凯 坐在 ",
+      "after": "「快递员 坐在 "
+    },
+    {
+      "record": "td.l2.page.3.cluename",
+      "before": "D（许航）提供的线索",
+      "after": "D（快递员）提供的线索"
+    },
+    {
+      "record": "td.l2.page.3.cluesay.0",
+      "before": "唐悦在王磊的上方。",
+      "after": "顾客在服务员的上方。"
+    },
+    {
+      "record": "td.l2.page.4.cluename",
+      "before": "D（许航）提供的线索",
+      "after": "D（快递员）提供的线索"
+    },
+    {
+      "record": "td.l2.page.4.cluesay.0",
+      "before": "唐悦在王磊的上方。",
+      "after": "顾客在服务员的上方。"
+    }
+  ],
+  "tutorialLayoutChanges": [
+    {
+      "record": "td.l1.page.5.body.0.0",
+      "shift": 0,
+      "widthDelta": 32,
+      "width": 465,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.5.body.0.0",
+      "shift": 0,
+      "widthDelta": 32,
+      "width": 465,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.5.body.0.0",
+      "shift": 0,
+      "widthDelta": 32,
+      "width": 465,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.5.body.0.0",
+      "shift": 0,
+      "widthDelta": 32,
+      "width": 465,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.5.cluesay.0",
+      "shift": 0,
+      "widthDelta": 32,
+      "width": 154,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.5.cluesay.0",
+      "shift": 0,
+      "widthDelta": 32,
+      "width": 154,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.5.cluesay.0",
+      "shift": 0,
+      "widthDelta": 32,
+      "width": 154,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.5.cluesay.0",
+      "shift": 0,
+      "widthDelta": 32,
+      "width": 154,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.5.cluesay.1",
+      "shift": 32,
+      "widthDelta": 0,
+      "width": 132,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.5.cluesay.1",
+      "shift": 32,
+      "widthDelta": 0,
+      "width": 132,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.5.cluesay.1",
+      "shift": 32,
+      "widthDelta": 0,
+      "width": 132,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.5.cluesay.1",
+      "shift": 32,
+      "widthDelta": 0,
+      "width": 132,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.5.cluesay.2",
+      "shift": 32,
+      "widthDelta": 0,
+      "width": 48,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.5.cluesay.2",
+      "shift": 32,
+      "widthDelta": 0,
+      "width": 48,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.5.cluesay.2",
+      "shift": 32,
+      "widthDelta": 0,
+      "width": 48,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.5.cluesay.2",
+      "shift": 32,
+      "widthDelta": 0,
+      "width": 48,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.6.body.2.0",
+      "shift": 0,
+      "widthDelta": 32,
+      "width": 324,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.6.body.2.0",
+      "shift": 0,
+      "widthDelta": 32,
+      "width": 324,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.6.body.2.0",
+      "shift": 0,
+      "widthDelta": 32,
+      "width": 324,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.6.body.2.0",
+      "shift": 0,
+      "widthDelta": 32,
+      "width": 324,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.6.body.2.1",
+      "shift": 32,
+      "widthDelta": 16,
+      "width": 173,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.6.body.2.1",
+      "shift": 32,
+      "widthDelta": 16,
+      "width": 173,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.6.body.2.1",
+      "shift": 32,
+      "widthDelta": 16,
+      "width": 173,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.6.body.2.1",
+      "shift": 32,
+      "widthDelta": 16,
+      "width": 173,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.6.body.2.2",
+      "shift": 48,
+      "widthDelta": 0,
+      "width": 48,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.6.body.2.2",
+      "shift": 48,
+      "widthDelta": 0,
+      "width": 48,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.6.body.2.2",
+      "shift": 48,
+      "widthDelta": 0,
+      "width": 48,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.6.body.2.2",
+      "shift": 48,
+      "widthDelta": 0,
+      "width": 48,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.6.cluesay.0",
+      "shift": 0,
+      "widthDelta": -16,
+      "width": 164,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.6.cluesay.0",
+      "shift": 0,
+      "widthDelta": -16,
+      "width": 164,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.6.cluesay.0",
+      "shift": 0,
+      "widthDelta": -16,
+      "width": 164,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.6.cluesay.0",
+      "shift": 0,
+      "widthDelta": -16,
+      "width": 164,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.6.cluesay.1",
+      "shift": -16,
+      "widthDelta": 0,
+      "width": 64,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.6.cluesay.1",
+      "shift": -16,
+      "widthDelta": 0,
+      "width": 64,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.6.cluesay.1",
+      "shift": -16,
+      "widthDelta": 0,
+      "width": 64,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.6.cluesay.1",
+      "shift": -16,
+      "widthDelta": 0,
+      "width": 64,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.6.cluesay.2",
+      "shift": -16,
+      "widthDelta": 0,
+      "width": 74,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.6.cluesay.2",
+      "shift": -16,
+      "widthDelta": 0,
+      "width": 74,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.6.cluesay.2",
+      "shift": -16,
+      "widthDelta": 0,
+      "width": 74,
+      "height": 36
+    },
+    {
+      "record": "td.l1.page.6.cluesay.2",
+      "shift": -16,
+      "widthDelta": 0,
+      "width": 74,
+      "height": 36
+    },
+    {
+      "record": "td.l2.page.3.cluesay.0",
+      "shift": 0,
+      "widthDelta": 16,
+      "width": 404,
+      "height": 36
+    },
+    {
+      "record": "td.l2.page.3.cluesay.0",
+      "shift": 0,
+      "widthDelta": 16,
+      "width": 404,
+      "height": 36
+    },
+    {
+      "record": "td.l2.page.3.cluesay.0",
+      "shift": 0,
+      "widthDelta": 16,
+      "width": 404,
+      "height": 36
+    },
+    {
+      "record": "td.l2.page.3.cluesay.0",
+      "shift": 0,
+      "widthDelta": 16,
+      "width": 404,
+      "height": 36
+    },
+    {
+      "record": "td.l2.page.4.cluesay.0",
+      "shift": 0,
+      "widthDelta": 16,
+      "width": 336,
+      "height": 36
+    },
+    {
+      "record": "td.l2.page.4.cluesay.0",
+      "shift": 0,
+      "widthDelta": 16,
+      "width": 336,
+      "height": 36
+    },
+    {
+      "record": "td.l2.page.4.cluesay.0",
+      "shift": 0,
+      "widthDelta": 16,
+      "width": 336,
+      "height": 36
+    },
+    {
+      "record": "td.l2.page.4.cluesay.0",
+      "shift": 0,
+      "widthDelta": 16,
+      "width": 336,
+      "height": 36
+    }
+  ],
+  "counts": {
+    "characters": 42,
+    "who": 42,
+    "what": 23,
+    "tutorial": 16
+  },
+  "checks": {
+    "roundtrip": true,
+    "oldNamesAbsent": true,
+    "all17ModulesOnlyNamesChanged": true,
+    "allWhoSlotsMatched": true,
+    "selectTitlesPreserved": true,
+    "base711Unchanged": true
+  },
+  "realGameTest": false
+}

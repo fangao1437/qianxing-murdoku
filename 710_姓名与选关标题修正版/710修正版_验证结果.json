@@ -1,0 +1,616 @@
+{
+  "version": 710,
+  "revision": 2,
+  "PASS": true,
+  "checks": [
+    {
+      "name": "page1/title1",
+      "pass": true,
+      "detail": "独行夜盗"
+    },
+    {
+      "name": "page1/text-draw-metrics1",
+      "pass": true,
+      "detail": "height=42.875001525879 font=18"
+    },
+    {
+      "name": "page1/title-no-overlap1",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "page1/title2",
+      "pass": true,
+      "detail": "双影疑云"
+    },
+    {
+      "name": "page1/text-draw-metrics2",
+      "pass": true,
+      "detail": "height=42.875001525879 font=18"
+    },
+    {
+      "name": "page1/title-no-overlap2",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "page1/title3",
+      "pass": true,
+      "detail": "明室谜踪"
+    },
+    {
+      "name": "page1/text-draw-metrics3",
+      "pass": true,
+      "detail": "height=42.875001525879 font=18"
+    },
+    {
+      "name": "page1/title-no-overlap3",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "page1/title4",
+      "pass": true,
+      "detail": "米纸谜案"
+    },
+    {
+      "name": "page1/text-draw-metrics4",
+      "pass": true,
+      "detail": "height=42.875001525879 font=18"
+    },
+    {
+      "name": "page1/title-no-overlap4",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "page2/title1",
+      "pass": true,
+      "detail": "火漆失窃"
+    },
+    {
+      "name": "page2/text-draw-metrics1",
+      "pass": true,
+      "detail": "height=42.875001525879 font=18"
+    },
+    {
+      "name": "page2/title-no-overlap1",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "page2/title2",
+      "pass": true,
+      "detail": "蓝图迷局"
+    },
+    {
+      "name": "page2/text-draw-metrics2",
+      "pass": true,
+      "detail": "height=42.875001525879 font=18"
+    },
+    {
+      "name": "page2/title-no-overlap2",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "page2/title3",
+      "pass": true,
+      "detail": "藏卷回声"
+    },
+    {
+      "name": "page2/text-draw-metrics3",
+      "pass": true,
+      "detail": "height=42.875001525879 font=18"
+    },
+    {
+      "name": "page2/title-no-overlap3",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "empty-title-hidden",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "page1/title1",
+      "pass": true,
+      "detail": "独行夜盗"
+    },
+    {
+      "name": "page1/text-draw-metrics1",
+      "pass": true,
+      "detail": "height=42.875001525879 font=18"
+    },
+    {
+      "name": "page1/title-no-overlap1",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "page1/title2",
+      "pass": true,
+      "detail": "双影疑云"
+    },
+    {
+      "name": "page1/text-draw-metrics2",
+      "pass": true,
+      "detail": "height=42.875001525879 font=18"
+    },
+    {
+      "name": "page1/title-no-overlap2",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "page1/title3",
+      "pass": true,
+      "detail": "明室谜踪"
+    },
+    {
+      "name": "page1/text-draw-metrics3",
+      "pass": true,
+      "detail": "height=42.875001525879 font=18"
+    },
+    {
+      "name": "page1/title-no-overlap3",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "page1/title4",
+      "pass": true,
+      "detail": "米纸谜案"
+    },
+    {
+      "name": "page1/text-draw-metrics4",
+      "pass": true,
+      "detail": "height=42.875001525879 font=18"
+    },
+    {
+      "name": "page1/title-no-overlap4",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "who/1/1",
+      "pass": true,
+      "detail": "李晨 expected 李晨"
+    },
+    {
+      "name": "letter/1/1",
+      "pass": true,
+      "detail": "A"
+    },
+    {
+      "name": "who/1/2",
+      "pass": true,
+      "detail": "林晓 expected 林晓"
+    },
+    {
+      "name": "letter/1/2",
+      "pass": true,
+      "detail": "B"
+    },
+    {
+      "name": "who/1/3",
+      "pass": true,
+      "detail": "周凯 expected 周凯"
+    },
+    {
+      "name": "letter/1/3",
+      "pass": true,
+      "detail": "C"
+    },
+    {
+      "name": "who/1/4",
+      "pass": true,
+      "detail": "陈宇 expected 陈宇"
+    },
+    {
+      "name": "letter/1/4",
+      "pass": true,
+      "detail": "D"
+    },
+    {
+      "name": "who/1/5",
+      "pass": true,
+      "detail": "赵宁 expected 赵宁"
+    },
+    {
+      "name": "letter/1/5",
+      "pass": true,
+      "detail": "V"
+    },
+    {
+      "name": "who/2/1",
+      "pass": true,
+      "detail": "王磊 expected 王磊"
+    },
+    {
+      "name": "letter/2/1",
+      "pass": true,
+      "detail": "A"
+    },
+    {
+      "name": "who/2/2",
+      "pass": true,
+      "detail": "苏晴 expected 苏晴"
+    },
+    {
+      "name": "letter/2/2",
+      "pass": true,
+      "detail": "B"
+    },
+    {
+      "name": "who/2/3",
+      "pass": true,
+      "detail": "高远 expected 高远"
+    },
+    {
+      "name": "letter/2/3",
+      "pass": true,
+      "detail": "C"
+    },
+    {
+      "name": "who/2/4",
+      "pass": true,
+      "detail": "许航 expected 许航"
+    },
+    {
+      "name": "letter/2/4",
+      "pass": true,
+      "detail": "D"
+    },
+    {
+      "name": "who/2/5",
+      "pass": true,
+      "detail": "唐悦 expected 唐悦"
+    },
+    {
+      "name": "letter/2/5",
+      "pass": true,
+      "detail": "E"
+    },
+    {
+      "name": "who/2/6",
+      "pass": true,
+      "detail": "顾宁 expected 顾宁"
+    },
+    {
+      "name": "letter/2/6",
+      "pass": true,
+      "detail": "V"
+    },
+    {
+      "name": "who/3/1",
+      "pass": true,
+      "detail": "陆川 expected 陆川"
+    },
+    {
+      "name": "letter/3/1",
+      "pass": true,
+      "detail": "A"
+    },
+    {
+      "name": "who/3/2",
+      "pass": true,
+      "detail": "沈妍 expected 沈妍"
+    },
+    {
+      "name": "letter/3/2",
+      "pass": true,
+      "detail": "B"
+    },
+    {
+      "name": "who/3/3",
+      "pass": true,
+      "detail": "程远 expected 程远"
+    },
+    {
+      "name": "letter/3/3",
+      "pass": true,
+      "detail": "C"
+    },
+    {
+      "name": "who/3/4",
+      "pass": true,
+      "detail": "叶宁 expected 叶宁"
+    },
+    {
+      "name": "letter/3/4",
+      "pass": true,
+      "detail": "D"
+    },
+    {
+      "name": "who/3/5",
+      "pass": true,
+      "detail": "顾晨 expected 顾晨"
+    },
+    {
+      "name": "letter/3/5",
+      "pass": true,
+      "detail": "E"
+    },
+    {
+      "name": "who/3/6",
+      "pass": true,
+      "detail": "何川 expected 何川"
+    },
+    {
+      "name": "letter/3/6",
+      "pass": true,
+      "detail": "V"
+    },
+    {
+      "name": "who/4/1",
+      "pass": true,
+      "detail": "韩松 expected 韩松"
+    },
+    {
+      "name": "letter/4/1",
+      "pass": true,
+      "detail": "A"
+    },
+    {
+      "name": "who/4/2",
+      "pass": true,
+      "detail": "林悦 expected 林悦"
+    },
+    {
+      "name": "letter/4/2",
+      "pass": true,
+      "detail": "B"
+    },
+    {
+      "name": "who/4/3",
+      "pass": true,
+      "detail": "宋杰 expected 宋杰"
+    },
+    {
+      "name": "letter/4/3",
+      "pass": true,
+      "detail": "C"
+    },
+    {
+      "name": "who/4/4",
+      "pass": true,
+      "detail": "陆宁 expected 陆宁"
+    },
+    {
+      "name": "letter/4/4",
+      "pass": true,
+      "detail": "D"
+    },
+    {
+      "name": "who/4/5",
+      "pass": true,
+      "detail": "方晓 expected 方晓"
+    },
+    {
+      "name": "letter/4/5",
+      "pass": true,
+      "detail": "E"
+    },
+    {
+      "name": "who/4/6",
+      "pass": true,
+      "detail": "周老师 expected 周老师"
+    },
+    {
+      "name": "letter/4/6",
+      "pass": true,
+      "detail": "V"
+    },
+    {
+      "name": "who/5/1",
+      "pass": true,
+      "detail": "梁晨 expected 梁晨"
+    },
+    {
+      "name": "letter/5/1",
+      "pass": true,
+      "detail": "A"
+    },
+    {
+      "name": "who/5/2",
+      "pass": true,
+      "detail": "许宁 expected 许宁"
+    },
+    {
+      "name": "letter/5/2",
+      "pass": true,
+      "detail": "B"
+    },
+    {
+      "name": "cross-person-keeps-speaker",
+      "pass": true,
+      "detail": "E沈琳在椅子上"
+    },
+    {
+      "name": "who/5/3",
+      "pass": true,
+      "detail": "赵越 expected 赵越"
+    },
+    {
+      "name": "letter/5/3",
+      "pass": true,
+      "detail": "C"
+    },
+    {
+      "name": "who/5/4",
+      "pass": true,
+      "detail": "周然 expected 周然"
+    },
+    {
+      "name": "letter/5/4",
+      "pass": true,
+      "detail": "D"
+    },
+    {
+      "name": "who/5/5",
+      "pass": true,
+      "detail": "沈琳 expected 沈琳"
+    },
+    {
+      "name": "letter/5/5",
+      "pass": true,
+      "detail": "E"
+    },
+    {
+      "name": "who/5/6",
+      "pass": true,
+      "detail": "林叔 expected 林叔"
+    },
+    {
+      "name": "letter/5/6",
+      "pass": true,
+      "detail": "V"
+    },
+    {
+      "name": "who/6/1",
+      "pass": true,
+      "detail": "何明 expected 何明"
+    },
+    {
+      "name": "letter/6/1",
+      "pass": true,
+      "detail": "A"
+    },
+    {
+      "name": "who/6/2",
+      "pass": true,
+      "detail": "苏禾 expected 苏禾"
+    },
+    {
+      "name": "letter/6/2",
+      "pass": true,
+      "detail": "B"
+    },
+    {
+      "name": "who/6/3",
+      "pass": true,
+      "detail": "陈放 expected 陈放"
+    },
+    {
+      "name": "letter/6/3",
+      "pass": true,
+      "detail": "C"
+    },
+    {
+      "name": "who/6/4",
+      "pass": true,
+      "detail": "林涛 expected 林涛"
+    },
+    {
+      "name": "letter/6/4",
+      "pass": true,
+      "detail": "D"
+    },
+    {
+      "name": "who/6/5",
+      "pass": true,
+      "detail": "顾言 expected 顾言"
+    },
+    {
+      "name": "letter/6/5",
+      "pass": true,
+      "detail": "E"
+    },
+    {
+      "name": "who/6/6",
+      "pass": true,
+      "detail": "周宁 expected 周宁"
+    },
+    {
+      "name": "letter/6/6",
+      "pass": true,
+      "detail": "F"
+    },
+    {
+      "name": "who/6/7",
+      "pass": true,
+      "detail": "吴老师 expected 吴老师"
+    },
+    {
+      "name": "letter/6/7",
+      "pass": true,
+      "detail": "V"
+    },
+    {
+      "name": "who/7/1",
+      "pass": true,
+      "detail": "江宁 expected 江宁"
+    },
+    {
+      "name": "letter/7/1",
+      "pass": true,
+      "detail": "A"
+    },
+    {
+      "name": "who/7/2",
+      "pass": true,
+      "detail": "叶青 expected 叶青"
+    },
+    {
+      "name": "letter/7/2",
+      "pass": true,
+      "detail": "B"
+    },
+    {
+      "name": "who/7/3",
+      "pass": true,
+      "detail": "陈墨 expected 陈墨"
+    },
+    {
+      "name": "letter/7/3",
+      "pass": true,
+      "detail": "C"
+    },
+    {
+      "name": "who/7/4",
+      "pass": true,
+      "detail": "林浩 expected 林浩"
+    },
+    {
+      "name": "letter/7/4",
+      "pass": true,
+      "detail": "D"
+    },
+    {
+      "name": "who/7/5",
+      "pass": true,
+      "detail": "苏然 expected 苏然"
+    },
+    {
+      "name": "letter/7/5",
+      "pass": true,
+      "detail": "E"
+    },
+    {
+      "name": "who/7/6",
+      "pass": true,
+      "detail": "周叔 expected 周叔"
+    },
+    {
+      "name": "letter/7/6",
+      "pass": true,
+      "detail": "V"
+    },
+    {
+      "name": "optional-style-failure-keeps-text",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "home-hides-select-title",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "realGameTest": false,
+  "limits": [
+    "实际控制器和适配器配合模拟控件API回放；文本尺寸依据本地实测规则，未真机导入"
+  ]
+}

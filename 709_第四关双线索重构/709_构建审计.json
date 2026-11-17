@@ -1,0 +1,107 @@
+{
+  "version": 709,
+  "baseVersion": 708,
+  "input": "708_第五七关单句与墙修正.gil",
+  "output": "709_第四关双线索重构.gil",
+  "sha256": "83f4a5a836f5cf78699a9c77c8c76a7daea15cf48db995b0d4344523d2a69b14",
+  "bytes": 7297041,
+  "records": 8300,
+  "fieldDiffs": 3,
+  "changedStaticRecords": [
+    {
+      "id": 1073754643,
+      "name": "what.4.1",
+      "before": "我在D卷宗管理上方",
+      "after": "B米纸誊录在我上方"
+    },
+    {
+      "id": 1073754648,
+      "name": "what.4.2",
+      "before": "我在桌子旁边",
+      "after": "我在椅子上"
+    }
+  ],
+  "embeddedLuaMarker": "v709",
+  "changedModules": [
+    "levels.case_004"
+  ],
+  "roundtrip": true,
+  "verification": "709_验证结果.json",
+  "cards": [
+    [
+      "B米纸誊录在我上方"
+    ],
+    [
+      "我在椅子上"
+    ],
+    [
+      "我在地毯上"
+    ],
+    [
+      "我在椅子上"
+    ],
+    [
+      "D卷宗管理在书架旁边"
+    ],
+    [
+      "我在植物旁边"
+    ]
+  ],
+  "hints": [
+    {
+      "rule": "不做位置提示",
+      "cells": [],
+      "count": 0
+    },
+    {
+      "rule": "该家具自己的格子",
+      "cells": [
+        "1:2",
+        "6:5"
+      ],
+      "count": 2
+    },
+    {
+      "rule": "该家具自己的格子",
+      "cells": [
+        "2:2",
+        "2:3",
+        "6:1",
+        "6:2"
+      ],
+      "count": 4
+    },
+    {
+      "rule": "该家具自己的格子",
+      "cells": [
+        "1:2",
+        "6:5"
+      ],
+      "count": 2
+    },
+    {
+      "rule": "该家具四邻、同区域、可站人的格",
+      "cells": [
+        "1:5",
+        "2:4",
+        "3:5"
+      ],
+      "count": 3
+    },
+    {
+      "rule": "该家具四邻、同区域、可站人的格",
+      "cells": [
+        "1:6",
+        "3:6",
+        "4:6",
+        "5:5",
+        "6:6"
+      ],
+      "count": 5
+    }
+  ],
+  "geometryUnchanged": true,
+  "realGameTest": false,
+  "renumberedFrom": 609,
+  "historical609Overwritten": false
+}

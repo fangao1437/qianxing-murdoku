@@ -5258,10 +5258,11 @@ function Controller:build_layout(ui_adapter)
                  visible = false, text = "", style = "card.title",
                  rect = { x = r.x + 16, y = r.y + 10, w = r.w - 32, h = 34 },
                  pos_runtime = true })
+          -- 710：标题来自当前关卡数据；存档静态文本不能覆盖关卡名。
           push({ id = "select.card." .. i .. ".info", kind = "text", parent = "root",
-                 visible = true, text = t.title, style = "card.name",
-                 rect = { x = r.x + r.w * 0.045, y = r.y + r.h * 0.885,
-                          w = r.w * 0.91, h = r.h * 0.10 },
+                 visible = true, text = t.short, style = "card.name",
+                 rect = { x = r.x + r.w * 0.045, y = r.y + r.h * 0.835,
+                          w = r.w * 0.91, h = r.h * 0.15 },
                  pos_runtime = true })
           push({ id = "select.card." .. i .. ".result", kind = "text", parent = "root",
                  visible = t.result ~= "", text = t.result,
@@ -5728,9 +5729,12 @@ local function enum_at(path)
   return cur
 end
 local function write_control_text(ctrl, txt)
-  if ctrl == nil or ctrl.text == nil then return false end
-  local ok = pcall(function() ctrl.text = tostring(txt or "") end)
-  return ok
+  if ctrl == nil then return false end
+  local expected = tostring(txt or "")
+  local ok = pcall(function() ctrl.text = expected end)
+  if not ok then pcall(function() ctrl:SetText(expected) end) end
+  local read_ok, actual = pcall(function() return ctrl.text end)
+  return read_ok and actual == expected
 end
 function Controller:_grid_log(key, msg)
   self._grid_logged = self._grid_logged or {}
@@ -6223,12 +6227,20 @@ function Controller:_grid_text_payload()
     local cl = vm.clues[i]
     local who, pre, post, wid, wportrait = split_by_name(vm, tostring(cl.text or ""))
     local rt = row_text and row_text[i] or nil
+    -- 710修正版：who 是发言人，不能从证词提到的人名反推；what 保留设计卡面。
+    local person = lv and lv.suspects and lv.suspects[i]
+    local pid = (rt and rt.letter) or (person and person.id)
+    if lv and type(lv.suspects) == "table" then
+      for _, candidate in ipairs(lv.suspects) do
+        if tostring(candidate.id) == tostring(pid) then person = candidate break end
+      end
+    end
     items[i] = {
-      who    = (rt and rt.who) or ((who ~= nil) and (tostring(pre or "") .. tostring(who)) or ""),
-      what   = (rt and rt.what) or ((who ~= nil) and tostring(post or "") or tostring(pre or "")),
-      letter = (rt and rt.letter) or tostring(wid or ""),
-      portrait = (rt and rt.face) or wportrait,
-      id     = i,
+      who    = (person and person.name) or (rt and rt.who) or who or "",
+      what   = (rt and rt.what) or tostring(cl.text or ""),
+      letter = (person and tostring(person.id)) or tostring(pid or ""),
+      portrait = (person and person.portrait) or wportrait or (rt and rt.face),
+      id     = person and person.id or i,
     }
   end
   p = { level = lv, n = n, items = items }
@@ -6311,6 +6323,14 @@ function Controller:_fill_general_item(adapter, item, index, pos)
         local _src = nil
         pcall(function() _src = _rc:FindChild("clue." .. tostring(_lv) .. ".1") end)
         if _src ~= nil then pcall(function() _txt = _src.text end) end
+      end
+      if (_txt == nil or _txt == "") and self.core ~= nil then
+        pcall(function()
+          local rows = self.core:general_clue_results()
+          local texts = {}
+          for _, row in ipairs(rows or {}) do texts[#texts + 1] = row.text end
+          _txt = table.concat(texts, "；")
+        end)
       end
       if _txt ~= nil and _txt ~= "" then
         local _dst = nil
@@ -6624,7 +6644,20 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
     if rec ~= nil then rec.text = tv end
   end
   if tv ~= nil then
-      end    
+    local function sync_text(key, ctrl, value)
+      if ctrl == nil then tv[key] = nil; return end
+      local expected = tostring(value or "")
+      local ok, actual = pcall(function() return ctrl.text end)
+      -- row.* 复制及列表项复用会覆盖旧值，不能只比较缓存。
+      if not ok or actual ~= expected then
+        if not write_control_text(ctrl, expected) then tv[key] = nil; return end
+      end
+      tv[key] = expected
+    end
+    sync_text("who", c_who, t_who)
+    sync_text("what", c_what, t_what)
+    sync_text("letter", c_letter, t_letter)
+  end
   if c_who == nil or c_what == nil or c_letter == nil then
     self:_grid_log("childmiss", "网格视窗：列表项子控件 who/what/letter = "
       .. ((c_who ~= nil) and "有" or "**缺**") .. "/"
@@ -11218,17 +11251,17 @@ function Adapter:set_property(id, key, value, nkey)
       end
       local width = size_of(ctrl)
       local size = math.min(18, math.max(10, math.floor(((width or 184) - 6) / math.max(1, units))))
-      local ok = pcall(function()
-        ctrl.adaptiveFontSize = false
-        ctrl.minimumFontSize = size
-        ctrl.fontSize = size
-        ctrl.fontColor = 0xFF4A2E1C
-        ctrl.text = expected
-        if Enum and Enum.TextHorizontalAlignment and Enum.TextVerticalAlignment then
-          ctrl.horizontalAlignment = Enum.TextHorizontalAlignment.Middle
-          ctrl.verticalAlignment = Enum.TextVerticalAlignment.Middle
-        end
-      end)
+      -- 文字是必要写入；个别样式属性不可写时，不应中断正文更新。
+      local ok = pcall(function() ctrl.text = expected end)
+      if not ok then ok = pcall(function() ctrl:SetText(expected) end) end
+      pcall(function() ctrl.adaptiveFontSize = false end)
+      pcall(function() ctrl.minimumFontSize = size end)
+      pcall(function() ctrl.fontSize = size end)
+      pcall(function() ctrl.fontColor = 0xFF4A2E1C end)
+      if Enum and Enum.TextHorizontalAlignment and Enum.TextVerticalAlignment then
+        pcall(function() ctrl.horizontalAlignment = Enum.TextHorizontalAlignment.Middle end)
+        pcall(function() ctrl.verticalAlignment = Enum.TextVerticalAlignment.Middle end)
+      end
       local read_ok, actual = pcall(function() return ctrl.text end)
       return ok and read_ok and actual == expected
     end
@@ -13870,7 +13903,7 @@ end
 __M["levels.case_001"] = function()
  return {
   id = "case_001",
-  name = "案件 001 · 夜盗独行",
+  name = "案件 001 · 独行夜盗",
   subtitle = "保险库内室只留下一个人的痕迹 —— 是独自作案，还是有人替他望风？",
   difficulty = "easy",
   size = { rows = 5, cols = 5 },
@@ -13906,13 +13939,13 @@ __M["levels.case_001"] = function()
   blocked = {},
   water   = {},
   suspects = {
-    { id = "A", name = "值班保安", portrait = "portrait.A",   gender = "male" },
-    { id = "B", name = "前台姑娘", portrait = "portrait.B",   gender = "female" },
-    { id = "C", name = "清洁工", portrait = "portrait.C", gender = "male" },
-    { id = "D", name = "古董商", portrait = "portrait.D", gender = "male" },
-    { id = "V", name = "收藏家", portrait = "portrait.V",     is_victim = true },
+    { id = "A", name = "保安", portrait = "portrait.A",   gender = "male" },
+    { id = "B", name = "前台小姐", portrait = "portrait.B",   gender = "female" },
+    { id = "C", name = "快递员", portrait = "portrait.C", gender = "male" },
+    { id = "D", name = "顾客", portrait = "portrait.D", gender = "male" },
+    { id = "V", name = "店长", portrait = "portrait.V",     is_victim = true },
   },
-  victim = { id = "V", name = "收藏家" },
+  victim = { id = "V", name = "店长" },
   roles = {
     thief = "D",
   },
@@ -13941,7 +13974,7 @@ end
 __M["levels.case_002"] = function()
 return {
   id = "case_002",
-  name = "案件 002 · 双影",
+  name = "案件 002 · 双影疑云",
   subtitle = "侧廊只留一个人的痕迹，大厅里却站着两位 —— 谁在说谎？",
   difficulty = "normal",
   size = { rows = 6, cols = 6 },
@@ -13981,14 +14014,14 @@ return {
   blocked = {},
   water   = {},
   suspects = {
-    { id = "A", name = "夜班门卫", portrait = "portrait.A",   gender = "male" },
-    { id = "B", name = "画廊助理", portrait = "portrait.B",   gender = "female" },
-    { id = "C", name = "搬运工", portrait = "portrait.C", gender = "male" },
-    { id = "D", name = "鉴定师", portrait = "portrait.D",     gender = "male" },
-    { id = "E", name = "随行记者", portrait = "portrait.E",   gender = "female" },
-    { id = "V", name = "馆长", portrait = "portrait.V",       is_victim = true },
+    { id = "A", name = "服务员", portrait = "portrait.A",   gender = "male" },
+    { id = "B", name = "收银员", portrait = "portrait.B",   gender = "female" },
+    { id = "C", name = "厨师", portrait = "portrait.C", gender = "male" },
+    { id = "D", name = "快递员", portrait = "portrait.D",     gender = "male" },
+    { id = "E", name = "顾客", portrait = "portrait.E",   gender = "female" },
+    { id = "V", name = "经理", portrait = "portrait.V",       is_victim = true },
   },
-  victim = { id = "V", name = "馆长" },
+  victim = { id = "V", name = "经理" },
   roles = {
     thief = "D",
   },
@@ -14020,32 +14053,128 @@ return {
 end
 
 __M["levels.case_003"] = function()
-return { ["hint_preview"]={{["rule"]="不做位置提示", ["cells"]={}, ["count"]=0}, {["rule"]="该家具四邻、同区域、可站人的格", ["cells"]={"1:2", "2:1"}, ["count"]=2}, {["rule"]="该家具自己的格子", ["cells"]={"3:2", "3:3", "4:2"}, ["count"]=3}, {["rule"]="该家具四邻、同区域、可站人的格", ["cells"]={"1:3", "2:2", "2:4", "3:3", "3:4", "4:3", "5:4", "6:3", "6:5"}, ["count"]=9}, {["rule"]="不做位置提示", ["cells"]={}, ["count"]=0}, {["rule"]="该家具四邻、同区域、可站人的格", ["cells"]={"1:3", "2:2", "2:4", "3:3", "3:4", "4:3", "5:4", "6:3", "6:5"}, ["count"]=9}}, ["id"]="case_003", ["name"]="案件 003 · 原作明亮俯视", ["difficulty"]="easy", ["size"]={rows=6, cols=6}, ["room_names"]={"R1", "R2", "R3", "R4"}, ["rules"]={one_per_row=true, one_per_col=true, one_per_room=false, place_all=true, tie_policy="forbid"}, ["walls"]={{"v",1,4},{"v",2,4},{"h",2,4},{"v",3,3},{"h",3,3},{"v",3,4},{"h",4,1},{"v",4,2},{"h",4,2},{"v",4,4},{"h",4,5},{"h",4,6},{"v",5,2},{"h",5,3},{"h",5,4},{"h",5,5},{"v",6,5}}, ["doors"]={{"v",2,4},{"h",3,3},{"h",4,2},{"h",4,5},{"h",5,4}}, ["objects"]={["桌子"]={cells={{r=6,c=4},{r=4,c=4},{r=2,c=3}}, occupiable=false, kind="table"}, ["椅子"]={cells={{r=2,c=1},{r=2,c=4}}, occupiable=true, kind="chair"}, ["书架"]={cells={{r=1,c=5}}, occupiable=false, kind="shelf"}, ["植物"]={cells={{r=1,c=1}}, occupiable=false, kind="plant"}, ["地毯"]={cells={{r=3,c=2},{r=3,c=3},{r=4,c=2}}, occupiable=true, kind="carpet"}, ["雕塑"]={cells={{r=2,c=6}}, occupiable=false, kind="statue"}}, ["blocked"]={}, ["water"]={}, ["suspects"]={{id="A",name="巡夜保安",portrait="portrait.A"},{id="B",name="展签誊录",portrait="portrait.B"},{id="C",name="拓片修复",portrait="portrait.C"},{id="D",name="门厅接待",portrait="portrait.D"},{id="E",name="证物清点",portrait="portrait.E"},{id="V",name="展厅主人",portrait="portrait.V",is_victim=true}}, ["victim"]={id="V",name="展厅主人"}, ["roles"]={thief="A"}, ["clues"]={{type="above",a="A",b="B",same_column=false},{type="beside_object",who="B",object="植物"},{type="only_on_object",who="C",object="地毯"},{type="beside_object",who="D",object="桌子"},{type="above",a="D",b="E",same_column=false},{type="beside_object",who="C",object="桌子"}}, ["general_clues"]={}, ["meta"]={announce="unknown"}, ["solution"]={A={r=1,c=2},B={r=2,c=1},C={r=3,c=3},D={r=5,c=4},E={r=6,c=5},V={r=4,c=6}}, ["visual_theme"]={key="reference",name="原作明亮俯视（沿用 v12/v13）",palette={INK="#010101"},room_colors={"#e3eef7","#f9ead0","#e3f0e4","#eee4f5"},wall="#27333c",door="#e38636",accent="#bb513c"}}
+return { ["hint_preview"]={{["rule"]="不做位置提示", ["cells"]={}, ["count"]=0}, {["rule"]="该家具四邻、同区域、可站人的格", ["cells"]={"1:2", "2:1"}, ["count"]=2}, {["rule"]="该家具自己的格子", ["cells"]={"3:2", "3:3", "4:2"}, ["count"]=3}, {["rule"]="该家具四邻、同区域、可站人的格", ["cells"]={"1:3", "2:2", "2:4", "3:3", "3:4", "4:3", "5:4", "6:3", "6:5"}, ["count"]=9}, {["rule"]="不做位置提示", ["cells"]={}, ["count"]=0}, {["rule"]="该家具四邻、同区域、可站人的格", ["cells"]={"1:3", "2:2", "2:4", "3:3", "3:4", "4:3", "5:4", "6:3", "6:5"}, ["count"]=9}}, ["id"]="case_003", ["name"]="案件 003 · 明室谜踪", ["difficulty"]="easy", ["size"]={rows=6, cols=6}, ["room_names"]={"R1", "R2", "R3", "R4"}, ["rules"]={one_per_row=true, one_per_col=true, one_per_room=false, place_all=true, tie_policy="forbid"}, ["walls"]={{"v",1,4},{"v",2,4},{"h",2,4},{"v",3,3},{"h",3,3},{"v",3,4},{"h",4,1},{"v",4,2},{"h",4,2},{"v",4,4},{"h",4,5},{"h",4,6},{"v",5,2},{"h",5,3},{"h",5,4},{"h",5,5},{"v",6,5}}, ["doors"]={{"v",2,4},{"h",3,3},{"h",4,2},{"h",4,5},{"h",5,4}}, ["objects"]={["桌子"]={cells={{r=6,c=4},{r=4,c=4},{r=2,c=3}}, occupiable=false, kind="table"}, ["椅子"]={cells={{r=2,c=1},{r=2,c=4}}, occupiable=true, kind="chair"}, ["书架"]={cells={{r=1,c=5}}, occupiable=false, kind="shelf"}, ["植物"]={cells={{r=1,c=1}}, occupiable=false, kind="plant"}, ["地毯"]={cells={{r=3,c=2},{r=3,c=3},{r=4,c=2}}, occupiable=true, kind="carpet"}, ["雕塑"]={cells={{r=2,c=6}}, occupiable=false, kind="statue"}}, ["blocked"]={}, ["water"]={}, ["suspects"]={{id="A",name="摄影师",portrait="portrait.A"},{id="B",name="导游",portrait="portrait.B"},{id="C",name="游客",portrait="portrait.C"},{id="D",name="雕刻家",portrait="portrait.D"},{id="E",name="清洁工",portrait="portrait.E"},{id="V",name="馆长",portrait="portrait.V",is_victim=true}}, ["victim"]={id="V",name="馆长"}, ["roles"]={thief="A"}, ["clues"]={{type="above",a="A",b="B",same_column=false},{type="beside_object",who="B",object="植物"},{type="only_on_object",who="C",object="地毯"},{type="beside_object",who="D",object="桌子"},{type="above",a="D",b="E",same_column=false},{type="beside_object",who="C",object="桌子"}}, ["general_clues"]={}, ["meta"]={announce="unknown"}, ["solution"]={A={r=1,c=2},B={r=2,c=1},C={r=3,c=3},D={r=5,c=4},E={r=6,c=5},V={r=4,c=6}}, ["visual_theme"]={key="reference",name="原作明亮俯视（沿用 v12/v13）",palette={INK="#010101"},room_colors={"#e3eef7","#f9ead0","#e3f0e4","#eee4f5"},wall="#27333c",door="#e38636",accent="#bb513c"}}
 
 end
 
 __M["levels.case_004"] = function()
- return {["hint_preview"] = {["1"] = {["rule"] = "不做位置提示", ["cells"] = {}, ["count"] = 0}, ["2"] = {["rule"] = "该家具四邻、同区域、可站人的格", ["cells"] = {"1:2", "2:1"}, ["count"] = 2}, ["3"] = {["rule"] = "该家具自己的格子", ["cells"] = {"2:2", "2:3", "6:1", "6:2"}, ["count"] = 4}, ["4"] = {["rule"] = "该家具自己的格子", ["cells"] = {"1:2", "6:5"}, ["count"] = 2}, ["5"] = {["rule"] = "该家具四邻、同区域、可站人的格", ["cells"] = {"1:5", "2:4", "3:5"}, ["count"] = 3}, ["6"] = {["rule"] = "该家具四邻、同区域、可站人的格", ["cells"] = {"1:6", "3:6", "4:6", "5:5", "6:6"}, ["count"] = 5}}, ["id"] = "case_004", ["name"] = "案件 004 · 档案卷宗 · 米纸浅色", ["difficulty"] = "normal", ["size"] = {["rows"] = 6, ["cols"] = 6}, ["room_names"] = {"R1", "R2", "R3", "R4"}, ["rules"] = {["one_per_row"] = true, ["one_per_col"] = true, ["one_per_room"] = false, ["place_all"] = true, ["tie_policy"] = "forbid"}, ["walls"] = {{"v", 1, 3}, {"v", 2, 3}, {"v", 3, 3}, {"h", 3, 3}, {"h", 3, 4}, {"h", 3, 5}, {"h", 3, 6}, {"h", 4, 1}, {"v", 4, 2}, {"h", 4, 2}, {"v", 5, 2}, {"v", 6, 2}}, ["doors"] = {{"v", 2, 3}, {"v", 4, 2}, {"h", 4, 2}, {"h", 3, 5}, {"v", 6, 2}}, ["objects"] = {["桌子"] = {["cells"] = {{["r"] = 1, ["c"] = 1}}, ["occupiable"] = false, ["kind"] = "table"}, ["椅子"] = {["cells"] = {{["r"] = 1, ["c"] = 2}, {["r"] = 6, ["c"] = 5}}, ["occupiable"] = true, ["kind"] = "chair"}, ["书架"] = {["cells"] = {{["r"] = 2, ["c"] = 5}}, ["occupiable"] = false, ["kind"] = "shelf"}, ["植物"] = {["cells"] = {{["r"] = 5, ["c"] = 6}, {["r"] = 2, ["c"] = 6}}, ["occupiable"] = false, ["kind"] = "plant"}, ["地毯"] = {["cells"] = {{["r"] = 2, ["c"] = 2}, {["r"] = 2, ["c"] = 3}, {["r"] = 6, ["c"] = 1}, {["r"] = 6, ["c"] = 2}}, ["occupiable"] = true, ["kind"] = "carpet"}}, ["blocked"] = {}, ["water"] = {}, ["suspects"] = {{["id"] = "A", ["name"] = "夜巡值守", ["portrait"] = "portrait.A"}, {["id"] = "B", ["name"] = "米纸誊录", ["portrait"] = "portrait.B"}, {["id"] = "C", ["name"] = "页角修复", ["portrait"] = "portrait.C"}, {["id"] = "D", ["name"] = "卷宗管理", ["portrait"] = "portrait.D"}, {["id"] = "E", ["name"] = "借阅登记", ["portrait"] = "portrait.E"}, {["id"] = "V", ["name"] = "老馆长", ["portrait"] = "portrait.V", ["is_victim"] = true}}, ["victim"] = {["id"] = "V", ["name"] = "老馆长"}, ["roles"] = {["thief"] = "E"}, ["clues"] = {{["type"] = "above", ["a"] = "A", ["b"] = "D", ["same_column"] = false}, {["type"] = "beside_object", ["who"] = "B", ["object"] = "桌子"}, {["type"] = "on_object", ["who"] = "C", ["object"] = "地毯"}, {["type"] = "on_object", ["who"] = "D", ["object"] = "椅子"}, {["type"] = "beside_object", ["who"] = "D", ["object"] = "书架"}, {["type"] = "beside_object", ["who"] = "V", ["object"] = "植物"}}, ["general_clues"] = {}, ["meta"] = {["announce"] = "unknown", ["false_clue"] = 5}, ["solution"] = {["A"] = {["r"] = 5, ["c"] = 4}, ["B"] = {["r"] = 1, ["c"] = 2}, ["C"] = {["r"] = 2, ["c"] = 3}, ["D"] = {["r"] = 6, ["c"] = 5}, ["E"] = {["r"] = 3, ["c"] = 1}, ["V"] = {["r"] = 4, ["c"] = 6}}, ["visual_theme"] = {["key"] = "archive-light", ["name"] = "档案卷宗 · 米纸浅色（美术调研 variant）", ["palette"] = {["INK"] = "#3F2A1E", ["INK_SOFT"] = "#6B4A34", ["GRAY"] = "#B9AC97", ["GRAY_DARK"] = "#8A7A66", ["WHITE"] = "#F8F1E2", ["SHADOW"] = "#241812", ["CHAIR_BASE"] = "#E3D5B8", ["CHAIR_LIGHT"] = "#F0E6D0", ["CHAIR_OVL"] = "#B08A55", ["TABLE_BASE"] = "#D9C7A3", ["TABLE_EDGE"] = "#8A6B45", ["SHELF_BASE"] = "#C8BBA0", ["SHELF_OVL"] = "#8FA3AE", ["TV_BASE"] = "#9AA4A6", ["TV_DARK"] = "#3A3B3C", ["TREE_BASE"] = "#B6A88E", ["TREE_OVL"] = "#7C8A6A", ["TREE_LIGHT"] = "#9BA98A", ["TREE_DARK"] = "#4F5C45", ["PLANT_BASE"] = "#C08A5E", ["PLANT_OVL"] = "#84977A", ["PLANT_LEAF_DARK"] = "#5E6E58", ["BED_BASE"] = "#EDE2C9", ["BED_OVL"] = "#C7A46A", ["CARPET"] = "#D9C08A", ["CARPET_EDGE"] = "#5A4634", ["ROOM_TINT"] = "#E6DAC0", ["SEAL"] = "#A8391B", ["TAG"] = "#7A8FA0", ["GOLD"] = "#C9A961", ["PAPER"] = "#EFE4CE"}, ["room_colors"] = {"#E6DAC0", "#D9CEC0", "#C9D6CE", "#D6D9E2"}, ["wall"] = "#3F2A1E", ["door"] = "#C9A961", ["accent"] = "#A8391B", ["note"] = "6 色低饱和档案纸；粗墙深棕墨、门改铜色；家具走差异化命名"}}
+ return {["hint_preview"] = {["1"] = {["rule"] = "不做位置提示", ["cells"] = {}, ["count"] = 0}, ["2"] = {["rule"] = "该家具自己的格子", ["cells"] = {"1:2", "6:5"}, ["count"] = 2}, ["3"] = {["rule"] = "该家具自己的格子", ["cells"] = {"2:2", "2:3", "6:1", "6:2"}, ["count"] = 4}, ["4"] = {["rule"] = "该家具自己的格子", ["cells"] = {"1:2", "6:5"}, ["count"] = 2}, ["5"] = {["rule"] = "该家具四邻、同区域、可站人的格", ["cells"] = {"1:5", "2:4", "3:5"}, ["count"] = 3}, ["6"] = {["rule"] = "该家具四邻、同区域、可站人的格", ["cells"] = {"1:6", "3:6", "4:6", "5:5", "6:6"}, ["count"] = 5}}, ["id"] = "case_004", ["name"] = "案件 004 · 米纸谜案", ["difficulty"] = "normal", ["size"] = {["rows"] = 6, ["cols"] = 6}, ["room_names"] = {"R1", "R2", "R3", "R4"}, ["rules"] = {["one_per_row"] = true, ["one_per_col"] = true, ["one_per_room"] = false, ["place_all"] = true, ["tie_policy"] = "forbid"}, ["walls"] = {{"v", 1, 3}, {"v", 2, 3}, {"v", 3, 3}, {"h", 3, 3}, {"h", 3, 4}, {"h", 3, 5}, {"h", 3, 6}, {"h", 4, 1}, {"v", 4, 2}, {"h", 4, 2}, {"v", 5, 2}, {"v", 6, 2}}, ["doors"] = {{"v", 2, 3}, {"v", 4, 2}, {"h", 4, 2}, {"h", 3, 5}, {"v", 6, 2}}, ["objects"] = {["桌子"] = {["cells"] = {{["r"] = 1, ["c"] = 1}}, ["occupiable"] = false, ["kind"] = "table"}, ["椅子"] = {["cells"] = {{["r"] = 1, ["c"] = 2}, {["r"] = 6, ["c"] = 5}}, ["occupiable"] = true, ["kind"] = "chair"}, ["书架"] = {["cells"] = {{["r"] = 2, ["c"] = 5}}, ["occupiable"] = false, ["kind"] = "shelf"}, ["植物"] = {["cells"] = {{["r"] = 5, ["c"] = 6}, {["r"] = 2, ["c"] = 6}}, ["occupiable"] = false, ["kind"] = "plant"}, ["地毯"] = {["cells"] = {{["r"] = 2, ["c"] = 2}, {["r"] = 2, ["c"] = 3}, {["r"] = 6, ["c"] = 1}, {["r"] = 6, ["c"] = 2}}, ["occupiable"] = true, ["kind"] = "carpet"}}, ["blocked"] = {}, ["water"] = {}, ["suspects"] = {{["id"] = "A", ["name"] = "印刷工", ["portrait"] = "portrait.A"}, {["id"] = "B", ["name"] = "编辑", ["portrait"] = "portrait.B"}, {["id"] = "C", ["name"] = "装订工", ["portrait"] = "portrait.C"}, {["id"] = "D", ["name"] = "快递员", ["portrait"] = "portrait.D"}, {["id"] = "E", ["name"] = "校对员", ["portrait"] = "portrait.E"}, {["id"] = "V", ["name"] = "老板", ["portrait"] = "portrait.V", ["is_victim"] = true}}, ["victim"] = {["id"] = "V", ["name"] = "老板"}, ["roles"] = {["thief"] = "E"}, ["clues"] = {{["type"] = "above", ["a"] = "B", ["b"] = "A", ["same_column"] = false}, {["type"] = "on_object", ["who"] = "B", ["object"] = "椅子"}, {["type"] = "on_object", ["who"] = "C", ["object"] = "地毯"}, {["type"] = "on_object", ["who"] = "D", ["object"] = "椅子"}, {["type"] = "beside_object", ["who"] = "D", ["object"] = "书架"}, {["type"] = "beside_object", ["who"] = "V", ["object"] = "植物"}}, ["general_clues"] = {}, ["meta"] = {["announce"] = "unknown", ["false_clue"] = 5}, ["solution"] = {["A"] = {["r"] = 5, ["c"] = 4}, ["B"] = {["r"] = 1, ["c"] = 2}, ["C"] = {["r"] = 2, ["c"] = 3}, ["D"] = {["r"] = 6, ["c"] = 5}, ["E"] = {["r"] = 3, ["c"] = 1}, ["V"] = {["r"] = 4, ["c"] = 6}}, ["visual_theme"] = {["key"] = "archive-light", ["name"] = "档案卷宗 · 米纸浅色（美术调研 variant）", ["palette"] = {["INK"] = "#3F2A1E", ["INK_SOFT"] = "#6B4A34", ["GRAY"] = "#B9AC97", ["GRAY_DARK"] = "#8A7A66", ["WHITE"] = "#F8F1E2", ["SHADOW"] = "#241812", ["CHAIR_BASE"] = "#E3D5B8", ["CHAIR_LIGHT"] = "#F0E6D0", ["CHAIR_OVL"] = "#B08A55", ["TABLE_BASE"] = "#D9C7A3", ["TABLE_EDGE"] = "#8A6B45", ["SHELF_BASE"] = "#C8BBA0", ["SHELF_OVL"] = "#8FA3AE", ["TV_BASE"] = "#9AA4A6", ["TV_DARK"] = "#3A3B3C", ["TREE_BASE"] = "#B6A88E", ["TREE_OVL"] = "#7C8A6A", ["TREE_LIGHT"] = "#9BA98A", ["TREE_DARK"] = "#4F5C45", ["PLANT_BASE"] = "#C08A5E", ["PLANT_OVL"] = "#84977A", ["PLANT_LEAF_DARK"] = "#5E6E58", ["BED_BASE"] = "#EDE2C9", ["BED_OVL"] = "#C7A46A", ["CARPET"] = "#D9C08A", ["CARPET_EDGE"] = "#5A4634", ["ROOM_TINT"] = "#E6DAC0", ["SEAL"] = "#A8391B", ["TAG"] = "#7A8FA0", ["GOLD"] = "#C9A961", ["PAPER"] = "#EFE4CE"}, ["room_colors"] = {"#E6DAC0", "#D9CEC0", "#C9D6CE", "#D6D9E2"}, ["wall"] = "#3F2A1E", ["door"] = "#C9A961", ["accent"] = "#A8391B", ["note"] = "6 色低饱和档案纸；粗墙深棕墨、门改铜色；家具走差异化命名"}}
 
 end
 
 __M["levels.case_005"] = function()
-return { ["hint_preview"]={{rule="不做位置提示",cells={},count=0},{rule="该家具自己的格子",cells={"1:2","6:5"},count=2},{rule="该家具自己的格子",cells={"2:2","2:3","6:2"},count=3},{rule="不做位置提示",cells={},count=0},{rule="不做位置提示",cells={},count=0},{rule="不做位置提示",cells={},count=0}}, ["id"]="case_005", ["name"]="案件 005 · 夜勘卷宗 · 深棕墨/火漆红", ["difficulty"]="hard", ["size"]={rows=6,cols=6}, ["room_names"]={"R1","R2","R3","R4"}, ["rules"]={one_per_row=true,one_per_col=true,one_per_room=false,place_all=true,tie_policy="forbid"}, ["walls"]={{"v",1,3},{"v",2,3},{"h",2,4},{"v",3,3},{"h",3,3},{"v",3,4},{"h",3,5},{"h",3,6},{"h",4,1},{"v",4,2},{"h",4,2},{"v",5,2},{"v",6,2}}, ["doors"]={{"v",1,3},{"v",4,2},{"h",4,2},{"h",3,5},{"v",6,2}}, ["objects"]={["桌子"]={cells={{r=4,c=4}},occupiable=false,kind="table"},["椅子"]={cells={{r=1,c=2},{r=6,c=5}},occupiable=true,kind="chair"},["书架"]={cells={{r=2,c=5}},occupiable=false,kind="shelf"},["植物"]={cells={{r=1,c=1}},occupiable=false,kind="plant"},["地毯"]={cells={{r=2,c=2},{r=2,c=3},{r=6,c=2}},occupiable=true,kind="carpet"},["雕塑"]={cells={{r=3,c=4}},occupiable=false,kind="statue"}},blocked={},water={}, ["suspects"]={{id="A",name="封条保管",portrait="portrait.A"},{id="B",name="夜勘记录",portrait="portrait.B"},{id="C",name="火漆验印",portrait="portrait.C"},{id="D",name="暗房洗印",portrait="portrait.D"},{id="E",name="证物登记",portrait="portrait.E"},{id="V",name="守夜馆人",portrait="portrait.V",is_victim=true}},victim={id="V",name="守夜馆人"},roles={thief="B"}, ["clues"]={{type="with",a="A",b="C"},{type="on_object",who="E",object="椅子"},{type="on_object",who="E",object="地毯"},{type="all_of",clauses={{type="not_beside_object",who="B",object="桌子"},{type="on_object",who="D",object="椅子"}}},{type="all_of",clauses={{type="on_object",who="A",object="椅子"},{type="beside_object",who="C",object="桌子"}}},{type="not_with",a="B",b="C"}},general_clues={},meta={announce="unknown",false_clue=2},solution={A={r=6,c=5},B={r=3,c=1},C={r=5,c=4},D={r=1,c=2},E={r=2,c=3},V={r=4,c=6}},visual_theme={key="archive-dark",name="夜勘卷宗 · 深棕墨/火漆红",room_colors={"#D8CBB0","#C9BCA6","#B8C6BE","#C4C8D2"},wall="#241812",door="#A8391B",accent="#7A2A16"}}
+return {
+  id = "case_005",
+  name = "案件 005 · 火漆失窃",
+  difficulty = "hard",
+  size = { rows = 6, cols = 6 },
+  room_names = { [1] = "大厅", [2] = "侧廊", [3] = "库房", [4] = "内室" },
+  rules = { one_per_row = true, one_per_col = true, one_per_room = false, place_all = true, tie_policy = "forbid" },
+  walls = {{"v",6,3},{"v",5,3},{"h",4,3},{"v",4,3},{"h",3,4},{"v",4,2},{"h",3,2},{"h",3,1},{"h",2,6},{"v",3,4},{"h",2,5},{"v",2,4},{"v",1,4}},
+  doors = {{"v",6,3},{"v",3,4},{"h",2,5},{"h",3,2},{"v",1,4}},
+  objects = {
+    ["桌子"] = { cells = {{["r"]=3,["c"]=3}}, occupiable = false, kind = "table" },
+    ["椅子"] = { cells = {{["r"]=1,["c"]=2},{["r"]=6,["c"]=5}}, occupiable = true, kind = "chair" },
+    ["书架"] = { cells = {{["r"]=5,["c"]=2}}, occupiable = false, kind = "shelf" },
+    ["植物"] = { cells = {{["r"]=6,["c"]=6}}, occupiable = false, kind = "plant" },
+    ["地毯"] = { cells = {{["r"]=1,["c"]=5},{["r"]=5,["c"]=4},{["r"]=5,["c"]=5}}, occupiable = true, kind = "carpet" },
+    ["雕塑"] = { cells = {{["r"]=4,["c"]=3}}, occupiable = false, kind = "statue" },
+  },
+  blocked = {}, water = {},
+  suspects = {
+    { id = "A", name = "保安", portrait = "portrait.A" },
+    { id = "B", name = "值班员", portrait = "portrait.B" },
+    { id = "C", name = "鉴定师", portrait = "portrait.C" },
+    { id = "D", name = "摄影师", portrait = "portrait.D" },
+    { id = "E", name = "管理员", portrait = "portrait.E" },
+    { id = "V", name = "馆长", portrait = "portrait.V", is_victim = true },
+  },
+  victim = { id = "V", name = "馆长" },
+  roles = { thief = "B" },
+  clues = {
+    { type = "on_object", who = "A", object = "椅子" },
+    { type = "on_object", who = "E", object = "椅子" },
+    { type = "beside_object", who = "C", object = "桌子" },
+    { type = "beside_object", who = "D", object = "植物" },
+    { type = "not_with", a = "E", b = "V" },
+    { type = "only_on_object", who = "E", object = "地毯" },
+  }, general_clues = {}, meta = { announce = "unknown", false_clue = 2 },
+  solution = {
+    A = {["r"]=1,["c"]=2},
+    B = {["r"]=4,["c"]=6},
+    C = {["r"]=2,["c"]=3},
+    D = {["r"]=6,["c"]=5},
+    E = {["r"]=5,["c"]=4},
+    V = {["r"]=3,["c"]=1},
+  },
+  visual_theme = {["key"]="archive-dark",["name"]="夜勘卷宗 · 深棕墨 / 火漆红",["palette"]={["INK"]="#3F2A1E",["INK_SOFT"]="#6B4A34",["GRAY"]="#B9AC97",["GRAY_DARK"]="#8A7A66",["WHITE"]="#F8F1E2",["SHADOW"]="#241812",["CHAIR_BASE"]="#E3D5B8",["CHAIR_LIGHT"]="#F0E6D0",["CHAIR_OVL"]="#B08A55",["TABLE_BASE"]="#D9C7A3",["TABLE_EDGE"]="#8A6B45",["SHELF_BASE"]="#C8BBA0",["SHELF_OVL"]="#8FA3AE",["TV_BASE"]="#9AA4A6",["TV_DARK"]="#3A3B3C",["TREE_BASE"]="#B6A88E",["TREE_OVL"]="#7C8A6A",["TREE_LIGHT"]="#9BA98A",["TREE_DARK"]="#4F5C45",["PLANT_BASE"]="#C08A5E",["PLANT_OVL"]="#84977A",["PLANT_LEAF_DARK"]="#5E6E58",["BED_BASE"]="#EDE2C9",["BED_OVL"]="#C7A46A",["CARPET"]="#D9C08A",["CARPET_EDGE"]="#5A4634",["ROOM_TINT"]="#E6DAC0",["SEAL"]="#A8391B",["TAG"]="#7A8FA0",["GOLD"]="#C9A961",["PAPER"]="#EFE4CE"},["room_colors"]={"#D8CBB0","#C9BCA6","#B8C6BE","#C4C8D2"},["wall"]="#241812",["door"]="#A8391B",["accent"]="#7A2A16",["note"]="与第4关同色系但更暗，火漆红门；门墙结构、家具、人物 id 均改动"},
+  hint_preview = {{["rule"]="该家具自己的格子",["cells"]={"1:2","6:5"},["count"]=2},{["rule"]="该家具自己的格子",["cells"]={"1:2","6:5"},["count"]=2},{["rule"]="该家具四邻、同区域、可站人的格",["cells"]={"2:3","3:2","3:4"},["count"]=3},{["rule"]="该家具四邻、同区域、可站人的格",["cells"]={"5:6","6:5"},["count"]=2},{["rule"]="不做位置提示",["cells"]={},["count"]=0},{["rule"]="该家具自己的格子",["cells"]={"1:5","5:4","5:5"},["count"]=3}},
+}
 
 end
 
 __M["levels.case_006"] = function()
-return { ["hint_preview"]={{rule="该家具四邻、同区域、可站人的格",cells={"2:5","3:6","4:6","5:7"},count=4},{rule="不做位置提示",cells={},count=0},{rule="该家具四邻、同区域、可站人的格",cells={"1:2","1:4","2:1","2:6","3:2","3:7","4:1","4:5","5:4","5:6","6:1","6:4","7:2","7:5"},count=14},{rule="该家具四邻、同区域、可站人的格",cells={"1:5","2:6","6:7"},count=3},{rule="该家具四邻、同区域、可站人的格",cells={"1:5","2:6","6:7"},count=3},{rule="不做位置提示",cells={},count=0},{rule="该家具自己的格子",cells={"3:2","5:4"},count=2}}, ["id"]="case_006", ["name"]="案件 006 · 蓝晒图 · 靛青网格/朱红批注", ["difficulty"]="normal", ["size"]={rows=7,cols=7}, ["room_names"]={"R1","R2","R3","R4"}, ["rules"]={one_per_row=true,one_per_col=true,one_per_room=false,place_all=true,tie_policy="forbid"}, ["walls"]={{"v",1,4},{"v",2,4},{"h",3,3},{"v",3,4},{"h",3,4},{"h",3,5},{"h",3,6},{"h",3,7},{"h",4,1},{"v",4,2},{"h",4,2},{"v",5,2},{"v",6,2},{"v",7,2}}, ["doors"]={{"h",3,3},{"v",3,4},{"h",3,5},{"h",4,1},{"v",7,2}}, ["objects"]={["桌子"]={cells={{r=1,c=3},{r=1,c=7},{r=2,c=2},{r=2,c=7},{r=3,c=1},{r=5,c=5},{r=6,c=5},{r=7,c=1},{r=7,c=6}},occupiable=false,kind="table"},["椅子"]={cells={{r=3,c=2},{r=5,c=4}},occupiable=true,kind="chair"},["书架"]={cells={{r=1,c=6},{r=7,c=7}},occupiable=false,kind="shelf"},["植物"]={cells={{r=2,c=3},{r=6,c=6}},occupiable=false,kind="plant"},["地毯"]={cells={{r=2,c=6},{r=5,c=6}},occupiable=true,kind="carpet"},["雕塑"]={cells={{r=7,c=3}},occupiable=false,kind="statue"}},blocked={},water={},suspects={{id="A",name="晒图学徒",portrait="portrait.A"},{id="B",name="靛青描图",portrait="portrait.B"},{id="C",name="野外测绘",portrait="portrait.C"},{id="D",name="朱批校样",portrait="portrait.D"},{id="E",name="蓝图管理",portrait="portrait.E"},{id="F",name="工地放样",portrait="portrait.F"},{id="V",name="总测绘师",portrait="portrait.V",is_victim=true}},victim={id="V",name="总测绘师"},roles={thief="B"},clues={{type="not_beside_object",who="B",object="地毯"},{type="all_of",clauses={{type="beside_object",who="E",object="雕塑"},{type="beside_object",who="F",object="椅子"}}},{type="beside_object",who="D",object="桌子"},{type="beside_object",who="C",object="书架"},{type="beside_object",who="B",object="书架"},{type="all_of",clauses={{type="not_beside_object",who="A",object="植物"},{type="beside_object",who="C",object="桌子"}}},{type="only_on_object",who="A",object="椅子"}},general_clues={},meta={announce="unknown"},solution={A={r=3,c=2},B={r=6,c=7},C={r=2,c=6},D={r=4,c=5},E={r=7,c=4},F={r=5,c=3},V={r=1,c=1}},visual_theme={key="blueprint",name="蓝晒图 · 靛青网格/朱红批注",room_colors={"#DCE7EF","#CBDDEA","#BFD2E4","#E1E7EC"},wall="#1B3A56",door="#C3563B",accent="#B4412C"}}
+return {
+  id = "case_006",
+  name = "案件 006 · 蓝图迷局",
+  difficulty = "normal",
+  size = { rows = 7, cols = 7 },
+  room_names = { [1] = "大厅", [2] = "侧廊", [3] = "库房", [4] = "内室" },
+  rules = { one_per_row = true, one_per_col = true, one_per_room = false, place_all = true, tie_policy = "forbid" },
+  walls = {{"v",1,4},{"v",2,4},{"h",3,3},{"v",3,4},{"h",3,4},{"h",3,5},{"h",3,6},{"h",3,7},{"h",4,1},{"v",4,2},{"h",4,2},{"v",5,2},{"v",6,2},{"v",7,2}},
+  doors = {{"h",3,3},{"v",3,4},{"h",3,5},{"h",4,1},{"v",7,2}},
+  objects = {
+    ["桌子"] = { cells = {{["r"]=1,["c"]=3},{["r"]=1,["c"]=7},{["r"]=2,["c"]=2},{["r"]=2,["c"]=7},{["r"]=3,["c"]=1},{["r"]=5,["c"]=5},{["r"]=6,["c"]=5},{["r"]=7,["c"]=1},{["r"]=7,["c"]=6}}, occupiable = false, kind = "table" },
+    ["椅子"] = { cells = {{["r"]=3,["c"]=2},{["r"]=5,["c"]=4}}, occupiable = true, kind = "chair" },
+    ["书架"] = { cells = {{["r"]=1,["c"]=6},{["r"]=7,["c"]=7}}, occupiable = false, kind = "shelf" },
+    ["植物"] = { cells = {{["r"]=2,["c"]=3},{["r"]=6,["c"]=6}}, occupiable = false, kind = "plant" },
+    ["地毯"] = { cells = {{["r"]=2,["c"]=6},{["r"]=5,["c"]=6}}, occupiable = true, kind = "carpet" },
+    ["雕塑"] = { cells = {{["r"]=7,["c"]=3}}, occupiable = false, kind = "statue" },
+  },
+  blocked = {}, water = {},
+  suspects = {
+    { id = "A", name = "绘图员", portrait = "portrait.A" },
+    { id = "B", name = "设计师", portrait = "portrait.B" },
+    { id = "C", name = "测绘员", portrait = "portrait.C" },
+    { id = "D", name = "工程师", portrait = "portrait.D" },
+    { id = "E", name = "管理员", portrait = "portrait.E" },
+    { id = "F", name = "施工员", portrait = "portrait.F" },
+    { id = "V", name = "老师", portrait = "portrait.V", is_victim = true },
+  },
+  victim = { id = "V", name = "老师" },
+  roles = { thief = "B" },
+  clues = {
+    { type = "beside_object", who = "E", object = "雕塑" },
+    { type = "beside_object", who = "F", object = "椅子" },
+    { type = "beside_object", who = "D", object = "桌子" },
+    { type = "beside_object", who = "B", object = "书架" },
+    { type = "on_object", who = "A", object = "椅子" },
+    { type = "on_object", who = "C", object = "地毯" },
+    { type = "not_beside_object", who = "E", object = "书架" },
+  }, general_clues = {}, meta = { announce = "unknown" },
+  solution = {
+    A = {r=3,c=2},
+    B = {r=6,c=7},
+    C = {r=2,c=6},
+    D = {r=4,c=5},
+    E = {r=7,c=4},
+    F = {r=5,c=3},
+    V = {r=1,c=1},
+  },
+  visual_theme = {["key"]="blueprint",["name"]="蓝晒图 · 靛青网格 / 朱红批注（7×7 专属）",["palette"]={["INK"]="#3F2A1E",["INK_SOFT"]="#6B4A34",["GRAY"]="#B9AC97",["GRAY_DARK"]="#8A7A66",["WHITE"]="#F8F1E2",["SHADOW"]="#241812",["CHAIR_BASE"]="#E3D5B8",["CHAIR_LIGHT"]="#F0E6D0",["CHAIR_OVL"]="#B08A55",["TABLE_BASE"]="#D9C7A3",["TABLE_EDGE"]="#8A6B45",["SHELF_BASE"]="#C8BBA0",["SHELF_OVL"]="#8FA3AE",["TV_BASE"]="#9AA4A6",["TV_DARK"]="#3A3B3C",["TREE_BASE"]="#B6A88E",["TREE_OVL"]="#7C8A6A",["TREE_LIGHT"]="#9BA98A",["TREE_DARK"]="#4F5C45",["PLANT_BASE"]="#C08A5E",["PLANT_OVL"]="#84977A",["PLANT_LEAF_DARK"]="#5E6E58",["BED_BASE"]="#EDE2C9",["BED_OVL"]="#C7A46A",["CARPET"]="#D9C08A",["CARPET_EDGE"]="#5A4634",["ROOM_TINT"]="#E6DAC0",["SEAL"]="#A8391B",["TAG"]="#7A8FA0",["GOLD"]="#C9A961",["PAPER"]="#EFE4CE"},["room_colors"]={"#DCE7EF","#CBDDEA","#BFD2E4","#E1E7EC"},["wall"]="#1B3A56",["door"]="#C3563B",["accent"]="#B4412C",["note"]="7×7 新关专属：冷蓝晒图底 + 朱红批注门，与 6×6 四关的暖棕/浅色系明确区分"},
+  hint_preview = {{["rule"]="该家具四邻、同区域、可站人的格",["cells"]={"6:3","7:4"},["count"]=2},{["rule"]="该家具四邻、同区域、可站人的格",["cells"]={"3:3","4:2","4:4","5:3","6:4"},["count"]=5},{["rule"]="该家具四邻、同区域、可站人的格",["cells"]={"1:2","1:4","2:1","2:6","3:2","3:7","4:1","4:5","5:4","5:6","6:1","6:4","7:2","7:5"},["count"]=14},{["rule"]="该家具四邻、同区域、可站人的格",["cells"]={"1:5","2:6","6:7"},["count"]=3},{["rule"]="该家具自己的格子",["cells"]={"3:2","5:4"},["count"]=2},{["rule"]="该家具自己的格子",["cells"]={"2:6","5:6"},["count"]=2},{["rule"]="该家具四邻、同区域、可站人的格",["cells"]={"2:4","3:3","5:6","6:7"},["count"]=4}},
+}
 
 end
 
 __M["levels.case_007"] = function()
-return { ["hint_preview"]={{rule="该家具自己的格子",cells={"2:3","2:4","3:4"},count=3},{rule="该家具自己的格子",cells={"2:3","2:4","3:4"},count=3},{rule="不做位置提示",cells={},count=0},{rule="不做位置提示",cells={},count=0},{rule="该家具四邻、同区域、可站人的格",cells={"2:5","3:1","3:3","3:4","3:6","4:2","4:5","5:1"},count=8},{rule="该家具四邻、同区域、可站人的格",cells={"1:5","2:6"},count=2}}, ["id"]="case_007", ["name"]="案件 007 · 旋转档案 · 深墨绿/铜金", ["difficulty"]="hard", ["size"]={rows=6,cols=6}, ["room_names"]={"R1","R2","R3","R4"}, ["rules"]={one_per_row=true,one_per_col=true,one_per_room=false,place_all=true,tie_policy="forbid"}, ["walls"]={{"v",1,2},{"v",2,2},{"h",2,2},{"h",2,3},{"v",3,1},{"v",3,3},{"h",3,4},{"v",4,1},{"h",4,3},{"v",4,3},{"h",4,4},{"h",4,5},{"h",4,6},{"v",5,1},{"h",5,1},{"v",5,2},{"v",6,2}}, ["doors"]={{"h",4,5},{"v",3,3},{"v",2,2},{"v",5,2},{"v",4,1}}, ["objects"]={["桌子"]={cells={{r=4,c=1},{r=4,c=3},{r=3,c=5}},occupiable=false,kind="table"},["椅子"]={cells={{r=6,c=6},{r=4,c=5},{r=5,c=1},{r=1,c=5}},occupiable=true,kind="chair"},["植物"]={cells={{r=1,c=6}},occupiable=false,kind="plant"},["地毯"]={cells={{r=2,c=4},{r=3,c=4},{r=2,c=3}},occupiable=true,kind="carpet"}},blocked={},water={},suspects={{id="A",name="铜钥保管",portrait="portrait.A"},{id="B",name="转架管理",portrait="portrait.B"},{id="C",name="誊写员",portrait="portrait.C"},{id="D",name="铜牌登记",portrait="portrait.D"},{id="E",name="线装匠人",portrait="portrait.E"},{id="V",name="藏卷人",portrait="portrait.V",is_victim=true}},victim={id="V",name="藏卷人"},roles={thief="B"},clues={{type="on_object",who="C",object="地毯"},{type="on_object",who="V",object="地毯"},{type="all_of",clauses={{type="on_object",who="B",object="椅子"},{type="on_object",who="E",object="椅子"}}},{type="all_of",clauses={{type="beside_object",who="B",object="植物"},{type="alone_in_room",who="E"}}},{type="not_beside_object",who="V",object="桌子"},{type="beside_object",who="A",object="植物"}},general_clues={},meta={announce="unknown",false_clue=2},solution={A={r=2,c=6},B={r=1,c=5},C={r=3,c=4},D={r=4,c=2},E={r=5,c=1},V={r=6,c=3}},visual_theme={key="sepia-rotated",name="旋转档案 · 深墨绿/铜金",room_colors={"#DDE4D5","#CFD9C8","#D8D3BE","#C6D2D2"},wall="#20342C",door="#B9913F",accent="#7C5A22"}}
+return { ["hint_preview"]={{["rule"]="该家具四邻、同区域、可站人的格",["cells"]={"2:5","3:1","3:3","3:4","3:6","4:2","4:5","5:1"},["count"]=8},{["rule"]="该家具自己的格子",["cells"]={"2:3","2:4","3:4"},["count"]=3},{["rule"]="该家具自己的格子",["cells"]={"2:3","2:4","3:4"},["count"]=3},{["rule"]="该家具四邻、同区域、可站人的格",["cells"]={"2:5","3:1","3:3","3:4","3:6","4:2","4:5","5:1"},["count"]=8},{["rule"]="该家具自己的格子",["cells"]={"1:5","4:5","5:1","6:6"},["count"]=4},{["rule"]="该家具自己的格子",["cells"]={"1:5","4:5","5:1","6:6"},["count"]=4}}, ["id"]="case_007", ["name"]="案件 007 · 藏卷回声", ["difficulty"]="hard", ["size"]={rows=6,cols=6}, ["room_names"]={"R1","R2","R3","R4"}, ["rules"]={one_per_row=true,one_per_col=true,one_per_room=false,place_all=true,tie_policy="forbid"}, ["walls"]={{"v",1,2},{"v",2,2},{"h",2,2},{"h",2,3},{"v",3,1},{"v",3,3},{"v",4,1},{"h",4,3},{"v",4,3},{"h",4,4},{"h",4,5},{"h",4,6},{"v",5,1},{"h",5,1},{"v",5,2},{"v",6,2}}, ["doors"]={{"h",4,5},{"v",3,3},{"v",2,2},{"v",5,2},{"v",4,1}}, ["objects"]={["桌子"]={cells={{r=4,c=1},{r=4,c=3},{r=3,c=5}},occupiable=false,kind="table"},["椅子"]={cells={{r=6,c=6},{r=4,c=5},{r=5,c=1},{r=1,c=5}},occupiable=true,kind="chair"},["植物"]={cells={{r=1,c=6}},occupiable=false,kind="plant"},["地毯"]={cells={{r=2,c=4},{r=3,c=4},{r=2,c=3}},occupiable=true,kind="carpet"}},blocked={},water={},suspects={{id="A",name="管理员",portrait="portrait.A"},{id="B",name="读者",portrait="portrait.B"},{id="C",name="作家",portrait="portrait.C"},{id="D",name="编辑",portrait="portrait.D"},{id="E",name="清洁工",portrait="portrait.E"},{id="V",name="馆长",portrait="portrait.V",is_victim=true}},victim={id="V",name="馆长"},roles={thief="B"},clues={{["type"]="beside_object",["who"]="C",["object"]="桌子"},{["type"]="on_object",["who"]="V",["object"]="地毯"},{["type"]="on_object",["who"]="C",["object"]="地毯"},{["type"]="beside_object",["who"]="D",["object"]="桌子"},{["type"]="on_object",["who"]="E",["object"]="椅子"},{["type"]="on_object",["who"]="B",["object"]="椅子"}},general_clues={{["type"]="n_on_object",["object"]="椅子",["n"]=2}},meta={announce="unknown",false_clue=2},solution={A={r=2,c=6},B={r=1,c=5},C={r=3,c=4},D={r=4,c=2},E={r=5,c=1},V={r=6,c=3}},visual_theme={key="sepia-rotated",name="旋转档案 · 深墨绿/铜金",room_colors={"#DDE4D5","#CFD9C8","#D8D3BE","#C6D2D2"},wall="#20342C",door="#B9913F",accent="#7C5A22"}}
 
 end
 
 -- ==== 入口：官方生命周期回调（OnInit / OnStart / OnUpdate / ...）==== --
 local FORCE_LEVEL = nil
+if print then print("[murdoku] ===== 构建标记 v712 / 2026-11-17 / 七关常见身份称呼：who、what与教程全文同步 =====") end
 local Murdoku, Qianxing
 local LOAD_ERR = nil
 local ok1 = pcall(function() Murdoku = __require("main") end)
@@ -14140,7 +14269,7 @@ local function check_canvas()
     local same = (math.abs(w - CANVAS_EXPECT.w) < 0.6) and (math.abs(h - CANVAS_EXPECT.h) < 0.6)
     if same then
       if print then
-        print("[murdoku] ===== 构建标记 v707 / 2026-11-16 / 第三关v16教学口径补写 =====")
+        print("[murdoku] ===== 构建标记 v712 / 2026-11-17 / 七关常见身份称呼：who、what与教程全文同步 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else

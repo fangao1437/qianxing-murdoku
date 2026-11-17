@@ -1700,10 +1700,11 @@ function Controller:build_layout(ui_adapter)
                  visible = false, text = "", style = "card.title",
                  rect = { x = r.x + 16, y = r.y + 10, w = r.w - 32, h = 34 },
                  pos_runtime = true })
+          -- 710：标题来自当前关卡数据；存档静态文本不能覆盖关卡名。
           push({ id = "select.card." .. i .. ".info", kind = "text", parent = "root",
-                 visible = true, text = t.title, style = "card.name",
-                 rect = { x = r.x + r.w * 0.045, y = r.y + r.h * 0.885,
-                          w = r.w * 0.91, h = r.h * 0.10 },
+                 visible = true, text = t.short, style = "card.name",
+                 rect = { x = r.x + r.w * 0.045, y = r.y + r.h * 0.835,
+                          w = r.w * 0.91, h = r.h * 0.15 },
                  pos_runtime = true })
           push({ id = "select.card." .. i .. ".result", kind = "text", parent = "root",
                  visible = t.result ~= "", text = t.result,
@@ -2170,9 +2171,12 @@ local function enum_at(path)
   return cur
 end
 local function write_control_text(ctrl, txt)
-  if ctrl == nil or ctrl.text == nil then return false end
-  local ok = pcall(function() ctrl.text = tostring(txt or "") end)
-  return ok
+  if ctrl == nil then return false end
+  local expected = tostring(txt or "")
+  local ok = pcall(function() ctrl.text = expected end)
+  if not ok then pcall(function() ctrl:SetText(expected) end) end
+  local read_ok, actual = pcall(function() return ctrl.text end)
+  return read_ok and actual == expected
 end
 function Controller:_grid_log(key, msg)
   self._grid_logged = self._grid_logged or {}
@@ -2665,12 +2669,20 @@ function Controller:_grid_text_payload()
     local cl = vm.clues[i]
     local who, pre, post, wid, wportrait = split_by_name(vm, tostring(cl.text or ""))
     local rt = row_text and row_text[i] or nil
+    -- 710修正版：who 是发言人，不能从证词提到的人名反推；what 保留设计卡面。
+    local person = lv and lv.suspects and lv.suspects[i]
+    local pid = (rt and rt.letter) or (person and person.id)
+    if lv and type(lv.suspects) == "table" then
+      for _, candidate in ipairs(lv.suspects) do
+        if tostring(candidate.id) == tostring(pid) then person = candidate break end
+      end
+    end
     items[i] = {
-      who    = (rt and rt.who) or ((who ~= nil) and (tostring(pre or "") .. tostring(who)) or ""),
-      what   = (rt and rt.what) or ((who ~= nil) and tostring(post or "") or tostring(pre or "")),
-      letter = (rt and rt.letter) or tostring(wid or ""),
-      portrait = (rt and rt.face) or wportrait,
-      id     = i,
+      who    = (person and person.name) or (rt and rt.who) or who or "",
+      what   = (rt and rt.what) or tostring(cl.text or ""),
+      letter = (person and tostring(person.id)) or tostring(pid or ""),
+      portrait = (person and person.portrait) or wportrait or (rt and rt.face),
+      id     = person and person.id or i,
     }
   end
   p = { level = lv, n = n, items = items }
@@ -2753,6 +2765,14 @@ function Controller:_fill_general_item(adapter, item, index, pos)
         local _src = nil
         pcall(function() _src = _rc:FindChild("clue." .. tostring(_lv) .. ".1") end)
         if _src ~= nil then pcall(function() _txt = _src.text end) end
+      end
+      if (_txt == nil or _txt == "") and self.core ~= nil then
+        pcall(function()
+          local rows = self.core:general_clue_results()
+          local texts = {}
+          for _, row in ipairs(rows or {}) do texts[#texts + 1] = row.text end
+          _txt = table.concat(texts, "；")
+        end)
       end
       if _txt ~= nil and _txt ~= "" then
         local _dst = nil
@@ -3066,7 +3086,20 @@ function Controller:_fill_grid_item(adapter, grid, item, index)
     if rec ~= nil then rec.text = tv end
   end
   if tv ~= nil then
-      end    
+    local function sync_text(key, ctrl, value)
+      if ctrl == nil then tv[key] = nil; return end
+      local expected = tostring(value or "")
+      local ok, actual = pcall(function() return ctrl.text end)
+      -- row.* 复制及列表项复用会覆盖旧值，不能只比较缓存。
+      if not ok or actual ~= expected then
+        if not write_control_text(ctrl, expected) then tv[key] = nil; return end
+      end
+      tv[key] = expected
+    end
+    sync_text("who", c_who, t_who)
+    sync_text("what", c_what, t_what)
+    sync_text("letter", c_letter, t_letter)
+  end
   if c_who == nil or c_what == nil or c_letter == nil then
     self:_grid_log("childmiss", "网格视窗：列表项子控件 who/what/letter = "
       .. ((c_who ~= nil) and "有" or "**缺**") .. "/"

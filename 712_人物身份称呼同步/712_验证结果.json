@@ -1,0 +1,110 @@
+{
+  "version": 712,
+  "PASS": true,
+  "checks": [
+    {
+      "name": "七关仅人物名变化及打包脚本语法",
+      "pass_": true,
+      "detail": "LEVEL 1 semantic PASS\nLEVEL 2 semantic PASS\nLEVEL 3 semantic PASS\nLEVEL 4 semantic PASS\nLEVEL 5 semantic PASS\nLEVEL 6 semantic PASS\nLEVEL 7 semantic PASS\nBUNDLE syntax PASS\n"
+    },
+    {
+      "name": "row_letter_stability.lua",
+      "pass_": true,
+      "detail": "dex=6（基准 1）⇒ 填到 pos=6\n[murdoku] ★ 标记来源记下 ✓：`row.1.6` ⇒ who=`6` letter=`f`\n[murdoku] ★ 单射命中：`row.1.6` ⇒ 写了 0 个槽位 ✓（★ 内容【由你在编辑器里定】✓）\n[murdoku] ★ 填充定位 ✓：引擎交来 index=5（基准 1）⇒ 填到 pos=5\n[murdoku] ★ 标记来源记下 ✓：`row.1.5` ⇒ who=`5` letter=`e`\n[murdoku] ★ 单射命中：`row.1.5` ⇒ 写了 0 个槽位 ✓（★ 内容【由你在编辑器里定】✓）\n[murdoku] ★ 填充定位 ✓：引擎交来 index=4（基准 1）⇒ 填到 pos=4\n[murdoku] ★ 标记来源记下 ✓：`row.1.4` ⇒ who=`4` letter=`d`\n[murdoku] ★ 单射命中：`row.1.4` ⇒ 写了 0 个槽位 ✓（★ 内容【由你在编辑器里定】✓）\n[murdoku] ★ 填充定位 ✓：引擎交来 index=3（基准 1）⇒ 填到 pos=3\n[murdoku] ★ 标记来源记下 ✓：`row.1.3` ⇒ who=`3` letter=`c`\n[murdoku] ★ 单射命中：`row.1.3` ⇒ 写了 0 个槽位 ✓（★ 内容【由你在编辑器里定】✓）\n[murdoku] ★ 填充定位 ✓：引擎交来 index=2（基准 1）⇒ 填到 pos=2\n[murdoku] ★ 标记来源记下 ✓：`row.1.2` ⇒ who=`2` letter=`b`\n[murdoku] ★ 单射命中：`row.1.2` ⇒ 写了 0 个槽位 ✓（★ 内容【由你在编辑器里定】✓）\n  [PASS] 每一行按行号落账，且与写入顺序无关\n[murdoku] 网格视窗：**索引基准定为 1**（第一次回调交来的 index = 1）⇒ 之后 `pos = index − 1 + 1`\n[murdoku] ★ 填充定位 ✓：引擎交来 index=1（基准 1）⇒ 填到 pos=1\n[murdoku] ★ `letter` 读不到文字 ✗：`letter.1.1`（★ 自有 `.text` / `FindChild(letter)` / 子孙 三条路都空 ✓ ⇒ 这一段标记会落回旧铅笔笔记 ✓）\n[murdoku] ★ 单射命中：`row.1.1` ⇒ 写了 0 个槽位 ✓（★ 内容【由你在编辑器里定】✓）\n[murdoku] ★ 填充定位 ✓：引擎交来 index=2（基准 1）⇒ 填到 pos=2\n[murdoku] ★ 标记来源记下 ✓：`row.1.2` ⇒ who=`2` letter=`b`\n[murdoku] ★ 单射命中：`row.1.2` ⇒ 写了 0 个槽位 ✓（★ 内容【由你在编辑器里定】✓）\n[murdoku] ★ 填充定位 ✓：引擎交来 index=3（基准 1）⇒ 填到 pos=3\n[murdoku] ★ 标记来源记下 ✓：`row.1.3` ⇒ who=`3` letter=`c`\n[murdoku] ★ 单射命中：`row.1.3` ⇒ 写了 0 个槽位 ✓（★ 内容【由你在编辑器里定】✓）\n[murdoku] ★ 填充定位 ✓：引擎交来 index=4（基准 1）⇒ 填到 pos=4\n[murdoku] ★ 标记来源记下 ✓：`row.1.4` ⇒ who=`4` letter=`d`\n[murdoku] ★ 单射命中：`row.1.4` ⇒ 写了 0 个槽位 ✓（★ 内容【由你在编辑器里定】✓）\n[murdoku] ★ 填充定位 ✓：引擎交来 index=5（基准 1）⇒ 填到 pos=5\n[murdoku] ★ 标记来源记下 ✓：`row.1.5` ⇒ who=`5` letter=`e`\n[murdoku] ★ 单射命中：`row.1.5` ⇒ 写了 0 个槽位 ✓（★ 内容【由你在编辑器里定】✓）\n[murdoku] ★ 填充定位 ✓：引擎交来 index=6（基准 1）⇒ 填到 pos=6\n[murdoku] ★ 标记来源记下 ✓：`row.1.6` ⇒ who=`6` letter=`f`\n[murdoku] ★ 单射命中：`row.1.6` ⇒ 写了 0 个槽位 ✓（★ 内容【由你在编辑器里定】✓）\n[murdoku] ★ 标记来源记下 ✓：`row.1.7` ⇒ who=`7` letter=`g`\n  [PASS] 空行不落账 ＋ 后面的行照常落账\n  [PASS] 换关清表 ＋ 同关不清\n\nrow_letter_stability: 8 passed, 0 failed\n"
+    },
+    {
+      "name": "entry_smoke.lua",
+      "pass_": true,
+      "detail": "cell.4.2 cell.4.3 cell.4.4 cell.4.5 cell.5.1 cell.5.2 cell.5.3 cell.5.4 cell.5.5\n  [PASS] 逐格自检列出了 board 树上的真实子控件   [murdoku] stage 树上实际有 26 个子控件：__tpl_ref_cell.1.1 cell.1.1 cell.1.2 cell.1.3 cell.1.4 cell.1.5 cell.2.1 cell.2.2 cell.2.3 cell.2.4 cell.2.5 cell.3.1 cell.3.2 cell.3.3 cell.3.4 cell.3.5 cell.4.1 cell.4.2 cell.4.3 cell.4.4 cell.4.5 cell.5.1 cell.5.2 cell.5.3 cell.5.4 cell.5.5\n  [PASS] 逐格自检统计了「脚本建的 / 编辑器摆的」   [murdoku] 来源统计：脚本建的 25 个，编辑器摆的 0 个（合计 25 / 25）\n  [PASS] 试造成功后明确报告了（探针路径在跑）   [murdoku] 模板索引 1073741876 验证通过（试造成功），探针已销毁 —— 25 个格子都会走同一条正常路径\n  [PASS] 探针被销毁、没有复用   [murdoku] 模板索引 1073741876 验证通过（试造成功），探针已销毁 —— 25 个格子都会走同一条正常路径\n  [PASS] 占位控件被挪出画布（锚点位置 = 200000,200000）\n\n== 6c. 按 referencedPrefabIndex 认模板引用控件（字段语义纠正）==\n  [PASS] 不抛错\n  [PASS] 按 referencedPrefabIndex 认出来了（现在叫 __tpl_ref_cell.1.1）\n  [PASS] 它让位后缺 25 格 —— 那一格会由脚本生成   [murdoku] 格子模板索引 1073741876（来自 cfg.cells.prefab）可用；缺 25 个格子，开始补建\n\n== 6d. 调色板 / 染色 / 墙门（一个模板配多种美术）==\n  [PASS] 调色板/染色/墙门 不抛错\n  [PASS] ① 按素材名换图成功（portrait.imageId = 424242）\n  [PASS] ①b 换头像图**不动**房间色底图（face.imageId 仍是 106053）\n  [PASS] ①c 头像层被点亮了（visible=true）\n  [PASS] ③ wall.up 按数据关掉了（visible=false）\n  [PASS] ③ door.left 按数据关掉了（visible=false）\n  [PASS] ★ 中间容器的「屏蔽区域内点击事件穿透」被脚本关掉了（false）\n  [PASS] ② 染色落到了 face.imageColor（0xAARRGGBB = 4278850590，期望 4278850590）\n\n== 6e. 四个方块（selbar + selbtn.1..4）已按用户指令删除 ==\n  [PASS] 入口配置里 widgets = false（★ 用户原话：「把原来四个方块删掉」✓）   实测 widgets = false\n  [PASS] （对照）同一环境下格子确实建出来了 ⇒ 下面两条有意义\n  [PASS] `selbar` 没有被创建   find('selbar') 実測 = false\n  [PASS] `selbtn.1..6` 一个都没建   实测建了 0 个\n\n== 6f. 两个 opt-in 开关（默认关闭 / 打开后仍然有效）==\n  [PASS] beacon 已挂到 __murdoku_debug（离线可测的前提）\n  [PASS] （前提）`cell.1.1` 在假树里\n  [PASS] 入口 CONFIG 里 cells_beacon = false（实测 false）\n  [PASS] （病因）adapter.cells_beacon 恒为 nil ⇒ 旧代码读它永远读不到关闭开关（实测 nil）\n  [PASS] ① 默认关闭 ⇒ 信标没碰 cell.1.1（调用次数 1，调用前 1）\n  [PASS] ② 老路径 a.cells_beacon=false 同样生效\n  [PASS] ③ 放开后信标真的把 cell.1.1 改成 300×300（实测 300×300）\n\n== 7. OnDestroy ==\n  [PASS] OnDestroy 不抛错\n  [PASS] 正常收尾   [murdoku] destroyed\n"
+    },
+    {
+      "name": "旧名扫描 case_001.lua",
+      "pass_": true,
+      "detail": ""
+    },
+    {
+      "name": "旧名扫描 case_002.lua",
+      "pass_": true,
+      "detail": ""
+    },
+    {
+      "name": "旧名扫描 case_003.lua",
+      "pass_": true,
+      "detail": ""
+    },
+    {
+      "name": "旧名扫描 case_004.lua",
+      "pass_": true,
+      "detail": ""
+    },
+    {
+      "name": "旧名扫描 case_005.lua",
+      "pass_": true,
+      "detail": ""
+    },
+    {
+      "name": "旧名扫描 case_006.lua",
+      "pass_": true,
+      "detail": ""
+    },
+    {
+      "name": "旧名扫描 case_007.lua",
+      "pass_": true,
+      "detail": ""
+    },
+    {
+      "name": "旧名扫描 current_design_v16.json",
+      "pass_": true,
+      "detail": ""
+    },
+    {
+      "name": "旧名扫描 verification_v16.json",
+      "pass_": true,
+      "detail": ""
+    },
+    {
+      "name": "旧名扫描 710_第3至7关难度对比.md",
+      "pass_": true,
+      "detail": ""
+    },
+    {
+      "name": "旧名扫描 entry_client_script.lua",
+      "pass_": true,
+      "detail": ""
+    },
+    {
+      "name": "旧名扫描 client_script.lua",
+      "pass_": true,
+      "detail": ""
+    },
+    {
+      "name": "设计数据仅名称变化 current_design_v16.json",
+      "pass_": true,
+      "detail": ""
+    },
+    {
+      "name": "设计数据仅名称变化 verification_v16.json",
+      "pass_": true,
+      "detail": ""
+    },
+    {
+      "name": "42个who已同步",
+      "pass_": true,
+      "detail": ""
+    },
+    {
+      "name": "16处教程文本已同步",
+      "pass_": true,
+      "detail": ""
+    }
+  ],
+  "archiveChecks": {
+    "roundtrip": true,
+    "oldNamesAbsent": true,
+    "all17ModulesOnlyNamesChanged": true,
+    "allWhoSlotsMatched": true,
+    "selectTitlesPreserved": true,
+    "base711Unchanged": true
+  },
+  "realGameTest": false
+}

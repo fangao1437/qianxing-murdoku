@@ -1,0 +1,200 @@
+{
+  "version": 710,
+  "revision": 2,
+  "base": "710_第五关旋转与第六关线索重构.gil",
+  "output": "710_姓名与选关标题修正版_v2.gil",
+  "baseSha256": "5af5ecc0207a5056c054cebf4b6dfb78fbb31cfc31ca972da13a307cd954542d",
+  "sha256": "0062a1e319d3568bc7323296e40e8ff05fb1b00752fe3f9f140e75ad8f943121",
+  "bytes": 7300969,
+  "records": 8300,
+  "fieldDiffs": 106,
+  "changes": [
+    {
+      "name": "who.4.1",
+      "before": "夜巡值守",
+      "after": "韩松"
+    },
+    {
+      "name": "who.4.2",
+      "before": "米纸誊录",
+      "after": "林悦"
+    },
+    {
+      "name": "who.4.3",
+      "before": "页角修复",
+      "after": "宋杰"
+    },
+    {
+      "name": "who.4.4",
+      "before": "卷宗管理",
+      "after": "陆宁"
+    },
+    {
+      "name": "who.4.5",
+      "before": "借阅登记",
+      "after": "方晓"
+    },
+    {
+      "name": "who.4.6",
+      "before": "老顾宁",
+      "after": "周老师"
+    },
+    {
+      "name": "who.5.1",
+      "before": "封条保管",
+      "after": "梁晨"
+    },
+    {
+      "name": "who.5.2",
+      "before": "夜勘记录",
+      "after": "许宁"
+    },
+    {
+      "name": "who.5.3",
+      "before": "火漆验印",
+      "after": "赵越"
+    },
+    {
+      "name": "who.5.4",
+      "before": "暗房洗印",
+      "after": "周然"
+    },
+    {
+      "name": "who.5.5",
+      "before": "证物登记",
+      "after": "沈琳"
+    },
+    {
+      "name": "who.5.6",
+      "before": "守夜馆人",
+      "after": "林叔"
+    },
+    {
+      "name": "who.6.1",
+      "before": "晒图学徒",
+      "after": "何明"
+    },
+    {
+      "name": "who.6.2",
+      "before": "靛青描图",
+      "after": "苏禾"
+    },
+    {
+      "name": "who.6.3",
+      "before": "野外测绘",
+      "after": "陈放"
+    },
+    {
+      "name": "who.6.4",
+      "before": "朱批校样",
+      "after": "林涛"
+    },
+    {
+      "name": "who.6.5",
+      "before": "蓝图管理",
+      "after": "顾言"
+    },
+    {
+      "name": "who.6.6",
+      "before": "工地放样",
+      "after": "周宁"
+    },
+    {
+      "name": "who.6.7",
+      "before": "总测绘师",
+      "after": "吴老师"
+    },
+    {
+      "name": "who.7.1",
+      "before": "铜钥保管",
+      "after": "江宁"
+    },
+    {
+      "name": "who.7.2",
+      "before": "转架管理",
+      "after": "叶青"
+    },
+    {
+      "name": "who.7.3",
+      "before": "誊写员",
+      "after": "陈墨"
+    },
+    {
+      "name": "who.7.4",
+      "before": "铜牌登记",
+      "after": "林浩"
+    },
+    {
+      "name": "who.7.5",
+      "before": "线装匠人",
+      "after": "苏然"
+    },
+    {
+      "name": "who.7.6",
+      "before": "藏卷人",
+      "after": "周叔"
+    },
+    {
+      "name": "select.card.1.info",
+      "before": "",
+      "after": "独行夜盗"
+    },
+    {
+      "name": "select.card.2.info",
+      "before": "",
+      "after": "双影疑云"
+    },
+    {
+      "name": "select.card.3.info",
+      "before": "",
+      "after": "明室谜踪"
+    },
+    {
+      "name": "select.card.4.info",
+      "before": "",
+      "after": "米纸谜案"
+    }
+  ],
+  "checkedWhoCount": 42,
+  "changedModules": [
+    "ui_controller",
+    "engine_adapter_qianxing"
+  ],
+  "allSevenLevelModulesUnchanged": true,
+  "titleMetrics": [
+    {
+      "slot": 1,
+      "width": 182,
+      "height": 42.87500152587891,
+      "fontSize": 18
+    },
+    {
+      "slot": 2,
+      "width": 182,
+      "height": 42.87500152587891,
+      "fontSize": 18
+    },
+    {
+      "slot": 3,
+      "width": 182,
+      "height": 42.87500152587891,
+      "fontSize": 18
+    },
+    {
+      "slot": 4,
+      "width": 182,
+      "height": 42.87500152587891,
+      "fontSize": 18
+    }
+  ],
+  "roundtrip": true,
+  "realGameTest": false,
+  "causes": [
+    "列表填充计算新文本后没有写入who/what/letter",
+    "选关文字18号而框高28.58，小于本地实测要求的两倍字号"
+  ],
+  "verification": "710修正版_验证结果.json",
+  "limits": [
+    "离线回放模拟控件API；本轮未操作游戏、未做真机导入"
+  ]
+}

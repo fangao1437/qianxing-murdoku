@@ -1,6 +1,6 @@
  return {
   id = "case_001",
-  name = "案件 001 · 夜盗独行",
+  name = "案件 001 · 独行夜盗",
   subtitle = "保险库内室只留下一个人的痕迹 —— 是独自作案，还是有人替他望风？",
   difficulty = "easy",
   size = { rows = 5, cols = 5 },
@@ -36,13 +36,13 @@
   blocked = {},
   water   = {},
   suspects = {
-    { id = "A", name = "值班保安", portrait = "portrait.A",   gender = "male" },
-    { id = "B", name = "前台姑娘", portrait = "portrait.B",   gender = "female" },
-    { id = "C", name = "清洁工", portrait = "portrait.C", gender = "male" },
-    { id = "D", name = "古董商", portrait = "portrait.D", gender = "male" },
-    { id = "V", name = "收藏家", portrait = "portrait.V",     is_victim = true },
+    { id = "A", name = "保安", portrait = "portrait.A",   gender = "male" },
+    { id = "B", name = "前台小姐", portrait = "portrait.B",   gender = "female" },
+    { id = "C", name = "快递员", portrait = "portrait.C", gender = "male" },
+    { id = "D", name = "顾客", portrait = "portrait.D", gender = "male" },
+    { id = "V", name = "店长", portrait = "portrait.V",     is_victim = true },
   },
-  victim = { id = "V", name = "收藏家" },
+  victim = { id = "V", name = "店长" },
   roles = {
     thief = "D",
   },

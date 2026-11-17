@@ -3924,17 +3924,17 @@ function Adapter:set_property(id, key, value, nkey)
       end
       local width = size_of(ctrl)
       local size = math.min(18, math.max(10, math.floor(((width or 184) - 6) / math.max(1, units))))
-      local ok = pcall(function()
-        ctrl.adaptiveFontSize = false
-        ctrl.minimumFontSize = size
-        ctrl.fontSize = size
-        ctrl.fontColor = 0xFF4A2E1C
-        ctrl.text = expected
-        if Enum and Enum.TextHorizontalAlignment and Enum.TextVerticalAlignment then
-          ctrl.horizontalAlignment = Enum.TextHorizontalAlignment.Middle
-          ctrl.verticalAlignment = Enum.TextVerticalAlignment.Middle
-        end
-      end)
+      -- 文字是必要写入；个别样式属性不可写时，不应中断正文更新。
+      local ok = pcall(function() ctrl.text = expected end)
+      if not ok then ok = pcall(function() ctrl:SetText(expected) end) end
+      pcall(function() ctrl.adaptiveFontSize = false end)
+      pcall(function() ctrl.minimumFontSize = size end)
+      pcall(function() ctrl.fontSize = size end)
+      pcall(function() ctrl.fontColor = 0xFF4A2E1C end)
+      if Enum and Enum.TextHorizontalAlignment and Enum.TextVerticalAlignment then
+        pcall(function() ctrl.horizontalAlignment = Enum.TextHorizontalAlignment.Middle end)
+        pcall(function() ctrl.verticalAlignment = Enum.TextVerticalAlignment.Middle end)
+      end
       local read_ok, actual = pcall(function() return ctrl.text end)
       return ok and read_ok and actual == expected
     end

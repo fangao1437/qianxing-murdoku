@@ -1,0 +1,71 @@
+{
+  "version": 711,
+  "baseVersion": 710,
+  "base": "710_姓名与选关标题修正版_v2.gil",
+  "output": "711_第六关线索去冗余修正.gil",
+  "baseSha256": "0062a1e319d3568bc7323296e40e8ff05fb1b00752fe3f9f140e75ad8f943121",
+  "sha256": "d4f5b22e9c1b29e788f73c54bbe073978593e4adb8985aee8a2bc49f65aaa9d3",
+  "bytes": 7301005,
+  "records": 8300,
+  "fieldDiffs": 2,
+  "changedStaticRecords": [
+    {
+      "name": "what.6.7",
+      "before": "E顾言不在植物旁边",
+      "after": "E顾言不在书架旁边"
+    }
+  ],
+  "embeddedLuaMarker": "v711",
+  "changedModules": [
+    "levels.case_006",
+    "entry_client_script"
+  ],
+  "roundtrip": true,
+  "level6": {
+    "cards": [
+      [
+        "E在雕塑旁边"
+      ],
+      [
+        "F在椅子旁边"
+      ],
+      [
+        "D在桌子旁边"
+      ],
+      [
+        "B在书架旁边"
+      ],
+      [
+        "A在椅子上"
+      ],
+      [
+        "C在地毯上"
+      ],
+      [
+        "E不在书架旁边"
+      ]
+    ],
+    "allClueBoards": 4,
+    "thiefCandidatePositions": [
+      4,
+      41
+    ],
+    "finalSolutions": 1,
+    "deletionBoards": [
+      100,
+      66,
+      18,
+      26,
+      136,
+      64,
+      6
+    ],
+    "allSingleSentence": true
+  },
+  "preserved710Fixes": {
+    "whoNames": true,
+    "selectTitles": true
+  },
+  "realGameTest": false,
+  "verification": "711_验证结果.json"
+}
