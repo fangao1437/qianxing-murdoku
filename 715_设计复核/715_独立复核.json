@@ -1,0 +1,3821 @@
+{
+  "rule": "all-clues-retained-truth-predicates-v715",
+  "source": "714实际内嵌模块",
+  "levels": [
+    {
+      "level": 3,
+      "base": {
+        "alltrue": 3,
+        "alltrue_boards": [
+          [
+            1,
+            6,
+            14,
+            27,
+            34,
+            23
+          ],
+          [
+            1,
+            6,
+            14,
+            27,
+            35,
+            22
+          ],
+          [
+            5,
+            6,
+            14,
+            27,
+            31,
+            22
+          ]
+        ],
+        "branches": [
+          {
+            "person": "A",
+            "truth": {
+              "before_boards": 3,
+              "before_positions": [
+                1,
+                5
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                1
+              ],
+              "final": 1
+            },
+            "lie": {
+              "before_boards": 47,
+              "before_positions": [
+                6,
+                10,
+                18,
+                22,
+                23,
+                24,
+                28,
+                29,
+                30,
+                34,
+                35
+              ],
+              "people_boards": 7,
+              "after_positions": [
+                6,
+                18,
+                28,
+                35
+              ],
+              "final": 0
+            },
+            "final": 1
+          },
+          {
+            "person": "B",
+            "truth": {
+              "before_boards": 3,
+              "before_positions": [
+                6
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                6
+              ],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 183,
+              "before_positions": [
+                7,
+                10,
+                18,
+                22,
+                23,
+                24,
+                25,
+                27,
+                28,
+                29,
+                30,
+                31,
+                34,
+                35
+              ],
+              "people_boards": 25,
+              "after_positions": [
+                18,
+                28,
+                35
+              ],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "C",
+            "truth": {
+              "before_boards": 3,
+              "before_positions": [
+                14
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                14
+              ],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 67,
+              "before_positions": [
+                14,
+                15,
+                20,
+                27,
+                32,
+                34
+              ],
+              "people_boards": 2,
+              "after_positions": [
+                15,
+                20
+              ],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "D",
+            "truth": {
+              "before_boards": 3,
+              "before_positions": [
+                27
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 18,
+              "before_positions": [
+                22,
+                23,
+                25,
+                28,
+                29
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "E",
+            "truth": {
+              "before_boards": 3,
+              "before_positions": [
+                31,
+                34,
+                35
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 7,
+              "before_positions": [
+                22,
+                23,
+                25,
+                27
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          }
+        ],
+        "solutions": [
+          {
+            "thief": "A",
+            "positions": {
+              "A": 1,
+              "B": 6,
+              "C": 14,
+              "D": 27,
+              "E": 34,
+              "V": 23
+            }
+          }
+        ],
+        "count": 1
+      },
+      "revised": {
+        "alltrue": 3,
+        "alltrue_boards": [
+          [
+            1,
+            6,
+            14,
+            27,
+            34,
+            23
+          ],
+          [
+            1,
+            6,
+            14,
+            27,
+            35,
+            22
+          ],
+          [
+            5,
+            6,
+            14,
+            27,
+            31,
+            22
+          ]
+        ],
+        "branches": [
+          {
+            "person": "A",
+            "truth": {
+              "before_boards": 3,
+              "before_positions": [
+                1,
+                5
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                1
+              ],
+              "final": 1
+            },
+            "lie": {
+              "before_boards": 47,
+              "before_positions": [
+                6,
+                10,
+                18,
+                22,
+                23,
+                24,
+                28,
+                29,
+                30,
+                34,
+                35
+              ],
+              "people_boards": 7,
+              "after_positions": [
+                6,
+                18,
+                28,
+                35
+              ],
+              "final": 0
+            },
+            "final": 1
+          },
+          {
+            "person": "B",
+            "truth": {
+              "before_boards": 3,
+              "before_positions": [
+                6
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                6
+              ],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 183,
+              "before_positions": [
+                7,
+                10,
+                18,
+                22,
+                23,
+                24,
+                25,
+                27,
+                28,
+                29,
+                30,
+                31,
+                34,
+                35
+              ],
+              "people_boards": 25,
+              "after_positions": [
+                18,
+                28,
+                35
+              ],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "C",
+            "truth": {
+              "before_boards": 3,
+              "before_positions": [
+                14
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                14
+              ],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 67,
+              "before_positions": [
+                14,
+                15,
+                20,
+                27,
+                32,
+                34
+              ],
+              "people_boards": 2,
+              "after_positions": [
+                15,
+                20
+              ],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "D",
+            "truth": {
+              "before_boards": 3,
+              "before_positions": [
+                27
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 18,
+              "before_positions": [
+                22,
+                23,
+                25,
+                28,
+                29
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "E",
+            "truth": {
+              "before_boards": 3,
+              "before_positions": [
+                31,
+                34,
+                35
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 7,
+              "before_positions": [
+                22,
+                23,
+                25,
+                27
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          }
+        ],
+        "solutions": [
+          {
+            "thief": "A",
+            "positions": {
+              "A": 1,
+              "B": 6,
+              "C": 14,
+              "D": 27,
+              "E": 34,
+              "V": 23
+            }
+          }
+        ],
+        "count": 1
+      },
+      "relaxed_base": {
+        "alltrue": 3,
+        "alltrue_boards": [
+          [
+            1,
+            6,
+            14,
+            27,
+            34,
+            23
+          ],
+          [
+            1,
+            6,
+            14,
+            27,
+            35,
+            22
+          ],
+          [
+            5,
+            6,
+            14,
+            27,
+            31,
+            22
+          ]
+        ],
+        "branches": [
+          {
+            "person": "A",
+            "truth": {
+              "before_boards": 3,
+              "before_positions": [
+                1,
+                5
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                1
+              ],
+              "final": 1
+            },
+            "lie": {
+              "before_boards": 47,
+              "before_positions": [
+                6,
+                10,
+                18,
+                22,
+                23,
+                24,
+                28,
+                29,
+                30,
+                34,
+                35
+              ],
+              "people_boards": 7,
+              "after_positions": [
+                6,
+                18,
+                28,
+                35
+              ],
+              "final": 0
+            },
+            "final": 1
+          },
+          {
+            "person": "B",
+            "truth": {
+              "before_boards": 3,
+              "before_positions": [
+                6
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                6
+              ],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 183,
+              "before_positions": [
+                7,
+                10,
+                18,
+                22,
+                23,
+                24,
+                25,
+                27,
+                28,
+                29,
+                30,
+                31,
+                34,
+                35
+              ],
+              "people_boards": 25,
+              "after_positions": [
+                18,
+                28,
+                35
+              ],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "C",
+            "truth": {
+              "before_boards": 3,
+              "before_positions": [
+                14
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                14
+              ],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 67,
+              "before_positions": [
+                14,
+                15,
+                20,
+                27,
+                32,
+                34
+              ],
+              "people_boards": 2,
+              "after_positions": [
+                15,
+                20
+              ],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "D",
+            "truth": {
+              "before_boards": 3,
+              "before_positions": [
+                27
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 18,
+              "before_positions": [
+                22,
+                23,
+                25,
+                28,
+                29
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "E",
+            "truth": {
+              "before_boards": 3,
+              "before_positions": [
+                31,
+                34,
+                35
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 7,
+              "before_positions": [
+                22,
+                23,
+                25,
+                27
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          }
+        ],
+        "solutions": [
+          {
+            "thief": "A",
+            "positions": {
+              "A": 1,
+              "B": 6,
+              "C": 14,
+              "D": 27,
+              "E": 34,
+              "V": 23
+            }
+          }
+        ],
+        "count": 1
+      },
+      "deletion": [
+        {
+          "card": 1,
+          "count": 32,
+          "solutions": [
+            {
+              "thief": "D",
+              "positions": {
+                "A": 18,
+                "B": 1,
+                "C": 14,
+                "D": 9,
+                "E": 28,
+                "V": 35
+              }
+            },
+            {
+              "thief": "D",
+              "positions": {
+                "A": 18,
+                "B": 1,
+                "C": 14,
+                "D": 9,
+                "E": 29,
+                "V": 34
+              }
+            },
+            {
+              "thief": "D",
+              "positions": {
+                "A": 18,
+                "B": 1,
+                "C": 14,
+                "D": 9,
+                "E": 34,
+                "V": 29
+              }
+            }
+          ],
+          "alltrue": 50
+        },
+        {
+          "card": 2,
+          "count": 0,
+          "solutions": [],
+          "alltrue": 186
+        },
+        {
+          "card": 3,
+          "count": 0,
+          "solutions": [],
+          "alltrue": 70
+        },
+        {
+          "card": 4,
+          "count": 0,
+          "solutions": [],
+          "alltrue": 21
+        },
+        {
+          "card": 5,
+          "count": 0,
+          "solutions": [],
+          "alltrue": 10
+        },
+        {
+          "card": 6,
+          "count": 0,
+          "solutions": [],
+          "alltrue": 24
+        }
+      ],
+      "without_general": null,
+      "matches_author_after_solving": true,
+      "room": [
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        2,
+        1,
+        1,
+        0,
+        0,
+        2,
+        2,
+        1,
+        1,
+        3,
+        3,
+        2,
+        2,
+        2,
+        2,
+        3,
+        3,
+        3,
+        3,
+        3,
+        2
+      ],
+      "doors": {
+        "0": [
+          1,
+          2,
+          3
+        ],
+        "1": [
+          0,
+          2
+        ],
+        "2": [
+          0,
+          1,
+          3
+        ],
+        "3": [
+          0,
+          2
+        ]
+      },
+      "hints": [
+        {
+          "rule": "不做位置提示",
+          "cells": [],
+          "count": 0
+        },
+        {
+          "rule": "该家具四邻、同区域、可站人的格",
+          "cells": [
+            "1:2",
+            "2:1"
+          ],
+          "count": 2
+        },
+        {
+          "rule": "该家具自己的格子",
+          "cells": [
+            "3:2",
+            "3:3",
+            "4:2"
+          ],
+          "count": 3
+        },
+        {
+          "rule": "该家具四邻、同区域、可站人的格",
+          "cells": [
+            "1:3",
+            "2:2",
+            "2:4",
+            "3:3",
+            "3:4",
+            "4:3",
+            "5:4",
+            "6:3",
+            "6:5"
+          ],
+          "count": 9
+        },
+        {
+          "rule": "不做位置提示",
+          "cells": [],
+          "count": 0
+        },
+        {
+          "rule": "该家具四邻、同区域、可站人的格",
+          "cells": [
+            "1:3",
+            "2:2",
+            "2:4",
+            "3:3",
+            "3:4",
+            "4:3",
+            "5:4",
+            "6:3",
+            "6:5"
+          ],
+          "count": 9
+        }
+      ]
+    },
+    {
+      "level": 4,
+      "base": {
+        "alltrue": 0,
+        "alltrue_boards": [],
+        "branches": [
+          {
+            "person": "A",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "B",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "C",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "D",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 24,
+              "before_positions": [
+                9,
+                16
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "E",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 8,
+              "before_positions": [
+                12,
+                15,
+                18,
+                21,
+                24,
+                27
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                12
+              ],
+              "final": 0
+            },
+            "final": 0
+          }
+        ],
+        "solutions": [],
+        "count": 0
+      },
+      "revised": {
+        "alltrue": 0,
+        "alltrue_boards": [],
+        "branches": [
+          {
+            "person": "A",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "B",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "C",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "D",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 14,
+              "before_positions": [
+                4,
+                9,
+                16
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "E",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 1,
+              "before_positions": [
+                12
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                12
+              ],
+              "final": 1
+            },
+            "final": 1
+          }
+        ],
+        "solutions": [
+          {
+            "thief": "E",
+            "positions": {
+              "A": 27,
+              "B": 1,
+              "C": 8,
+              "D": 34,
+              "E": 12,
+              "V": 23
+            }
+          }
+        ],
+        "count": 1
+      },
+      "relaxed_base": {
+        "alltrue": 0,
+        "alltrue_boards": [],
+        "branches": [
+          {
+            "person": "A",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "B",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "C",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "D",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 24,
+              "before_positions": [
+                9,
+                16
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "E",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 8,
+              "before_positions": [
+                12,
+                15,
+                18,
+                21,
+                24,
+                27
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                12
+              ],
+              "final": 0
+            },
+            "final": 0
+          }
+        ],
+        "solutions": [],
+        "count": 0
+      },
+      "deletion": [
+        {
+          "card": 1,
+          "count": 0,
+          "solutions": [],
+          "alltrue": 0
+        },
+        {
+          "card": 2,
+          "count": 0,
+          "solutions": [],
+          "alltrue": 0
+        },
+        {
+          "card": 3,
+          "count": 0,
+          "solutions": [],
+          "alltrue": 0
+        },
+        {
+          "card": 4,
+          "count": 3,
+          "solutions": [
+            {
+              "thief": "B",
+              "positions": {
+                "A": 27,
+                "B": 1,
+                "C": 8,
+                "D": 16,
+                "E": 18,
+                "V": 35
+              }
+            },
+            {
+              "thief": "C",
+              "positions": {
+                "A": 27,
+                "B": 1,
+                "C": 8,
+                "D": 16,
+                "E": 18,
+                "V": 35
+              }
+            },
+            {
+              "thief": "E",
+              "positions": {
+                "A": 27,
+                "B": 1,
+                "C": 8,
+                "D": 16,
+                "E": 18,
+                "V": 35
+              }
+            }
+          ],
+          "alltrue": 14
+        },
+        {
+          "card": 5,
+          "count": 0,
+          "solutions": [],
+          "alltrue": 1
+        },
+        {
+          "card": 6,
+          "count": 2,
+          "solutions": [
+            {
+              "thief": "E",
+              "positions": {
+                "A": 23,
+                "B": 1,
+                "C": 8,
+                "D": 34,
+                "E": 12,
+                "V": 27
+              }
+            },
+            {
+              "thief": "E",
+              "positions": {
+                "A": 27,
+                "B": 1,
+                "C": 8,
+                "D": 34,
+                "E": 12,
+                "V": 23
+              }
+            }
+          ],
+          "alltrue": 0
+        }
+      ],
+      "without_general": null,
+      "matches_author_after_solving": true,
+      "room": [
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        2,
+        2,
+        2,
+        2,
+        3,
+        3,
+        2,
+        2,
+        2,
+        2,
+        3,
+        3,
+        2,
+        2,
+        2,
+        2
+      ],
+      "doors": {
+        "0": [
+          1,
+          2,
+          3
+        ],
+        "1": [
+          0,
+          2
+        ],
+        "2": [
+          0,
+          1,
+          3
+        ],
+        "3": [
+          0,
+          2
+        ]
+      },
+      "hints": [
+        {
+          "rule": "不做位置提示",
+          "cells": [],
+          "count": 0
+        },
+        {
+          "rule": "该家具四邻、同区域、可站人的格",
+          "cells": [
+            "1:2",
+            "2:1"
+          ],
+          "count": 2
+        },
+        {
+          "rule": "该家具自己的格子",
+          "cells": [
+            "2:2",
+            "2:3",
+            "6:1",
+            "6:2"
+          ],
+          "count": 4
+        },
+        {
+          "rule": "该家具自己的格子",
+          "cells": [
+            "1:2",
+            "6:5"
+          ],
+          "count": 2
+        },
+        {
+          "rule": "该家具四邻、同区域、可站人的格",
+          "cells": [
+            "1:5",
+            "2:4",
+            "3:5"
+          ],
+          "count": 3
+        },
+        {
+          "rule": "该家具四邻、同区域、可站人的格",
+          "cells": [
+            "1:6",
+            "3:6",
+            "4:6",
+            "5:5",
+            "6:6"
+          ],
+          "count": 5
+        }
+      ]
+    },
+    {
+      "level": 5,
+      "base": {
+        "alltrue": 0,
+        "alltrue_boards": [],
+        "branches": [
+          {
+            "person": "A",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "B",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 2,
+              "before_positions": [
+                17,
+                23
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                23
+              ],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "C",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "D",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "E",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          }
+        ],
+        "solutions": [],
+        "count": 0
+      },
+      "revised": {
+        "alltrue": 0,
+        "alltrue_boards": [],
+        "branches": [
+          {
+            "person": "A",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "B",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 1,
+              "before_positions": [
+                23
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                23
+              ],
+              "final": 1
+            },
+            "final": 1
+          },
+          {
+            "person": "C",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "D",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "E",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          }
+        ],
+        "solutions": [
+          {
+            "thief": "B",
+            "positions": {
+              "A": 1,
+              "B": 23,
+              "C": 8,
+              "D": 34,
+              "E": 27,
+              "V": 12
+            }
+          }
+        ],
+        "count": 1
+      },
+      "relaxed_base": {
+        "alltrue": 0,
+        "alltrue_boards": [],
+        "branches": [
+          {
+            "person": "A",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "B",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 2,
+              "before_positions": [
+                17,
+                23
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                23
+              ],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "C",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "D",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "E",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          }
+        ],
+        "solutions": [],
+        "count": 0
+      },
+      "deletion": [
+        {
+          "card": 1,
+          "count": 0,
+          "solutions": [],
+          "alltrue": 0
+        },
+        {
+          "card": 2,
+          "count": 0,
+          "solutions": [],
+          "alltrue": 1
+        },
+        {
+          "card": 3,
+          "count": 0,
+          "solutions": [],
+          "alltrue": 0
+        },
+        {
+          "card": 4,
+          "count": 0,
+          "solutions": [],
+          "alltrue": 0
+        },
+        {
+          "card": 5,
+          "count": 0,
+          "solutions": [],
+          "alltrue": 0
+        },
+        {
+          "card": 6,
+          "count": 0,
+          "solutions": [],
+          "alltrue": 2
+        }
+      ],
+      "without_general": null,
+      "matches_author_after_solving": true,
+      "room": [
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        2,
+        2,
+        3,
+        3,
+        0,
+        2,
+        2,
+        2,
+        3,
+        3,
+        3,
+        2,
+        2,
+        2,
+        3,
+        3,
+        3,
+        2,
+        2,
+        2
+      ],
+      "doors": {
+        "0": [
+          1,
+          2,
+          3
+        ],
+        "1": [
+          0,
+          2
+        ],
+        "2": [
+          0,
+          1,
+          3
+        ],
+        "3": [
+          0,
+          2
+        ]
+      },
+      "hints": [
+        {
+          "rule": "该家具自己的格子",
+          "cells": [
+            "1:2",
+            "6:5"
+          ],
+          "count": 2
+        },
+        {
+          "rule": "该家具自己的格子",
+          "cells": [
+            "1:2",
+            "6:5"
+          ],
+          "count": 2
+        },
+        {
+          "rule": "该家具四邻、同区域、可站人的格",
+          "cells": [
+            "2:3",
+            "3:2",
+            "3:4"
+          ],
+          "count": 3
+        },
+        {
+          "rule": "该家具四邻、同区域、可站人的格",
+          "cells": [
+            "5:6",
+            "6:5"
+          ],
+          "count": 2
+        },
+        {
+          "rule": "不做位置提示",
+          "cells": [],
+          "count": 0
+        },
+        {
+          "rule": "该家具自己的格子",
+          "cells": [
+            "1:5",
+            "5:4",
+            "5:5"
+          ],
+          "count": 3
+        }
+      ]
+    },
+    {
+      "level": 6,
+      "base": {
+        "alltrue": 2,
+        "alltrue_boards": [
+          [
+            15,
+            0,
+            12,
+            25,
+            45,
+            30,
+            41
+          ],
+          [
+            15,
+            41,
+            12,
+            25,
+            45,
+            30,
+            0
+          ]
+        ],
+        "branches": [
+          {
+            "person": "A",
+            "truth": {
+              "before_boards": 2,
+              "before_positions": [
+                15
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 52,
+              "before_positions": [
+                0,
+                1,
+                7,
+                20,
+                28,
+                29,
+                34,
+                35,
+                36,
+                41,
+                46
+              ],
+              "people_boards": 10,
+              "after_positions": [
+                1,
+                7,
+                34,
+                41
+              ],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "B",
+            "truth": {
+              "before_boards": 2,
+              "before_positions": [
+                0,
+                41
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                41
+              ],
+              "final": 1
+            },
+            "lie": {
+              "before_boards": 4,
+              "before_positions": [
+                0,
+                20,
+                34
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                34
+              ],
+              "final": 0
+            },
+            "final": 1
+          },
+          {
+            "person": "C",
+            "truth": {
+              "before_boards": 2,
+              "before_positions": [
+                12
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 4,
+              "before_positions": [
+                0,
+                41
+              ],
+              "people_boards": 2,
+              "after_positions": [
+                41
+              ],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "D",
+            "truth": {
+              "before_boards": 2,
+              "before_positions": [
+                25
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                25
+              ],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 8,
+              "before_positions": [
+                27,
+                34,
+                41
+              ],
+              "people_boards": 4,
+              "after_positions": [
+                27,
+                34,
+                41
+              ],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "E",
+            "truth": {
+              "before_boards": 2,
+              "before_positions": [
+                45
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                45
+              ],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 12,
+              "before_positions": [
+                21,
+                41,
+                43,
+                46
+              ],
+              "people_boards": 7,
+              "after_positions": [
+                21,
+                41,
+                46
+              ],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "F",
+            "truth": {
+              "before_boards": 2,
+              "before_positions": [
+                30
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                30
+              ],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 28,
+              "before_positions": [
+                0,
+                20,
+                27,
+                34,
+                37,
+                41,
+                43,
+                45,
+                46
+              ],
+              "people_boards": 7,
+              "after_positions": [
+                27,
+                34,
+                37,
+                41,
+                45,
+                46
+              ],
+              "final": 0
+            },
+            "final": 0
+          }
+        ],
+        "solutions": [
+          {
+            "thief": "B",
+            "positions": {
+              "A": 15,
+              "B": 41,
+              "C": 12,
+              "D": 25,
+              "E": 45,
+              "F": 30,
+              "V": 0
+            }
+          }
+        ],
+        "count": 1
+      },
+      "revised": {
+        "alltrue": 2,
+        "alltrue_boards": [
+          [
+            15,
+            0,
+            12,
+            25,
+            45,
+            30,
+            41
+          ],
+          [
+            15,
+            41,
+            12,
+            25,
+            45,
+            30,
+            0
+          ]
+        ],
+        "branches": [
+          {
+            "person": "A",
+            "truth": {
+              "before_boards": 2,
+              "before_positions": [
+                15
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 52,
+              "before_positions": [
+                0,
+                1,
+                7,
+                20,
+                28,
+                29,
+                34,
+                35,
+                36,
+                41,
+                46
+              ],
+              "people_boards": 10,
+              "after_positions": [
+                1,
+                7,
+                34,
+                41
+              ],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "B",
+            "truth": {
+              "before_boards": 2,
+              "before_positions": [
+                0,
+                41
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                41
+              ],
+              "final": 1
+            },
+            "lie": {
+              "before_boards": 4,
+              "before_positions": [
+                0,
+                20,
+                34
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                34
+              ],
+              "final": 0
+            },
+            "final": 1
+          },
+          {
+            "person": "C",
+            "truth": {
+              "before_boards": 2,
+              "before_positions": [
+                12
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 4,
+              "before_positions": [
+                0,
+                41
+              ],
+              "people_boards": 2,
+              "after_positions": [
+                41
+              ],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "D",
+            "truth": {
+              "before_boards": 2,
+              "before_positions": [
+                25
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                25
+              ],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 8,
+              "before_positions": [
+                27,
+                34,
+                41
+              ],
+              "people_boards": 4,
+              "after_positions": [
+                27,
+                34,
+                41
+              ],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "E",
+            "truth": {
+              "before_boards": 2,
+              "before_positions": [
+                45
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                45
+              ],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 12,
+              "before_positions": [
+                21,
+                41,
+                43,
+                46
+              ],
+              "people_boards": 7,
+              "after_positions": [
+                21,
+                41,
+                46
+              ],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "F",
+            "truth": {
+              "before_boards": 2,
+              "before_positions": [
+                30
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                30
+              ],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 28,
+              "before_positions": [
+                0,
+                20,
+                27,
+                34,
+                37,
+                41,
+                43,
+                45,
+                46
+              ],
+              "people_boards": 7,
+              "after_positions": [
+                27,
+                34,
+                37,
+                41,
+                45,
+                46
+              ],
+              "final": 0
+            },
+            "final": 0
+          }
+        ],
+        "solutions": [
+          {
+            "thief": "B",
+            "positions": {
+              "A": 15,
+              "B": 41,
+              "C": 12,
+              "D": 25,
+              "E": 45,
+              "F": 30,
+              "V": 0
+            }
+          }
+        ],
+        "count": 1
+      },
+      "relaxed_base": {
+        "alltrue": 2,
+        "alltrue_boards": [
+          [
+            15,
+            0,
+            12,
+            25,
+            45,
+            30,
+            41
+          ],
+          [
+            15,
+            41,
+            12,
+            25,
+            45,
+            30,
+            0
+          ]
+        ],
+        "branches": [
+          {
+            "person": "A",
+            "truth": {
+              "before_boards": 2,
+              "before_positions": [
+                15
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 52,
+              "before_positions": [
+                0,
+                1,
+                7,
+                20,
+                28,
+                29,
+                34,
+                35,
+                36,
+                41,
+                46
+              ],
+              "people_boards": 10,
+              "after_positions": [
+                1,
+                7,
+                34,
+                41
+              ],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "B",
+            "truth": {
+              "before_boards": 2,
+              "before_positions": [
+                0,
+                41
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                41
+              ],
+              "final": 1
+            },
+            "lie": {
+              "before_boards": 4,
+              "before_positions": [
+                0,
+                20,
+                34
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                34
+              ],
+              "final": 0
+            },
+            "final": 1
+          },
+          {
+            "person": "C",
+            "truth": {
+              "before_boards": 2,
+              "before_positions": [
+                12
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 4,
+              "before_positions": [
+                0,
+                41
+              ],
+              "people_boards": 2,
+              "after_positions": [
+                41
+              ],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "D",
+            "truth": {
+              "before_boards": 2,
+              "before_positions": [
+                25
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                25
+              ],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 8,
+              "before_positions": [
+                27,
+                34,
+                41
+              ],
+              "people_boards": 4,
+              "after_positions": [
+                27,
+                34,
+                41
+              ],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "E",
+            "truth": {
+              "before_boards": 2,
+              "before_positions": [
+                45
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                45
+              ],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 12,
+              "before_positions": [
+                21,
+                41,
+                43,
+                46
+              ],
+              "people_boards": 7,
+              "after_positions": [
+                21,
+                41,
+                46
+              ],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "F",
+            "truth": {
+              "before_boards": 2,
+              "before_positions": [
+                30
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                30
+              ],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 28,
+              "before_positions": [
+                0,
+                20,
+                27,
+                34,
+                37,
+                41,
+                43,
+                45,
+                46
+              ],
+              "people_boards": 7,
+              "after_positions": [
+                27,
+                34,
+                37,
+                41,
+                45,
+                46
+              ],
+              "final": 0
+            },
+            "final": 0
+          }
+        ],
+        "solutions": [
+          {
+            "thief": "B",
+            "positions": {
+              "A": 15,
+              "B": 41,
+              "C": 12,
+              "D": 25,
+              "E": 45,
+              "F": 30,
+              "V": 0
+            }
+          }
+        ],
+        "count": 1
+      },
+      "deletion": [
+        {
+          "card": 1,
+          "count": 52,
+          "solutions": [
+            {
+              "thief": "C",
+              "positions": {
+                "A": 1,
+                "B": 41,
+                "C": 33,
+                "D": 25,
+                "E": 45,
+                "F": 16,
+                "V": 7
+              }
+            },
+            {
+              "thief": "C",
+              "positions": {
+                "A": 7,
+                "B": 41,
+                "C": 33,
+                "D": 25,
+                "E": 45,
+                "F": 16,
+                "V": 1
+              }
+            },
+            {
+              "thief": "C",
+              "positions": {
+                "A": 41,
+                "B": 1,
+                "C": 33,
+                "D": 25,
+                "E": 45,
+                "F": 16,
+                "V": 7
+              }
+            }
+          ],
+          "alltrue": 54
+        },
+        {
+          "card": 2,
+          "count": 0,
+          "solutions": [],
+          "alltrue": 6
+        },
+        {
+          "card": 3,
+          "count": 4,
+          "solutions": [
+            {
+              "thief": "B",
+              "positions": {
+                "A": 15,
+                "B": 41,
+                "C": 0,
+                "D": 25,
+                "E": 45,
+                "F": 30,
+                "V": 12
+              }
+            },
+            {
+              "thief": "B",
+              "positions": {
+                "A": 15,
+                "B": 41,
+                "C": 12,
+                "D": 25,
+                "E": 45,
+                "F": 30,
+                "V": 0
+              }
+            },
+            {
+              "thief": "C",
+              "positions": {
+                "A": 15,
+                "B": 0,
+                "C": 41,
+                "D": 25,
+                "E": 45,
+                "F": 30,
+                "V": 12
+              }
+            }
+          ],
+          "alltrue": 6
+        },
+        {
+          "card": 4,
+          "count": 0,
+          "solutions": [],
+          "alltrue": 10
+        },
+        {
+          "card": 5,
+          "count": 0,
+          "solutions": [],
+          "alltrue": 14
+        },
+        {
+          "card": 6,
+          "count": 4,
+          "solutions": [
+            {
+              "thief": "A",
+              "positions": {
+                "A": 31,
+                "B": 0,
+                "C": 12,
+                "D": 25,
+                "E": 37,
+                "F": 20,
+                "V": 43
+              }
+            },
+            {
+              "thief": "A",
+              "positions": {
+                "A": 31,
+                "B": 0,
+                "C": 12,
+                "D": 25,
+                "E": 37,
+                "F": 43,
+                "V": 20
+              }
+            },
+            {
+              "thief": "A",
+              "positions": {
+                "A": 31,
+                "B": 20,
+                "C": 12,
+                "D": 25,
+                "E": 37,
+                "F": 0,
+                "V": 43
+              }
+            }
+          ],
+          "alltrue": 30
+        },
+        {
+          "card": 7,
+          "count": 5,
+          "solutions": [
+            {
+              "thief": "D",
+              "positions": {
+                "A": 15,
+                "B": 41,
+                "C": 12,
+                "D": 25,
+                "E": 45,
+                "F": 30,
+                "V": 0
+              }
+            },
+            {
+              "thief": "E",
+              "positions": {
+                "A": 15,
+                "B": 27,
+                "C": 12,
+                "D": 35,
+                "E": 45,
+                "F": 30,
+                "V": 4
+              }
+            },
+            {
+              "thief": "E",
+              "positions": {
+                "A": 15,
+                "B": 41,
+                "C": 12,
+                "D": 25,
+                "E": 45,
+                "F": 30,
+                "V": 0
+              }
+            }
+          ],
+          "alltrue": 8
+        }
+      ],
+      "without_general": null,
+      "matches_author_after_solving": true,
+      "room": [
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        2,
+        2,
+        2,
+        2,
+        2,
+        3,
+        3,
+        2,
+        2,
+        2,
+        2,
+        2,
+        3,
+        3,
+        2,
+        2,
+        2,
+        2,
+        2,
+        3,
+        3,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "doors": {
+        "0": [
+          1,
+          2,
+          3
+        ],
+        "1": [
+          0,
+          2
+        ],
+        "2": [
+          0,
+          1,
+          3
+        ],
+        "3": [
+          0,
+          2
+        ]
+      },
+      "hints": [
+        {
+          "rule": "该家具自己的格子",
+          "cells": [
+            "3:2",
+            "5:4"
+          ],
+          "count": 2
+        },
+        {
+          "rule": "不做位置提示",
+          "cells": [],
+          "count": 0
+        },
+        {
+          "rule": "该家具自己的格子",
+          "cells": [
+            "2:6",
+            "5:6"
+          ],
+          "count": 2
+        },
+        {
+          "rule": "该家具四邻、同区域、可站人的格",
+          "cells": [
+            "1:2",
+            "1:4",
+            "2:1",
+            "2:6",
+            "3:2",
+            "3:7",
+            "4:1",
+            "4:5",
+            "5:4",
+            "5:6",
+            "6:1",
+            "6:4",
+            "7:2",
+            "7:5"
+          ],
+          "count": 14
+        },
+        {
+          "rule": "该家具四邻、同区域、可站人的格",
+          "cells": [
+            "6:3",
+            "7:4"
+          ],
+          "count": 2
+        },
+        {
+          "rule": "该家具四邻、同区域、可站人的格",
+          "cells": [
+            "3:3",
+            "4:2",
+            "4:4",
+            "5:3",
+            "6:4"
+          ],
+          "count": 5
+        },
+        {
+          "rule": "不做位置提示",
+          "cells": [],
+          "count": 0
+        }
+      ]
+    },
+    {
+      "level": 7,
+      "base": {
+        "alltrue": 0,
+        "alltrue_boards": [],
+        "branches": [
+          {
+            "person": "A",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "B",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 16,
+              "before_positions": [
+                4,
+                24,
+                35
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                4
+              ],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "C",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 20,
+              "before_positions": [
+                10,
+                12,
+                17,
+                19
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "D",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 8,
+              "before_positions": [
+                0,
+                23,
+                25,
+                31
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "E",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 4,
+              "before_positions": [
+                0,
+                23,
+                25,
+                31
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          }
+        ],
+        "solutions": [],
+        "count": 0
+      },
+      "revised": {
+        "alltrue": 0,
+        "alltrue_boards": [],
+        "branches": [
+          {
+            "person": "A",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "B",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 1,
+              "before_positions": [
+                4
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                4
+              ],
+              "final": 1
+            },
+            "final": 1
+          },
+          {
+            "person": "C",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 1,
+              "before_positions": [
+                32
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "D",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "E",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          }
+        ],
+        "solutions": [
+          {
+            "thief": "B",
+            "positions": {
+              "A": 11,
+              "B": 4,
+              "C": 15,
+              "D": 19,
+              "E": 24,
+              "V": 32
+            }
+          }
+        ],
+        "count": 1
+      },
+      "relaxed_base": {
+        "alltrue": 0,
+        "alltrue_boards": [],
+        "branches": [
+          {
+            "person": "A",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "B",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 16,
+              "before_positions": [
+                4,
+                24,
+                35
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                4
+              ],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "C",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 20,
+              "before_positions": [
+                10,
+                12,
+                17,
+                19
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "D",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 8,
+              "before_positions": [
+                0,
+                23,
+                25,
+                31
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "E",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 4,
+              "before_positions": [
+                0,
+                23,
+                25,
+                31
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          }
+        ],
+        "solutions": [],
+        "count": 0
+      },
+      "deletion": [
+        {
+          "card": 1,
+          "count": 0,
+          "solutions": [],
+          "alltrue": 0
+        },
+        {
+          "card": 2,
+          "count": 0,
+          "solutions": [],
+          "alltrue": 1
+        },
+        {
+          "card": 3,
+          "count": 0,
+          "solutions": [],
+          "alltrue": 1
+        },
+        {
+          "card": 4,
+          "count": 0,
+          "solutions": [],
+          "alltrue": 0
+        },
+        {
+          "card": 5,
+          "count": 0,
+          "solutions": [],
+          "alltrue": 0
+        },
+        {
+          "card": 6,
+          "count": 0,
+          "solutions": [],
+          "alltrue": 0
+        }
+      ],
+      "without_general": {
+        "alltrue": 0,
+        "alltrue_boards": [],
+        "branches": [
+          {
+            "person": "A",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 10,
+              "before_positions": [
+                0,
+                1,
+                19,
+                24,
+                35
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "B",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 2,
+              "before_positions": [
+                4,
+                34
+              ],
+              "people_boards": 1,
+              "after_positions": [
+                4
+              ],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "C",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 2,
+              "before_positions": [
+                2,
+                32
+              ],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "D",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          },
+          {
+            "person": "E",
+            "truth": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "lie": {
+              "before_boards": 0,
+              "before_positions": [],
+              "people_boards": 0,
+              "after_positions": [],
+              "final": 0
+            },
+            "final": 0
+          }
+        ],
+        "solutions": [],
+        "count": 0
+      },
+      "matches_author_after_solving": true,
+      "room": [
+        0,
+        0,
+        1,
+        1,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1,
+        0,
+        2,
+        2,
+        1,
+        1,
+        1,
+        0,
+        2,
+        2,
+        1,
+        1,
+        1,
+        0,
+        2,
+        3,
+        3,
+        3,
+        3,
+        2,
+        2,
+        3,
+        3,
+        3,
+        3
+      ],
+      "doors": {
+        "0": [
+          1,
+          2
+        ],
+        "1": [
+          0,
+          2,
+          3
+        ],
+        "2": [
+          0,
+          1,
+          3
+        ],
+        "3": [
+          1,
+          2
+        ]
+      },
+      "hints": [
+        {
+          "rule": "该家具四邻、同区域、可站人的格",
+          "cells": [
+            "1:5",
+            "2:6"
+          ],
+          "count": 2
+        },
+        {
+          "rule": "该家具自己的格子",
+          "cells": [
+            "2:3",
+            "2:4",
+            "3:4"
+          ],
+          "count": 3
+        },
+        {
+          "rule": "该家具自己的格子",
+          "cells": [
+            "2:3",
+            "2:4",
+            "3:4"
+          ],
+          "count": 3
+        },
+        {
+          "rule": "该家具四邻、同区域、可站人的格",
+          "cells": [
+            "2:5",
+            "3:1",
+            "3:3",
+            "3:4",
+            "3:6",
+            "4:2",
+            "4:5",
+            "5:1"
+          ],
+          "count": 8
+        },
+        {
+          "rule": "该家具自己的格子",
+          "cells": [
+            "1:5",
+            "4:5",
+            "5:1",
+            "6:6"
+          ],
+          "count": 4
+        },
+        {
+          "rule": "第 5 列的可站格",
+          "cells": [
+            "1:5",
+            "2:5",
+            "4:5",
+            "5:5",
+            "6:5"
+          ],
+          "count": 5
+        }
+      ]
+    }
+  ],
+  "six_unknown": {
+    "alltrue": 2,
+    "alltrue_boards": [
+      [
+        15,
+        0,
+        12,
+        25,
+        45,
+        30,
+        41
+      ],
+      [
+        15,
+        41,
+        12,
+        25,
+        45,
+        30,
+        0
+      ]
+    ],
+    "branches": [
+      {
+        "person": "A",
+        "truth": {
+          "before_boards": 2,
+          "before_positions": [
+            15
+          ],
+          "people_boards": 0,
+          "after_positions": [],
+          "final": 0
+        },
+        "lie": {
+          "before_boards": 52,
+          "before_positions": [
+            0,
+            1,
+            7,
+            20,
+            28,
+            29,
+            34,
+            35,
+            36,
+            41,
+            46
+          ],
+          "people_boards": 10,
+          "after_positions": [
+            1,
+            7,
+            34,
+            41
+          ],
+          "final": 0
+        },
+        "final": 0
+      },
+      {
+        "person": "B",
+        "truth": {
+          "before_boards": 2,
+          "before_positions": [
+            0,
+            41
+          ],
+          "people_boards": 1,
+          "after_positions": [
+            41
+          ],
+          "final": 1
+        },
+        "lie": {
+          "before_boards": 4,
+          "before_positions": [
+            0,
+            20,
+            34
+          ],
+          "people_boards": 1,
+          "after_positions": [
+            34
+          ],
+          "final": 0
+        },
+        "final": 1
+      },
+      {
+        "person": "C",
+        "truth": {
+          "before_boards": 2,
+          "before_positions": [
+            12
+          ],
+          "people_boards": 0,
+          "after_positions": [],
+          "final": 0
+        },
+        "lie": {
+          "before_boards": 4,
+          "before_positions": [
+            0,
+            41
+          ],
+          "people_boards": 2,
+          "after_positions": [
+            41
+          ],
+          "final": 0
+        },
+        "final": 0
+      },
+      {
+        "person": "D",
+        "truth": {
+          "before_boards": 2,
+          "before_positions": [
+            25
+          ],
+          "people_boards": 1,
+          "after_positions": [
+            25
+          ],
+          "final": 0
+        },
+        "lie": {
+          "before_boards": 8,
+          "before_positions": [
+            27,
+            34,
+            41
+          ],
+          "people_boards": 4,
+          "after_positions": [
+            27,
+            34,
+            41
+          ],
+          "final": 0
+        },
+        "final": 0
+      },
+      {
+        "person": "E",
+        "truth": {
+          "before_boards": 2,
+          "before_positions": [
+            45
+          ],
+          "people_boards": 1,
+          "after_positions": [
+            45
+          ],
+          "final": 0
+        },
+        "lie": {
+          "before_boards": 12,
+          "before_positions": [
+            21,
+            41,
+            43,
+            46
+          ],
+          "people_boards": 7,
+          "after_positions": [
+            21,
+            41,
+            46
+          ],
+          "final": 0
+        },
+        "final": 0
+      },
+      {
+        "person": "F",
+        "truth": {
+          "before_boards": 2,
+          "before_positions": [
+            30
+          ],
+          "people_boards": 1,
+          "after_positions": [
+            30
+          ],
+          "final": 0
+        },
+        "lie": {
+          "before_boards": 28,
+          "before_positions": [
+            0,
+            20,
+            27,
+            34,
+            37,
+            41,
+            43,
+            45,
+            46
+          ],
+          "people_boards": 7,
+          "after_positions": [
+            27,
+            34,
+            37,
+            41,
+            45,
+            46
+          ],
+          "final": 0
+        },
+        "final": 0
+      }
+    ],
+    "solutions": [
+      {
+        "thief": "B",
+        "positions": {
+          "A": 15,
+          "B": 41,
+          "C": 12,
+          "D": 25,
+          "E": 45,
+          "F": 30,
+          "V": 0
+        }
+      }
+    ],
+    "count": 1
+  },
+  "additional": [
+    {
+      "level": 3,
+      "fixed_identity_deletion_only_diagnostic": [
+        8,
+        74,
+        14,
+        17,
+        7,
+        9
+      ],
+      "single_changes": []
+    },
+    {
+      "level": 4,
+      "fixed_identity_deletion_only_diagnostic": [
+        1,
+        20,
+        20,
+        15,
+        1,
+        2
+      ],
+      "single_changes": [
+        {
+          "card": 1,
+          "count": 2
+        },
+        {
+          "card": 2,
+          "count": 0
+        }
+      ]
+    },
+    {
+      "level": 5,
+      "fixed_identity_deletion_only_diagnostic": [
+        9,
+        1,
+        2,
+        13,
+        2,
+        20
+      ],
+      "single_changes": []
+    },
+    {
+      "level": 6,
+      "fixed_identity_deletion_only_diagnostic": [
+        10,
+        2,
+        2,
+        3,
+        3,
+        8,
+        2
+      ],
+      "single_changes": []
+    },
+    {
+      "level": 7,
+      "fixed_identity_deletion_only_diagnostic": [
+        28,
+        1,
+        8,
+        5,
+        7,
+        10
+      ],
+      "single_changes": [
+        {
+          "card": 1,
+          "count": 0
+        },
+        {
+          "card": 6,
+          "count": 0
+        }
+      ]
+    }
+  ]
+}

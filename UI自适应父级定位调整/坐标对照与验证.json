@@ -1,0 +1,6005 @@
+{
+  "base": "715_全线索规则复核修订.gil",
+  "reference": {
+    "w": 1600,
+    "h": 720,
+    "canvasW": 1600,
+    "canvasH": 900,
+    "source": "679历史1280x576截图映射：1600画布可见y=90..810；本版假设沿用该移动端参考，不是715实测"
+  },
+  "interpretation": {
+    "backgrounds": [
+      "art642.select.backdrop"
+    ],
+    "clues": "left-middle; whole card area including help tab moves together",
+    "protected": [
+      "stage",
+      "board.bg",
+      "art657.grid.reuse",
+      "modal",
+      "td.home",
+      "td.l1",
+      "td.l2",
+      "help617",
+      "home.select",
+      "home.continue",
+      "home.shop",
+      "home.bag"
+    ],
+    "centerSelectCards": "unchanged as a centred composition"
+  },
+  "recordsBefore": 8300,
+  "recordsAfter": 8322,
+  "groups": [
+    {
+      "id": 1073761050,
+      "name": "adapt715.LM.1",
+      "parent": "grp653.static.1.art641.game",
+      "key": "LM",
+      "children": [
+        1073754826,
+        1073754827,
+        1073754828,
+        1073754829,
+        1073754830,
+        1073754831,
+        1073754832,
+        1073754833,
+        1073754834,
+        1073754835,
+        1073754836,
+        1073754837,
+        1073754838,
+        1073754839,
+        1073754840,
+        1073754841,
+        1073754842,
+        1073754843,
+        1073754844,
+        1073754845,
+        1073754846,
+        1073754847,
+        1073754848,
+        1073754849,
+        1073754850,
+        1073754851,
+        1073754852,
+        1073754853,
+        1073754854,
+        1073754855,
+        1073754856,
+        1073754857,
+        1073754858,
+        1073754859,
+        1073754860,
+        1073754861
+      ],
+      "childNames": [
+        "art641.game.notebook.shadow",
+        "art641.game.notebook.cover",
+        "art641.game.notebook.paper",
+        "art641.game.rule290",
+        "art641.game.rule314",
+        "art641.game.rule338",
+        "art641.game.rule362",
+        "art641.game.rule386",
+        "art641.game.rule410",
+        "art641.game.rule434",
+        "art641.game.rule458",
+        "art641.game.rule482",
+        "art641.game.rule506",
+        "art641.game.rule530",
+        "art641.game.rule554",
+        "art641.game.rule578",
+        "art641.game.rule602",
+        "art641.game.rule626",
+        "art641.game.rule650",
+        "art641.game.rule674",
+        "art641.game.rule698",
+        "art641.game.rule722",
+        "art641.game.ring295",
+        "art641.game.ringhole295",
+        "art641.game.ring360",
+        "art641.game.ringhole360",
+        "art641.game.ring425",
+        "art641.game.ringhole425",
+        "art641.game.ring490",
+        "art641.game.ringhole490",
+        "art641.game.ring555",
+        "art641.game.ringhole555",
+        "art641.game.ring620",
+        "art641.game.ringhole620",
+        "art641.game.ring685",
+        "art641.game.ringhole685"
+      ]
+    },
+    {
+      "id": 1073761051,
+      "name": "adapt715.LM.2",
+      "parent": "grp653.static.1.art641.game",
+      "key": "LM",
+      "children": [
+        1073758287,
+        1073758288,
+        1073758289,
+        1073758290,
+        1073758291,
+        1073758292,
+        1073758293,
+        1073758294,
+        1073758295,
+        1073758296,
+        1073758297,
+        1073758298,
+        1073758299,
+        1073758300,
+        1073758301,
+        1073758302,
+        1073758303,
+        1073758304,
+        1073758305,
+        1073758306,
+        1073758307,
+        1073758308,
+        1073758309,
+        1073758310,
+        1073758311,
+        1073758312,
+        1073758313,
+        1073758314,
+        1073758315,
+        1073758316,
+        1073758317,
+        1073758318,
+        1073758319,
+        1073758320,
+        1073758321,
+        1073758322,
+        1073758323,
+        1073758324,
+        1073758325,
+        1073758326,
+        1073758327,
+        1073758328,
+        1073758329,
+        1073758330,
+        1073758331,
+        1073758332,
+        1073758333,
+        1073758334,
+        1073758335,
+        1073758336,
+        1073758337,
+        1073758338,
+        1073758339,
+        1073758340,
+        1073758341,
+        1073758342,
+        1073758343,
+        1073758344,
+        1073758345,
+        1073758346,
+        1073758347,
+        1073758348,
+        1073758349,
+        1073758350,
+        1073758351,
+        1073758352,
+        1073758353,
+        1073758354,
+        1073758355,
+        1073758356,
+        1073758357,
+        1073758358,
+        1073758359,
+        1073758360,
+        1073758361,
+        1073758362,
+        1073758373,
+        1073758374,
+        1073758375,
+        1073758376,
+        1073758377,
+        1073758378,
+        1073758379,
+        1073758380,
+        1073758381,
+        1073758382,
+        1073758383,
+        1073758384,
+        1073758385,
+        1073758386,
+        1073758387,
+        1073758388,
+        1073758389,
+        1073758390,
+        1073758391,
+        1073758392,
+        1073758393,
+        1073758394,
+        1073758395,
+        1073758396,
+        1073758397,
+        1073758398,
+        1073758399,
+        1073758400,
+        1073758401,
+        1073758402,
+        1073758403,
+        1073758404,
+        1073758405,
+        1073758406,
+        1073758407,
+        1073758408,
+        1073758409,
+        1073758410,
+        1073758411,
+        1073758412,
+        1073758413,
+        1073758414,
+        1073758415,
+        1073758416,
+        1073758417,
+        1073758418,
+        1073758419,
+        1073758420,
+        1073758421,
+        1073758422,
+        1073758423,
+        1073758424,
+        1073758425,
+        1073758426,
+        1073758427,
+        1073758428,
+        1073758429,
+        1073758430,
+        1073758431,
+        1073758432,
+        1073758433,
+        1073758434,
+        1073758435,
+        1073758436,
+        1073758437,
+        1073758438,
+        1073758439,
+        1073758440,
+        1073758441,
+        1073758442,
+        1073758443,
+        1073758444,
+        1073758445,
+        1073758446,
+        1073758447,
+        1073758448,
+        1073758449,
+        1073758450,
+        1073758451,
+        1073758452,
+        1073758453,
+        1073758454,
+        1073758455,
+        1073758456,
+        1073758457,
+        1073758458,
+        1073758459,
+        1073758460,
+        1073758461,
+        1073758462,
+        1073758463,
+        1073758464,
+        1073758465,
+        1073758466,
+        1073758467,
+        1073758468,
+        1073758469
+      ],
+      "childNames": [
+        "art660.clues.grid.paper",
+        "art660.clues.grid.v1",
+        "art660.clues.grid.v2",
+        "art660.clues.grid.v3",
+        "art660.clues.grid.v4",
+        "art660.clues.grid.v5",
+        "art660.clues.grid.v6",
+        "art660.clues.grid.v7",
+        "art660.clues.grid.v8",
+        "art660.clues.grid.v9",
+        "art660.clues.grid.v10",
+        "art660.clues.grid.v11",
+        "art660.clues.grid.v12",
+        "art660.clues.grid.v13",
+        "art660.clues.grid.v14",
+        "art660.clues.grid.v15",
+        "art660.clues.grid.h1",
+        "art660.clues.grid.h2",
+        "art660.clues.grid.h3",
+        "art660.clues.grid.h4",
+        "art660.clues.grid.h5",
+        "art660.clues.grid.h6",
+        "art660.clues.grid.h7",
+        "art660.clues.grid.h8",
+        "art660.clues.grid.h9",
+        "art660.clues.grid.h10",
+        "art660.clues.grid.h11",
+        "art660.clues.grid.h12",
+        "art660.clues.grid.h13",
+        "art660.clues.grid.h14",
+        "art660.clues.grid.h15",
+        "art660.clues.grid.h16",
+        "art660.clues.grid.h17",
+        "art660.clues.grid.h18",
+        "art660.clues.grid.h19",
+        "art660.clues.grid.h20",
+        "art660.clues.grid.h21",
+        "art660.clues.cover",
+        "art660.clues.cover.dash.top1",
+        "art660.clues.cover.dash.top2",
+        "art660.clues.cover.dash.top3",
+        "art660.clues.cover.dash.top4",
+        "art660.clues.cover.dash.top5",
+        "art660.clues.cover.dash.top6",
+        "art660.clues.cover.dash.top7",
+        "art660.clues.cover.dash.top8",
+        "art660.clues.cover.dash.top9",
+        "art660.clues.cover.dash.top10",
+        "art660.clues.cover.dash.top11",
+        "art660.clues.cover.dash.top12",
+        "art660.clues.cover.dash.right1",
+        "art660.clues.cover.dash.right2",
+        "art660.clues.cover.dash.right3",
+        "art660.clues.cover.dash.right4",
+        "art660.clues.cover.dash.right5",
+        "art660.clues.cover.dash.right6",
+        "art660.clues.cover.dash.right7",
+        "art660.clues.cover.dash.right8",
+        "art660.clues.cover.dash.right9",
+        "art660.clues.cover.dash.right10",
+        "art660.clues.cover.dash.right11",
+        "art660.clues.cover.dash.right12",
+        "art660.clues.cover.dash.right13",
+        "art660.clues.cover.dash.right14",
+        "art660.clues.cover.dash.bottom1",
+        "art660.clues.cover.dash.bottom2",
+        "art660.clues.cover.dash.bottom3",
+        "art660.clues.cover.dash.bottom4",
+        "art660.clues.cover.dash.bottom5",
+        "art660.clues.cover.dash.bottom6",
+        "art660.clues.cover.dash.bottom7",
+        "art660.clues.cover.dash.bottom8",
+        "art660.clues.cover.dash.bottom9",
+        "art660.clues.cover.dash.bottom10",
+        "art660.clues.cover.dash.bottom11",
+        "art660.clues.cover.dash.bottom12",
+        "art661.clues.grid.paper",
+        "art661.clues.grid.v1",
+        "art661.clues.grid.v2",
+        "art661.clues.grid.v3",
+        "art661.clues.grid.v4",
+        "art661.clues.grid.v5",
+        "art661.clues.grid.v6",
+        "art661.clues.grid.v7",
+        "art661.clues.grid.v8",
+        "art661.clues.grid.v9",
+        "art661.clues.grid.v10",
+        "art661.clues.grid.v11",
+        "art661.clues.grid.v12",
+        "art661.clues.grid.v13",
+        "art661.clues.grid.v14",
+        "art661.clues.grid.v15",
+        "art661.clues.grid.v16",
+        "art661.clues.grid.v17",
+        "art661.clues.grid.v18",
+        "art661.clues.grid.v19",
+        "art661.clues.grid.v20",
+        "art661.clues.grid.v21",
+        "art661.clues.grid.v22",
+        "art661.clues.grid.v23",
+        "art661.clues.grid.v24",
+        "art661.clues.grid.v25",
+        "art661.clues.grid.h1",
+        "art661.clues.grid.h2",
+        "art661.clues.grid.h3",
+        "art661.clues.grid.h4",
+        "art661.clues.grid.h5",
+        "art661.clues.grid.h6",
+        "art661.clues.grid.h7",
+        "art661.clues.grid.h8",
+        "art661.clues.grid.h9",
+        "art661.clues.grid.h10",
+        "art661.clues.grid.h11",
+        "art661.clues.grid.h12",
+        "art661.clues.grid.h13",
+        "art661.clues.grid.h14",
+        "art661.clues.grid.h15",
+        "art661.clues.grid.h16",
+        "art661.clues.grid.h17",
+        "art661.clues.grid.h18",
+        "art661.clues.grid.h19",
+        "art661.clues.grid.h20",
+        "art661.clues.grid.h21",
+        "art661.clues.grid.h22",
+        "art661.clues.grid.h23",
+        "art661.clues.grid.h24",
+        "art661.clues.grid.h25",
+        "art661.clues.grid.h26",
+        "art661.clues.grid.h27",
+        "art661.clues.grid.h28",
+        "art661.clues.grid.h29",
+        "art661.clues.grid.h30",
+        "art661.clues.grid.h31",
+        "art661.clues.cover",
+        "art661.clues.cover.dash.top1",
+        "art661.clues.cover.dash.top2",
+        "art661.clues.cover.dash.top3",
+        "art661.clues.cover.dash.top4",
+        "art661.clues.cover.dash.top5",
+        "art661.clues.cover.dash.top6",
+        "art661.clues.cover.dash.top7",
+        "art661.clues.cover.dash.top8",
+        "art661.clues.cover.dash.top9",
+        "art661.clues.cover.dash.top10",
+        "art661.clues.cover.dash.top11",
+        "art661.clues.cover.dash.top12",
+        "art661.clues.cover.dash.right1",
+        "art661.clues.cover.dash.right2",
+        "art661.clues.cover.dash.right3",
+        "art661.clues.cover.dash.right4",
+        "art661.clues.cover.dash.right5",
+        "art661.clues.cover.dash.right6",
+        "art661.clues.cover.dash.right7",
+        "art661.clues.cover.dash.right8",
+        "art661.clues.cover.dash.right9",
+        "art661.clues.cover.dash.right10",
+        "art661.clues.cover.dash.right11",
+        "art661.clues.cover.dash.right12",
+        "art661.clues.cover.dash.right13",
+        "art661.clues.cover.dash.right14",
+        "art661.clues.cover.dash.bottom1",
+        "art661.clues.cover.dash.bottom2",
+        "art661.clues.cover.dash.bottom3",
+        "art661.clues.cover.dash.bottom4",
+        "art661.clues.cover.dash.bottom5",
+        "art661.clues.cover.dash.bottom6",
+        "art661.clues.cover.dash.bottom7",
+        "art661.clues.cover.dash.bottom8",
+        "art661.clues.cover.dash.bottom9",
+        "art661.clues.cover.dash.bottom10",
+        "art661.clues.cover.dash.bottom11",
+        "art661.clues.cover.dash.bottom12",
+        "art661.clues.frame.edge"
+      ]
+    },
+    {
+      "id": 1073761052,
+      "name": "adapt715.TL.3",
+      "parent": "grp653.static.1.art641.game",
+      "key": "TL",
+      "children": [
+        1073758023,
+        1073758024,
+        1073758025,
+        1073758026
+      ],
+      "childNames": [
+        "art657.game.flag.back.shadow",
+        "art657.game.flag.back.outline",
+        "art657.game.flag.back.outline.tri.top",
+        "art657.game.flag.back.outline.tri.bottom"
+      ]
+    },
+    {
+      "id": 1073761053,
+      "name": "adapt715.TR.4",
+      "parent": "grp653.static.1.art641.game",
+      "key": "TR",
+      "children": [
+        1073758029,
+        1073758030,
+        1073758031,
+        1073758032,
+        1073758035,
+        1073758036,
+        1073758037,
+        1073758038,
+        1073758041,
+        1073758042,
+        1073758043,
+        1073758044
+      ],
+      "childNames": [
+        "art657.game.flag.submit.shadow",
+        "art657.game.flag.submit.outline",
+        "art657.game.flag.submit.outline.tri.top",
+        "art657.game.flag.submit.outline.tri.bottom",
+        "art657.game.flag.redo.shadow",
+        "art657.game.flag.redo.outline",
+        "art657.game.flag.redo.outline.tri.top",
+        "art657.game.flag.redo.outline.tri.bottom",
+        "art657.game.flag.undo.shadow",
+        "art657.game.flag.undo.outline",
+        "art657.game.flag.undo.outline.tri.top",
+        "art657.game.flag.undo.outline.tri.bottom"
+      ]
+    },
+    {
+      "id": 1073761054,
+      "name": "adapt715.BR.5",
+      "parent": "grp653.static.1.art641.game",
+      "key": "BR",
+      "children": [
+        1073758047,
+        1073758048,
+        1073758049,
+        1073758050
+      ],
+      "childNames": [
+        "art657.game.flag.hint.shadow",
+        "art657.game.flag.hint.outline",
+        "art657.game.flag.hint.outline.tri.top",
+        "art657.game.flag.hint.outline.tri.bottom"
+      ]
+    },
+    {
+      "id": 1073761055,
+      "name": "adapt715.TL.6",
+      "parent": "grp653.static.1.art641.game",
+      "key": "TL",
+      "children": [
+        1073754866
+      ],
+      "childNames": [
+        "art641.game.flag.back"
+      ]
+    },
+    {
+      "id": 1073761056,
+      "name": "adapt715.TR.7",
+      "parent": "grp653.static.1.art641.game",
+      "key": "TR",
+      "children": [
+        1073754867,
+        1073754868,
+        1073754869
+      ],
+      "childNames": [
+        "art641.game.flag.submit",
+        "art641.game.flag.redo",
+        "art641.game.flag.undo"
+      ]
+    },
+    {
+      "id": 1073761057,
+      "name": "adapt715.BR.8",
+      "parent": "grp653.static.1.art641.game",
+      "key": "BR",
+      "children": [
+        1073754870
+      ],
+      "childNames": [
+        "art641.game.flag.hint"
+      ]
+    },
+    {
+      "id": 1073761058,
+      "name": "adapt715.LM.9",
+      "parent": "grp653.static.1.art641.game",
+      "key": "LM",
+      "children": [
+        1073758156,
+        1073758157,
+        1073758158,
+        1073758159,
+        1073758160,
+        1073758161,
+        1073758162,
+        1073758163,
+        1073758164,
+        1073758165,
+        1073758166,
+        1073758167,
+        1073758168,
+        1073758169,
+        1073758170,
+        1073758171,
+        1073758172,
+        1073758173,
+        1073758174,
+        1073758175,
+        1073758176,
+        1073758177,
+        1073758178,
+        1073758179,
+        1073758180,
+        1073758181,
+        1073758182,
+        1073758183,
+        1073758184,
+        1073758185,
+        1073758186,
+        1073758187,
+        1073758188,
+        1073758189,
+        1073758190,
+        1073758191,
+        1073758192,
+        1073758193,
+        1073758194,
+        1073758195,
+        1073758196,
+        1073758197,
+        1073758198,
+        1073758199,
+        1073758200,
+        1073758201,
+        1073758202,
+        1073758203,
+        1073758204,
+        1073758205,
+        1073758206,
+        1073758207,
+        1073758208,
+        1073758209,
+        1073758210,
+        1073758211,
+        1073758212,
+        1073758213,
+        1073758214,
+        1073758215,
+        1073758216,
+        1073758217,
+        1073758218,
+        1073758219,
+        1073758220,
+        1073758221,
+        1073758222,
+        1073758223,
+        1073758224,
+        1073758225,
+        1073758226,
+        1073758227,
+        1073758228,
+        1073758229,
+        1073758230,
+        1073758231,
+        1073758232,
+        1073758233,
+        1073758234,
+        1073758235,
+        1073758236,
+        1073758237,
+        1073758238,
+        1073758239,
+        1073758240,
+        1073758241,
+        1073758242,
+        1073757938,
+        1073757939,
+        1073757940,
+        1073757941,
+        1073757942,
+        1073757943,
+        1073757944,
+        1073757945,
+        1073757946,
+        1073757947,
+        1073757948,
+        1073757949,
+        1073757950,
+        1073758062,
+        1073758063,
+        1073758064,
+        1073758065,
+        1073758066,
+        1073758067,
+        1073758068,
+        1073758069,
+        1073758070,
+        1073758071,
+        1073758072,
+        1073758073,
+        1073758074,
+        1073757951,
+        1073757952,
+        1073757953,
+        1073757954,
+        1073757955,
+        1073757956,
+        1073757957,
+        1073757958,
+        1073757959,
+        1073757960,
+        1073757961,
+        1073758282,
+        1073758283,
+        1073758284,
+        1073758285,
+        1073758286,
+        1073757962,
+        1073757963,
+        1073757964,
+        1073757965,
+        1073760031,
+        1073760074,
+        1073760075,
+        1073760076,
+        1073760077,
+        1073760078,
+        1073760079,
+        1073760080,
+        1073760081,
+        1073760082,
+        1073760083,
+        1073760084,
+        1073760085,
+        1073760086,
+        1073760087,
+        1073760088,
+        1073760089,
+        1073760090,
+        1073760091,
+        1073760092,
+        1073760093,
+        1073760094,
+        1073760095,
+        1073760096,
+        1073760097,
+        1073760098,
+        1073760099,
+        1073760100,
+        1073760101,
+        1073760102,
+        1073760103,
+        1073760104,
+        1073760105,
+        1073760106,
+        1073760107,
+        1073760108,
+        1073760109,
+        1073760110,
+        1073760111,
+        1073760112,
+        1073760113,
+        1073760114,
+        1073760115,
+        1073760116,
+        1073760117,
+        1073760118,
+        1073760119,
+        1073760120,
+        1073760121,
+        1073760122,
+        1073760123,
+        1073760124,
+        1073760125,
+        1073760126,
+        1073760127,
+        1073760128,
+        1073760129,
+        1073760130,
+        1073760131,
+        1073760132,
+        1073760133,
+        1073760134,
+        1073760135,
+        1073760136,
+        1073760137,
+        1073760138,
+        1073760139,
+        1073760140,
+        1073760141,
+        1073760142,
+        1073760143,
+        1073760144,
+        1073760145,
+        1073760032,
+        1073760033,
+        1073760034,
+        1073760035,
+        1073760036,
+        1073760037,
+        1073760038,
+        1073760039,
+        1073760040,
+        1073760041,
+        1073760042,
+        1073760043,
+        1073760044,
+        1073760045,
+        1073760046,
+        1073760047,
+        1073760048,
+        1073760049,
+        1073760050,
+        1073760051,
+        1073760052,
+        1073760053,
+        1073760054,
+        1073760055,
+        1073760056,
+        1073760057,
+        1073760058,
+        1073760059,
+        1073760060,
+        1073760061,
+        1073760062,
+        1073760063,
+        1073760064,
+        1073760065,
+        1073760066,
+        1073760067,
+        1073760068,
+        1073760069,
+        1073760070,
+        1073760071,
+        1073760072,
+        1073760073,
+        1073759603,
+        1073759604,
+        1073759605,
+        1073759606,
+        1073759607,
+        1073759608,
+        1073759609,
+        1073759610,
+        1073759611,
+        1073759612,
+        1073759613,
+        1073759614,
+        1073759615,
+        1073759616,
+        1073759617,
+        1073759618,
+        1073759619,
+        1073759620,
+        1073759621,
+        1073759622
+      ],
+      "childNames": [
+        "art659.clues.grid.top.base",
+        "art659.clues.grid.top.v1",
+        "art659.clues.grid.top.v2",
+        "art659.clues.grid.top.v3",
+        "art659.clues.grid.top.v4",
+        "art659.clues.grid.top.v5",
+        "art659.clues.grid.top.v6",
+        "art659.clues.grid.top.v7",
+        "art659.clues.grid.top.v8",
+        "art659.clues.grid.top.v9",
+        "art659.clues.grid.top.v10",
+        "art659.clues.grid.top.v11",
+        "art659.clues.grid.top.v12",
+        "art659.clues.grid.top.v13",
+        "art659.clues.grid.top.v14",
+        "art659.clues.grid.top.v15",
+        "art659.clues.grid.top.v16",
+        "art659.clues.grid.top.h",
+        "art659.clues.grid.top.dash1",
+        "art659.clues.grid.top.dash2",
+        "art659.clues.grid.top.dash3",
+        "art659.clues.grid.top.dash4",
+        "art659.clues.grid.top.dash5",
+        "art659.clues.grid.top.dash6",
+        "art659.clues.grid.top.dash7",
+        "art659.clues.grid.top.dash8",
+        "art659.clues.grid.top.dash9",
+        "art659.clues.grid.top.dash10",
+        "art659.clues.grid.top.dash11",
+        "art659.clues.grid.top.dash12",
+        "art659.clues.grid.right.base",
+        "art659.clues.grid.right.h1",
+        "art659.clues.grid.right.h2",
+        "art659.clues.grid.right.h3",
+        "art659.clues.grid.right.h4",
+        "art659.clues.grid.right.h5",
+        "art659.clues.grid.right.h6",
+        "art659.clues.grid.right.h7",
+        "art659.clues.grid.right.h8",
+        "art659.clues.grid.right.h9",
+        "art659.clues.grid.right.h10",
+        "art659.clues.grid.right.h11",
+        "art659.clues.grid.right.h12",
+        "art659.clues.grid.right.h13",
+        "art659.clues.grid.right.h14",
+        "art659.clues.grid.right.h15",
+        "art659.clues.grid.right.h16",
+        "art659.clues.grid.right.h17",
+        "art659.clues.grid.right.h18",
+        "art659.clues.grid.right.h19",
+        "art659.clues.grid.right.h20",
+        "art659.clues.grid.right.h21",
+        "art659.clues.grid.right.v",
+        "art659.clues.grid.right.dash1",
+        "art659.clues.grid.right.dash2",
+        "art659.clues.grid.right.dash3",
+        "art659.clues.grid.right.dash4",
+        "art659.clues.grid.right.dash5",
+        "art659.clues.grid.right.dash6",
+        "art659.clues.grid.right.dash7",
+        "art659.clues.grid.right.dash8",
+        "art659.clues.grid.right.dash9",
+        "art659.clues.grid.right.dash10",
+        "art659.clues.grid.right.dash11",
+        "art659.clues.grid.right.dash12",
+        "art659.clues.grid.bottom.base",
+        "art659.clues.grid.bottom.v1",
+        "art659.clues.grid.bottom.v2",
+        "art659.clues.grid.bottom.v3",
+        "art659.clues.grid.bottom.v4",
+        "art659.clues.grid.bottom.v5",
+        "art659.clues.grid.bottom.v6",
+        "art659.clues.grid.bottom.v7",
+        "art659.clues.grid.bottom.v8",
+        "art659.clues.grid.bottom.v9",
+        "art659.clues.grid.bottom.v10",
+        "art659.clues.grid.bottom.v11",
+        "art659.clues.grid.bottom.v12",
+        "art659.clues.grid.bottom.dash1",
+        "art659.clues.grid.bottom.dash2",
+        "art659.clues.grid.bottom.dash3",
+        "art659.clues.grid.bottom.dash4",
+        "art659.clues.grid.bottom.dash5",
+        "art659.clues.grid.bottom.dash6",
+        "art659.clues.grid.bottom.dash7",
+        "art659.clues.grid.bottom.dash8",
+        "art659.clues.grid.bottom.dash9",
+        "art657.game.notebook.frame",
+        "art657.game.notebook.page",
+        "art657.game.notebook.page.mid",
+        "art657.game.notebook.page.lower",
+        "art657.game.notebook.rule.1",
+        "art657.game.notebook.rule.2",
+        "art657.game.notebook.rule.3",
+        "art657.game.notebook.rule.4",
+        "art657.game.notebook.slot.1",
+        "art657.game.notebook.slot.2",
+        "art657.game.notebook.slot.3",
+        "art657.game.notebook.slot.4",
+        "art657.game.notebook.slot.5",
+        "art658.clues.binding",
+        "art658.clues.binding.dash1",
+        "art658.clues.binding.dash2",
+        "art658.clues.binding.dash3",
+        "art658.clues.binding.dash4",
+        "art658.clues.binding.dash5",
+        "art658.clues.binding.dash6",
+        "art658.clues.binding.dash7",
+        "art658.clues.binding.dash8",
+        "art658.clues.binding.dash9",
+        "art658.clues.binding.dash10",
+        "art658.clues.binding.dash11",
+        "art658.clues.binding.dash12",
+        "art657.game.notebook.ring.1",
+        "art657.game.notebook.ring.2",
+        "art657.game.notebook.ring.3",
+        "art657.game.notebook.ring.4",
+        "art657.game.notebook.ring.5",
+        "art657.game.notebook.ringhole.1",
+        "art657.game.notebook.ringhole.2",
+        "art657.game.notebook.ringhole.3",
+        "art657.game.notebook.ringhole.4",
+        "art657.game.notebook.ringhole.5",
+        "art657.game.notebook.ribbon",
+        "art660.ribbon.light.rect",
+        "art660.ribbon.light.tri",
+        "art660.ribbon.light.patch1",
+        "art660.ribbon.light.patch2",
+        "art660.ribbon.dark.patch",
+        "art657.game.notebook.ribbon.tri.top",
+        "art657.game.notebook.ribbon.tri.bottom",
+        "art657.game.sticker.q.dot",
+        "art657.game.sticker.q.mark",
+        "art676.binding.mid",
+        "art677.ring.1.holeOuter",
+        "art677.ring.1.holeInner",
+        "art677.ring.1.outer",
+        "art677.ring.1.mid",
+        "art677.ring.1.lit",
+        "art677.ring.1.low",
+        "art677.ring.1.top",
+        "art677.ring.1.tip",
+        "art677.ring.1.tipHi",
+        "art677.ring.2.holeOuter",
+        "art677.ring.2.holeInner",
+        "art677.ring.2.outer",
+        "art677.ring.2.mid",
+        "art677.ring.2.lit",
+        "art677.ring.2.low",
+        "art677.ring.2.top",
+        "art677.ring.2.tip",
+        "art677.ring.2.tipHi",
+        "art677.ring.3.holeOuter",
+        "art677.ring.3.holeInner",
+        "art677.ring.3.outer",
+        "art677.ring.3.mid",
+        "art677.ring.3.lit",
+        "art677.ring.3.low",
+        "art677.ring.3.top",
+        "art677.ring.3.tip",
+        "art677.ring.3.tipHi",
+        "art677.ring.4.holeOuter",
+        "art677.ring.4.holeInner",
+        "art677.ring.4.outer",
+        "art677.ring.4.mid",
+        "art677.ring.4.lit",
+        "art677.ring.4.low",
+        "art677.ring.4.top",
+        "art677.ring.4.tip",
+        "art677.ring.4.tipHi",
+        "art677.ring.5.holeOuter",
+        "art677.ring.5.holeInner",
+        "art677.ring.5.outer",
+        "art677.ring.5.mid",
+        "art677.ring.5.lit",
+        "art677.ring.5.low",
+        "art677.ring.5.top",
+        "art677.ring.5.tip",
+        "art677.ring.5.tipHi",
+        "art677.ring.6.holeOuter",
+        "art677.ring.6.holeInner",
+        "art677.ring.6.outer",
+        "art677.ring.6.mid",
+        "art677.ring.6.lit",
+        "art677.ring.6.low",
+        "art677.ring.6.top",
+        "art677.ring.6.tip",
+        "art677.ring.6.tipHi",
+        "art677.ring.7.holeOuter",
+        "art677.ring.7.holeInner",
+        "art677.ring.7.outer",
+        "art677.ring.7.mid",
+        "art677.ring.7.lit",
+        "art677.ring.7.low",
+        "art677.ring.7.top",
+        "art677.ring.7.tip",
+        "art677.ring.7.tipHi",
+        "art677.ring.8.holeOuter",
+        "art677.ring.8.holeInner",
+        "art677.ring.8.outer",
+        "art677.ring.8.mid",
+        "art677.ring.8.lit",
+        "art677.ring.8.low",
+        "art677.ring.8.top",
+        "art677.ring.8.tip",
+        "art677.ring.8.tipHi",
+        "art676.ring.1.outer",
+        "art676.ring.1.mid",
+        "art676.ring.1.lit",
+        "art676.ring.1.low",
+        "art676.ring.1.top",
+        "art676.ring.1.tip",
+        "art676.ring.1.tipHi",
+        "art676.ring.2.outer",
+        "art676.ring.2.mid",
+        "art676.ring.2.lit",
+        "art676.ring.2.low",
+        "art676.ring.2.top",
+        "art676.ring.2.tip",
+        "art676.ring.2.tipHi",
+        "art676.ring.3.outer",
+        "art676.ring.3.mid",
+        "art676.ring.3.lit",
+        "art676.ring.3.low",
+        "art676.ring.3.top",
+        "art676.ring.3.tip",
+        "art676.ring.3.tipHi",
+        "art676.ring.4.outer",
+        "art676.ring.4.mid",
+        "art676.ring.4.lit",
+        "art676.ring.4.low",
+        "art676.ring.4.top",
+        "art676.ring.4.tip",
+        "art676.ring.4.tipHi",
+        "art676.ring.5.outer",
+        "art676.ring.5.mid",
+        "art676.ring.5.lit",
+        "art676.ring.5.low",
+        "art676.ring.5.top",
+        "art676.ring.5.tip",
+        "art676.ring.5.tipHi",
+        "art676.ring.6.outer",
+        "art676.ring.6.mid",
+        "art676.ring.6.lit",
+        "art676.ring.6.low",
+        "art676.ring.6.top",
+        "art676.ring.6.tip",
+        "art676.ring.6.tipHi",
+        "art663.ring.1.outer",
+        "art663.ring.1.hi",
+        "art663.ring.1.shade",
+        "art663.ring.1.tip",
+        "art663.ring.2.outer",
+        "art663.ring.2.hi",
+        "art663.ring.2.shade",
+        "art663.ring.2.tip",
+        "art663.ring.3.outer",
+        "art663.ring.3.hi",
+        "art663.ring.3.shade",
+        "art663.ring.3.tip",
+        "art663.ring.4.outer",
+        "art663.ring.4.hi",
+        "art663.ring.4.shade",
+        "art663.ring.4.tip",
+        "art663.ring.5.outer",
+        "art663.ring.5.hi",
+        "art663.ring.5.shade",
+        "art663.ring.5.tip"
+      ]
+    },
+    {
+      "id": 1073761059,
+      "name": "adapt715.RM.10",
+      "parent": "grp653.static.1.art641.game",
+      "key": "RM",
+      "children": [
+        1073758019,
+        1073758020,
+        1073758021,
+        1073758022
+      ],
+      "childNames": [
+        "art657.game.pin.border",
+        "art657.game.pin",
+        "art657.game.pin.mid",
+        "art657.game.pin.hilite"
+      ]
+    },
+    {
+      "id": 1073761060,
+      "name": "adapt715.TL.11",
+      "parent": "grp653.static.1.art641.game",
+      "key": "TL",
+      "children": [
+        1073758027,
+        1073758028
+      ],
+      "childNames": [
+        "art657.game.flag.back.ribbon.tri.top",
+        "art657.game.flag.back.ribbon.tri.bottom"
+      ]
+    },
+    {
+      "id": 1073761061,
+      "name": "adapt715.TR.12",
+      "parent": "grp653.static.1.art641.game",
+      "key": "TR",
+      "children": [
+        1073758033,
+        1073758034,
+        1073758039,
+        1073758040,
+        1073758045,
+        1073758046
+      ],
+      "childNames": [
+        "art657.game.flag.submit.ribbon.tri.top",
+        "art657.game.flag.submit.ribbon.tri.bottom",
+        "art657.game.flag.redo.ribbon.tri.top",
+        "art657.game.flag.redo.ribbon.tri.bottom",
+        "art657.game.flag.undo.ribbon.tri.top",
+        "art657.game.flag.undo.ribbon.tri.bottom"
+      ]
+    },
+    {
+      "id": 1073761062,
+      "name": "adapt715.BR.13",
+      "parent": "grp653.static.1.art641.game",
+      "key": "BR",
+      "children": [
+        1073758051,
+        1073759642,
+        1073759643,
+        1073759644,
+        1073759645,
+        1073759646,
+        1073759647,
+        1073759648,
+        1073759649,
+        1073759650,
+        1073759651,
+        1073759652,
+        1073759653,
+        1073759654,
+        1073759655,
+        1073759656,
+        1073759657,
+        1073759658,
+        1073759659,
+        1073759660,
+        1073759661,
+        1073759662,
+        1073759663,
+        1073759664,
+        1073759665,
+        1073759666,
+        1073759667,
+        1073759668,
+        1073759669,
+        1073759693,
+        1073759694,
+        1073759695,
+        1073759696,
+        1073759697,
+        1073759698,
+        1073759699,
+        1073759700,
+        1073759701,
+        1073759702,
+        1073759703,
+        1073759704,
+        1073759705,
+        1073759706,
+        1073759707,
+        1073759708,
+        1073759709,
+        1073759710,
+        1073759711,
+        1073759712,
+        1073759713,
+        1073759714,
+        1073759791,
+        1073759792,
+        1073759793,
+        1073759794,
+        1073759795,
+        1073759796,
+        1073759797,
+        1073759798,
+        1073759799,
+        1073759800,
+        1073759801,
+        1073759802,
+        1073759803,
+        1073759804,
+        1073759805,
+        1073759806,
+        1073759807,
+        1073759808,
+        1073759809,
+        1073759810,
+        1073759811,
+        1073759812,
+        1073759813,
+        1073759814,
+        1073759815,
+        1073759816,
+        1073759817,
+        1073759818,
+        1073759819,
+        1073759820,
+        1073759821,
+        1073759822,
+        1073759823,
+        1073759824,
+        1073759825,
+        1073759826,
+        1073759827,
+        1073759828,
+        1073759829,
+        1073759830,
+        1073759831,
+        1073759832,
+        1073759833,
+        1073759834,
+        1073759835,
+        1073759836,
+        1073759837,
+        1073759838,
+        1073759839,
+        1073759840,
+        1073759841,
+        1073759842,
+        1073759843,
+        1073759844,
+        1073759845,
+        1073759846,
+        1073759847,
+        1073759848,
+        1073759849,
+        1073759850,
+        1073759851,
+        1073759852,
+        1073759853,
+        1073759854,
+        1073759855,
+        1073759856,
+        1073759857,
+        1073759858,
+        1073759859,
+        1073759860,
+        1073759861,
+        1073759862,
+        1073759863,
+        1073759864,
+        1073759865,
+        1073759866,
+        1073759867,
+        1073759868,
+        1073759869,
+        1073759870,
+        1073759871,
+        1073759872,
+        1073759873,
+        1073759874,
+        1073759875,
+        1073759876,
+        1073759877,
+        1073759878,
+        1073759879,
+        1073759880,
+        1073759881,
+        1073759882,
+        1073759883,
+        1073759884,
+        1073759885,
+        1073759886,
+        1073759887,
+        1073759888,
+        1073759889,
+        1073759890,
+        1073759891,
+        1073759892,
+        1073759893,
+        1073759894,
+        1073759895,
+        1073759896,
+        1073759897,
+        1073759898,
+        1073759899,
+        1073759900,
+        1073759901,
+        1073759902,
+        1073759903,
+        1073759904,
+        1073759905,
+        1073759906,
+        1073759907,
+        1073759908,
+        1073759909,
+        1073759910,
+        1073759911,
+        1073759912,
+        1073759913,
+        1073759914,
+        1073759915,
+        1073759916,
+        1073759917,
+        1073759918,
+        1073759919,
+        1073759920,
+        1073759921,
+        1073759922,
+        1073759923,
+        1073759924,
+        1073759925,
+        1073759926,
+        1073759927,
+        1073759928,
+        1073759929,
+        1073759930,
+        1073759931,
+        1073759932,
+        1073759933,
+        1073759934,
+        1073759935,
+        1073759936,
+        1073759937,
+        1073759938,
+        1073759939,
+        1073759940,
+        1073759941,
+        1073759942,
+        1073759943,
+        1073759944,
+        1073759945,
+        1073759946,
+        1073759947,
+        1073759948,
+        1073759949,
+        1073759950,
+        1073759951,
+        1073759952,
+        1073759953,
+        1073759954,
+        1073759955,
+        1073759956,
+        1073759957,
+        1073759958,
+        1073759959,
+        1073759960,
+        1073759961,
+        1073759962,
+        1073759963,
+        1073759964,
+        1073759965,
+        1073759966,
+        1073759967,
+        1073759968,
+        1073759969,
+        1073759970,
+        1073759971,
+        1073759972,
+        1073759973,
+        1073759974,
+        1073759975,
+        1073759976,
+        1073759977,
+        1073759978,
+        1073759979,
+        1073759980,
+        1073759981,
+        1073759982,
+        1073759983,
+        1073759984,
+        1073759985,
+        1073759986,
+        1073759987,
+        1073759988,
+        1073759989,
+        1073759990,
+        1073759991,
+        1073759992,
+        1073759993,
+        1073759994,
+        1073759995,
+        1073759996,
+        1073759997,
+        1073759998,
+        1073759999,
+        1073760000,
+        1073760001,
+        1073760002,
+        1073760003,
+        1073760004,
+        1073760005,
+        1073760006,
+        1073760007,
+        1073760008,
+        1073760009,
+        1073760010,
+        1073760011,
+        1073760012,
+        1073760013,
+        1073760014,
+        1073760015,
+        1073760016,
+        1073760017,
+        1073760018,
+        1073760019,
+        1073760020,
+        1073760021,
+        1073760022,
+        1073760023,
+        1073760024,
+        1073760025,
+        1073760026,
+        1073760027,
+        1073760028,
+        1073760029,
+        1073760030,
+        1073758052
+      ],
+      "childNames": [
+        "art657.game.flag.hint.ribbon.tri.top",
+        "art663.wax.edge.0",
+        "art663.wax.edge.1",
+        "art663.wax.edge.2",
+        "art663.wax.edge.3",
+        "art663.wax.edge.4",
+        "art663.wax.edge.5",
+        "art663.wax.edge.6",
+        "art663.wax.edge.7",
+        "art663.wax.edge.8",
+        "art663.wax.edge.9",
+        "art663.wax.edge.10",
+        "art663.wax.edge.11",
+        "art663.wax.lobe.0",
+        "art663.wax.lobe.1",
+        "art663.wax.lobe.2",
+        "art663.wax.lobe.3",
+        "art663.wax.lobe.4",
+        "art663.wax.lobe.5",
+        "art663.wax.lobe.6",
+        "art663.wax.lobe.7",
+        "art663.wax.lobe.8",
+        "art663.wax.lobe.9",
+        "art663.wax.lobe.10",
+        "art663.wax.lobe.11",
+        "art663.wax.core",
+        "art663.wax.glow.l",
+        "art663.wax.glow.r",
+        "art663.wax.inner",
+        "art664.wax.ring.0",
+        "art664.wax.ring.1",
+        "art664.wax.ring.2",
+        "art664.wax.ring.3",
+        "art664.wax.ring.4",
+        "art664.wax.ring.5",
+        "art664.wax.ring.6",
+        "art664.wax.ring.7",
+        "art664.wax.ring.8",
+        "art664.wax.ring.9",
+        "art664.wax.ring.10",
+        "art664.wax.ring.11",
+        "art664.wax.ring.12",
+        "art664.wax.ring.13",
+        "art664.wax.ring.14",
+        "art664.wax.ring.15",
+        "art664.wax.top.lobe",
+        "art664.wax.center",
+        "art664.wax.hot.l",
+        "art664.wax.hot.r",
+        "art664.wax.stamp.rim",
+        "art664.wax.stamp.core",
+        "art675.wax.fit000",
+        "art675.wax.fit001",
+        "art675.wax.fit002",
+        "art675.wax.fit003",
+        "art675.wax.fit004",
+        "art675.wax.fit005",
+        "art675.wax.fit006",
+        "art675.wax.fit007",
+        "art675.wax.fit008",
+        "art675.wax.fit009",
+        "art675.wax.fit010",
+        "art675.wax.fit011",
+        "art675.wax.fit012",
+        "art675.wax.fit013",
+        "art675.wax.fit014",
+        "art675.wax.fit015",
+        "art675.wax.fit016",
+        "art675.wax.fit017",
+        "art675.wax.fit018",
+        "art675.wax.fit019",
+        "art675.wax.fit020",
+        "art675.wax.fit021",
+        "art675.wax.fit022",
+        "art675.wax.fit023",
+        "art675.wax.fit024",
+        "art675.wax.fit025",
+        "art675.wax.fit026",
+        "art675.wax.fit027",
+        "art675.wax.fit028",
+        "art675.wax.fit029",
+        "art675.wax.fit030",
+        "art675.wax.fit031",
+        "art675.wax.fit032",
+        "art675.wax.fit033",
+        "art675.wax.fit034",
+        "art675.wax.fit035",
+        "art675.wax.fit036",
+        "art675.wax.fit037",
+        "art675.wax.fit038",
+        "art675.wax.fit039",
+        "art675.wax.fit040",
+        "art675.wax.fit041",
+        "art675.wax.fit042",
+        "art675.wax.fit043",
+        "art675.wax.fit044",
+        "art675.wax.fit045",
+        "art675.wax.fit046",
+        "art675.wax.fit047",
+        "art675.wax.fit048",
+        "art675.wax.fit049",
+        "art675.wax.fit050",
+        "art675.wax.fit051",
+        "art675.wax.fit052",
+        "art675.wax.fit053",
+        "art675.wax.fit054",
+        "art675.wax.fit055",
+        "art675.wax.fit056",
+        "art675.wax.fit057",
+        "art675.wax.fit058",
+        "art675.wax.fit059",
+        "art675.wax.fit060",
+        "art675.wax.fit061",
+        "art675.wax.fit062",
+        "art675.wax.fit063",
+        "art675.wax.fit064",
+        "art675.wax.fit065",
+        "art675.wax.fit066",
+        "art675.wax.fit067",
+        "art675.wax.fit068",
+        "art675.wax.fit069",
+        "art675.wax.fit070",
+        "art675.wax.fit071",
+        "art675.wax.fit072",
+        "art675.wax.fit073",
+        "art675.wax.fit074",
+        "art675.wax.fit075",
+        "art675.wax.fit076",
+        "art675.wax.fit077",
+        "art675.wax.fit078",
+        "art675.wax.fit079",
+        "art675.wax.fit080",
+        "art675.wax.fit081",
+        "art675.wax.fit082",
+        "art675.wax.fit083",
+        "art675.wax.fit084",
+        "art675.wax.fit085",
+        "art675.wax.fit086",
+        "art675.wax.fit087",
+        "art675.wax.fit088",
+        "art675.wax.fit089",
+        "art675.wax.fit090",
+        "art675.wax.fit091",
+        "art675.wax.fit092",
+        "art675.wax.fit093",
+        "art675.wax.fit094",
+        "art675.wax.fit095",
+        "art675.wax.fit096",
+        "art675.wax.fit097",
+        "art675.wax.fit098",
+        "art675.wax.fit099",
+        "art675.wax.fit100",
+        "art675.wax.fit101",
+        "art675.wax.fit102",
+        "art675.wax.fit103",
+        "art675.wax.fit104",
+        "art675.wax.fit105",
+        "art675.wax.fit106",
+        "art675.wax.fit107",
+        "art675.wax.fit108",
+        "art675.wax.fit109",
+        "art675.wax.fit110",
+        "art675.wax.fit111",
+        "art675.wax.fit112",
+        "art675.wax.fit113",
+        "art675.wax.fit114",
+        "art675.wax.fit115",
+        "art675.wax.fit116",
+        "art675.wax.fit117",
+        "art675.wax.fit118",
+        "art675.wax.fit119",
+        "art675.wax.fit120",
+        "art675.wax.fit121",
+        "art675.wax.fit122",
+        "art675.wax.fit123",
+        "art675.wax.fit124",
+        "art675.wax.fit125",
+        "art675.wax.fit126",
+        "art675.wax.fit127",
+        "art675.wax.fit128",
+        "art675.wax.fit129",
+        "art675.wax.fit130",
+        "art675.wax.fit131",
+        "art675.wax.fit132",
+        "art675.wax.fit133",
+        "art675.wax.fit134",
+        "art675.wax.fit135",
+        "art675.wax.fit136",
+        "art675.wax.fit137",
+        "art675.wax.fit138",
+        "art675.wax.fit139",
+        "art675.wax.fit140",
+        "art675.wax.fit141",
+        "art675.wax.fit142",
+        "art675.wax.fit143",
+        "art675.wax.fit144",
+        "art675.wax.fit145",
+        "art675.wax.fit146",
+        "art675.wax.fit147",
+        "art675.wax.fit148",
+        "art675.wax.fit149",
+        "art675.wax.fit150",
+        "art675.wax.fit151",
+        "art675.wax.fit152",
+        "art675.wax.fit153",
+        "art675.wax.fit154",
+        "art675.wax.fit155",
+        "art675.wax.fit156",
+        "art675.wax.fit157",
+        "art675.wax.fit158",
+        "art675.wax.fit159",
+        "art675.wax.fit160",
+        "art675.wax.fit161",
+        "art675.wax.fit162",
+        "art675.wax.fit163",
+        "art675.wax.fit164",
+        "art675.wax.fit165",
+        "art675.wax.fit166",
+        "art675.wax.fit167",
+        "art675.wax.fit168",
+        "art675.wax.fit169",
+        "art675.wax.fit170",
+        "art675.wax.fit171",
+        "art675.wax.fit172",
+        "art675.wax.fit173",
+        "art675.wax.fit174",
+        "art675.wax.fit175",
+        "art675.wax.fit176",
+        "art675.wax.fit177",
+        "art675.wax.fit178",
+        "art675.wax.fit179",
+        "art675.wax.fit180",
+        "art675.wax.fit181",
+        "art675.wax.fit182",
+        "art675.wax.fit183",
+        "art675.wax.fit184",
+        "art675.wax.fit185",
+        "art675.wax.fit186",
+        "art675.wax.fit187",
+        "art675.wax.fit188",
+        "art675.wax.fit189",
+        "art675.wax.fit190",
+        "art675.wax.fit191",
+        "art675.wax.fit192",
+        "art675.wax.fit193",
+        "art675.wax.fit194",
+        "art675.wax.fit195",
+        "art675.wax.fit196",
+        "art675.wax.fit197",
+        "art675.wax.fit198",
+        "art675.wax.fit199",
+        "art675.wax.fit200",
+        "art675.wax.fit201",
+        "art675.wax.fit202",
+        "art675.wax.fit203",
+        "art675.wax.fit204",
+        "art675.wax.fit205",
+        "art675.wax.fit206",
+        "art675.wax.fit207",
+        "art675.wax.fit208",
+        "art675.wax.fit209",
+        "art675.wax.fit210",
+        "art675.wax.fit211",
+        "art675.wax.fit212",
+        "art675.wax.fit213",
+        "art675.wax.fit214",
+        "art675.wax.fit215",
+        "art675.wax.fit216",
+        "art675.wax.fit217",
+        "art675.wax.fit218",
+        "art675.wax.fit219",
+        "art675.wax.fit220",
+        "art675.wax.fit221",
+        "art675.wax.fit222",
+        "art675.wax.fit223",
+        "art675.wax.fit224",
+        "art675.wax.fit225",
+        "art675.wax.fit226",
+        "art675.wax.fit227",
+        "art675.wax.fit228",
+        "art675.wax.fit229",
+        "art675.wax.fit230",
+        "art675.wax.fit231",
+        "art675.wax.fit232",
+        "art675.wax.fit233",
+        "art675.wax.fit234",
+        "art675.wax.fit235",
+        "art675.wax.fit236",
+        "art675.wax.fit237",
+        "art675.wax.fit238",
+        "art675.wax.fit239",
+        "art657.game.flag.hint.ribbon.tri.bottom"
+      ]
+    },
+    {
+      "id": 1073761063,
+      "name": "adapt715.LM.14",
+      "parent": "grp653.static.1.art641.game",
+      "key": "LM",
+      "children": [
+        1073758054,
+        1073758055,
+        1073758056,
+        1073758057,
+        1073758263,
+        1073758264,
+        1073758265,
+        1073758058,
+        1073758266,
+        1073758267,
+        1073758268,
+        1073758152,
+        1073758269,
+        1073758470,
+        1073760146,
+        1073760147,
+        1073760150,
+        1073760151,
+        1073760154,
+        1073760155,
+        1073760158,
+        1073760159,
+        1073760162,
+        1073760163,
+        1073760166,
+        1073760167,
+        1073754865,
+        1073758270,
+        1073758271,
+        1073758272,
+        1073758273,
+        1073758274,
+        1073758275,
+        1073758276,
+        1073758277,
+        1073758278,
+        1073758279,
+        1073758280,
+        1073758281,
+        1073758471,
+        1073758472,
+        1073758473,
+        1073758474,
+        1073758475,
+        1073758476,
+        1073758477,
+        1073758478,
+        1073758479,
+        1073758480,
+        1073758481,
+        1073758482,
+        1073758483,
+        1073758484,
+        1073760148,
+        1073760149,
+        1073760152,
+        1073760153,
+        1073760156,
+        1073760157,
+        1073760160,
+        1073760161,
+        1073760164,
+        1073760165,
+        1073760168,
+        1073760169,
+        1073759670,
+        1073759671,
+        1073759672,
+        1073759673,
+        1073759674,
+        1073759675,
+        1073759676,
+        1073759677,
+        1073759678,
+        1073759679,
+        1073759680,
+        1073759681,
+        1073759682,
+        1073759683,
+        1073759684,
+        1073759685,
+        1073759686,
+        1073759687,
+        1073759688,
+        1073759689,
+        1073759690,
+        1073759691,
+        1073759692,
+        1073759587,
+        1073759588,
+        1073759589,
+        1073759590,
+        1073759591,
+        1073759592,
+        1073759593,
+        1073759594,
+        1073759595,
+        1073759596,
+        1073759597,
+        1073759598,
+        1073759599,
+        1073759600,
+        1073759601,
+        1073759602,
+        1073758485,
+        1073758486,
+        1073758487,
+        1073758488,
+        1073758489,
+        1073758490,
+        1073758491,
+        1073758492,
+        1073758493,
+        1073758494,
+        1073758495
+      ],
+      "childNames": [
+        "art658.help.tab.jag.l1",
+        "art658.help.tab.jag.l2",
+        "art658.help.tab.jag.r1",
+        "art658.help.tab.jag.r2",
+        "art659.help.tab.band1",
+        "art659.help.tab.band2",
+        "art659.help.tab.band3",
+        "art658.help.tab.clip",
+        "art659.ribbon.band1",
+        "art659.ribbon.band2",
+        "art659.ribbon.band3",
+        "art658.ribbon.clip",
+        "art660.tab.outline",
+        "art661.tab.outline",
+        "art678.tab.outline.l1.rect",
+        "art678.tab.outline.l1.tri",
+        "art678.tab.outline.l2.rect",
+        "art678.tab.outline.l2.tri",
+        "art678.tab.outline.l3.rect",
+        "art678.tab.outline.l3.tri",
+        "art678.tab.outline.r1.rect",
+        "art678.tab.outline.r1.tri",
+        "art678.tab.outline.r2.rect",
+        "art678.tab.outline.r2.tri",
+        "art678.tab.outline.r3.rect",
+        "art678.tab.outline.r3.tri",
+        "art641.game.help.tab",
+        "art660.tab.light.rect",
+        "art660.tab.light.tri",
+        "art660.tab.light.patch1",
+        "art660.tab.light.patch2",
+        "art660.tab.notch.lt",
+        "art660.tab.notch.lb",
+        "art660.tab.tip.lt",
+        "art660.tab.tip.lb",
+        "art660.tab.notch.rt",
+        "art660.tab.notch.rb",
+        "art660.tab.tip.rt",
+        "art660.tab.tip.rb",
+        "art661.tab.light.rect",
+        "art661.tab.light.tri",
+        "art661.tab.light.patch1",
+        "art661.tab.light.patch2",
+        "art661.tab.notch.l1",
+        "art661.tab.notch.l2",
+        "art661.tab.notch.l3",
+        "art661.tab.tip.lt",
+        "art661.tab.tip.lb",
+        "art661.tab.notch.r1",
+        "art661.tab.notch.r2",
+        "art661.tab.notch.r3",
+        "art661.tab.tip.rt",
+        "art661.tab.tip.rb",
+        "art678.tab.main.l1.rect",
+        "art678.tab.main.l1.tri",
+        "art678.tab.main.l2.rect",
+        "art678.tab.main.l2.tri",
+        "art678.tab.main.l3.rect",
+        "art678.tab.main.l3.tri",
+        "art678.tab.main.r1.rect",
+        "art678.tab.main.r1.tri",
+        "art678.tab.main.r2.rect",
+        "art678.tab.main.r2.tri",
+        "art678.tab.main.r3.rect",
+        "art678.tab.main.r3.tri",
+        "art664.tab.mid.fit01",
+        "art664.tab.mid.fit02",
+        "art664.tab.mid.fit03",
+        "art664.tab.mid.fit04",
+        "art664.tab.mid.fit05",
+        "art664.tab.mid.fit06",
+        "art664.tab.mid.fit07",
+        "art664.tab.mid.fit08",
+        "art664.tab.mid.fit09",
+        "art664.tab.mid.fit10",
+        "art664.tab.mid.fit11",
+        "art664.tab.mid.fit12",
+        "art664.tab.mid.fit13",
+        "art664.tab.mid.fit14",
+        "art664.tab.hi.fit15",
+        "art664.tab.hi.fit16",
+        "art664.tab.hi.fit17",
+        "art664.tab.hi.fit18",
+        "art664.tab.hi.fit19",
+        "art664.tab.hi.fit20",
+        "art664.tab.hi.fit21",
+        "art664.tab.hi.fit22",
+        "art664.tab.hi.fit23",
+        "art663.tab.edge.l0",
+        "art663.tab.edge.l1",
+        "art663.tab.edge.l2",
+        "art663.tab.edge.l3",
+        "art663.tab.edge.r0",
+        "art663.tab.edge.r1",
+        "art663.tab.edge.r2",
+        "art663.tab.edge.r3",
+        "art663.tab.tooth.l0",
+        "art663.tab.tooth.l1",
+        "art663.tab.tooth.l2",
+        "art663.tab.tooth.l3",
+        "art663.tab.tooth.r0",
+        "art663.tab.tooth.r1",
+        "art663.tab.tooth.r2",
+        "art663.tab.tooth.r3",
+        "art661.ribbon.mid.rect",
+        "art661.ribbon.mid.tri",
+        "art661.ribbon.mid.patch2",
+        "art661.ribbon.mid.patch3",
+        "art661.ribbon.mid.patch4",
+        "art661.ribbon.dark.rect",
+        "art661.ribbon.dark.tri",
+        "art661.ribbon.dark.patch2",
+        "art661.ribbon.dark.patch3",
+        "art661.ribbon.dark.patch4",
+        "art661.ribbon.dark.patch5"
+      ]
+    },
+    {
+      "id": 1073761064,
+      "name": "adapt715.LM.15",
+      "parent": "grp653.static.1.art641.home",
+      "key": "LM",
+      "children": [
+        1073754778,
+        1073754779,
+        1073754780,
+        1073754781,
+        1073757883,
+        1073757884,
+        1073757885,
+        1073757886,
+        1073757887,
+        1073757888,
+        1073757889,
+        1073757890,
+        1073754782,
+        1073754783,
+        1073754784,
+        1073754785
+      ],
+      "childNames": [
+        "art641.home.camera.photo.shadow",
+        "art641.home.camera.photo.paper",
+        "art641.home.camera.photo.inner",
+        "art641.home.camera.body",
+        "art656.home.camera.side.l",
+        "art656.home.camera.side.r",
+        "art656.home.camera.seam",
+        "art656.home.camera.bottom",
+        "art656.home.camera.cap.slope",
+        "art656.home.camera.cap.high",
+        "art656.home.camera.bump0",
+        "art656.home.camera.bump1",
+        "art641.home.camera.top",
+        "art641.home.camera.window",
+        "art641.home.camera.dot0",
+        "art641.home.camera.dot1"
+      ]
+    },
+    {
+      "id": 1073761065,
+      "name": "adapt715.RM.16",
+      "parent": "grp653.static.1.art641.home",
+      "key": "RM",
+      "children": [
+        1073757904,
+        1073757905,
+        1073757906,
+        1073757907,
+        1073757908,
+        1073757909,
+        1073757910,
+        1073757911,
+        1073757912,
+        1073757913,
+        1073757914,
+        1073757915,
+        1073757916,
+        1073757917,
+        1073757918,
+        1073757919,
+        1073757920,
+        1073757921,
+        1073757922,
+        1073757923,
+        1073757924,
+        1073757925,
+        1073757926,
+        1073757927,
+        1073757928,
+        1073757929,
+        1073757930,
+        1073757931,
+        1073757932,
+        1073757933,
+        1073757934,
+        1073757935,
+        1073757936,
+        1073757937
+      ],
+      "childNames": [
+        "art656.home.note.band0",
+        "art656.home.note.band1",
+        "art656.home.note.band2",
+        "art656.home.note.band3",
+        "art656.home.note.tape",
+        "art656.home.wave.upper.0",
+        "art656.home.wave.upper.1",
+        "art656.home.wave.upper.2",
+        "art656.home.wave.upper.3",
+        "art656.home.wave.upper.4",
+        "art656.home.wave.upper.5",
+        "art656.home.wave.upper.6",
+        "art656.home.wave.upper.7",
+        "art656.home.wave.upper.8",
+        "art656.home.wave.upper.9",
+        "art656.home.wave.upper.10",
+        "art656.home.wave.upper.11",
+        "art656.home.wave.dot.0",
+        "art656.home.wave.lower.0",
+        "art656.home.wave.lower.1",
+        "art656.home.wave.lower.2",
+        "art656.home.wave.lower.3",
+        "art656.home.wave.lower.4",
+        "art656.home.wave.lower.5",
+        "art656.home.wave.lower.6",
+        "art656.home.wave.lower.7",
+        "art656.home.wave.lower.8",
+        "art656.home.wave.lower.9",
+        "art656.home.wave.lower.10",
+        "art656.home.wave.lower.11",
+        "art656.home.wave.lower.12",
+        "art656.home.wave.lower.13",
+        "art656.home.wave.lower.14",
+        "art656.home.wave.lower.15"
+      ]
+    },
+    {
+      "id": 1073761066,
+      "name": "adapt715.BR.17",
+      "parent": "art641.home",
+      "key": "BR",
+      "children": [
+        1073756513,
+        1073756514,
+        1073756515,
+        1073756516,
+        1073756517,
+        1073756518,
+        1073756519,
+        1073756520,
+        1073756521,
+        1073756522,
+        1073756523
+      ],
+      "childNames": [
+        "art647.home.settle.shadow",
+        "art647.home.settle.yellow.shadow",
+        "art647.home.settle.yellow.edge",
+        "art647.home.settle.yellow",
+        "art647.home.settle.outline",
+        "art647.home.settle.outline.tri.top",
+        "art647.home.settle.outline.tri.bottom",
+        "art647.home.settle.ribbon",
+        "art647.home.settle.ribbon.tri.top",
+        "art647.home.settle.ribbon.tri.bottom",
+        "art647.home.settle.text"
+      ]
+    },
+    {
+      "id": 1073761067,
+      "name": "adapt715.BR.18",
+      "parent": "art642.select.buttons",
+      "key": "BR",
+      "children": [
+        1073755738,
+        1073755739,
+        1073755740,
+        1073755741,
+        1073755742,
+        1073755743,
+        1073755744,
+        1073755745,
+        1073755746,
+        1073755747,
+        1073755748
+      ],
+      "childNames": [
+        "art647.select.settle.shadow",
+        "art647.select.settle.yellow.shadow",
+        "art647.select.settle.yellow.edge",
+        "art647.select.settle.yellow",
+        "art647.select.settle.outline",
+        "art647.select.settle.outline.tri.top",
+        "art647.select.settle.outline.tri.bottom",
+        "art647.select.settle.ribbon",
+        "art647.select.settle.ribbon.tri.top",
+        "art647.select.settle.ribbon.tri.bottom",
+        "art647.select.settle.text"
+      ]
+    },
+    {
+      "id": 1073761068,
+      "name": "adapt715.LM.19",
+      "parent": "art642.select.buttons",
+      "key": "LM",
+      "children": [
+        1073755749
+      ],
+      "childNames": [
+        "art647.select.diamond.left"
+      ]
+    },
+    {
+      "id": 1073761069,
+      "name": "adapt715.RM.20",
+      "parent": "art642.select.buttons",
+      "key": "RM",
+      "children": [
+        1073755750
+      ],
+      "childNames": [
+        "art647.select.diamond.right"
+      ]
+    },
+    {
+      "id": 1073761070,
+      "name": "adapt715.TL.21",
+      "parent": "grp653.static.1.art642.select.buttons",
+      "key": "TL",
+      "children": [
+        1073755731,
+        1073755732,
+        1073755733,
+        1073755734,
+        1073755735,
+        1073755736,
+        1073755737
+      ],
+      "childNames": [
+        "art647.select.back.shadow",
+        "art647.select.back.outline",
+        "art647.select.back.outline.tri.top",
+        "art647.select.back.outline.tri.bottom",
+        "art647.select.back.ribbon",
+        "art647.select.back.ribbon.tri.top",
+        "art647.select.back.ribbon.tri.bottom"
+      ]
+    },
+    {
+      "id": 1073761071,
+      "name": "adapt715.LM.22",
+      "parent": "home",
+      "key": "LM",
+      "children": [
+        1073754509,
+        1073757891,
+        1073754510,
+        1073754512,
+        1073754513
+      ],
+      "childNames": [
+        "home.tutorial627.bg",
+        "home.tutorial627.mid",
+        "home.tutorial627.ring",
+        "home.tutorial627.label",
+        "home.tutorial627.hit"
+      ]
+    }
+  ],
+  "targets": [
+    {
+      "id": 1073761050,
+      "name": "adapt715.LM.1",
+      "parent": "grp653.static.1.art641.game",
+      "key": "LM",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761051,
+      "name": "adapt715.LM.2",
+      "parent": "grp653.static.1.art641.game",
+      "key": "LM",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761052,
+      "name": "adapt715.TL.3",
+      "parent": "grp653.static.1.art641.game",
+      "key": "TL",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            -360
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            -360
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            -360
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            -360
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761053,
+      "name": "adapt715.TR.4",
+      "parent": "grp653.static.1.art641.game",
+      "key": "TR",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            -360
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            -360
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            -360
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            -360
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761054,
+      "name": "adapt715.BR.5",
+      "parent": "grp653.static.1.art641.game",
+      "key": "BR",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            360
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            360
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            360
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            360
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761055,
+      "name": "adapt715.TL.6",
+      "parent": "grp653.static.1.art641.game",
+      "key": "TL",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            -360
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            -360
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            -360
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            -360
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761056,
+      "name": "adapt715.TR.7",
+      "parent": "grp653.static.1.art641.game",
+      "key": "TR",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            -360
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            -360
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            -360
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            -360
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761057,
+      "name": "adapt715.BR.8",
+      "parent": "grp653.static.1.art641.game",
+      "key": "BR",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            360
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            360
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            360
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            360
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761058,
+      "name": "adapt715.LM.9",
+      "parent": "grp653.static.1.art641.game",
+      "key": "LM",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761059,
+      "name": "adapt715.RM.10",
+      "parent": "grp653.static.1.art641.game",
+      "key": "RM",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761060,
+      "name": "adapt715.TL.11",
+      "parent": "grp653.static.1.art641.game",
+      "key": "TL",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            -360
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            -360
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            -360
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            -360
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761061,
+      "name": "adapt715.TR.12",
+      "parent": "grp653.static.1.art641.game",
+      "key": "TR",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            -360
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            -360
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            -360
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            -360
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761062,
+      "name": "adapt715.BR.13",
+      "parent": "grp653.static.1.art641.game",
+      "key": "BR",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            360
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            360
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            360
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            360
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761063,
+      "name": "adapt715.LM.14",
+      "parent": "grp653.static.1.art641.game",
+      "key": "LM",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761064,
+      "name": "adapt715.LM.15",
+      "parent": "grp653.static.1.art641.home",
+      "key": "LM",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761065,
+      "name": "adapt715.RM.16",
+      "parent": "grp653.static.1.art641.home",
+      "key": "RM",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761066,
+      "name": "adapt715.BR.17",
+      "parent": "art641.home",
+      "key": "BR",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            360
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            360
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            360
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            360
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761067,
+      "name": "adapt715.BR.18",
+      "parent": "art642.select.buttons",
+      "key": "BR",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            360
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            360
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            360
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            360
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761068,
+      "name": "adapt715.LM.19",
+      "parent": "art642.select.buttons",
+      "key": "LM",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761069,
+      "name": "adapt715.RM.20",
+      "parent": "art642.select.buttons",
+      "key": "RM",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            -800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761070,
+      "name": "adapt715.TL.21",
+      "parent": "grp653.static.1.art642.select.buttons",
+      "key": "TL",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            -360
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            -360
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            -360
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            -360
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761071,
+      "name": "adapt715.LM.22",
+      "parent": "home",
+      "key": "LM",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            0,
+            0
+          ],
+          "edgeOffset": [
+            800,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742359,
+      "name": "clues",
+      "parent": "root",
+      "key": "LM",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            -570,
+            -61.099998474121094
+          ],
+          "edgeOffset": [
+            230,
+            -61.099998474121094
+          ],
+          "editor": [
+            -570,
+            -61.099998474121094
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            -570,
+            -61.099998474121094
+          ],
+          "edgeOffset": [
+            230,
+            -61.099998474121094
+          ],
+          "editor": [
+            -570,
+            -61.099998474121094
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            -570,
+            -61.099998474121094
+          ],
+          "edgeOffset": [
+            230,
+            -61.099998474121094
+          ],
+          "editor": [
+            -570,
+            -61.099998474121094
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            -570,
+            -61.099998474121094
+          ],
+          "edgeOffset": [
+            230,
+            -61.099998474121094
+          ],
+          "editor": [
+            -570,
+            -61.099998474121094
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073741916,
+      "name": "topbar",
+      "parent": "root",
+      "key": "LM",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            0,
+            230.40011596679688
+          ],
+          "edgeOffset": [
+            800,
+            230.40011596679688
+          ],
+          "editor": [
+            0,
+            230.40011596679688
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            0,
+            230.40011596679688
+          ],
+          "edgeOffset": [
+            800,
+            230.40011596679688
+          ],
+          "editor": [
+            0,
+            230.40011596679688
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            0,
+            230.40011596679688
+          ],
+          "edgeOffset": [
+            800,
+            230.40011596679688
+          ],
+          "editor": [
+            0,
+            230.40011596679688
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            0,
+            230.40011596679688
+          ],
+          "edgeOffset": [
+            800,
+            230.40011596679688
+          ],
+          "editor": [
+            0,
+            230.40011596679688
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073754496,
+      "name": "clues.help617",
+      "parent": "root",
+      "key": "LM",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            -416,
+            239
+          ],
+          "edgeOffset": [
+            384,
+            239
+          ],
+          "editor": [
+            -416,
+            239
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            -416,
+            239
+          ],
+          "edgeOffset": [
+            384,
+            239
+          ],
+          "editor": [
+            -416,
+            239
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            -416,
+            239
+          ],
+          "edgeOffset": [
+            384,
+            239
+          ],
+          "editor": [
+            -416,
+            239
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            -416,
+            239
+          ],
+          "edgeOffset": [
+            384,
+            239
+          ],
+          "editor": [
+            -416,
+            239
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073754508,
+      "name": "clues.help627.hit",
+      "parent": "root",
+      "key": "LM",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            -416,
+            239
+          ],
+          "edgeOffset": [
+            384,
+            239
+          ],
+          "editor": [
+            -416,
+            239
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            -416,
+            239
+          ],
+          "edgeOffset": [
+            384,
+            239
+          ],
+          "editor": [
+            -416,
+            239
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            -416,
+            239
+          ],
+          "edgeOffset": [
+            384,
+            239
+          ],
+          "editor": [
+            -416,
+            239
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            -416,
+            239
+          ],
+          "edgeOffset": [
+            384,
+            239
+          ],
+          "editor": [
+            -416,
+            239
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742775,
+      "name": "settle.btn",
+      "parent": "root",
+      "key": "BR",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            683,
+            -279
+          ],
+          "edgeOffset": [
+            -117,
+            81
+          ],
+          "editor": [
+            683,
+            -369
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            683,
+            -279
+          ],
+          "edgeOffset": [
+            -117,
+            81
+          ],
+          "editor": [
+            683,
+            -369
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            683,
+            -279
+          ],
+          "edgeOffset": [
+            -117,
+            81
+          ],
+          "editor": [
+            683,
+            -369
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            683,
+            -279
+          ],
+          "edgeOffset": [
+            -117,
+            81
+          ],
+          "editor": [
+            683,
+            -369
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073754467,
+      "name": "settle.btn.countdown",
+      "parent": "root",
+      "key": "BR",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            683,
+            -339
+          ],
+          "edgeOffset": [
+            -117,
+            21
+          ],
+          "editor": [
+            683,
+            -429
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            683,
+            -339
+          ],
+          "edgeOffset": [
+            -117,
+            21
+          ],
+          "editor": [
+            683,
+            -429
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            683,
+            -339
+          ],
+          "edgeOffset": [
+            -117,
+            21
+          ],
+          "editor": [
+            683,
+            -429
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            683,
+            -339
+          ],
+          "edgeOffset": [
+            -117,
+            21
+          ],
+          "editor": [
+            683,
+            -429
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742727,
+      "name": "select.back",
+      "parent": "root",
+      "key": "TL",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            -709,
+            296.8999938964844
+          ],
+          "edgeOffset": [
+            91,
+            -63.100006103515625
+          ],
+          "editor": [
+            -709,
+            386.8999938964844
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            -709,
+            296.8999938964844
+          ],
+          "edgeOffset": [
+            91,
+            -63.100006103515625
+          ],
+          "editor": [
+            -709,
+            386.8999938964844
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            -709,
+            296.8999938964844
+          ],
+          "edgeOffset": [
+            91,
+            -63.100006103515625
+          ],
+          "editor": [
+            -709,
+            386.8999938964844
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            -709,
+            296.8999938964844
+          ],
+          "edgeOffset": [
+            91,
+            -63.100006103515625
+          ],
+          "editor": [
+            -709,
+            386.8999938964844
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742730,
+      "name": "hit.select.back",
+      "parent": "root",
+      "key": "TL",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            -714.1666870117188,
+            326.25
+          ],
+          "edgeOffset": [
+            85.83331298828125,
+            -33.75
+          ],
+          "editor": [
+            -714.1666870117188,
+            416.25
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            -714.1666870117188,
+            326.25
+          ],
+          "edgeOffset": [
+            85.83331298828125,
+            -33.75
+          ],
+          "editor": [
+            -714.1666870117188,
+            416.25
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            -714.1666870117188,
+            326.25
+          ],
+          "edgeOffset": [
+            85.83331298828125,
+            -33.75
+          ],
+          "editor": [
+            -714.1666870117188,
+            416.25
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            -714.1666870117188,
+            326.25
+          ],
+          "edgeOffset": [
+            85.83331298828125,
+            -33.75
+          ],
+          "editor": [
+            -714.1666870117188,
+            416.25
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742731,
+      "name": "hit.select.prev",
+      "parent": "root",
+      "key": "LM",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            -738,
+            3
+          ],
+          "edgeOffset": [
+            62,
+            3
+          ],
+          "editor": [
+            -738,
+            3
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            -738,
+            3
+          ],
+          "edgeOffset": [
+            62,
+            3
+          ],
+          "editor": [
+            -738,
+            3
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            -738,
+            3
+          ],
+          "edgeOffset": [
+            62,
+            3
+          ],
+          "editor": [
+            -738,
+            3
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            -738,
+            3
+          ],
+          "edgeOffset": [
+            62,
+            3
+          ],
+          "editor": [
+            -738,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742732,
+      "name": "hit.select.next",
+      "parent": "root",
+      "key": "RM",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            726,
+            -2
+          ],
+          "edgeOffset": [
+            -74,
+            -2
+          ],
+          "editor": [
+            726,
+            -2
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            726,
+            -2
+          ],
+          "edgeOffset": [
+            -74,
+            -2
+          ],
+          "editor": [
+            726,
+            -2
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            726,
+            -2
+          ],
+          "edgeOffset": [
+            -74,
+            -2
+          ],
+          "editor": [
+            726,
+            -2
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            726,
+            -2
+          ],
+          "edgeOffset": [
+            -74,
+            -2
+          ],
+          "editor": [
+            726,
+            -2
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073754517,
+      "name": "hint635.menu",
+      "parent": "root",
+      "key": "BR",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            480,
+            -105
+          ],
+          "edgeOffset": [
+            -320,
+            255
+          ],
+          "editor": [
+            480,
+            -195
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            480,
+            -105
+          ],
+          "edgeOffset": [
+            -320,
+            255
+          ],
+          "editor": [
+            480,
+            -195
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            480,
+            -105
+          ],
+          "edgeOffset": [
+            -320,
+            255
+          ],
+          "editor": [
+            480,
+            -195
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            480,
+            -105
+          ],
+          "edgeOffset": [
+            -320,
+            255
+          ],
+          "editor": [
+            480,
+            -195
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073754518,
+      "name": "hint635.result",
+      "parent": "root",
+      "key": "BR",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            480,
+            -105
+          ],
+          "edgeOffset": [
+            -320,
+            255
+          ],
+          "editor": [
+            480,
+            -195
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            480,
+            -105
+          ],
+          "edgeOffset": [
+            -320,
+            255
+          ],
+          "editor": [
+            480,
+            -195
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            480,
+            -105
+          ],
+          "edgeOffset": [
+            -320,
+            255
+          ],
+          "editor": [
+            480,
+            -195
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            480,
+            -105
+          ],
+          "edgeOffset": [
+            -320,
+            255
+          ],
+          "editor": [
+            480,
+            -195
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742502,
+      "name": "hex.back",
+      "parent": "root",
+      "key": "TL",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            -730.9119873046875,
+            293
+          ],
+          "edgeOffset": [
+            69.0880126953125,
+            -67
+          ],
+          "editor": [
+            -730.9119873046875,
+            383
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            -730.9119873046875,
+            293
+          ],
+          "edgeOffset": [
+            69.0880126953125,
+            -67
+          ],
+          "editor": [
+            -730.9119873046875,
+            383
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            -730.9119873046875,
+            293
+          ],
+          "edgeOffset": [
+            69.0880126953125,
+            -67
+          ],
+          "editor": [
+            -730.9119873046875,
+            383
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            -730.9119873046875,
+            293
+          ],
+          "edgeOffset": [
+            69.0880126953125,
+            -67
+          ],
+          "editor": [
+            -730.9119873046875,
+            383
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742503,
+      "name": "hex.submit",
+      "parent": "root",
+      "key": "TR",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            704.4000244140625,
+            298
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            -62
+          ],
+          "editor": [
+            704.4000244140625,
+            388
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            704.4000244140625,
+            298
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            -62
+          ],
+          "editor": [
+            704.4000244140625,
+            388
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            704.4000244140625,
+            298
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            -62
+          ],
+          "editor": [
+            704.4000244140625,
+            388
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            704.4000244140625,
+            298
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            -62
+          ],
+          "editor": [
+            704.4000244140625,
+            388
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742504,
+      "name": "hex.redo",
+      "parent": "root",
+      "key": "TR",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            704.4000244140625,
+            203
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            -157
+          ],
+          "editor": [
+            704.4000244140625,
+            293
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            704.4000244140625,
+            203
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            -157
+          ],
+          "editor": [
+            704.4000244140625,
+            293
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            704.4000244140625,
+            203
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            -157
+          ],
+          "editor": [
+            704.4000244140625,
+            293
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            704.4000244140625,
+            203
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            -157
+          ],
+          "editor": [
+            704.4000244140625,
+            293
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742505,
+      "name": "hex.undo",
+      "parent": "root",
+      "key": "TR",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            704.4000244140625,
+            108
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            -252
+          ],
+          "editor": [
+            704.4000244140625,
+            198
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            704.4000244140625,
+            108
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            -252
+          ],
+          "editor": [
+            704.4000244140625,
+            198
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            704.4000244140625,
+            108
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            -252
+          ],
+          "editor": [
+            704.4000244140625,
+            198
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            704.4000244140625,
+            108
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            -252
+          ],
+          "editor": [
+            704.4000244140625,
+            198
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742506,
+      "name": "hex.hint",
+      "parent": "root",
+      "key": "BR",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            704.4000244140625,
+            -282.1000061035156
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            77.89999389648438
+          ],
+          "editor": [
+            704.4000244140625,
+            -372.1000061035156
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            704.4000244140625,
+            -282.1000061035156
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            77.89999389648438
+          ],
+          "editor": [
+            704.4000244140625,
+            -372.1000061035156
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            704.4000244140625,
+            -282.1000061035156
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            77.89999389648438
+          ],
+          "editor": [
+            704.4000244140625,
+            -372.1000061035156
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            704.4000244140625,
+            -282.1000061035156
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            77.89999389648438
+          ],
+          "editor": [
+            704.4000244140625,
+            -372.1000061035156
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742509,
+      "name": "hit.back",
+      "parent": "root",
+      "key": "TL",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            -730.9119873046875,
+            293
+          ],
+          "edgeOffset": [
+            69.0880126953125,
+            -67
+          ],
+          "editor": [
+            -730.9119873046875,
+            383
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            -730.9119873046875,
+            293
+          ],
+          "edgeOffset": [
+            69.0880126953125,
+            -67
+          ],
+          "editor": [
+            -730.9119873046875,
+            383
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            -730.9119873046875,
+            293
+          ],
+          "edgeOffset": [
+            69.0880126953125,
+            -67
+          ],
+          "editor": [
+            -730.9119873046875,
+            383
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            -730.9119873046875,
+            293
+          ],
+          "edgeOffset": [
+            69.0880126953125,
+            -67
+          ],
+          "editor": [
+            -730.9119873046875,
+            383
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742510,
+      "name": "hit.submit",
+      "parent": "root",
+      "key": "TR",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            704.4000244140625,
+            298
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            -62
+          ],
+          "editor": [
+            704.4000244140625,
+            388
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            704.4000244140625,
+            298
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            -62
+          ],
+          "editor": [
+            704.4000244140625,
+            388
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            704.4000244140625,
+            298
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            -62
+          ],
+          "editor": [
+            704.4000244140625,
+            388
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            704.4000244140625,
+            298
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            -62
+          ],
+          "editor": [
+            704.4000244140625,
+            388
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742511,
+      "name": "hit.redo",
+      "parent": "root",
+      "key": "TR",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            704.4000244140625,
+            203
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            -157
+          ],
+          "editor": [
+            704.4000244140625,
+            293
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            704.4000244140625,
+            203
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            -157
+          ],
+          "editor": [
+            704.4000244140625,
+            293
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            704.4000244140625,
+            203
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            -157
+          ],
+          "editor": [
+            704.4000244140625,
+            293
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            704.4000244140625,
+            203
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            -157
+          ],
+          "editor": [
+            704.4000244140625,
+            293
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742512,
+      "name": "hit.undo",
+      "parent": "root",
+      "key": "TR",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            704.4000244140625,
+            108
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            -252
+          ],
+          "editor": [
+            704.4000244140625,
+            198
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            704.4000244140625,
+            108
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            -252
+          ],
+          "editor": [
+            704.4000244140625,
+            198
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            704.4000244140625,
+            108
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            -252
+          ],
+          "editor": [
+            704.4000244140625,
+            198
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            704.4000244140625,
+            108
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            -252
+          ],
+          "editor": [
+            704.4000244140625,
+            198
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742513,
+      "name": "hit.hint",
+      "parent": "root",
+      "key": "BR",
+      "states": [
+        {
+          "platform": 0,
+          "reference": [
+            704.4000244140625,
+            -282.1000061035156
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            77.89999389648438
+          ],
+          "editor": [
+            704.4000244140625,
+            -372.1000061035156
+          ]
+        },
+        {
+          "platform": 1,
+          "reference": [
+            704.4000244140625,
+            -282.1000061035156
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            77.89999389648438
+          ],
+          "editor": [
+            704.4000244140625,
+            -372.1000061035156
+          ]
+        },
+        {
+          "platform": 2,
+          "reference": [
+            704.4000244140625,
+            -282.1000061035156
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            77.89999389648438
+          ],
+          "editor": [
+            704.4000244140625,
+            -372.1000061035156
+          ]
+        },
+        {
+          "platform": 3,
+          "reference": [
+            704.4000244140625,
+            -282.1000061035156
+          ],
+          "edgeOffset": [
+            -95.5999755859375,
+            77.89999389648438
+          ],
+          "editor": [
+            704.4000244140625,
+            -372.1000061035156
+          ]
+        }
+      ]
+    }
+  ],
+  "backgrounds": [
+    {
+      "id": 1073754871,
+      "name": "art642.select.backdrop",
+      "states": [
+        {
+          "platform": 0,
+          "pos": [
+            0,
+            0
+          ],
+          "size": [
+            1600,
+            900
+          ]
+        },
+        {
+          "platform": 1,
+          "pos": [
+            0,
+            0
+          ],
+          "size": [
+            1600,
+            900
+          ]
+        },
+        {
+          "platform": 2,
+          "pos": [
+            0,
+            0
+          ],
+          "size": [
+            1600,
+            900
+          ]
+        },
+        {
+          "platform": 3,
+          "pos": [
+            0,
+            0
+          ],
+          "size": [
+            1600,
+            900
+          ]
+        }
+      ]
+    }
+  ],
+  "serverBackground": {
+    "id": 1073742783,
+    "asset": "police-v19",
+    "mode": "native full stretch, aspect ratio may change",
+    "before": [
+      {
+        "platform": 0,
+        "min": [
+          0.5,
+          0.5
+        ],
+        "max": [
+          0.5,
+          0.5
+        ],
+        "pos": [
+          0,
+          0
+        ],
+        "size": [
+          1600.0003662109375,
+          900
+        ]
+      },
+      {
+        "platform": 1,
+        "min": [
+          0.5,
+          0.5
+        ],
+        "max": [
+          0.5,
+          0.5
+        ],
+        "pos": [
+          0,
+          0
+        ],
+        "size": [
+          1600.0003662109375,
+          900
+        ]
+      },
+      {
+        "platform": 2,
+        "min": [
+          0.5,
+          0.5
+        ],
+        "max": [
+          0.5,
+          0.5
+        ],
+        "pos": [
+          0,
+          0
+        ],
+        "size": [
+          1600.0003662109375,
+          900
+        ]
+      },
+      {
+        "platform": 3,
+        "min": [
+          0.5,
+          0.5
+        ],
+        "max": [
+          0.5,
+          0.5
+        ],
+        "pos": [
+          0,
+          0
+        ],
+        "size": [
+          1600.0003662109375,
+          900
+        ]
+      }
+    ]
+  },
+  "checks": {
+    "sourceLuaEqualsEmbedded": true,
+    "onlyAllowedFieldsChanged": true,
+    "protectedRecordsUnchanged": true,
+    "originalDrawOrderUnchanged": true,
+    "diskReread": true,
+    "roundtrip": true,
+    "bidirectionalParents": true,
+    "luaSyntax": true,
+    "luaRuntimeMock32Cases": true,
+    "repeatedRefreshIdempotent": true,
+    "invalidReadAndLateControlRecovery": true,
+    "gameplayPrefixUnchanged": true,
+    "groupLookupRoutesPresent": true
+  },
+  "realGameTest": false,
+  "limitations": [
+    "参考可见区沿用679记录，未取得715本轮跨端实测。",
+    "若画布和父尺寸都固定而宿主另行裁切，本版无法从固定值推断屏幕比例。",
+    "只移动父级不缩放棋盘或线索；极窄宽度可能重叠，需要实机验证后决定。",
+    "警戒线背景是服务器图片：本版用原生全拉伸铺满，未保证等比；选关织物背景由Lua等比铺满。",
+    "离线验证覆盖32组尺寸与输入端组合；不等于宿主实机画布映射、显隐与点击验证。"
+  ],
+  "inputSha256": "0eb5a67f4ed8710f9f4a00026e2011d579cd455c0f21efd9624442c98ce79c5e",
+  "outputSha256": "8210363b3c2187ba432df8588b9559884db524a4b865b6ecb6e2fb2fd710c5fc",
+  "bytes": 7455145,
+  "fieldDifferences": 1095,
+  "validationMatrix": [
+    {
+      "label": "参考20:9",
+      "w": 1600,
+      "h": 720,
+      "criticalBoundsOverflow": [],
+      "boardOverlaps": [],
+      "keyBoxes": [
+        {
+          "name": "hit.back",
+          "x": -730.9119873046875,
+          "y": 293,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.submit",
+          "x": 704.4000244140625,
+          "y": 298,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.redo",
+          "x": 704.4000244140625,
+          "y": 203,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.undo",
+          "x": 704.4000244140625,
+          "y": 108,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.hint",
+          "x": 704.4000244140625,
+          "y": -282.1000061035156,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.select.back",
+          "x": -714.1666870117188,
+          "y": 326.25,
+          "w": 145,
+          "h": 65.83333587646484
+        },
+        {
+          "name": "hit.select.prev",
+          "x": -738,
+          "y": 3,
+          "w": 124,
+          "h": 68
+        },
+        {
+          "name": "hit.select.next",
+          "x": 726,
+          "y": -2,
+          "w": 112,
+          "h": 100
+        },
+        {
+          "name": "clues",
+          "x": -570,
+          "y": -61.099998474121094,
+          "w": 360,
+          "h": 544
+        }
+      ]
+    },
+    {
+      "label": "16:9",
+      "w": 1600,
+      "h": 900,
+      "criticalBoundsOverflow": [],
+      "boardOverlaps": [],
+      "keyBoxes": [
+        {
+          "name": "hit.back",
+          "x": -730.9119873046875,
+          "y": 383,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.submit",
+          "x": 704.4000244140625,
+          "y": 388,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.redo",
+          "x": 704.4000244140625,
+          "y": 293,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.undo",
+          "x": 704.4000244140625,
+          "y": 198,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.hint",
+          "x": 704.4000244140625,
+          "y": -372.1000061035156,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.select.back",
+          "x": -714.1666870117188,
+          "y": 416.25,
+          "w": 145,
+          "h": 65.83333587646484
+        },
+        {
+          "name": "hit.select.prev",
+          "x": -738,
+          "y": 3,
+          "w": 124,
+          "h": 68
+        },
+        {
+          "name": "hit.select.next",
+          "x": 726,
+          "y": -2,
+          "w": 112,
+          "h": 100
+        },
+        {
+          "name": "clues",
+          "x": -570,
+          "y": -61.099998474121094,
+          "w": 360,
+          "h": 544
+        }
+      ]
+    },
+    {
+      "label": "16:10",
+      "w": 1600,
+      "h": 1000,
+      "criticalBoundsOverflow": [],
+      "boardOverlaps": [],
+      "keyBoxes": [
+        {
+          "name": "hit.back",
+          "x": -730.9119873046875,
+          "y": 433,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.submit",
+          "x": 704.4000244140625,
+          "y": 438,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.redo",
+          "x": 704.4000244140625,
+          "y": 343,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.undo",
+          "x": 704.4000244140625,
+          "y": 248,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.hint",
+          "x": 704.4000244140625,
+          "y": -422.1000061035156,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.select.back",
+          "x": -714.1666870117188,
+          "y": 466.25,
+          "w": 145,
+          "h": 65.83333587646484
+        },
+        {
+          "name": "hit.select.prev",
+          "x": -738,
+          "y": 3,
+          "w": 124,
+          "h": 68
+        },
+        {
+          "name": "hit.select.next",
+          "x": 726,
+          "y": -2,
+          "w": 112,
+          "h": 100
+        },
+        {
+          "name": "clues",
+          "x": -570,
+          "y": -61.099998474121094,
+          "w": 360,
+          "h": 544
+        }
+      ]
+    },
+    {
+      "label": "4:3宽固定模型",
+      "w": 1600,
+      "h": 1200,
+      "criticalBoundsOverflow": [],
+      "boardOverlaps": [],
+      "keyBoxes": [
+        {
+          "name": "hit.back",
+          "x": -730.9119873046875,
+          "y": 533,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.submit",
+          "x": 704.4000244140625,
+          "y": 538,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.redo",
+          "x": 704.4000244140625,
+          "y": 443,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.undo",
+          "x": 704.4000244140625,
+          "y": 348,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.hint",
+          "x": 704.4000244140625,
+          "y": -522.1000061035156,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.select.back",
+          "x": -714.1666870117188,
+          "y": 566.25,
+          "w": 145,
+          "h": 65.83333587646484
+        },
+        {
+          "name": "hit.select.prev",
+          "x": -738,
+          "y": 3,
+          "w": 124,
+          "h": 68
+        },
+        {
+          "name": "hit.select.next",
+          "x": 726,
+          "y": -2,
+          "w": 112,
+          "h": 100
+        },
+        {
+          "name": "clues",
+          "x": -570,
+          "y": -61.099998474121094,
+          "w": 360,
+          "h": 544
+        }
+      ]
+    },
+    {
+      "label": "19.5:9",
+      "w": 1600,
+      "h": 738.4615384615385,
+      "criticalBoundsOverflow": [],
+      "boardOverlaps": [],
+      "keyBoxes": [
+        {
+          "name": "hit.back",
+          "x": -730.9119873046875,
+          "y": 302.2307692307692,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.submit",
+          "x": 704.4000244140625,
+          "y": 307.2307692307692,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.redo",
+          "x": 704.4000244140625,
+          "y": 212.23076923076923,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.undo",
+          "x": 704.4000244140625,
+          "y": 117.23076923076923,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.hint",
+          "x": 704.4000244140625,
+          "y": -291.33077533428485,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.select.back",
+          "x": -714.1666870117188,
+          "y": 335.4807692307692,
+          "w": 145,
+          "h": 65.83333587646484
+        },
+        {
+          "name": "hit.select.prev",
+          "x": -738,
+          "y": 3,
+          "w": 124,
+          "h": 68
+        },
+        {
+          "name": "hit.select.next",
+          "x": 726,
+          "y": -2,
+          "w": 112,
+          "h": 100
+        },
+        {
+          "name": "clues",
+          "x": -570,
+          "y": -61.099998474121094,
+          "w": 360,
+          "h": 544
+        }
+      ]
+    },
+    {
+      "label": "21:9宽固定模型",
+      "w": 1600,
+      "h": 685.7142857142857,
+      "criticalBoundsOverflow": [],
+      "boardOverlaps": [],
+      "keyBoxes": [
+        {
+          "name": "hit.back",
+          "x": -730.9119873046875,
+          "y": 275.85714285714283,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.submit",
+          "x": 704.4000244140625,
+          "y": 280.85714285714283,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.redo",
+          "x": 704.4000244140625,
+          "y": 185.85714285714283,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.undo",
+          "x": 704.4000244140625,
+          "y": 90.85714285714283,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.hint",
+          "x": 704.4000244140625,
+          "y": -264.95714896065846,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.select.back",
+          "x": -714.1666870117188,
+          "y": 309.10714285714283,
+          "w": 145,
+          "h": 65.83333587646484
+        },
+        {
+          "name": "hit.select.prev",
+          "x": -738,
+          "y": 3,
+          "w": 124,
+          "h": 68
+        },
+        {
+          "name": "hit.select.next",
+          "x": 726,
+          "y": -2,
+          "w": 112,
+          "h": 100
+        },
+        {
+          "name": "clues",
+          "x": -570,
+          "y": -61.099998474121094,
+          "w": 360,
+          "h": 544
+        }
+      ]
+    },
+    {
+      "label": "4:3高固定模型",
+      "w": 1200,
+      "h": 900,
+      "criticalBoundsOverflow": [],
+      "boardOverlaps": [
+        "clues"
+      ],
+      "keyBoxes": [
+        {
+          "name": "hit.back",
+          "x": -530.9119873046875,
+          "y": 383,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.submit",
+          "x": 504.4000244140625,
+          "y": 388,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.redo",
+          "x": 504.4000244140625,
+          "y": 293,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.undo",
+          "x": 504.4000244140625,
+          "y": 198,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.hint",
+          "x": 504.4000244140625,
+          "y": -372.1000061035156,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.select.back",
+          "x": -514.1666870117188,
+          "y": 416.25,
+          "w": 145,
+          "h": 65.83333587646484
+        },
+        {
+          "name": "hit.select.prev",
+          "x": -538,
+          "y": 3,
+          "w": 124,
+          "h": 68
+        },
+        {
+          "name": "hit.select.next",
+          "x": 526,
+          "y": -2,
+          "w": 112,
+          "h": 100
+        },
+        {
+          "name": "clues",
+          "x": -370,
+          "y": -61.099998474121094,
+          "w": 360,
+          "h": 544
+        }
+      ]
+    },
+    {
+      "label": "21:9高固定模型",
+      "w": 2100,
+      "h": 900,
+      "criticalBoundsOverflow": [],
+      "boardOverlaps": [],
+      "keyBoxes": [
+        {
+          "name": "hit.back",
+          "x": -980.9119873046875,
+          "y": 383,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.submit",
+          "x": 954.4000244140625,
+          "y": 388,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.redo",
+          "x": 954.4000244140625,
+          "y": 293,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.undo",
+          "x": 954.4000244140625,
+          "y": 198,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.hint",
+          "x": 954.4000244140625,
+          "y": -372.1000061035156,
+          "w": 84,
+          "h": 96
+        },
+        {
+          "name": "hit.select.back",
+          "x": -964.1666870117188,
+          "y": 416.25,
+          "w": 145,
+          "h": 65.83333587646484
+        },
+        {
+          "name": "hit.select.prev",
+          "x": -988,
+          "y": 3,
+          "w": 124,
+          "h": 68
+        },
+        {
+          "name": "hit.select.next",
+          "x": 976,
+          "y": -2,
+          "w": 112,
+          "h": 100
+        },
+        {
+          "name": "clues",
+          "x": -820,
+          "y": -61.099998474121094,
+          "w": 360,
+          "h": 544
+        }
+      ]
+    }
+  ]
+}

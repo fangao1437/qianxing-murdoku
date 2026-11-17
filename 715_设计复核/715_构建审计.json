@@ -1,0 +1,210 @@
+{
+  "version": 715,
+  "baseVersion": 714,
+  "baseSha256": "21efc18de4bb66dd338a65ed3dcf569da58144f80586c1ca17931d7f06c17eaa",
+  "sha256": "0eb5a67f4ed8710f9f4a00026e2011d579cd455c0f21efd9624442c98ce79c5e",
+  "records": 8300,
+  "bytes": 7315370,
+  "fieldDiffs": 25,
+  "changedRecords": [
+    "what.7.1",
+    "what.7.6",
+    "what.4.1",
+    "what.4.2"
+  ],
+  "changes": [
+    {
+      "name": "what.4.1",
+      "before": "B编辑在我上方",
+      "after": "我与V老板在同一房间",
+      "states": [
+        {
+          "widthBefore": 68.00030517578125,
+          "widthAfter": 128.00030517578125,
+          "height": 40.000038146972656
+        },
+        {
+          "widthBefore": 68.00030517578125,
+          "widthAfter": 128.00030517578125,
+          "height": 40.000038146972656
+        },
+        {
+          "widthBefore": 68.00030517578125,
+          "widthAfter": 128.00030517578125,
+          "height": 40.000038146972656
+        },
+        {
+          "widthBefore": 68.00030517578125,
+          "widthAfter": 128.00030517578125,
+          "height": 40.000038146972656
+        }
+      ]
+    },
+    {
+      "name": "what.4.2",
+      "before": "我在椅子上",
+      "after": "我在桌子旁边",
+      "states": [
+        {
+          "widthBefore": 100.00030517578125,
+          "widthAfter": 120.00030517578125,
+          "height": 40.000038146972656
+        },
+        {
+          "widthBefore": 100.00030517578125,
+          "widthAfter": 120.00030517578125,
+          "height": 40.000038146972656
+        },
+        {
+          "widthBefore": 100.00030517578125,
+          "widthAfter": 120.00030517578125,
+          "height": 40.000038146972656
+        },
+        {
+          "widthBefore": 100.00030517578125,
+          "widthAfter": 120.00030517578125,
+          "height": 40.000038146972656
+        }
+      ]
+    },
+    {
+      "name": "what.7.1",
+      "before": "C作家在桌子旁边",
+      "after": "我在植物旁边",
+      "states": [
+        {
+          "widthBefore": 80.00030517578125,
+          "widthAfter": 80.00030517578125,
+          "height": 40.000038146972656
+        },
+        {
+          "widthBefore": 80.00030517578125,
+          "widthAfter": 80.00030517578125,
+          "height": 40.000038146972656
+        },
+        {
+          "widthBefore": 80.00030517578125,
+          "widthAfter": 80.00030517578125,
+          "height": 40.000038146972656
+        },
+        {
+          "widthBefore": 80.00030517578125,
+          "widthAfter": 80.00030517578125,
+          "height": 40.000038146972656
+        }
+      ]
+    },
+    {
+      "name": "what.7.6",
+      "before": "B读者在椅子上",
+      "after": "B读者在第5列",
+      "states": [
+        {
+          "widthBefore": null,
+          "widthAfter": null,
+          "height": null
+        },
+        {
+          "widthBefore": null,
+          "widthAfter": null,
+          "height": null
+        },
+        {
+          "widthBefore": null,
+          "widthAfter": null,
+          "height": null
+        },
+        {
+          "widthBefore": null,
+          "widthAfter": null,
+          "height": null
+        }
+      ]
+    }
+  ],
+  "checks": {
+    "roundtrip": true,
+    "allRecordBytesMatch": true,
+    "all84CardTextsChecked": true,
+    "base714Unchanged": true,
+    "all17SourceModulesMatch": true,
+    "onlyThreeLevelModulesChanged": true,
+    "lua54Compile": true,
+    "sevenLevelRuntime": true,
+    "changedHintsMatchIndependentGeometry": true,
+    "shelfRuntimeArtAt4_1": true,
+    "shelfOld5_2Released": true,
+    "allNamesMatch": true
+  },
+  "realGameTest": false,
+  "changedModules": [
+    "levels.case_004",
+    "levels.case_005",
+    "levels.case_007"
+  ],
+  "hintCounts": {
+    "1": [
+      4,
+      2,
+      2,
+      6,
+      5
+    ],
+    "2": [
+      3,
+      6,
+      2,
+      0,
+      6,
+      0
+    ],
+    "3": [
+      0,
+      2,
+      3,
+      9,
+      0,
+      9
+    ],
+    "4": [
+      0,
+      2,
+      4,
+      2,
+      3,
+      5
+    ],
+    "5": [
+      2,
+      2,
+      3,
+      2,
+      0,
+      3
+    ],
+    "6": [
+      2,
+      0,
+      2,
+      14,
+      2,
+      5,
+      0
+    ],
+    "7": [
+      2,
+      3,
+      3,
+      8,
+      4,
+      5
+    ]
+  },
+  "luaVersion": "Lua 5.4",
+  "limits": [
+    "未进行715实机试玩",
+    "本轮使用Lua5.4.6编译及运行，未执行Lua5.3二进制验证",
+    "第7关显式列线索降低定位难度；未重算历史难度分数",
+    "第7关V卡继承基线布局，部分状态几何值不可读，未改变其几何；实际排版需实机确认"
+  ]
+}
