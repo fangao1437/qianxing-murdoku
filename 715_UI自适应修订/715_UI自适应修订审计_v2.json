@@ -1,0 +1,6498 @@
+{
+  "base": "715_全线索规则复核修订.gil",
+  "baseSha256": "0eb5a67f4ed8710f9f4a00026e2011d579cd455c0f21efd9624442c98ce79c5e",
+  "recordsBefore": 8300,
+  "recordsAfter": 7773,
+  "groups": [
+    {
+      "id": 1073761050,
+      "name": "adapt715r.LM.1",
+      "parent": "grp653.static.1.art641.game",
+      "key": "LM",
+      "children": [
+        1073758373,
+        1073758374,
+        1073758375,
+        1073758376,
+        1073758377,
+        1073758378,
+        1073758379,
+        1073758380,
+        1073758381,
+        1073758382,
+        1073758383,
+        1073758384,
+        1073758385,
+        1073758386,
+        1073758387,
+        1073758388,
+        1073758389,
+        1073758390,
+        1073758391,
+        1073758392,
+        1073758393,
+        1073758394,
+        1073758395,
+        1073758396,
+        1073758397,
+        1073758398,
+        1073758399,
+        1073758400,
+        1073758401,
+        1073758402,
+        1073758403,
+        1073758404,
+        1073758405,
+        1073758406,
+        1073758407,
+        1073758408,
+        1073758409,
+        1073758410,
+        1073758411,
+        1073758412,
+        1073758413,
+        1073758414,
+        1073758430,
+        1073758431,
+        1073758432,
+        1073758433,
+        1073758434,
+        1073758435,
+        1073758436,
+        1073758437,
+        1073758438,
+        1073758439,
+        1073758440,
+        1073758441,
+        1073758442,
+        1073758443,
+        1073758444,
+        1073758445,
+        1073758446,
+        1073758447,
+        1073758448,
+        1073758449,
+        1073758450,
+        1073758451,
+        1073758452,
+        1073758453,
+        1073758454,
+        1073758455,
+        1073758456,
+        1073758457,
+        1073758458,
+        1073758459,
+        1073758460,
+        1073758461,
+        1073758462,
+        1073758463,
+        1073758464,
+        1073758465,
+        1073758466,
+        1073758467,
+        1073758468,
+        1073758469
+      ],
+      "childNames": [
+        "art661.clues.grid.paper",
+        "art661.clues.grid.v1",
+        "art661.clues.grid.v2",
+        "art661.clues.grid.v3",
+        "art661.clues.grid.v4",
+        "art661.clues.grid.v5",
+        "art661.clues.grid.v6",
+        "art661.clues.grid.v7",
+        "art661.clues.grid.v8",
+        "art661.clues.grid.v9",
+        "art661.clues.grid.v10",
+        "art661.clues.grid.v11",
+        "art661.clues.grid.v12",
+        "art661.clues.grid.v13",
+        "art661.clues.grid.v14",
+        "art661.clues.grid.v15",
+        "art661.clues.grid.v16",
+        "art661.clues.grid.v17",
+        "art661.clues.grid.v18",
+        "art661.clues.grid.v19",
+        "art661.clues.grid.v20",
+        "art661.clues.grid.v21",
+        "art661.clues.grid.v22",
+        "art661.clues.grid.v23",
+        "art661.clues.grid.v24",
+        "art661.clues.grid.v25",
+        "art661.clues.grid.h1",
+        "art661.clues.grid.h2",
+        "art661.clues.grid.h3",
+        "art661.clues.grid.h4",
+        "art661.clues.grid.h5",
+        "art661.clues.grid.h6",
+        "art661.clues.grid.h7",
+        "art661.clues.grid.h8",
+        "art661.clues.grid.h9",
+        "art661.clues.grid.h10",
+        "art661.clues.grid.h11",
+        "art661.clues.grid.h12",
+        "art661.clues.grid.h13",
+        "art661.clues.grid.h14",
+        "art661.clues.grid.h15",
+        "art661.clues.grid.h16",
+        "art661.clues.cover",
+        "art661.clues.cover.dash.top1",
+        "art661.clues.cover.dash.top2",
+        "art661.clues.cover.dash.top3",
+        "art661.clues.cover.dash.top4",
+        "art661.clues.cover.dash.top5",
+        "art661.clues.cover.dash.top6",
+        "art661.clues.cover.dash.top7",
+        "art661.clues.cover.dash.top8",
+        "art661.clues.cover.dash.top9",
+        "art661.clues.cover.dash.top10",
+        "art661.clues.cover.dash.top11",
+        "art661.clues.cover.dash.top12",
+        "art661.clues.cover.dash.right1",
+        "art661.clues.cover.dash.right2",
+        "art661.clues.cover.dash.right3",
+        "art661.clues.cover.dash.right4",
+        "art661.clues.cover.dash.right5",
+        "art661.clues.cover.dash.right6",
+        "art661.clues.cover.dash.right7",
+        "art661.clues.cover.dash.right8",
+        "art661.clues.cover.dash.right9",
+        "art661.clues.cover.dash.right10",
+        "art661.clues.cover.dash.right11",
+        "art661.clues.cover.dash.right12",
+        "art661.clues.cover.dash.right13",
+        "art661.clues.cover.dash.right14",
+        "art661.clues.cover.dash.bottom1",
+        "art661.clues.cover.dash.bottom2",
+        "art661.clues.cover.dash.bottom3",
+        "art661.clues.cover.dash.bottom4",
+        "art661.clues.cover.dash.bottom5",
+        "art661.clues.cover.dash.bottom6",
+        "art661.clues.cover.dash.bottom7",
+        "art661.clues.cover.dash.bottom8",
+        "art661.clues.cover.dash.bottom9",
+        "art661.clues.cover.dash.bottom10",
+        "art661.clues.cover.dash.bottom11",
+        "art661.clues.cover.dash.bottom12",
+        "art661.clues.frame.edge"
+      ]
+    },
+    {
+      "id": 1073761051,
+      "name": "adapt715r.TL.2",
+      "parent": "grp653.static.1.art641.game",
+      "key": "TL",
+      "children": [
+        1073758023,
+        1073758024,
+        1073758025,
+        1073758026
+      ],
+      "childNames": [
+        "art657.game.flag.back.shadow",
+        "art657.game.flag.back.outline",
+        "art657.game.flag.back.outline.tri.top",
+        "art657.game.flag.back.outline.tri.bottom"
+      ]
+    },
+    {
+      "id": 1073761052,
+      "name": "adapt715r.TR.3",
+      "parent": "grp653.static.1.art641.game",
+      "key": "TR",
+      "children": [
+        1073758029,
+        1073758030,
+        1073758031,
+        1073758032,
+        1073758035,
+        1073758036,
+        1073758037,
+        1073758038,
+        1073758041,
+        1073758042,
+        1073758043,
+        1073758044
+      ],
+      "childNames": [
+        "art657.game.flag.submit.shadow",
+        "art657.game.flag.submit.outline",
+        "art657.game.flag.submit.outline.tri.top",
+        "art657.game.flag.submit.outline.tri.bottom",
+        "art657.game.flag.redo.shadow",
+        "art657.game.flag.redo.outline",
+        "art657.game.flag.redo.outline.tri.top",
+        "art657.game.flag.redo.outline.tri.bottom",
+        "art657.game.flag.undo.shadow",
+        "art657.game.flag.undo.outline",
+        "art657.game.flag.undo.outline.tri.top",
+        "art657.game.flag.undo.outline.tri.bottom"
+      ]
+    },
+    {
+      "id": 1073761053,
+      "name": "adapt715r.BR.4",
+      "parent": "grp653.static.1.art641.game",
+      "key": "BR",
+      "children": [
+        1073758047,
+        1073758048,
+        1073758049,
+        1073758050
+      ],
+      "childNames": [
+        "art657.game.flag.hint.shadow",
+        "art657.game.flag.hint.outline",
+        "art657.game.flag.hint.outline.tri.top",
+        "art657.game.flag.hint.outline.tri.bottom"
+      ]
+    },
+    {
+      "id": 1073761054,
+      "name": "adapt715r.TL.5",
+      "parent": "grp653.static.1.art641.game",
+      "key": "TL",
+      "children": [
+        1073754866
+      ],
+      "childNames": [
+        "art641.game.flag.back"
+      ]
+    },
+    {
+      "id": 1073761055,
+      "name": "adapt715r.TR.6",
+      "parent": "grp653.static.1.art641.game",
+      "key": "TR",
+      "children": [
+        1073754867,
+        1073754868,
+        1073754869
+      ],
+      "childNames": [
+        "art641.game.flag.submit",
+        "art641.game.flag.redo",
+        "art641.game.flag.undo"
+      ]
+    },
+    {
+      "id": 1073761056,
+      "name": "adapt715r.BR.7",
+      "parent": "grp653.static.1.art641.game",
+      "key": "BR",
+      "children": [
+        1073754870
+      ],
+      "childNames": [
+        "art641.game.flag.hint"
+      ]
+    },
+    {
+      "id": 1073761057,
+      "name": "adapt715r.LM.8",
+      "parent": "grp653.static.1.art641.game",
+      "key": "LM",
+      "children": [
+        1073757938,
+        1073758062,
+        1073757961,
+        1073757962,
+        1073757963,
+        1073760031,
+        1073760074,
+        1073760075,
+        1073760076,
+        1073760077,
+        1073760078,
+        1073760079,
+        1073760080,
+        1073760081,
+        1073760083,
+        1073760084,
+        1073760085,
+        1073760086,
+        1073760087,
+        1073760088,
+        1073760089,
+        1073760090,
+        1073760092,
+        1073760093,
+        1073760094,
+        1073760095,
+        1073760096,
+        1073760097,
+        1073760098,
+        1073760099,
+        1073760101,
+        1073760102,
+        1073760103,
+        1073760104,
+        1073760105,
+        1073760106,
+        1073760107,
+        1073760108,
+        1073760110,
+        1073760111,
+        1073760112,
+        1073760113,
+        1073760114,
+        1073760115,
+        1073760116,
+        1073760117,
+        1073760119,
+        1073760120,
+        1073760121,
+        1073760122,
+        1073760123,
+        1073760124,
+        1073760125,
+        1073760126,
+        1073760128,
+        1073760129,
+        1073760130,
+        1073760131,
+        1073760132,
+        1073760133,
+        1073760134,
+        1073760135,
+        1073760137,
+        1073760138,
+        1073760139,
+        1073760140,
+        1073760141,
+        1073760142,
+        1073760143,
+        1073760144
+      ],
+      "childNames": [
+        "art657.game.notebook.frame",
+        "art658.clues.binding",
+        "art657.game.notebook.ribbon",
+        "art657.game.notebook.ribbon.tri.top",
+        "art657.game.notebook.ribbon.tri.bottom",
+        "art676.binding.mid",
+        "art677.ring.1.holeOuter",
+        "art677.ring.1.holeInner",
+        "art677.ring.1.outer",
+        "art677.ring.1.mid",
+        "art677.ring.1.lit",
+        "art677.ring.1.low",
+        "art677.ring.1.top",
+        "art677.ring.1.tip",
+        "art677.ring.2.holeOuter",
+        "art677.ring.2.holeInner",
+        "art677.ring.2.outer",
+        "art677.ring.2.mid",
+        "art677.ring.2.lit",
+        "art677.ring.2.low",
+        "art677.ring.2.top",
+        "art677.ring.2.tip",
+        "art677.ring.3.holeOuter",
+        "art677.ring.3.holeInner",
+        "art677.ring.3.outer",
+        "art677.ring.3.mid",
+        "art677.ring.3.lit",
+        "art677.ring.3.low",
+        "art677.ring.3.top",
+        "art677.ring.3.tip",
+        "art677.ring.4.holeOuter",
+        "art677.ring.4.holeInner",
+        "art677.ring.4.outer",
+        "art677.ring.4.mid",
+        "art677.ring.4.lit",
+        "art677.ring.4.low",
+        "art677.ring.4.top",
+        "art677.ring.4.tip",
+        "art677.ring.5.holeOuter",
+        "art677.ring.5.holeInner",
+        "art677.ring.5.outer",
+        "art677.ring.5.mid",
+        "art677.ring.5.lit",
+        "art677.ring.5.low",
+        "art677.ring.5.top",
+        "art677.ring.5.tip",
+        "art677.ring.6.holeOuter",
+        "art677.ring.6.holeInner",
+        "art677.ring.6.outer",
+        "art677.ring.6.mid",
+        "art677.ring.6.lit",
+        "art677.ring.6.low",
+        "art677.ring.6.top",
+        "art677.ring.6.tip",
+        "art677.ring.7.holeOuter",
+        "art677.ring.7.holeInner",
+        "art677.ring.7.outer",
+        "art677.ring.7.mid",
+        "art677.ring.7.lit",
+        "art677.ring.7.low",
+        "art677.ring.7.top",
+        "art677.ring.7.tip",
+        "art677.ring.8.holeOuter",
+        "art677.ring.8.holeInner",
+        "art677.ring.8.outer",
+        "art677.ring.8.mid",
+        "art677.ring.8.lit",
+        "art677.ring.8.low",
+        "art677.ring.8.top",
+        "art677.ring.8.tip"
+      ]
+    },
+    {
+      "id": 1073761058,
+      "name": "adapt715r.TL.9",
+      "parent": "grp653.static.1.art641.game",
+      "key": "TL",
+      "children": [
+        1073758027,
+        1073758028
+      ],
+      "childNames": [
+        "art657.game.flag.back.ribbon.tri.top",
+        "art657.game.flag.back.ribbon.tri.bottom"
+      ]
+    },
+    {
+      "id": 1073761059,
+      "name": "adapt715r.TR.10",
+      "parent": "grp653.static.1.art641.game",
+      "key": "TR",
+      "children": [
+        1073758033,
+        1073758034,
+        1073758039,
+        1073758040,
+        1073758045,
+        1073758046
+      ],
+      "childNames": [
+        "art657.game.flag.submit.ribbon.tri.top",
+        "art657.game.flag.submit.ribbon.tri.bottom",
+        "art657.game.flag.redo.ribbon.tri.top",
+        "art657.game.flag.redo.ribbon.tri.bottom",
+        "art657.game.flag.undo.ribbon.tri.top",
+        "art657.game.flag.undo.ribbon.tri.bottom"
+      ]
+    },
+    {
+      "id": 1073761060,
+      "name": "adapt715r.BR.11",
+      "parent": "grp653.static.1.art641.game",
+      "key": "BR",
+      "children": [
+        1073758051
+      ],
+      "childNames": [
+        "art657.game.flag.hint.ribbon.tri.top"
+      ]
+    },
+    {
+      "id": 1073761061,
+      "name": "adapt715r.WAX.12",
+      "parent": "grp653.static.1.art641.game",
+      "key": "WAX",
+      "children": [
+        1073759791,
+        1073759792,
+        1073759793,
+        1073759794,
+        1073759795,
+        1073759796,
+        1073759797,
+        1073759798,
+        1073759799,
+        1073759800,
+        1073759801,
+        1073759802,
+        1073759803,
+        1073759804,
+        1073759805,
+        1073759806,
+        1073759807,
+        1073759808,
+        1073759809,
+        1073759810,
+        1073759811,
+        1073759812,
+        1073759813,
+        1073759814,
+        1073759815,
+        1073759816,
+        1073759817,
+        1073759818,
+        1073759819,
+        1073759820,
+        1073759821,
+        1073759822,
+        1073759823,
+        1073759824,
+        1073759825,
+        1073759826,
+        1073759827,
+        1073759828,
+        1073759829,
+        1073759830,
+        1073759831,
+        1073759832,
+        1073759833,
+        1073759834,
+        1073759835,
+        1073759836,
+        1073759837,
+        1073759838,
+        1073759839,
+        1073759840,
+        1073759841,
+        1073759842,
+        1073759843,
+        1073759844,
+        1073759845,
+        1073759846,
+        1073759847,
+        1073759848,
+        1073759849,
+        1073759850,
+        1073759851,
+        1073759852,
+        1073759853,
+        1073759854,
+        1073759855,
+        1073759856,
+        1073759857,
+        1073759858,
+        1073759859,
+        1073759860,
+        1073759861,
+        1073759862,
+        1073759863,
+        1073759864,
+        1073759865,
+        1073759866,
+        1073759867,
+        1073759868,
+        1073759869,
+        1073759870,
+        1073759871,
+        1073759872,
+        1073759873,
+        1073759874,
+        1073759875,
+        1073759876,
+        1073759877,
+        1073759878,
+        1073759879,
+        1073759880,
+        1073759881,
+        1073759882,
+        1073759883,
+        1073759884,
+        1073759885,
+        1073759886,
+        1073759887,
+        1073759888,
+        1073759889,
+        1073759890,
+        1073759891,
+        1073759892,
+        1073759893,
+        1073759894,
+        1073759895,
+        1073759896,
+        1073759897,
+        1073759898,
+        1073759899,
+        1073759900,
+        1073759901,
+        1073759902,
+        1073759903,
+        1073759904,
+        1073759905,
+        1073759906,
+        1073759907,
+        1073759908,
+        1073759909,
+        1073759910,
+        1073759911,
+        1073759912,
+        1073759913,
+        1073759914,
+        1073759915,
+        1073759916,
+        1073759917,
+        1073759918,
+        1073759919,
+        1073759920,
+        1073759921,
+        1073759922,
+        1073759923,
+        1073759924,
+        1073759925,
+        1073759926,
+        1073759927,
+        1073759928,
+        1073759929,
+        1073759930,
+        1073759931,
+        1073759932,
+        1073759933,
+        1073759934,
+        1073759935,
+        1073759936,
+        1073759937,
+        1073759938,
+        1073759939,
+        1073759940,
+        1073759941,
+        1073759942,
+        1073759943,
+        1073759944,
+        1073759945,
+        1073759946,
+        1073759947,
+        1073759948,
+        1073759949,
+        1073759950,
+        1073759951,
+        1073759952,
+        1073759953,
+        1073759954,
+        1073759955,
+        1073759956,
+        1073759957,
+        1073759958,
+        1073759959,
+        1073759960,
+        1073759961,
+        1073759962,
+        1073759963,
+        1073759964,
+        1073759965,
+        1073759966,
+        1073759967,
+        1073759968,
+        1073759969,
+        1073759970,
+        1073759971,
+        1073759972,
+        1073759973,
+        1073759974,
+        1073759975,
+        1073759976,
+        1073759977,
+        1073759978,
+        1073759979,
+        1073759980,
+        1073759981,
+        1073759982,
+        1073759983,
+        1073759984,
+        1073759985,
+        1073759986,
+        1073759987,
+        1073759988,
+        1073759989,
+        1073759990,
+        1073759991,
+        1073759992,
+        1073759993,
+        1073759994,
+        1073759995,
+        1073759996,
+        1073759997,
+        1073759998,
+        1073759999,
+        1073760000,
+        1073760001,
+        1073760002,
+        1073760003,
+        1073760004,
+        1073760005,
+        1073760006,
+        1073760007,
+        1073760008,
+        1073760009,
+        1073760010,
+        1073760011,
+        1073760012,
+        1073760013,
+        1073760014,
+        1073760015,
+        1073760016,
+        1073760017,
+        1073760018,
+        1073760019,
+        1073760020,
+        1073760021,
+        1073760022,
+        1073760023,
+        1073760024,
+        1073760025,
+        1073760026,
+        1073760027,
+        1073760028,
+        1073760029,
+        1073760030
+      ],
+      "childNames": [
+        "art675.wax.fit000",
+        "art675.wax.fit001",
+        "art675.wax.fit002",
+        "art675.wax.fit003",
+        "art675.wax.fit004",
+        "art675.wax.fit005",
+        "art675.wax.fit006",
+        "art675.wax.fit007",
+        "art675.wax.fit008",
+        "art675.wax.fit009",
+        "art675.wax.fit010",
+        "art675.wax.fit011",
+        "art675.wax.fit012",
+        "art675.wax.fit013",
+        "art675.wax.fit014",
+        "art675.wax.fit015",
+        "art675.wax.fit016",
+        "art675.wax.fit017",
+        "art675.wax.fit018",
+        "art675.wax.fit019",
+        "art675.wax.fit020",
+        "art675.wax.fit021",
+        "art675.wax.fit022",
+        "art675.wax.fit023",
+        "art675.wax.fit024",
+        "art675.wax.fit025",
+        "art675.wax.fit026",
+        "art675.wax.fit027",
+        "art675.wax.fit028",
+        "art675.wax.fit029",
+        "art675.wax.fit030",
+        "art675.wax.fit031",
+        "art675.wax.fit032",
+        "art675.wax.fit033",
+        "art675.wax.fit034",
+        "art675.wax.fit035",
+        "art675.wax.fit036",
+        "art675.wax.fit037",
+        "art675.wax.fit038",
+        "art675.wax.fit039",
+        "art675.wax.fit040",
+        "art675.wax.fit041",
+        "art675.wax.fit042",
+        "art675.wax.fit043",
+        "art675.wax.fit044",
+        "art675.wax.fit045",
+        "art675.wax.fit046",
+        "art675.wax.fit047",
+        "art675.wax.fit048",
+        "art675.wax.fit049",
+        "art675.wax.fit050",
+        "art675.wax.fit051",
+        "art675.wax.fit052",
+        "art675.wax.fit053",
+        "art675.wax.fit054",
+        "art675.wax.fit055",
+        "art675.wax.fit056",
+        "art675.wax.fit057",
+        "art675.wax.fit058",
+        "art675.wax.fit059",
+        "art675.wax.fit060",
+        "art675.wax.fit061",
+        "art675.wax.fit062",
+        "art675.wax.fit063",
+        "art675.wax.fit064",
+        "art675.wax.fit065",
+        "art675.wax.fit066",
+        "art675.wax.fit067",
+        "art675.wax.fit068",
+        "art675.wax.fit069",
+        "art675.wax.fit070",
+        "art675.wax.fit071",
+        "art675.wax.fit072",
+        "art675.wax.fit073",
+        "art675.wax.fit074",
+        "art675.wax.fit075",
+        "art675.wax.fit076",
+        "art675.wax.fit077",
+        "art675.wax.fit078",
+        "art675.wax.fit079",
+        "art675.wax.fit080",
+        "art675.wax.fit081",
+        "art675.wax.fit082",
+        "art675.wax.fit083",
+        "art675.wax.fit084",
+        "art675.wax.fit085",
+        "art675.wax.fit086",
+        "art675.wax.fit087",
+        "art675.wax.fit088",
+        "art675.wax.fit089",
+        "art675.wax.fit090",
+        "art675.wax.fit091",
+        "art675.wax.fit092",
+        "art675.wax.fit093",
+        "art675.wax.fit094",
+        "art675.wax.fit095",
+        "art675.wax.fit096",
+        "art675.wax.fit097",
+        "art675.wax.fit098",
+        "art675.wax.fit099",
+        "art675.wax.fit100",
+        "art675.wax.fit101",
+        "art675.wax.fit102",
+        "art675.wax.fit103",
+        "art675.wax.fit104",
+        "art675.wax.fit105",
+        "art675.wax.fit106",
+        "art675.wax.fit107",
+        "art675.wax.fit108",
+        "art675.wax.fit109",
+        "art675.wax.fit110",
+        "art675.wax.fit111",
+        "art675.wax.fit112",
+        "art675.wax.fit113",
+        "art675.wax.fit114",
+        "art675.wax.fit115",
+        "art675.wax.fit116",
+        "art675.wax.fit117",
+        "art675.wax.fit118",
+        "art675.wax.fit119",
+        "art675.wax.fit120",
+        "art675.wax.fit121",
+        "art675.wax.fit122",
+        "art675.wax.fit123",
+        "art675.wax.fit124",
+        "art675.wax.fit125",
+        "art675.wax.fit126",
+        "art675.wax.fit127",
+        "art675.wax.fit128",
+        "art675.wax.fit129",
+        "art675.wax.fit130",
+        "art675.wax.fit131",
+        "art675.wax.fit132",
+        "art675.wax.fit133",
+        "art675.wax.fit134",
+        "art675.wax.fit135",
+        "art675.wax.fit136",
+        "art675.wax.fit137",
+        "art675.wax.fit138",
+        "art675.wax.fit139",
+        "art675.wax.fit140",
+        "art675.wax.fit141",
+        "art675.wax.fit142",
+        "art675.wax.fit143",
+        "art675.wax.fit144",
+        "art675.wax.fit145",
+        "art675.wax.fit146",
+        "art675.wax.fit147",
+        "art675.wax.fit148",
+        "art675.wax.fit149",
+        "art675.wax.fit150",
+        "art675.wax.fit151",
+        "art675.wax.fit152",
+        "art675.wax.fit153",
+        "art675.wax.fit154",
+        "art675.wax.fit155",
+        "art675.wax.fit156",
+        "art675.wax.fit157",
+        "art675.wax.fit158",
+        "art675.wax.fit159",
+        "art675.wax.fit160",
+        "art675.wax.fit161",
+        "art675.wax.fit162",
+        "art675.wax.fit163",
+        "art675.wax.fit164",
+        "art675.wax.fit165",
+        "art675.wax.fit166",
+        "art675.wax.fit167",
+        "art675.wax.fit168",
+        "art675.wax.fit169",
+        "art675.wax.fit170",
+        "art675.wax.fit171",
+        "art675.wax.fit172",
+        "art675.wax.fit173",
+        "art675.wax.fit174",
+        "art675.wax.fit175",
+        "art675.wax.fit176",
+        "art675.wax.fit177",
+        "art675.wax.fit178",
+        "art675.wax.fit179",
+        "art675.wax.fit180",
+        "art675.wax.fit181",
+        "art675.wax.fit182",
+        "art675.wax.fit183",
+        "art675.wax.fit184",
+        "art675.wax.fit185",
+        "art675.wax.fit186",
+        "art675.wax.fit187",
+        "art675.wax.fit188",
+        "art675.wax.fit189",
+        "art675.wax.fit190",
+        "art675.wax.fit191",
+        "art675.wax.fit192",
+        "art675.wax.fit193",
+        "art675.wax.fit194",
+        "art675.wax.fit195",
+        "art675.wax.fit196",
+        "art675.wax.fit197",
+        "art675.wax.fit198",
+        "art675.wax.fit199",
+        "art675.wax.fit200",
+        "art675.wax.fit201",
+        "art675.wax.fit202",
+        "art675.wax.fit203",
+        "art675.wax.fit204",
+        "art675.wax.fit205",
+        "art675.wax.fit206",
+        "art675.wax.fit207",
+        "art675.wax.fit208",
+        "art675.wax.fit209",
+        "art675.wax.fit210",
+        "art675.wax.fit211",
+        "art675.wax.fit212",
+        "art675.wax.fit213",
+        "art675.wax.fit214",
+        "art675.wax.fit215",
+        "art675.wax.fit216",
+        "art675.wax.fit217",
+        "art675.wax.fit218",
+        "art675.wax.fit219",
+        "art675.wax.fit220",
+        "art675.wax.fit221",
+        "art675.wax.fit222",
+        "art675.wax.fit223",
+        "art675.wax.fit224",
+        "art675.wax.fit225",
+        "art675.wax.fit226",
+        "art675.wax.fit227",
+        "art675.wax.fit228",
+        "art675.wax.fit229",
+        "art675.wax.fit230",
+        "art675.wax.fit231",
+        "art675.wax.fit232",
+        "art675.wax.fit233",
+        "art675.wax.fit234",
+        "art675.wax.fit235",
+        "art675.wax.fit236",
+        "art675.wax.fit237",
+        "art675.wax.fit238",
+        "art675.wax.fit239"
+      ]
+    },
+    {
+      "id": 1073761062,
+      "name": "adapt715r.BR.13",
+      "parent": "grp653.static.1.art641.game",
+      "key": "BR",
+      "children": [
+        1073758052
+      ],
+      "childNames": [
+        "art657.game.flag.hint.ribbon.tri.bottom"
+      ]
+    },
+    {
+      "id": 1073761063,
+      "name": "adapt715r.LM.14",
+      "parent": "grp653.static.1.art641.game",
+      "key": "LM",
+      "children": [
+        1073758058,
+        1073758152,
+        1073758470,
+        1073760146,
+        1073760147,
+        1073760150,
+        1073760151,
+        1073760154,
+        1073760155,
+        1073760158,
+        1073760159,
+        1073760162,
+        1073760163,
+        1073760166,
+        1073760167,
+        1073754865,
+        1073760148,
+        1073760149,
+        1073760152,
+        1073760153,
+        1073760156,
+        1073760157,
+        1073760160,
+        1073760161,
+        1073760164,
+        1073760165,
+        1073760168,
+        1073760169,
+        1073759670,
+        1073759671,
+        1073759672,
+        1073759673,
+        1073759674,
+        1073759675,
+        1073759676,
+        1073759677,
+        1073759678,
+        1073759679,
+        1073759680,
+        1073759681,
+        1073759682,
+        1073759683,
+        1073759684,
+        1073759685,
+        1073759686,
+        1073759687,
+        1073759688,
+        1073759689,
+        1073759690,
+        1073759691,
+        1073759692,
+        1073758485,
+        1073758486,
+        1073758487,
+        1073758488,
+        1073758489,
+        1073758490,
+        1073758491,
+        1073758492,
+        1073758493,
+        1073758494,
+        1073758495
+      ],
+      "childNames": [
+        "art658.help.tab.clip",
+        "art658.ribbon.clip",
+        "art661.tab.outline",
+        "art678.tab.outline.l1.rect",
+        "art678.tab.outline.l1.tri",
+        "art678.tab.outline.l2.rect",
+        "art678.tab.outline.l2.tri",
+        "art678.tab.outline.l3.rect",
+        "art678.tab.outline.l3.tri",
+        "art678.tab.outline.r1.rect",
+        "art678.tab.outline.r1.tri",
+        "art678.tab.outline.r2.rect",
+        "art678.tab.outline.r2.tri",
+        "art678.tab.outline.r3.rect",
+        "art678.tab.outline.r3.tri",
+        "art641.game.help.tab",
+        "art678.tab.main.l1.rect",
+        "art678.tab.main.l1.tri",
+        "art678.tab.main.l2.rect",
+        "art678.tab.main.l2.tri",
+        "art678.tab.main.l3.rect",
+        "art678.tab.main.l3.tri",
+        "art678.tab.main.r1.rect",
+        "art678.tab.main.r1.tri",
+        "art678.tab.main.r2.rect",
+        "art678.tab.main.r2.tri",
+        "art678.tab.main.r3.rect",
+        "art678.tab.main.r3.tri",
+        "art664.tab.mid.fit01",
+        "art664.tab.mid.fit02",
+        "art664.tab.mid.fit03",
+        "art664.tab.mid.fit04",
+        "art664.tab.mid.fit05",
+        "art664.tab.mid.fit06",
+        "art664.tab.mid.fit07",
+        "art664.tab.mid.fit08",
+        "art664.tab.mid.fit09",
+        "art664.tab.mid.fit10",
+        "art664.tab.mid.fit11",
+        "art664.tab.mid.fit12",
+        "art664.tab.mid.fit13",
+        "art664.tab.mid.fit14",
+        "art664.tab.hi.fit15",
+        "art664.tab.hi.fit16",
+        "art664.tab.hi.fit17",
+        "art664.tab.hi.fit18",
+        "art664.tab.hi.fit19",
+        "art664.tab.hi.fit20",
+        "art664.tab.hi.fit21",
+        "art664.tab.hi.fit22",
+        "art664.tab.hi.fit23",
+        "art661.ribbon.mid.rect",
+        "art661.ribbon.mid.tri",
+        "art661.ribbon.mid.patch2",
+        "art661.ribbon.mid.patch3",
+        "art661.ribbon.mid.patch4",
+        "art661.ribbon.dark.rect",
+        "art661.ribbon.dark.tri",
+        "art661.ribbon.dark.patch2",
+        "art661.ribbon.dark.patch3",
+        "art661.ribbon.dark.patch4",
+        "art661.ribbon.dark.patch5"
+      ]
+    },
+    {
+      "id": 1073761064,
+      "name": "adapt715r.LM.15",
+      "parent": "grp653.static.1.art641.home",
+      "key": "LM",
+      "children": [
+        1073754781,
+        1073757883,
+        1073757884,
+        1073757885,
+        1073757886,
+        1073757887,
+        1073757888,
+        1073757889,
+        1073757890,
+        1073754782,
+        1073754783,
+        1073754784,
+        1073754785
+      ],
+      "childNames": [
+        "art641.home.camera.body",
+        "art656.home.camera.side.l",
+        "art656.home.camera.side.r",
+        "art656.home.camera.seam",
+        "art656.home.camera.bottom",
+        "art656.home.camera.cap.slope",
+        "art656.home.camera.cap.high",
+        "art656.home.camera.bump0",
+        "art656.home.camera.bump1",
+        "art641.home.camera.top",
+        "art641.home.camera.window",
+        "art641.home.camera.dot0",
+        "art641.home.camera.dot1"
+      ]
+    },
+    {
+      "id": 1073761065,
+      "name": "adapt715r.RM.16",
+      "parent": "grp653.static.1.art641.home",
+      "key": "RM",
+      "children": [
+        1073757904,
+        1073757905,
+        1073757906,
+        1073757907,
+        1073757908,
+        1073757909,
+        1073757910,
+        1073757911,
+        1073757912,
+        1073757913,
+        1073757914,
+        1073757915,
+        1073757916,
+        1073757917,
+        1073757918,
+        1073757919,
+        1073757920,
+        1073757921,
+        1073757922,
+        1073757923,
+        1073757924,
+        1073757925,
+        1073757926,
+        1073757927,
+        1073757928,
+        1073757929,
+        1073757930,
+        1073757931,
+        1073757932,
+        1073757933,
+        1073757934,
+        1073757935,
+        1073757936,
+        1073757937
+      ],
+      "childNames": [
+        "art656.home.note.band0",
+        "art656.home.note.band1",
+        "art656.home.note.band2",
+        "art656.home.note.band3",
+        "art656.home.note.tape",
+        "art656.home.wave.upper.0",
+        "art656.home.wave.upper.1",
+        "art656.home.wave.upper.2",
+        "art656.home.wave.upper.3",
+        "art656.home.wave.upper.4",
+        "art656.home.wave.upper.5",
+        "art656.home.wave.upper.6",
+        "art656.home.wave.upper.7",
+        "art656.home.wave.upper.8",
+        "art656.home.wave.upper.9",
+        "art656.home.wave.upper.10",
+        "art656.home.wave.upper.11",
+        "art656.home.wave.dot.0",
+        "art656.home.wave.lower.0",
+        "art656.home.wave.lower.1",
+        "art656.home.wave.lower.2",
+        "art656.home.wave.lower.3",
+        "art656.home.wave.lower.4",
+        "art656.home.wave.lower.5",
+        "art656.home.wave.lower.6",
+        "art656.home.wave.lower.7",
+        "art656.home.wave.lower.8",
+        "art656.home.wave.lower.9",
+        "art656.home.wave.lower.10",
+        "art656.home.wave.lower.11",
+        "art656.home.wave.lower.12",
+        "art656.home.wave.lower.13",
+        "art656.home.wave.lower.14",
+        "art656.home.wave.lower.15"
+      ]
+    },
+    {
+      "id": 1073761066,
+      "name": "adapt715r.BR.17",
+      "parent": "art641.home",
+      "key": "BR",
+      "children": [
+        1073756513,
+        1073756514,
+        1073756515,
+        1073756516,
+        1073756517,
+        1073756518,
+        1073756519,
+        1073756520,
+        1073756521,
+        1073756522,
+        1073756523
+      ],
+      "childNames": [
+        "art647.home.settle.shadow",
+        "art647.home.settle.yellow.shadow",
+        "art647.home.settle.yellow.edge",
+        "art647.home.settle.yellow",
+        "art647.home.settle.outline",
+        "art647.home.settle.outline.tri.top",
+        "art647.home.settle.outline.tri.bottom",
+        "art647.home.settle.ribbon",
+        "art647.home.settle.ribbon.tri.top",
+        "art647.home.settle.ribbon.tri.bottom",
+        "art647.home.settle.text"
+      ]
+    },
+    {
+      "id": 1073761067,
+      "name": "adapt715r.BR.18",
+      "parent": "art642.select.buttons",
+      "key": "BR",
+      "children": [
+        1073755738,
+        1073755739,
+        1073755740,
+        1073755741,
+        1073755742,
+        1073755743,
+        1073755744,
+        1073755745,
+        1073755746,
+        1073755747,
+        1073755748
+      ],
+      "childNames": [
+        "art647.select.settle.shadow",
+        "art647.select.settle.yellow.shadow",
+        "art647.select.settle.yellow.edge",
+        "art647.select.settle.yellow",
+        "art647.select.settle.outline",
+        "art647.select.settle.outline.tri.top",
+        "art647.select.settle.outline.tri.bottom",
+        "art647.select.settle.ribbon",
+        "art647.select.settle.ribbon.tri.top",
+        "art647.select.settle.ribbon.tri.bottom",
+        "art647.select.settle.text"
+      ]
+    },
+    {
+      "id": 1073761068,
+      "name": "adapt715r.LM.19",
+      "parent": "art642.select.buttons",
+      "key": "LM",
+      "children": [
+        1073755749
+      ],
+      "childNames": [
+        "art647.select.diamond.left"
+      ]
+    },
+    {
+      "id": 1073761069,
+      "name": "adapt715r.RM.20",
+      "parent": "art642.select.buttons",
+      "key": "RM",
+      "children": [
+        1073755750
+      ],
+      "childNames": [
+        "art647.select.diamond.right"
+      ]
+    },
+    {
+      "id": 1073761070,
+      "name": "adapt715r.TL.21",
+      "parent": "grp653.static.1.art642.select.buttons",
+      "key": "TL",
+      "children": [
+        1073755731,
+        1073755732,
+        1073755733,
+        1073755734,
+        1073755735,
+        1073755736,
+        1073755737
+      ],
+      "childNames": [
+        "art647.select.back.shadow",
+        "art647.select.back.outline",
+        "art647.select.back.outline.tri.top",
+        "art647.select.back.outline.tri.bottom",
+        "art647.select.back.ribbon",
+        "art647.select.back.ribbon.tri.top",
+        "art647.select.back.ribbon.tri.bottom"
+      ]
+    },
+    {
+      "id": 1073761071,
+      "name": "adapt715r.LM.22",
+      "parent": "home",
+      "key": "LM",
+      "children": [
+        1073754509,
+        1073757891,
+        1073754510,
+        1073754512,
+        1073754513
+      ],
+      "childNames": [
+        "home.tutorial627.bg",
+        "home.tutorial627.mid",
+        "home.tutorial627.ring",
+        "home.tutorial627.label",
+        "home.tutorial627.hit"
+      ]
+    }
+  ],
+  "targets": [
+    {
+      "id": 1073761050,
+      "name": "adapt715r.LM.1",
+      "key": "LM",
+      "ax": 0,
+      "ay": 0.5,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761051,
+      "name": "adapt715r.TL.2",
+      "key": "TL",
+      "ax": 0,
+      "ay": 1,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761052,
+      "name": "adapt715r.TR.3",
+      "key": "TR",
+      "ax": 1,
+      "ay": 1,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761053,
+      "name": "adapt715r.BR.4",
+      "key": "BR",
+      "ax": 1,
+      "ay": 0,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761054,
+      "name": "adapt715r.TL.5",
+      "key": "TL",
+      "ax": 0,
+      "ay": 1,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761055,
+      "name": "adapt715r.TR.6",
+      "key": "TR",
+      "ax": 1,
+      "ay": 1,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761056,
+      "name": "adapt715r.BR.7",
+      "key": "BR",
+      "ax": 1,
+      "ay": 0,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761057,
+      "name": "adapt715r.LM.8",
+      "key": "LM",
+      "ax": 0,
+      "ay": 0.5,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761058,
+      "name": "adapt715r.TL.9",
+      "key": "TL",
+      "ax": 0,
+      "ay": 1,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761059,
+      "name": "adapt715r.TR.10",
+      "key": "TR",
+      "ax": 1,
+      "ay": 1,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761060,
+      "name": "adapt715r.BR.11",
+      "key": "BR",
+      "ax": 1,
+      "ay": 0,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761061,
+      "name": "adapt715r.WAX.12",
+      "key": "WAX",
+      "ax": 0.5,
+      "ay": 0.5,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761062,
+      "name": "adapt715r.BR.13",
+      "key": "BR",
+      "ax": 1,
+      "ay": 0,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761063,
+      "name": "adapt715r.LM.14",
+      "key": "LM",
+      "ax": 0,
+      "ay": 0.5,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761064,
+      "name": "adapt715r.LM.15",
+      "key": "LM",
+      "ax": 0,
+      "ay": 0.5,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761065,
+      "name": "adapt715r.RM.16",
+      "key": "RM",
+      "ax": 1,
+      "ay": 0.5,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761066,
+      "name": "adapt715r.BR.17",
+      "key": "BR",
+      "ax": 1,
+      "ay": 0,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761067,
+      "name": "adapt715r.BR.18",
+      "key": "BR",
+      "ax": 1,
+      "ay": 0,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            -90
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761068,
+      "name": "adapt715r.LM.19",
+      "key": "LM",
+      "ax": 0,
+      "ay": 0.5,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761069,
+      "name": "adapt715r.RM.20",
+      "key": "RM",
+      "ax": 1,
+      "ay": 0.5,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761070,
+      "name": "adapt715r.TL.21",
+      "key": "TL",
+      "ax": 0,
+      "ay": 1,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            90
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073761071,
+      "name": "adapt715r.LM.22",
+      "key": "LM",
+      "ax": 0,
+      "ay": 0.5,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            0,
+            0
+          ],
+          "editor": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742359,
+      "name": "clues",
+      "key": "LM",
+      "ax": 0,
+      "ay": 0.5,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            -570,
+            -61.099998474121094
+          ],
+          "editor": [
+            -570,
+            -61.099998474121094
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            -570,
+            -61.099998474121094
+          ],
+          "editor": [
+            -570,
+            -61.099998474121094
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            -570,
+            -61.099998474121094
+          ],
+          "editor": [
+            -570,
+            -61.099998474121094
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            -570,
+            -61.099998474121094
+          ],
+          "editor": [
+            -570,
+            -61.099998474121094
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073741916,
+      "name": "topbar",
+      "key": "LM",
+      "ax": 0,
+      "ay": 0.5,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            0,
+            230.40011596679688
+          ],
+          "editor": [
+            0,
+            230.40011596679688
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            0,
+            230.40011596679688
+          ],
+          "editor": [
+            0,
+            230.40011596679688
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            0,
+            230.40011596679688
+          ],
+          "editor": [
+            0,
+            230.40011596679688
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            0,
+            230.40011596679688
+          ],
+          "editor": [
+            0,
+            230.40011596679688
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073754496,
+      "name": "clues.help617",
+      "key": "LM",
+      "ax": 0,
+      "ay": 0.5,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            -416,
+            239
+          ],
+          "editor": [
+            -416,
+            239
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            -416,
+            239
+          ],
+          "editor": [
+            -416,
+            239
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            -416,
+            239
+          ],
+          "editor": [
+            -416,
+            239
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            -416,
+            239
+          ],
+          "editor": [
+            -416,
+            239
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073754508,
+      "name": "clues.help627.hit",
+      "key": "LM",
+      "ax": 0,
+      "ay": 0.5,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            -416,
+            239
+          ],
+          "editor": [
+            -416,
+            239
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            -416,
+            239
+          ],
+          "editor": [
+            -416,
+            239
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            -416,
+            239
+          ],
+          "editor": [
+            -416,
+            239
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            -416,
+            239
+          ],
+          "editor": [
+            -416,
+            239
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742775,
+      "name": "settle.btn",
+      "key": "BR",
+      "ax": 1,
+      "ay": 0,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            683,
+            -279
+          ],
+          "editor": [
+            683,
+            -369
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            683,
+            -279
+          ],
+          "editor": [
+            683,
+            -279
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            683,
+            -279
+          ],
+          "editor": [
+            683,
+            -369
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            683,
+            -279
+          ],
+          "editor": [
+            683,
+            -279
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073754467,
+      "name": "settle.btn.countdown",
+      "key": "BR",
+      "ax": 1,
+      "ay": 0,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            683,
+            -339
+          ],
+          "editor": [
+            683,
+            -429
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            683,
+            -339
+          ],
+          "editor": [
+            683,
+            -339
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            683,
+            -339
+          ],
+          "editor": [
+            683,
+            -429
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            683,
+            -339
+          ],
+          "editor": [
+            683,
+            -339
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742727,
+      "name": "select.back",
+      "key": "TL",
+      "ax": 0,
+      "ay": 1,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            -730.9119873046875,
+            293
+          ],
+          "editor": [
+            -730.9119873046875,
+            383
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            -730.9119873046875,
+            293
+          ],
+          "editor": [
+            -730.9119873046875,
+            293
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            -730.9119873046875,
+            293
+          ],
+          "editor": [
+            -730.9119873046875,
+            383
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            -730.9119873046875,
+            293
+          ],
+          "editor": [
+            -730.9119873046875,
+            293
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742730,
+      "name": "hit.select.back",
+      "key": "TL",
+      "ax": 0,
+      "ay": 1,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            -730.9119873046875,
+            293
+          ],
+          "editor": [
+            -730.9119873046875,
+            383
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            -730.9119873046875,
+            293
+          ],
+          "editor": [
+            -730.9119873046875,
+            293
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            -730.9119873046875,
+            293
+          ],
+          "editor": [
+            -730.9119873046875,
+            383
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            -730.9119873046875,
+            293
+          ],
+          "editor": [
+            -730.9119873046875,
+            293
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742731,
+      "name": "hit.select.prev",
+      "key": "LM",
+      "ax": 0,
+      "ay": 0.5,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            -738,
+            3
+          ],
+          "editor": [
+            -738,
+            3
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            -738,
+            3
+          ],
+          "editor": [
+            -738,
+            3
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            -738,
+            3
+          ],
+          "editor": [
+            -738,
+            3
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            -738,
+            3
+          ],
+          "editor": [
+            -738,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742732,
+      "name": "hit.select.next",
+      "key": "RM",
+      "ax": 1,
+      "ay": 0.5,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            726,
+            -2
+          ],
+          "editor": [
+            726,
+            -2
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            726,
+            -2
+          ],
+          "editor": [
+            726,
+            -2
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            726,
+            -2
+          ],
+          "editor": [
+            726,
+            -2
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            726,
+            -2
+          ],
+          "editor": [
+            726,
+            -2
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742502,
+      "name": "hex.back",
+      "key": "TL",
+      "ax": 0,
+      "ay": 1,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            -730.9119873046875,
+            293
+          ],
+          "editor": [
+            -730.9119873046875,
+            383
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            -730.9119873046875,
+            293
+          ],
+          "editor": [
+            -730.9119873046875,
+            293
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            -730.9119873046875,
+            293
+          ],
+          "editor": [
+            -730.9119873046875,
+            383
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            -730.9119873046875,
+            293
+          ],
+          "editor": [
+            -730.9119873046875,
+            293
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742503,
+      "name": "hex.submit",
+      "key": "TR",
+      "ax": 1,
+      "ay": 1,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            704.4000244140625,
+            298
+          ],
+          "editor": [
+            704.4000244140625,
+            388
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            704.4000244140625,
+            298
+          ],
+          "editor": [
+            704.4000244140625,
+            298
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            704.4000244140625,
+            298
+          ],
+          "editor": [
+            704.4000244140625,
+            388
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            704.4000244140625,
+            298
+          ],
+          "editor": [
+            704.4000244140625,
+            298
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742504,
+      "name": "hex.redo",
+      "key": "TR",
+      "ax": 1,
+      "ay": 1,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            704.4000244140625,
+            203
+          ],
+          "editor": [
+            704.4000244140625,
+            293
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            704.4000244140625,
+            203
+          ],
+          "editor": [
+            704.4000244140625,
+            203
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            704.4000244140625,
+            203
+          ],
+          "editor": [
+            704.4000244140625,
+            293
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            704.4000244140625,
+            203
+          ],
+          "editor": [
+            704.4000244140625,
+            203
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742505,
+      "name": "hex.undo",
+      "key": "TR",
+      "ax": 1,
+      "ay": 1,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            704.4000244140625,
+            108
+          ],
+          "editor": [
+            704.4000244140625,
+            198
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            704.4000244140625,
+            108
+          ],
+          "editor": [
+            704.4000244140625,
+            108
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            704.4000244140625,
+            108
+          ],
+          "editor": [
+            704.4000244140625,
+            198
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            704.4000244140625,
+            108
+          ],
+          "editor": [
+            704.4000244140625,
+            108
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742506,
+      "name": "hex.hint",
+      "key": "BR",
+      "ax": 1,
+      "ay": 0,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            704.4000244140625,
+            -282.1000061035156
+          ],
+          "editor": [
+            704.4000244140625,
+            -372.1000061035156
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            704.4000244140625,
+            -282.1000061035156
+          ],
+          "editor": [
+            704.4000244140625,
+            -282.1000061035156
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            704.4000244140625,
+            -282.1000061035156
+          ],
+          "editor": [
+            704.4000244140625,
+            -372.1000061035156
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            704.4000244140625,
+            -282.1000061035156
+          ],
+          "editor": [
+            704.4000244140625,
+            -282.1000061035156
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742509,
+      "name": "hit.back",
+      "key": "TL",
+      "ax": 0,
+      "ay": 1,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            -730.9119873046875,
+            293
+          ],
+          "editor": [
+            -730.9119873046875,
+            383
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            -730.9119873046875,
+            293
+          ],
+          "editor": [
+            -730.9119873046875,
+            293
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            -730.9119873046875,
+            293
+          ],
+          "editor": [
+            -730.9119873046875,
+            383
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            -730.9119873046875,
+            293
+          ],
+          "editor": [
+            -730.9119873046875,
+            293
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742510,
+      "name": "hit.submit",
+      "key": "TR",
+      "ax": 1,
+      "ay": 1,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            704.4000244140625,
+            298
+          ],
+          "editor": [
+            704.4000244140625,
+            388
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            704.4000244140625,
+            298
+          ],
+          "editor": [
+            704.4000244140625,
+            298
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            704.4000244140625,
+            298
+          ],
+          "editor": [
+            704.4000244140625,
+            388
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            704.4000244140625,
+            298
+          ],
+          "editor": [
+            704.4000244140625,
+            298
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742511,
+      "name": "hit.redo",
+      "key": "TR",
+      "ax": 1,
+      "ay": 1,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            704.4000244140625,
+            203
+          ],
+          "editor": [
+            704.4000244140625,
+            293
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            704.4000244140625,
+            203
+          ],
+          "editor": [
+            704.4000244140625,
+            203
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            704.4000244140625,
+            203
+          ],
+          "editor": [
+            704.4000244140625,
+            293
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            704.4000244140625,
+            203
+          ],
+          "editor": [
+            704.4000244140625,
+            203
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742512,
+      "name": "hit.undo",
+      "key": "TR",
+      "ax": 1,
+      "ay": 1,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            704.4000244140625,
+            108
+          ],
+          "editor": [
+            704.4000244140625,
+            198
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            704.4000244140625,
+            108
+          ],
+          "editor": [
+            704.4000244140625,
+            108
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            704.4000244140625,
+            108
+          ],
+          "editor": [
+            704.4000244140625,
+            198
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            704.4000244140625,
+            108
+          ],
+          "editor": [
+            704.4000244140625,
+            108
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1073742513,
+      "name": "hit.hint",
+      "key": "BR",
+      "ax": 1,
+      "ay": 0,
+      "states": [
+        {
+          "pt": 0,
+          "base": [
+            704.4000244140625,
+            -282.1000061035156
+          ],
+          "editor": [
+            704.4000244140625,
+            -372.1000061035156
+          ]
+        },
+        {
+          "pt": 1,
+          "base": [
+            704.4000244140625,
+            -282.1000061035156
+          ],
+          "editor": [
+            704.4000244140625,
+            -282.1000061035156
+          ]
+        },
+        {
+          "pt": 2,
+          "base": [
+            704.4000244140625,
+            -282.1000061035156
+          ],
+          "editor": [
+            704.4000244140625,
+            -372.1000061035156
+          ]
+        },
+        {
+          "pt": 3,
+          "base": [
+            704.4000244140625,
+            -282.1000061035156
+          ],
+          "editor": [
+            704.4000244140625,
+            -282.1000061035156
+          ]
+        }
+      ]
+    }
+  ],
+  "removed": [
+    {
+      "id": 1073758075,
+      "name": "art658.clues.grid.top.base",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758076,
+      "name": "art658.clues.grid.top.l1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758077,
+      "name": "art658.clues.grid.top.l2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758078,
+      "name": "art658.clues.grid.top.l3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758079,
+      "name": "art658.clues.grid.top.l4",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758080,
+      "name": "art658.clues.grid.top.l5",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758081,
+      "name": "art658.clues.grid.top.l6",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758082,
+      "name": "art658.clues.grid.top.l7",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758083,
+      "name": "art658.clues.grid.top.l8",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758084,
+      "name": "art658.clues.grid.top.l9",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758085,
+      "name": "art658.clues.grid.top.l10",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758086,
+      "name": "art658.clues.grid.top.l11",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758087,
+      "name": "art658.clues.grid.top.l12",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758088,
+      "name": "art658.clues.grid.top.l13",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758089,
+      "name": "art658.clues.grid.top.l14",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758090,
+      "name": "art658.clues.grid.top.l15",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758091,
+      "name": "art658.clues.grid.top.l16",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758092,
+      "name": "art658.clues.grid.top.l17",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758093,
+      "name": "art658.clues.grid.top.l18",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758094,
+      "name": "art658.clues.grid.top.l19",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758095,
+      "name": "art658.clues.grid.right.base",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758096,
+      "name": "art658.clues.grid.right.l1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758097,
+      "name": "art658.clues.grid.right.l2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758098,
+      "name": "art658.clues.grid.right.l3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758099,
+      "name": "art658.clues.grid.right.l4",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758100,
+      "name": "art658.clues.grid.right.l5",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758101,
+      "name": "art658.clues.grid.right.l6",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758102,
+      "name": "art658.clues.grid.right.l7",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758103,
+      "name": "art658.clues.grid.right.l8",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758104,
+      "name": "art658.clues.grid.right.l9",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758105,
+      "name": "art658.clues.grid.right.l10",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758106,
+      "name": "art658.clues.grid.right.l11",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758107,
+      "name": "art658.clues.grid.right.l12",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758108,
+      "name": "art658.clues.grid.right.l13",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758109,
+      "name": "art658.clues.grid.right.l14",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758110,
+      "name": "art658.clues.grid.right.l15",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758111,
+      "name": "art658.clues.grid.right.l16",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758112,
+      "name": "art658.clues.grid.right.l17",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758113,
+      "name": "art658.clues.grid.right.l18",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758114,
+      "name": "art658.clues.grid.right.l19",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758115,
+      "name": "art658.clues.grid.right.l20",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758116,
+      "name": "art658.clues.grid.right.l21",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758117,
+      "name": "art658.clues.grid.right.l22",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758118,
+      "name": "art658.clues.grid.right.l23",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758119,
+      "name": "art658.clues.grid.right.l24",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758120,
+      "name": "art658.clues.grid.right.l25",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758121,
+      "name": "art658.clues.grid.bottom.base",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758122,
+      "name": "art658.clues.grid.bottom.l1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758123,
+      "name": "art658.clues.grid.bottom.l2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758124,
+      "name": "art658.clues.grid.bottom.l3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758125,
+      "name": "art658.clues.grid.bottom.l4",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758126,
+      "name": "art658.clues.grid.bottom.l5",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758127,
+      "name": "art658.clues.grid.bottom.l6",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758128,
+      "name": "art658.clues.grid.bottom.l7",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758129,
+      "name": "art658.clues.grid.bottom.l8",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758130,
+      "name": "art658.clues.grid.bottom.l9",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758131,
+      "name": "art658.clues.grid.bottom.l10",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758132,
+      "name": "art658.clues.grid.bottom.l11",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758133,
+      "name": "art658.clues.grid.bottom.l12",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758134,
+      "name": "art658.clues.grid.bottom.l13",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758135,
+      "name": "art658.clues.grid.bottom.l14",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758136,
+      "name": "art658.clues.grid.bottom.l15",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758137,
+      "name": "art658.clues.grid.bottom.l16",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758138,
+      "name": "art658.clues.grid.bottom.l17",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758139,
+      "name": "art658.clues.grid.bottom.l18",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758140,
+      "name": "art658.clues.grid.bottom.l19",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754774,
+      "name": "art641.home.document.shadow",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754777,
+      "name": "art641.home.pin",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754778,
+      "name": "art641.home.camera.photo.shadow",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754779,
+      "name": "art641.home.camera.photo.paper",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754780,
+      "name": "art641.home.camera.photo.inner",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754786,
+      "name": "art641.select.base",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754787,
+      "name": "art641.select.cork.shadow",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754788,
+      "name": "art641.select.cork.paper",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754789,
+      "name": "art641.select.cork.inner",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754790,
+      "name": "art641.select.scrap1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754791,
+      "name": "art641.select.scrap2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754792,
+      "name": "art641.select.scrap3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754793,
+      "name": "art641.select.scrap4",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754794,
+      "name": "art641.select.scrap5",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754795,
+      "name": "art641.select.scrap6",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754796,
+      "name": "art641.select.scrap7",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754797,
+      "name": "art641.select.thread1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754798,
+      "name": "art641.select.thread2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754799,
+      "name": "art641.select.thread3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754800,
+      "name": "art641.select.thread4",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754801,
+      "name": "art641.select.thread5",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754802,
+      "name": "art641.select.pinborder0",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754803,
+      "name": "art641.select.pin0",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754804,
+      "name": "art641.select.pinborder1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754805,
+      "name": "art641.select.pin1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754806,
+      "name": "art641.select.pinborder2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754807,
+      "name": "art641.select.pin2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754808,
+      "name": "art641.select.pinborder3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754809,
+      "name": "art641.select.pin3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754810,
+      "name": "art641.select.pinborder4",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754811,
+      "name": "art641.select.pin4",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754812,
+      "name": "art641.select.pinborder5",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754813,
+      "name": "art641.select.pin5",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754814,
+      "name": "art641.select.card1.shadow",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754815,
+      "name": "art641.select.card1.paper",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754816,
+      "name": "art641.select.card1.inner",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754817,
+      "name": "art641.select.card2.shadow",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754818,
+      "name": "art641.select.card2.paper",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754819,
+      "name": "art641.select.card2.inner",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754820,
+      "name": "art641.select.card3.shadow",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754821,
+      "name": "art641.select.card3.paper",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754822,
+      "name": "art641.select.card3.inner",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754823,
+      "name": "art641.select.card4.shadow",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754824,
+      "name": "art641.select.card4.paper",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754825,
+      "name": "art641.select.card4.inner",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754826,
+      "name": "art641.game.notebook.shadow",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754827,
+      "name": "art641.game.notebook.cover",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754828,
+      "name": "art641.game.notebook.paper",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754829,
+      "name": "art641.game.rule290",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754830,
+      "name": "art641.game.rule314",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754831,
+      "name": "art641.game.rule338",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754832,
+      "name": "art641.game.rule362",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754833,
+      "name": "art641.game.rule386",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754834,
+      "name": "art641.game.rule410",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754835,
+      "name": "art641.game.rule434",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754836,
+      "name": "art641.game.rule458",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754837,
+      "name": "art641.game.rule482",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754838,
+      "name": "art641.game.rule506",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754839,
+      "name": "art641.game.rule530",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754840,
+      "name": "art641.game.rule554",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754841,
+      "name": "art641.game.rule578",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754842,
+      "name": "art641.game.rule602",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754843,
+      "name": "art641.game.rule626",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754844,
+      "name": "art641.game.rule650",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754845,
+      "name": "art641.game.rule674",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754846,
+      "name": "art641.game.rule698",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754847,
+      "name": "art641.game.rule722",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754848,
+      "name": "art641.game.ring295",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754849,
+      "name": "art641.game.ringhole295",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754850,
+      "name": "art641.game.ring360",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754851,
+      "name": "art641.game.ringhole360",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754852,
+      "name": "art641.game.ring425",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754853,
+      "name": "art641.game.ringhole425",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754854,
+      "name": "art641.game.ring490",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754855,
+      "name": "art641.game.ringhole490",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754856,
+      "name": "art641.game.ring555",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754857,
+      "name": "art641.game.ringhole555",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754858,
+      "name": "art641.game.ring620",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754859,
+      "name": "art641.game.ringhole620",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754860,
+      "name": "art641.game.ring685",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073754861,
+      "name": "art641.game.ringhole685",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758287,
+      "name": "art660.clues.grid.paper",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758288,
+      "name": "art660.clues.grid.v1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758289,
+      "name": "art660.clues.grid.v2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758290,
+      "name": "art660.clues.grid.v3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758291,
+      "name": "art660.clues.grid.v4",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758292,
+      "name": "art660.clues.grid.v5",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758293,
+      "name": "art660.clues.grid.v6",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758294,
+      "name": "art660.clues.grid.v7",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758295,
+      "name": "art660.clues.grid.v8",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758296,
+      "name": "art660.clues.grid.v9",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758297,
+      "name": "art660.clues.grid.v10",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758298,
+      "name": "art660.clues.grid.v11",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758299,
+      "name": "art660.clues.grid.v12",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758300,
+      "name": "art660.clues.grid.v13",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758301,
+      "name": "art660.clues.grid.v14",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758302,
+      "name": "art660.clues.grid.v15",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758303,
+      "name": "art660.clues.grid.h1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758304,
+      "name": "art660.clues.grid.h2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758305,
+      "name": "art660.clues.grid.h3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758306,
+      "name": "art660.clues.grid.h4",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758307,
+      "name": "art660.clues.grid.h5",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758308,
+      "name": "art660.clues.grid.h6",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758309,
+      "name": "art660.clues.grid.h7",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758310,
+      "name": "art660.clues.grid.h8",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758311,
+      "name": "art660.clues.grid.h9",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758312,
+      "name": "art660.clues.grid.h10",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758313,
+      "name": "art660.clues.grid.h11",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758314,
+      "name": "art660.clues.grid.h12",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758315,
+      "name": "art660.clues.grid.h13",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758316,
+      "name": "art660.clues.grid.h14",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758317,
+      "name": "art660.clues.grid.h15",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758318,
+      "name": "art660.clues.grid.h16",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758319,
+      "name": "art660.clues.grid.h17",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758320,
+      "name": "art660.clues.grid.h18",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758321,
+      "name": "art660.clues.grid.h19",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758322,
+      "name": "art660.clues.grid.h20",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758323,
+      "name": "art660.clues.grid.h21",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758324,
+      "name": "art660.clues.cover",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758325,
+      "name": "art660.clues.cover.dash.top1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758326,
+      "name": "art660.clues.cover.dash.top2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758327,
+      "name": "art660.clues.cover.dash.top3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758328,
+      "name": "art660.clues.cover.dash.top4",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758329,
+      "name": "art660.clues.cover.dash.top5",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758330,
+      "name": "art660.clues.cover.dash.top6",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758331,
+      "name": "art660.clues.cover.dash.top7",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758332,
+      "name": "art660.clues.cover.dash.top8",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758333,
+      "name": "art660.clues.cover.dash.top9",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758334,
+      "name": "art660.clues.cover.dash.top10",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758335,
+      "name": "art660.clues.cover.dash.top11",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758336,
+      "name": "art660.clues.cover.dash.top12",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758337,
+      "name": "art660.clues.cover.dash.right1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758338,
+      "name": "art660.clues.cover.dash.right2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758339,
+      "name": "art660.clues.cover.dash.right3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758340,
+      "name": "art660.clues.cover.dash.right4",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758341,
+      "name": "art660.clues.cover.dash.right5",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758342,
+      "name": "art660.clues.cover.dash.right6",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758343,
+      "name": "art660.clues.cover.dash.right7",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758344,
+      "name": "art660.clues.cover.dash.right8",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758345,
+      "name": "art660.clues.cover.dash.right9",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758346,
+      "name": "art660.clues.cover.dash.right10",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758347,
+      "name": "art660.clues.cover.dash.right11",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758348,
+      "name": "art660.clues.cover.dash.right12",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758349,
+      "name": "art660.clues.cover.dash.right13",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758350,
+      "name": "art660.clues.cover.dash.right14",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758351,
+      "name": "art660.clues.cover.dash.bottom1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758352,
+      "name": "art660.clues.cover.dash.bottom2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758353,
+      "name": "art660.clues.cover.dash.bottom3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758354,
+      "name": "art660.clues.cover.dash.bottom4",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758355,
+      "name": "art660.clues.cover.dash.bottom5",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758356,
+      "name": "art660.clues.cover.dash.bottom6",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758357,
+      "name": "art660.clues.cover.dash.bottom7",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758358,
+      "name": "art660.clues.cover.dash.bottom8",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758359,
+      "name": "art660.clues.cover.dash.bottom9",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758360,
+      "name": "art660.clues.cover.dash.bottom10",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758361,
+      "name": "art660.clues.cover.dash.bottom11",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758362,
+      "name": "art660.clues.cover.dash.bottom12",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758415,
+      "name": "art661.clues.grid.h17",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758416,
+      "name": "art661.clues.grid.h18",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758417,
+      "name": "art661.clues.grid.h19",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758418,
+      "name": "art661.clues.grid.h20",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758419,
+      "name": "art661.clues.grid.h21",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758420,
+      "name": "art661.clues.grid.h22",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758421,
+      "name": "art661.clues.grid.h23",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758422,
+      "name": "art661.clues.grid.h24",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758423,
+      "name": "art661.clues.grid.h25",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758424,
+      "name": "art661.clues.grid.h26",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758425,
+      "name": "art661.clues.grid.h27",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758426,
+      "name": "art661.clues.grid.h28",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758427,
+      "name": "art661.clues.grid.h29",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758428,
+      "name": "art661.clues.grid.h30",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758429,
+      "name": "art661.clues.grid.h31",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758156,
+      "name": "art659.clues.grid.top.base",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758157,
+      "name": "art659.clues.grid.top.v1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758158,
+      "name": "art659.clues.grid.top.v2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758159,
+      "name": "art659.clues.grid.top.v3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758160,
+      "name": "art659.clues.grid.top.v4",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758161,
+      "name": "art659.clues.grid.top.v5",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758162,
+      "name": "art659.clues.grid.top.v6",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758163,
+      "name": "art659.clues.grid.top.v7",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758164,
+      "name": "art659.clues.grid.top.v8",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758165,
+      "name": "art659.clues.grid.top.v9",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758166,
+      "name": "art659.clues.grid.top.v10",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758167,
+      "name": "art659.clues.grid.top.v11",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758168,
+      "name": "art659.clues.grid.top.v12",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758169,
+      "name": "art659.clues.grid.top.v13",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758170,
+      "name": "art659.clues.grid.top.v14",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758171,
+      "name": "art659.clues.grid.top.v15",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758172,
+      "name": "art659.clues.grid.top.v16",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758173,
+      "name": "art659.clues.grid.top.h",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758174,
+      "name": "art659.clues.grid.top.dash1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758175,
+      "name": "art659.clues.grid.top.dash2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758176,
+      "name": "art659.clues.grid.top.dash3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758177,
+      "name": "art659.clues.grid.top.dash4",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758178,
+      "name": "art659.clues.grid.top.dash5",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758179,
+      "name": "art659.clues.grid.top.dash6",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758180,
+      "name": "art659.clues.grid.top.dash7",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758181,
+      "name": "art659.clues.grid.top.dash8",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758182,
+      "name": "art659.clues.grid.top.dash9",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758183,
+      "name": "art659.clues.grid.top.dash10",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758184,
+      "name": "art659.clues.grid.top.dash11",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758185,
+      "name": "art659.clues.grid.top.dash12",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758186,
+      "name": "art659.clues.grid.right.base",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758187,
+      "name": "art659.clues.grid.right.h1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758188,
+      "name": "art659.clues.grid.right.h2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758189,
+      "name": "art659.clues.grid.right.h3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758190,
+      "name": "art659.clues.grid.right.h4",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758191,
+      "name": "art659.clues.grid.right.h5",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758192,
+      "name": "art659.clues.grid.right.h6",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758193,
+      "name": "art659.clues.grid.right.h7",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758194,
+      "name": "art659.clues.grid.right.h8",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758195,
+      "name": "art659.clues.grid.right.h9",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758196,
+      "name": "art659.clues.grid.right.h10",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758197,
+      "name": "art659.clues.grid.right.h11",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758198,
+      "name": "art659.clues.grid.right.h12",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758199,
+      "name": "art659.clues.grid.right.h13",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758200,
+      "name": "art659.clues.grid.right.h14",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758201,
+      "name": "art659.clues.grid.right.h15",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758202,
+      "name": "art659.clues.grid.right.h16",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758203,
+      "name": "art659.clues.grid.right.h17",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758204,
+      "name": "art659.clues.grid.right.h18",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758205,
+      "name": "art659.clues.grid.right.h19",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758206,
+      "name": "art659.clues.grid.right.h20",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758207,
+      "name": "art659.clues.grid.right.h21",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758208,
+      "name": "art659.clues.grid.right.v",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758209,
+      "name": "art659.clues.grid.right.dash1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758210,
+      "name": "art659.clues.grid.right.dash2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758211,
+      "name": "art659.clues.grid.right.dash3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758212,
+      "name": "art659.clues.grid.right.dash4",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758213,
+      "name": "art659.clues.grid.right.dash5",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758214,
+      "name": "art659.clues.grid.right.dash6",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758215,
+      "name": "art659.clues.grid.right.dash7",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758216,
+      "name": "art659.clues.grid.right.dash8",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758217,
+      "name": "art659.clues.grid.right.dash9",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758218,
+      "name": "art659.clues.grid.right.dash10",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758219,
+      "name": "art659.clues.grid.right.dash11",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758220,
+      "name": "art659.clues.grid.right.dash12",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758221,
+      "name": "art659.clues.grid.bottom.base",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758222,
+      "name": "art659.clues.grid.bottom.v1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758223,
+      "name": "art659.clues.grid.bottom.v2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758224,
+      "name": "art659.clues.grid.bottom.v3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758225,
+      "name": "art659.clues.grid.bottom.v4",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758226,
+      "name": "art659.clues.grid.bottom.v5",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758227,
+      "name": "art659.clues.grid.bottom.v6",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758228,
+      "name": "art659.clues.grid.bottom.v7",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758229,
+      "name": "art659.clues.grid.bottom.v8",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758230,
+      "name": "art659.clues.grid.bottom.v9",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758231,
+      "name": "art659.clues.grid.bottom.v10",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758232,
+      "name": "art659.clues.grid.bottom.v11",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758233,
+      "name": "art659.clues.grid.bottom.v12",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758234,
+      "name": "art659.clues.grid.bottom.dash1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758235,
+      "name": "art659.clues.grid.bottom.dash2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758236,
+      "name": "art659.clues.grid.bottom.dash3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758237,
+      "name": "art659.clues.grid.bottom.dash4",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758238,
+      "name": "art659.clues.grid.bottom.dash5",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758239,
+      "name": "art659.clues.grid.bottom.dash6",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758240,
+      "name": "art659.clues.grid.bottom.dash7",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758241,
+      "name": "art659.clues.grid.bottom.dash8",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758242,
+      "name": "art659.clues.grid.bottom.dash9",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073757939,
+      "name": "art657.game.notebook.page",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073757940,
+      "name": "art657.game.notebook.page.mid",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073757941,
+      "name": "art657.game.notebook.page.lower",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073757942,
+      "name": "art657.game.notebook.rule.1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073757943,
+      "name": "art657.game.notebook.rule.2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073757944,
+      "name": "art657.game.notebook.rule.3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073757945,
+      "name": "art657.game.notebook.rule.4",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073757946,
+      "name": "art657.game.notebook.slot.1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073757947,
+      "name": "art657.game.notebook.slot.2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073757948,
+      "name": "art657.game.notebook.slot.3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073757949,
+      "name": "art657.game.notebook.slot.4",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073757950,
+      "name": "art657.game.notebook.slot.5",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758063,
+      "name": "art658.clues.binding.dash1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758064,
+      "name": "art658.clues.binding.dash2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758065,
+      "name": "art658.clues.binding.dash3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758066,
+      "name": "art658.clues.binding.dash4",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758067,
+      "name": "art658.clues.binding.dash5",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758068,
+      "name": "art658.clues.binding.dash6",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758069,
+      "name": "art658.clues.binding.dash7",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758070,
+      "name": "art658.clues.binding.dash8",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758071,
+      "name": "art658.clues.binding.dash9",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758072,
+      "name": "art658.clues.binding.dash10",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758073,
+      "name": "art658.clues.binding.dash11",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758074,
+      "name": "art658.clues.binding.dash12",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073757951,
+      "name": "art657.game.notebook.ring.1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073757952,
+      "name": "art657.game.notebook.ring.2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073757953,
+      "name": "art657.game.notebook.ring.3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073757954,
+      "name": "art657.game.notebook.ring.4",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073757955,
+      "name": "art657.game.notebook.ring.5",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073757956,
+      "name": "art657.game.notebook.ringhole.1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073757957,
+      "name": "art657.game.notebook.ringhole.2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073757958,
+      "name": "art657.game.notebook.ringhole.3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073757959,
+      "name": "art657.game.notebook.ringhole.4",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073757960,
+      "name": "art657.game.notebook.ringhole.5",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758282,
+      "name": "art660.ribbon.light.rect",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758283,
+      "name": "art660.ribbon.light.tri",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758284,
+      "name": "art660.ribbon.light.patch1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758285,
+      "name": "art660.ribbon.light.patch2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758286,
+      "name": "art660.ribbon.dark.patch",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073757964,
+      "name": "art657.game.sticker.q.dot",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073757965,
+      "name": "art657.game.sticker.q.mark",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760082,
+      "name": "art677.ring.1.tipHi",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760091,
+      "name": "art677.ring.2.tipHi",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760100,
+      "name": "art677.ring.3.tipHi",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760109,
+      "name": "art677.ring.4.tipHi",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760118,
+      "name": "art677.ring.5.tipHi",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760127,
+      "name": "art677.ring.6.tipHi",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760136,
+      "name": "art677.ring.7.tipHi",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760145,
+      "name": "art677.ring.8.tipHi",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760032,
+      "name": "art676.ring.1.outer",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760033,
+      "name": "art676.ring.1.mid",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760034,
+      "name": "art676.ring.1.lit",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760035,
+      "name": "art676.ring.1.low",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760036,
+      "name": "art676.ring.1.top",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760037,
+      "name": "art676.ring.1.tip",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760038,
+      "name": "art676.ring.1.tipHi",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760039,
+      "name": "art676.ring.2.outer",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760040,
+      "name": "art676.ring.2.mid",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760041,
+      "name": "art676.ring.2.lit",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760042,
+      "name": "art676.ring.2.low",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760043,
+      "name": "art676.ring.2.top",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760044,
+      "name": "art676.ring.2.tip",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760045,
+      "name": "art676.ring.2.tipHi",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760046,
+      "name": "art676.ring.3.outer",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760047,
+      "name": "art676.ring.3.mid",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760048,
+      "name": "art676.ring.3.lit",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760049,
+      "name": "art676.ring.3.low",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760050,
+      "name": "art676.ring.3.top",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760051,
+      "name": "art676.ring.3.tip",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760052,
+      "name": "art676.ring.3.tipHi",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760053,
+      "name": "art676.ring.4.outer",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760054,
+      "name": "art676.ring.4.mid",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760055,
+      "name": "art676.ring.4.lit",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760056,
+      "name": "art676.ring.4.low",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760057,
+      "name": "art676.ring.4.top",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760058,
+      "name": "art676.ring.4.tip",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760059,
+      "name": "art676.ring.4.tipHi",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760060,
+      "name": "art676.ring.5.outer",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760061,
+      "name": "art676.ring.5.mid",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760062,
+      "name": "art676.ring.5.lit",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760063,
+      "name": "art676.ring.5.low",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760064,
+      "name": "art676.ring.5.top",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760065,
+      "name": "art676.ring.5.tip",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760066,
+      "name": "art676.ring.5.tipHi",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760067,
+      "name": "art676.ring.6.outer",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760068,
+      "name": "art676.ring.6.mid",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760069,
+      "name": "art676.ring.6.lit",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760070,
+      "name": "art676.ring.6.low",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760071,
+      "name": "art676.ring.6.top",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760072,
+      "name": "art676.ring.6.tip",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073760073,
+      "name": "art676.ring.6.tipHi",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759603,
+      "name": "art663.ring.1.outer",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759604,
+      "name": "art663.ring.1.hi",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759605,
+      "name": "art663.ring.1.shade",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759606,
+      "name": "art663.ring.1.tip",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759607,
+      "name": "art663.ring.2.outer",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759608,
+      "name": "art663.ring.2.hi",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759609,
+      "name": "art663.ring.2.shade",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759610,
+      "name": "art663.ring.2.tip",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759611,
+      "name": "art663.ring.3.outer",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759612,
+      "name": "art663.ring.3.hi",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759613,
+      "name": "art663.ring.3.shade",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759614,
+      "name": "art663.ring.3.tip",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759615,
+      "name": "art663.ring.4.outer",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759616,
+      "name": "art663.ring.4.hi",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759617,
+      "name": "art663.ring.4.shade",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759618,
+      "name": "art663.ring.4.tip",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759619,
+      "name": "art663.ring.5.outer",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759620,
+      "name": "art663.ring.5.hi",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759621,
+      "name": "art663.ring.5.shade",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759622,
+      "name": "art663.ring.5.tip",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758019,
+      "name": "art657.game.pin.border",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758020,
+      "name": "art657.game.pin",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758021,
+      "name": "art657.game.pin.mid",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758022,
+      "name": "art657.game.pin.hilite",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759642,
+      "name": "art663.wax.edge.0",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759643,
+      "name": "art663.wax.edge.1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759644,
+      "name": "art663.wax.edge.2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759645,
+      "name": "art663.wax.edge.3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759646,
+      "name": "art663.wax.edge.4",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759647,
+      "name": "art663.wax.edge.5",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759648,
+      "name": "art663.wax.edge.6",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759649,
+      "name": "art663.wax.edge.7",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759650,
+      "name": "art663.wax.edge.8",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759651,
+      "name": "art663.wax.edge.9",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759652,
+      "name": "art663.wax.edge.10",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759653,
+      "name": "art663.wax.edge.11",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759654,
+      "name": "art663.wax.lobe.0",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759655,
+      "name": "art663.wax.lobe.1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759656,
+      "name": "art663.wax.lobe.2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759657,
+      "name": "art663.wax.lobe.3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759658,
+      "name": "art663.wax.lobe.4",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759659,
+      "name": "art663.wax.lobe.5",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759660,
+      "name": "art663.wax.lobe.6",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759661,
+      "name": "art663.wax.lobe.7",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759662,
+      "name": "art663.wax.lobe.8",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759663,
+      "name": "art663.wax.lobe.9",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759664,
+      "name": "art663.wax.lobe.10",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759665,
+      "name": "art663.wax.lobe.11",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759666,
+      "name": "art663.wax.core",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759667,
+      "name": "art663.wax.glow.l",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759668,
+      "name": "art663.wax.glow.r",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759669,
+      "name": "art663.wax.inner",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759693,
+      "name": "art664.wax.ring.0",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759694,
+      "name": "art664.wax.ring.1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759695,
+      "name": "art664.wax.ring.2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759696,
+      "name": "art664.wax.ring.3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759697,
+      "name": "art664.wax.ring.4",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759698,
+      "name": "art664.wax.ring.5",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759699,
+      "name": "art664.wax.ring.6",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759700,
+      "name": "art664.wax.ring.7",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759701,
+      "name": "art664.wax.ring.8",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759702,
+      "name": "art664.wax.ring.9",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759703,
+      "name": "art664.wax.ring.10",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759704,
+      "name": "art664.wax.ring.11",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759705,
+      "name": "art664.wax.ring.12",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759706,
+      "name": "art664.wax.ring.13",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759707,
+      "name": "art664.wax.ring.14",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759708,
+      "name": "art664.wax.ring.15",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759709,
+      "name": "art664.wax.top.lobe",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759710,
+      "name": "art664.wax.center",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759711,
+      "name": "art664.wax.hot.l",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759712,
+      "name": "art664.wax.hot.r",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759713,
+      "name": "art664.wax.stamp.rim",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759714,
+      "name": "art664.wax.stamp.core",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758054,
+      "name": "art658.help.tab.jag.l1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758055,
+      "name": "art658.help.tab.jag.l2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758056,
+      "name": "art658.help.tab.jag.r1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758057,
+      "name": "art658.help.tab.jag.r2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758263,
+      "name": "art659.help.tab.band1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758264,
+      "name": "art659.help.tab.band2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758265,
+      "name": "art659.help.tab.band3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758266,
+      "name": "art659.ribbon.band1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758267,
+      "name": "art659.ribbon.band2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758268,
+      "name": "art659.ribbon.band3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758269,
+      "name": "art660.tab.outline",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758270,
+      "name": "art660.tab.light.rect",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758271,
+      "name": "art660.tab.light.tri",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758272,
+      "name": "art660.tab.light.patch1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758273,
+      "name": "art660.tab.light.patch2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758274,
+      "name": "art660.tab.notch.lt",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758275,
+      "name": "art660.tab.notch.lb",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758276,
+      "name": "art660.tab.tip.lt",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758277,
+      "name": "art660.tab.tip.lb",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758278,
+      "name": "art660.tab.notch.rt",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758279,
+      "name": "art660.tab.notch.rb",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758280,
+      "name": "art660.tab.tip.rt",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758281,
+      "name": "art660.tab.tip.rb",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758471,
+      "name": "art661.tab.light.rect",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758472,
+      "name": "art661.tab.light.tri",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758473,
+      "name": "art661.tab.light.patch1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758474,
+      "name": "art661.tab.light.patch2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758475,
+      "name": "art661.tab.notch.l1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758476,
+      "name": "art661.tab.notch.l2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758477,
+      "name": "art661.tab.notch.l3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758478,
+      "name": "art661.tab.tip.lt",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758479,
+      "name": "art661.tab.tip.lb",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758480,
+      "name": "art661.tab.notch.r1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758481,
+      "name": "art661.tab.notch.r2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758482,
+      "name": "art661.tab.notch.r3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758483,
+      "name": "art661.tab.tip.rt",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758484,
+      "name": "art661.tab.tip.rb",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759587,
+      "name": "art663.tab.edge.l0",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759588,
+      "name": "art663.tab.edge.l1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759589,
+      "name": "art663.tab.edge.l2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759590,
+      "name": "art663.tab.edge.l3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759591,
+      "name": "art663.tab.edge.r0",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759592,
+      "name": "art663.tab.edge.r1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759593,
+      "name": "art663.tab.edge.r2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759594,
+      "name": "art663.tab.edge.r3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759595,
+      "name": "art663.tab.tooth.l0",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759596,
+      "name": "art663.tab.tooth.l1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759597,
+      "name": "art663.tab.tooth.l2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759598,
+      "name": "art663.tab.tooth.l3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759599,
+      "name": "art663.tab.tooth.r0",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759600,
+      "name": "art663.tab.tooth.r1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759601,
+      "name": "art663.tab.tooth.r2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073759602,
+      "name": "art663.tab.tooth.r3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758059,
+      "name": "art658.help.tab.g1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758060,
+      "name": "art658.help.tab.g2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758061,
+      "name": "art658.help.tab.g3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758153,
+      "name": "art658.ribbon.g1",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758154,
+      "name": "art658.ribbon.g2",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    },
+    {
+      "id": 1073758155,
+      "name": "art658.ribbon.g3",
+      "reason": "隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用"
+    }
+  ],
+  "protectedCount": 2954,
+  "background": {
+    "serverId": 1073742783,
+    "asset": "police-v19",
+    "mode": "恢复715固定1600×900素材组；跨比例铺满未解决",
+    "before": [
+      {
+        "pt": 0,
+        "pos": [
+          0,
+          0
+        ],
+        "size": [
+          1600.0003662109375,
+          900
+        ],
+        "min": [
+          0.5,
+          0.5
+        ],
+        "max": [
+          0.5,
+          0.5
+        ]
+      },
+      {
+        "pt": 1,
+        "pos": [
+          0,
+          0
+        ],
+        "size": [
+          1600.0003662109375,
+          900
+        ],
+        "min": [
+          0.5,
+          0.5
+        ],
+        "max": [
+          0.5,
+          0.5
+        ]
+      },
+      {
+        "pt": 2,
+        "pos": [
+          0,
+          0
+        ],
+        "size": [
+          1600.0003662109375,
+          900
+        ],
+        "min": [
+          0.5,
+          0.5
+        ],
+        "max": [
+          0.5,
+          0.5
+        ]
+      },
+      {
+        "pt": 3,
+        "pos": [
+          0,
+          0
+        ],
+        "size": [
+          1600.0003662109375,
+          900
+        ],
+        "min": [
+          0.5,
+          0.5
+        ],
+        "max": [
+          0.5,
+          0.5
+        ]
+      }
+    ],
+    "clientBackdrop": "art642.select.backdrop"
+  },
+  "wax": {
+    "group": "adapt715r.WAX.12",
+    "count": 240,
+    "mode": "恢复715独立父级单位缩放，撤回未经验证的画布倍率；等效缩放未解决"
+  },
+  "limitations": [
+    "服务器背景与客户端真实映射未测得，背景跨比例铺满和火漆等效缩放尚未解决。",
+    "普通UI使用1600宽设计空间，画布仅取宽高比；移动端固定1600×900返回值仍用历史720高参考。此模型待真机验证。",
+    "旧版传入1280宽时左移量算为+160的条件已复现，但用户本机实际返回值尚未取得。"
+  ],
+  "realGameTest": false,
+  "revision": 2,
+  "backUnified": [
+    [
+      "select.back",
+      "hex.back"
+    ],
+    [
+      "hit.select.back",
+      "hit.back"
+    ],
+    [
+      "art647.select.back.shadow",
+      "art657.game.flag.back.shadow"
+    ],
+    [
+      "art647.select.back.outline",
+      "art657.game.flag.back.outline"
+    ],
+    [
+      "art647.select.back.outline.tri.top",
+      "art657.game.flag.back.outline.tri.top"
+    ],
+    [
+      "art647.select.back.outline.tri.bottom",
+      "art657.game.flag.back.outline.tri.bottom"
+    ],
+    [
+      "art647.select.back.ribbon",
+      "art641.game.flag.back"
+    ],
+    [
+      "art647.select.back.ribbon.tri.top",
+      "art657.game.flag.back.ribbon.tri.top"
+    ],
+    [
+      "art647.select.back.ribbon.tri.bottom",
+      "art657.game.flag.back.ribbon.tri.bottom"
+    ]
+  ],
+  "checks": {
+    "diskReread": true,
+    "roundtrip": true,
+    "protectedSubtrees": true,
+    "ancestorTransforms": true,
+    "gameModulesUnchanged": true,
+    "drawOrder": true,
+    "parentChildLinks": true,
+    "fullLuaCompile": true,
+    "runtimeCases": 8,
+    "sameAspectPairs": 5,
+    "bindingIncluded": true,
+    "backGeometriesEqual": true,
+    "realEngineRendering": false
+  },
+  "outputSha256": "611c819286d85c76a018b5eae530dddf91b063fcbaaf40ad2cd52840c4d12195"
+}
