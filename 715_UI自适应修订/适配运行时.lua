@@ -1,7 +1,8 @@
 -- ADAPT715R BEGIN
 -- TARGET_TABLE
 local adapt715r = {elapsed=1,handles={},gen=nil,signature=nil,report=nil,backgroundNodes=nil}
-local ADAPT715R_SELECT_BACKGROUND = {'art642.select.backdrop','art642.select.paper','art642.select.thread'}
+local ADAPT715R_SELECT_BACKGROUND = {'art642.select.backdrop'}
+local ADAPT715R_SELECT_CARDS = {'art642.select.paper','art642.select.thread','art642.select.lighting','art642.select.frames'}
 local function adapt715r_pair(c,method)
   if c==nil then return nil end
   local ok,x,y=pcall(function() return c[method](c) end)
@@ -62,14 +63,45 @@ local function sync_adapt715r(dt,force)
     return
   end
   local profile,actualRatio=adapt715r_profile(slot,cw,ch)
-  -- GetUICanvasSize 的单位未经过本机日志确认。只取比例，保持715的1600宽设计口径。
-  -- 1280x576与1600x720必须产生同一组设计坐标，禁止直接用1280-1600造成+160右移。
+  -- v12：沿用v3的1600宽设计口径，只以API宽高比计算可见高度。
+  -- 相同比例的1280x576、1600x720、1920x864必须得到相同设计坐标。
+  -- 不再把移动端固定成720高：4:3为1200、16:10为1000，背景同时补足上下。
+  -- 这是基于v3实机对照的映射候选；API若固定返回16:9仍无法推断真实屏幕。
+  local physicalW,physicalH=cw,ch
+  local unit=1
   local w,h=1600,1600*ch/cw
-  local mode='aspect-normalized-unverified'
-  -- 固定画布无法推断屏幕比例。明确标识历史参考兜底，不能把它当实际测量。
-  if (slot==1 or slot==3) and math.abs(cw-1600)<1 and math.abs(ch-900)<1 then w,h=1600,720;mode='mobile-reference-fallback' end
-  -- 官方接口返回UI画布单位。背景使用原始画布尺寸，不套用普通UI的移动端定位兜底。
-  local cover=math.max(cw/1600,ch/900)
+  local mode='v3-design-width-aspect-height'
+  local root=find('root')
+  if not root then return end
+  -- 保留原生root变换；不写回根尺寸、缩放和位置，避免改变宿主映射。
+  local rw,rh=adapt715r_pair(root,'GetSizeDelta')
+  local rsx,rsy=adapt715r_pair(root,'GetLocalScale')
+  local rx,ry=adapt715r_pair(root,'GetAnchoredPosition')
+  local rminx,rminy=adapt715r_pair(root,'GetAnchorMin')
+  local rmaxx,rmaxy=adapt715r_pair(root,'GetAnchorMax')
+  local rpx,rpy=adapt715r_pair(root,'GetPivot')
+  local function near(a,b,eps)
+    return type(a)=='number' and a==a and math.abs(a-b)<eps
+  end
+  local root_ready=near(rw,0,.01) and near(rh,0,.01)
+    and near(rsx,unit,.002) and near(rsy,unit,.002)
+    and near(rx,0,.01) and near(ry,0,.01)
+    and near(rminx,0,.002) and near(rminy,0,.002)
+    and near(rmaxx,1,.002) and near(rmaxy,1,.002)
+    and near(rpx,.5,.002) and near(rpy,.5,.002)
+  if not root_ready then
+    if st.report~='root-transform-pending' then
+      print('[adapt715r-v12] root-transform-pending; retry next refresh')
+      st.report='root-transform-pending'
+    end
+    return
+  end
+  if st.report=='root-transform-pending' then st.report=nil end
+  -- cfg中的1600x900仍是原始设计坐标转换的原点，不能改成物理像素。
+  -- editor_card_box与动态rect仍在同一原生UI空间；不附加根缩放。
+  adapter._adapt715_canvas={physical_w=physicalW,physical_h=physicalH,w=w,h=h,unit=unit}
+  cw,ch=w,h
+  local cover=math.max(w/1600,h/900)
   local applied,missing,failed=0,0,0
   local background=find('adapt715r.background')
   local background_ok=false
@@ -79,7 +111,7 @@ local function sync_adapt715r(dt,force)
       background:SetLocalScale(cover,cover,1)
     end)
     local a,b=adapt715r_pair(background,'GetLocalScale')
-    background_ok=background_ok and a~=nil and math.abs(a-cover)<0.002 and math.abs(b-cover)<0.002
+    background_ok=background_ok and a~=nil and b~=nil and math.abs(a-cover)<0.002 and math.abs(b-cover)<0.002
   end
   -- v6：背景树按页面互斥。原 v5 每帧把完整背景树强制打开，导致选关/弹窗状态串层。
   -- 页面根层仍由原有 sync_art641 / 渲染器负责；适配层只管理自己新增的完整背景。
@@ -96,25 +128,30 @@ local function sync_adapt715r(dt,force)
     end)
   end
   if background and fill then
-    local root_ok=set_visible(background,background_want) and set_visible(fill,background_want)
+    -- v8：首层不透明底色跨页面常驻，选关不再关闭兜底。
+    local root_ok=set_visible(background,background_want) and set_visible(fill,true)
     visibility_ok=root_ok
-    if background_want then
-      if st.backgroundNodes==nil then
-        local nodes={fill,background};local queue={background};local complete=true
-        for i=1,2 do
-          local nextq={}
-          for _,parent in ipairs(queue) do
-            local good,children=pcall(function() return parent:GetChildren() end)
-            if good and type(children)=='table' then
-              for _,child in ipairs(children) do nodes[#nodes+1]=child;nextq[#nextq+1]=child end
-            else complete=false end
-          end
-          queue=nextq
+    pcall(function()
+      fill.imageColor=page=='select' and ADAPT715R_SELECT_COLOR or ADAPT715R_HOME_COLOR
+      fill:SetAnchorMin(0,0);fill:SetAnchorMax(1,1);fill:SetPivot(.5,.5)
+      fill:SetSizeDelta(0,0);fill:SetAnchoredPosition(0,0);fill:SetLocalScale(1,1,1)
+    end)
+    if st.backgroundNodes==nil then
+      local nodes={background};local queue={background};local complete=true
+      for i=1,2 do
+        local nextq={}
+        for _,parent in ipairs(queue) do
+          local good,children=pcall(function() return parent:GetChildren() end)
+          if good and type(children)=='table' then
+            for _,child in ipairs(children) do nodes[#nodes+1]=child;nextq[#nextq+1]=child end
+          else complete=false end
         end
-        if complete and #nodes>=651 then st.backgroundNodes=nodes end
+        queue=nextq
       end
-      for _,c in ipairs(st.backgroundNodes or {}) do if not set_visible(c,true) then visibility_ok=false end end
+      if complete and #nodes>=650 then st.backgroundNodes=nodes end
     end
+    -- 不依赖父隐藏级联，离开背景页逐层关闭；重新进入逐层恢复。
+    for _,c in ipairs(st.backgroundNodes or {}) do if not set_visible(c,background_want) then visibility_ok=false end end
   else visibility_ok=false end
   local eps=0.002
   for _,t in ipairs(ADAPT715R_TARGETS) do
@@ -146,9 +183,12 @@ local function sync_adapt715r(dt,force)
       if good and scale_ok and px and math.abs(px-x)<eps and math.abs(py-y)<eps then applied=applied+1 else failed=failed+1 end
     end
   end
-  -- v5：底纹/背景便签沿用cover；四张衬纸与白框共用卡片倍率。
-  local cardScale=math.min(cover,cw/1120,ch/600)
-  local fit=math.min(cw/1600,ch/900)
+  -- v12：底纹独立cover；便签纸、连线、衬纸、白框及动态卡片共同限幅。
+  -- 不能只限制卡片而让纸张继续放大，否则达到上限后又会分离。
+  local cardScale=cover
+  local cardMax=math.min(w/1120,h/600)
+  if cardMax>0 then cardScale=math.min(cardScale,cardMax) end
+  local fit=math.min(cover,math.min(w/1600,h/900))
   local select_applied,select_failed=0,0
   local function transform(name,x,y,s)
     local c=find(name);if not c then select_failed=select_failed+1;return false end
@@ -159,10 +199,34 @@ local function sync_adapt715r(dt,force)
     return good
   end
   for _,name in ipairs(ADAPT715R_SELECT_BACKGROUND) do transform(name,0,0,cover) end
+  local selectBase=find('art647.select.bg.base')
+  if selectBase then
+    -- 构建时已移到root底层；按真实父容器拉伸，不用API数值缩窄底色。
+    pcall(function()
+      selectBase:SetAnchorMin(0,0);selectBase:SetAnchorMax(1,1);selectBase:SetPivot(.5,.5)
+      selectBase:SetAnchoredPosition(0,0)
+      selectBase:SetSizeDelta(4,4)
+      selectBase:SetLocalScale(1,1,1)
+    end)
+    set_visible(selectBase,page=='select')
+  end
+
   transform('art642.select.board',0,0,1)
-  local cardsOk=transform('art642.select.frames',0,0,cardScale)
-  cardsOk=transform('art642.select.lighting',0,0,cardScale) and cardsOk
+  local cardsOk=true
+  for _,name in ipairs(ADAPT715R_SELECT_CARDS) do
+    cardsOk=transform(name,0,0,cardScale) and cardsOk
+  end
+  -- 撕边组已重挂到art641.select末尾；显隐逐叶处理，不依赖父级级联。
   for _,v in ipairs(ADAPT715R_TEARS) do
+    local group=find(v.name)
+    if group then
+      set_visible(group,page=='select')
+      pcall(function() group:SetAsLastSibling() end)
+      local good,children=pcall(function() return group:GetChildren() end)
+      if good and type(children)=='table' then
+        for _,child in ipairs(children) do set_visible(child,page=='select') end
+      end
+    end
     local sign=v.side=='tr' and 1 or -1
     transform(v.name,sign*(cw-1600*fit)/2,sign*(ch-900*fit)/2,fit)
   end
@@ -187,14 +251,14 @@ local function sync_adapt715r(dt,force)
       end
     end
   end
-  local signature=string.format('%.3f/%.3f/%s/%s/%s/%s/%s/%s/%s/%s/%s',cw,ch,device,mode,tostring(gen),applied,missing,failed,tostring(background_ok),tostring(visibility_ok),tostring(select_applied))
+  local signature=string.format('%.3f/%.3f/%s/%s/%s/%s/%s/%s/%s/%s/%s/%.5f/%.5f',cw,ch,device,mode,tostring(gen),applied,missing,failed,tostring(background_ok),tostring(visibility_ok),tostring(select_applied),cover,cardScale)
   if signature~=st.signature then
     st.signature=signature
-    print('[adapt715r-v5] background=client-cover wax=equivalent cover='..cover..' card_scale='..cardScale..' tear_scale='..fit..' background_ok='..tostring(background_ok)..' visibility_ok='..tostring(visibility_ok)..' select='..select_applied..'/8 select_failed='..select_failed..' canvas='..cw..'x'..ch..' layout='..w..'x'..h..' device='..device..' slot='..slot..' profile='..profile..' ratio='..actualRatio..' mode='..mode..' applied='..applied..'/'..#ADAPT715R_TARGETS..' missing='..missing..' failed='..failed)
-    for _,n in ipairs({'root','stage','modal','home.select','clues','art641.game','art642.select.backdrop','adapt715r.background','adapt715r.background.fill'}) do
+    print('[adapt715r-v12] background=client-cover wax=equivalent cover='..cover..' card_scale='..cardScale..' tear_scale='..fit..' background_ok='..tostring(background_ok)..' visibility_ok='..tostring(visibility_ok)..' select='..select_applied..'/12 select_failed='..select_failed..' reported_ui='..physicalW..'x'..physicalH..' unit='..unit..' canvas='..cw..'x'..ch..' layout='..w..'x'..h..' device='..device..' slot='..slot..' profile='..profile..' ratio='..actualRatio..' mode='..mode..' applied='..applied..'/'..#ADAPT715R_TARGETS..' missing='..missing..' failed='..failed)
+    for _,n in ipairs({'root','stage','modal','home.select','clues','art641.game','art642.select.backdrop','art642.select.paper','art642.select.thread','art642.select.frames','art642.select.lighting','adapt715r.background','adapt715r.background.fill'}) do
       local c=find(n);local x,y=adapt715r_pair(c,'GetAnchoredPosition');local a,b=adapt715r_pair(c,'GetSizeDelta');local sx,sy=adapt715r_pair(c,'GetLocalScale')
       local mnx,mny=adapt715r_pair(c,'GetAnchorMin');local mxx,mxy=adapt715r_pair(c,'GetAnchorMax')
-      print('[adapt715r-v5-geometry] '..n..' pos='..tostring(x)..','..tostring(y)..' sizeDelta='..tostring(a)..','..tostring(b)..' scale='..tostring(sx)..','..tostring(sy)..' anchors='..tostring(mnx)..','..tostring(mny)..':'..tostring(mxx)..','..tostring(mxy))
+      print('[adapt715r-v12-geometry] '..n..' pos='..tostring(x)..','..tostring(y)..' sizeDelta='..tostring(a)..','..tostring(b)..' scale='..tostring(sx)..','..tostring(sy)..' anchors='..tostring(mnx)..','..tostring(mny)..':'..tostring(mxx)..','..tostring(mxy))
     end
   end
 end

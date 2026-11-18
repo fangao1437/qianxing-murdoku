@@ -1,0 +1,34 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import {fileURLToPath} from 'node:url';
+import {readGil, encodeMsg} from '../qianxing-murdoku/tools/gil/gilread.mjs';
+import {findScriptLeaf, writeGil} from '../qianxing-murdoku/tools/gil/gilwrite.mjs';
+const dir=path.dirname(fileURLToPath(import.meta.url));
+const hash=b=>createHash('sha256').update(b).digest('hex');
+const g=readGil(process.argv[2]);
+assert.equal(hash(g.src),'8f9c5cbb10547852e4d3b347b173dee8cbb2efe592f86240cf6c17902753fab1');
+const leaf=findScriptLeaf(g), old=leaf.buf.toString('utf8');
+const out=path.resolve(dir,'../715_UI多比例适配_v13.gil');
+assert(!fs.existsSync(out),'输出已存在');
+let script=old;
+function patch(a,b){assert.equal(script.split(a).length,2,a.slice(0,70));script=script.replace(a,()=>b);}
+const start=old.indexOf('local adapt715r = {elapsed=');
+const end=old.indexOf('-- ADAPT715R END',start);
+assert(start>0 && end>start);
+const runtime=fs.readFileSync(path.join(dir,'适配运行时.lua'),'utf8').replace(/^\uFEFF/,'').replace(/\r\n/g,'\n');
+const helpers=old.slice(old.indexOf('local function adapt715r_pair',start),old.indexOf('local function sync_adapt715r',start));
+const targets=old.slice(old.indexOf('  for _,t in ipairs(ADAPT715R_TARGETS)',start),old.indexOf('  -- v12：底纹独立cover',start));
+const cards=old.slice(old.indexOf("  transform('art642.select.board'",start),old.indexOf('  local signature=string.format',start));
+assert(helpers.includes('adapt715r_device') && targets.includes('WAX') && cards.includes('_select715_scale'));
+patch(old.slice(start,end),helpers+runtime.replace('-- V12_TARGETS',()=>targets).replace('-- V12_CARDS',()=>cards)+'\n');
+patch('v12恢复v3设计坐标与原生底色拉伸修复','v13 四边延展与完整主画');
+patch('  elseif key == "rect" then\n    if self.cfg.respect_editor_rect','  elseif key == "rect" then\n    -- v13: 根保持存档中的四边拉伸，子控件继续使用原设计坐标。\n    if id == "root" then return true end\n    if self.cfg.respect_editor_rect');
+const originalRecords=new Map(g.recs.map(r=>[r.id,hash(encodeMsg([r.field]))]));
+leaf.field.payload=Buffer.from(script);leaf.field.len=leaf.field.payload.length;leaf.field.sub=null;
+writeGil(g,out,{expectRecs:8430,expectDiffs:1,expectMarker:'v715',quiet:true,assert:r=>{
+ assert(findScriptLeaf(r).buf.equals(Buffer.from(script)));assert(r.trailer.equals(g.trailer));
+ for(const row of r.recs)assert.equal(hash(encodeMsg([row.field])),originalRecords.get(row.id));return true;
+}});
+console.log(JSON.stringify({records:g.recs.length,changedTreeFields:1,sha256:hash(fs.readFileSync(out)),bytes:fs.statSync(out).size}));

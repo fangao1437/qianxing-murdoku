@@ -1,0 +1,18 @@
+{
+  "version": 13,
+  "compiledWholeLua": true,
+  "controls": 8430,
+  "unchangedControlRecords": 8430,
+  "diffFields": 1,
+  "profiles": 12,
+  "widths": [
+    1280,
+    1920
+  ],
+  "pageScenarios": 96,
+  "invalidCanvasSwitches": 2,
+  "backgroundChildren": 649,
+  "rootRectThenAdapt": true,
+  "realGameTest": false,
+  "limits": "控件替身，卡片与热区使用共用样本矩形，未运行完整控制器或模拟真实手势、安全区、宿主裁剪"
+}

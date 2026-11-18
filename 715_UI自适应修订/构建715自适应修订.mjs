@@ -8,7 +8,7 @@ import {readGil,encodeMsg,cloneField,asIdList,ensureChildListTop,setChildList,te
 import {writeGil,findScriptLeaf} from '../tools/gil/gilwrite.mjs';
 const DIR=path.dirname(fileURLToPath(import.meta.url));
 const INPUT=path.resolve(DIR,'../715_设计复核/715_全线索规则复核修订.gil');
-const OUT=path.join(DIR,'715_UI自适应修订版_v6.gil'),LUA=path.join(DIR,'715_UI自适应修订版_v6.lua'),AUDIT=path.join(DIR,'715_UI自适应修订审计_v6.json');
+const OUT=path.join(DIR,'715_UI自适应修订版_v12.gil'),LUA=path.join(DIR,'715_UI自适应修订版_v12.lua'),AUDIT=path.join(DIR,'715_UI自适应修订审计_v12.json');
 const DRY=process.argv.includes('--dry');
 const g=readGil(INPUT),original=readGil(INPUT),hash=b=>crypto.createHash('sha256').update(b).digest('hex');
 assert.equal(hash(original.src),'0eb5a67f4ed8710f9f4a00026e2011d579cd455c0f21efd9624442c98ce79c5e');
@@ -34,9 +34,20 @@ const clientIds=new Set();descendants(R('root').id,clientIds);
 const hidden=r=>ns(r.field,[505,503,14,17]).some(f=>f.sub?.some(x=>x.field===503&&x.wt===0));
 const removed=g.recs.filter(r=>clientIds.has(r.id)&&!protectedIds.has(r.id)&&/^art\d+\./.test(r.name||'')&&hidden(r)&&kids(r).length===0&&!runtimeWithoutPaths.includes(r.name));
 const deleted=new Set(removed.map(r=>r.id));
-const changedParents=new Set(),reparented=new Set(),touched=new Set(),backUnified=new Set();
-// 两页返回键采用关卡内的原有几何；只替换变换，不改事件、可见性或图片配置。
+const changedParents=new Set(),reparented=new Set(),touched=new Set(),backUnified=new Set(),geometryChanged=new Set();
+// v10：恢复647/658历史返回旗完整配方（撤销658只对back施加的0.78）。
+// 以现有旗面中心保持定位，七层同步恢复尺寸与相对间距；图标/热区仍同中心。
 const backPairs=[['select.back','hex.back'],['hit.select.back','hit.back']];
+const gameBack=R('art641.game.flag.back');
+const originalBackCenters=new Map(plats(gameBack).map(({pt,s})=>[pt,pair(s,504)]));
+for(const r of g.recs.filter(r=>r.name==='art641.game.flag.back'||r.name?.startsWith('art657.game.flag.back.'))){
+ for(const {pt,s} of plats(r)){
+  const c=originalBackCenters.get(pt),p=pair(s,504),z=pair(s,505);
+  setP(s,504,c[0]+(p[0]-c[0])/.78,c[1]+(p[1]-c[1])/.78);
+  setP(s,505,z[0]/.78,z[1]/.78);
+ }
+ backUnified.add(r.id);
+}
 for(const r of g.recs.filter(r=>/^art647\.select\.back\./.test(r.name||''))){
  const suffix=r.name.slice('art647.select.back.'.length);
  const source=g.recs.find(x=>x.name==='art657.game.flag.back.'+suffix)||g.recs.find(x=>x.name===(suffix==='ribbon'?'art641.game.flag.back':'art641.game.flag.back.'+suffix));
@@ -81,6 +92,10 @@ for(const pn of ['grp653.static.1.art641.game','grp653.static.1.art641.home','ar
 const direct={clues:'LM',topbar:'LM','clues.help617':'LM','clues.help627.hit':'LM','settle.btn':'BR','settle.btn.countdown':'BR','select.back':'TL','hit.select.back':'TL','hit.select.prev':'LM','hit.select.next':'RM'};
 for(const s of ['hex','hit'])for(const n of ['back','submit','redo','undo','hint'])direct[s+'.'+n]=n==='back'?'TL':n==='hint'?'BR':'TR';
 for(const[n,k]of Object.entries(direct))addTarget(R(n),k);
+// v8：附加运行时目标不修改存档，保护记录保持逐字节相同。
+for(const [name,ax,ay] of [['select.title',.5,1],['select.page',.5,0],['hex.ok',0,1],['hex.no',0,1],['hit.ok',0,1],['hit.no',0,1]]){
+ const r=R(name);targets.push({id:r.id,name,key:'EDGE',ax,ay,states:plats(r).map(({pt,s})=>{const p=pair(s,504);return{pt,base:[p[0],p[1]-(ay-.5)*180],editor:p};})});
+}
 const wax=groups.filter(x=>x.key==='WAX');assert.equal(wax.length,1);assert.equal(wax[0].children.length,240);
 // v5：撕边保持原图元，新增两个独立定位父级；不沿用整屏cover。
 const tearGroups=[];
@@ -91,6 +106,24 @@ for(const side of ['tr','bl']){
   let run=[];const flush=()=>{if(!run.length)return;addGroup(parent,run,side==='tr'?'TR':'BR');const gr=groups.at(-1);targets.pop();gr.key='TEAR_'+side;tearGroups.push({name:gr.name,side});for(const {s}of plats(by.get(gr.id)))setP(s,504,0,0);run=[];};
   for(const id of [...kids(parent)]){if(wanted.has(id))run.push(id);else flush();}flush();
  }
+}
+// v10：将撕边父组从board子树重挂到选关美术最后。
+// 原父组为零位移/单位缩放，先逐端断言，避免重挂引入新偏移。
+const tearLeafIds=new Set();
+for(const t of tearGroups){
+ const r=R(t.name),old=by.get(r.parentId),dest=R('art641.select');
+ for(let a=old;a&&a.id!==dest.id;a=by.get(a.parentId)){
+  for(const {s}of plats(a)){
+   assert(pair(s,504).every(v=>Math.abs(v)<.01),'撕边原祖先非零位移 '+a.name);
+   assert(pair(s,502).every(v=>Math.abs(v-.5)<.01)&&pair(s,503).every(v=>Math.abs(v-.5)<.01),'撕边原祖先非中心锚点 '+a.name);
+   assert(pairOf(s,501).sub.every(v=>Math.abs(v.f-1)<.01),'撕边原祖先非单位缩放 '+a.name);
+  }
+ }
+ setKids(old,kids(old).filter(id=>id!==r.id));changedParents.add(old.id);
+ setKids(dest,[...kids(dest),r.id]);changedParents.add(dest.id);
+ r.field.sub.find(f=>f.field===504&&f.wt===0).num=BigInt(dest.id);r.parentId=dest.id;
+ for(const id of kids(r))tearLeafIds.add(id);
+ const group=groups.find(x=>x.id===r.id);group.parent=dest.name;
 }
 // v3：把整张素材组转换为客户端图元层；拍立得仍为完整背景的一部分。
 const bg=by.get(1073742783);assert(bg);
@@ -152,26 +185,35 @@ for(const f of extraFields)g.recHolder.splice(g.recHolder.indexOf(f),1);
 const insertion=g.recHolder.indexOf(clientRoot.field)+1;
 const newOrder=[guard,coverRoot,...converted.map(x=>by.get(x.id))].map(r=>r.field);
 g.recHolder.splice(insertion,0,...newOrder);
-// 原服务器图片不再绘制（零尺度），母素材完整保留；不改服务器公共父级。
+// v12：恢复v3的服务器背景停绘，避免客户端边缘露出第二套拉伸装饰。
 for(const {s}of plats(bg))vec(s,501,[0,0,0]);
+// 选关底色移到root底层，以原生拉伸覆盖实际宿主；不再按API数值缩小。
+const selectBase=R('art647.select.bg.base'),selectBaseOldParent=by.get(selectBase.parentId);
+setKids(selectBaseOldParent,kids(selectBaseOldParent).filter(id=>id!==selectBase.id));changedParents.add(selectBaseOldParent.id);
+selectBase.field.sub.find(f=>f.field===504&&f.wt===0).num=BigInt(clientRoot.id);selectBase.parentId=clientRoot.id;reparented.add(selectBase.id);
+setKids(clientRoot,[guard.id,coverRoot.id,selectBase.id,...kids(clientRoot).filter(id=>![guard.id,coverRoot.id,selectBase.id].includes(id))]);
+for(const {s}of plats(selectBase)){setP(s,502,0,0);setP(s,503,1,1);setP(s,504,0,0);setP(s,505,4,4);setP(s,506,.5,.5);vec(s,501,[1,1,1]);}
+geometryChanged.add(selectBase.id);
+g.recHolder.splice(g.recHolder.indexOf(selectBase.field),1);g.recHolder.splice(g.recHolder.indexOf(converted.at(-1) && by.get(converted.at(-1).id).field)+1,0,selectBase.field);
 const paths=new Map();function walk(r,p=[]){const q=[...p,r.name];paths.set(r.id,q.join('/'));for(const id of kids(r))walk(by.get(id),q);}walk(R('root'));
 const start=raw.indexOf('local STATIC_PATH_655 = {'),end=raw.indexOf('\nlocal function path_lookup_655',start);assert(start>0&&end>start);
 const oldTable=raw.slice(start,end),routes=new Map();for(const m of oldTable.matchAll(/  \["([^"\n]+)"\] = "([^"\n]+)",/g))routes.set(m[1],m[2]);
 for(const r of removed)routes.delete(r.name);
 for(const r of g.recs)if(paths.has(r.id)&&(routes.has(r.name)||targets.some(t=>t.id===r.id)||reparented.has(r.id)||extraIds.has(r.id)))routes.set(r.name,paths.get(r.id));
-for(const n of ['art642.select.backdrop','art642.select.board','art642.select.paper','art642.select.thread','art642.select.frames','art642.select.lighting',...tearGroups.map(x=>x.name)])routes.set(n,paths.get(R(n).id));
+for(const n of ['art642.select.backdrop','art642.select.board','art642.select.paper','art642.select.thread','art642.select.frames','art642.select.lighting','art647.select.bg.base',...tearGroups.map(x=>x.name)])routes.set(n,paths.get(R(n).id));
 const table='local STATIC_PATH_655 = {\n'+[...routes].map(([k,v])=>'  ['+JSON.stringify(k)+'] = '+JSON.stringify(v)+',').join('\n')+'\n}\n';
 let script=raw.slice(0,start)+table+raw.slice(end);
-const homeGroups=groups.filter(x=>x.parent==='home');script=script.replace('local DECOR = {','local DECOR = {\n'+[...homeGroups.map(x=>x.name),'adapt715r.background','adapt715r.background.fill'].map(n=>'  ['+JSON.stringify(n)+'] = true,').join('\n'));
+const homeGroups=groups.filter(x=>x.parent==='home');script=script.replace('local DECOR = {','local DECOR = {\n'+[...homeGroups.map(x=>x.name),'adapt715r.background','adapt715r.background.fill','art647.select.bg.base'].map(n=>'  ['+JSON.stringify(n)+'] = true,').join('\n'));
 const luaRows=targets.map(t=>'  {name='+JSON.stringify(t.name)+',kind='+JSON.stringify(t.key)+',ax='+t.ax+',ay='+t.ay+',base={'+t.states.map(s=>'['+s.pt+']={'+s.base.join(',')+'}').join(',')+'}},').join('\n');
-const config='local ADAPT715R_TEARS = {'+tearGroups.map(t=>'{name='+JSON.stringify(t.name)+',side='+JSON.stringify(t.side)+'}').join(',')+'}\nlocal ADAPT715R_TARGETS = {\n'+luaRows+'\n}\n';
+const selectColor=Number(ns(R('art647.select.bg.base').field,[505,503,84])[0].sub.find(f=>f.field===502).num);
+const config='local ADAPT715R_HOME_COLOR = '+baseColor+'\nlocal ADAPT715R_SELECT_COLOR = '+selectColor+'\nlocal ADAPT715R_TEARS = {'+tearGroups.map(t=>'{name='+JSON.stringify(t.name)+',side='+JSON.stringify(t.side)+'}').join(',')+'}\nlocal ADAPT715R_TARGETS = {\n'+luaRows+'\n}\n';
 const runtime=fs.readFileSync(path.join(DIR,'适配运行时.lua'),'utf8').replace('-- TARGET_TABLE',config);
 assert(runtime.includes('local function sync_adapt715r'));
 script=script.replace('local art641_cache = nil',runtime+'\nlocal art641_cache = nil');
 script=script.replace('  sync_block640()\nend','  sync_block640()\n  sync_adapt715r(dt, false)\nend');
 script=script.replace('  pcall(check_canvas)','  pcall(check_canvas)\n  sync_adapt715r(0, true)');
-script=script.replace('构建标记 v715 / 2026-11-17 / 全线索保留复核与第四五七关修订','构建标记 v715 / 2026-11-18 / v6页面显隐互斥与官方全比例适配');
-const selectPatches=[["visible = true,\n                 rect = r, image = CARD_MAT", "visible = true, pos_runtime = true,\n                 rect = r, image = CARD_MAT"], ["rect = r, event = { action = \"pick_level\", id = it.id }", "rect = r, pos_runtime = true, event = { action = \"pick_level\", id = it.id }"], ["visible = t.result ~= \"\", text = t.result,\n                 rect = { x = r.x, y = r.y + r.h + 10, w = math.max(r.w, 220), h = 72 }", "visible = t.result ~= \"\", text = t.result, pos_runtime = true,\n                 rect = { x = r.x, y = r.y + r.h + 10 * (ui_adapter._select715_scale or 1), w = math.max(r.w, 220 * (ui_adapter._select715_scale or 1)), h = 72 * (ui_adapter._select715_scale or 1) }"], ["ui_adapter and ui_adapter.cfg and ui_adapter.cfg.scale)", "ui_adapter and ui_adapter.cfg and ui_adapter.cfg.scale, ui_adapter and ui_adapter._select715_scale)"], ["function Controller:push_room_thumb(push, cardId, it, cardRect, parent, canvas_scale)", "function Controller:push_room_thumb(push, cardId, it, cardRect, parent, canvas_scale, card_scale)"], ["  local gap_px = 2\n", "  local unit = tonumber(card_scale) or 1\n  if unit <= 0 or unit ~= unit or unit == math.huge then unit = 1 end\n  local gap_px = 2 * unit\n"], ["math.max(4, math.floor(cardRect.w * sc * 0.022 + 0.5))", "math.max(4 * unit, math.floor(cardRect.w * sc * 0.022 + 0.5))"], ["local wall_width, door_width = 5 / sc, 5 / sc", "local wall_width, door_width = 5 * unit / sc, 5 * unit / sc"], ["math.max(8, math.floor(cell_px * 0.44 + 0.5))", "math.max(8 * unit, math.floor(cell_px * 0.44 + 0.5))"], ["  return id == \"select.thumb.pool\"\n", "  return id == \"select.thumb.pool\"\n    or id:match(\"^select%.card%.%d+$\") ~= nil\n    or id:match(\"^hit%.select%.card%.%d+$\") ~= nil\n"]];
+script=script.replace('构建标记 v715 / 2026-11-17 / 全线索保留复核与第四五七关修订','构建标记 v715 / 2026-11-18 / v12恢复v3设计坐标与原生底色拉伸修复');
+const selectPatches=[["visible = true,\n                 rect = r, image = CARD_MAT", "visible = true, pos_runtime = true,\n                 rect = r, image = CARD_MAT"], ["rect = r, event = { action = \"pick_level\", id = it.id }", "rect = r, pos_runtime = true, event = { action = \"pick_level\", id = it.id }"], ["visible = t.result ~= \"\", text = t.result,\n                 rect = { x = r.x, y = r.y + r.h + 10, w = math.max(r.w, 220), h = 72 }", "visible = t.result ~= \"\", text = t.result, pos_runtime = true,\n                 rect = { x = r.x, y = r.y + r.h + 10 * (ui_adapter and ui_adapter._select715_scale or 1), w = math.max(r.w, 220 * (ui_adapter and ui_adapter._select715_scale or 1)), h = 72 * (ui_adapter and ui_adapter._select715_scale or 1) }"], ["ui_adapter and ui_adapter.cfg and ui_adapter.cfg.scale)", "ui_adapter and ui_adapter.cfg and ui_adapter.cfg.scale, ui_adapter and ui_adapter._select715_scale)"], ["function Controller:push_room_thumb(push, cardId, it, cardRect, parent, canvas_scale)", "function Controller:push_room_thumb(push, cardId, it, cardRect, parent, canvas_scale, card_scale)"], ["  local gap_px = 2\n", "  local unit = tonumber(card_scale) or 1\n  if unit <= 0 or unit ~= unit or unit == math.huge then unit = 1 end\n  local gap_px = 2 * unit\n"], ["math.max(4, math.floor(cardRect.w * sc * 0.022 + 0.5))", "math.max(4 * unit, math.floor(cardRect.w * sc * 0.022 + 0.5))"], ["local wall_width, door_width = 5 / sc, 5 / sc", "local wall_width, door_width = 5 * unit / sc, 5 * unit / sc"], ["math.max(8, math.floor(cell_px * 0.44 + 0.5))", "math.max(8 * unit, math.floor(cell_px * 0.44 + 0.5))"], ["  return id == \"select.thumb.pool\"\n", "  return id == \"select.thumb.pool\"\n    or id:match(\"^select%.card%.%d+$\") ~= nil\n    or id:match(\"^hit%.select%.card%.%d+$\") ~= nil\n"]];
 for(const [a,b] of selectPatches){assert.equal(script.split(a).length-1,1,"选关补丁定位 "+a.slice(0,60));script=script.replace(a,b);}
 const visibilityPatch=[[`  for i = 1, #nodes do
     local id = nodes[i].id
@@ -210,12 +252,50 @@ const sourceModules=raw.slice(0,raw.indexOf('local adapter   = nil'));const newM
 const stripModule=s=>visibilityPatch.reduce((v,[a,b])=>v.replace(b,a),selectPatches.reduce((v,[a,b])=>v.replace(b,a),s).replace(/构建标记 v715[^\n]*/g,'构建标记 v715').replace(/local STATIC_PATH_655 = \{[\s\S]*?\n}\s*\n(?=local function path_lookup_655)/,'')).replace(/local DECOR = \{[\s\S]*?(?=  \["home.tutorial627.bg"\])/,'local DECOR = {\n');
 {const a=stripModule(newModules),b=stripModule(sourceModules);if(a!==b){let i=0;while(i<Math.min(a.length,b.length)&&a[i]===b[i])i++;console.log('MODULE_DIFF',i,JSON.stringify(a.slice(i-100,i+180)),JSON.stringify(b.slice(i-100,i+180)));}assert(a===b,'玩法模块差异');}
 assert.equal((script.match(/sync_adapt715r\(dt, false\)/g)||[]).length,1,'更新入口必须存在且唯一');
-function strip(r){const f=cloneField(r.field);if(reparented.has(r.id))f.sub=f.sub.filter(x=>!(x.field===504&&x.wt===0));if(changedParents.has(r.id))f.sub=f.sub.filter(x=>x.field!==503);if(backUnified.has(r.id))for(const p of ns(f,[505,503,13,12,501,502]))p.sub=[];else if(touched.has(r.id))for(const p of ns(f,[505,503,13,12,501,502]))p.sub=p.sub.filter(x=>x.field!==504);if(r.id===bg.id)for(const p of ns(f,[505,503,13,12,501,502]))p.sub=p.sub.filter(x=>![501,502,503,504,505].includes(x.field));return encodeMsg([f]);}
+function strip(r){const f=cloneField(r.field);if(reparented.has(r.id))f.sub=f.sub.filter(x=>!(x.field===504&&x.wt===0));if(changedParents.has(r.id))f.sub=f.sub.filter(x=>x.field!==503);if(backUnified.has(r.id)||geometryChanged.has(r.id))for(const p of ns(f,[505,503,13,12,501,502]))p.sub=[];else if(touched.has(r.id))for(const p of ns(f,[505,503,13,12,501,502]))p.sub=p.sub.filter(x=>x.field!==504);if(r.id===bg.id)for(const p of ns(f,[505,503,13,12,501,502]))p.sub=p.sub.filter(x=>![501,502,503,504,505].includes(x.field));return encodeMsg([f]);}
 for(const r of original.recs)if(!deleted.has(r.id))assert(strip(r).equals(strip(by.get(r.id))),'超范围变化 '+r.name);
-const groupIds=new Set(groups.map(x=>x.id));function flattened(gx){const m=new Map(gx.recs.map(x=>[x.id,x])),out=[];function visit(id){if(deleted.has(id))return;const r=m.get(id);if(!groupIds.has(id)&&!extraIds.has(id))out.push(id);for(const c of kids(r))visit(c);}visit(R('root').id);return out;}
+const groupIds=new Set(groups.map(x=>x.id));function flattened(gx){const m=new Map(gx.recs.map(x=>[x.id,x])),out=[];function visit(id){if(deleted.has(id))return;const r=m.get(id);if(!groupIds.has(id)&&!extraIds.has(id)&&!tearLeafIds.has(id)&&id!==selectBase.id)out.push(id);for(const c of kids(r))visit(c);}visit(R('root').id);return out;}
 assert.deepEqual(flattened(g),flattened(original));
-const audit={base:path.basename(INPUT),baseSha256:hash(original.src),recordsBefore:original.recs.length,recordsAfter:g.recs.length,groups,targets,removed:removed.map(r=>({id:r.id,name:r.name,reason:'隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用'})),protectedCount:protectedIds.size,background:{serverId:bg.id,asset:'police-v19',mode:'原生满幅拉伸；非等比cover',before:bgStates,clientBackdrop:backdrop.name},wax:{group:wax[0].name,count:240,mode:'独立客户端父级；相对1600x900背景中心分别乘W/1600、H/900'},limitations:['画布恒1600x900且输入为触屏时用历史1600x720参考可见区，属于分端兜底，不能识别所有手机实际比例。','服务器背景与客户端画布实际映射仍需真机日志核对；不声称已支持所有比例。','棋盘放大未取得同设备前后测量；本版固定区域整树及祖先几何保持715。'],realGameTest:false};
+const boundaryProfiles=[
+  ['PC 16:9',16/9],['PC 21:9',21/9],['触屏 16:9',16/9],['触屏 19.5:9',19.5/9],['触屏 4:3',4/3],
+  ['主机手柄 16:9',16/9],['主机手柄 21:9',21/9],['移动手柄 16:9',16/9],['移动手柄 19.5:9',19.5/9],['移动手柄 4:3',4/3],
+  ['额外 16:10',16/10],['额外 20:9',20/9]
+];
+const boundaryCases=[];
+for(const [profile,ratio] of boundaryProfiles){
+  for(const width of [1280,1600,1920]){
+    const height=width/ratio,designWidth=1600,designHeight=1600/ratio;
+    const cover=Math.max(1,designHeight/900),cardScale=Math.min(cover,designWidth/1120,designHeight/600);
+    // 使用存档实际背景底色叶层；静态祖先中心、单位缩放另有断言。
+    for(const {s} of plats(R('adapt715r.background.part.1'))){
+      const size=pair(s,505),pos=pair(s,504);
+      assert((size[0]/2-Math.abs(pos[0]))*cover>=designWidth/2-1e-5);
+      assert((size[1]/2-Math.abs(pos[1]))*cover>=designHeight/2-1e-5);
+    }
+    assert(cardScale>0&&1120*cardScale<=designWidth+1e-9&&600*cardScale<=designHeight+1e-9,'卡片越界 '+profile+' '+width);
+    boundaryCases.push({profile,reportedWidth:width,reportedHeight:+height.toFixed(4),designWidth,designHeight:+designHeight.toFixed(4),cover:+cover.toFixed(6),cardScale:+cardScale.toFixed(6),paperScale:+cardScale.toFixed(6),backgroundCoversInDesignWidthModel:true,cardGroupFits:true});
+  }
+}
+for(const {s}of plats(selectBase)){assert.deepEqual(pair(s,502),[0,0]);assert.deepEqual(pair(s,503),[1,1]);assert.deepEqual(pair(s,505),[4,4]);}
+assert.equal(selectBase.parentId,clientRoot.id);
+for(const {s}of plats(bg))assert(pairOf(s,501).sub.every(f=>f.f===0),'服务器重复背景仍在绘制');
+for(const name of ['art641.select','art642.select.backdrop','grp653.static.1.art642.select.backdrop'])for(const {s}of plats(R(name))){assert.deepEqual(pair(s,504),[0,0]);assert(pairOf(s,501).sub.every(f=>Math.abs(f.f-1)<1e-5));}
+const audit={base:path.basename(INPUT),baseSha256:hash(original.src),recordsBefore:original.recs.length,recordsAfter:g.recs.length,groups,targets,removed:removed.map(r=>({id:r.id,name:r.name,reason:'隐藏的客户端静态美术叶层，排除固定区域，无Lua运行时引用'})),protectedCount:protectedIds.size,background:{serverId:bg.id,asset:'police-v19',mode:'原生满幅拉伸；非等比cover',before:bgStates,clientBackdrop:backdrop.name},wax:{group:wax[0].name,count:240,mode:'独立客户端父级；相对1600x900背景中心分别乘W/1600、H/900'},boundaryRegression:{profiles:boundaryProfiles.map(([name])=>name),cases:boundaryCases,assertions:['背景cover同时覆盖宽高','选关衬纸/白框统一cardScale','卡片组不越出可用矩形'],realGameTest:false},limitations:['已移除移动端固定1600x720兜底，所有设备只使用有效UI画布尺寸。','root恢复原生满拉伸、零偏移与单位缩放。','不将画布API数值当成物理像素；选关背景纸、卡片衬纸和白框共用cover链。'],realGameTest:false};
 if(DRY){console.log(JSON.stringify({records:audit.recordsAfter,removed:removed.length,groups:groups.length,targets:targets.length,wax:audit.wax,protected:protectedIds.size},null,2));process.exit(0);}
 const expected=new Map(g.recs.map(r=>[r.id,encodeMsg([r.field])]));
 const report=writeGil(g,OUT,{label:'715 UI分端修订与废弃美术清理',expectRecs:g.recs.length,expectMarker:'v715',quiet:true,assert:g2=>{const m=new Map(g2.recs.map(r=>[r.id,r]));for(const r of g2.recs){assert(expected.get(r.id)?.equals(encodeMsg([r.field])),'落盘 '+r.name);for(const id of kids(r)){assert(m.has(id));assert.equal(m.get(id).parentId,r.id);}}for(const id of deleted)assert(!m.has(id));assert(findScriptLeaf(g2).buf.equals(Buffer.from(script)));assert(g2.trailer.equals(original.trailer));assert.deepEqual(flattened(g2),flattened(original));return true;}});
-audit.revision=6;audit.selectCardScale="min(cover,画布宽/1120,画布高/600)，衬纸、白框、动态缩略图、文字与点击区同步";audit.visibilityFix="页面隐藏状态可恢复；完整背景与选关背景按home/select/game互斥；适配层不再强制打开非当前页";audit.officialProfiles=['PC 16:9','PC 21:9','触屏 16:9','触屏 19.5:9','触屏 4:3','主机手柄 16:9','主机手柄 21:9','移动手柄 16:9','移动手柄 19.5:9','移动手柄 4:3'];audit.tearGroups=tearGroups;audit.tearMode="fit等比尺寸，右上/左下贴边平移，16:9基准不变";audit.backUnified=backPairs;audit.background.mode='完整素材组转换为客户端独立背景，按可用画布等比cover，另有原生全画布底色';audit.background.converted=converted;audit.background.guard=guard.name;audit.background.sourceAssetPreserved=true;audit.background.serverDisabledByZeroScale=true;audit.background.clientRoot=coverRoot.name;audit.background.visibilityProtectedByDecor=true;audit.background.selectCoverParents=['art642.select.backdrop','art642.select.paper','art642.select.thread'];audit.background.selectCardParents=['art642.select.lighting','art642.select.frames'];audit.background.selectFixedParents=['art642.select.buttons'];audit.wax.mode='独立父级，使用与完整背景相同的中心、尺度及重试逻辑';audit.limitations=['未操作游戏进行实机渲染验证；客户端素材与文字渲染需导入确认。','覆盖采用GetUICanvasSize比例；若宿主返回恒定比例，原生底色仍覆盖，但整张图的裁切比例无法准确推断。','背景改为649个客户端图元，增加客户端渲染负担；原服务器素材保留但停止绘制。','三段警戒带文字转换为客户端文本；字体渲染和服务端存在差异的可能。'];audit.checks={diskReread:true,roundtrip:true,protectedSubtrees:true,ancestorTransforms:true,gameModulesUnchanged:true,drawOrder:true,parentChildLinks:true};audit.outputSha256=hash(report.g2.src);fs.writeFileSync(LUA,script);fs.writeFileSync(AUDIT,JSON.stringify(audit,null,2));console.log(JSON.stringify({output:OUT,removed:removed.length,groups:groups.length,targets:targets.length,records:g.recs.length,checks:audit.checks}));
+audit.revision=12;audit.startupFix='选关成绩布局倍率读取允许ui_adapter为空；修复layout_plan中断导致首页初始化清理未执行';audit.selectCardScale="由cover统一驱动，受1120x600卡片组可用矩形上限约束；衬纸、白框、动态缩略图、文字与点击区同步";audit.visibilityFix="页面显隐双向恢复；背景子层逐层互斥；不透明底色常驻且按页面换色；选关底色严格覆盖画布";audit.officialProfiles=['PC 16:9','PC 21:9','触屏 16:9','触屏 19.5:9','触屏 4:3','主机手柄 16:9','主机手柄 21:9','移动手柄 16:9','移动手柄 19.5:9','移动手柄 4:3'];audit.tearGroups=tearGroups;audit.tearMode="原生尺寸，右上/左下贴边平移，六组置于选关美术末尾并逐层显隐";audit.backUnified=backPairs;audit.background.mode='服务器原生满屏拉伸兜底＋客户端等比cover背景＋常驻客户端底色';audit.background.converted=converted;audit.background.guard=guard.name;audit.background.sourceAssetPreserved=true;audit.background.serverDisabledByZeroScale=false;audit.background.serverFullStretch=true;audit.background.clientRoot=coverRoot.name;audit.background.visibilityProtectedByDecor=true;audit.background.selectCoverParents=['art642.select.backdrop','art642.select.paper','art642.select.thread'];audit.background.selectCardParents=['art642.select.lighting','art642.select.frames'];audit.background.selectFixedParents=['art642.select.buttons'];audit.wax.mode='独立父级，使用与完整背景相同的中心、尺度及重试逻辑';audit.limitations=['未操作游戏进行实机渲染验证；不能宣称真实设备漏边已彻底消失。','卡片组使用cover并受可用矩形上限约束；极窄或极矮画布仍需实机确认文字可读性。','服务器兜底背景允许非等比拉伸；边缘可能显示背景装饰延伸，需实机检查。','客户端背景649图元和服务器底层同时保留；需实机观察性能、裁剪、安全区和命中。'];audit.checks={diskReread:true,roundtrip:true,protectedSubtrees:true,ancestorTransforms:true,gameModulesUnchanged:true,drawOrderExceptRequestedTears:true,tearsAboveSelectArt:true,parentChildLinks:true};audit.rootPositionFix={previous:'v9中心定尺寸、min(cw/1600,ch/900)缩放',current:'根满拉伸、选关背景与卡片按cover统一；固定玩法根仍单位缩放',basis:'用户第四张原移动端截图、v3左右边界思路与v10上下覆盖问题',readback:'位置、尺寸差、缩放、锚点及pivot均校验',realGameVerified:false};audit.backFix={recipe:'647完整返回旗配方',height:79.2,previousHeight:61.776,gameAndSelect:true};audit.requestedReorder={names:tearGroups.map(t=>t.name),leafCount:tearLeafIds.size,scope:'仅撕边相对其它选关美术的绘制顺序允许变化'};audit.selectCardScale='背景纸、连线、衬纸、白框及动态内容共用min(cover,1600/1120,designHeight/600)；底纹独立cover';
+audit.background.mode='服务器背景零缩放停绘；客户端背景按1600宽设计坐标等比cover；选关底色重挂root并原生全拉伸';
+audit.background.serverDisabledByZeroScale=true;audit.background.serverFullStretch=false;
+audit.background.selectCoverParents=['art642.select.backdrop'];audit.background.selectCardParents=['art642.select.paper','art642.select.thread','art642.select.lighting','art642.select.frames'];
+audit.background.selectBase={name:selectBase.name,oldParent:selectBaseOldParent.name,parent:clientRoot.name,anchorMin:[0,0],anchorMax:[1,1],sizeDelta:[4,4],page:'select'};
+audit.background.assessment='v3停绘服务器背景、v11恢复绘制已由四端存档证实；背景露出唯一实机根因尚未由日志证实。';
+audit.tearMode='fit等比缩放与角部偏移，沿用六组置顶和逐层显隐';
+audit.boundaryRegression.assertions=['实际背景底色叶层在1600宽设计模型覆盖宽高','选关底色root满拉伸且不依赖API绝对数值','纸/连线/衬纸/白框共用cardScale','服务器背景四端停绘','卡片组不越出设计可用矩形'];
+audit.limitations=['未操作游戏进行实机渲染验证；v12是修复候选，不宣称已消除真实设备漏边。','1600宽设计映射沿用v3并用截图对照支持，实际宿主/API映射尚无运行日志确认。','API若固定返回16:9则不能推断实际设备比例；不使用固定移动端720高度冒充测量。','模型不模拟引擎裁剪、字体栅格化、原生安全区和触控命中。'];
+audit.checks.drawOrderExceptRequestedTearsAndSelectBase=true;delete audit.checks.drawOrderExceptRequestedTears;
+audit.checks.selectBaseRootStretch=true;audit.checks.serverBackgroundDisabled=true;
+audit.rootPositionFix={previous:'v11直接采用API宽高并重写root，侧栏受绝对数值影响',current:'保留原生root，w=1600,h=1600*ch/cw；背景在此设计空间cover',basis:'v3实机对照与v11独立宿主模型失败案例；不是实机尺寸测量',realGameVerified:false};
+audit.requestedReorder.scope='仅撕边置顶与选关底色移到root背景层允许改变绘制顺序';
+audit.visibilityFix='页面显隐双向恢复；服务器重复背景停绘；root下选关底色按页面显示';
+audit.outputSha256=hash(report.g2.src);fs.writeFileSync(LUA,script);fs.writeFileSync(AUDIT,JSON.stringify(audit,null,2));console.log(JSON.stringify({output:OUT,removed:removed.length,groups:groups.length,targets:targets.length,records:g.recs.length,checks:audit.checks}));
