@@ -20,6 +20,21 @@ Murdoku.VERSION = "1.0.0"
 local current = nil             
 local prepared_adapter = nil    
 local signals_registered = false
+local tutorial_mask_pending = nil
+function Murdoku.set_tutorial_mask(mask)
+  tutorial_mask_pending = tonumber(mask) or 0
+  Murdoku._tutorial_mask = tutorial_mask_pending
+  if Murdoku.apply_tutorial_mask ~= nil then
+    pcall(function() Murdoku.apply_tutorial_mask(tutorial_mask_pending) end)
+  end
+end
+function Murdoku.get_tutorial_mask()
+  if Murdoku.read_tutorial_mask ~= nil then
+    local ok, value = pcall(Murdoku.read_tutorial_mask)
+    if ok and value ~= nil then return tonumber(value) or 0 end
+  end
+  return tonumber(tutorial_mask_pending or Murdoku._tutorial_mask) or 0
+end
 local murdoku_vis_memo = {}       
 local murdoku_vis_force_to = 0    
 local murdoku_vis_key = nil       
@@ -116,6 +131,18 @@ function Murdoku.render(force)
   if current == nil then return end
   current.controller:render(current.adapter, force)
 end
+function Murdoku.refresh_restored_ui()
+  if current == nil or current.controller == nil then return end
+  local controller = current.controller
+  -- 恢复信号可能早于线索网格完成首轮绑定。清掉列表项缓存，
+  -- 让下一次 render 按当前 core.view() 重新填充人物、字母和高亮状态。
+  controller._grid_seen = {}
+  controller._grid_item_cache = setmetatable({}, { __mode = "k" })
+  controller._grid_bound = setmetatable({}, { __mode = "k" })
+  controller._grid_force_rebind = true
+  controller.dirty = true
+  Murdoku.render(true)
+end
 function Murdoku.start(level_id, opts)
   opts = opts or {}
   local level = Levels.get(level_id or Levels.current_id())
@@ -190,7 +217,9 @@ function Murdoku.start(level_id, opts)
         start_other(id)
         if controller ~= nil then controller.screen = nil end
       else
-        if not controller._continue_requested then controller:do_restart() end
+        if not controller._continue_requested and not controller._restored_from_save then
+          controller:do_restart()
+        end
         controller.screen = nil
         controller.modal = nil
         controller.dirty = true
@@ -247,16 +276,26 @@ function Murdoku.start(level_id, opts)
       Murdoku.on_signal("murdoku/sync", payload)
     end)
   end
+  local restored_local_save = false
   if opts.restore_save then
     local save = adapter:load("murdoku/save/" .. tostring(level.id))
     if type(save) == "table" then
       if save.state_code then
-        core:decode_state(save.state_code)
+        local local_code, local_mask = tostring(save.state_code):match("^(.-)|murdoku_meta:([0-9]+)$")
+        if local_code ~= nil then
+          save.state_code = local_code
+          Murdoku.set_tutorial_mask(local_mask)
+        end
+        local ok_local = core:decode_state(save.state_code)
+        restored_local_save = ok_local == true
       elseif save.cells then
-        core:deserialize(save)
+        restored_local_save = core:deserialize(save) == true
       end
       core:set_elapsed(save.elapsed or 0)
     end
+  end
+  if restored_local_save then
+    controller._restored_from_save = true
   end
   if current and current.controller then current.controller:_clear_verdict() end
   if adapter.clear_verdict_rings then adapter:clear_verdict_rings() end
@@ -1009,8 +1048,17 @@ function Murdoku.on_signal(name, payload)
 end
 function Murdoku.restore(payload)
   if not current or type(payload) ~= "table" then return false, "没有存档" end
-  if payload.state_code then
-    local ok, err = current.core:decode_state(payload.state_code)
+  if payload.tutorial_mask ~= nil then Murdoku.set_tutorial_mask(payload.tutorial_mask) end
+  local state_code = payload.state_code
+  if type(state_code) == "string" then
+    local base, mask = state_code:match("^(.-)|murdoku_meta:([0-9]+)$")
+    if base ~= nil then
+      state_code = base
+      Murdoku.set_tutorial_mask(mask)
+    end
+  end
+  if state_code then
+    local ok, err = current.core:decode_state(state_code)
     if not ok then
       if printerr then printerr("[murdoku] 读档失败：" .. tostring(err)) end
       return false, err
@@ -1019,7 +1067,8 @@ function Murdoku.restore(payload)
     current.core:deserialize(payload)
   end
   current.core:set_elapsed(payload.elapsed or 0)
-  Murdoku.render(true)
+  current.controller._restored_from_save = true
+  Murdoku.refresh_restored_ui()
   return true
 end
 local SAVE_RECENT   = "murdoku/recent"
@@ -1100,7 +1149,7 @@ function Murdoku.save_now()
   local core = current.core
   local payload = {
     level_id   = tostring(current.level.id),
-    state_code = core:encode_state(),
+    state_code = core:encode_state() .. "|murdoku_meta:" .. tostring(Murdoku.get_tutorial_mask()),
     moves      = 0,
     elapsed    = math.floor(core.elapsed or 0),
     solved     = (core.status == Core.STATUS_SOLVED),

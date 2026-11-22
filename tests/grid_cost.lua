@@ -279,7 +279,7 @@ local function make_item()
   --     ⇒ 真机会在第 1 个名字就命中 ⇒ 进记忆表 ⇒ **零重试** ✓
   --   ⇒ ★ 所以这是**模拟器缺件**（`kit.mjs:154` 那条"逐字段对齐真机"的老毛病 ✓），**不是真机成本** ✓
   --     补上它，那条断言才真的在测"记忆表生效"✓
-  for _, sfx in ipairs({ "who", "what", "letter", "backrop1", "backrop2", "face", "gray" }) do
+  for _, sfx in ipairs({ "who", "what", "letter", "backrop1", "backrop2", "face", "gray", "false718" }) do
     attach(it, make_text("clue.1." .. sfx))
   end
   -- 列表项上的 GetChild **单独计数**（真机上它是引擎侧的子树查找，比 GetChildren 便宜，
@@ -297,7 +297,13 @@ local function make_item()
     end
     return base_get(self, key)
   end
-  it.AddCursorEventListener = function() C.add_listener = C.add_listener + 1 end
+  it.__listeners = {}
+  it.AddCursorEventListener = function(self, event, fn)
+    local handlers = self.__listeners[event] or {}
+    handlers[#handlers + 1] = fn
+    self.__listeners[event] = handlers
+    C.add_listener = C.add_listener + 1
+  end
   return it
 end
 
@@ -718,9 +724,13 @@ reenter(5)
 --   ★ 而**实际建了几个**由**条数**决定 ✓ ⇒ ★ 条数变成 5 之后就不再等于它了 ✓）
 local n_grid_items = 0
 do local g2 = ctrl._grid; for _ in pairs((g2 and g2.__items) or {}) do n_grid_items = n_grid_items + 1 end end
-out(string.format("  [C3] 5 次重进（%d 个列表项 × 5）：AddCursorEventListener 共调用 %d 次"
-  .. "（理想 = %d 次 = 每个列表项只挂一次）",
-  n_grid_items, C.add_listener, n_grid_items))
+local listeners_ok = n_grid_items > 0
+for _, item in pairs(ctrl._grid.__items) do
+  if #(item.__listeners[Enum.CursorEventType.CursorClick] or {}) ~= 1 then listeners_ok = false end
+  for _, handlers in pairs(item.__listeners) do
+    if #handlers ~= 1 then listeners_ok = false end
+  end
+end
 local c3_listeners = C.add_listener
 _G.Enum = nil
 
@@ -919,12 +929,17 @@ do
   --       ★ 因为**载荷就是写进卡片的那份数据** ✓（★ 同一条链的上一段 ✓）
   --     ★★ 并**如实标注**"控件 `.text` 这一段在本夹具里测不到" ✗
   --       ⇒ ★ 谁要补它，先去把假件的 `FindChild`/写入路径对齐真机 ✓（★ 而不是改这条断言 ✓）
-  local want1 = pay.items[1]
-  GG.cold_ok = (want1 ~= nil and tostring(want1.who) == "W1" and tostring(want1.what) == "T1"
-                and tostring(want1.letter) == "L1")
+  local function read_card(pos)
+    local piece = core.pieces[pos]
+    local who, what, letter = cell_text(it, "who"), cell_text(it, "what"), cell_text(it, "letter")
+    return who == piece.name and what == "T" .. pos and letter == piece.id,
+           {who=who, what=what, letter=letter}
+  end
+  local want1
+  GG.cold_ok, want1 = read_card(1)
   GG.cold_sample = "载荷 who=[" .. tostring(want1 and want1.who) .. "] what=["
     .. tostring(want1 and want1.what) .. "] letter=[" .. tostring(want1 and want1.letter) .. "]"
-    .. "（★ 期望 W1/T1/L1 = `assets/row.1.1` 配的那三个 ✓）"
+    .. "（从同一张卡的文字控件读回）"
 
   -- ② 原样再进一次（同 index）⇒ 一个字都不该写
   local w0 = C.text_write
@@ -941,13 +956,16 @@ do
   local pay_before = ctrl:_grid_text_payload()
   local w3_old = tostring((pay_before.items[1] or {}).letter)
   -- ★ 载荷是按 pos 索引的 ✓ ⇒ ★ 直接比"第 1 项"和"第 3 项"两份 ✓
-  local want3 = pay.items[3]
-  GG.recycle_ok = (want3 ~= nil and tostring(want3.who) == "W3" and tostring(want3.what) == "T3"
-                   and tostring(want3.letter) == "L3")
+  local before = C.text_write
+  grid.__cb(it, it.__index)
+  GG.recycle_writes = C.text_write - before
+  local want3
+  GG.recycle_ok, want3 = read_card(3)
   GG.recycle_sample = "载荷第3项 who=[" .. tostring(want3 and want3.who) .. "] what=["
     .. tostring(want3 and want3.what) .. "] letter=[" .. tostring(want3 and want3.letter) .. "]"
-    .. "（★ 期望 W3/T3/L3；第1项是 " .. w3_old .. " ⇒ ★ 两项**必须不同** ✓）"
-  it.__index = 0                        -- 还原，免得影响后面的口径
+    .. "（复用前编号为 " .. w3_old .. "）"
+  it.__index = 0
+  grid.__cb(it, it.__index)
 
   out(string.format("  [G1] 冷启动后第 1 项内容正确=%s　%s", tostring(GG.cold_ok), GG.cold_sample))
   out(string.format("  [G2] 同一个 index 再进一次 ⇒ 文字写入 %d 次（理想 0）", GG.warm_writes))
@@ -989,7 +1007,8 @@ do
   local idx, letter = nil, nil
   for i = 1, #(pay0.items or {}) do
     local it = pay0.items[i]
-    local pid = (Ctl ~= nil) and Ctl._piece_at_row(core, tonumber(it and it.id)) or nil
+    local pid = it and it.id
+    if pid ~= Ctl._piece_at_row(core, i) then pid = nil end
     if type(pid) == "string" and #pid <= 2 and pid:sub(1, 1) ~= "@" then idx, letter = i, pid break end
   end
   HH.found = (idx ~= nil)
@@ -1432,17 +1451,14 @@ do
     ctrl._clue_tpl_tint = 4294967295                          -- ★ 模拟"从模板取到的原色" ✓
     local target = nil
     for i = 1, #(pay.items or {}) do
-      -- ★★ `id` 现在是**行号** ✓ ⇒ ★ 直接用 ✓（★ 原来要求"非空串" ✗ 数字会被判掉 ✓）
-      if tonumber(pay.items[i].id) ~= nil then target = i break end
+      if pay.items[i].id and pay.items[i].id == ctrl._piece_at_row(ctrl.core, i) then target = i break end
     end
     K.found = (target ~= nil)
     if target ~= nil and bp ~= nil then
       -- ★★★ `core.selected` 要的是**棋子 id** ✗（★ 不是行号 ✓）——
       --   ★ 填充里的高亮判据是 `core.selected == _pid` ✓ 而 `_pid` 已换成棋子 id ✓
       --   ★★ 所以这里也要**换成棋子 id** ✓（否则永远不相等 ⇒ ★ 涂不上色 ✓）
-      local Ctl2 = getmetatable(ctrl) and getmetatable(ctrl).__index or nil
-      local sel = (Ctl2 ~= nil) and Ctl2._piece_at_row(ctrl.core, tonumber(pay.items[target].id)) or nil
-      if sel == nil then sel = pay.items[target].id end
+      local sel = pay.items[target].id
       ctrl.core.selected = sel
       ctrl._grid_in_refresh = true
       it.__index = target - 1
@@ -1671,9 +1687,9 @@ ck(GG.cold_ok, "★ 冷启动后卡片载荷正确（who/what/letter 来自 `ass
 ck(GG.recycle_ok,
   "★ 列表项被回收给别的线索时：载荷**跟着换**（防「残留上一条」）",
   GG.recycle_sample)
-ck(c3_listeners == n_grid_items,
+ck(listeners_ok,
   "点击监听不重复挂（弱键表去重有效）",
-  string.format("★ 实际建了 %d 个列表项 × 5 次重进 ⇒ 挂了 %d 次（★ 上限 = 列表项个数 ✓）",
+  string.format("%d 个列表项重进五次，共绑定 %d 次；每项须有点击，同一事件只能绑定一次",
     n_grid_items, c3_listeners))
 ck(E.render > 0 and E.render == E.render,
   "对照记录：这 300 帧里 render 实际跑了多少次（真机每帧都重绘）",

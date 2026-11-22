@@ -424,12 +424,29 @@ end
 local tutorial_mod_state = nil    
 local tutorial_inst = {}          
 local tutorial_seen = {}          
+local TUT_MASK_BITS = { home = 1, l1 = 2, l2 = 4 }
+local function tutorial_mask()
+  local mask = 0
+  for tag, bit in pairs(TUT_MASK_BITS) do
+    if tutorial_seen[tag] then mask = mask + bit end
+  end
+  return mask
+end
+local function apply_tutorial_mask(mask)
+  mask = tonumber(mask) or 0
+  for tag, bit in pairs(TUT_MASK_BITS) do tutorial_seen[tag] = (mask % (bit * 2)) >= bit end
+end
 local TUT_SETS = {
   home = { tag = "home", root = "td.home", text = "td.home", pages = 1 },
   l1   = { tag = "l1",   root = "td.l1",   text = "td.l1",   pages = 8 },
   l2   = { tag = "l2",   root = "td.l2",   text = "td.l2",   pages = 4 },
 }
 local TUT_TRIGGER = { home = "home", case_001 = "l1", case_002 = "l2" }
+if Murdoku ~= nil then
+  Murdoku.get_tutorial_mask = tutorial_mask
+  Murdoku.read_tutorial_mask = tutorial_mask
+  Murdoku.apply_tutorial_mask = apply_tutorial_mask
+end
 local function tutorial_module()
   if tutorial_mod_state ~= nil then
     if tutorial_mod_state == false then return nil end

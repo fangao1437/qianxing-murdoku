@@ -12427,6 +12427,21 @@ Murdoku.VERSION = "1.0.0"
 local current = nil             
 local prepared_adapter = nil    
 local signals_registered = false
+local tutorial_mask_pending = nil
+function Murdoku.set_tutorial_mask(mask)
+  tutorial_mask_pending = tonumber(mask) or 0
+  Murdoku._tutorial_mask = tutorial_mask_pending
+  if Murdoku.apply_tutorial_mask ~= nil then
+    pcall(function() Murdoku.apply_tutorial_mask(tutorial_mask_pending) end)
+  end
+end
+function Murdoku.get_tutorial_mask()
+  if Murdoku.read_tutorial_mask ~= nil then
+    local ok, value = pcall(Murdoku.read_tutorial_mask)
+    if ok and value ~= nil then return tonumber(value) or 0 end
+  end
+  return tonumber(tutorial_mask_pending or Murdoku._tutorial_mask) or 0
+end
 local murdoku_vis_memo = {}       
 local murdoku_vis_force_to = 0    
 local murdoku_vis_key = nil       
@@ -12523,6 +12538,18 @@ function Murdoku.render(force)
   if current == nil then return end
   current.controller:render(current.adapter, force)
 end
+function Murdoku.refresh_restored_ui()
+  if current == nil or current.controller == nil then return end
+  local controller = current.controller
+  -- 恢复信号可能早于线索网格完成首轮绑定。清掉列表项缓存，
+  -- 让下一次 render 按当前 core.view() 重新填充人物、字母和高亮状态。
+  controller._grid_seen = {}
+  controller._grid_item_cache = setmetatable({}, { __mode = "k" })
+  controller._grid_bound = setmetatable({}, { __mode = "k" })
+  controller._grid_force_rebind = true
+  controller.dirty = true
+  Murdoku.render(true)
+end
 function Murdoku.start(level_id, opts)
   opts = opts or {}
   local level = Levels.get(level_id or Levels.current_id())
@@ -12597,7 +12624,9 @@ function Murdoku.start(level_id, opts)
         start_other(id)
         if controller ~= nil then controller.screen = nil end
       else
-        if not controller._continue_requested then controller:do_restart() end
+        if not controller._continue_requested and not controller._restored_from_save then
+          controller:do_restart()
+        end
         controller.screen = nil
         controller.modal = nil
         controller.dirty = true
@@ -12654,16 +12683,26 @@ function Murdoku.start(level_id, opts)
       Murdoku.on_signal("murdoku/sync", payload)
     end)
   end
+  local restored_local_save = false
   if opts.restore_save then
     local save = adapter:load("murdoku/save/" .. tostring(level.id))
     if type(save) == "table" then
       if save.state_code then
-        core:decode_state(save.state_code)
+        local local_code, local_mask = tostring(save.state_code):match("^(.-)|murdoku_meta:([0-9]+)$")
+        if local_code ~= nil then
+          save.state_code = local_code
+          Murdoku.set_tutorial_mask(local_mask)
+        end
+        local ok_local = core:decode_state(save.state_code)
+        restored_local_save = ok_local == true
       elseif save.cells then
-        core:deserialize(save)
+        restored_local_save = core:deserialize(save) == true
       end
       core:set_elapsed(save.elapsed or 0)
     end
+  end
+  if restored_local_save then
+    controller._restored_from_save = true
   end
   if current and current.controller then current.controller:_clear_verdict() end
   if adapter.clear_verdict_rings then adapter:clear_verdict_rings() end
@@ -13416,8 +13455,17 @@ function Murdoku.on_signal(name, payload)
 end
 function Murdoku.restore(payload)
   if not current or type(payload) ~= "table" then return false, "没有存档" end
-  if payload.state_code then
-    local ok, err = current.core:decode_state(payload.state_code)
+  if payload.tutorial_mask ~= nil then Murdoku.set_tutorial_mask(payload.tutorial_mask) end
+  local state_code = payload.state_code
+  if type(state_code) == "string" then
+    local base, mask = state_code:match("^(.-)|murdoku_meta:([0-9]+)$")
+    if base ~= nil then
+      state_code = base
+      Murdoku.set_tutorial_mask(mask)
+    end
+  end
+  if state_code then
+    local ok, err = current.core:decode_state(state_code)
     if not ok then
       if printerr then printerr("[murdoku] 读档失败：" .. tostring(err)) end
       return false, err
@@ -13426,7 +13474,8 @@ function Murdoku.restore(payload)
     current.core:deserialize(payload)
   end
   current.core:set_elapsed(payload.elapsed or 0)
-  Murdoku.render(true)
+  current.controller._restored_from_save = true
+  Murdoku.refresh_restored_ui()
   return true
 end
 local SAVE_RECENT   = "murdoku/recent"
@@ -13507,7 +13556,7 @@ function Murdoku.save_now()
   local core = current.core
   local payload = {
     level_id   = tostring(current.level.id),
-    state_code = core:encode_state(),
+    state_code = core:encode_state() .. "|murdoku_meta:" .. tostring(Murdoku.get_tutorial_mask()),
     moves      = 0,
     elapsed    = math.floor(core.elapsed or 0),
     solved     = (core.status == Core.STATUS_SOLVED),
@@ -14059,10 +14108,12 @@ end
 
 __M["levels.case_004"] = function()
 return {["blocked"]={},["clues"]={{["type"]="same_room",["a"]="A",["b"]="V"},{["type"]="beside_object",["who"]="B",["object"]="桌子"},{["object"]="地毯",["type"]="on_object",["who"]="C"},{["object"]="椅子",["type"]="on_object",["who"]="D"},{["object"]="书架",["type"]="beside_object",["who"]="D"},{["object"]="植物",["type"]="beside_object",["who"]="V"}},["difficulty"]="normal",["doors"]={{"v",2,3},{"v",4,2},{"h",4,2},{"h",3,5},{"v",6,2}},["general_clues"]={},["hint_preview"]={{["rule"]="不做位置提示",["cells"]={},["count"]=0},{["rule"]="该家具四邻、同区域、可站人的格",["cells"]={"1:2","2:1"},["count"]=2},{["rule"]="该家具自己的格子",["cells"]={"2:2","2:3","6:1","6:2"},["count"]=4},{["rule"]="该家具自己的格子",["cells"]={"1:2","6:5"},["count"]=2},{["rule"]="该家具四邻、同区域、可站人的格",["cells"]={"1:5","2:4","3:5"},["count"]=3},{["rule"]="该家具四邻、同区域、可站人的格",["cells"]={"1:6","3:6","4:6","5:5","6:6"},["count"]=5}},["id"]="case_004",["meta"]={["announce"]="unknown",["false_clue"]=5},["name"]="案件 004 · 米纸谜案",["objects"]={["书架"]={["cells"]={{["c"]=5,["r"]=2}},["kind"]="shelf",["occupiable"]=false},["地毯"]={["cells"]={{["c"]=2,["r"]=2},{["c"]=3,["r"]=2},{["c"]=1,["r"]=6},{["c"]=2,["r"]=6}},["kind"]="carpet",["occupiable"]=true},["桌子"]={["cells"]={{["c"]=1,["r"]=1}},["kind"]="table",["occupiable"]=false},["椅子"]={["cells"]={{["c"]=2,["r"]=1},{["c"]=5,["r"]=6}},["kind"]="chair",["occupiable"]=true},["植物"]={["cells"]={{["c"]=6,["r"]=5},{["c"]=6,["r"]=2}},["kind"]="plant",["occupiable"]=false}},["roles"]={["thief"]="E"},["room_names"]={"R1","R2","R3","R4"},["rules"]={["one_per_col"]=true,["one_per_room"]=false,["one_per_row"]=true,["place_all"]=true,["tie_policy"]="forbid"},["size"]={["cols"]=6,["rows"]=6},["solution"]={["A"]={["c"]=4,["r"]=5},["B"]={["c"]=2,["r"]=1},["C"]={["c"]=3,["r"]=2},["D"]={["c"]=5,["r"]=6},["E"]={["c"]=1,["r"]=3},["V"]={["c"]=6,["r"]=4}},["suspects"]={{["id"]="A",["name"]="印刷工",["portrait"]="portrait.A"},{["id"]="B",["name"]="编辑",["portrait"]="portrait.B"},{["id"]="C",["name"]="装订工",["portrait"]="portrait.C"},{["id"]="D",["name"]="快递员",["portrait"]="portrait.D"},{["id"]="E",["name"]="校对员",["portrait"]="portrait.E"},{["id"]="V",["is_victim"]=true,["name"]="老板",["portrait"]="portrait.V"}},["victim"]={["id"]="V",["name"]="老板"},["visual_theme"]={["accent"]="#A8391B",["door"]="#C9A961",["key"]="archive-light",["name"]="档案卷宗 · 米纸浅色（美术调研 variant）",["note"]="6 色低饱和档案纸；粗墙深棕墨、门改铜色；家具走差异化命名",["palette"]={["BED_BASE"]="#EDE2C9",["BED_OVL"]="#C7A46A",["CARPET"]="#D9C08A",["CARPET_EDGE"]="#5A4634",["CHAIR_BASE"]="#E3D5B8",["CHAIR_LIGHT"]="#F0E6D0",["CHAIR_OVL"]="#B08A55",["GOLD"]="#C9A961",["GRAY"]="#B9AC97",["GRAY_DARK"]="#8A7A66",["INK"]="#3F2A1E",["INK_SOFT"]="#6B4A34",["PAPER"]="#EFE4CE",["PLANT_BASE"]="#C08A5E",["PLANT_LEAF_DARK"]="#5E6E58",["PLANT_OVL"]="#84977A",["ROOM_TINT"]="#E6DAC0",["SEAL"]="#A8391B",["SHADOW"]="#241812",["SHELF_BASE"]="#C8BBA0",["SHELF_OVL"]="#8FA3AE",["TABLE_BASE"]="#D9C7A3",["TABLE_EDGE"]="#8A6B45",["TAG"]="#7A8FA0",["TREE_BASE"]="#B6A88E",["TREE_DARK"]="#4F5C45",["TREE_LIGHT"]="#9BA98A",["TREE_OVL"]="#7C8A6A",["TV_BASE"]="#9AA4A6",["TV_DARK"]="#3A3B3C",["WHITE"]="#F8F1E2"},["room_colors"]={"#E6DAC0","#D9CEC0","#C9D6CE","#D6D9E2"},["wall"]="#3F2A1E"},["walls"]={{"v",1,3},{"v",2,3},{"v",3,3},{"h",3,3},{"h",3,4},{"h",3,5},{"h",3,6},{"h",4,1},{"v",4,2},{"h",4,2},{"v",5,2},{"v",6,2}},["water"]={}}
+
 end
 
 __M["levels.case_005"] = function()
 return {["blocked"]={},["clues"]={{["object"]="椅子",["type"]="on_object",["who"]="A"},{["object"]="椅子",["type"]="on_object",["who"]="E"},{["object"]="桌子",["type"]="beside_object",["who"]="C"},{["object"]="植物",["type"]="beside_object",["who"]="D"},{["a"]="E",["b"]="V",["type"]="not_with"},{["object"]="地毯",["type"]="only_on_object",["who"]="E"}},["difficulty"]="hard",["doors"]={{"v",6,3},{"v",3,4},{"h",2,5},{"h",3,2},{"v",1,4}},["general_clues"]={},["hint_preview"]={{["rule"]="该家具自己的格子",["cells"]={"1:2","6:5"},["count"]=2},{["rule"]="该家具自己的格子",["cells"]={"1:2","6:5"},["count"]=2},{["rule"]="该家具四邻、同区域、可站人的格",["cells"]={"2:3","3:2","3:4"},["count"]=3},{["rule"]="该家具四邻、同区域、可站人的格",["cells"]={"5:6","6:5"},["count"]=2},{["rule"]="不做位置提示",["cells"]={},["count"]=0},{["rule"]="该家具自己的格子",["cells"]={"1:5","5:4","5:5"},["count"]=3}},["id"]="case_005",["meta"]={["announce"]="unknown",["false_clue"]=2},["name"]="案件 005 · 火漆失窃",["objects"]={["书架"]={["cells"]={{["r"]=4,["c"]=1}},["kind"]="shelf",["occupiable"]=false},["地毯"]={["cells"]={{["c"]=5,["r"]=1},{["c"]=4,["r"]=5},{["c"]=5,["r"]=5}},["kind"]="carpet",["occupiable"]=true},["桌子"]={["cells"]={{["c"]=3,["r"]=3}},["kind"]="table",["occupiable"]=false},["椅子"]={["cells"]={{["c"]=2,["r"]=1},{["c"]=5,["r"]=6}},["kind"]="chair",["occupiable"]=true},["植物"]={["cells"]={{["c"]=6,["r"]=6}},["kind"]="plant",["occupiable"]=false},["雕塑"]={["cells"]={{["c"]=3,["r"]=4}},["kind"]="statue",["occupiable"]=false}},["roles"]={["thief"]="B"},["room_names"]={"大厅","侧廊","库房","内室"},["rules"]={["one_per_col"]=true,["one_per_room"]=false,["one_per_row"]=true,["place_all"]=true,["tie_policy"]="forbid"},["size"]={["cols"]=6,["rows"]=6},["solution"]={["A"]={["c"]=2,["r"]=1},["B"]={["c"]=6,["r"]=4},["C"]={["c"]=3,["r"]=2},["D"]={["c"]=5,["r"]=6},["E"]={["c"]=4,["r"]=5},["V"]={["c"]=1,["r"]=3}},["suspects"]={{["id"]="A",["name"]="保安",["portrait"]="portrait.A"},{["id"]="B",["name"]="值班员",["portrait"]="portrait.B"},{["id"]="C",["name"]="鉴定师",["portrait"]="portrait.C"},{["id"]="D",["name"]="摄影师",["portrait"]="portrait.D"},{["id"]="E",["name"]="管理员",["portrait"]="portrait.E"},{["id"]="V",["is_victim"]=true,["name"]="馆长",["portrait"]="portrait.V"}},["victim"]={["id"]="V",["name"]="馆长"},["visual_theme"]={["accent"]="#7A2A16",["door"]="#A8391B",["key"]="archive-dark",["name"]="夜勘卷宗 · 深棕墨 / 火漆红",["note"]="与第4关同色系但更暗，火漆红门；门墙结构、家具、人物 id 均改动",["palette"]={["BED_BASE"]="#EDE2C9",["BED_OVL"]="#C7A46A",["CARPET"]="#D9C08A",["CARPET_EDGE"]="#5A4634",["CHAIR_BASE"]="#E3D5B8",["CHAIR_LIGHT"]="#F0E6D0",["CHAIR_OVL"]="#B08A55",["GOLD"]="#C9A961",["GRAY"]="#B9AC97",["GRAY_DARK"]="#8A7A66",["INK"]="#3F2A1E",["INK_SOFT"]="#6B4A34",["PAPER"]="#EFE4CE",["PLANT_BASE"]="#C08A5E",["PLANT_LEAF_DARK"]="#5E6E58",["PLANT_OVL"]="#84977A",["ROOM_TINT"]="#E6DAC0",["SEAL"]="#A8391B",["SHADOW"]="#241812",["SHELF_BASE"]="#C8BBA0",["SHELF_OVL"]="#8FA3AE",["TABLE_BASE"]="#D9C7A3",["TABLE_EDGE"]="#8A6B45",["TAG"]="#7A8FA0",["TREE_BASE"]="#B6A88E",["TREE_DARK"]="#4F5C45",["TREE_LIGHT"]="#9BA98A",["TREE_OVL"]="#7C8A6A",["TV_BASE"]="#9AA4A6",["TV_DARK"]="#3A3B3C",["WHITE"]="#F8F1E2"},["room_colors"]={"#D8CBB0","#C9BCA6","#B8C6BE","#C4C8D2"},["wall"]="#241812"},["walls"]={{"v",6,3},{"v",5,3},{"h",4,3},{"v",4,3},{"h",3,4},{"v",4,2},{"h",3,2},{"h",3,1},{"h",2,6},{"v",3,4},{"h",2,5},{"v",2,4},{"v",1,4}},["water"]={}}
+
 end
 
 __M["levels.case_006"] = function()
@@ -14125,6 +14176,7 @@ end
 
 __M["levels.case_007"] = function()
 return {["blocked"]={},["clues"]={{["type"]="beside_object",["who"]="A",["object"]="植物"},{["object"]="地毯",["type"]="on_object",["who"]="V"},{["object"]="地毯",["type"]="on_object",["who"]="C"},{["object"]="桌子",["type"]="beside_object",["who"]="D"},{["object"]="椅子",["type"]="on_object",["who"]="E"},{["type"]="in_col",["who"]="B",["c"]=5}},["difficulty"]="hard",["doors"]={{"h",4,5},{"v",3,3},{"v",2,2},{"v",5,2},{"v",4,1}},["general_clues"]={{["n"]=2,["object"]="椅子",["type"]="n_on_object"}},["hint_preview"]={{["rule"]="该家具四邻、同区域、可站人的格",["cells"]={"1:5","2:6"},["count"]=2},{["rule"]="该家具自己的格子",["cells"]={"2:3","2:4","3:4"},["count"]=3},{["rule"]="该家具自己的格子",["cells"]={"2:3","2:4","3:4"},["count"]=3},{["rule"]="该家具四邻、同区域、可站人的格",["cells"]={"2:5","3:1","3:3","3:4","3:6","4:2","4:5","5:1"},["count"]=8},{["rule"]="该家具自己的格子",["cells"]={"1:5","4:5","5:1","6:6"},["count"]=4},{["rule"]="第 5 列的可站格",["cells"]={"1:5","2:5","4:5","5:5","6:5"},["count"]=5}},["id"]="case_007",["meta"]={["announce"]="unknown",["false_clue"]=2},["name"]="案件 007 · 藏卷回声",["objects"]={["地毯"]={["cells"]={{["c"]=4,["r"]=2},{["c"]=4,["r"]=3},{["c"]=3,["r"]=2}},["kind"]="carpet",["occupiable"]=true},["桌子"]={["cells"]={{["c"]=1,["r"]=4},{["c"]=3,["r"]=4},{["c"]=5,["r"]=3}},["kind"]="table",["occupiable"]=false},["椅子"]={["cells"]={{["c"]=6,["r"]=6},{["c"]=5,["r"]=4},{["c"]=1,["r"]=5},{["c"]=5,["r"]=1}},["kind"]="chair",["occupiable"]=true},["植物"]={["cells"]={{["c"]=6,["r"]=1}},["kind"]="plant",["occupiable"]=false}},["roles"]={["thief"]="B"},["room_names"]={"R1","R2","R3","R4"},["rules"]={["one_per_col"]=true,["one_per_room"]=false,["one_per_row"]=true,["place_all"]=true,["tie_policy"]="forbid"},["size"]={["cols"]=6,["rows"]=6},["solution"]={["A"]={["c"]=6,["r"]=2},["B"]={["c"]=5,["r"]=1},["C"]={["c"]=4,["r"]=3},["D"]={["c"]=2,["r"]=4},["E"]={["c"]=1,["r"]=5},["V"]={["c"]=3,["r"]=6}},["suspects"]={{["id"]="A",["name"]="管理员",["portrait"]="portrait.A"},{["id"]="B",["name"]="读者",["portrait"]="portrait.B"},{["id"]="C",["name"]="作家",["portrait"]="portrait.C"},{["id"]="D",["name"]="编辑",["portrait"]="portrait.D"},{["id"]="E",["name"]="清洁工",["portrait"]="portrait.E"},{["id"]="V",["is_victim"]=true,["name"]="馆长",["portrait"]="portrait.V"}},["victim"]={["id"]="V",["name"]="馆长"},["visual_theme"]={["accent"]="#7C5A22",["door"]="#B9913F",["key"]="sepia-rotated",["name"]="旋转档案 · 深墨绿/铜金",["room_colors"]={"#DDE4D5","#CFD9C8","#D8D3BE","#C6D2D2"},["wall"]="#20342C"},["walls"]={{"v",1,2},{"v",2,2},{"h",2,2},{"h",2,3},{"v",3,1},{"v",3,3},{"v",4,1},{"h",4,3},{"v",4,3},{"h",4,4},{"h",4,5},{"h",4,6},{"v",5,1},{"h",5,1},{"v",5,2},{"v",6,2}},["water"]={}}
+
 end
 
 -- ==== 入口：官方生命周期回调（OnInit / OnStart / OnUpdate / ...）==== --
@@ -14554,12 +14606,29 @@ end
 local tutorial_mod_state = nil    
 local tutorial_inst = {}          
 local tutorial_seen = {}          
+local TUT_MASK_BITS = { home = 1, l1 = 2, l2 = 4 }
+local function tutorial_mask()
+  local mask = 0
+  for tag, bit in pairs(TUT_MASK_BITS) do
+    if tutorial_seen[tag] then mask = mask + bit end
+  end
+  return mask
+end
+local function apply_tutorial_mask(mask)
+  mask = tonumber(mask) or 0
+  for tag, bit in pairs(TUT_MASK_BITS) do tutorial_seen[tag] = (mask % (bit * 2)) >= bit end
+end
 local TUT_SETS = {
   home = { tag = "home", root = "td.home", text = "td.home", pages = 1 },
   l1   = { tag = "l1",   root = "td.l1",   text = "td.l1",   pages = 8 },
   l2   = { tag = "l2",   root = "td.l2",   text = "td.l2",   pages = 4 },
 }
 local TUT_TRIGGER = { home = "home", case_001 = "l1", case_002 = "l2" }
+if Murdoku ~= nil then
+  Murdoku.get_tutorial_mask = tutorial_mask
+  Murdoku.read_tutorial_mask = tutorial_mask
+  Murdoku.apply_tutorial_mask = apply_tutorial_mask
+end
 local function tutorial_module()
   if tutorial_mod_state ~= nil then
     if tutorial_mod_state == false then return nil end
