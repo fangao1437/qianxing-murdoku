@@ -64,7 +64,7 @@ foreach ($f in $outside) {
   if ($h1 -eq $h2) { continue }
   $rel = $f.FullName.Replace($base + '\', '')
   # 预期副本：临时区 _work\、工具仓的归档镜像 project-tools\
-  if ($rel -like '_work\*' -or $rel -like 'qianxing-murdoku-tool\project-tools\*') { $expected++ }
+  if ($rel -like '_work\*' -or $rel -like 'qianxing-murdoku-tool\*' -or $rel -like 'murdoku-project\*' -or $rel -like 'murdoku-pro\*' -or $rel -like 'qianxing-murdoku-old\*') { $expected++ }
   else { $risk += [pscustomobject]@{ Name = $f.Name; Where = $rel } }
 }
 Line ('  主仓 tools 脚本名 ' + $canon.Count + ' 个')
