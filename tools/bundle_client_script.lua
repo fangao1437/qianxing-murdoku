@@ -79,6 +79,7 @@ end
 local modules = {
   -- ★ room_map 放最前：它是纯函数模块，murdoku_core 与 levels.init 都要 require 它
   { name = "room_map",                 path = "lua/room_map.lua" },
+  { name = "economy",                   path = "lua/economy.lua" },
   { name = "murdoku_core",             path = "lua/murdoku_core.lua" },
   -- ★ 2026-10-22（v300）：家具美术数据层（分组 / 锚点 / 六层元素 / 地毯切矩形 / 房间名标签）。
   --   ⚠️ 必须**显式**列在这里 —— 打包器只会自动补 `levels.*` 那批，普通模块漏了就会打出

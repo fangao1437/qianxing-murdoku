@@ -83,6 +83,7 @@ function M.new(core, opts)
   self._created = {}
   self._props = {}
   self._gesture_snapshot = nil
+  self.econ_status = nil
   self.debug = opts.debug == true
   self.kb = { r = 1, c = 1 }
   self.kb_active = false
@@ -692,15 +693,31 @@ function Controller:hint635_action(action)
     self._clue_sel_key,self._clue_sel_pos=nil,nil;self.focused_clue=nil
     self.dirty=true;self:fx("hex.hint",M.EFFECTS.SELECT)
   elseif action=="clue" then
-    if used.clue>=2 then message("本关验证线索次数已用完",true);return end
+    local paid = false
+    local paid_msg = "本关验证线索次数已用完"
     self:_sync_clue_focus()
     local general=self.general_focus==true
     local index=general and 1 or self.focused_clue
     if not index or (not general and not core.selected) then message("请先选中一条线索卡",true);return end
     local truth=core:answer_clue(index,general)
     if truth==nil then message("请先选中一条线索卡",true);return end
-    used.clue=used.clue+1
-    message(truth and "该线索为真" or "该线索为假",false)
+    if used.clue>=2 then
+      if self.opts.wallet and self.opts.consume_item then
+        local _, tickets = self.opts.wallet()
+        if (tonumber(tickets) or 0) > 0 then
+          local ok, msg = self.opts.consume_item("clue_verify_ticket")
+          paid = ok == true
+          paid_msg = msg or paid_msg
+        end
+      end
+      if not paid then message(paid_msg, true); return end
+    end
+    if paid then
+      message((truth and "该线索为真" or "该线索为假") .. "（已消耗 1 张线索核验券）", false)
+    else
+      used.clue=used.clue+1
+      message(truth and "该线索为真" or "该线索为假",false)
+    end
   end
 end
 function Controller:on_input(event)
@@ -876,8 +893,21 @@ function Controller:on_input(event)
     end
     self.dirty = true
   elseif a == "shop" or a == "bag" then
-    self.toast = (a == "shop") and "商城：美术资源就绪后开放" or "背包：美术资源就绪后开放"
-    self.toast_until = self.now + M.TOAST_SECONDS    
+    self.screen = a
+    self.modal = nil
+    self.toast = nil
+    self.econ_status = nil
+    self.dirty = true
+  elseif a == "econ_back" then
+    self.screen = "home"
+    self.modal = nil
+    self.toast = nil
+    self.econ_status = nil
+    self.dirty = true
+  elseif a == "econ_buy_ticket" then
+    local ok, msg = false, "经济模块未接入"
+    if self.opts.buy_item then ok, msg = self.opts.buy_item("clue_verify_ticket") end
+    self.econ_status = tostring(msg or (ok and "购买成功" or "购买失败"))
     self.dirty = true
   elseif a == "clue_up" or a == "clue_down" then
     local rows = M.LAYOUT.clue_rows or 9
@@ -1641,6 +1671,41 @@ function Controller:build_layout(ui_adapter)
                rect = { x = 730, y = b[4], w = 460, h = 88 },
                text = b[2], event = { action = b[3] } })
       end
+    elseif self.screen == "shop" or self.screen == "bag" then
+      local is_shop = self.screen == "shop"
+      local currency, tickets = 0, 0
+      if self.opts.wallet then currency, tickets = self.opts.wallet() end
+      local title = is_shop and "商城" or "背包"
+      local status = self.econ_status or (is_shop and "选择商品购买" or "购买的道具会显示在这里")
+      push({ id = "econ." .. self.screen .. ".page", kind = "container", parent = "root", visible = true,
+             rect = FULL, style = "screen", pos_runtime = true })
+      push({ id = "econ." .. self.screen .. ".panel", kind = "button", parent = "root", visible = true,
+             rect = { x = 250, y = 150, w = 1420, h = 760 }, style = "modal" })
+      push({ id = "econ." .. self.screen .. ".title", kind = "text", parent = "root", visible = true,
+             text = title, rect = { x = 420, y = 190, w = 1080, h = 90 }, style = "modal.title" })
+      push({ id = "econ." .. self.screen .. ".coin", kind = "button", parent = "root", visible = true,
+             image_id = 100120, imageType = "Stretch", icon_template = true,
+             rect = { x = 320, y = 295, w = 70, h = 70 } })
+      push({ id = "econ." .. self.screen .. ".wallet", kind = "text", parent = "root", visible = true,
+             text = "调查币：" .. tostring(currency) .. "    货币 ID：murdoku.investigation_coin",
+             rect = { x = 390, y = 300, w = 1140, h = 58 }, style = "modal.body" })
+      push({ id = "econ." .. self.screen .. ".currency_id", kind = "text", parent = "root", visible = true,
+             text = "图片来源：Currency    配置 ID：murdoku.investigation_coin",
+             rect = { x = 390, y = 360, w = 1140, h = 50 }, style = "muted" })
+      push({ id = "econ." .. self.screen .. ".item", kind = "text", parent = "root", visible = true,
+             text = "线索核验券    数量：" .. tostring(tickets),
+             rect = { x = 440, y = 470, w = 820, h = 72 }, style = "modal.body" })
+      push({ id = "econ." .. self.screen .. ".price", kind = "text", parent = "root", visible = true,
+             text = is_shop and "售价：6 调查币    购买后进入背包" or "案件内使用：免费验证次数用完后可消耗 1 张",
+             rect = { x = 440, y = 550, w = 820, h = 52 }, style = "muted" })
+      push({ id = "econ." .. self.screen .. ".status", kind = "text", parent = "root", visible = true,
+             text = status, rect = { x = 440, y = 650, w = 820, h = 52 }, style = "muted" })
+      if is_shop then
+        btn("econ.shop.buy", "root", { x = 1280, y = 470, w = 280, h = 82 }, "购买",
+            { action = "econ_buy_ticket" }, "stamp.primary")
+      end
+      btn("econ." .. self.screen .. ".back", "root", { x = 760, y = 790, w = 400, h = 76 }, "返回首页",
+          { action = "econ_back" }, "stamp")
     elseif self.screen == "select" then
       push({ id = "select.thumb.pool", kind = "container", parent = "root", visible = true,
              rect = FULL, pos_runtime = true })
@@ -2028,6 +2093,8 @@ function Controller:layout_plan()
   local first_id = vm0.tray[1] and vm0.tray[1].id
   local states = {
     { name = "home",              intro = 99, modal = nil, screen = "home" },
+    { name = "shop",              intro = 99, modal = nil, screen = "shop" },
+    { name = "bag",               intro = 99, modal = nil, screen = "bag" },
     { name = "select",            intro = 99, modal = nil, screen = "select" },
     { name = "board",             intro = 99, modal = nil, screen = nil },
     { name = "result",            intro = 99,

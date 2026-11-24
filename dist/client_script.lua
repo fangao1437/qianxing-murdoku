@@ -117,6 +117,104 @@ return M
 
 end
 
+__M["economy"] = function()
+-- economy.lua —— 调查币与背包的本地持久化逻辑
+local M = {}
+
+M.VERSION = 1
+M.CURRENCY_ID = "murdoku.investigation_coin"
+M.CURRENCY_NAME = "调查币"
+M.CURRENCY_IMAGE_SOURCE = "Currency"
+M.CURRENCY_CONFIG_ID = "murdoku.investigation_coin"
+M.SAVE_KEY = "murdoku/economy"
+M.FIRST_CLEAR_REWARD = 10
+M.TICKET_ID = "clue_verify_ticket"
+M.TICKET_NAME = "线索核验券"
+M.TICKET_PRICE = 6
+
+local function number(v, fallback)
+  v = tonumber(v)
+  if v == nil then return fallback end
+  return math.max(0, math.floor(v))
+end
+
+local function normalized(raw)
+  local s = type(raw) == "table" and raw or {}
+  local items = type(s.items) == "table" and s.items or {}
+  local rewarded = type(s.rewarded) == "table" and s.rewarded or {}
+  return {
+    version = M.VERSION,
+    currency_id = tostring(s.currency_id or M.CURRENCY_ID),
+    currency_config_id = tostring(s.currency_config_id or M.CURRENCY_CONFIG_ID),
+    currency = number(s.currency, 0),
+    items = { [M.TICKET_ID] = number(items[M.TICKET_ID], 0) },
+    rewarded = rewarded,
+  }
+end
+
+function M.load(adapter)
+  if adapter == nil or adapter.load == nil then return normalized(nil) end
+  local ok, raw = pcall(function() return adapter:load(M.SAVE_KEY) end)
+  return normalized(ok and raw or nil)
+end
+
+function M.save(adapter, state)
+  if adapter == nil or adapter.save == nil then return false end
+  local s = normalized(state)
+  local ok = pcall(function() adapter:save(M.SAVE_KEY, s, { no_signal = true }) end)
+  return ok
+end
+
+function M.settings()
+  return {
+    currency_id = M.CURRENCY_ID,
+    currency_config_id = M.CURRENCY_CONFIG_ID,
+    currency_name = M.CURRENCY_NAME,
+    image_source = M.CURRENCY_IMAGE_SOURCE,
+    first_clear_reward = M.FIRST_CLEAR_REWARD,
+    ticket_id = M.TICKET_ID,
+  }
+end
+
+function M.wallet(adapter)
+  local s = M.load(adapter)
+  return s.currency, s.items[M.TICKET_ID], s
+end
+
+function M.grant_first_clear(adapter, level_id)
+  if level_id == nil then return false, 0 end
+  local s = M.load(adapter)
+  local key = tostring(level_id)
+  if s.rewarded[key] then return false, 0 end
+  s.rewarded[key] = true
+  s.currency = s.currency + M.FIRST_CLEAR_REWARD
+  M.save(adapter, s)
+  return true, M.FIRST_CLEAR_REWARD
+end
+
+function M.buy(adapter, item_id)
+  if tostring(item_id or M.TICKET_ID) ~= M.TICKET_ID then return false, "商品不存在" end
+  local s = M.load(adapter)
+  if s.currency < M.TICKET_PRICE then return false, "调查币不足" end
+  s.currency = s.currency - M.TICKET_PRICE
+  s.items[M.TICKET_ID] = s.items[M.TICKET_ID] + 1
+  M.save(adapter, s)
+  return true, "已购买 1 张线索核验券"
+end
+
+function M.consume(adapter, item_id)
+  if tostring(item_id or M.TICKET_ID) ~= M.TICKET_ID then return false, "道具不存在" end
+  local s = M.load(adapter)
+  if s.items[M.TICKET_ID] <= 0 then return false, "背包里没有线索核验券" end
+  s.items[M.TICKET_ID] = s.items[M.TICKET_ID] - 1
+  M.save(adapter, s)
+  return true, "已使用 1 张线索核验券"
+end
+
+return M
+
+end
+
 __M["murdoku_core"] = function()
 local M = {}
 M.VERSION = "0.3.0"
@@ -3641,6 +3739,7 @@ function M.new(core, opts)
   self._created = {}
   self._props = {}
   self._gesture_snapshot = nil
+  self.econ_status = nil
   self.debug = opts.debug == true
   self.kb = { r = 1, c = 1 }
   self.kb_active = false
@@ -4250,15 +4349,31 @@ function Controller:hint635_action(action)
     self._clue_sel_key,self._clue_sel_pos=nil,nil;self.focused_clue=nil
     self.dirty=true;self:fx("hex.hint",M.EFFECTS.SELECT)
   elseif action=="clue" then
-    if used.clue>=2 then message("本关验证线索次数已用完",true);return end
+    local paid = false
+    local paid_msg = "本关验证线索次数已用完"
     self:_sync_clue_focus()
     local general=self.general_focus==true
     local index=general and 1 or self.focused_clue
     if not index or (not general and not core.selected) then message("请先选中一条线索卡",true);return end
     local truth=core:answer_clue(index,general)
     if truth==nil then message("请先选中一条线索卡",true);return end
-    used.clue=used.clue+1
-    message(truth and "该线索为真" or "该线索为假",false)
+    if used.clue>=2 then
+      if self.opts.wallet and self.opts.consume_item then
+        local _, tickets = self.opts.wallet()
+        if (tonumber(tickets) or 0) > 0 then
+          local ok, msg = self.opts.consume_item("clue_verify_ticket")
+          paid = ok == true
+          paid_msg = msg or paid_msg
+        end
+      end
+      if not paid then message(paid_msg, true); return end
+    end
+    if paid then
+      message((truth and "该线索为真" or "该线索为假") .. "（已消耗 1 张线索核验券）", false)
+    else
+      used.clue=used.clue+1
+      message(truth and "该线索为真" or "该线索为假",false)
+    end
   end
 end
 function Controller:on_input(event)
@@ -4434,8 +4549,21 @@ function Controller:on_input(event)
     end
     self.dirty = true
   elseif a == "shop" or a == "bag" then
-    self.toast = (a == "shop") and "商城：美术资源就绪后开放" or "背包：美术资源就绪后开放"
-    self.toast_until = self.now + M.TOAST_SECONDS    
+    self.screen = a
+    self.modal = nil
+    self.toast = nil
+    self.econ_status = nil
+    self.dirty = true
+  elseif a == "econ_back" then
+    self.screen = "home"
+    self.modal = nil
+    self.toast = nil
+    self.econ_status = nil
+    self.dirty = true
+  elseif a == "econ_buy_ticket" then
+    local ok, msg = false, "经济模块未接入"
+    if self.opts.buy_item then ok, msg = self.opts.buy_item("clue_verify_ticket") end
+    self.econ_status = tostring(msg or (ok and "购买成功" or "购买失败"))
     self.dirty = true
   elseif a == "clue_up" or a == "clue_down" then
     local rows = M.LAYOUT.clue_rows or 9
@@ -5199,6 +5327,41 @@ function Controller:build_layout(ui_adapter)
                rect = { x = 730, y = b[4], w = 460, h = 88 },
                text = b[2], event = { action = b[3] } })
       end
+    elseif self.screen == "shop" or self.screen == "bag" then
+      local is_shop = self.screen == "shop"
+      local currency, tickets = 0, 0
+      if self.opts.wallet then currency, tickets = self.opts.wallet() end
+      local title = is_shop and "商城" or "背包"
+      local status = self.econ_status or (is_shop and "选择商品购买" or "购买的道具会显示在这里")
+      push({ id = "econ." .. self.screen .. ".page", kind = "container", parent = "root", visible = true,
+             rect = FULL, style = "screen", pos_runtime = true })
+      push({ id = "econ." .. self.screen .. ".panel", kind = "button", parent = "root", visible = true,
+             rect = { x = 250, y = 150, w = 1420, h = 760 }, style = "modal" })
+      push({ id = "econ." .. self.screen .. ".title", kind = "text", parent = "root", visible = true,
+             text = title, rect = { x = 420, y = 190, w = 1080, h = 90 }, style = "modal.title" })
+      push({ id = "econ." .. self.screen .. ".coin", kind = "button", parent = "root", visible = true,
+             image_id = 100120, imageType = "Stretch", icon_template = true,
+             rect = { x = 320, y = 295, w = 70, h = 70 } })
+      push({ id = "econ." .. self.screen .. ".wallet", kind = "text", parent = "root", visible = true,
+             text = "调查币：" .. tostring(currency) .. "    货币 ID：murdoku.investigation_coin",
+             rect = { x = 390, y = 300, w = 1140, h = 58 }, style = "modal.body" })
+      push({ id = "econ." .. self.screen .. ".currency_id", kind = "text", parent = "root", visible = true,
+             text = "图片来源：Currency    配置 ID：murdoku.investigation_coin",
+             rect = { x = 390, y = 360, w = 1140, h = 50 }, style = "muted" })
+      push({ id = "econ." .. self.screen .. ".item", kind = "text", parent = "root", visible = true,
+             text = "线索核验券    数量：" .. tostring(tickets),
+             rect = { x = 440, y = 470, w = 820, h = 72 }, style = "modal.body" })
+      push({ id = "econ." .. self.screen .. ".price", kind = "text", parent = "root", visible = true,
+             text = is_shop and "售价：6 调查币    购买后进入背包" or "案件内使用：免费验证次数用完后可消耗 1 张",
+             rect = { x = 440, y = 550, w = 820, h = 52 }, style = "muted" })
+      push({ id = "econ." .. self.screen .. ".status", kind = "text", parent = "root", visible = true,
+             text = status, rect = { x = 440, y = 650, w = 820, h = 52 }, style = "muted" })
+      if is_shop then
+        btn("econ.shop.buy", "root", { x = 1280, y = 470, w = 280, h = 82 }, "购买",
+            { action = "econ_buy_ticket" }, "stamp.primary")
+      end
+      btn("econ." .. self.screen .. ".back", "root", { x = 760, y = 790, w = 400, h = 76 }, "返回首页",
+          { action = "econ_back" }, "stamp")
     elseif self.screen == "select" then
       push({ id = "select.thumb.pool", kind = "container", parent = "root", visible = true,
              rect = FULL, pos_runtime = true })
@@ -5586,6 +5749,8 @@ function Controller:layout_plan()
   local first_id = vm0.tray[1] and vm0.tray[1].id
   local states = {
     { name = "home",              intro = 99, modal = nil, screen = "home" },
+    { name = "shop",              intro = 99, modal = nil, screen = "shop" },
+    { name = "bag",               intro = 99, modal = nil, screen = "bag" },
     { name = "select",            intro = 99, modal = nil, screen = "select" },
     { name = "board",             intro = 99, modal = nil, screen = nil },
     { name = "result",            intro = 99,
@@ -12406,6 +12571,7 @@ end
 
 __M["main"] = function()
 local Core      = __require("murdoku_core")
+local Economy   = __require("economy")
 local UIC       = __require("ui_controller")
 local Adapters  = __require("engine_adapter")
 local Qianxing  = __require("engine_adapter_qianxing")
@@ -12616,6 +12782,10 @@ function Murdoku.start(level_id, opts)
       and adapter.cfg.cells.push_text == true) or false,
     progress = function(lid) return Murdoku.progress_of(lid) end,
     on_result = function(kind, wrong, seconds) Murdoku.record_result(level.id, kind, wrong, seconds) end,
+    economy = Economy,
+    wallet = function() return Economy.wallet(adapter) end,
+    buy_item = function(item_id) return Economy.buy(adapter, item_id) end,
+    consume_item = function(item_id) return Economy.consume(adapter, item_id) end,
     last_level = function() return Murdoku.last_played() end,
     current_level = tostring(level.id),
     on_pick_level = function(id)
@@ -13523,6 +13693,8 @@ function Murdoku.mark_cleared(id)
 end
 function Murdoku.record_result(id, outcome, wrong, seconds)
   if id == nil or (outcome ~= "success" and outcome ~= "perfect") then return false end
+  -- 通过后发放一次调查币，奖励状态与关卡成绩分开记录。
+  Economy.grant_first_clear(store(), id)
   local a = store()
   if not a or not a.save or not a.load then return false end
   wrong = math.max(0, math.floor(tonumber(wrong) or 0))
@@ -13542,6 +13714,12 @@ function Murdoku.record_result(id, outcome, wrong, seconds)
   p[tostring(id)] = cur
   a:save(SAVE_PROGRESS, p, {no_signal = true})
   return true
+end
+function Murdoku.economy_settings()
+  return Economy.settings()
+end
+function Murdoku.wallet()
+  return Economy.wallet(store())
 end
 function Murdoku.progress_of(id)
   local a = store()
@@ -14181,7 +14359,7 @@ end
 
 -- ==== 入口：官方生命周期回调（OnInit / OnStart / OnUpdate / ...）==== --
 local FORCE_LEVEL = nil
-if print then print("[murdoku] ===== 构建标记 v715 / 2026-11-17 / 全线索保留复核与第四五七关修订 =====") end
+if print then print("[murdoku] ===== 构建标记 v731 / 2026-11-17 / 全线索保留复核与第四五七关修订 =====") end
 local Murdoku, Qianxing
 local LOAD_ERR = nil
 local ok1 = pcall(function() Murdoku = __require("main") end)
@@ -14276,7 +14454,7 @@ local function check_canvas()
     local same = (math.abs(w - CANVAS_EXPECT.w) < 0.6) and (math.abs(h - CANVAS_EXPECT.h) < 0.6)
     if same then
       if print then
-        print("[murdoku] ===== 构建标记 v715 / 2026-11-17 / 全线索保留复核与第四五七关修订 =====")
+        print("[murdoku] ===== 构建标记 v731 / 2026-11-17 / 全线索保留复核与第四五七关修订 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -14325,6 +14503,9 @@ local function build_adapter()
     prefab_icon = 1073742357,
     text_editor_first = {
       "home.select", "home.continue", "home.shop", "home.bag",
+      "econ.shop.title", "econ.shop.wallet", "econ.shop.currency_id", "econ.shop.item", "econ.shop.price", "econ.shop.status",
+      "econ.bag.title", "econ.bag.wallet", "econ.bag.currency_id", "econ.bag.item", "econ.bag.price", "econ.bag.status",
+      "econ.shop.buy", "econ.shop.back", "econ.bag.back",
       "settle.btn",
       "modal.exit", "modal.save", "modal.settle", "modal.cancel",
       "result.next", "result.exit", "result.home", "result.settle",

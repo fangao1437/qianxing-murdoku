@@ -1,4 +1,5 @@
 local Core      = require("murdoku_core")
+local Economy   = require("economy")
 local UIC       = require("ui_controller")
 local Adapters  = require("engine_adapter")
 local Qianxing  = require("engine_adapter_qianxing")
@@ -209,6 +210,10 @@ function Murdoku.start(level_id, opts)
       and adapter.cfg.cells.push_text == true) or false,
     progress = function(lid) return Murdoku.progress_of(lid) end,
     on_result = function(kind, wrong, seconds) Murdoku.record_result(level.id, kind, wrong, seconds) end,
+    economy = Economy,
+    wallet = function() return Economy.wallet(adapter) end,
+    buy_item = function(item_id) return Economy.buy(adapter, item_id) end,
+    consume_item = function(item_id) return Economy.consume(adapter, item_id) end,
     last_level = function() return Murdoku.last_played() end,
     current_level = tostring(level.id),
     on_pick_level = function(id)
@@ -1116,6 +1121,8 @@ function Murdoku.mark_cleared(id)
 end
 function Murdoku.record_result(id, outcome, wrong, seconds)
   if id == nil or (outcome ~= "success" and outcome ~= "perfect") then return false end
+  -- 通过后发放一次调查币，奖励状态与关卡成绩分开记录。
+  Economy.grant_first_clear(store(), id)
   local a = store()
   if not a or not a.save or not a.load then return false end
   wrong = math.max(0, math.floor(tonumber(wrong) or 0))
@@ -1135,6 +1142,12 @@ function Murdoku.record_result(id, outcome, wrong, seconds)
   p[tostring(id)] = cur
   a:save(SAVE_PROGRESS, p, {no_signal = true})
   return true
+end
+function Murdoku.economy_settings()
+  return Economy.settings()
+end
+function Murdoku.wallet()
+  return Economy.wallet(store())
 end
 function Murdoku.progress_of(id)
   local a = store()

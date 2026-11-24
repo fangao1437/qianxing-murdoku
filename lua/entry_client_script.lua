@@ -1,5 +1,5 @@
 local FORCE_LEVEL = nil
-if print then print("[murdoku] ===== 构建标记 v715 / 2026-11-17 / 全线索保留复核与第四五七关修订 =====") end
+if print then print("[murdoku] ===== 构建标记 v731 / 2026-11-17 / 全线索保留复核与第四五七关修订 =====") end
 local Murdoku, Qianxing
 local LOAD_ERR = nil
 local ok1 = pcall(function() Murdoku = require("main") end)
@@ -94,7 +94,7 @@ local function check_canvas()
     local same = (math.abs(w - CANVAS_EXPECT.w) < 0.6) and (math.abs(h - CANVAS_EXPECT.h) < 0.6)
     if same then
       if print then
-        print("[murdoku] ===== 构建标记 v715 / 2026-11-17 / 全线索保留复核与第四五七关修订 =====")
+        print("[murdoku] ===== 构建标记 v731 / 2026-11-17 / 全线索保留复核与第四五七关修订 =====")
       end
       if print then print("[murdoku] 画布 " .. num(w) .. "×" .. num(h) .. "，与设计一致") end
     else
@@ -143,6 +143,9 @@ local function build_adapter()
     prefab_icon = 1073742357,
     text_editor_first = {
       "home.select", "home.continue", "home.shop", "home.bag",
+      "econ.shop.title", "econ.shop.wallet", "econ.shop.currency_id", "econ.shop.item", "econ.shop.price", "econ.shop.status",
+      "econ.bag.title", "econ.bag.wallet", "econ.bag.currency_id", "econ.bag.item", "econ.bag.price", "econ.bag.status",
+      "econ.shop.buy", "econ.shop.back", "econ.bag.back",
       "settle.btn",
       "modal.exit", "modal.save", "modal.settle", "modal.cancel",
       "result.next", "result.exit", "result.home", "result.settle",
