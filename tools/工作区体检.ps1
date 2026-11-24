@@ -1,4 +1,4 @@
-# 工作区体检.ps1 —— 检查「仓库状态 / 重复脚本 / 根目录散件」
+# 工作区体检.ps1 —— 检查「仓库状态 / 撞名脚本 / 根目录散件」
 # 用法：在根目录跑  pwsh -File .\工作区体检.ps1        （加 -Full 显示全部）
 param([switch]$Full)
 
@@ -22,9 +22,9 @@ $repos = @('qianxing-murdoku','qianxing-murdoku-old','qianxing-murdoku-tool','mu
 foreach ($r in $repos) {
   $p = Join-Path $base $r
   if (-not (Test-Path (Join-Path $p '.git'))) { Line ('  ⚠️ ' + $r + '：没有 .git（★ 缺仓）'); $bad++; continue }
-  $branch = (& git -C $p rev-parse --abbrev-ref HEAD 2>$null)
   $head = (& git -C $p rev-parse --short HEAD 2>$null)
   if (-not $head) { Line ('  ⏳ ' + $r + '：克隆/检出未完成（HEAD 为空）'); $bad++; continue }
+  $branch = (& git -C $p rev-parse --abbrev-ref HEAD 2>$null)
   $up = (& git -C $p rev-parse --short '@{u}' 2>$null)
   $dirty = (@(& git -C $p -c core.quotepath=false status --porcelain 2>$null)).Count
   $hasUp = ($up -and $up -notmatch 'fatal|error')
@@ -44,9 +44,9 @@ if (Test-Path (Join-Path $main '.git')) {
   if ($wts.Count -gt 1) { Line '  ⚠️ 多于 1 个 ⇒ 旧的请退役（防拿错脚本）'; $bad++ }
 }
 
-# ── ③ 外部脚本副本 vs 主仓 tools ───────────────────────────
+# ── ③ 撞名脚本：真风险 vs 预期副本 ─────────────────────────
 Line ''
-Line '── ③ 主仓 tools 之外的脚本副本（★ 拿错脚本的根因）──'
+Line '── ③ 主仓 tools 之外的撞名脚本 ────────'
 $skipRx = '\\(\.git|node_modules|_vendor|games|_trash|__pycache__)\\|\\1\.2[0-9]\.'
 $canon = @{}
 if (Test-Path $tools) {
@@ -55,21 +55,25 @@ if (Test-Path $tools) {
 }
 $outside = Get-ChildItem $base -Recurse -File -Include '*.mjs','*.ps1','*.py','*.lua','*.cjs' -ErrorAction SilentlyContinue |
   Where-Object { $_.FullName -notmatch $skipRx -and $_.FullName -notlike ($main + '\*') }
-$sameName = @()
+$expected = 0
+$risk = @()
 foreach ($f in $outside) {
-  if ($canon.ContainsKey($f.Name)) {
-    $h1 = (Get-FileHash -LiteralPath $f.FullName -Algorithm SHA256 -ErrorAction SilentlyContinue).Hash
-    $h2 = (Get-FileHash -LiteralPath $canon[$f.Name] -Algorithm SHA256 -ErrorAction SilentlyContinue).Hash
-    if ($h1 -ne $h2) {
-      $sameName += [pscustomobject]@{ Name = $f.Name; Where = $f.FullName.Replace($base + '\', '') }
-    }
-  }
+  if (-not $canon.ContainsKey($f.Name)) { continue }
+  $h1 = (Get-FileHash -LiteralPath $f.FullName -Algorithm SHA256 -ErrorAction SilentlyContinue).Hash
+  $h2 = (Get-FileHash -LiteralPath $canon[$f.Name] -Algorithm SHA256 -ErrorAction SilentlyContinue).Hash
+  if ($h1 -eq $h2) { continue }
+  $rel = $f.FullName.Replace($base + '\', '')
+  # 预期副本：临时区 _work\、工具仓的归档镜像 project-tools\
+  if ($rel -like '_work\*' -or $rel -like 'qianxing-murdoku-tool\project-tools\*') { $expected++ }
+  else { $risk += [pscustomobject]@{ Name = $f.Name; Where = $rel } }
 }
-Line ('  主仓 tools 内脚本名 ' + $canon.Count + ' 个；外部有同名副本 ' + $sameName.Count + ' 份')
-$show = if ($Full) { $sameName } else { $sameName | Select-Object -First 15 }
-foreach ($s in $show) { Line ('    ⚠️ ' + $s.Name + '  ← ' + $s.Where) }
-if ($sameName.Count -gt 0) {
-  Line '  ★ 一律以 `qianxing-murdoku\tools\` 那份为准；外部副本不要跑'
+Line ('  主仓 tools 脚本名 ' + $canon.Count + ' 个')
+Line ('  预期副本（_work / 工具仓镜像，不要跑但也别怕）：' + $expected + ' 份')
+Line ('  ⚠️ 真风险副本（其它位置，可能是拿错源）：' + $risk.Count + ' 份')
+$show = if ($Full) { $risk } else { $risk | Select-Object -First 15 }
+foreach ($s in $show) { Line ('     ⚠️ ' + $s.Name + '  ← ' + $s.Where) }
+if ($risk.Count -gt 0) {
+  Line '  ★ 一律以 `qianxing-murdoku\tools\` 那份为准；其它位置的副本不要跑'
   $bad++
 }
 
