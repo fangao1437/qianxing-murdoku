@@ -1,0 +1,22 @@
+{
+  "latest": "739_调查商城全屏与选中态_v2.gil",
+  "test": "tests/shop_cold_render.lua",
+  "files": [
+    {
+      "file": "739_调查商城全屏与选中态.gil",
+      "sha256": "60b53799535808bb4459461c53d89a36a44005dc699a6b4cb222774fac2d11f7",
+      "bytes": 7658351,
+      "records": 8371,
+      "cold_writes": 1442,
+      "replay_writes": 11876
+    },
+    {
+      "file": "739_调查商城全屏与选中态_v2.gil",
+      "sha256": "fbdec8affae16c616894abf9a57b4715d8a27aecaa07470fb4c765688708fd6c",
+      "bytes": 7666201,
+      "records": 8379,
+      "cold_writes": 1450,
+      "replay_writes": 11992
+    }
+  ]
+}

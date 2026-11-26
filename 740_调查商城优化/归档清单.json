@@ -1,0 +1,22 @@
+{
+  "latest": "740_调查商城定价与控件优化_v2.gil",
+  "test": "tests/shop_cold_render.lua",
+  "files": [
+    {
+      "file": "740_调查商城定价与控件优化.gil",
+      "sha256": "d351186227475a06c0b114d839e12f1dc2ecd6e459d59fe4ffe0feb4df266445",
+      "bytes": 7652930,
+      "records": 8364,
+      "cold_writes": 1435,
+      "replay_writes": 11800
+    },
+    {
+      "file": "740_调查商城定价与控件优化_v2.gil",
+      "sha256": "0b10abfc237a2949466fd778eca16086f1d9e1a6b2fda03fcda4e368032847ea",
+      "bytes": 7652636,
+      "records": 8364,
+      "cold_writes": 1435,
+      "replay_writes": 11800
+    }
+  ]
+}

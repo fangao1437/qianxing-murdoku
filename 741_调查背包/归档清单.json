@@ -1,0 +1,30 @@
+{
+  "latest": "741_调查背包_v3.gil",
+  "test": "tests/shop_cold_render.lua",
+  "files": [
+    {
+      "file": "741_调查背包.gil",
+      "sha256": "ef66f089d9267ad15d8f0a6a1e91bc5e68091b21889c6f0a4821353c5fc92e6c",
+      "bytes": 7741207,
+      "records": 8460,
+      "cold_writes": 1521,
+      "replay_writes": 12553
+    },
+    {
+      "file": "741_调查背包_v2.gil",
+      "sha256": "1ba010e864a79249fdc2b0e5383a1743fb149435e825ecdac0b8786da222efb8",
+      "bytes": 7756327,
+      "records": 8474,
+      "cold_writes": 1535,
+      "replay_writes": 12679
+    },
+    {
+      "file": "741_调查背包_v3.gil",
+      "sha256": "088ac42f4760245112090e92287aaf4fc8616ac086c27af0c05f3213427a4f0f",
+      "bytes": 7756337,
+      "records": 8474,
+      "cold_writes": 1535,
+      "replay_writes": 12679
+    }
+  ]
+}
