@@ -1,0 +1,82 @@
+{
+  "baseVersion": "743",
+  "baseSha256": "66654aabd7d9dcaeac8fb6a5e4c21db29c65c4887be931ba0f56b12ababe66cd",
+  "baseBytes": 7714778,
+  "scriptBytesBefore": 781574,
+  "scriptBytesAfter": 787281,
+  "candidateSha256": "4148820c319ec508cc27333e9a3aad419c8110858380c3f7acace0458b83a77f",
+  "patches": [
+    "apply_screen_hide去正则",
+    "_set_prop去闭包",
+    "_render_impl辅助函数与select_content快判",
+    "_render_impl循环去闭包",
+    "_render_impl记录待重试状态",
+    "_render_impl矩形待重试与销毁特效去闭包",
+    "Adapter去闭包助手与index_in",
+    "path_lookup_655去闭包与首字节过滤",
+    "全树索引与缺失查找稳态指数退避",
+    "Adapter:find缺失项同代数指数退避",
+    "enable_cursor稳态收敛与去闭包",
+    "enable_raycast去闭包",
+    "visible分支增量标记隐藏子树",
+    "enforce_hidden_subtrees增量与读回守卫",
+    "on_tick触发增量隐藏子树",
+    "murdoku_set_vis去闭包",
+    "非关内稳态免每秒无故全量render",
+    "tut_visible与help_visible去闭包",
+    "help_visible静态pcall去闭包",
+    "write_art_color650去闭包",
+    "sync_adapt715r读回守卫与591撕边叶缓存",
+    "sync_adapt715r_transform读回守卫",
+    "sync_adapt715r撕边591叶缓存与选关卡字号按需刷新",
+    "sync_econ742稳态早退"
+  ],
+  "cold": {
+    "before": [
+      1639,
+      13628,
+      68,
+      2866
+    ],
+    "after": [
+      1639,
+      13628,
+      68,
+      2866
+    ]
+  },
+  "records": 8578,
+  "outputBytes": 7720485,
+  "outputSha256": "166694ef198d33fce1c76a4e4fa6c7ab6d02e76502bb6879f4d9102500798ee7",
+  "controlRecordsChanged": 0,
+  "fieldDifferences": 1,
+  "validation": {
+    "pass": true,
+    "candidateSha256": "4148820c319ec508cc27333e9a3aad419c8110858380c3f7acace0458b83a77f",
+    "realTreeNodes": 8578,
+    "phasesCompared": 31,
+    "controlSnapshotsCompared": 265918,
+    "controlSnapshotDiffs": 0,
+    "phaseStatesIdentical": true,
+    "lateRecovery": true,
+    "staleHandleRecovery": true,
+    "pcallGuard": true,
+    "thirtyPhaseStats": {
+      "api743": 1136293,
+      "api744": 1005632,
+      "getChildren743": 229425,
+      "getChildren744": 198607,
+      "setVisible743": 37777,
+      "setVisible744": 10467,
+      "setPos743": 3486,
+      "setPos744": 2878,
+      "setScale743": 2333,
+      "setScale744": 1731
+    }
+  },
+  "limits": [
+    "性能与等价验证基于导出自 743.gil 的 8,578 节点真实控件树离线模拟，非真机实测帧率",
+    "保留全部 pcall 保护、迟到控件自愈（首秒敏感 + 稳态指数退避）、换屏/换关重建清缓存和 X 标记 70%/底图点亮逻辑",
+    "744 以 tools/build_744.mjs 与 744_内嵌脚本.lua 为派生链，未改动任何 .gil 控件记录"
+  ]
+}

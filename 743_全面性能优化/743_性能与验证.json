@@ -1,0 +1,77 @@
+{
+  "baseCommit": "50bc9940f15db1eed084b7022cfe135796ade2fb",
+  "baseSha256": "b2c46e289e86fb660529c3ded53b46f2c109279ef4c7f7842441302fc2c87414",
+  "baseBytes": 7866528,
+  "scriptBytesBefore": 933324,
+  "scriptBytesAfter": 781574,
+  "routes": 2130,
+  "parentGroups": 59,
+  "routeBytesBefore": 210331,
+  "routeBytesAfter": 58222,
+  "patches": [
+    "共享静态路径父前缀",
+    "静态路径首次使用展开",
+    "存在性检查共用函数",
+    "记录创建前是否已存在",
+    "复用同一节点已成功的查找",
+    "属性存在性检查",
+    "矩形存在性检查",
+    "复用私有矩形账本3处",
+    "布局固定表只构造一次",
+    "布局固定表模块级定义",
+    "批处理开始免临时闭包",
+    "批处理结束免临时闭包"
+  ],
+  "cold": {
+    "before": [
+      1639,
+      13628,
+      68,
+      3487
+    ],
+    "after": [
+      1639,
+      13628,
+      68,
+      2866
+    ]
+  },
+  "records": 8578,
+  "outputBytes": 7714778,
+  "outputSha256": "66654aabd7d9dcaeac8fb6a5e4c21db29c65c4887be931ba0f56b12ababe66cd",
+  "controlRecordsChanged": 0,
+  "fieldDifferences": 1,
+  "validation": {
+    "pass": true,
+    "candidateSha256": "07d1c79bcb8999ea814aa14121ce04e59fb5a342dc65296e44262d7b98d13bd6",
+    "pageSnapshots": 945,
+    "propertyWrites": {
+      "before": 613513,
+      "after": 613513
+    },
+    "findCalls": {
+      "before": 277939,
+      "after": 247785
+    },
+    "routeChecks": 4260,
+    "lateRecovery": true,
+    "realTreeNodes": 6138,
+    "topTemplates": 41,
+    "enginePhases": 29,
+    "engineInterop": {
+      "743": 610397,
+      "v13": 610397
+    },
+    "phaseStatesIdentical": true,
+    "syntax": true,
+    "limits": [
+      "fake_engine是离线模拟，并非真实游戏渲染或服务器交易验证",
+      "故障重试与页面差分使用离线适配器；29阶段使用存档导出的真实父子树"
+    ]
+  },
+  "limits": [
+    "离线模拟不代表实机帧率；未导入游戏",
+    "保留逐帧显隐、层序、查找TTL和迟到重试，未实施跨帧子列表缓存",
+    "通用lua和dist是旧基线，743以本构建器及743内嵌脚本为源，不用旧打包入口覆盖"
+  ]
+}
