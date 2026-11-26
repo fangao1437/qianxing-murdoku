@@ -1,0 +1,902 @@
+{
+  "baseVersion": "746",
+  "baseSha256": "86f343b5df3aa972976c8cfbeaa2698c0691291c626580b7d3924f759113f7d1",
+  "baseBytes": 7736340,
+  "scriptBytesBefore": 803136,
+  "scriptBytesAfter": 817591,
+  "candidateSha256": "f4daa92d291c199c42b7b60679b0b99ff0972333d9ef5f2a9dfc8c2ced660a9c",
+  "globalAudit": {
+    "removedCurVis": true,
+    "newUndefinedGlobals": 0
+  },
+  "patches": [
+    "P1-2_Controller_tick原地重试未完成的灰层禁用",
+    "P1-2_grid_disable_gray_raycast失败入队自动重试",
+    "P1-1_render_impl切屏标记与同根替换交互按钮即时换绑",
+    "P1-1_render_impl对当前页交互按钮检查同根实例替换",
+    "P2-1_p745_set_vis_guard返回写前可见状态",
+    "Perf-1_invalidate_lookups清理747缓存并剪枝纯静态美术子树",
+    "Perf-1_index_in剪枝纯静态画片叶子容器",
+    "Perf-1_path_lookup_655补齐art685_mark动态路由",
+    "P1-1_Wait_Adapter增加has_static_route747与probe_static747与rebind_if_replaced747",
+    "P1-3_enable_raycast遇错记录失败节点并定向补扫后才收敛",
+    "P1-3_enable_raycast核心扫描错误追踪与失败子树定向补扫",
+    "P1-3_enable_raycast闭合else分支",
+    "P2-1_edges写入同步失效已隐藏cell的子树完成标记",
+    "P2-1_P1-4_set_prop修复cur_vis并置即时隐藏标志",
+    "P1-1_bind_input新实例自动ensure_raycast",
+    "P1-1_bind_input登记可点击交互节点表",
+    "P1-4_enforce_hidden_subtrees失败项重入队不丢待办",
+    "P1-4_on_tick按即时标志或0.25s节流调度enforce_hidden_subtrees",
+    "Perf-2_murdoku_set_vis关内稳态cell直查免全树DFS",
+    "Wait_on_update对静态路径缺项每2秒O1探活压缩等待时长",
+    "P2-3_格子巡检完整判定补齐box容器",
+    "P2-3_格子巡检rec_complete与got_all含box",
+    "P2-4_adapt14_pagers支持仅重试失败翻页控件",
+    "P2-4_sync_adapt715r拆分主布局稳态与翻页失败项定向重试",
+    "P2-4_sync_adapt715r稳态分支仅重试失败翻页热区",
+    "P2-4_sync_adapt715r分别记录主布局与翻页重试表",
+    "P2-4_sync_adapt715r写回main_ok747与pager_retry747",
+    "Perf-3_背景649叶整批pcall与异常降级",
+    "Perf-3_撕边591叶整批pcall与异常降级",
+    "P2-2_sync_econ742读接口缺失不放行缓存签名",
+    "P1-1_OnUpdate_2秒保活抽检当前页交互控件同根替换",
+    "版本标记1",
+    "版本标记2"
+  ],
+  "cold": {
+    "before": [
+      1639,
+      13592,
+      68,
+      2866
+    ],
+    "after": [
+      1639,
+      13592,
+      68,
+      2866
+    ]
+  },
+  "records": 8578,
+  "outputBytes": 7750795,
+  "outputSha256": "e979ed1ce89326f49bde6c5108b48164d2eb2ef840a2ec787541d98ed5acf377",
+  "controlRecordsChanged": 0,
+  "fieldDifferences": 1,
+  "validation": {
+    "benchmarks": {
+      "runs": 5,
+      "scenarios": {
+        "cold_boot": {
+          "v743": {
+            "allocKB": 21304,
+            "api": 43608,
+            "getKids": 31379,
+            "msMean": 92.2,
+            "msMedian": 94,
+            "msRuns": [
+              85,
+              97,
+              94,
+              94,
+              91
+            ],
+            "msStd": 4.0694,
+            "pcall": 166015
+          },
+          "v744": {
+            "allocKB": 8158,
+            "api": 37244,
+            "getKids": 30470,
+            "msMean": 73.4,
+            "msMedian": 73,
+            "msRuns": [
+              69,
+              72,
+              78,
+              75,
+              73
+            ],
+            "msStd": 3.0067,
+            "pcall": 167206
+          },
+          "v745": {
+            "allocKB": 7133,
+            "api": 30654,
+            "getKids": 24332,
+            "msMean": 51.8,
+            "msMedian": 51,
+            "msRuns": [
+              50,
+              51,
+              51,
+              56,
+              51
+            ],
+            "msStd": 2.1354,
+            "pcall": 35794
+          },
+          "v746": {
+            "allocKB": 7142,
+            "api": 30779,
+            "getKids": 24326,
+            "msMean": 52,
+            "msMedian": 52,
+            "msRuns": [
+              52,
+              53,
+              50,
+              52,
+              53
+            ],
+            "msStd": 1.0954,
+            "pcall": 34948
+          },
+          "v747": {
+            "allocKB": 5851,
+            "api": 16830,
+            "getKids": 9907,
+            "msMean": 37.6,
+            "msMedian": 37,
+            "msRuns": [
+              39,
+              36,
+              37,
+              37,
+              39
+            ],
+            "msStd": 1.2,
+            "pcall": 21030
+          }
+        },
+        "nav_flow": {
+          "v743": {
+            "allocKB": 61824,
+            "api": 140971,
+            "getKids": 93977,
+            "msMean": 296.4,
+            "msMedian": 295,
+            "msRuns": [
+              289,
+              295,
+              299,
+              305,
+              294
+            ],
+            "msStd": 5.3516,
+            "pcall": 500064
+          },
+          "v744": {
+            "allocKB": 19626,
+            "api": 103416,
+            "getKids": 75959,
+            "msMean": 218.8,
+            "msMedian": 218,
+            "msRuns": [
+              220,
+              218,
+              215,
+              231,
+              210
+            ],
+            "msStd": 6.9685,
+            "pcall": 462155
+          },
+          "v745": {
+            "allocKB": 9052,
+            "api": 32962,
+            "getKids": 18380,
+            "msMean": 64.2,
+            "msMedian": 66,
+            "msRuns": [
+              66,
+              66,
+              62,
+              61,
+              66
+            ],
+            "msStd": 2.2271,
+            "pcall": 47875
+          },
+          "v746": {
+            "allocKB": 8107,
+            "api": 24312,
+            "getKids": 9793,
+            "msMean": 54.2,
+            "msMedian": 54,
+            "msRuns": [
+              54,
+              52,
+              55,
+              54,
+              56
+            ],
+            "msStd": 1.3266,
+            "pcall": 38016
+          },
+          "v747": {
+            "allocKB": 7383,
+            "api": 16318,
+            "getKids": 2062,
+            "msMean": 42.8,
+            "msMedian": 43,
+            "msRuns": [
+              42,
+              43,
+              43,
+              43,
+              43
+            ],
+            "msStd": 0.4,
+            "pcall": 28724
+          }
+        },
+        "screen_switch_burst": {
+          "v743": {
+            "allocKB": 54720,
+            "api": 117464,
+            "frameMaxMsMean": 37.8,
+            "frameMaxMsMedian": 38,
+            "frameMaxMsStd": 1.7205,
+            "frameP50ms": 0,
+            "frameP95msMean": 9.6,
+            "frameP99msMean": 35.6,
+            "getKids": 78539,
+            "maxFrameGetKids": 14740,
+            "maxFrameLabel": "#3->shop",
+            "msMean": 261,
+            "msMedian": 263,
+            "msRuns": [
+              247,
+              255,
+              270,
+              270,
+              263
+            ],
+            "msStd": 8.9219,
+            "pcall": 460037
+          },
+          "v744": {
+            "allocKB": 17312,
+            "api": 95442,
+            "frameMaxMsMean": 33.6,
+            "frameMaxMsMedian": 35,
+            "frameMaxMsStd": 2.245,
+            "frameP50ms": 0,
+            "frameP95msMean": 7.6,
+            "frameP99msMean": 29.2,
+            "getKids": 69763,
+            "maxFrameGetKids": 14740,
+            "maxFrameLabel": "#3->shop",
+            "msMean": 200.4,
+            "msMedian": 202,
+            "msRuns": [
+              193,
+              211,
+              202,
+              208,
+              188
+            ],
+            "msStd": 8.7316,
+            "pcall": 443846
+          },
+          "v745": {
+            "allocKB": 6822,
+            "api": 22470,
+            "frameMaxMsMean": 15.4,
+            "frameMaxMsMedian": 16,
+            "frameMaxMsStd": 0.8,
+            "frameP50ms": 0,
+            "frameP95msMean": 1,
+            "frameP99msMean": 14.2,
+            "getKids": 9744,
+            "maxFrameGetKids": 8595,
+            "maxFrameLabel": "#3->shop",
+            "msMean": 48,
+            "msMedian": 49,
+            "msRuns": [
+              45,
+              49,
+              47,
+              50,
+              49
+            ],
+            "msStd": 1.7889,
+            "pcall": 34941
+          },
+          "v746": {
+            "allocKB": 6716,
+            "api": 22404,
+            "frameMaxMsMean": 15.2,
+            "frameMaxMsMedian": 15,
+            "frameMaxMsStd": 1.4697,
+            "frameP50ms": 0,
+            "frameP95msMean": 1,
+            "frameP99msMean": 14.2,
+            "getKids": 9735,
+            "maxFrameGetKids": 8592,
+            "maxFrameLabel": "#3->shop",
+            "msMean": 47.6,
+            "msMedian": 47,
+            "msRuns": [
+              47,
+              51,
+              46,
+              48,
+              46
+            ],
+            "msStd": 1.8547,
+            "pcall": 33678
+          },
+          "v747": {
+            "allocKB": 5983,
+            "api": 14522,
+            "frameMaxMsMean": 13.6,
+            "frameMaxMsMedian": 13,
+            "frameMaxMsStd": 0.8,
+            "frameP50ms": 0,
+            "frameP95msMean": 1,
+            "frameP99msMean": 6.6,
+            "getKids": 2056,
+            "maxFrameGetKids": 1399,
+            "maxFrameLabel": "#3->shop",
+            "msMean": 37,
+            "msMedian": 37,
+            "msRuns": [
+              37,
+              38,
+              37,
+              36,
+              37
+            ],
+            "msStd": 0.6325,
+            "pcall": 24449
+          }
+        },
+        "steady_home": {
+          "v743": {
+            "allocKB": 18142,
+            "api": 83163,
+            "getKids": 55280,
+            "msMean": 103.8,
+            "msMedian": 105,
+            "msRuns": [
+              98,
+              105,
+              108,
+              105,
+              103
+            ],
+            "msStd": 3.3106,
+            "pcall": 140513
+          },
+          "v744": {
+            "allocKB": 5154,
+            "api": 33920,
+            "getKids": 29432,
+            "msMean": 48.6,
+            "msMedian": 48,
+            "msRuns": [
+              44,
+              47,
+              48,
+              51,
+              53
+            ],
+            "msStd": 3.1369,
+            "pcall": 76993
+          },
+          "v745": {
+            "allocKB": 2591,
+            "api": 17835,
+            "getKids": 17156,
+            "msMean": 27,
+            "msMedian": 26,
+            "msRuns": [
+              24,
+              26,
+              24,
+              32,
+              29
+            ],
+            "msStd": 3.0984,
+            "pcall": 21640
+          },
+          "v746": {
+            "allocKB": 882,
+            "api": 667,
+            "getKids": 0,
+            "msMean": 7.2,
+            "msMedian": 7,
+            "msRuns": [
+              7,
+              8,
+              7,
+              6,
+              8
+            ],
+            "msStd": 0.7483,
+            "pcall": 4454
+          },
+          "v747": {
+            "allocKB": 882,
+            "api": 695,
+            "getKids": 0,
+            "msMean": 7.2,
+            "msMedian": 7,
+            "msRuns": [
+              7,
+              8,
+              7,
+              7,
+              7
+            ],
+            "msStd": 0.4,
+            "pcall": 4484
+          }
+        },
+        "steady_level": {
+          "v743": {
+            "allocKB": 17365,
+            "api": 76932,
+            "getKids": 49177,
+            "msMean": 99.4,
+            "msMedian": 102,
+            "msRuns": [
+              93,
+              103,
+              96,
+              102,
+              103
+            ],
+            "msStd": 4.128,
+            "pcall": 135824
+          },
+          "v744": {
+            "allocKB": 4530,
+            "api": 27647,
+            "getKids": 23329,
+            "msMean": 44.8,
+            "msMedian": 46,
+            "msRuns": [
+              39,
+              43,
+              47,
+              49,
+              46
+            ],
+            "msStd": 3.4871,
+            "pcall": 72322
+          },
+          "v745": {
+            "allocKB": 2561,
+            "api": 17658,
+            "getKids": 17164,
+            "msMean": 27.8,
+            "msMedian": 28,
+            "msRuns": [
+              26,
+              27,
+              28,
+              29,
+              29
+            ],
+            "msStd": 1.1662,
+            "pcall": 21522
+          },
+          "v746": {
+            "allocKB": 2560,
+            "api": 17673,
+            "getKids": 17179,
+            "msMean": 27.6,
+            "msMedian": 27,
+            "msRuns": [
+              28,
+              27,
+              27,
+              27,
+              29
+            ],
+            "msStd": 0.8,
+            "pcall": 21503
+          },
+          "v747": {
+            "allocKB": 1157,
+            "api": 3773,
+            "getKids": 2793,
+            "msMean": 11.8,
+            "msMedian": 12,
+            "msRuns": [
+              13,
+              11,
+              12,
+              12,
+              11
+            ],
+            "msStd": 0.7483,
+            "pcall": 10416
+          }
+        },
+        "steady_select": {
+          "v743": {
+            "allocKB": 19988,
+            "api": 78147,
+            "getKids": 49142,
+            "msMean": 116.2,
+            "msMedian": 118,
+            "msRuns": [
+              111,
+              118,
+              119,
+              118,
+              115
+            ],
+            "msStd": 2.9257,
+            "pcall": 131799
+          },
+          "v744": {
+            "allocKB": 7787,
+            "api": 28910,
+            "getKids": 23294,
+            "msMean": 60.8,
+            "msMedian": 61,
+            "msRuns": [
+              53,
+              61,
+              67,
+              59,
+              64
+            ],
+            "msStd": 4.7497,
+            "pcall": 68753
+          },
+          "v745": {
+            "allocKB": 6051,
+            "api": 25059,
+            "getKids": 17156,
+            "msMean": 47.4,
+            "msMedian": 49,
+            "msRuns": [
+              49,
+              45,
+              43,
+              51,
+              49
+            ],
+            "msStd": 2.9394,
+            "pcall": 32572
+          },
+          "v746": {
+            "allocKB": 4436,
+            "api": 7885,
+            "getKids": 0,
+            "msMean": 27.8,
+            "msMedian": 28,
+            "msRuns": [
+              27,
+              28,
+              28,
+              27,
+              29
+            ],
+            "msStd": 0.7483,
+            "pcall": 15380
+          },
+          "v747": {
+            "allocKB": 4510,
+            "api": 7933,
+            "getKids": 0,
+            "msMean": 29.2,
+            "msMedian": 29,
+            "msRuns": [
+              29,
+              28,
+              27,
+              32,
+              30
+            ],
+            "msStd": 1.7205,
+            "pcall": 15452
+          }
+        },
+        "steady_shop": {
+          "v743": {
+            "allocKB": 16427,
+            "api": 76125,
+            "getKids": 49142,
+            "msMean": 94.4,
+            "msMedian": 97,
+            "msRuns": [
+              89,
+              97,
+              87,
+              99,
+              100
+            ],
+            "msStd": 5.3516,
+            "pcall": 127219
+          },
+          "v744": {
+            "allocKB": 3746,
+            "api": 26870,
+            "getKids": 23294,
+            "msMean": 40.2,
+            "msMedian": 41,
+            "msRuns": [
+              38,
+              40,
+              41,
+              41,
+              41
+            ],
+            "msStd": 1.1662,
+            "pcall": 62822
+          },
+          "v745": {
+            "allocKB": 213,
+            "api": 357,
+            "getKids": 0,
+            "msMean": 3.6,
+            "msMedian": 4,
+            "msRuns": [
+              3,
+              4,
+              3,
+              4,
+              4
+            ],
+            "msStd": 0.4899,
+            "pcall": 4043
+          },
+          "v746": {
+            "allocKB": 213,
+            "api": 357,
+            "getKids": 0,
+            "msMean": 3.6,
+            "msMedian": 4,
+            "msRuns": [
+              4,
+              3,
+              3,
+              4,
+              4
+            ],
+            "msStd": 0.4899,
+            "pcall": 4043
+          },
+          "v747": {
+            "allocKB": 214,
+            "api": 402,
+            "getKids": 0,
+            "msMean": 4.2,
+            "msMedian": 4,
+            "msRuns": [
+              4,
+              5,
+              4,
+              4,
+              4
+            ],
+            "msStd": 0.4,
+            "pcall": 4088
+          }
+        }
+      }
+    },
+    "candidateSha256": "f4daa92d291c199c42b7b60679b0b99ff0972333d9ef5f2a9dfc8c2ced660a9c",
+    "checks": {
+      "late_recovery": {
+        "pass": true
+      },
+      "r1_p1_1_late_x": {
+        "pass": true,
+        "recoveredFrame": 46,
+        "xh": 84,
+        "xw": 84
+      },
+      "r1_p1_2_gray_retry": {
+        "after1": {
+          "blk": false,
+          "intr": false,
+          "ray": true
+        },
+        "after2": {
+          "blk": false,
+          "intr": false,
+          "ray": false
+        },
+        "pass": true
+      },
+      "r1_p1_3_pager_retry": {
+        "pass": true,
+        "px": 726,
+        "selectPage": 2
+      },
+      "r1_p2_1_tears_partial": {
+        "completeGroupReEnum": 0,
+        "pass": true,
+        "restored": 41,
+        "totalLate": 41
+      },
+      "r1_p2_2_econ_silent_ignore": {
+        "pass": true,
+        "px": 0,
+        "py": 0
+      },
+      "r1_p2_3_missing_backoff": {
+        "buildLayoutCount40s": 0,
+        "pass": true
+      },
+      "r2_p1_1_same_root_button_swap_idle": {
+        "pass": true,
+        "v746": {
+          "clicked": false,
+          "ray": false,
+          "readyFrame": -1,
+          "screen": "home",
+          "waitSec": -1
+        },
+        "v747": {
+          "clicked": true,
+          "ray": true,
+          "readyFrame": 91,
+          "screen": "shop",
+          "waitSec": 1.5167
+        }
+      },
+      "r2_p1_1_same_root_button_swap_switch": {
+        "pass": true,
+        "v746": {
+          "clicked": false,
+          "ray": false,
+          "screen": "home"
+        },
+        "v747": {
+          "clicked": true,
+          "ray": true,
+          "screen": "shop"
+        }
+      },
+      "r2_p1_2_gray_retry_idle_no_scroll": {
+        "pass": true,
+        "v746": {
+          "blk": false,
+          "intr": false,
+          "ray": true,
+          "recoveredFrame": -1
+        },
+        "v747": {
+          "blk": false,
+          "intr": false,
+          "ray": false,
+          "recoveredFrame": 16
+        }
+      },
+      "r2_p1_3_raycast_partial_err_recovery": {
+        "pass": true,
+        "v746": {
+          "doneAfterErr": true,
+          "doneAfterRec": true,
+          "rayAfter1": false,
+          "rayAfter2": false,
+          "retryGetKids": 0
+        },
+        "v747": {
+          "doneAfterErr": false,
+          "doneAfterRec": true,
+          "rayAfter1": false,
+          "rayAfter2": true,
+          "retryGetKids": 17
+        }
+      },
+      "r2_p1_4_hidden_subtree_err_requeue": {
+        "pass": true,
+        "v746": {
+          "visAfter1": true,
+          "visAfterWait": true
+        },
+        "v747": {
+          "visAfter1": true,
+          "visAfterWait": false
+        }
+      },
+      "r2_p2_1_cur_vis_dedup_active": {
+        "pass": true,
+        "v746": {
+          "dirtyAfterRedundantHide": true,
+          "getKids": 6
+        },
+        "v747": {
+          "dirtyAfterRedundantHide": false,
+          "getKids": 0
+        }
+      },
+      "r2_p2_2_econ_missing_getter_no_lock": {
+        "pass": true,
+        "v746": {
+          "px": 250,
+          "py": -180
+        },
+        "v747": {
+          "px": 0,
+          "py": 0
+        }
+      },
+      "r2_p2_3_late_box_recovery": {
+        "pass": true,
+        "v746": {
+          "bh": 200,
+          "bw": 200,
+          "recoveredFrame": -1
+        },
+        "v747": {
+          "bh": 124,
+          "bw": 124,
+          "recoveredFrame": 46
+        }
+      },
+      "r2_p2_4_pager_fail_isolated_retry": {
+        "pass": true,
+        "v746": {
+          "extraMainLayoutTouches": 3,
+          "page": 2,
+          "px": 726
+        },
+        "v747": {
+          "extraMainLayoutTouches": 0,
+          "page": 2,
+          "px": 726
+        }
+      },
+      "r2_wait_shop_missing_fast_recover": {
+        "pass": true,
+        "v746": {
+          "buildLayout40s": 0,
+          "getKids40s": 51462,
+          "recoverFrames": 746,
+          "recoverSec": 12.4333
+        },
+        "v747": {
+          "buildLayout40s": 0,
+          "getKids40s": 0,
+          "recoverFrames": 86,
+          "recoverSec": 1.4333
+        }
+      },
+      "zone1_hex_back_confirm": {
+        "exit_open": true,
+        "pass": true,
+        "sub_pend": true
+      },
+      "zone2_pcall_guard": {
+        "pass": true
+      },
+      "zone3_root_rebuild_fallback": {
+        "genAfter": 2,
+        "genBefore": 1,
+        "pass": true
+      },
+      "zone4_face_and_x70": {
+        "faceVis": true,
+        "pass": true,
+        "xh": 84,
+        "xw": 84
+      }
+    },
+    "equivalence": {
+      "controlSnapshotDiffs": 0,
+      "nodesPerStage": 8578,
+      "pass": true,
+      "stages": 32,
+      "totalSnapshots": 274496
+    },
+    "pass": true,
+    "schema": "747-full-v1"
+  },
+  "limits": [
+    "性能、故障注入恢复与状态差分均基于导出自真实 .gil 的 8,578 节点控件树离线高仿真环境，尚未导入千星奇域真机实测",
+    "同一套桩与同一口径下连续 5 轮重复采样统一横向对比 743 / 744 / 745 / 746 / 747，同时汇报均值、中位数、标准差与逐帧 P50/P95/P99/Max",
+    "暂停自动 GC 的累计堆分配（allocKB）反映脚本层分配压力，不等价于真机常驻 RSS，真机仍需实测绝对帧时与 GPU 耗时",
+    "747 以 tools/build_747.mjs 与 747_内嵌脚本.lua 为派生链，0 控件记录改动；writeGil 已升级为原子临时文件校验通过后 rename 落盘"
+  ]
+}

@@ -205,57 +205,69 @@ export function writeGil(g, out, opts = {}) {
       + `     · 你改的对象是否在 g.tree 的对象图里（不是 clone ✗）`);
   }
 
-  // ③ 落盘
-  fs.writeFileSync(out, buf);
+  // ③ 原子落盘：先写同目录临时文件，所有重读/往返/diff/断言/版本标记全部通过后再 rename 覆盖目标；
+  //   任一步失败在 catch 中清理临时文件，永不留下占坑的半成品！
+  fs.mkdirSync(path.dirname(out), { recursive: true });
+  const tmpOut = `${out}.tmp.${process.pid}.${Date.now()}`;
+  let rep;
+  try {
+    fs.writeFileSync(tmpOut, buf);
 
-  // ④ ★★ 从磁盘重新读（★ 决不复用内存 ✓）
-  const g2 = (() => {
-    // 用 readGil 才能拿到 recs/pack；动态 import 避免循环依赖
-    return loadTree(out);
-  })();
+    // ④ ★★ 从磁盘重新读（★ 决不复用内存 ✓）
+    const g2 = loadTree(tmpOut);
 
-  // ⑤ 往返闸门：重编码必须与落盘字节逐字节一致
-  const body2 = encodeMsg(g2.tree);
-  const rereadBody = g2.src.subarray(20, 20 + g2.hdr[4]);
-  if (!body2.equals(rereadBody)) {
-    throw new GilWriteError(`[${label}] ★ 往返闸门失败：输出文件重编码与自身字节不一致 ✗（写出的东西不是稳定形态 ✗）`);
-  }
-
-  // ⑥ 记录数断言
-  const recs2 = g2.recs;
-  if (expectRecs != null && recs2.length !== expectRecs) {
-    throw new GilWriteError(`[${label}] ★ 记录数变了：期望 ${expectRecs}，实得 ${recs2.length} ✗`);
-  }
-
-  // ⑦ 字段级 diff：★ 逐节点说明"到底改了什么" ✓
-  const A = loadTree(g.file), B = loadTree(out);
-  const d = diffTrees(A, B, 50);
-  if (expectDiffs != null && d.total !== expectDiffs) {
-    throw new GilWriteError(`[${label}] ★ 字段差异条数不符：期望 ${expectDiffs}，实得 ${d.total} ✗\n`
-      + d.diffs.slice(0, 10).map((x) => `     [${x.kind}] ${x.where}  ${x.detail}`).join('\n'));
-  }
-
-  // ⑧ 自定义断言（★ 用重读磁盘的 g2 ✓）
-  if (typeof assert === 'function') {
-    const r = assert(g2, { diffs: d, bytes: buf.length });
-    if (r !== true && r !== undefined) throw new GilWriteError(`[${label}] ★ 断言失败：${r} ✗`);
-  }
-
-  // ⑨ ★ 内嵌脚本的版本标记断言（★ 可选 ✓；叠脚本的工具**必须**传 ✓）
-  let marker = null;
-  if (expectMarker !== undefined) {
-    const leaf = findScriptLeaf(g2);
-    if (!leaf) throw new GilWriteError(`[${label}] ★ 重读后找不到内嵌脚本叶子 ⇒ 标记无法断言 ✗（★ 不许静默放过 ✗）`);
-    marker = markerOf(leaf.buf);
-    if (marker !== expectMarker) {
-      throw new GilWriteError(
-        `[${label}] ★★ 内嵌脚本的版本标记不符：期望 ${expectMarker}，实得 ${marker} ✗\n`
-        + `   ⇒ ★ 这通常意味着【叠进去的是旧脚本】✗ —— 先跑 \`lua tools/bundle_client_script.lua\` 重建 dist ✓\n`
-        + `   （★ "字节变了"并不等于"叠对了版本" ✗ —— 这正是 2026-10-10 那次静默失败 ✓）`);
+    // ⑤ 往返闸门：重编码必须与落盘字节逐字节一致
+    const body2 = encodeMsg(g2.tree);
+    const rereadBody = g2.src.subarray(20, 20 + g2.hdr[4]);
+    if (!body2.equals(rereadBody)) {
+      throw new GilWriteError(`[${label}] ★ 往返闸门失败：输出文件重编码与自身字节不一致 ✗（写出的东西不是稳定形态 ✗）`);
     }
-  }
 
-  const rep = { bytes: buf.length, diffs: d.total, compared: d.compared, list: d.diffs, g2, recs: recs2.length, marker };
+    // ⑥ 记录数断言
+    const recs2 = g2.recs;
+    if (expectRecs != null && recs2.length !== expectRecs) {
+      throw new GilWriteError(`[${label}] ★ 记录数变了：期望 ${expectRecs}，实得 ${recs2.length} ✗`);
+    }
+
+    // ⑦ 字段级 diff：★ 逐节点说明"到底改了什么" ✓
+    const A = loadTree(g.file), B = loadTree(tmpOut);
+    const d = diffTrees(A, B, 50);
+    if (expectDiffs != null && d.total !== expectDiffs) {
+      throw new GilWriteError(`[${label}] ★ 字段差异条数不符：期望 ${expectDiffs}，实得 ${d.total} ✗\n`
+        + d.diffs.slice(0, 10).map((x) => `     [${x.kind}] ${x.where}  ${x.detail}`).join('\n'));
+    }
+
+    // ⑧ 自定义断言（★ 用重读磁盘的 g2 ✓）
+    if (typeof assert === 'function') {
+      const r = assert(g2, { diffs: d, bytes: buf.length });
+      if (r !== true && r !== undefined) throw new GilWriteError(`[${label}] ★ 断言失败：${r} ✗`);
+    }
+
+    // ⑨ ★ 内嵌脚本的版本标记断言（★ 可选 ✓；叠脚本的工具**必须**传 ✓）
+    let marker = null;
+    if (expectMarker !== undefined) {
+      const leaf = findScriptLeaf(g2);
+      if (!leaf) throw new GilWriteError(`[${label}] ★ 重读后找不到内嵌脚本叶子 ⇒ 标记无法断言 ✗（★ 不许静默放过 ✗）`);
+      marker = markerOf(leaf.buf);
+      if (marker !== expectMarker) {
+        throw new GilWriteError(
+          `[${label}] ★★ 内嵌脚本的版本标记不符：期望 ${expectMarker}，实得 ${marker} ✗\n`
+          + `   ⇒ ★ 这通常意味着【叠进去的是旧脚本】✗ —— 先跑 \`lua tools/bundle_client_script.lua\` 重建 dist ✓\n`
+          + `   （★ "字节变了"并不等于"叠对了版本" ✗ —— 这正是 2026-10-10 那次静默失败 ✓）`);
+      }
+    }
+
+    // ⑩ 全部闸门通过后原子替换到正式目标路径，并更新 g2.file 指向正式路径
+    fs.renameSync(tmpOut, out);
+    g2.file = out;
+    rep = { bytes: buf.length, diffs: d.total, compared: d.compared, list: d.diffs, g2, recs: recs2.length, marker };
+  } catch (err) {
+    try { if (fs.existsSync(tmpOut)) fs.unlinkSync(tmpOut); } catch {}
+    throw err;
+  }
+  const d = { compared: rep.compared, total: rep.diffs, diffs: rep.list };
+  const recs2 = rep.g2.recs;
+  const marker = rep.marker;
   say(`\n── writeGil 验收（${label}）──`);
   say(`  ✅ ② 输出 ≠ 输入（${g.src.length} → ${buf.length} 字节）`);
   say(`  ✅ ④ 已从磁盘重读 ${path.basename(out)}（记录 ${recs2.length} 条）`);
