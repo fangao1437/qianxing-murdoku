@@ -1,6 +1,6 @@
 {
-  "latest": "742_调查背包美术还原_v12.gil",
-  "build": "tools/build_742.mjs",
+  "latest": "742_调查背包美术还原_v13.gil",
+  "build": "tools/build_742_v13.mjs",
   "test": "tests/shop_cold_render.lua",
   "files": [
     {
@@ -61,7 +61,13 @@
     {
       "file": "742_调查背包美术还原_v12.gil",
       "sha256": "0be919ee32d24d35c9253d5d0b6adb203515858166de15f1dbbd596819765776",
-      "bytes": 7866784
+      "bytes": 7866784,
+      "build": "tools/build_742.mjs"
+    },
+    {
+      "file": "742_调查背包美术还原_v13.gil",
+      "sha256": "b2c46e289e86fb660529c3ded53b46f2c109279ef4c7f7842441302fc2c87414",
+      "bytes": 7866528
     }
   ]
 }

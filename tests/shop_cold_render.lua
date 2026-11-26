@@ -9,8 +9,9 @@ local ui = require('ui_controller').new(core, {
 })
 local adapter = require('engine_adapter').new_stub()
 -- 预制控件在界面退出后仍在画布上，保留最后一次下发的可见性。
-local handles = {}
+local handles, finds = {}, 0
 function adapter:find(id)
+  finds = finds + 1
   if not handles[id] then handles[id] = {} end
   return handles[id]
 end
@@ -34,7 +35,7 @@ render('home') -- 首次 render 会遍历其它页面，再隐藏不属于首页
 assert(ui.screen == 'home' and ui._shown)
 assert(visible('econ.shop736.s0') == false)
 for i=1,3 do assert(visible('result.title.'..i) == false) end
-local cold = writes
+local cold, cold_finds = writes, finds
 render('select')
 render('shop')
 assert(visible('econ.shop736.s0') == true)
@@ -56,4 +57,4 @@ end
 render('home')
 for i=1,3 do assert(visible('result.title.'..i) == false) end
 assert(visible('econ.shop736.s0') == false)
-print(('COLD=%d WRITES=%d'):format(cold,writes))
+print(('COLD=%d WRITES=%d COLD_FINDS=%d FINDS=%d'):format(cold,writes,cold_finds,finds))
