@@ -1,0 +1,362 @@
+{
+  "baseVersion": "744",
+  "baseSha256": "166694ef198d33fce1c76a4e4fa6c7ab6d02e76502bb6879f4d9102500798ee7",
+  "baseBytes": 7720485,
+  "scriptBytesBefore": 787281,
+  "scriptBytesAfter": 795390,
+  "candidateSha256": "a2af004eecce943b96195646fa2c91ca9723824a0ca9be9a80b0b4b175593927",
+  "patches": [
+    "_grid_render删空转诊断循环",
+    "_find_by_name复用适配器全树索引并去闭包",
+    "_grid_refill_now与gray去闭包",
+    "_render_impl切屏探活复用与去闭包",
+    "Adapter合并pcall助手与root探活",
+    "index_in合并单次pcall",
+    "path_lookup_655缓存根容器与单pcall链式查",
+    "enable_raycast单趟收敛与合并pcall",
+    "_mark_layer_raise事件驱动与低频兜底",
+    "on_tick按需置顶mark_layer",
+    "destroy_control读回守卫去闭包",
+    "_mark_hide_all与_mark_set_visible读回守卫去闭包",
+    "_mark_set_visible读回守卫去闭包",
+    "set_property_image与visible与raycast写前读回守卫去闭包",
+    "set_property_visible主写入读回守卫合并pcall",
+    "set_property_hide_kids与raycast读回守卫去闭包",
+    "select_render_content读回守卫",
+    "CURSOR_CONTAINERS清理历史废弃名",
+    "key_control_fallbacks清理历史废弃board与bind_keyboard退避",
+    "OnUpdate键盘重绑退避防移动端永久空转",
+    "tutorial_furniture防缺失board无限触发全树重扫",
+    "tutorial_furniture_done同代跳过缺失board",
+    "read_pair与_furn_resync去闭包和读回守卫",
+    "Adapter_sub去闭包与_furn_resync稳态降频",
+    "_furn_resync稳态退避",
+    "Levels.all缓存静态模块列表",
+    "on_update缓存n_levels与stage去闭包",
+    "murdoku_set_vis读回守卫与稳态降频",
+    "on_update_murdoku_vis稳态降频与去冗余查找",
+    "on_update_vis_ids稳态30帧复核",
+    "禁区4_face与x按代缓存句柄单pcall读回守卫",
+    "tut_probe清理废弃board与去闭包_help_visible单pcall",
+    "tick_hint635常量表与稳态早退",
+    "tick_hint635记录关闭态快路径",
+    "sync_block640状态驱动与零闭包",
+    "sync_block640辅助函数与confirm分支优化",
+    "sync_block640_confirm分支状态驱动",
+    "adapt715r_pair去闭包",
+    "sync_adapt715r_set_visible与签名早退与去WAX乒乓",
+    "sync_adapt715r写字号去闭包与记录稳态完成标记",
+    "sync_adapt715r_gen变更清理steady_ok745",
+    "Tutorial_find与_visible读回守卫去闭包",
+    "版本标记v745_1",
+    "版本标记v745_2"
+  ],
+  "cold": {
+    "before": [
+      1639,
+      13628,
+      68,
+      2866
+    ],
+    "after": [
+      1639,
+      13628,
+      68,
+      2866
+    ]
+  },
+  "records": 8578,
+  "outputBytes": 7728594,
+  "outputSha256": "fb2822bad1f1a31d695c205d73d0f75cd340879e9878bee9e32d2b0c6ff96fa0",
+  "controlRecordsChanged": 0,
+  "fieldDifferences": 1,
+  "validation": {
+    "pass": true,
+    "candidateSha256": "a2af004eecce943b96195646fa2c91ca9723824a0ca9be9a80b0b4b175593927",
+    "realTreeNodes": 8578,
+    "phasesCompared": 32,
+    "controlSnapshotsCompared": 274496,
+    "controlSnapshotDiffs": 0,
+    "phaseStatesIdentical": true,
+    "zoneChecks": {
+      "zone1_hex_back_confirm": true,
+      "zone2_pcall_guard": true,
+      "zone3_root_rebuild_fallback": true,
+      "zone4_face_and_x70": true,
+      "late_recovery": true
+    },
+    "benchmarks": {
+      "cold_boot": {
+        "v743": {
+          "ms": 23,
+          "gcKB": 7987,
+          "api": 22855,
+          "pcall": 53920,
+          "getKids": 15626,
+          "setVis": 3914,
+          "noopVis": 3853,
+          "noopPos": 197,
+          "noopScale": 39,
+          "lastSib": 93
+        },
+        "v744": {
+          "ms": 18,
+          "gcKB": 2897,
+          "api": 17152,
+          "pcall": 53209,
+          "getKids": 14717,
+          "setVis": 1056,
+          "noopVis": 995,
+          "noopPos": 160,
+          "noopScale": 2,
+          "lastSib": 81
+        },
+        "v745": {
+          "ms": 12,
+          "gcKB": 1898,
+          "api": 9740,
+          "pcall": 17012,
+          "getKids": 8104,
+          "setVis": 342,
+          "noopVis": 281,
+          "noopPos": 160,
+          "noopScale": 2,
+          "lastSib": 51
+        }
+      },
+      "steady_home": {
+        "v743": {
+          "ms": 66,
+          "gcKB": 3600,
+          "api": 71381,
+          "pcall": 131954,
+          "getKids": 45379,
+          "setVis": 12319,
+          "noopVis": 12319,
+          "noopPos": 361,
+          "noopScale": 361,
+          "lastSib": 414
+        },
+        "v744": {
+          "ms": 32,
+          "gcKB": 4666,
+          "api": 11355,
+          "pcall": 47025,
+          "getKids": 9053,
+          "setVis": 900,
+          "noopVis": 900,
+          "noopPos": 0,
+          "noopScale": 0,
+          "lastSib": 300
+        },
+        "v745": {
+          "ms": 19,
+          "gcKB": 2141,
+          "api": 338,
+          "pcall": 13121,
+          "getKids": 0,
+          "setVis": 0,
+          "noopVis": 0,
+          "noopPos": 0,
+          "noopScale": 0,
+          "lastSib": 0
+        }
+      },
+      "steady_select": {
+        "v743": {
+          "ms": 77,
+          "gcKB": 4965,
+          "api": 71541,
+          "pcall": 134462,
+          "getKids": 45379,
+          "setVis": 12319,
+          "noopVis": 12319,
+          "noopPos": 361,
+          "noopScale": 361,
+          "lastSib": 414
+        },
+        "v744": {
+          "ms": 44,
+          "gcKB": 5968,
+          "api": 11515,
+          "pcall": 50013,
+          "getKids": 9053,
+          "setVis": 900,
+          "noopVis": 900,
+          "noopPos": 0,
+          "noopScale": 0,
+          "lastSib": 300
+        },
+        "v745": {
+          "ms": 34,
+          "gcKB": 3436,
+          "api": 498,
+          "pcall": 15953,
+          "getKids": 0,
+          "setVis": 0,
+          "noopVis": 0,
+          "noopPos": 0,
+          "noopScale": 0,
+          "lastSib": 0
+        }
+      },
+      "steady_level": {
+        "v743": {
+          "ms": 81,
+          "gcKB": 6283,
+          "api": 77436,
+          "pcall": 154709,
+          "getKids": 49704,
+          "setVis": 12409,
+          "noopVis": 12409,
+          "noopPos": 451,
+          "noopScale": 361,
+          "lastSib": 414
+        },
+        "v744": {
+          "ms": 49,
+          "gcKB": 6776,
+          "api": 24321,
+          "pcall": 83626,
+          "getKids": 20289,
+          "setVis": 990,
+          "noopVis": 990,
+          "noopPos": 90,
+          "noopScale": 0,
+          "lastSib": 300
+        },
+        "v745": {
+          "ms": 20,
+          "gcKB": 2252,
+          "api": 610,
+          "pcall": 14320,
+          "getKids": 5,
+          "setVis": 36,
+          "noopVis": 36,
+          "noopPos": 36,
+          "noopScale": 0,
+          "lastSib": 5
+        }
+      },
+      "steady_shop": {
+        "v743": {
+          "ms": 89,
+          "gcKB": 4148,
+          "api": 71381,
+          "pcall": 133937,
+          "getKids": 45379,
+          "setVis": 12319,
+          "noopVis": 12319,
+          "noopPos": 361,
+          "noopScale": 361,
+          "lastSib": 414
+        },
+        "v744": {
+          "ms": 32,
+          "gcKB": 5154,
+          "api": 11355,
+          "pcall": 49032,
+          "getKids": 9053,
+          "setVis": 900,
+          "noopVis": 900,
+          "noopPos": 0,
+          "noopScale": 0,
+          "lastSib": 300
+        },
+        "v745": {
+          "ms": 21,
+          "gcKB": 2629,
+          "api": 338,
+          "pcall": 15128,
+          "getKids": 0,
+          "setVis": 0,
+          "noopVis": 0,
+          "noopPos": 0,
+          "noopScale": 0,
+          "lastSib": 0
+        }
+      },
+      "screen_switch_burst": {
+        "v743": {
+          "ms": 882,
+          "gcKB": 9520,
+          "api": 530006,
+          "pcall": 2380500,
+          "getKids": 277580,
+          "setVis": 93099,
+          "noopVis": 72819,
+          "noopPos": 10089,
+          "noopScale": 2214,
+          "lastSib": 2094
+        },
+        "v744": {
+          "ms": 573,
+          "gcKB": 2813,
+          "api": 472967,
+          "pcall": 2381997,
+          "getKids": 261284,
+          "setVis": 60276,
+          "noopVis": 39996,
+          "noopPos": 9765,
+          "noopScale": 1890,
+          "lastSib": 2004
+        },
+        "v745": {
+          "ms": 162,
+          "gcKB": 9574,
+          "api": 112561,
+          "pcall": 193319,
+          "getKids": 32620,
+          "setVis": 24960,
+          "noopVis": 5508,
+          "noopPos": 3706,
+          "noopScale": 337,
+          "lastSib": 936
+        }
+      },
+      "nav_flow": {
+        "v743": {
+          "ms": 496,
+          "gcKB": 15380,
+          "api": 355597,
+          "pcall": 1353899,
+          "getKids": 202865,
+          "setVis": 56194,
+          "noopVis": 45784,
+          "noopPos": 4935,
+          "noopScale": 2025,
+          "lastSib": 1325
+        },
+        "v744": {
+          "ms": 351,
+          "gcKB": 2342,
+          "api": 308598,
+          "pcall": 1340952,
+          "getKids": 190544,
+          "setVis": 32622,
+          "noopVis": 22212,
+          "noopPos": 4564,
+          "noopScale": 1654,
+          "lastSib": 1217
+        },
+        "v745": {
+          "ms": 96,
+          "gcKB": 3985,
+          "api": 75431,
+          "pcall": 122431,
+          "getKids": 25520,
+          "setVis": 13098,
+          "noopVis": 3056,
+          "noopPos": 1530,
+          "noopScale": 718,
+          "lastSib": 480
+        }
+      }
+    }
+  },
+  "limits": [
+    "性能与等价验证基于导出自真实 .gil 的 8,578 节点控件树离线模拟，非真机实测帧率",
+    "解禁 11 条禁区限制后，保留全部核心玩法与容错：hex.back 唯一返回入口与确认条联动、单/批 pcall 异常兜底、root 探活失效自动回退全树重建、关内 face 恒亮与 x 70% 缩放、单射与 _row_face/_row_letter、gray 关射线与 RefreshItems 不清签名",
+    "745 以 tools/build_745.mjs 与 745_内嵌脚本.lua 为派生链，未改动任何 .gil 控件记录"
+  ]
+}
