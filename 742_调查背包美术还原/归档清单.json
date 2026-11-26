@@ -1,0 +1,67 @@
+{
+  "latest": "742_调查背包美术还原_v12.gil",
+  "build": "tools/build_742.mjs",
+  "test": "tests/shop_cold_render.lua",
+  "files": [
+    {
+      "file": "742_调查背包美术还原.gil",
+      "sha256": "ca0643499fa20eaa5b11c3db3c54db53b4499d558bea9daf2b7a4c4674750ed3",
+      "bytes": 7818951
+    },
+    {
+      "file": "742_调查背包美术还原_v2.gil",
+      "sha256": "615214d5f8e4338ea8ce6273f4f8310f74a684033367c67cd511a38cf04cbeeb",
+      "bytes": 7816556
+    },
+    {
+      "file": "742_调查背包美术还原_v3.gil",
+      "sha256": "7c051e171d1b54ff058980c7776b33950d722d835b843beeea235ca3a60e2f2c",
+      "bytes": 7833061
+    },
+    {
+      "file": "742_调查背包美术还原_v4.gil",
+      "sha256": "7010b8fd73d90d737bbc2454692c21f02f690cc01c073eb15a969abede955a83",
+      "bytes": 7842338
+    },
+    {
+      "file": "742_调查背包美术还原_v5.gil",
+      "sha256": "913217517b2a79da5c272050b6124f6e5dfa0942aa058260d9048e4dc0770c3d",
+      "bytes": 7848298
+    },
+    {
+      "file": "742_调查背包美术还原_v6.gil",
+      "sha256": "12a41d17c7501d68d14d8637d0e8659b478c6863629e8707ef7b4f1dfade074f",
+      "bytes": 7861942
+    },
+    {
+      "file": "742_调查背包美术还原_v7.gil",
+      "sha256": "e58b65a8d023cee216fc1ae23b5af53dbada9ae1f9ab6c80a4f05a27fae7683c",
+      "bytes": 7861954
+    },
+    {
+      "file": "742_调查背包美术还原_v8.gil",
+      "sha256": "e75b640dac5ac8556f71028cce6b87d8eb6bb1f19a2daabc6ca557645cdb1d20",
+      "bytes": 7862956
+    },
+    {
+      "file": "742_调查背包美术还原_v9.gil",
+      "sha256": "88762c9cbe87d7b49e60e89c8c576f60cb96e4aeebffebd0f3f2748c59c9565d",
+      "bytes": 7863162
+    },
+    {
+      "file": "742_调查背包美术还原_v10.gil",
+      "sha256": "0d716744f78250221dc2bbf22dcd02778a96c19885c484a701faa2c05ebad9a2",
+      "bytes": 7865593
+    },
+    {
+      "file": "742_调查背包美术还原_v11.gil",
+      "sha256": "9a8ca6888d83375bcb0380cd084430e745f8038ee1569823e0ed568337f4510b",
+      "bytes": 7866700
+    },
+    {
+      "file": "742_调查背包美术还原_v12.gil",
+      "sha256": "0be919ee32d24d35c9253d5d0b6adb203515858166de15f1dbbd596819765776",
+      "bytes": 7866784
+    }
+  ]
+}
