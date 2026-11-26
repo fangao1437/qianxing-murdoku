@@ -1,0 +1,571 @@
+{
+  "baseVersion": "745",
+  "baseSha256": "fb2822bad1f1a31d695c205d73d0f75cd340879e9878bee9e32d2b0c6ff96fa0",
+  "baseBytes": 7728594,
+  "scriptBytesBefore": 795390,
+  "scriptBytesAfter": 803136,
+  "candidateSha256": "5c1ccd97a0c56c6aa23af3751fa38e18af197ec88750d4ef3d0e6cc36dffe39b",
+  "patches": [
+    "P1-2_线索灰层逐属性受保护关闭与回读确认",
+    "P2-3_render_impl记录待重试缺项表",
+    "P2-3_render_impl收集缺项ID",
+    "P2-3_render_impl矩形缺项记录ID",
+    "P2-3_on_update按缺项探测到期调度免无故重绘",
+    "Bonus-1_非关内跳过apply_furn_level的fart.furn全树扫描",
+    "Bonus-2_invalidate_lookups清隐藏子树完成缓存",
+    "Bonus-2_已隐藏控件不重复标脏隐藏子树",
+    "Bonus-2_enforce_hidden_subtrees标记已完成并合并单节点pcall",
+    "P1-1_格子巡检缺项保留低频重查不封死",
+    "P2-1_撕边组增加真实预期叶数",
+    "P1-3_adapt14_pagers返回4控件完整定位状态",
+    "P1-3与P2-1_sync_adapt715r纳入翻页就绪与撕边完整叶数校验",
+    "P1-3与P2-1_steady_ok745严格纳入翻页与撕边完整就绪",
+    "P2-2_sync_econ742写后回读确认到位再缓存",
+    "加固_render_impl的clear_board_portraits保护",
+    "Bonus-3_same_value支持嵌套表值比较避免每帧重复下发与查找",
+    "Bonus-3_非关内跳过apply_baked的缺失fart扫描",
+    "Bonus-4_同关切屏精准清miss避免非关内cell缺项触发全树重建",
+    "版本标记1",
+    "版本标记2"
+  ],
+  "cold": {
+    "before": [
+      1639,
+      13628,
+      68,
+      2866
+    ],
+    "after": [
+      1639,
+      13592,
+      68,
+      2866
+    ]
+  },
+  "records": 8578,
+  "outputBytes": 7736340,
+  "outputSha256": "86f343b5df3aa972976c8cfbeaa2698c0691291c626580b7d3924f759113f7d1",
+  "controlRecordsChanged": 0,
+  "fieldDifferences": 1,
+  "validation": {
+    "candidateSha256": "5c1ccd97a0c56c6aa23af3751fa38e18af197ec88750d4ef3d0e6cc36dffe39b",
+    "controlSnapshotDiffs": 0,
+    "controlSnapshotsCompared": 274496,
+    "legacyZones": {
+      "late_recovery": true,
+      "zone1_hex_back_confirm": true,
+      "zone2_pcall_guard": true,
+      "zone3_root_rebuild_fallback": true,
+      "zone4_face_and_x70": true
+    },
+    "pass": true,
+    "phaseStatesIdentical": true,
+    "phasesCompared": 32,
+    "realTreeNodes": 8578,
+    "reviewChecks": {
+      "p1_1_late_x": {
+        "v745": {
+          "gen_same": true,
+          "other_complete_cells_reenum": 0,
+          "recover_frames": -1,
+          "recover_ms_30fps": -1,
+          "recover_ms_60fps": -1,
+          "recovered": false,
+          "x_h": 120,
+          "x_w": 120
+        },
+        "v746": {
+          "gen_same": true,
+          "other_complete_cells_reenum": 0,
+          "recover_frames": 41,
+          "recover_ms_30fps": 1367,
+          "recover_ms_60fps": 683,
+          "recovered": true,
+          "x_h": 84,
+          "x_w": 84
+        }
+      },
+      "p1_2_gray_retry": {
+        "v745": {
+          "after1": {
+            "blk": true,
+            "inter": true,
+            "ray": true
+          },
+          "after2": {
+            "blk": true,
+            "inter": true,
+            "ray": true
+          },
+          "all_false": false,
+          "click_reaches_clue": false
+        },
+        "v746": {
+          "after1": {
+            "blk": false,
+            "inter": false,
+            "ray": true
+          },
+          "after2": {
+            "blk": false,
+            "inter": false,
+            "ray": false
+          },
+          "all_false": true,
+          "click_reaches_clue": true
+        }
+      },
+      "p1_3_pager_retry": {
+        "v745": {
+          "clicked_paged": false,
+          "expected_x": 732,
+          "expected_y": 0.83333331346512,
+          "got_x": 512,
+          "got_y": 0.83333331346512,
+          "page_after": 1,
+          "page_before": 1,
+          "positioned_ok": false
+        },
+        "v746": {
+          "clicked_paged": true,
+          "expected_x": 732,
+          "expected_y": 0.83333331346512,
+          "got_x": 732,
+          "got_y": 0.83333331346512,
+          "page_after": 2,
+          "page_before": 1,
+          "positioned_ok": true
+        }
+      },
+      "p2_1_tears_partial": {
+        "v745": {
+          "all_recovered": false,
+          "complete_group_tr24_reenum": 0,
+          "gen_same": true,
+          "recovered_leaves": 0,
+          "total_late_leaves": 41
+        },
+        "v746": {
+          "all_recovered": true,
+          "complete_group_tr24_reenum": 0,
+          "gen_same": true,
+          "recovered_leaves": 41,
+          "total_late_leaves": 41
+        }
+      },
+      "p2_2_econ_silent_ignore": {
+        "v745": {
+          "end_x": 250,
+          "end_y": -180,
+          "mid_x": 250,
+          "mid_y": -180,
+          "recovered": false
+        },
+        "v746": {
+          "end_x": 0,
+          "end_y": 0,
+          "mid_x": 250,
+          "mid_y": -180,
+          "recovered": true
+        }
+      },
+      "p2_3_missing_backoff": {
+        "v745": {
+          "layout_calls_40s": 40,
+          "no_spurious_redraw": false,
+          "real_probes_40s": 6,
+          "reattach_recover_frames": 816,
+          "reattached_recovered": true
+        },
+        "v746": {
+          "layout_calls_40s": 0,
+          "no_spurious_redraw": true,
+          "real_probes_40s": 6,
+          "reattach_recover_frames": 816,
+          "reattached_recovered": true
+        }
+      }
+    },
+    "unifiedBenchmarks": {
+      "cold_boot": {
+        "v743": {
+          "allocKB": 20707,
+          "api": 43578,
+          "getKids": 31379,
+          "lastSib": 72,
+          "ms": 101,
+          "noopPos": 72,
+          "noopScale": 52,
+          "noopVis": 3105,
+          "pcall": 159893,
+          "setVis": 4738
+        },
+        "v744": {
+          "allocKB": 8089,
+          "api": 37214,
+          "getKids": 30470,
+          "lastSib": 54,
+          "ms": 64,
+          "noopPos": 33,
+          "noopScale": 2,
+          "noopVis": 224,
+          "pcall": 161084,
+          "setVis": 1857
+        },
+        "v745": {
+          "allocKB": 7064,
+          "api": 30593,
+          "getKids": 24332,
+          "lastSib": 6,
+          "ms": 46,
+          "noopPos": 33,
+          "noopScale": 2,
+          "noopVis": 102,
+          "pcall": 35724,
+          "setVis": 1735
+        },
+        "v746": {
+          "allocKB": 7028,
+          "api": 30707,
+          "getKids": 24326,
+          "lastSib": 6,
+          "ms": 38,
+          "noopPos": 33,
+          "noopScale": 2,
+          "noopVis": 102,
+          "pcall": 34878,
+          "setVis": 1735
+        }
+      },
+      "nav_flow": {
+        "v743": {
+          "allocKB": 83091,
+          "api": 172939,
+          "getKids": 114770,
+          "lastSib": 516,
+          "ms": 395,
+          "noopPos": 833,
+          "noopScale": 1507,
+          "noopVis": 15550,
+          "pcall": 730431,
+          "setVis": 19220
+        },
+        "v744": {
+          "allocKB": 23055,
+          "api": 144428,
+          "getKids": 108828,
+          "lastSib": 432,
+          "ms": 253,
+          "noopPos": 628,
+          "noopScale": 1242,
+          "noopVis": 3142,
+          "pcall": 724512,
+          "setVis": 6812
+        },
+        "v745": {
+          "allocKB": 8414,
+          "api": 35868,
+          "getKids": 19311,
+          "lastSib": 26,
+          "ms": 90,
+          "noopPos": 120,
+          "noopScale": 934,
+          "noopVis": 80,
+          "pcall": 54835,
+          "setVis": 3726
+        },
+        "v746": {
+          "allocKB": 7416,
+          "api": 27203,
+          "getKids": 10722,
+          "lastSib": 26,
+          "ms": 67,
+          "noopPos": 120,
+          "noopScale": 934,
+          "noopVis": 80,
+          "pcall": 44180,
+          "setVis": 3726
+        }
+      },
+      "screen_switch_burst": {
+        "v743": {
+          "allocKB": 167079,
+          "api": 295866,
+          "frameMaxMs": 68,
+          "frameP50ms": 0,
+          "frameP95ms": 45,
+          "frameP99ms": 57,
+          "getKids": 186895,
+          "lastSib": 318,
+          "maxFrameGetKids": 15458,
+          "maxFrameLabel": "#3->bag",
+          "ms": 787,
+          "noopPos": 1993,
+          "noopScale": 2699,
+          "noopVis": 20242,
+          "pcall": 1558099,
+          "setVis": 32001
+        },
+        "v744": {
+          "allocKB": 42438,
+          "api": 268240,
+          "frameMaxMs": 39,
+          "frameP50ms": 0,
+          "frameP95ms": 26,
+          "frameP99ms": 39,
+          "getKids": 177470,
+          "lastSib": 270,
+          "maxFrameGetKids": 9270,
+          "maxFrameLabel": "#9->select",
+          "ms": 534,
+          "noopPos": 1837,
+          "noopScale": 2495,
+          "noopVis": 8575,
+          "pcall": 1567799,
+          "setVis": 20334
+        },
+        "v745": {
+          "allocKB": 13543,
+          "api": 63092,
+          "frameMaxMs": 21,
+          "frameP50ms": 0,
+          "frameP95ms": 5,
+          "frameP99ms": 20,
+          "getKids": 22786,
+          "lastSib": 49,
+          "maxFrameGetKids": 8761,
+          "maxFrameLabel": "#12->select",
+          "ms": 135,
+          "noopPos": 728,
+          "noopScale": 1875,
+          "noopVis": 178,
+          "pcall": 105387,
+          "setVis": 11871
+        },
+        "v746": {
+          "allocKB": 12308,
+          "api": 54252,
+          "frameMaxMs": 22,
+          "frameP50ms": 0,
+          "frameP95ms": 4,
+          "frameP99ms": 20,
+          "getKids": 14173,
+          "lastSib": 49,
+          "maxFrameGetKids": 394,
+          "maxFrameLabel": "#9->select",
+          "ms": 127,
+          "noopPos": 728,
+          "noopScale": 1875,
+          "noopVis": 178,
+          "pcall": 91518,
+          "setVis": 11871
+        }
+      },
+      "steady_home": {
+        "v743": {
+          "allocKB": 14233,
+          "api": 70862,
+          "getKids": 43004,
+          "lastSib": 1014,
+          "ms": 71,
+          "noopPos": 266,
+          "noopScale": 342,
+          "noopVis": 11419,
+          "pcall": 115951,
+          "setVis": 11419
+        },
+        "v744": {
+          "allocKB": 2984,
+          "api": 13039,
+          "getKids": 8578,
+          "lastSib": 900,
+          "ms": 26,
+          "noopPos": 0,
+          "noopScale": 0,
+          "noopVis": 0,
+          "pcall": 35197,
+          "setVis": 0
+        },
+        "v745": {
+          "allocKB": 1763,
+          "api": 9257,
+          "getKids": 8578,
+          "lastSib": 10,
+          "ms": 14,
+          "noopPos": 0,
+          "noopScale": 0,
+          "noopVis": 0,
+          "pcall": 13028,
+          "setVis": 0
+        },
+        "v746": {
+          "allocKB": 908,
+          "api": 667,
+          "getKids": 0,
+          "lastSib": 10,
+          "ms": 9,
+          "noopPos": 0,
+          "noopScale": 0,
+          "noopVis": 0,
+          "pcall": 4420,
+          "setVis": 0
+        }
+      },
+      "steady_level": {
+        "v743": {
+          "allocKB": 17362,
+          "api": 76932,
+          "getKids": 49177,
+          "lastSib": 1014,
+          "ms": 84,
+          "noopPos": 266,
+          "noopScale": 342,
+          "noopVis": 11459,
+          "pcall": 135824,
+          "setVis": 11459
+        },
+        "v744": {
+          "allocKB": 4530,
+          "api": 27647,
+          "getKids": 23329,
+          "lastSib": 900,
+          "ms": 38,
+          "noopPos": 0,
+          "noopScale": 0,
+          "noopVis": 40,
+          "pcall": 72322,
+          "setVis": 40
+        },
+        "v745": {
+          "allocKB": 2557,
+          "api": 17655,
+          "getKids": 17161,
+          "lastSib": 15,
+          "ms": 18,
+          "noopPos": 0,
+          "noopScale": 0,
+          "noopVis": 0,
+          "pcall": 21523,
+          "setVis": 0
+        },
+        "v746": {
+          "allocKB": 2560,
+          "api": 17670,
+          "getKids": 17176,
+          "lastSib": 15,
+          "ms": 20,
+          "noopPos": 0,
+          "noopScale": 0,
+          "noopVis": 0,
+          "pcall": 21504,
+          "setVis": 0
+        }
+      },
+      "steady_select": {
+        "v743": {
+          "allocKB": 20046,
+          "api": 78147,
+          "getKids": 49142,
+          "lastSib": 414,
+          "ms": 117,
+          "noopPos": 266,
+          "noopScale": 2172,
+          "noopVis": 11439,
+          "pcall": 131799,
+          "setVis": 11439
+        },
+        "v744": {
+          "allocKB": 7845,
+          "api": 28910,
+          "getKids": 23294,
+          "lastSib": 300,
+          "ms": 96,
+          "noopPos": 0,
+          "noopScale": 1830,
+          "noopVis": 20,
+          "pcall": 68753,
+          "setVis": 20
+        },
+        "v745": {
+          "allocKB": 6106,
+          "api": 25059,
+          "getKids": 17156,
+          "lastSib": 0,
+          "ms": 50,
+          "noopPos": 0,
+          "noopScale": 1834,
+          "noopVis": 0,
+          "pcall": 32506,
+          "setVis": 0
+        },
+        "v746": {
+          "allocKB": 4502,
+          "api": 7885,
+          "getKids": 0,
+          "lastSib": 0,
+          "ms": 40,
+          "noopPos": 0,
+          "noopScale": 1834,
+          "noopVis": 0,
+          "pcall": 15314,
+          "setVis": 0
+        }
+      },
+      "steady_shop": {
+        "v743": {
+          "allocKB": 16424,
+          "api": 76125,
+          "getKids": 49142,
+          "lastSib": 414,
+          "ms": 86,
+          "noopPos": 266,
+          "noopScale": 342,
+          "noopVis": 11439,
+          "pcall": 127219,
+          "setVis": 11439
+        },
+        "v744": {
+          "allocKB": 3746,
+          "api": 26870,
+          "getKids": 23294,
+          "lastSib": 300,
+          "ms": 31,
+          "noopPos": 0,
+          "noopScale": 0,
+          "noopVis": 20,
+          "pcall": 62822,
+          "setVis": 20
+        },
+        "v745": {
+          "allocKB": 211,
+          "api": 357,
+          "getKids": 0,
+          "lastSib": 0,
+          "ms": 5,
+          "noopPos": 0,
+          "noopScale": 0,
+          "noopVis": 0,
+          "pcall": 4043,
+          "setVis": 0
+        },
+        "v746": {
+          "allocKB": 211,
+          "api": 357,
+          "getKids": 0,
+          "lastSib": 0,
+          "ms": 5,
+          "noopPos": 0,
+          "noopScale": 0,
+          "noopVis": 0,
+          "pcall": 4043,
+          "setVis": 0
+        }
+      }
+    }
+  },
+  "limits": [
+    "性能、故障注入恢复与状态差分均基于导出自真实 .gil 的 8,578 节点控件树离线高仿真环境，尚未导入千星奇域真机实测",
+    "同一套桩与同一口径下统一横向对比 743 / 744 / 745 / 746，并同时报告暂停自动 GC 的累计堆分配增量与逐帧 P50/P95/P99/Max",
+    "746 以 tools/build_746.mjs 与 746_内嵌脚本.lua 为派生链，0 控件记录改动"
+  ]
+}
