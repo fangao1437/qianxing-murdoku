@@ -1,0 +1,348 @@
+{
+  "version": "756",
+  "base": "755_教程图文间距与视觉一致性精修\\755_教程图文间距与视觉一致性精修.gil",
+  "base_sha256": "7e186a6cba72cd7e68035d825804ef92bb138c794732f620373e35f94a68db87",
+  "output": "756_清理失效教程控件\\756_清理失效教程控件.gil",
+  "output_bytes": 7245334,
+  "bytes_saved": 690072,
+  "output_sha256": "03176a5aa9a52c115ae4a95f4f7e133a3dfcdb1d1498ed742a6d504a93a415d5",
+  "records_before": 8751,
+  "records_after": 7879,
+  "records_deleted": 872,
+  "cleanup_breakdown": {
+    "skipped_pages_subtrees": {
+      "td.l1.page.2": 137,
+      "td.l1.page.4": 141,
+      "td.l1.page.5": 159,
+      "td.l1.page.6": 144,
+      "td.l2.page.1": 150
+    },
+    "skipped_pages_total": 731,
+    "active_pages_hidden_leaves": {
+      "td.home.page.1": 17,
+      "td.l1.page.1": 22,
+      "td.l1.page.3": 29,
+      "td.l1.page.7": 20,
+      "td.l1.page.8": 24,
+      "td.l2.page.2": 7,
+      "td.l2.page.3": 17,
+      "td.l2.page.4": 5
+    },
+    "active_pages_hidden_leaves_total": 141,
+    "parent_lists_edited": 146
+  },
+  "single_player_preserved": {
+    "faction_players": 1,
+    "group_max_players": 1
+  },
+  "globals_gate": {
+    "newGets": 0,
+    "newSets": 0
+  },
+  "verify749PaperAnim": {
+    "checks": {
+      "bag_paper_anim": {
+        "done": {
+          "bendVis": false,
+          "leavesOff": true,
+          "ptopVis": true,
+          "underVis": false
+        },
+        "enter": {
+          "bendVis": false,
+          "leavesOff": true,
+          "ptopVis": true,
+          "title": "调查背包",
+          "underVis": false
+        },
+        "leaveAbort": {
+          "afterBend": false,
+          "afterVis": false,
+          "leavesOff": true,
+          "midBefore": true,
+          "topRz": 0,
+          "topX": 0
+        },
+        "noSemiArtifacts": true,
+        "pass": true,
+        "reenter": {
+          "bendVis": false,
+          "title": "调查背包",
+          "underVis": false
+        },
+        "steady": {
+          "getKids": 0,
+          "setPos": 0,
+          "setRot": 0
+        },
+        "step1": {
+          "bendVis": true,
+          "blY": -294.8139,
+          "fc16Rz": 2.8263,
+          "fc1Rz": 1.1201,
+          "flex": true,
+          "lLen": 567.1331,
+          "leavesOn": true,
+          "liveTitle": "位置揭示券",
+          "maxStepX": 0.4631,
+          "opaque": true,
+          "rLen": 555.3537,
+          "restArc": 577.8125,
+          "staticHidden": true,
+          "tlY": 309.5726,
+          "trY": 317.244,
+          "uTitle": "调查背包",
+          "underVis": true
+        },
+        "step2": {
+          "liveTitle": "线索核验券",
+          "uTitle": "位置揭示券",
+          "underVis": true
+        }
+      },
+      "render_does_not_clobber_anim_transform": {
+        "after": {
+          "px": 20.6383,
+          "py": 200.1796
+        },
+        "before": {
+          "px": 20.6383,
+          "py": 200.1796
+        },
+        "pass": true
+      },
+      "shop_icon_layers_on_under_sheet": {
+        "clueToEmpty": {
+          "liveClue": false,
+          "uClue": true,
+          "uPos": false
+        },
+        "pass": true,
+        "posToClue": {
+          "liveClue": true,
+          "livePos": false,
+          "uClue": false,
+          "uPos": true
+        }
+      },
+      "shop_paper_anim": {
+        "clear": {
+          "endBend": false,
+          "endVis": false,
+          "leavesOff": true,
+          "livePrice": "",
+          "uPrice": "3 调查币",
+          "underVis": true
+        },
+        "done": {
+          "bendLeavesOff": true,
+          "bendVis": false,
+          "faceVis": true,
+          "pinsRest": true,
+          "underLeavesOff": true,
+          "underVis": false
+        },
+        "enter": {
+          "bendLeavesOff": true,
+          "bendVis": false,
+          "faceVis": true,
+          "underLeavesOff": true,
+          "underVis": false
+        },
+        "interrupt": {
+          "bendVis": true,
+          "leavesOk": true,
+          "livePrice": "3 调查币",
+          "moved": true,
+          "uPrice": "6 调查币",
+          "underVis": true
+        },
+        "mid1": {
+          "bendLeavesOn": true,
+          "bendVis": true,
+          "blY": -256.6688,
+          "botRz": 2.7029,
+          "fc16Rz": 2.8038,
+          "fc1Rz": 1.1574,
+          "headerStill": true,
+          "in10Rz": 2.7988,
+          "in1Rz": 2.3968,
+          "lLen": 489.4031,
+          "maxStepX": 0.4422,
+          "opaque": true,
+          "rLen": 476.3289,
+          "restArc": 496.875,
+          "staticHidden": true,
+          "tlY": 264.703,
+          "topRz": 1.7767,
+          "trX": 244.6293,
+          "trY": 273.8331,
+          "underLeavesOn": true,
+          "underVis": true
+        },
+        "mid2": {
+          "fc16Rz": 0.9431,
+          "progressing": true,
+          "topX": 5.6808
+        },
+        "pass": true,
+        "sameClick": {
+          "bendVis": false,
+          "underVis": false
+        },
+        "steady": {
+          "getKids": 0,
+          "setPos": 0,
+          "setRot": 0
+        },
+        "structure": {
+          "buttonFixed": true,
+          "cardInSheet": true,
+          "headerFixed": true,
+          "noSemiArtifacts": true,
+          "noUName": true
+        },
+        "zOrder": {
+          "hitPurchase": 107,
+          "s148": 108,
+          "s37": 32,
+          "sheet": 31
+        }
+      },
+      "shop_purchase_never_triggers_anim": {
+        "buyFlow": {
+          "openNoAnim": true,
+          "owned": "持有 2 张",
+          "status": "购买成功",
+          "yesNoAnim": true
+        },
+        "nextSwitch": {
+          "triggered": true,
+          "uOwned": "持有 2 张"
+        },
+        "noPick": {
+          "noAnim": true,
+          "status": "请先选择道具"
+        },
+        "pass": true,
+        "poor": {
+          "noAnim": true,
+          "status": "调查币不足"
+        }
+      }
+    },
+    "pass": true,
+    "schema": "749-paper-anim-v5"
+  },
+  "feedback_tests": {
+    "checks": {
+      "a_settle_90s_after_enter_level": {
+        "detail": {
+          "blocked_at_60": true,
+          "can_at_90": true,
+          "can_solved": true,
+          "left_at_60": 30,
+          "left_home": 90
+        },
+        "pass": true
+      },
+      "b_submit_feedback_and_confirm_align": {
+        "detail": {
+          "immediate_align": true,
+          "shown_msg": true,
+          "win_modal": true
+        },
+        "pass": true
+      },
+      "c_tablet_4_3_modal_cover_and_buttons": {
+        "detail": {
+          "after_lv": "case_002",
+          "covered_h": 1208,
+          "exit_idx": 32,
+          "next_idx": 31,
+          "win_idx": 22
+        },
+        "pass": true
+      },
+      "d_mobile_grid_swipe_and_double_tap_place": {
+        "detail": {
+          "no_drag": true,
+          "passthrough": true,
+          "placed_drift": true,
+          "placed_now": true,
+          "swipe_ok": true
+        },
+        "pass": true
+      },
+      "e_tutorial_compact_pages_and_mapping": {
+        "detail": {
+          "l1_close": true,
+          "l1_p1": true,
+          "l1_p2": true,
+          "l1_p4": true,
+          "l2_close": true,
+          "l2_p1": true,
+          "l2_p3": true
+        },
+        "pass": true
+      },
+      "f_room_colors_high_separation": {
+        "detail": {
+          "min_dist": 45
+        },
+        "pass": true
+      },
+      "g_tutorial_dim_shade_and_zorder": {
+        "detail": {
+          "exit_close_ok": true,
+          "exit_shade_ok": true,
+          "init_hidden": true,
+          "ok_home": true,
+          "ok_l1": true,
+          "ok_l2": true
+        },
+        "pass": true
+      },
+      "h_icon_sizes_and_text_alignment": {
+        "detail": {
+          "all_exist": true,
+          "icon_count": 10
+        },
+        "pass": true
+      },
+      "i_resumed_solved_resubmit_fast_modal_and_no_unlock": {
+        "detail": {
+          "cleared_after_edit": true,
+          "has_rings_after_resume": true,
+          "instant_modal": true,
+          "locked_after_resume": true,
+          "redrawn_after_edit": true,
+          "resumed": true,
+          "ring_calls_before_edit": true,
+          "still_locked": true,
+          "unlocked_after_re_solve": true
+        },
+        "pass": true
+      },
+      "j_756_all_tutorial_pages_and_checkmarks": {
+        "detail": {
+          "check_ok": true,
+          "done_checkmark_pairs": 9,
+          "visited_l1": 4,
+          "visited_l2": 3
+        },
+        "pass": true
+      },
+      "k_756_garbage_controls_removed_and_zero_miss": {
+        "detail": {
+          "leftovers": 0,
+          "miss_calls": 0,
+          "total_nodes": 7859
+        },
+        "pass": true
+      }
+    },
+    "pass": true,
+    "version": "756"
+  }
+}
