@@ -1,0 +1,2540 @@
+{
+  "baseVersion": "747",
+  "baseSha256": "e979ed1ce89326f49bde6c5108b48164d2eb2ef840a2ec787541d98ed5acf377",
+  "baseBytes": 7750795,
+  "baseline742Sha256": "0be919ee32d24d35c9253d5d0b6adb203515858166de15f1dbbd596819765776",
+  "scriptBytesBefore": 817591,
+  "scriptBytesAfter": 835476,
+  "candidateSha256": "3db02ce67c70c6bbc088d77264db423ff95c4368ea73aa525d4608d917b3d890",
+  "derivedCounts": {
+    "bgLeaves": 649,
+    "tears": {
+      "adapt715r.TR.23": 141,
+      "adapt715r.TR.24": 183,
+      "adapt715r.TR.25": 17,
+      "adapt715r.BR.26": 79,
+      "adapt715r.BR.27": 150,
+      "adapt715r.BR.28": 21
+    },
+    "markCtrls": 192
+  },
+  "staticGates": {
+    "syntaxPass": true,
+    "newGlobalGetVs742": 0,
+    "newGlobalSetVs742": 0,
+    "newGlobalGetVs747": 0,
+    "newGlobalSetVs747": 0,
+    "moduleRootCacheRemoved": true,
+    "gilPruneContainersVerified": 14,
+    "gilRayDecorVerified": 12
+  },
+  "patches": [
+    "B2_B3_B10_单属性隔离helper与实例级root缓存",
+    "B5_B10_invalidate_lookups清理实例缓存",
+    "B7_U8_修正INDEX_PRUNE拼写并记录被剪枝容器",
+    "B7_B10_path_lookup_655补齐grp653并在树验证与实例缓存",
+    "B7_build_name_index记录被剪枝容器并支持定向补查",
+    "B5_U7_统一交互控件看护管理器与实例root缓存调用",
+    "B5_切屏当帧统一检查当前页全部看护句柄",
+    "B5_OnUpdate_2s保活走统一check_watched_handles748",
+    "B5_bind_input统一向watch_handles748登记",
+    "B5_bind_input尾部登记静态与动态cell交互句柄",
+    "B5_util_bind统一向adapter看护管理器登记并传递sync_tbl",
+    "B5_help617与hint635传入sync_tbl同步新句柄",
+    "B5_help617_entry与home与hint635传入sync_tbl",
+    "B5_hint635_bind传入sync_tbl",
+    "B1_enable_raycast恢复RAY_IDLE_STOP为3并取消早停与确认趟跳过静态美术叶",
+    "B9_enable_cursor取消缺项6趟永久放弃改O1退避探活",
+    "B9_enable_cursor缺项期间仅O1静态探活不重复扫描",
+    "U11_mark_all_ctrls使用自动推导的标点数",
+    "B3_set_property_visible严格单属性隔离且失败不锁缓存",
+    "B2_B3_set_property_visible失败返false与raycast三项独立pcall",
+    "B3_mark与image与face子项直接调用单属性隔离p745_set_vis_guard",
+    "B3_image分支调用单属性隔离p745_set_vis_guard",
+    "B3_cell_face调用单属性隔离p745_set_vis_guard",
+    "B8_murdoku_set_vis恢复forcing强写语义与cell主容器解析",
+    "B9_教程furniture取消永久跳过改轻量退避探活",
+    "B3_t745_set_vis拆分为单操作独立pcall",
+    "B3_Tutorial_visible调用独立pcall",
+    "B3_e745_help_vis拆单操作独立pcall",
+    "B3_help_visible返回成功标志且独立pcall",
+    "B4_B3_sync_block640确认条打开期每帧置顶与遮罩单操作隔离失败即重试",
+    "B4_sync_block640确认条恢复打开期每帧缓存置顶",
+    "B4_sync_block640遮罩全成功才落盘last_want失败下帧即重试",
+    "U11_撕边叶数由构建期自动推导",
+    "U11_背景叶数引用自动推导常量",
+    "B6_sync_adapt715r选关稳态异步文本变更极轻量字号同步",
+    "B6_sync_adapt715r主路径复用sync_card_fonts748并记录cardScale",
+    "B6_保存steady_cardScale748并在代数重置时清理cardCtrls748",
+    "B6_代数重置清理cardCtrls748",
+    "版本标记1",
+    "版本标记2"
+  ],
+  "cold": {
+    "v742v12": [
+      1639,
+      13628,
+      897,
+      13471
+    ],
+    "v747": [
+      1639,
+      13592,
+      68,
+      2866
+    ],
+    "v748": [
+      1639,
+      13592,
+      68,
+      2866
+    ]
+  },
+  "records": 8578,
+  "outputBytes": 7768680,
+  "outputSha256": "312c06738ae049b27f318f7dafb4e844773249821b7ea4d9ff65f6f339741ef3",
+  "controlRecordsChanged": 0,
+  "fieldDifferences": 1,
+  "validation": {
+    "bench": {
+      "cold_boot": {
+        "v742v12": {
+          "allocKB": {
+            "max": 7863.6162,
+            "mean": 7863.6162,
+            "median": 7863.6162,
+            "min": 7863.6162,
+            "std": 0
+          },
+          "api": 22704,
+          "fmax": {
+            "max": 23,
+            "mean": 21.6,
+            "median": 21,
+            "min": 21,
+            "std": 0.8
+          },
+          "getChild": 314,
+          "getKids": 15593,
+          "lastSib": 117,
+          "maxFrameKids": 7619,
+          "ms": {
+            "max": 44,
+            "mean": 43,
+            "median": 43,
+            "min": 42,
+            "std": 0.6325
+          },
+          "p95": {
+            "max": 13,
+            "mean": 11.6,
+            "median": 11,
+            "min": 11,
+            "std": 0.8
+          },
+          "p99": {
+            "max": 23,
+            "mean": 21.6,
+            "median": 21,
+            "min": 21,
+            "std": 0.8
+          },
+          "pcallN": 56259,
+          "redundantPos": 188,
+          "redundantScale": 37,
+          "redundantVis": 3757,
+          "rounds": 5,
+          "setAct": 1879,
+          "setTransform": 383,
+          "setVis": 3859
+        },
+        "v743": {
+          "allocKB": {
+            "max": 7816.208,
+            "mean": 7816.208,
+            "median": 7816.208,
+            "min": 7816.208,
+            "std": 0
+          },
+          "api": 22704,
+          "fmax": {
+            "max": 22,
+            "mean": 20.6,
+            "median": 20,
+            "min": 20,
+            "std": 0.8
+          },
+          "getChild": 314,
+          "getKids": 15593,
+          "lastSib": 117,
+          "maxFrameKids": 7619,
+          "ms": {
+            "max": 44,
+            "mean": 41.8,
+            "median": 42,
+            "min": 39,
+            "std": 1.7205
+          },
+          "p95": {
+            "max": 12,
+            "mean": 11.2,
+            "median": 11,
+            "min": 10,
+            "std": 0.7483
+          },
+          "p99": {
+            "max": 22,
+            "mean": 20.6,
+            "median": 20,
+            "min": 20,
+            "std": 0.8
+          },
+          "pcallN": 55430,
+          "redundantPos": 188,
+          "redundantScale": 37,
+          "redundantVis": 3757,
+          "rounds": 5,
+          "setAct": 1879,
+          "setTransform": 383,
+          "setVis": 3859
+        },
+        "v745": {
+          "allocKB": {
+            "max": 1592.0898,
+            "mean": 1592.0898,
+            "median": 1592.0898,
+            "min": 1592.0898,
+            "std": 0
+          },
+          "api": 9526,
+          "fmax": {
+            "max": 13,
+            "mean": 11.8,
+            "median": 12,
+            "min": 10,
+            "std": 0.9798
+          },
+          "getChild": 314,
+          "getKids": 8086,
+          "lastSib": 57,
+          "maxFrameKids": 7619,
+          "ms": {
+            "max": 21,
+            "mean": 19.2,
+            "median": 19,
+            "min": 17,
+            "std": 1.3266
+          },
+          "p95": {
+            "max": 5,
+            "mean": 4.6,
+            "median": 5,
+            "min": 4,
+            "std": 0.4899
+          },
+          "p99": {
+            "max": 13,
+            "mean": 11.8,
+            "median": 12,
+            "min": 10,
+            "std": 0.9798
+          },
+          "pcallN": 16277,
+          "redundantPos": 161,
+          "redundantScale": 2,
+          "redundantVis": 285,
+          "rounds": 5,
+          "setAct": 7,
+          "setTransform": 297,
+          "setVis": 387
+        },
+        "v746": {
+          "allocKB": {
+            "max": 1605.5762,
+            "mean": 1605.5762,
+            "median": 1605.5762,
+            "min": 1605.5762,
+            "std": 0
+          },
+          "api": 9520,
+          "fmax": {
+            "max": 13,
+            "mean": 11.4,
+            "median": 11,
+            "min": 10,
+            "std": 1.0198
+          },
+          "getChild": 315,
+          "getKids": 8079,
+          "lastSib": 57,
+          "maxFrameKids": 7616,
+          "ms": {
+            "max": 21,
+            "mean": 19.4,
+            "median": 20,
+            "min": 17,
+            "std": 1.3565
+          },
+          "p95": {
+            "max": 7,
+            "mean": 5.4,
+            "median": 5,
+            "min": 4,
+            "std": 1.0198
+          },
+          "p99": {
+            "max": 13,
+            "mean": 11.4,
+            "median": 11,
+            "min": 10,
+            "std": 1.0198
+          },
+          "pcallN": 14339,
+          "redundantPos": 161,
+          "redundantScale": 2,
+          "redundantVis": 285,
+          "rounds": 5,
+          "setAct": 7,
+          "setTransform": 297,
+          "setVis": 387
+        },
+        "v747": {
+          "allocKB": {
+            "max": 1602.792,
+            "mean": 1602.792,
+            "median": 1602.792,
+            "min": 1602.792,
+            "std": 0
+          },
+          "api": 9487,
+          "fmax": {
+            "max": 12,
+            "mean": 11.6,
+            "median": 12,
+            "min": 11,
+            "std": 0.4899
+          },
+          "getChild": 315,
+          "getKids": 8046,
+          "lastSib": 57,
+          "maxFrameKids": 7616,
+          "ms": {
+            "max": 21,
+            "mean": 19.2,
+            "median": 19,
+            "min": 18,
+            "std": 1.1662
+          },
+          "p95": {
+            "max": 8,
+            "mean": 5.2,
+            "median": 5,
+            "min": 4,
+            "std": 1.4697
+          },
+          "p99": {
+            "max": 12,
+            "mean": 11.6,
+            "median": 12,
+            "min": 11,
+            "std": 0.4899
+          },
+          "pcallN": 13073,
+          "redundantPos": 161,
+          "redundantScale": 2,
+          "redundantVis": 285,
+          "rounds": 5,
+          "setAct": 7,
+          "setTransform": 297,
+          "setVis": 387
+        },
+        "v748": {
+          "allocKB": {
+            "max": 1897.2393,
+            "mean": 1897.2393,
+            "median": 1897.2393,
+            "min": 1897.2393,
+            "std": 0
+          },
+          "api": 9766,
+          "fmax": {
+            "max": 14,
+            "mean": 12.6,
+            "median": 13,
+            "min": 11,
+            "std": 1.0198
+          },
+          "getChild": 315,
+          "getKids": 8296,
+          "lastSib": 57,
+          "maxFrameKids": 7616,
+          "ms": {
+            "max": 22,
+            "mean": 21.4,
+            "median": 22,
+            "min": 20,
+            "std": 0.8
+          },
+          "p95": {
+            "max": 6,
+            "mean": 4.8,
+            "median": 5,
+            "min": 4,
+            "std": 0.7483
+          },
+          "p99": {
+            "max": 14,
+            "mean": 12.6,
+            "median": 13,
+            "min": 11,
+            "std": 1.0198
+          },
+          "pcallN": 15385,
+          "redundantPos": 161,
+          "redundantScale": 2,
+          "redundantVis": 314,
+          "rounds": 5,
+          "setAct": 7,
+          "setTransform": 297,
+          "setVis": 416
+        }
+      },
+      "nav_flow": {
+        "v742v12": {
+          "allocKB": {
+            "max": 84382.3506,
+            "mean": 84382.3506,
+            "median": 84382.3506,
+            "min": 84382.3506,
+            "std": 0
+          },
+          "api": 195252,
+          "fmax": {
+            "max": 63,
+            "mean": 58.8,
+            "median": 59,
+            "min": 52,
+            "std": 3.8678
+          },
+          "getChild": 9971,
+          "getKids": 125209,
+          "lastSib": 918,
+          "maxFrameKids": 15692,
+          "ms": {
+            "max": 544,
+            "mean": 527.4,
+            "median": 537,
+            "min": 505,
+            "std": 15.4221
+          },
+          "p95": {
+            "max": 13,
+            "mean": 11.8,
+            "median": 12,
+            "min": 11,
+            "std": 0.7483
+          },
+          "p99": {
+            "max": 46,
+            "mean": 42.2,
+            "median": 41,
+            "min": 40,
+            "std": 2.1354
+          },
+          "pcallN": 699749,
+          "redundantPos": 2669,
+          "redundantScale": 1811,
+          "redundantVis": 23426,
+          "rounds": 5,
+          "setAct": 12720,
+          "setTransform": 8701,
+          "setVis": 27968
+        },
+        "v743": {
+          "allocKB": {
+            "max": 83535.4639,
+            "mean": 83535.4639,
+            "median": 83535.4639,
+            "min": 83535.4639,
+            "std": 0
+          },
+          "api": 195252,
+          "fmax": {
+            "max": 58,
+            "mean": 54,
+            "median": 53,
+            "min": 51,
+            "std": 2.6077
+          },
+          "getChild": 9971,
+          "getKids": 125209,
+          "lastSib": 918,
+          "maxFrameKids": 15692,
+          "ms": {
+            "max": 507,
+            "mean": 496.4,
+            "median": 495,
+            "min": 488,
+            "std": 6.5909
+          },
+          "p95": {
+            "max": 12,
+            "mean": 11.2,
+            "median": 11,
+            "min": 11,
+            "std": 0.4
+          },
+          "p99": {
+            "max": 41,
+            "mean": 39.6,
+            "median": 40,
+            "min": 38,
+            "std": 1.0198
+          },
+          "pcallN": 684445,
+          "redundantPos": 2669,
+          "redundantScale": 1811,
+          "redundantVis": 23426,
+          "rounds": 5,
+          "setAct": 12720,
+          "setTransform": 8701,
+          "setVis": 27968
+        },
+        "v745": {
+          "allocKB": {
+            "max": 9782.2969,
+            "mean": 9782.2969,
+            "median": 9782.2969,
+            "min": 9782.2969,
+            "std": 0
+          },
+          "api": 47294,
+          "fmax": {
+            "max": 24,
+            "mean": 22.6,
+            "median": 23,
+            "min": 21,
+            "std": 1.0198
+          },
+          "getChild": 1787,
+          "getKids": 20800,
+          "lastSib": 239,
+          "maxFrameKids": 9420,
+          "ms": {
+            "max": 129,
+            "mean": 126.6,
+            "median": 127,
+            "min": 124,
+            "std": 1.8547
+          },
+          "p95": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "p99": {
+            "max": 13,
+            "mean": 12,
+            "median": 12,
+            "min": 11,
+            "std": 0.8944
+          },
+          "pcallN": 76117,
+          "redundantPos": 1221,
+          "redundantScale": 1237,
+          "redundantVis": 1546,
+          "rounds": 5,
+          "setAct": 3311,
+          "setTransform": 5420,
+          "setVis": 5950
+        },
+        "v746": {
+          "allocKB": {
+            "max": 8746.5264,
+            "mean": 8746.5264,
+            "median": 8746.5264,
+            "min": 8746.5264,
+            "std": 0
+          },
+          "api": 38215,
+          "fmax": {
+            "max": 25,
+            "mean": 23.6,
+            "median": 23,
+            "min": 23,
+            "std": 0.8
+          },
+          "getChild": 1787,
+          "getKids": 11719,
+          "lastSib": 239,
+          "maxFrameKids": 9052,
+          "ms": {
+            "max": 126,
+            "mean": 120.8,
+            "median": 119,
+            "min": 118,
+            "std": 2.9257
+          },
+          "p95": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "p99": {
+            "max": 12,
+            "mean": 11.2,
+            "median": 11,
+            "min": 10,
+            "std": 0.7483
+          },
+          "pcallN": 63831,
+          "redundantPos": 1221,
+          "redundantScale": 1237,
+          "redundantVis": 1546,
+          "rounds": 5,
+          "setAct": 3311,
+          "setTransform": 5420,
+          "setVis": 5950
+        },
+        "v747": {
+          "allocKB": {
+            "max": 7995.4287,
+            "mean": 7995.4287,
+            "median": 7995.4287,
+            "min": 7995.4287,
+            "std": 0
+          },
+          "api": 30410,
+          "fmax": {
+            "max": 29,
+            "mean": 25,
+            "median": 24,
+            "min": 23,
+            "std": 2.2804
+          },
+          "getChild": 1654,
+          "getKids": 4047,
+          "lastSib": 239,
+          "maxFrameKids": 1859,
+          "ms": {
+            "max": 122,
+            "mean": 117.4,
+            "median": 118,
+            "min": 112,
+            "std": 3.2
+          },
+          "p95": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "p99": {
+            "max": 12,
+            "mean": 11.6,
+            "median": 12,
+            "min": 11,
+            "std": 0.4899
+          },
+          "pcallN": 55122,
+          "redundantPos": 1221,
+          "redundantScale": 1237,
+          "redundantVis": 1546,
+          "rounds": 5,
+          "setAct": 3311,
+          "setTransform": 5420,
+          "setVis": 5950
+        },
+        "v748": {
+          "allocKB": {
+            "max": 8588.1836,
+            "mean": 8588.1836,
+            "median": 8588.1836,
+            "min": 8588.1836,
+            "std": 0
+          },
+          "api": 33781,
+          "fmax": {
+            "max": 26,
+            "mean": 23.6,
+            "median": 23,
+            "min": 22,
+            "std": 1.3565
+          },
+          "getChild": 1881,
+          "getKids": 5445,
+          "lastSib": 295,
+          "maxFrameKids": 1761,
+          "ms": {
+            "max": 134,
+            "mean": 130,
+            "median": 128,
+            "min": 127,
+            "std": 2.8983
+          },
+          "p95": {
+            "max": 3,
+            "mean": 2.6,
+            "median": 3,
+            "min": 2,
+            "std": 0.4899
+          },
+          "p99": {
+            "max": 13,
+            "mean": 12.2,
+            "median": 12,
+            "min": 12,
+            "std": 0.4
+          },
+          "pcallN": 70575,
+          "redundantPos": 1221,
+          "redundantScale": 1237,
+          "redundantVis": 3236,
+          "rounds": 5,
+          "setAct": 3311,
+          "setTransform": 5420,
+          "setVis": 7640
+        }
+      },
+      "screen_switch_burst": {
+        "v742v12": {
+          "allocKB": {
+            "max": 60029.5,
+            "mean": 60029.5,
+            "median": 60029.5,
+            "min": 60029.5,
+            "std": 0
+          },
+          "api": 134430,
+          "fmax": {
+            "max": 61,
+            "mean": 56.6,
+            "median": 55,
+            "min": 55,
+            "std": 2.3324
+          },
+          "getChild": 7767,
+          "getKids": 85796,
+          "lastSib": 578,
+          "maxFrameKids": 16037,
+          "ms": {
+            "max": 361,
+            "mean": 352.4,
+            "median": 352,
+            "min": 345,
+            "std": 5.9867
+          },
+          "p95": {
+            "max": 11,
+            "mean": 10.4,
+            "median": 10,
+            "min": 10,
+            "std": 0.4899
+          },
+          "p99": {
+            "max": 50,
+            "mean": 45.6,
+            "median": 45,
+            "min": 43,
+            "std": 2.6533
+          },
+          "pcallN": 512716,
+          "redundantPos": 1706,
+          "redundantScale": 838,
+          "redundantVis": 15868,
+          "rounds": 5,
+          "setAct": 9895,
+          "setTransform": 4911,
+          "setVis": 19890
+        },
+        "v743": {
+          "allocKB": {
+            "max": 59348.9492,
+            "mean": 59348.9492,
+            "median": 59348.9492,
+            "min": 59348.9492,
+            "std": 0
+          },
+          "api": 134430,
+          "fmax": {
+            "max": 59,
+            "mean": 56.6,
+            "median": 56,
+            "min": 54,
+            "std": 1.7436
+          },
+          "getChild": 7767,
+          "getKids": 85796,
+          "lastSib": 578,
+          "maxFrameKids": 16037,
+          "ms": {
+            "max": 368,
+            "mean": 352.2,
+            "median": 350,
+            "min": 342,
+            "std": 8.9978
+          },
+          "p95": {
+            "max": 10,
+            "mean": 10,
+            "median": 10,
+            "min": 10,
+            "std": 0
+          },
+          "p99": {
+            "max": 47,
+            "mean": 44.6,
+            "median": 44,
+            "min": 43,
+            "std": 1.3565
+          },
+          "pcallN": 500624,
+          "redundantPos": 1706,
+          "redundantScale": 838,
+          "redundantVis": 15868,
+          "rounds": 5,
+          "setAct": 9895,
+          "setTransform": 4911,
+          "setVis": 19890
+        },
+        "v745": {
+          "allocKB": {
+            "max": 5758.8271,
+            "mean": 5758.8271,
+            "median": 5758.8271,
+            "min": 5758.8271,
+            "std": 0
+          },
+          "api": 17527,
+          "fmax": {
+            "max": 27,
+            "mean": 23.8,
+            "median": 23,
+            "min": 22,
+            "std": 1.7205
+          },
+          "getChild": 1690,
+          "getKids": 2393,
+          "lastSib": 159,
+          "maxFrameKids": 515,
+          "ms": {
+            "max": 66,
+            "mean": 64.2,
+            "median": 64,
+            "min": 63,
+            "std": 1.1662
+          },
+          "p95": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "p99": {
+            "max": 12,
+            "mean": 9.8,
+            "median": 9,
+            "min": 9,
+            "std": 1.1662
+          },
+          "pcallN": 37769,
+          "redundantPos": 498,
+          "redundantScale": 315,
+          "redundantVis": 918,
+          "rounds": 5,
+          "setAct": 3157,
+          "setTransform": 2125,
+          "setVis": 4802
+        },
+        "v746": {
+          "allocKB": {
+            "max": 5697.8193,
+            "mean": 5697.8193,
+            "median": 5697.8193,
+            "min": 5697.8193,
+            "std": 0
+          },
+          "api": 17518,
+          "fmax": {
+            "max": 24,
+            "mean": 22.2,
+            "median": 22,
+            "min": 21,
+            "std": 0.9798
+          },
+          "getChild": 1690,
+          "getKids": 2381,
+          "lastSib": 159,
+          "maxFrameKids": 515,
+          "ms": {
+            "max": 65,
+            "mean": 62.8,
+            "median": 63,
+            "min": 61,
+            "std": 1.6
+          },
+          "p95": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "p99": {
+            "max": 12,
+            "mean": 11,
+            "median": 11,
+            "min": 10,
+            "std": 0.8944
+          },
+          "pcallN": 34946,
+          "redundantPos": 498,
+          "redundantScale": 315,
+          "redundantVis": 918,
+          "rounds": 5,
+          "setAct": 3157,
+          "setTransform": 2125,
+          "setVis": 4802
+        },
+        "v747": {
+          "allocKB": {
+            "max": 5649.8193,
+            "mean": 5649.8193,
+            "median": 5649.8193,
+            "min": 5649.8193,
+            "std": 0
+          },
+          "api": 16906,
+          "fmax": {
+            "max": 24,
+            "mean": 22.8,
+            "median": 23,
+            "min": 22,
+            "std": 0.7483
+          },
+          "getChild": 1564,
+          "getKids": 1895,
+          "lastSib": 159,
+          "maxFrameKids": 367,
+          "ms": {
+            "max": 65,
+            "mean": 62.8,
+            "median": 63,
+            "min": 60,
+            "std": 1.7205
+          },
+          "p95": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "p99": {
+            "max": 12,
+            "mean": 11,
+            "median": 11,
+            "min": 10,
+            "std": 0.8944
+          },
+          "pcallN": 31490,
+          "redundantPos": 498,
+          "redundantScale": 315,
+          "redundantVis": 918,
+          "rounds": 5,
+          "setAct": 3157,
+          "setTransform": 2125,
+          "setVis": 4802
+        },
+        "v748": {
+          "allocKB": {
+            "max": 5956.4141,
+            "mean": 5956.4141,
+            "median": 5956.4141,
+            "min": 5956.4141,
+            "std": 0
+          },
+          "api": 17997,
+          "fmax": {
+            "max": 27,
+            "mean": 24.8,
+            "median": 24,
+            "min": 24,
+            "std": 1.1662
+          },
+          "getChild": 1677,
+          "getKids": 2783,
+          "lastSib": 159,
+          "maxFrameKids": 596,
+          "ms": {
+            "max": 73,
+            "mean": 72,
+            "median": 72,
+            "min": 70,
+            "std": 1.0954
+          },
+          "p95": {
+            "max": 2,
+            "mean": 1.4,
+            "median": 1,
+            "min": 1,
+            "std": 0.4899
+          },
+          "p99": {
+            "max": 15,
+            "mean": 12.6,
+            "median": 12,
+            "min": 11,
+            "std": 1.6248
+          },
+          "pcallN": 40462,
+          "redundantPos": 498,
+          "redundantScale": 315,
+          "redundantVis": 1008,
+          "rounds": 5,
+          "setAct": 3157,
+          "setTransform": 2125,
+          "setVis": 4892
+        }
+      },
+      "steady_home": {
+        "v742v12": {
+          "allocKB": {
+            "max": 14388.7227,
+            "mean": 14388.7227,
+            "median": 14388.7227,
+            "min": 14388.7227,
+            "std": 0
+          },
+          "api": 71474,
+          "fmax": {
+            "max": 14,
+            "mean": 12.2,
+            "median": 12,
+            "min": 11,
+            "std": 1.1662
+          },
+          "getChild": 300,
+          "getKids": 45398,
+          "lastSib": 1008,
+          "maxFrameKids": 9064,
+          "ms": {
+            "max": 90,
+            "mean": 88.6,
+            "median": 89,
+            "min": 86,
+            "std": 1.3565
+          },
+          "p95": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "p99": {
+            "max": 11,
+            "mean": 10.6,
+            "median": 11,
+            "min": 10,
+            "std": 0.4899
+          },
+          "pcallN": 119380,
+          "redundantPos": 252,
+          "redundantScale": 324,
+          "redundantVis": 10818,
+          "rounds": 5,
+          "setAct": 10818,
+          "setTransform": 792,
+          "setVis": 10818
+        },
+        "v743": {
+          "allocKB": {
+            "max": 14368.4492,
+            "mean": 14368.4492,
+            "median": 14368.4492,
+            "min": 14368.4492,
+            "std": 0
+          },
+          "api": 71474,
+          "fmax": {
+            "max": 14,
+            "mean": 13,
+            "median": 13,
+            "min": 12,
+            "std": 0.8944
+          },
+          "getChild": 300,
+          "getKids": 45398,
+          "lastSib": 1008,
+          "maxFrameKids": 9064,
+          "ms": {
+            "max": 93,
+            "mean": 89,
+            "median": 89,
+            "min": 84,
+            "std": 2.8983
+          },
+          "p95": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "p99": {
+            "max": 13,
+            "mean": 11.8,
+            "median": 12,
+            "min": 10,
+            "std": 0.9798
+          },
+          "pcallN": 119380,
+          "redundantPos": 252,
+          "redundantScale": 324,
+          "redundantVis": 10818,
+          "rounds": 5,
+          "setAct": 10818,
+          "setTransform": 792,
+          "setVis": 10818
+        },
+        "v745": {
+          "allocKB": {
+            "max": 862.0742,
+            "mean": 862.0742,
+            "median": 862.0742,
+            "min": 862.0742,
+            "std": 0
+          },
+          "api": 310,
+          "fmax": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "getChild": 300,
+          "getKids": 0,
+          "lastSib": 10,
+          "maxFrameKids": 0,
+          "ms": {
+            "max": 9,
+            "mean": 8.6,
+            "median": 9,
+            "min": 8,
+            "std": 0.4899
+          },
+          "p95": {
+            "max": 0,
+            "mean": 0,
+            "median": 0,
+            "min": 0,
+            "std": 0
+          },
+          "p99": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "pcallN": 4173,
+          "redundantPos": 0,
+          "redundantScale": 0,
+          "redundantVis": 0,
+          "rounds": 5,
+          "setAct": 0,
+          "setTransform": 0,
+          "setVis": 0
+        },
+        "v746": {
+          "allocKB": {
+            "max": 862.0742,
+            "mean": 862.0742,
+            "median": 862.0742,
+            "min": 862.0742,
+            "std": 0
+          },
+          "api": 310,
+          "fmax": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "getChild": 300,
+          "getKids": 0,
+          "lastSib": 10,
+          "maxFrameKids": 0,
+          "ms": {
+            "max": 11,
+            "mean": 9.2,
+            "median": 10,
+            "min": 7,
+            "std": 1.4697
+          },
+          "p95": {
+            "max": 0,
+            "mean": 0,
+            "median": 0,
+            "min": 0,
+            "std": 0
+          },
+          "p99": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "pcallN": 4113,
+          "redundantPos": 0,
+          "redundantScale": 0,
+          "redundantVis": 0,
+          "rounds": 5,
+          "setAct": 0,
+          "setTransform": 0,
+          "setVis": 0
+        },
+        "v747": {
+          "allocKB": {
+            "max": 862.3867,
+            "mean": 862.3867,
+            "median": 862.3867,
+            "min": 862.3867,
+            "std": 0
+          },
+          "api": 328,
+          "fmax": {
+            "max": 2,
+            "mean": 1.2,
+            "median": 1,
+            "min": 1,
+            "std": 0.4
+          },
+          "getChild": 318,
+          "getKids": 0,
+          "lastSib": 10,
+          "maxFrameKids": 0,
+          "ms": {
+            "max": 11,
+            "mean": 9.8,
+            "median": 10,
+            "min": 8,
+            "std": 0.9798
+          },
+          "p95": {
+            "max": 0,
+            "mean": 0,
+            "median": 0,
+            "min": 0,
+            "std": 0
+          },
+          "p99": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "pcallN": 4143,
+          "redundantPos": 0,
+          "redundantScale": 0,
+          "redundantVis": 0,
+          "rounds": 5,
+          "setAct": 0,
+          "setTransform": 0,
+          "setVis": 0
+        },
+        "v748": {
+          "allocKB": {
+            "max": 864.043,
+            "mean": 864.043,
+            "median": 864.043,
+            "min": 864.043,
+            "std": 0
+          },
+          "api": 356,
+          "fmax": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "getChild": 346,
+          "getKids": 0,
+          "lastSib": 10,
+          "maxFrameKids": 0,
+          "ms": {
+            "max": 12,
+            "mean": 10.4,
+            "median": 10,
+            "min": 9,
+            "std": 1.0198
+          },
+          "p95": {
+            "max": 0,
+            "mean": 0,
+            "median": 0,
+            "min": 0,
+            "std": 0
+          },
+          "p99": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "pcallN": 5338,
+          "redundantPos": 0,
+          "redundantScale": 0,
+          "redundantVis": 0,
+          "rounds": 5,
+          "setAct": 0,
+          "setTransform": 0,
+          "setVis": 0
+        }
+      },
+      "steady_level": {
+        "v742v12": {
+          "allocKB": {
+            "max": 16455.3438,
+            "mean": 16455.3438,
+            "median": 16455.3438,
+            "min": 16455.3438,
+            "std": 0
+          },
+          "api": 75117,
+          "fmax": {
+            "max": 14,
+            "mean": 12.6,
+            "median": 12,
+            "min": 12,
+            "std": 0.8
+          },
+          "getChild": 0,
+          "getKids": 46199,
+          "lastSib": 1014,
+          "maxFrameKids": 9072,
+          "ms": {
+            "max": 113,
+            "mean": 107,
+            "median": 107,
+            "min": 103,
+            "std": 3.5214
+          },
+          "p95": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "p99": {
+            "max": 11,
+            "mean": 10.6,
+            "median": 11,
+            "min": 10,
+            "std": 0.4899
+          },
+          "pcallN": 134106,
+          "redundantPos": 356,
+          "redundantScale": 342,
+          "redundantVis": 11509,
+          "rounds": 5,
+          "setAct": 11509,
+          "setTransform": 1016,
+          "setVis": 11509
+        },
+        "v743": {
+          "allocKB": {
+            "max": 16440.4609,
+            "mean": 16440.4609,
+            "median": 16440.4609,
+            "min": 16440.4609,
+            "std": 0
+          },
+          "api": 75117,
+          "fmax": {
+            "max": 13,
+            "mean": 12.4,
+            "median": 13,
+            "min": 11,
+            "std": 0.8
+          },
+          "getChild": 0,
+          "getKids": 46199,
+          "lastSib": 1014,
+          "maxFrameKids": 9072,
+          "ms": {
+            "max": 109,
+            "mean": 105.4,
+            "median": 106,
+            "min": 101,
+            "std": 2.5768
+          },
+          "p95": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "p99": {
+            "max": 11,
+            "mean": 10.8,
+            "median": 11,
+            "min": 10,
+            "std": 0.4
+          },
+          "pcallN": 134106,
+          "redundantPos": 356,
+          "redundantScale": 342,
+          "redundantVis": 11509,
+          "rounds": 5,
+          "setAct": 11509,
+          "setTransform": 1016,
+          "setVis": 11509
+        },
+        "v745": {
+          "allocKB": {
+            "max": 820.8477,
+            "mean": 820.8477,
+            "median": 820.8477,
+            "min": 820.8477,
+            "std": 0
+          },
+          "api": 474,
+          "fmax": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "getChild": 0,
+          "getKids": 5,
+          "lastSib": 15,
+          "maxFrameKids": 1,
+          "ms": {
+            "max": 10,
+            "mean": 9.2,
+            "median": 9,
+            "min": 9,
+            "std": 0.4
+          },
+          "p95": {
+            "max": 0,
+            "mean": 0,
+            "median": 0,
+            "min": 0,
+            "std": 0
+          },
+          "p99": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "pcallN": 4148,
+          "redundantPos": 36,
+          "redundantScale": 0,
+          "redundantVis": 36,
+          "rounds": 5,
+          "setAct": 36,
+          "setTransform": 72,
+          "setVis": 36
+        },
+        "v746": {
+          "allocKB": {
+            "max": 890.4023,
+            "mean": 890.4023,
+            "median": 890.4023,
+            "min": 890.4023,
+            "std": 0
+          },
+          "api": 1149,
+          "fmax": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "getChild": 0,
+          "getKids": 305,
+          "lastSib": 15,
+          "maxFrameKids": 75,
+          "ms": {
+            "max": 13,
+            "mean": 10.6,
+            "median": 10,
+            "min": 10,
+            "std": 1.2
+          },
+          "p95": {
+            "max": 0,
+            "mean": 0,
+            "median": 0,
+            "min": 0,
+            "std": 0
+          },
+          "p99": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "pcallN": 4263,
+          "redundantPos": 36,
+          "redundantScale": 0,
+          "redundantVis": 36,
+          "rounds": 5,
+          "setAct": 36,
+          "setTransform": 72,
+          "setVis": 36
+        },
+        "v747": {
+          "allocKB": {
+            "max": 890.7148,
+            "mean": 890.7148,
+            "median": 890.7148,
+            "min": 890.7148,
+            "std": 0
+          },
+          "api": 1159,
+          "fmax": {
+            "max": 2,
+            "mean": 1.2,
+            "median": 1,
+            "min": 1,
+            "std": 0.4
+          },
+          "getChild": 10,
+          "getKids": 305,
+          "lastSib": 15,
+          "maxFrameKids": 75,
+          "ms": {
+            "max": 13,
+            "mean": 11.8,
+            "median": 12,
+            "min": 11,
+            "std": 0.7483
+          },
+          "p95": {
+            "max": 0,
+            "mean": 0,
+            "median": 0,
+            "min": 0,
+            "std": 0
+          },
+          "p99": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "pcallN": 4293,
+          "redundantPos": 36,
+          "redundantScale": 0,
+          "redundantVis": 36,
+          "rounds": 5,
+          "setAct": 36,
+          "setTransform": 72,
+          "setVis": 36
+        },
+        "v748": {
+          "allocKB": {
+            "max": 892.4805,
+            "mean": 892.4805,
+            "median": 892.4805,
+            "min": 892.4805,
+            "std": 0
+          },
+          "api": 1287,
+          "fmax": {
+            "max": 2,
+            "mean": 1.4,
+            "median": 1,
+            "min": 1,
+            "std": 0.4899
+          },
+          "getChild": 138,
+          "getKids": 305,
+          "lastSib": 15,
+          "maxFrameKids": 75,
+          "ms": {
+            "max": 13,
+            "mean": 11.6,
+            "median": 12,
+            "min": 10,
+            "std": 1.0198
+          },
+          "p95": {
+            "max": 0,
+            "mean": 0,
+            "median": 0,
+            "min": 0,
+            "std": 0
+          },
+          "p99": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "pcallN": 5582,
+          "redundantPos": 36,
+          "redundantScale": 0,
+          "redundantVis": 36,
+          "rounds": 5,
+          "setAct": 36,
+          "setTransform": 72,
+          "setVis": 36
+        }
+      },
+      "steady_select": {
+        "v742v12": {
+          "allocKB": {
+            "max": 19038.8936,
+            "mean": 19038.8936,
+            "median": 19038.8936,
+            "min": 19038.8936,
+            "std": 0
+          },
+          "api": 81572,
+          "fmax": {
+            "max": 13,
+            "mean": 12.8,
+            "median": 13,
+            "min": 12,
+            "std": 0.4
+          },
+          "getChild": 300,
+          "getKids": 45404,
+          "lastSib": 414,
+          "maxFrameKids": 9058,
+          "ms": {
+            "max": 138,
+            "mean": 133.4,
+            "median": 134,
+            "min": 125,
+            "std": 4.5869
+          },
+          "p95": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "p99": {
+            "max": 12,
+            "mean": 11.4,
+            "median": 11,
+            "min": 11,
+            "std": 0.4899
+          },
+          "pcallN": 133444,
+          "redundantPos": 1791,
+          "redundantScale": 1867,
+          "redundantVis": 11419,
+          "rounds": 5,
+          "setAct": 11419,
+          "setTransform": 5411,
+          "setVis": 11419
+        },
+        "v743": {
+          "allocKB": {
+            "max": 18947.3311,
+            "mean": 18947.3311,
+            "median": 18947.3311,
+            "min": 18947.3311,
+            "std": 0
+          },
+          "api": 81572,
+          "fmax": {
+            "max": 13,
+            "mean": 12.4,
+            "median": 12,
+            "min": 12,
+            "std": 0.4899
+          },
+          "getChild": 300,
+          "getKids": 45404,
+          "lastSib": 414,
+          "maxFrameKids": 9058,
+          "ms": {
+            "max": 131,
+            "mean": 129.2,
+            "median": 129,
+            "min": 126,
+            "std": 1.833
+          },
+          "p95": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "p99": {
+            "max": 12,
+            "mean": 11,
+            "median": 11,
+            "min": 10,
+            "std": 0.6325
+          },
+          "pcallN": 131919,
+          "redundantPos": 1791,
+          "redundantScale": 1867,
+          "redundantVis": 11419,
+          "rounds": 5,
+          "setAct": 11419,
+          "setTransform": 5411,
+          "setVis": 11419
+        },
+        "v745": {
+          "allocKB": {
+            "max": 4341.541,
+            "mean": 4341.541,
+            "median": 4341.541,
+            "min": 4341.541,
+            "std": 0
+          },
+          "api": 14221,
+          "fmax": {
+            "max": 14,
+            "mean": 12.8,
+            "median": 13,
+            "min": 12,
+            "std": 0.7483
+          },
+          "getChild": 300,
+          "getKids": 0,
+          "lastSib": 0,
+          "maxFrameKids": 0,
+          "ms": {
+            "max": 62,
+            "mean": 60.4,
+            "median": 60,
+            "min": 59,
+            "std": 1.0198
+          },
+          "p95": {
+            "max": 0,
+            "mean": 0,
+            "median": 0,
+            "min": 0,
+            "std": 0
+          },
+          "p99": {
+            "max": 11,
+            "mean": 10.4,
+            "median": 10,
+            "min": 10,
+            "std": 0.4899
+          },
+          "pcallN": 26881,
+          "redundantPos": 1529,
+          "redundantScale": 1529,
+          "redundantVis": 0,
+          "rounds": 5,
+          "setAct": 0,
+          "setTransform": 4587,
+          "setVis": 0
+        },
+        "v746": {
+          "allocKB": {
+            "max": 4399.3574,
+            "mean": 4399.3574,
+            "median": 4399.3574,
+            "min": 4399.3574,
+            "std": 0
+          },
+          "api": 14221,
+          "fmax": {
+            "max": 13,
+            "mean": 12.2,
+            "median": 12,
+            "min": 12,
+            "std": 0.4
+          },
+          "getChild": 300,
+          "getKids": 0,
+          "lastSib": 0,
+          "maxFrameKids": 0,
+          "ms": {
+            "max": 62,
+            "mean": 60.8,
+            "median": 61,
+            "min": 60,
+            "std": 0.7483
+          },
+          "p95": {
+            "max": 0,
+            "mean": 0,
+            "median": 0,
+            "min": 0,
+            "std": 0
+          },
+          "p99": {
+            "max": 11,
+            "mean": 10.8,
+            "median": 11,
+            "min": 10,
+            "std": 0.4
+          },
+          "pcallN": 26821,
+          "redundantPos": 1529,
+          "redundantScale": 1529,
+          "redundantVis": 0,
+          "rounds": 5,
+          "setAct": 0,
+          "setTransform": 4587,
+          "setVis": 0
+        },
+        "v747": {
+          "allocKB": {
+            "max": 4399.8574,
+            "mean": 4399.8574,
+            "median": 4399.8574,
+            "min": 4399.8574,
+            "std": 0
+          },
+          "api": 14237,
+          "fmax": {
+            "max": 14,
+            "mean": 12.6,
+            "median": 12,
+            "min": 12,
+            "std": 0.8
+          },
+          "getChild": 316,
+          "getKids": 0,
+          "lastSib": 0,
+          "maxFrameKids": 0,
+          "ms": {
+            "max": 66,
+            "mean": 62,
+            "median": 62,
+            "min": 58,
+            "std": 2.6077
+          },
+          "p95": {
+            "max": 0,
+            "mean": 0,
+            "median": 0,
+            "min": 0,
+            "std": 0
+          },
+          "p99": {
+            "max": 11,
+            "mean": 10.8,
+            "median": 11,
+            "min": 10,
+            "std": 0.4
+          },
+          "pcallN": 26869,
+          "redundantPos": 1529,
+          "redundantScale": 1529,
+          "redundantVis": 0,
+          "rounds": 5,
+          "setAct": 0,
+          "setTransform": 4587,
+          "setVis": 0
+        },
+        "v748": {
+          "allocKB": {
+            "max": 4403.3652,
+            "mean": 4403.3652,
+            "median": 4403.3652,
+            "min": 4403.3652,
+            "std": 0
+          },
+          "api": 14251,
+          "fmax": {
+            "max": 13,
+            "mean": 12.4,
+            "median": 12,
+            "min": 12,
+            "std": 0.4899
+          },
+          "getChild": 330,
+          "getKids": 0,
+          "lastSib": 0,
+          "maxFrameKids": 0,
+          "ms": {
+            "max": 63,
+            "mean": 60.8,
+            "median": 61,
+            "min": 58,
+            "std": 2.0396
+          },
+          "p95": {
+            "max": 0,
+            "mean": 0,
+            "median": 0,
+            "min": 0,
+            "std": 0
+          },
+          "p99": {
+            "max": 11,
+            "mean": 10.4,
+            "median": 10,
+            "min": 10,
+            "std": 0.4899
+          },
+          "pcallN": 28550,
+          "redundantPos": 1529,
+          "redundantScale": 1529,
+          "redundantVis": 0,
+          "rounds": 5,
+          "setAct": 0,
+          "setTransform": 4587,
+          "setVis": 0
+        }
+      },
+      "steady_shop": {
+        "v742v12": {
+          "allocKB": {
+            "max": 14872.957,
+            "mean": 14872.957,
+            "median": 14872.957,
+            "min": 14872.957,
+            "std": 0
+          },
+          "api": 72262,
+          "fmax": {
+            "max": 14,
+            "mean": 12.8,
+            "median": 13,
+            "min": 12,
+            "std": 0.7483
+          },
+          "getChild": 300,
+          "getKids": 45404,
+          "lastSib": 414,
+          "maxFrameKids": 9058,
+          "ms": {
+            "max": 101,
+            "mean": 94.8,
+            "median": 95,
+            "min": 91,
+            "std": 3.7094
+          },
+          "p95": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "p99": {
+            "max": 12,
+            "mean": 11,
+            "median": 11,
+            "min": 10,
+            "std": 0.8944
+          },
+          "pcallN": 119189,
+          "redundantPos": 266,
+          "redundantScale": 342,
+          "redundantVis": 11419,
+          "rounds": 5,
+          "setAct": 11419,
+          "setTransform": 836,
+          "setVis": 11419
+        },
+        "v743": {
+          "allocKB": {
+            "max": 14852.8789,
+            "mean": 14852.8789,
+            "median": 14852.8789,
+            "min": 14852.8789,
+            "std": 0
+          },
+          "api": 72262,
+          "fmax": {
+            "max": 14,
+            "mean": 12.8,
+            "median": 13,
+            "min": 11,
+            "std": 0.9798
+          },
+          "getChild": 300,
+          "getKids": 45404,
+          "lastSib": 414,
+          "maxFrameKids": 9058,
+          "ms": {
+            "max": 93,
+            "mean": 89.8,
+            "median": 88,
+            "min": 88,
+            "std": 2.2271
+          },
+          "p95": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "p99": {
+            "max": 12,
+            "mean": 11,
+            "median": 11,
+            "min": 10,
+            "std": 0.6325
+          },
+          "pcallN": 119189,
+          "redundantPos": 266,
+          "redundantScale": 342,
+          "redundantVis": 11419,
+          "rounds": 5,
+          "setAct": 11419,
+          "setTransform": 836,
+          "setVis": 11419
+        },
+        "v745": {
+          "allocKB": {
+            "max": 147.291,
+            "mean": 147.291,
+            "median": 147.291,
+            "min": 147.291,
+            "std": 0
+          },
+          "api": 300,
+          "fmax": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "getChild": 300,
+          "getKids": 0,
+          "lastSib": 0,
+          "maxFrameKids": 0,
+          "ms": {
+            "max": 6,
+            "mean": 4.8,
+            "median": 5,
+            "min": 4,
+            "std": 0.7483
+          },
+          "p95": {
+            "max": 0,
+            "mean": 0,
+            "median": 0,
+            "min": 0,
+            "std": 0
+          },
+          "p99": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "pcallN": 3716,
+          "redundantPos": 0,
+          "redundantScale": 0,
+          "redundantVis": 0,
+          "rounds": 5,
+          "setAct": 0,
+          "setTransform": 0,
+          "setVis": 0
+        },
+        "v746": {
+          "allocKB": {
+            "max": 147.291,
+            "mean": 147.291,
+            "median": 147.291,
+            "min": 147.291,
+            "std": 0
+          },
+          "api": 300,
+          "fmax": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "getChild": 300,
+          "getKids": 0,
+          "lastSib": 0,
+          "maxFrameKids": 0,
+          "ms": {
+            "max": 6,
+            "mean": 4.6,
+            "median": 4,
+            "min": 4,
+            "std": 0.8
+          },
+          "p95": {
+            "max": 0,
+            "mean": 0,
+            "median": 0,
+            "min": 0,
+            "std": 0
+          },
+          "p99": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "pcallN": 3716,
+          "redundantPos": 0,
+          "redundantScale": 0,
+          "redundantVis": 0,
+          "rounds": 5,
+          "setAct": 0,
+          "setTransform": 0,
+          "setVis": 0
+        },
+        "v747": {
+          "allocKB": {
+            "max": 147.6035,
+            "mean": 147.6035,
+            "median": 147.6035,
+            "min": 147.6035,
+            "std": 0
+          },
+          "api": 320,
+          "fmax": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "getChild": 320,
+          "getKids": 0,
+          "lastSib": 0,
+          "maxFrameKids": 0,
+          "ms": {
+            "max": 7,
+            "mean": 5.4,
+            "median": 6,
+            "min": 4,
+            "std": 1.2
+          },
+          "p95": {
+            "max": 0,
+            "mean": 0,
+            "median": 0,
+            "min": 0,
+            "std": 0
+          },
+          "p99": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "pcallN": 3746,
+          "redundantPos": 0,
+          "redundantScale": 0,
+          "redundantVis": 0,
+          "rounds": 5,
+          "setAct": 0,
+          "setTransform": 0,
+          "setVis": 0
+        },
+        "v748": {
+          "allocKB": {
+            "max": 149.3691,
+            "mean": 149.3691,
+            "median": 149.3691,
+            "min": 149.3691,
+            "std": 0
+          },
+          "api": 336,
+          "fmax": {
+            "max": 1,
+            "mean": 1,
+            "median": 1,
+            "min": 1,
+            "std": 0
+          },
+          "getChild": 336,
+          "getKids": 0,
+          "lastSib": 0,
+          "maxFrameKids": 0,
+          "ms": {
+            "max": 6,
+            "mean": 5,
+            "median": 5,
+            "min": 4,
+            "std": 0.6325
+          },
+          "p95": {
+            "max": 0,
+            "mean": 0,
+            "median": 0,
+            "min": 0,
+            "std": 0
+          },
+          "p99": {
+            "max": 1,
+            "mean": 0.8,
+            "median": 1,
+            "min": 0,
+            "std": 0.4
+          },
+          "pcallN": 5213,
+          "redundantPos": 0,
+          "redundantScale": 0,
+          "redundantVis": 0,
+          "rounds": 5,
+          "setAct": 0,
+          "setTransform": 0,
+          "setVis": 0
+        }
+      }
+    },
+    "candidateSha256": "3db02ce67c70c6bbc088d77264db423ff95c4368ea73aa525d4608d917b3d890",
+    "checks": {
+      "b10_detached_readable_root_cache": {
+        "pass": true,
+        "v742": {
+          "hitNew": true,
+          "hitOld": false
+        },
+        "v747": {
+          "hitNew": false,
+          "hitOld": true
+        },
+        "v748": {
+          "hitNew": true,
+          "hitOld": false
+        }
+      },
+      "b1_late_raycast_after_f20": {
+        "pass": true,
+        "v742": {
+          "done": true,
+          "ray": true,
+          "scans": 8
+        },
+        "v747": {
+          "done": true,
+          "ray": false,
+          "scans": 1
+        },
+        "v748": {
+          "done": true,
+          "ray": true,
+          "scans": 8
+        }
+      },
+      "b2_set_prop_raycast_isolation": {
+        "pass": true,
+        "v742": {
+          "blk": false,
+          "intr": false,
+          "ok": true,
+          "ray": true
+        },
+        "v747": {
+          "blk": true,
+          "intr": true,
+          "ok": true,
+          "ray": true
+        },
+        "v748": {
+          "blk": false,
+          "intr": false,
+          "ok": false,
+          "ray": true
+        }
+      },
+      "b3_help_and_tut_visible_isolation": {
+        "pass": true,
+        "v747": {
+          "ok": true,
+          "vis": false
+        },
+        "v748": {
+          "ok": false,
+          "vis": false
+        }
+      },
+      "b3_set_prop_visible_active_isolation": {
+        "pass": true,
+        "v742": {
+          "ok": true,
+          "vis": true
+        },
+        "v747": {
+          "ok": true,
+          "vis": false
+        },
+        "v748": {
+          "ok": true,
+          "vis": true
+        }
+      },
+      "b4_confirm_bar_stay_on_top": {
+        "pass": true,
+        "v742": {
+          "above": true,
+          "resets": 70
+        },
+        "v747": {
+          "above": false,
+          "resets": 0
+        },
+        "v748": {
+          "above": true,
+          "resets": 70
+        }
+      },
+      "b4_modal_block_err_next_frame_retry": {
+        "pass": true,
+        "v742": {
+          "after1": 1,
+          "retriesIn10": 10
+        },
+        "v747": {
+          "after1": 1,
+          "retriesIn10": 0
+        },
+        "v748": {
+          "after1": 1,
+          "retriesIn10": 1
+        }
+      },
+      "b5_same_root_dynamic_cell_rebind": {
+        "pass": true,
+        "v747": {
+          "clicked": false,
+          "ray": false
+        },
+        "v748": {
+          "clicked": true,
+          "ray": true
+        }
+      },
+      "b5_same_root_util_bind_help627": {
+        "pass": true,
+        "v747": {
+          "clicked": false,
+          "ray": false
+        },
+        "v748": {
+          "clicked": true,
+          "ray": true
+        }
+      },
+      "b6_select_card_async_text_refit": {
+        "pass": true,
+        "v742": {
+          "after": 10,
+          "before": 18
+        },
+        "v747": {
+          "after": 18,
+          "before": 18
+        },
+        "v748": {
+          "after": 10,
+          "before": 18
+        }
+      },
+      "b7_pruned_container_lookup_and_typos": {
+        "pass": true,
+        "v742": {
+          "dynAd": false,
+          "dynCtrl": true,
+          "grpAd": true,
+          "grpCtrl": true,
+          "idxNodes": 9034
+        },
+        "v747": {
+          "dynAd": false,
+          "dynCtrl": true,
+          "grpAd": false,
+          "grpCtrl": true,
+          "idxNodes": 1891
+        },
+        "v748": {
+          "dynAd": true,
+          "dynCtrl": true,
+          "grpAd": true,
+          "grpCtrl": true,
+          "idxNodes": 1795
+        }
+      },
+      "b8_forcing_60f_force_write": {
+        "pass": true,
+        "v742": {
+          "forcedSetVis": 5
+        },
+        "v747": {
+          "forcedSetVis": 0
+        },
+        "v748": {
+          "forcedSetVis": 5
+        }
+      },
+      "b9_cursor_late_right_recovery": {
+        "pass": true,
+        "v742": {
+          "doneAfter": false,
+          "doneBefore": false,
+          "showCursor": true
+        },
+        "v747": {
+          "doneAfter": true,
+          "doneBefore": true,
+          "showCursor": false
+        },
+        "v748": {
+          "doneAfter": true,
+          "doneBefore": false,
+          "showCursor": true
+        }
+      },
+      "b9_tutorial_board_late_furniture": {
+        "pass": true,
+        "v742": {
+          "doneAfter": false,
+          "doneMissing": false,
+          "made": 1
+        },
+        "v747": {
+          "doneAfter": true,
+          "doneMissing": true,
+          "made": 1
+        },
+        "v748": {
+          "doneAfter": false,
+          "doneMissing": false,
+          "made": 1
+        }
+      },
+      "r2_p1_1_same_root_btn_idle_wait": {
+        "clicked": true,
+        "pass": true,
+        "readyFrame": 62
+      },
+      "r2_p1_1_same_root_btn_replace": {
+        "clicked": true,
+        "pass": true,
+        "ray": true,
+        "screen": "shop"
+      },
+      "r2_p1_2_gray_retry_idle_no_scroll": {
+        "pass": true,
+        "recoveredFrame": 15
+      },
+      "r2_p1_3_raycast_partial_err_recovery": {
+        "doneAfterErr": false,
+        "doneAfterRec": true,
+        "pass": true,
+        "rayAfter": true
+      },
+      "r2_p1_4_hidden_subtree_err_requeue": {
+        "pass": true,
+        "visAfter1": true,
+        "visAfterWait": false
+      },
+      "r2_p2_1_cur_vis_dedup_active": {
+        "dirtyAfterRedundantHide": false,
+        "getKids": 0,
+        "pass": true
+      },
+      "r2_p2_2_econ_missing_getter_no_lock": {
+        "pass": true,
+        "px": 0,
+        "py": 0
+      },
+      "r2_p2_3_late_box_recovery": {
+        "bh": 108,
+        "bw": 108,
+        "pass": true,
+        "recoveredFrame": 66
+      },
+      "r2_p2_4_pager_fail_isolated_retry": {
+        "extraMainLayoutTouches": 0,
+        "page": 2,
+        "pass": true
+      },
+      "r2_wait_shop_missing_fast_recover": {
+        "getKids40s": 0,
+        "pass": true,
+        "recoverFrames": 11,
+        "recoverSec": 0.1833
+      },
+      "zone1_hex_back_confirm": {
+        "exit_open": true,
+        "pass": true,
+        "sub_pend": true
+      },
+      "zone2_pcall_guard": {
+        "pass": true
+      },
+      "zone3_root_rebuild_fallback": {
+        "genAfter": 2,
+        "genBefore": 1,
+        "pass": true
+      },
+      "zone4_face_and_x70": {
+        "expect": 75.6,
+        "faceVis": true,
+        "pass": true,
+        "xh": 75.6,
+        "xw": 75.6
+      }
+    },
+    "equivalence742vs748": {
+      "controlSnapshotDiffs": 0,
+      "hiddenTimerDeferredDiffs": 28,
+      "nodesPerStage": 9053,
+      "otherHiddenDiffs": 0,
+      "pass": true,
+      "rawTotalDiffs": 28,
+      "stages": 32,
+      "totalSnapshots": 289696,
+      "visibleControlDiffs": 0
+    },
+    "equivalence747vs748": {
+      "controlSnapshotDiffs": 0,
+      "hiddenTimerDeferredDiffs": 0,
+      "nodesPerStage": 9053,
+      "otherHiddenDiffs": 0,
+      "pass": true,
+      "rawTotalDiffs": 0,
+      "stages": 32,
+      "totalSnapshots": 289696,
+      "visibleControlDiffs": 0
+    },
+    "pass": true,
+    "schema": "748-e2e-v1"
+  },
+  "limits": [
+    "全部验证与 6 代（742v12/743/745/746/747/748）5 轮采样基准已正式入库为 tests/export_gil_tree.mjs 与 tests/perf_verify_748.lua，并由 tools/build_748.mjs 实时执行强断言后原子落盘，可直接独立复现",
+    "离线高仿真环境基于导出自真实 .gil 的 8,578 节点控件树，已补充按引擎跨界类别拆分的调用计数（GetChildren/GetChild/SetVisible/Transform/pcall），但仍未导入千星奇域客户端真机实测，移动端真实帧时、合批重绘与 RSS 仍需真机 A/B 验收",
+    "仓库 lua/ 源码树停留在 715 之前（636 KB / 15,451 行，缺少 ADAPT715R 与 sync_econ742 等 716–742 业务逻辑），748 在 747 基础上派生并保持 0 控件记录改动"
+  ]
+}
