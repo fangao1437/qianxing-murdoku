@@ -1,0 +1,251 @@
+{
+  "version": "749_v8",
+  "baseVersion": "748",
+  "baseSha256": "312c06738ae049b27f318f7dafb4e844773249821b7ea4d9ff65f6f339741ef3",
+  "outputPath": "D:\\新建文件夹\\miHoYo Launcher\\qianxing-murdoku\\749_背包商店右侧纸张切换动画\\749_背包商店右侧纸张切换动画_v8.gil",
+  "outputBytes": 7926856,
+  "outputSha256": "f41bee4261f571a048172b181d52b024b03b59ff54531891f52e4081d22cd65f",
+  "recordsBefore": 8578,
+  "recordsAfter": 8731,
+  "recordsAdded": 153,
+  "bendStripCount": 16,
+  "shopInnerBendStrips": 10,
+  "bagInnerBendStrips": 14,
+  "decorImagesOpaque": 92,
+  "semiTransparentArtifacts": 0,
+  "shopMovedControls": 35,
+  "shopFixedHeaderAndButtons": [
+    "s8",
+    "s9",
+    "s37",
+    "s38",
+    "s43..s64",
+    "name",
+    "s71..s74",
+    "cancel",
+    "purchase"
+  ],
+  "shopCardTheme": {
+    "outerBoard": "#ECE2CC",
+    "cardBorder": "#B89872",
+    "cardFace": "#F7F0DF",
+    "innerBox": "#E7D0B2"
+  },
+  "bagMovedControls": 12,
+  "shopBase": {
+    "cx": 444,
+    "cy": -19,
+    "w": 468,
+    "h": 530
+  },
+  "bagBase": {
+    "cx": 395.6666564941406,
+    "cy": -44,
+    "w": 408.5,
+    "h": 616.3333129882812
+  },
+  "scriptBytesBefore": 835476,
+  "scriptBytesAfter": 870697,
+  "staticGates": {
+    "syntaxPass": true,
+    "newGlobalGetVs748": 0,
+    "newGlobalSetVs748": 0,
+    "worldPosExactMatch": true
+  },
+  "shopColdRender": "[murdoku] ===== 构建标记 v749_v8 / 基尔霍夫薄板双模态物理弯曲 =====\r\n[murdoku] 网格视窗：cfg.clues_grid_prefab 没有配置 ⇒ 不启用（继续走老路径；模板索引请填在 main.lua）\r\nCOLD=1651 WRITES=13718 COLD_FINDS=68 FINDS=2918",
+  "animVerification": {
+    "checks": {
+      "bag_paper_anim": {
+        "done": {
+          "bendVis": false,
+          "leavesOff": true,
+          "ptopVis": true,
+          "underVis": false
+        },
+        "enter": {
+          "bendVis": false,
+          "leavesOff": true,
+          "ptopVis": true,
+          "title": "调查背包",
+          "underVis": false
+        },
+        "leaveAbort": {
+          "afterBend": false,
+          "afterVis": false,
+          "leavesOff": true,
+          "midBefore": true,
+          "topRz": 0,
+          "topX": 0
+        },
+        "noSemiArtifacts": true,
+        "pass": true,
+        "reenter": {
+          "bendVis": false,
+          "title": "调查背包",
+          "underVis": false
+        },
+        "steady": {
+          "getKids": 0,
+          "setPos": 0,
+          "setRot": 0
+        },
+        "step1": {
+          "bendVis": true,
+          "blY": -294.8139,
+          "fc16Rz": 2.8263,
+          "fc1Rz": 1.1201,
+          "flex": true,
+          "lLen": 567.1331,
+          "leavesOn": true,
+          "liveTitle": "位置揭示券",
+          "maxStepX": 0.4631,
+          "opaque": true,
+          "rLen": 555.3537,
+          "restArc": 577.8125,
+          "staticHidden": true,
+          "tlY": 309.5726,
+          "trY": 317.244,
+          "uTitle": "调查背包",
+          "underVis": true
+        },
+        "step2": {
+          "liveTitle": "线索核验券",
+          "uTitle": "位置揭示券",
+          "underVis": true
+        }
+      },
+      "render_does_not_clobber_anim_transform": {
+        "after": {
+          "px": 20.6383,
+          "py": 200.1796
+        },
+        "before": {
+          "px": 20.6383,
+          "py": 200.1796
+        },
+        "pass": true
+      },
+      "shop_icon_layers_on_under_sheet": {
+        "clueToEmpty": {
+          "liveClue": false,
+          "uClue": true,
+          "uPos": false
+        },
+        "pass": true,
+        "posToClue": {
+          "liveClue": true,
+          "livePos": false,
+          "uClue": false,
+          "uPos": true
+        }
+      },
+      "shop_paper_anim": {
+        "clear": {
+          "endBend": false,
+          "endVis": false,
+          "leavesOff": true,
+          "livePrice": "",
+          "uPrice": "3 调查币",
+          "underVis": true
+        },
+        "done": {
+          "bendLeavesOff": true,
+          "bendVis": false,
+          "faceVis": true,
+          "pinsRest": true,
+          "underLeavesOff": true,
+          "underVis": false
+        },
+        "enter": {
+          "bendLeavesOff": true,
+          "bendVis": false,
+          "faceVis": true,
+          "underLeavesOff": true,
+          "underVis": false
+        },
+        "interrupt": {
+          "bendVis": true,
+          "leavesOk": true,
+          "livePrice": "3 调查币",
+          "moved": true,
+          "uPrice": "6 调查币",
+          "underVis": true
+        },
+        "mid1": {
+          "bendLeavesOn": true,
+          "bendVis": true,
+          "blY": -256.6688,
+          "botRz": 2.7029,
+          "fc16Rz": 2.8038,
+          "fc1Rz": 1.1574,
+          "headerStill": true,
+          "in10Rz": 2.7988,
+          "in1Rz": 2.3968,
+          "lLen": 489.4031,
+          "maxStepX": 0.4422,
+          "opaque": true,
+          "rLen": 476.3289,
+          "restArc": 496.875,
+          "staticHidden": true,
+          "tlY": 264.703,
+          "topRz": 1.7767,
+          "trX": 244.6293,
+          "trY": 273.8331,
+          "underLeavesOn": true,
+          "underVis": true
+        },
+        "mid2": {
+          "fc16Rz": 0.9431,
+          "progressing": true,
+          "topX": 5.6808
+        },
+        "pass": true,
+        "sameClick": {
+          "bendVis": false,
+          "underVis": false
+        },
+        "steady": {
+          "getKids": 0,
+          "setPos": 0,
+          "setRot": 0
+        },
+        "structure": {
+          "buttonFixed": true,
+          "cardInSheet": true,
+          "headerFixed": true,
+          "noSemiArtifacts": true,
+          "noUName": true
+        },
+        "zOrder": {
+          "hitPurchase": 96,
+          "s148": 97,
+          "s37": 24,
+          "sheet": 23
+        }
+      },
+      "shop_purchase_never_triggers_anim": {
+        "buyFlow": {
+          "openNoAnim": true,
+          "owned": "持有 2 张",
+          "status": "购买成功",
+          "yesNoAnim": true
+        },
+        "nextSwitch": {
+          "triggered": true,
+          "uOwned": "持有 2 张"
+        },
+        "noPick": {
+          "noAnim": true,
+          "status": "请先选择道具"
+        },
+        "pass": true,
+        "poor": {
+          "noAnim": true,
+          "status": "调查币不足"
+        }
+      }
+    },
+    "pass": true,
+    "schema": "749-paper-anim-v5"
+  }
+}
